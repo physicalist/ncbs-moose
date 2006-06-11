@@ -1,0 +1,23 @@
+This directory contains MOOSE documentation and demos for a biochemical
+reaction and for the squid model.
+
+The Moose_users_guide.txt and G2M_users_guide.txt are somewhat preliminary.
+The Moose_developers_guide.txt is much more complete, but still has far to go.
+
+The Demos are run using 
+
+	moose squid.g
+and should emit a plot 
+	squid.plot
+
+The kinetic demo is run using
+
+	moose kholodenko.g
+and should emit a plot 
+	kh.plot
+
+You will need to hit return once when doing the kholodenko demo.
+The kholodenko.g file is a regular kkit dump file. You can try other simple
+models - they should work too.
+As of Jan 2006 the parser is temperamental and needs a second hit of the
+return key to complete loading the kholodenko model.
