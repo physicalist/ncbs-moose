@@ -1,0 +1,10 @@
+This is the 0.03 release of MOOSE
+Date: 27 Jan 2006.
+
+Compilation instructions:
+Moose compiles on Linux under GCC 3 and GCC 4. It needs Flex++.
+
+Type 
+	make moose
+
+See DOCS/ReleaseNotes for details.

@@ -1,0 +1,102 @@
+cd basecode
+make[1]: Entering directory `/home/bhalla/genesis/mus_release_feb10_2006/basecode'
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF Conn.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF Cinfo.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF CinfoWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF Ftype.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF Field.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF Finfo.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF RelayFinfo.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF ValueFinfo.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF DestFinfo.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF SingleSrcFinfo.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF NSrcFinfo.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF SharedFinfo.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF ReturnFinfo.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF ObjFinfo.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF MsgSrc.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF MsgFuncs.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF Element.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF Neutral.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF Shell.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF ShellWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF ReadCell.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF Wildcard.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF TestBasecode.cpp -c
+ld -r -o basecode.o Conn.o Cinfo.o CinfoWrapper.o Ftype.o Field.o Finfo.o RelayFinfo.o ValueFinfo.o DestFinfo.o SingleSrcFinfo.o NSrcFinfo.o SharedFinfo.o ReturnFinfo.o ObjFinfo.o MsgSrc.o MsgFuncs.o Element.o Neutral.o Shell.o ShellWrapper.o ReadCell.o Wildcard.o TestBasecode.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus_release_feb10_2006/basecode'
+cd maindir
+make[1]: Entering directory `/home/bhalla/genesis/mus_release_feb10_2006/maindir'
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode main.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode TestField.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode TestMsg.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode MyClassWrapper.cpp -c
+ld -r -o maindir.o main.o TestField.o TestMsg.o MyClassWrapper.o 
+make[1]: Leaving directory `/home/bhalla/genesis/mus_release_feb10_2006/maindir'
+cd randnum
+make[1]: Entering directory `/home/bhalla/genesis/mus_release_feb10_2006/randnum'
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode mt19937ar.cpp -c
+ld -r -o randnum.o mt19937ar.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus_release_feb10_2006/randnum'
+cd builtins
+make[1]: Entering directory `/home/bhalla/genesis/mus_release_feb10_2006/builtins'
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode String.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode Int.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode Double.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode Interpol.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode InterpolWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode TableWrapper.cpp -c
+ld -r -o builtins.o String.o Int.o Double.o Interpol.o InterpolWrapper.o TableWrapper.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus_release_feb10_2006/builtins'
+cd genesis_parser
+make[1]: Entering directory `/home/bhalla/genesis/mus_release_feb10_2006/genesis_parser'
+flex++ -oGenesisParser.yy.cpp GenesisParser.yy.l
+bison -d GenesisParser.ypp
+sed -e "/^extern\ YYSTYPE/D" GenesisParser.tab.hpp > GenesisParser.tab.h
+sed -e "s/^yyparse/myFlexLexer::yyparse/" GenesisParser.tab.cpp > temp
+sed -e "s/^YY_DECL_VARIABLES/\/\/ Shifted YY_DECL_VARIABLES to inside myFlexLexer class/" temp > GenesisParser.tab.cpp 
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode GenesisParser.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode GenesisParser.tab.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode GenesisParserWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode symtab.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode eval.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode parse.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode getopt.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode script.cpp -c
+ld -r -o SLI.o GenesisParser.o GenesisParser.tab.o GenesisParserWrapper.o symtab.o eval.o parse.o getopt.o script.o 
+make[1]: Leaving directory `/home/bhalla/genesis/mus_release_feb10_2006/genesis_parser'
+cd scheduling
+make[1]: Entering directory `/home/bhalla/genesis/mus_release_feb10_2006/scheduling'
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode SchedWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode JobWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode ClockJobWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode ClockTickWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode TockWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode TestScheduling.cpp -c
+ld -r -o scheduling.o SchedWrapper.o JobWrapper.o ClockJobWrapper.o ClockTickWrapper.o TockWrapper.o TestScheduling.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus_release_feb10_2006/scheduling'
+cd kinetics
+make[1]: Entering directory `/home/bhalla/genesis/mus_release_feb10_2006/kinetics'
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode MoleculeWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode ReactionWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode EnzymeWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode ConcChanWrapper.cpp -c
+ld -r -o kinetics.o MoleculeWrapper.o ReactionWrapper.o EnzymeWrapper.o ConcChanWrapper.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus_release_feb10_2006/kinetics'
+cd biophysics
+make[1]: Entering directory `/home/bhalla/genesis/mus_release_feb10_2006/biophysics'
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode CompartmentWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode HHChannelWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode HHGateWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode CaConcWrapper.cpp -c
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode NernstWrapper.cpp -c
+ld -r -o biophysics.o CompartmentWrapper.o HHChannelWrapper.o HHGateWrapper.o CaConcWrapper.o NernstWrapper.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus_release_feb10_2006/biophysics'
+cd textio
+make[1]: Entering directory `/home/bhalla/genesis/mus_release_feb10_2006/textio'
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF -I../basecode PlotWrapper.cpp -c
+ld -r -o textio.o PlotWrapper.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus_release_feb10_2006/textio'
+All Libs compiled
+g++ -O3 -Wall -pedantic -DNO_OFFSETOF basecode/basecode.o scheduling/scheduling.o randnum/randnum.o maindir/maindir.o genesis_parser/SLI.o builtins/builtins.o textio/textio.o kinetics/kinetics.o biophysics/biophysics.o  -lm -o moose
+Moose compilation finished

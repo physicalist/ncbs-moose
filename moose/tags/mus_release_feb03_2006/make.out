@@ -1,0 +1,100 @@
+cd basecode
+make[1]: Entering directory `/home/bhalla/genesis/mus/basecode'
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF Conn.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF Cinfo.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF CinfoWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF Ftype.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF Field.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF Finfo.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF RelayFinfo.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF ValueFinfo.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF DestFinfo.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF SingleSrcFinfo.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF NSrcFinfo.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF SharedFinfo.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF ReturnFinfo.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF ObjFinfo.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF MsgSrc.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF MsgFuncs.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF Element.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF Neutral.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF Shell.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF ShellWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF ReadCell.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF Wildcard.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF TestBasecode.cpp -c
+ld -r -o basecode.o Conn.o Cinfo.o CinfoWrapper.o Ftype.o Field.o Finfo.o RelayFinfo.o ValueFinfo.o DestFinfo.o SingleSrcFinfo.o NSrcFinfo.o SharedFinfo.o ReturnFinfo.o ObjFinfo.o MsgSrc.o MsgFuncs.o Element.o Neutral.o Shell.o ShellWrapper.o ReadCell.o Wildcard.o TestBasecode.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus/basecode'
+cd maindir
+make[1]: Entering directory `/home/bhalla/genesis/mus/maindir'
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode main.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode TestField.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode TestMsg.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode MyClassWrapper.cpp -c
+ld -r -o maindir.o main.o TestField.o TestMsg.o MyClassWrapper.o 
+make[1]: Leaving directory `/home/bhalla/genesis/mus/maindir'
+cd randnum
+make[1]: Entering directory `/home/bhalla/genesis/mus/randnum'
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode mt19937ar.cpp -c
+ld -r -o randnum.o mt19937ar.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus/randnum'
+cd builtins
+make[1]: Entering directory `/home/bhalla/genesis/mus/builtins'
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode String.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode Int.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode Double.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode Interpol.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode InterpolWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode TableWrapper.cpp -c
+ld -r -o builtins.o String.o Int.o Double.o Interpol.o InterpolWrapper.o TableWrapper.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus/builtins'
+cd genesis_parser
+make[1]: Entering directory `/home/bhalla/genesis/mus/genesis_parser'
+flex++ -oGenesisParser.yy.cpp GenesisParser.yy.l
+bison -d GenesisParser.ypp
+sed -e "/^extern\ YYSTYPE/D" GenesisParser.tab.hpp > GenesisParser.tab.h
+sed -e "s/^yyparse/myFlexLexer::yyparse/" GenesisParser.tab.cpp > temp
+sed -e "s/^YY_DECL_VARIABLES/\/\/ Shifted YY_DECL_VARIABLES to inside myFlexLexer class/" temp > GenesisParser.tab.cpp 
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode GenesisParser.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode GenesisParser.tab.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode GenesisParserWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode symtab.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode eval.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode parse.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode getopt.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -DYYSTYPE_IS_DECLARED -I../basecode script.cpp -c
+ld -r -o SLI.o GenesisParser.o GenesisParser.tab.o GenesisParserWrapper.o symtab.o eval.o parse.o getopt.o script.o 
+make[1]: Leaving directory `/home/bhalla/genesis/mus/genesis_parser'
+cd scheduling
+make[1]: Entering directory `/home/bhalla/genesis/mus/scheduling'
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode SchedWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode JobWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode ClockJobWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode ClockTickWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode TockWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode TestScheduling.cpp -c
+ld -r -o scheduling.o SchedWrapper.o JobWrapper.o ClockJobWrapper.o ClockTickWrapper.o TockWrapper.o TestScheduling.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus/scheduling'
+cd kinetics
+make[1]: Entering directory `/home/bhalla/genesis/mus/kinetics'
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode MoleculeWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode ReactionWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode EnzymeWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode ConcChanWrapper.cpp -c
+ld -r -o kinetics.o MoleculeWrapper.o ReactionWrapper.o EnzymeWrapper.o ConcChanWrapper.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus/kinetics'
+cd biophysics
+make[1]: Entering directory `/home/bhalla/genesis/mus/biophysics'
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode CompartmentWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode HHChannelWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode HHGateWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode CaConcWrapper.cpp -c
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode NernstWrapper.cpp -c
+ld -r -o biophysics.o CompartmentWrapper.o HHChannelWrapper.o HHGateWrapper.o CaConcWrapper.o NernstWrapper.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus/biophysics'
+cd textio
+make[1]: Entering directory `/home/bhalla/genesis/mus/textio'
+g++ -g -Wall -pedantic -DDO_UNIT_TESTS -DNO_OFFSETOF -I../basecode PlotWrapper.cpp -c
+ld -r -o textio.o PlotWrapper.o  
+make[1]: Leaving directory `/home/bhalla/genesis/mus/textio'
+All Libs compiled
