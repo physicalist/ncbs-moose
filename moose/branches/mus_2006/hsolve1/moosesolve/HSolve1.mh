@@ -1,0 +1,188 @@
+/**********************************************************************
+** This program is part of 'MOOSE', the
+** Messaging Object Oriented Simulation Environment.
+**         copyright (C) 2007 Niraj Dudani, Upinder S. Bhalla and NCBS
+** It is made available under the terms of the
+** GNU Lesser General Public License version 2.1
+** See the file COPYING.LIB for the full notice.
+**********************************************************************/
+
+/* This a representative .mh file--it doesn't really translate into compilable
+ * code, for naming issues. The classes HSolve1 and HSolve1Wrapper are filled-in
+ * for by HSolveCompute and HSolveComputeMus respectively.
+ */
+
+class HSolve1
+{
+	author: 
+		Niraj Dudani, 2007, NCBS
+	
+	description:
+		Hines solver equipped to handle branched nerve with HH channels.
+	
+	field:
+		int    NDiv;
+		double VLo;
+		double VHi;
+	
+	eval_field:
+		string getPath( ) {
+			return path_;
+		}
+		
+		void setPath( string value ) {
+			this->setPath( value );
+		}
+	
+	shared:
+		single process( processIn, reinitIn );
+	
+	dest:
+		single reinit( ) {
+			;
+		}
+		single reinitialize( double dt ) {
+			initialize( &model_, seed_, dt,
+			            NDiv_, VLo_, VHi_ );
+			/* Zombification should be done here */
+		}
+		
+		single process( ProcInfo info ) {
+			storeRecordings( info->currTime_ );
+			step( );
+		}
+		
+		/* Dump data structures for the stand-alone solver to read */
+		single writeConduit( string fileName ) {
+			this->writeConduit( fileName );
+		}
+		
+		/* Mark a compartment for recording membrane potential */
+		single recordCompartment( string path ) {
+			vector< Element* > target;
+			if ( Element::wildcardFind( path, target ) != 1 )
+				return;
+			for ( unsigned long ci = 0; ci < compartment_.size(); ++ci )
+				if ( compartment_[ ci ] == target[ 0 ] ) {
+					recordPath_.push_back( path );
+					recordIndex_.push_back( ci );
+					plotVolt_.resize( 1 + plotVolt_.size() );
+					break;
+				}
+		}
+		
+		/* Write membrane potential time series to file */
+		single printVoltageTrace( string fileName, int plotMode ) {
+			ofstream fout( fileName.c_str(), plotMode == 1 ? ios::out : ios::app );
+			fout << "#Time";
+			for ( unsigned long i = 0; i < recordPath_.size(); ++i )
+				fout << "\t" << recordPath_[ i ];
+			for ( unsigned long i = 0; i < plotTime_.size(); ++i ) {
+				fout << "\n" << fixed << setw( 8 ) << plotTime_[ i ];
+				fout << scientific << setprecision( 6 );
+				for ( unsigned long j = 0; j < plotVolt_.size(); ++j )
+					fout << "\t" << plotVolt_[ j ][ i ];
+			}
+			fout << endl;
+			fout.close();
+		}
+	
+	private:
+	
+	private_wrapper:
+		HSolveModelMus           model_;
+		Element*                 seed_;
+		string                   path_;
+		int                      NDiv_;
+		double                   VLo_;
+		double                   VHi_;
+		void                     setPath( const string& path );
+		
+		/* Link to stand-alone solver */
+		void                     writeConduit( const string& fileName );
+		
+		/* Plotting related members */
+		void                     storeRecordings( double currTime );
+		vector< string >         recordPath_;
+		vector< unsigned long >  recordIndex_;
+		vector< double >         plotTime_;
+		vector< vector< double > > plotVolt_;
+};
+
+void HSolveComputeMus::setPath( const string& path ) {
+	vector< Element* > seed;
+	CompartmentWrapper dummy( "dummy" );
+	int count = Element::wildcardFind( path, seed );
+	if ( count == 0 )
+		cerr << "Error: Invalid path set in \'" << this->path() << "\'.\n";
+	else if ( count > 1 )
+		cerr << "Error: Path in \'" << this->path()
+		     << "\' should point to exactly 1 element.\n";
+	else if ( !seed[ 0 ]->cinfo()->isA( dummy.cinfo() ) )
+		cerr << "Error: Path in \'" << this->path()
+		     << "\' should point to type \'Compartment\'.\n";
+	else {
+		seed_ = seed[ 0 ];
+		path_ = path;
+	}
+}
+
+void HSolveComputeMus::storeRecordings( double currTime ) {
+	if ( recordIndex_.size() == 0 )
+		return;
+	plotTime_.push_back( currTime );
+	for ( unsigned long i = 0; i < plotVolt_.size(); ++i )
+		plotVolt_[ i ].push_back (
+			V_[ recordIndex_[ i ] ]
+		);
+}
+
+#define STREAM_OUT( STREAM, DATA ) \
+	( ( STREAM ).write( reinterpret_cast< const char* >( &( DATA ) ), sizeof( DATA ) ) )
+#define STREAM_OUT_VECTOR( STREAM, DATA ) \
+	do { \
+		unsigned long vSize = ( DATA ).size( ); \
+		STREAM_OUT( ( STREAM ), vSize ); \
+		if ( vSize ) \
+			( STREAM ).write( \
+				reinterpret_cast< const char* >( &( DATA )[ 0 ] ), \
+				sizeof( DATA )[ 0 ] * vSize \
+			); \
+	} while( 0 )
+
+void HSolveComputeMus::writeConduit( const string& fileName ) const {
+	ofstream fout( fileName.c_str(), ios::binary );
+	STREAM_OUT_VECTOR( fout, checkpoint_ );
+	STREAM_OUT( fout, N_ );
+	STREAM_OUT( fout, VLo_ );
+	STREAM_OUT( fout, VHi_ );
+	STREAM_OUT( fout, NDiv_ );
+	STREAM_OUT( fout, dV_ );
+	double Inject, Vm, Em, Cm, Rm, Ra;
+	for ( unsigned long ci = 0; ci < N_; ++ci ) {
+		model_.getFieldDouble( compartment_[ ci ], "Inject", Inject );
+		model_.getFieldDouble( compartment_[ ci ], "Vm", Vm );
+		model_.getFieldDouble( compartment_[ ci ], "Em", Em );
+		model_.getFieldDouble( compartment_[ ci ], "Cm", Cm );
+		model_.getFieldDouble( compartment_[ ci ], "Rm", Rm );
+		model_.getFieldDouble( compartment_[ ci ], "Ra", Ra );
+		STREAM_OUT( fout, Inject );
+		STREAM_OUT( fout, Vm );
+		STREAM_OUT( fout, Em );
+		STREAM_OUT( fout, Cm );
+		STREAM_OUT( fout, Rm );
+		STREAM_OUT( fout, Ra );
+	}
+	STREAM_OUT_VECTOR( fout, channelCount_ );
+	STREAM_OUT_VECTOR( fout, gateCount_ );
+	STREAM_OUT_VECTOR( fout, gateCount1_ );
+	STREAM_OUT_VECTOR( fout, Gbar_ );
+	STREAM_OUT_VECTOR( fout, GbarEk_ );
+	STREAM_OUT_VECTOR( fout, state_ );
+	STREAM_OUT_VECTOR( fout, power_ );
+	STREAM_OUT_VECTOR( fout, lookup_ );
+	STREAM_OUT_VECTOR( fout, gateFamily_ );
+	STREAM_OUT( fout, lookupBlocSize_ );
+	STREAM_OUT_VECTOR( fout, recordIndex_ );
+	fout.close( );
+}
