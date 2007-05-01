@@ -1,0 +1,35 @@
+HSolve is made up of the following classes:
+
+ - HSolveCompute:
+   Handles all calculations. The model is read in via a pointer to HSolveModel
+   (below).
+
+ - HSolveModel:
+   Abstract base class laying out the interface thro' which HSolveCompute and
+   GateInfo (below) read in model parameters.
+
+ - GateInfo:
+   Encapsulates all features defining a gate, and also the process by which
+   2 gates can be tested for identity. HSolveCompute uses this to build a set of
+   unique gates within a model, which is further used in lookup table
+   construction.
+
+ - Node:
+   Connectivity information for a compartment. Used for labeling of compartments.
+
+All the above classes are templated, where "T" is the type of the handle for
+model entities (compartments / channels / gates). In MOOSE 2007, "T" is int, as
+also in the standalone solver. In MOOSE 2006, it is Element*. Templatization
+may well be left out in a future version, as it feels superfluous.
+
+The solver can be customized by concretizing HSolveModel, and inheriting from
+HSolveCompute. 
+
+For instance, the following classes let the solver speak with MOOSE:
+ - HSolveModelMus:
+   Lets the solver fetch information from Moose.
+
+ - HSolveComputeMus:
+   Adds messaging capability to HSolveCompute.
+
+The stand-alone solver can be written by implementing analogous classes.

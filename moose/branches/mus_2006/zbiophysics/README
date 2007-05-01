@@ -1,0 +1,2 @@
+zbiophysics classes are zombified versions of their cousins from biophysics.
+HSolve1 reads its model parameters from these objects.
