@@ -1,0 +1,23 @@
+
+=====================================================================
+2007-09-25 09:41:49
+=====================================================================
+Decided to use XML for configuration. Chucked the property-file 
+approach as there are no readily available implementation for reading
+property files in C++. Too lazy to roll one. Moreover, at some point
+we may want to store the GUI configurations in more organized way,
+XML will be ideal for that.
+We have to include one XML library or another for handling SBML. So
+better to start now. 
+Choice of library:
+libxml2 - portable, extensive functionalities, fast
+	- but big, complex and several dependencies
+expat - portable, solid (granddad of all C++ XML parsers), fast, small, 
+	no dependencies
+      - less functionality ( no validation ),
+xerces - good functionalities 
+       - is windows port available? not as fast as xpat/libxml
+
+
+
+
