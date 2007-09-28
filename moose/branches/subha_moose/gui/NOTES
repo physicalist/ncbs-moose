@@ -1,0 +1,43 @@
+1. Main window
+
+1.1 left panel
+1.1.1. file system browser
+1.1.2. open files
+1.1.3. ?
+
+1.2. right panel
+1.2.1. tool buttons
+1.2.2. ?
+
+1.3. workspace (centre)
+1.3.1. tabview / docked windows view
+		
+
+1.4. Widgets in workspace:
+
+1.4.1. graph
+1.4.1.1. zoom-in
+1.4.1.2. zoom-out
+1.4.1.3. clear
+
+1.4.2. model
+1.4.2.1. for each object in model, right click opens menu dialogue
+1.4.2.1.1. menu-item: properties - dialog-box for editing properties
+1.4.2.1.2. menu-item: zoom in
+1.4.2.1.3. menu-item: zoom out		
+1.4.2.1.4. menu-item: delete object	
+1.4.2.1.5. menu-item: move object
+1.4.2.1.6. menu-item: copy object
+ -- perhaps objects should be connected using wires?
+
+
+Event handling:
+	The shell should be interfaced through another class to post events to the GUI.
+	Shell user should be able to:
+		1. trigger action for every menu item
+		2. resize the objects that can be resized
+		3. apply the tool actions on appropriate objects
+		4. redirect data to graph object
+		5. display the model in GUI
+
+
