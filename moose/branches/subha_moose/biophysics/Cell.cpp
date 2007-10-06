@@ -37,7 +37,7 @@ const Cinfo * initCellCinfo()
         {            
             process,
         };
-    static SchedInfo schedInfo[] = { { process, 2, 1 } }; // put this to t5
+    static SchedInfo schedInfo[] = { { process, 2, 1 } }; // tick 2,stage 0 gives SIGSEGV
     static Cinfo cellCinfo("Cell",
                            "Subhasis Ray",
                            "Cell object. Container for applying solvers.",
@@ -106,8 +106,8 @@ void Cell::reinitFuncLocal( Element* e, ProcInfo info)
                 std::string solverPath = "/solvers/neuronal/";
                 solverPath += solverName.str();
         
-                // See neuronal solver exists for this Cell
-                Id nsolve(solverName.str());
+                // See if neuronal solver exists for this Cell
+                Id nsolve(solverPath);
         
                 if ( !nsolve.bad() ) { // alter existing nsolve
                     set( nsolve(), "path", (seed->id()).path() );
@@ -115,16 +115,17 @@ void Cell::reinitFuncLocal( Element* e, ProcInfo info)
                     // make a new solver
                     Element* ni = Neutral::create( "HSolve", solverName.str(), nsolvers() );
                     set( ni, "path", (seed->id()).path());
+                    
                     // TODO: Check this part - each cell should set the clock
                     // corresponding to its SchedInfo to the associated
                     // solver.  What is tick#4 for ??
-                    Id cj("/sched/cj");
-                    vector <Id> childList = Neutral::getChildList(cj());
+                    // Id cj("/sched/cj");
+//                     vector <Id> childList = Neutral::getChildList(cj());
             
-                    childList[4]()->findFinfo( "process" )->add(
-                        childList[4](), ni, ni->findFinfo( "process" ) );
+//                     childList[4]()->findFinfo( "process" )->add(
+//                         childList[4](), ni, ni->findFinfo( "process" ) );
                 }
-                break;
+                return;
             }        
         }        
     }    
