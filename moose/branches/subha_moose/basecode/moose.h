@@ -30,6 +30,7 @@
 #include "MsgDest.h"
 #include "SimpleElement.h"
 #include "ArrayElement.h"
+#include "ArrayWrapperElement.h"
 
 #include "DynamicFinfo.h"
 #include "ValueFinfo.h"
@@ -51,6 +52,8 @@
 
 #include "setget.h"
 #include "setgetLookup.h"
+
+#include "../utility/utility.h"
 
 /// This is here because most classes derive from NeutralCinfo
 extern const Cinfo* initNeutralCinfo();

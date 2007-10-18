@@ -81,6 +81,8 @@ class Id
 		static Id shellId();
 
 		Id assignIndex( unsigned int index );
+		
+		void setIndex( unsigned int index );
 
 		//////////////////////////////////////////////////////////////
 		//	Id info
@@ -141,6 +143,12 @@ class Id
 		 * Checks if id has been given an error flag
 		 */
 		bool bad() const;
+
+		/**
+		 * Returns true only if id is not bad, not zero and not out of range
+		 * Note that this more restrictive than !Id::bad().
+		 */
+		bool good() const;
 
 		/**
 		 * True if id points to zero object

@@ -4262,7 +4262,161 @@ array. This extends GENESIS syntax but does not break it.
 Working on handling lookup. Next to handle creation of arrays.
 
 =============================================================================
-
+19 Aug 2007
+Checked in as revision 182, in serial compile form with debugging.
 
 =============================================================================
+10 Oct 2007.
+Updated to version 203.
+=============================================================================
+11 Oct 2007.
 
+Redesign plans for solver autoscheduling: Develop new manager classes.
+Subha has already set up a 'cell' manager class. This is meant to be created
+under a cell tree, and then it manages set up of a solver that manages
+all the child compartments and channels.
+I will create a similar 'kinetics' manager class that does a similar thing.
+
+The rule is that objects do NOT get solved by default, only when these managers
+are set up. Cellreader and kreader will set up managers.
+
+Also we revert to a single clock created by default. Later we'll figure out
+how to get solvers to negotiate timesteps with each other.
+
+=============================================================================
+12 Oct 2007.
+
+implemented shell of KineticManager class to act as controller for solving
+kinetic models. Lots yet to be done.
+
+=============================================================================
+13 Oct 2007
+Continuing work on it. The Manager class now knows about the GSL integrators
+as well as having hooks for a lot of others. Croaks when I try to 
+set the method.
+=============================================================================
+14 Oct 2007
+Now getting to set up the solver scheduling. There are serious issues,
+reported earlier by Raamesh, of the thing crashing when reset.
+
+I have also cleaned up the clock ticks. Now only t0 and t1 are created 
+by default. 
+I have also cleaned up the printouts during unit tests. Now much less junk
+is printed.
+
+Time to check this mess in before going on to next stage of fixing kinetics
+solver.
+
+Checked it in. Now at revision 205.
+
+Now to tackle reset problems with solver. 
+Resched should do the following:
+	- Check if the object list has changed
+	- If so, clear out old ones and reload matrix. When clearing out
+	old ones, must put the latest state values back into the old objects.
+	- Currently don't try to do this incrementally. Too complex.
+
+Reinit should do the following:
+	- Restore all initial conditions. This is a purely internal operation.
+
+Reset does resched + reinit.
+
+Step should do the following:
+	- Check for change of object list. If so, do a resched.
+
+Now all the steps are in order. Kkit automatically sets up a KineticManager
+so that instead of waiting to change the method, we get a core dump right away.
+The dump is because the ThisFinfo has been replaced on some elements with
+a SolveFinfo, but the message from the solver is no longer there.
+I have put in a lot of stuff that ought to clean out old simulations so that
+they are ready to be re-solved, but it isn't doing the job.
+
+Last thing: tried to get it so that upon deletion the KineticHub cleans up
+all the solved objects. Crashes now during unit tests.
+
+=============================================================================
+15 Oct 2007
+After much messing around, figured out why the crash occurs. It has nothing
+to do with the stoich stuff. Simply that we used the hard-coded index
+0 for the childDest message, but in the KineticHub we override the childFinfo
+with a new one and the current ugly system then uses a new index.
+
+Fixed. Now unit tests pass. The solvers now run without crashing but do not
+give any results. Time to check in this mess.
+Checked in as revision 206, in serial compile form with debugging.
+
+Seems like the KineticHub is not created. On closer inspection it seems
+like it interferes with the listing and access to child objects including
+itself. This is what happens if we start out with new children on an object:
+If we create any object before the hub, the hub becomes invisible.
+If we create any object after the hub, the object becomes invisible.
+
+Fixed. Turned out to be related to the earlier problem. I was using a new
+target function for handling child messages to the hub class, so the MsgSrc
+should have been going to the connSrcVeryEnd rather than connSrcEnd. 
+Fixed in several places. The kholodenko demo still does not work, though.
+Also when I change the method to ee and reset it dumps core.
+Checked in as revision 207, in serial compile form with debugging.
+
+Now to tackle the issues with the demo.
+
+Seems like the main issue was just that it wasn't initialized properly.
+Unfortunately the bog-standard reset command is pretty ugly as it rebuilds 
+the whole mess.
+Did a test of rerunning the model multiple times. Seems promising. But it
+still dies when I change the method to ee.
+
+Fixed the crash when the method changes. But now EE does not give any output
+at all. Other things look fine.
+The clock ticks are connected up OK. I think it is the input to the table for
+the output graphs that gets messed up. Anyway, this is a good intermediate
+point to check it in.
+Checked in as revision 208, in serial compile form with debugging.
+
+=============================================================================
+16 Oct 2007
+Ascertained that the plot messages remain intact when going from GSL to ee
+solvers. So the issue is, how is the plot message set up and cleared during
+rebuilding the stoichiometric system.
+
+Found that the existing function redirectDynamicMessages works fine in
+either direction. Used it, works right off. So we can now switch between
+solved and unsolved simulations. Test program is DOCS/Demos/test_kinsolver.g
+
+Checked in as revision 209, in serial compile form with debugging.
+
+Now to see if sumtotal works with the solvers.
+
+No, it doesn't. And the reason is that the solver SumTotal class works through
+molecules only. What I need is an extRateHandler that forces various 
+external calculation entities to do their stuff for the specified time and dt.
+Due to variable timestep algorithms, the time may be non-monotonic.
+The outcome of these calculations goes into the mol array as a dummy, and then
+the SumTotal will finally be able to use it.
+
+Rather than this, note that the only likely external input is a table. This
+needs to be managed by the solver to handle variable dt methods. So we really
+need to work on incorporating tables that live in the kinetic object tree.
+
+Turns out I had anticipated almost all of this. I had a silly error in the
+KineticHub code that deleted the internal sumTot messages. Now fixed, and
+the internal sumTots work. On now to external sumTots. The problem here
+is managing timing, which may differ for internal steps of the solver, and the
+external clock tick of tables and other inputs to the sumTot. 
+In the current version I just assume that the dt is small
+enough that a little bit of jumping around by the solver won't mess up the
+output.
+
+Checked in as revision 212, in serial compile form with debugging.
+
+Implemented a test case for sumtots with tables. In GENESIS/kkit such
+beasts are handled using the SLAVE message, here I want to stick to sumtots.
+
+=============================================================================
+17 Oct 2007
+
+Got table input into the regular EE method to work, and also set up loadtab
+from kkit dump files. The solver still does not handle it, and still does
+not work to restore EE function if the mode is switched back.
+
+=============================================================================
