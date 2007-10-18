@@ -14,9 +14,12 @@
 
 # Use the options below for compiling on GCC3. Pick your favourite
 # optimization settings.
+# Higher optimization levels should use -DNDEBUG to eliminate the
+# assertions sprinkled throughout the code
+#
 #CFLAGS  =	-g -Wall -pedantic -DDO_UNIT_TESTS
-#CFLAGS  =	-O3 -Wall -pedantic
-#CFLAGS  =	-O3 -pg -Wall -pedantic
+#CFLAGS  =	-O3 -Wall -pedantic -DNDEBUG
+#CFLAGS  =	-O3 -pg -Wall -pedantic -DNDEBUG
 
 # Use the options below for compiling on GCC4.0
 
@@ -36,7 +39,7 @@
 # It is completely harmless except for a few file existence checks at startup.
 CFLAGS = -g -Wall -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER 
 
-#CFLAGS = -O3 -Wall -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER -DGENERATE_WRAPPERS
+#CFLAGS = -O3 -Wall -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER -DGENERATE_WRAPPERS -DNDEBUG
 
 # Use the options below for compiling on GCC4.1
 # GNU C++ 4.1 and newer might need -ffriend-injection
@@ -47,7 +50,7 @@ CFLAGS = -g -Wall -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER
 # Libraries are defined below. For now we do not use threads.
 SUBLIBS = 
 #LIBS = 		-lm -lpthread
-LIBS = 		-lm -lgsl -lgslcblas $(shell pkg-config libxml++-2.6 --libs) 
+LIBS = 		-lm -lgsl -lgslcblas
 
 # Here we decide if we want to use MPI and the parallel library
 # Uncomment the line below if you do.

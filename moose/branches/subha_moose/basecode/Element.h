@@ -117,7 +117,9 @@ class Element
 		 * Returns zero at the end of the list.
 		 */
 		virtual unsigned int nextSrc( unsigned int src ) const = 0;
-
+		
+		virtual unsigned int destSize() const = 0;
+		
 		/**
 		 * This function returns the iterator to conn_ at the beginning
 		 * of the Dest range specified by i.
@@ -196,6 +198,8 @@ class Element
 		 * any value for ArrayElement
 		 */
 		virtual unsigned int numEntries() const = 0;
+		
+		virtual unsigned int index() const = 0;
 
 
 		/** Returns a Finfo that matches the path given by 'name'.
@@ -205,6 +209,13 @@ class Element
 		 * it cannot be a const function of the Element.
 		 */
 		virtual const Finfo* findFinfo( const string& name ) = 0;
+
+		/**
+		 * Returns a Finfo as above, except that it cannot handle any
+		 * dynamic Finfo thus limiting it to predefined finfos. Has the
+		 * merit that it is a const function
+		 */
+		virtual const Finfo* constFindFinfo( const string& name ) const = 0;
 
 		/**
 		 * Returns finfo ptr associated with specified conn index.
@@ -299,7 +310,7 @@ class Element
 		 */
 		static Element* root();
 
-		Id id() const {
+		virtual Id id() const {
 			return id_;
 		}
 
@@ -327,6 +338,20 @@ class Element
 		 */
 		virtual Element* copy( Element* parent, const string& newName )
 				const = 0;
+				
+		/**
+		 * This function takes a prototype element and creates an array
+		 * of elements. Only the data part gets duplicated and Finfo and
+		 * Cinfo details, etc remain common. This will greatly increase
+		 * the space efficiency and reduce the number of messages.
+		 * \param parent the element to which the generated parent to be 
+		   added to
+		   \param newName the name of the copied element
+		   \param n number of copies
+		   \return An Element * pointing to a ArrayElement object
+		*/
+		virtual Element* copyIntoArray( Element* parent, const string& newName, 
+			int n ) const = 0;
 		/**
 		 * True if current element descends from the specified ancestor.
 		 */
@@ -341,6 +366,10 @@ class Element
 		 */
 		virtual Element* innerDeepCopy( 
 				map< const Element*, Element* >& tree )
+				const = 0;
+				
+		virtual Element* innerDeepCopy( 
+				map< const Element*, Element* >& tree, int n )
 				const = 0;
 
 		/**
@@ -387,6 +416,7 @@ class Element
 		 * or child.
 		 */
 		virtual Element* innerCopy() const = 0;
+		virtual Element* innerCopy(int n) const = 0;
 		virtual bool innerCopyMsg(
 				Conn& c, const Element* orig, Element* dup ) = 0;
 
