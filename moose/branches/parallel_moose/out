@@ -1,0 +1,47 @@
+/neuron1/c1
+/neuron1/c2
+/neuron1/c3
+/neuron1/c4
+/neuron1/c5
+/neuron2/c1
+/neuron2/c2
+/neuron2/c3
+/neuron2/c4
+/neuron2/c5
+/neuron3/c1
+/neuron3/c2
+/neuron3/c3
+/neuron3/c4
+/neuron3/c5
+Root Process started:0
+Connection count for 1 = 3
+Connection count for 2 = 2
+Connection count for 3 = 2
+Planarconnect arguments
+ For Process 1
+planarconnect1
+/channel/spkgn
+/channel/syncn
+2|3|
+2|
+ For Process 2
+planarconnect1
+/channel/spkgn
+/channel/syncn
+1|
+1|3|
+
+
+ For Process 3
+planarconnect1
+/channel/spkgn
+/channel/syncn
+2|
+1|
+
+1
+2
+
+
+1
+done
