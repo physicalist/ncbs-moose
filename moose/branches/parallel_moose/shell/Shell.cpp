@@ -720,7 +720,6 @@ void Shell::planardelay(const Conn& c, string source, double delay){
 		bool ret;
 		ret = get< unsigned int >( src_list[i], "numSynapses", numSynapses );
 		if (!ret) {cout << "error" <<endl;}
-		cout<< numSynapses << endl;
 		for (size_t j = 0 ; j < numSynapses; j++){
 			lookupSet< double, unsigned int >( src_list[i], "delay", delay, j );
 		}
