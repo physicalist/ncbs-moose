@@ -50,6 +50,10 @@ const Cinfo* initTableCinfo()
 	///////////////////////////////////////////////////////
 	// Field definitions
 	///////////////////////////////////////////////////////
+		new ValueFinfo( "index", ValueFtype1< int >::global(),
+			GFCAST( &Table::getIndex ),
+			RFCAST( &Table::setIndex )
+		),
 		new ValueFinfo( "input", ValueFtype1< double >::global(),
 			GFCAST( &Table::getInput ),
 			RFCAST( &Table::setInput )
@@ -169,6 +173,18 @@ double Table::getOutput( const Element* e )
 	return static_cast< Table* >( e->data() )->output_;
 }
 
+void Table::setIndex( const Conn& c, int value ) 
+{
+	if(value == 0)
+		static_cast< Table* >( c.data() )->eIndex_ = FIRST;
+	else if(value == 1)
+		static_cast< Table* >( c.data() )->eIndex_ = LAST;
+}
+int Table::getIndex( const Element* e )
+{
+	return static_cast< Table* >( e->data() )->eIndex_;
+}
+
 void Table::setStepMode( const Conn& c, int value ) 
 {
 	static_cast< Table* >( c.data() )->stepMode_ = value;
@@ -282,6 +298,14 @@ void Table::innerProcess( Element* e, ProcInfo p )
 			table_[ index ] = input_;
 			output_ += 1.0;
 			xmax_ = output_;
+
+			if(eIndex_ == FIRST || eIndex_ == LAST)
+			{
+				//SendRecords(eIndex_);
+				SendVisualizationData(eIndex_);
+				uiTobeSentRecords++;
+			}
+
 			break;
 		case TAB_DELAY:
 			{

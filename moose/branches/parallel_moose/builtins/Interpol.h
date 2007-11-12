@@ -10,6 +10,8 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#include <sys/timeb.h>
+
 class Interpol
 {
 	public:
@@ -99,6 +101,17 @@ class Interpol
 		static const unsigned int MAX_DIVS;
 		double sy_;
 		vector < double > table_;
+
+
+		void SendRecords(int iIndex);
+		void SendVisualizationData(int iIndex);
+		unsigned int uiSentRecords;
+		unsigned int uiTobeSentRecords;
+		double arrOutput[MAX_MPI_BUFF_SIZE];
+		struct timeb objPreviousTime;
+		struct timeb objCurrentTime;			
+		int	iSentCounter;	
+
 	private:
 		double invDx_;
 };

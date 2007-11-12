@@ -29,6 +29,9 @@
 #include <mpi.h>
 #endif
 
+
+#include "nonblock.h"
+
 #ifdef DO_UNIT_TESTS
 	extern void testBasecode();
 	extern void testNeutral();
@@ -318,6 +321,9 @@ int main(int argc, char** argv)
 	MPI::Finalize();
 #endif
 
-	//MPI::Finalize();
+	/*cout<<endl<<"[Before] Process "<<iMyRank<<" executing a barrier"<<flush;
+	MPI_Barrier(MPI_COMM_WORLD);
+	cout<<endl<<"Process "<<iMyRank<<" executed barrier"<<flush;
+	MPI::Finalize();*/
 	cout << "done" << endl;
 }

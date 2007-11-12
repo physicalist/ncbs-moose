@@ -29,6 +29,8 @@ HEADERS = \
 	../basecode/header.h \
 	../basecode/Conn.h \
 	../basecode/Element.h \
+	../gnuplot/gnuplot_i.h \
+	../maindir/nonblock.h \
 
 default: $(TARGET)
 
@@ -57,7 +59,7 @@ GenesisParser.tab.h GenesisParser.tab.cpp: GenesisParser.ypp
 	sed -e "s/^extern \"C\" int isatty (int );/\/\/ Deleted extern C int isatty/" temp > GenesisParser.yy.cpp
 
 .cpp.o:
-	$(CXX) $(CFLAGS) -DYYMALLOC -DYYFREE -DYYSTYPE_IS_DECLARED -I../basecode $< -c
+	$(CXX) $(CFLAGS) -DYYMALLOC -DYYFREE -DYYSTYPE_IS_DECLARED -I../basecode -I../gnuplot -I../maindir $< -c
 
 $(TARGET):		$(OBJ) $(HEADERS)
 		$(LD) -r -o $(TARGET) $(OBJ) $(LIBS)

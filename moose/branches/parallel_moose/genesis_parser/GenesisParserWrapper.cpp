@@ -338,13 +338,33 @@ void GenesisParserWrapper::parseFunc( const Conn& c, string s )
 				pArgs[i] = new char [strlen(data->arrArgs[i])+1];
 				strcpy(pArgs[i], data->arrArgs[i]);
 			}
-				
+
+			if( !strcmp(data->arrArgs[0], "step"))
+			{
+				MPI_Barrier(MPI_COMM_WORLD);
+				//cout<<endl<<"Process "<<data->processrank_<<" completed barrier"<<flush;
+			}
+
 
 			data->ExecuteCommand(status.MPI_TAG, pArgs );
 			
+
+			for(i=0; i<status.MPI_TAG; i++)
+			{
+				delete pArgs[i];
+			}
+
 			delete[] pArgs;
 
-			if( data->arrArgs[i-1][0] == 'q')
+			
+			if( !strcmp(data->arrArgs[0], "step"))
+			{
+				int j = 1;
+				//cout<<endl<<"Completed step command by: "<<data->processrank_;
+				MPI_Send(&j, 1, MPI_INT, 0, MOOSE_COMMAND_ACK_TAG, MPI_COMM_WORLD);
+			}
+			
+			if( !strcmp(data->arrArgs[0], "quit"))
 				break;
 
 		}
@@ -671,6 +691,9 @@ bool GenesisParserWrapper::innerAdd(
 void GenesisParserWrapper::doAdd(
 				int argc, const char** const argv, Id s )
 {
+
+	//cout<<endl<<argv[0]<<" "<<argv[1]<<" "<<argv[2]<<endl<<flush;
+
 	if ( argc == 3 ) {
 		string srcE = Shell::head( argv[1], "/" );
 		string srcF = Shell::tail( argv[1], "/" );
@@ -2016,10 +2039,11 @@ void doReadDump( int argc, const char** const argv, Id s )
 
 float do_exp( int argc, const char** const argv, Id s )
 {
-	if ( argc != 2 ) {
+	if ( argc != 2) {
+	cout<<"Error in Function Exp"<<flush;
 ; //		s->error( "exp: Too few command arguments\nusage: exp number" );
 		return 0.0;
-	} else {	
+	} else {
 		return exp( atof( argv[ 1 ] ) );
 	}
 }

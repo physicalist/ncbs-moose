@@ -157,18 +157,22 @@ void SpikeGen::sendRank( const Conn& c, int rank )
 
 void SpikeGen::innerProcessFunc( const Conn& c, ProcInfo p )
 {
-	int iMyRank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &iMyRank);
+	double t;
+	MPI_Request request;
 
-	double t = p->currTime_;
+	t = p->currTime_;
+
+
 	if ( V_ > threshold_ && t >= lastEvent_ + refractT_ ) {
-	cout<<endl<<"Sending a spike"<<flush;	
 
-	
-		for(int i=0; i<sendRank_.size(); i++)
+		//cout<<endl<<"V_ "<<V_<<" threshold "<<threshold_<<" t "<<t<<flush;
+		for(unsigned int i=0; i<sendRank_.size(); i++)
 		{
-			MPI_Send(&t, 1, MPI_DOUBLE, sendRank_[i], 0, MPI_COMM_WORLD);
-			cout<<endl<<"Rank "<<iMyRank<<" sent a tick to rank "<< sendRank_[i] <<flush;
+			//cout<<endl<<"Sent a tick to rank "<< sendRank_[i] <<flush;
+			//MPI_Send(&t, 1, MPI_DOUBLE, sendRank_[i], SPIKE_TAG, MPI_COMM_WORLD);
+
+			MPI_Isend(&t, 1, MPI_DOUBLE, sendRank_[i], SPIKE_TAG, MPI_COMM_WORLD, &request);
+			MPI_Wait(&request, MPI_STATUS_IGNORE);
 		}
 	
 		send1< double >( c.targetElement(), eventSlot, t );

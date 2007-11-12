@@ -34,7 +34,7 @@
 # in the working directory of moose. Also you have to do some editing to get the 
 # generated code to work. 
 # It is completely harmless except for a few file existence checks at startup.
-CFLAGS = -g -Wall -pedantic -DUSE_GENESIS_PARSER -DGENERATE_WRAPPERS
+CFLAGS = -g -Wall -pedantic -DUSE_GENESIS_PARSER -DGENERATE_WRAPPERS -Wno-long-long
 
 #CFLAGS = -O3 -Wall -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER -DGENERATE_WRAPPERS
 
@@ -71,9 +71,10 @@ CXX = mpicxx
 
 LD = ld
 
-SUBDIR = genesis_parser basecode shell element maindir biophysics kinetics builtins scheduling example $(PARALLEL_DIR)
+SUBDIR = genesis_parser basecode shell element maindir biophysics kinetics builtins scheduling example gnuplot$(PARALLEL_DIR)
 
 OBJLIBS =	\
+	gnuplot/gnuplot_i.o \
 	basecode/basecode.o \
 	maindir/maindir.o \
 	genesis_parser/SLI.o \

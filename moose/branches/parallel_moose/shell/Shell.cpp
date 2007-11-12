@@ -673,7 +673,7 @@ void Shell::planarconnect1(const Conn& c, string source, string dest, string spi
                 previous = next+1;
         }
                     
-        cout<<endl<<endl;
+        //cout<<endl<<endl;
 
         previous = 0;   
         while(1)
