@@ -475,7 +475,6 @@ void Interpol::SendVisualizationData(int iIndex)
 		
 			MPI_Wait(&request, MPI_STATUS_IGNORE);
 			uiSentRecords = uiSentRecords + uiCount;
-			usleep(100);
 		  }
 		
 	}
