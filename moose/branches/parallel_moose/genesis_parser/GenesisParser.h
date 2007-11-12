@@ -23,6 +23,7 @@
 #include <map>
 #include <string>
 
+#include "gnuplot_i.h"
 // Particularly ugly macro definition 
 //#define BEGIN yy_start = 1 + 2 *
 
@@ -123,6 +124,9 @@ class func_entry
 
 typedef std::map< std::string, func_entry* > Func_map;
 
+struct stNonRootNode;
+
+
 class myFlexLexer: public yyFlexLexer
 {
 	public:
@@ -137,7 +141,20 @@ class myFlexLexer: public yyFlexLexer
 		int processrank_;
 		int processcount_;
 		int SendCommand(int argc);
-		char arrArgs[MAX_COMMAND_SIZE][MAX_COMMAND_ARGUMENTS];
+		char arrArgs [MAX_COMMAND_ARGUMENTS][MAX_COMMAND_SIZE];
+		stNonRootNode **ppstNonRootNodes;
+		void CollectData();
+		void DisplayData();
+		gnuplot_ctrl	*hNodeGraph;
+
+
+		int             iSelectedNode, iSelectedObject;
+		double          arrXCounter[MAX_MPI_RECV_RECORD_SIZE];
+		double          arrYOutput[MAX_MPI_RECV_RECORD_SIZE];
+		double 		arrRecv[MAX_MPI_RECV_RECORD_SIZE];
+		bool 		bNodeSelected;		
+		int 		iTotalProcesses;
+		bool		bRecvCalled;
 
                 int add_word(int type, char* word);
                 int lookup_word(char* word);

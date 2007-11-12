@@ -284,7 +284,7 @@ double SynChan::getDelay( const Element* e, const unsigned int& i )
 
 unsigned int SynChan::updateNumSynapse( const Element* e )
 {
-	static const Finfo* synFinfo = initSynChanCinfo()->findFinfo( "synapse" );
+	//static const Finfo* synFinfo = initSynChanCinfo()->findFinfo( "synapse" );
 
 	unsigned int n = recvRank_.size();	//synFinfo->numIncoming( e );
 	if ( n >= synapses_.size() )
@@ -299,15 +299,15 @@ unsigned int SynChan::updateNumSynapse( const Element* e )
 void SynChan::innerProcessFunc( Element* e, ProcInfo info )
 {
 	int flag;
-	int iMyRank;
+	//int iMyRank;
 	double tick;
-	int i;
+	unsigned int i;
 
 	for (i = 0; i< recvRank_.size(); i++)
 	{
 		if(objRecvStatus[i].bExecutedRecv == false)
 		{
-        		MPI_Irecv (&tick, 1, MPI_DOUBLE, recvRank_[i], MPI_ANY_TAG, MPI_COMM_WORLD, &(objRecvStatus[i].request));
+        		MPI_Irecv (&tick, 1, MPI_DOUBLE, recvRank_[i], SPIKE_TAG, MPI_COMM_WORLD, &(objRecvStatus[i].request));
 			objRecvStatus[i].bExecutedRecv = true;
 		}
 
@@ -317,8 +317,8 @@ void SynChan::innerProcessFunc( Element* e, ProcInfo info )
 	
 			if(flag == true)
 			{
-				MPI_Comm_rank(MPI_COMM_WORLD, &iMyRank);
-				cout<<endl<<"Process "<<iMyRank<<" received spike from "<<objRecvStatus[i].status.MPI_SOURCE<<flush;
+				//MPI_Comm_rank(MPI_COMM_WORLD, &iMyRank);
+				//cout<<endl<<"Process "<<iMyRank<<" received spike from "<<objRecvStatus[i].status.MPI_SOURCE<<flush;
 				pendingEvents_.push( synapses_[i].event( info->currTime_ ) );
 				objRecvStatus[i].bExecutedRecv = false;
 			}
@@ -336,11 +336,15 @@ void SynChan::innerProcessFunc( Element* e, ProcInfo info )
 	Ik_ = ( Ek_ - Vm_ ) * Gk_;
 	activation_ = 0.0;
 	modulation_ = 1.0;
+
+	if(Ik_ != 0)
+	{
+		Ik_ = 0.1e-6;
+		//cout<<endl<<"SynChan: Send inject value "<<Ik_;
+	}
 	send2< double, double >( e, channelSlot, Gk_, Ek_ );
 	send1< double >( e, ikSlot, Ik_ );
 	
-	if(Ik_ != 0)
-		cout<<endl<<"SynChan: Send inject value "<<Ik_;
 }
 void SynChan::processFunc( const Conn& c, ProcInfo p )
 {

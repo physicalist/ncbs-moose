@@ -16,6 +16,8 @@ const double Interpol::EPSILON = 1.0e-10;
 const unsigned int Interpol::MAX_DIVS = 10000000;
 	//Ten million points should do.
 
+#include <mpi.h>
+
 const Cinfo* initInterpolCinfo()
 {
 	/**
@@ -383,6 +385,101 @@ void Interpol::innerPrint( const string& fname )
 	std::ofstream fout( fname.c_str(), std::ios::app );
 	for ( i = table_.begin(); i != table_.end(); i++ )
 		fout << *i << endl;
+}
+
+void Interpol::SendRecords(int iIndex)
+{
+	ftime(&objCurrentTime);
+	vector< double >::iterator itr;
+	unsigned int uiIndex = 0;
+	int iRetVal;
+	MPI_Request request;
+
+
+
+	if	( 	(objCurrentTime.time > objPreviousTime.time) 												||
+			(objCurrentTime.millitm - objPreviousTime.millitm) > MAX_MPI_SEND_TIME 	
+			||( (uiTobeSentRecords-uiSentRecords) > (MAX_MPI_BUFF_SIZE / 2))
+		)
+	{
+		itr = table_.begin();
+		if(uiSentRecords > table_.size())
+			cout<<endl<<"Error **** "<<uiSentRecords<<" Size "<<table_.size()<<flush;
+		itr += uiSentRecords;
+
+		do
+		{
+		  for(uiIndex=0; itr != table_.end() && uiIndex < (MAX_MPI_BUFF_SIZE-1); uiIndex++, itr++)
+		  {
+		 	arrOutput[uiIndex] = *itr;
+		  }
+		  
+		  if(uiIndex > 0)
+		  {
+			arrOutput[uiIndex] = (double)iIndex;
+			//cout<<endl<<"uiSentRecords: "<<uiSentRecords<<" uiIndex: "<<uiIndex<<flush;
+
+		  	iRetVal = MPI_Isend(arrOutput, uiIndex+1, MPI_DOUBLE, 0, VISUALIZATION_TAG, MPI_COMM_WORLD, &request);
+		  	if( iRetVal != 0)
+		  	{
+				printf("\n ************ Error in MPI_Send");
+		 	}
+		
+			MPI_Wait(&request, MPI_STATUS_IGNORE);
+		  	/*iRetVal = MPI_Send(arrOutput, uiIndex+1, MPI_DOUBLE, 0, VISUALIZATION_TAG, MPI_COMM_WORLD);
+		  	if( iRetVal != 0)
+		  	{
+				printf("\n ************ Error in MPI_Send");
+		 	}*/
+		
+			 //MPI_Barrier(MPI_COMM_WORLD);	
+		  	 uiSentRecords += uiIndex;
+		  }
+		
+		}while(itr != table_.end());
+
+		ftime(&objPreviousTime);
+	}
+	
+}
+
+
+void Interpol::SendVisualizationData(int iIndex)
+{
+	unsigned int uiIndex = 0;
+	int iRetVal;
+	MPI_Request request;
+	unsigned int uiCount;
+	
+
+	if	( (uiTobeSentRecords-uiSentRecords) > (MAX_MPI_BUFF_SIZE /2) )
+	{
+
+
+		  for(uiCount=0, uiIndex=uiSentRecords; uiIndex < uiTobeSentRecords && uiCount < (MAX_MPI_BUFF_SIZE-1); uiIndex++, uiCount++)
+		  {
+		 	arrOutput[uiCount] = table_[uiIndex];
+		  }
+		 
+
+ 
+		  if(uiCount > 0)
+		  {
+			arrOutput[uiCount] = (double)iIndex;
+
+		  	iRetVal = MPI_Isend(arrOutput, uiCount+1, MPI_DOUBLE, 0, VISUALIZATION_TAG, MPI_COMM_WORLD, &request);
+		  	if( iRetVal != 0)
+		  	{
+				printf("\n ************ Error in MPI_Send");
+		 	}
+		
+			MPI_Wait(&request, MPI_STATUS_IGNORE);
+			uiSentRecords = uiSentRecords + uiCount;
+			usleep(100);
+		  }
+		
+	}
+	
 }
 
 #ifdef DO_UNIT_TESTS

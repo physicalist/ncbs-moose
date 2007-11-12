@@ -11,6 +11,7 @@
 **********************************************************************/
 
 enum TableModes { TAB_IO, TAB_LOOP, TAB_ONCE, TAB_BUF, TAB_SPIKE, TAB_FIELDS, TAB_DELAY };
+enum eObjectIndex {FIRST = 0, LAST, INVALID};
 
 class Table: public Interpol
 {
@@ -19,7 +20,7 @@ class Table: public Interpol
 				: input_( 0.0 ), output_( 0.0 ),
 				stepSize_( 0.0 ), stepMode_( TAB_IO ),
 				sy_( 0.0 ), py_( 1.0 ), lastSpike_( 0.0 ),
-				counter_( 0 )
+				counter_( 0 ), eIndex_(INVALID)
 		{ ; }
 
 		////////////////////////////////////////////////////////////
@@ -36,6 +37,9 @@ class Table: public Interpol
 		static void setStepMode( const Conn& c, int value );
 		static int getStepMode( const Element* e );
 		static double getLookup( const Element* e, const double& x );
+
+		static void setIndex( const Conn& c, int value );
+		static int getIndex( const Element* e );
 
 		////////////////////////////////////////////////////////////
 		// Here are the Table Destination functions
@@ -62,6 +66,7 @@ class Table: public Interpol
 		double py_;
 		double lastSpike_;
 		unsigned int counter_;
+		enum eObjectIndex eIndex_;
 };
 
 extern const Cinfo* initTableCinfo();

@@ -6,6 +6,7 @@
 #include<unistd.h>
 #include<sys/select.h>
 #include<sys/time.h>
+#include "nonblock.h"
 
 using namespace std;
 
@@ -21,9 +22,6 @@ int kbhit()
     select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
     return FD_ISSET(STDIN_FILENO, &fds);
 }
-
-#define NB_DISABLE 0
-#define NB_ENABLE 1
 
 // This function changes the terminal state. It turns out that
 // the canonical state is highly desirable. So I don't actually

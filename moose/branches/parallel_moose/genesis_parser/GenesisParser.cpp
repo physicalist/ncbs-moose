@@ -47,6 +47,9 @@ using std::map;
 using std::string;
 
 #include "GenesisParserWrapper.h"
+#include "gnuplot_i.h"
+#include "nonblock.h"
+#include <mpi.h>
 
 #define MOOSE_THREADS 0
 
@@ -55,6 +58,44 @@ using std::string;
 // Basic GenesisParser functions
 //
 ///////////////////////////////////////////////////////////////////////
+
+struct stNonRootNode
+{
+        double arrOutput[MAX_MPI_RECV_RECORD_SIZE];
+        unsigned long ulCurrentIndex;
+	unsigned long ulRecordCounter;
+
+	stNonRootNode()
+	{
+		memset(arrOutput, 0, MAX_MPI_RECV_RECORD_SIZE * sizeof(double));
+		ulCurrentIndex = 0;
+		ulRecordCounter = 0;
+	};
+	
+	void Insert(unsigned long ulRecordCount, double* arrRecv)
+	{
+		unsigned long ulIndex = 0;
+		
+		// Check for overflow condition
+		if( ( (ulCurrentIndex + ulRecordCount) > MAX_MPI_RECV_RECORD_SIZE) )
+		{
+			// Partial copy to output array - current to end of array, copy input array from start
+			ulIndex = MAX_MPI_RECV_RECORD_SIZE - ulCurrentIndex; 
+			memcpy(arrOutput+ulCurrentIndex, arrRecv, ulIndex * sizeof(double));
+
+			// Partial copy to 
+                        memcpy(arrOutput, arrRecv+ulIndex, (ulRecordCount-ulIndex) * sizeof(double));
+			ulCurrentIndex = ulRecordCount-ulIndex+1;
+		}
+		else
+		{
+			memcpy(arrOutput+ulCurrentIndex, arrRecv, ulRecordCount * sizeof(double));
+			ulCurrentIndex += ulRecordCount;
+		}
+		
+		ulRecordCounter += ulRecordCount;
+	}
+};
 
 
 myFlexLexer::myFlexLexer( )
@@ -71,10 +112,17 @@ myFlexLexer::myFlexLexer( )
 	continuation = 0;
 	CurLocals = 0;
 	script_ptr = -1;
+	
+	hNodeGraph = NULL;
 
 	// AddFunc("quit", do_quit, "void");
 	// AddFunc("echo", do_echo, "void");
 	set_float_format("%g");
+	
+	iSelectedNode = 1;
+	iSelectedObject = 0;
+	bNodeSelected = false;
+	bRecvCalled =  false;
 }
 
 void myFlexLexer::setElement( Id id )
@@ -451,21 +499,82 @@ Result func_entry::Execute(int argc, const char** argv, Id s)
 int myFlexLexer::SendCommand(int argc)
 {
 	int i;
+	bool bStepCommand = false;
+	int iReceivedACK = false;
+	int iACK;
 
 	if( strlen(arrArgs[0]) == 0 )
 		return 1;
 
+	if(!strcmp(arrArgs[0], "step"))
+	{
+		bStepCommand = true;
+	}
+
+
 	if(commandrank_ == 0)
 	{
+
 		for(i=1; i < processcount_; i++)
 		{
 			MPI_Send(arrArgs, MAX_COMMAND_SIZE * argc, MPI_CHAR, i, argc, MPI_COMM_WORLD);
 		}
+
+		if(bStepCommand ==  true)
+		{
+			cout<<endl<<"Reset Command sent to all ranks"<<flush;	
+
+			MPI_Barrier(MPI_COMM_WORLD);
+			//cout<<endl<<"Root process executed barrier"<<flush;
+
+			hNodeGraph = gnuplot_init() ;
+			if( hNodeGraph == NULL)
+			{
+				cout<<endl<<"Error in initializing Gnuplot"<<flush;
+			}
+
+			ppstNonRootNodes = (stNonRootNode**) new stNonRootNode* [processcount_];
+
+			for(i=0; i < processcount_; i++)
+			{
+				ppstNonRootNodes[i] = (stNonRootNode*) new stNonRootNode [OBJECTS_PER_NODE];
+				if(NULL == ppstNonRootNodes[i])
+				{
+					cout<<endl<<"CollectData ************ Error ***************";
+				}
+			}
+
+
+			cout << "\n moose # > "<< flush;
+			for(i=1; i < processcount_; i++)
+			{
+				MPI_Request req;
+				MPI_Status status;
+				
+				iReceivedACK = false;
+        			MPI_Irecv (&iACK, 1, MPI_INT, i, MOOSE_COMMAND_ACK_TAG, MPI_COMM_WORLD, &req);
+
+				while(iReceivedACK == false)
+				{
+					MPI_Test(&req, &iReceivedACK, &status);
+					DisplayData();
+				}
+				cout<<endl<<"Received ACK from: "<<status.MPI_SOURCE<<flush;
+			}
+
+		        for(i=0; i < processcount_; i++)
+		        {
+		                delete ppstNonRootNodes[i];
+		        }
+
+			delete[] ppstNonRootNodes;
+
+			gnuplot_close(hNodeGraph);
+		}
 	}
 	else
 	{
-		MPI_Send(arrArgs, MAX_COMMAND_SIZE * argc, MPI_CHAR, commandrank_, argc, MPI_COMM_WORLD);
-	}
+		MPI_Send(arrArgs, MAX_COMMAND_SIZE * argc, MPI_CHAR, commandrank_, argc, MPI_COMM_WORLD);	  }
 
    return 0;
 }
@@ -517,7 +626,7 @@ void myFlexLexer::generateRandomConnections(int argc, char** argv)
 				bValid = true;
 		}
 		
-		cout<<endl<<"Connection count for "<<i<<" = "<<connectionCount<<flush;
+		//cout<<endl<<"Connection count for "<<i<<" = "<<connectionCount<<flush;
 
 		for(j=0; j<connectionCount; j++)
 		{
@@ -561,10 +670,10 @@ void myFlexLexer::generateRandomConnections(int argc, char** argv)
 		}
 	}*/
 
-	cout<<endl<<"Planarconnect arguments";
+	//cout<<endl<<"Planarconnect arguments";
 	for(i=1; i < processcount_; i++)
 	{
-		cout<<endl<<" For Process "<<i;
+		//cout<<endl<<" For Process "<<i;
 		
 		strcpy(arrArgs[argc], "");
 		for(j=0; 0 != arrSpikegenConnections[i][j]; j++)
@@ -582,10 +691,10 @@ void myFlexLexer::generateRandomConnections(int argc, char** argv)
 			strcat(arrArgs[argc+1], "|");
 		}			
 
-		for(j=0; j < argc+2; j++)
+		/*for(j=0; j < argc+2; j++)
 		{
 			cout<<endl<<arrArgs[j]<<flush;
-		}
+		}*/
 
 		commandrank_ = i;
 		SendCommand(argc+2);
@@ -617,12 +726,12 @@ func_entry	*command;
     /*
     ** is this an simulator shell function?
     */
-    if( processrank_ == 0)
+    if( processrank_ == 0 && strcmp(argv[0], "exp") && strcmp(argv[0], "abs"))
     {
 	if( argc > MAX_COMMAND_ARGUMENTS)
 		return result;
 	
-	memset(arrArgs, 0, MAX_COMMAND_SIZE * MAX_COMMAND_ARGUMENTS);
+	//memset(arrArgs, 0, MAX_COMMAND_SIZE * MAX_COMMAND_ARGUMENTS);
 
 	if(!strcmp(argv[0], "planarconnect"))
 	{
@@ -636,10 +745,12 @@ func_entry	*command;
 	}
 	else
 	{
-		for(i=0; argv[i] != NULL ; i++)
+		for(i=0; i < argc; i++)
 		{
+			strcpy(arrArgs[i], "");
 			strcpy(arrArgs[i], argv[i]);
-		}	
+		}
+
 	}
 
 	SendCommand(argc);
@@ -858,4 +969,162 @@ FILE	*pfile;
 	return(0);
     }
 }
+
+void myFlexLexer:: CollectData()
+{
+}
+
+void myFlexLexer:: DisplayData()
+{
+	int 		iRecordCount;
+	int 		iRetVal;
+	int             i,j;
+	char 		chUserInput[256];
+	char		chGraphTitle[256];
+	unsigned long	ulCount;
+	string 		strUserInput;	
+	int		iXDisplayRange;
+	MPI_Status 	status;
+	int 		iRecvFlag = false;
+	static MPI_Request vis_request;
+	int		iObjectIndex;
+	
+
+	if( nonBlockingGetLine(strUserInput) )
+	{
+		cout << "\n moose # > " << strUserInput << flush;
+		sscanf(strUserInput.c_str(), "%s %d:%d", chUserInput, &iSelectedNode, &iSelectedObject);
+
+		if( !strcmp(chUserInput,"listnodes") )
+		{	
+			for (int iNoOfNodes=1;iNoOfNodes < processcount_; iNoOfNodes++)
+			{
+				cout<<endl<<iNoOfNodes;
+			}
+			cout << endl<<flush;
+			cout << "\n moose # > "<< flush;
+		}
+		else if( !strcmp(chUserInput,"shownodes"))
+		{
+			if(iSelectedNode < 1 || iSelectedNode >= processcount_)
+			{
+				cout<< "\nError: Invalid node value"<<flush;
+				cout << "\n moose # > "<< flush;
+				bNodeSelected = false;
+			}
+			else if(iSelectedObject > OBJECTS_PER_NODE || iSelectedObject < 0)
+			{
+				cout << "\nError: Invalid object value" << flush;
+				cout << "\n moose # > "<< flush;
+				bNodeSelected = false;
+			}
+			else
+			{
+				cout<<endl<<"Selected Command: "<<chUserInput<<" Node: "<<iSelectedNode<<" Object: "<<iSelectedObject;
+				bNodeSelected = true;
+				cout << "\n moose # > "<< flush;
+			}
+		}
+	}
+
+		if(bRecvCalled == false)
+		{
+			iRetVal = MPI_Irecv(arrRecv, MAX_MPI_RECV_RECORD_SIZE, MPI_DOUBLE, MPI_ANY_SOURCE, VISUALIZATION_TAG, MPI_COMM_WORLD, &vis_request);
+			if(iRetVal != MPI_SUCCESS)
+			{
+				printf("\nError in MPI_Recv **********");
+				return;
+			}
+
+			bRecvCalled = true;
+		}
+
+		MPI_Test(&vis_request, &iRecvFlag, &status);
+		if(iRecvFlag == true)
+		{
+			bRecvCalled = false;
+		}
+		else
+		{
+			return;
+		}
+			
+		iRetVal = MPI_Get_count(&status, MPI_DOUBLE, &iRecordCount);
+		if(iRetVal != MPI_SUCCESS)
+		{
+			printf("\nError in MPI_Get_Count************");
+			return;
+		}
+	
+		iObjectIndex = (int)arrRecv[iRecordCount-1];
+
+		if(iObjectIndex < 0 && iObjectIndex >= OBJECTS_PER_NODE)
+		{
+			cout<<endl<<"*************** Error: Received Invalid tag: "<<iObjectIndex<<" ****************"<<flush;
+			return;
+		}
+
+		if(status.MPI_SOURCE > 0)
+		{
+			//cout<<endl<<"VIS data from: "<<status.MPI_SOURCE<<" Index: "<<iObjectIndex<<" RecordCount "<<iRecordCount<<flush;
+			ppstNonRootNodes[status.MPI_SOURCE - 1][iObjectIndex].Insert(iRecordCount-1, arrRecv);
+		}
+					
+	
+		if(iSelectedNode == status.MPI_SOURCE && iSelectedObject == iObjectIndex && bNodeSelected == true)
+		{
+			
+			if( ppstNonRootNodes[iSelectedNode-1][iSelectedObject].ulRecordCounter > MAX_MPI_RECV_RECORD_SIZE)
+			{
+				iXDisplayRange = MAX_MPI_RECV_RECORD_SIZE;
+
+				//cout <<endl<<"Max Display Range "<<iXDisplayRange<<flush;
+				//cout<<endl<<ppstNonRootNodes[iSelectedNode-1][iSelectedObject].ulRecordCounter;
+
+				for(i=0, ulCount=ppstNonRootNodes[iSelectedNode-1][iSelectedObject].ulRecordCounter; i < iXDisplayRange; i++, ulCount++)
+				{
+					arrXCounter[i] = ulCount;
+				}
+				
+				sprintf(chGraphTitle, "set xrange[%g:%g]", arrXCounter[0], arrXCounter[iXDisplayRange-1]);
+				gnuplot_cmd(hNodeGraph, chGraphTitle);
+
+				for(j=0, i = ppstNonRootNodes[iSelectedNode-1][iSelectedObject].ulCurrentIndex; i < iXDisplayRange; i++, j++)
+				{
+					arrYOutput[j] = ppstNonRootNodes[iSelectedNode-1][iSelectedObject].arrOutput[i];
+				}
+			
+				for(i=0, j = ppstNonRootNodes[iSelectedNode-1][iSelectedObject].ulCurrentIndex; i< ppstNonRootNodes[iSelectedNode-1][iSelectedObject].ulCurrentIndex; i++, j++)
+				{
+					arrYOutput[j] = ppstNonRootNodes[iSelectedNode-1][iSelectedObject].arrOutput[i];
+				}
+
+			}
+			else
+			{
+				iXDisplayRange = ppstNonRootNodes[iSelectedNode-1][iSelectedObject].ulRecordCounter;
+				//cout <<endl<<"Display Range "<<iXDisplayRange<<flush;
+
+				for(i=0; i < iXDisplayRange; i++)
+				{
+					arrXCounter[i] = i;
+				}
+				
+				sprintf(chGraphTitle, "set xrange[%g:%g]", arrXCounter[0], arrXCounter[iXDisplayRange-1]);
+				gnuplot_cmd(hNodeGraph, chGraphTitle);
+
+				for(i=0; i< ppstNonRootNodes[iSelectedNode-1][iSelectedObject].ulCurrentIndex; i++)
+				{
+					arrYOutput[i] =  ppstNonRootNodes[iSelectedNode-1][iSelectedObject].arrOutput[i];
+				}
+			}
+
+			sprintf(chGraphTitle, "Node: %d Object: %d", iSelectedNode, iSelectedObject);
+			gnuplot_plot_xy_file(hNodeGraph, arrXCounter, arrYOutput, iXDisplayRange, chGraphTitle);
+		}
+		
+}
+
+
+
 

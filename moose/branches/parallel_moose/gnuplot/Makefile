@@ -12,28 +12,22 @@
 # $Log: $
 #
 
-TARGET = maindir.o
-
-OBJ = \
-	main.o	\
-	nonblock.o \
+TARGET = gnuplot_i.o
 
 HEADERS = \
-	../basecode/header.h \
-	../basecode/Conn.h \
-	../basecode/Element.h \
+	gnuplot_i.h \
 	
+        
+
 default: $(TARGET)
 
 $(OBJ)	: $(HEADERS)
 
-#MyClassWrapper.o: MyClassWrapper.h
 
 .cpp.o:
-	$(CXX) $(CFLAGS) -I../basecode $< -c
+	$(CXX) $(CFLAGS)  $< -c
 
 $(TARGET):		$(OBJ) $(HEADERS)
-	$(LD) -r -o $(TARGET) $(OBJ) $(LIBS)
 
 clean:
 	-rm -f *.o $(TARGET) core core.*

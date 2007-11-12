@@ -60,8 +60,17 @@ class IdManager;
 #include "Element.h"
 
 
-#define MAX_COMMAND_ARGUMENTS	25
-#define MAX_COMMAND_SIZE	1024
-#define MAX_MPI_PROCESSES	1024
+#define MAX_COMMAND_ARGUMENTS		25
+#define MAX_COMMAND_SIZE		1024
+#define MAX_MPI_PROCESSES		1024
+#define MAX_MPI_RECV_RECORD_SIZE	500
+#define OBJECTS_PER_NODE		2
+
+#define MAX_MPI_BUFF_SIZE 		512
+#define MAX_MPI_SEND_TIME 		50 
+
+#define	VISUALIZATION_TAG		1
+#define MOOSE_COMMAND_ACK_TAG		2
+#define SPIKE_TAG			3
 
 #endif // _HEADER_H

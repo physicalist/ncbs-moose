@@ -3,7 +3,7 @@ function make_compartment(path, RA, RM, CM, EM, inject, diameter, length)
           float RA, RM, CM, EM, inject, diameter, length
           str path
  		
-	  echo {path}
+	 // echo {path}
 
           float PI = 3.141592654
           float Ra = 4.0 * {length} * {RA} / ({PI} * {diameter} * {diameter})
@@ -47,6 +47,9 @@ function make_neuron(path, RA, RM, CM, EM, inject, diameter, length, count)
 
 	setfield {path}/v1,{path}/vn stepmode 3
 
+	setfield {path}/v1 index 0
+	setfield {path}/vn index 1
+
 	setfield /channel/syncn "tau1" 1.0e-3
 	setfield /channel/syncn "tau2" 1.0e-3
 	setfield /channel/syncn "Gbar" 0.9e-3
@@ -61,7 +64,7 @@ function make_neuron(path, RA, RM, CM, EM, inject, diameter, length, count)
 	addmsg {path}/vn/inputRequest {path}/c{count}/Vm
 
 	addmsg {path}/c{count}/VmSrc /channel/spkgn/Vm
-	addmsg /channel/syncn/IkSrc {path}/c1/injectMsg
+	addmsg /channel/syncn/IkSrc {path}/c1/inject
 
 	useclock {path}/##[TYPE=Table] 5
 	//useclock {path}/##[TYPE=Compartment] 4
@@ -72,8 +75,8 @@ end
 
 float  SIMDT           = 50e-6
 float  PLOTDT          = {SIMDT} * 1.0
-float  SIMLENGTH       = 0.25
-int    N_COMPARTMENT   = 5
+float  SIMLENGTH       = 1.00
+int    N_COMPARTMENT   = 100
 float  CABLE_LENGTH    = 1e-3
 float  RA              = 1.0
 float  RM              = 4.0
@@ -111,11 +114,11 @@ planarweight /channel/syncn 1
 
 step {SIMLENGTH} -t
 
-for ( i = 1; i <= {N_NEURON}; i = i + 1 )
+/*for ( i = 1; i <= {N_NEURON}; i = i + 1 )
 	setrank {i}
 	setfield /neuron{i}/v1 print "sim_cable.0"{i}
 	setfield /neuron{i}/vn print "sim_cable.x"{i}
-end
+end*/
 setrank 0
 
 //echo "Plots written to 'sim_cable.*'"
