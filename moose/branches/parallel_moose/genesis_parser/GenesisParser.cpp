@@ -119,8 +119,8 @@ myFlexLexer::myFlexLexer( )
 	// AddFunc("echo", do_echo, "void");
 	set_float_format("%g");
 	
-	iSelectedNode = 1;
-	iSelectedObject = 0;
+	iSelectedNode = -1;
+	iSelectedObject = -1;
 	bNodeSelected = false;
 	bRecvCalled =  false;
 }
@@ -1024,6 +1024,10 @@ void myFlexLexer:: DisplayData()
 				bNodeSelected = true;
 				cout << "\n moose # > "<< flush;
 			}
+		}
+		else
+		{
+				cout << "\n moose # > "<< flush;
 		}
 	}
 
