@@ -1,0 +1,251 @@
+/**********************************************************************
+** This program is part of 'MOOSE', the
+** Messaging Object Oriented Simulation Environment,
+** also known as GENESIS 3 base code.
+**           copyright (C) 2003-2005 Upinder S. Bhalla. and NCBS
+** It is made available under the terms of the
+** GNU General Public License version 2
+** See the file COPYING.LIB for the full notice.
+**********************************************************************/
+#ifndef _FTYPE_H
+#define _FTYPE_H
+#include <map>
+/*
+enum FinfoIdentifier { VALUE_SET, VALUE_TRIG, 
+		ARRAY_SET, ARRAY_TRIG, 
+		NEST_SET, NEST_TRIG };
+		*/
+
+/**
+ * This typedef is used for functions converting serial data
+ * into calls to messages on the target end of a parallel message.
+ * The IncomingFunc munches through serial data stream to send data to
+ * destination objects. This function is called from 
+ * PostMaster on target node. Returns the data pointer
+ * incremented with the size of the fields in the Ftype.
+ * Index looks up the message slot (MsgSrc) to send from.
+ */
+typedef const void* ( *IncomingFunc )( 
+			const Conn& c, const void* data, RecvFunc rf );
+
+/**
+ * Virtual base class for typing information. 
+ */
+class Ftype
+{
+		public:
+			Ftype()
+			{;}
+
+			virtual ~Ftype()
+			{;}
+
+			virtual unsigned int nValues() const = 0;
+
+			/**
+			 * This virtual function is used to compare two 
+			 * instantiated Ftypes. If you just want to check if the
+			 * instantiated Ftype is of a given Ftype, use
+			 * FtypeN<T>::isA( const Ftype* other );
+			 * which is a static function.
+			 */
+			virtual bool isSameType( const Ftype* other ) const = 0;
+
+			/**
+			 * This virtual function returns the base type of the Ftype,
+			 * that is, the elementary template specification T1 T2 etc.
+			 * For most Ftypes 'this' will do, but in some cases
+			 * (ValueFtype) we need to return the simpler variant.
+			 */
+			virtual const Ftype* baseFtype() const {
+				return this;
+			}
+			
+			virtual size_t size() const = 0;
+
+			virtual RecvFunc recvFunc() const = 0;
+			virtual RecvFunc trigFunc() const = 0;
+
+			/**
+			 * StrGet extracts the value, converts it to a string,
+			 * and returns true if successful
+			 */
+			virtual bool strGet( const Element* e, const Finfo* f,
+					string& s ) const {
+					s = "";
+					return 0;
+			}
+			
+			/**
+			 * StrSet takes a string, converts it to the value,
+			 * does the assignment and returns true if successful
+			 */
+			virtual bool strSet( Element* e, const Finfo* f,
+					const string& s ) const {
+					return 0;
+			}
+
+			/**
+			 * Returns a void* to allocated instance of converted
+			 * string. Returns 0 on failure.
+			 * This must be supported by Ftype1, and possibly other
+			 * ftypes. In general the conversion doesn't work so we
+			 * return 0 by default.
+			 */
+			virtual void* strToIndexPtr( const string& s ) const {
+					return 0;
+			}
+
+			/**
+			 * create an object of the specified type. Applies of
+			 * course only to objects with a single type, ie, Ftype1.
+			 */
+			virtual void* create( const unsigned int num ) const
+			{
+				return 0;
+			}
+
+			/**
+			 * Copy an object of the specified type, possibly an
+			 * entire array of it if num > 1. Applies only to Ftype1.
+			 * Returns the copy.
+			 */
+			virtual void* copy( 
+					const void* orig, const unsigned int num ) const
+			{
+				return 0;
+			}
+			
+			virtual void* copyIntoArray( 
+					const void* orig, const unsigned int num, 
+					const unsigned int numCopies ) const
+			{
+				return 0;
+			}
+
+			/**
+			 * Free data of the specified type. If isArray, then
+			 * the array delete[] is used.
+			 * Applies only to objects with a single type.
+			 */
+			virtual void destroy( void* data, bool isArray ) const
+			{;}
+
+			/**
+			 * Free index data. Currently used only for LookupFtype.
+			 */
+			virtual void destroyIndex( void* index ) const
+			{;}
+
+			/**
+			 * Copy index data. Currently used only for LookupFtype
+			 * in the context of DynamicFinfo.
+			 */
+			virtual void* copyIndex( void* index ) const
+			{
+				return 0;
+			}
+
+			////////////////////////////////////////////////////////
+			// Here are some ftype to string conversion functions.
+			////////////////////////////////////////////////////////
+			// I believe these are used by the Python code.
+			
+			static std::string full_type(std::string type)
+    		{
+        		static map < std::string, std::string > type_map;
+				if (type_map.find("j") == type_map.end())
+        		{
+            		type_map["j"] = "unsigned int";
+            		type_map["i"] = "int";        
+            		type_map["f"] = "float";        
+            		type_map["d"] = "double";        
+            		type_map["Ss"] = "string";        
+            		type_map["s"] = "short";
+            		type_map["b"] = "bool";            
+        		}
+        		const map< std::string, std::string >::iterator i = type_map.find(type);
+        		if (i == type_map.end())
+        		{
+            		cout << "Not found - " << type << endl;
+            		
+            		return type;
+        		}
+        		else 
+        		{
+            		return i->second;
+        		}
+    		}
+
+			virtual std::string getTemplateParameters() const
+    		{
+        		return "void";        
+    		}
+
+			/**
+			 * This is a helper function for val2str and returns a 
+			 * string for the Ftype. The function is specialized
+			 * when the derived class is 
+			 * a SharedFtype where we need to append lots of Ftypes.
+			 * The function is used by val2str<Ftype*>
+			 */
+			virtual std::string typeStr() const
+			{
+				return typeid( this ).name();
+			}
+
+			////////////////////////////////////////////////////////
+			// Here are some serialization functions used for
+			// parallel message transfer
+			////////////////////////////////////////////////////////
+
+			/**
+			 * This returns the IncomingFunc from the specific
+			 * Ftype in the vector ret. The vector is needed because
+			 * SharedFtype may return many funcs. 
+			 * The job of the IncomingFunc is to
+			 * munch through serial data stream to send data to
+			 * destination objects. This function is called from 
+			 * PostMaster on target node.
+			 */
+			virtual IncomingFunc inFunc() const = 0;
+			// virtual void inFunc( vector< IncomingFunc >& ret ) const = 0;
+
+			/**
+			 * This puts into the return vector ret, one or more suitably 
+			 * typecast RecvFuncs for handling messages going into the 
+			 * PostMaster. Many may be entered by a SharedFtype. 
+			 * Each Ftype has
+			 * to provide a static function to return here.
+			 * The job of the RecvFunc is to call a global function
+			 * 'getParbuf' that returns the current location in
+			 * the postmaster outBuf, and then to copy
+			 * the arguments of the recvFunc into this buffer.
+			 * The syncFunc stores only value data in the buffer, and
+			 * requires that the data sequence is identical every timestep.
+			 */
+			virtual void syncFunc( vector< RecvFunc >& ret ) const = 0;
+			/**
+			 * The asyncFunc is similar to the syncFunc, but it is for
+			 * data that is transmitted sporadically such as action
+			 * potentials and cross-node shell calls. It stores
+			 * both the value data and the conn index in the buffer.
+			 * The target node figures out which target object to call
+			 * using the conn index.
+			 */
+			virtual void asyncFunc( vector< RecvFunc >& ret ) const = 0;
+
+			/**
+			 * This is used for making messages from postmasters to
+			 * their dests. The PostMaster needs to be able to
+			 * send to arbitrary targets, so the targets have to
+			 * be able to supply the Ftype that they want.
+			 * In most cases self will do,
+			 * but for SharedFtypes it gets more interesting.
+			 */
+			virtual const Ftype* makeMatchingType() const {
+				return this;
+			}
+};
+
+#endif // _FTYPE_H
