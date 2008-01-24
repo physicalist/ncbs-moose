@@ -1,0 +1,3730 @@
+/**********************************************************************
+** This program is part of 'MOOSE', the
+** Messaging Object Oriented Simulation Environment,
+** also known as GENESIS 3 base code.
+**           copyright (C) 2003 Upinder S. Bhalla and NCBS
+** It is made available under the terms of the
+** GNU General Public License version 2
+** See the file COPYING.LIB for the full notice.
+**********************************************************************/
+
+#include "moose.h"
+#include <math.h>
+
+#include <setjmp.h>
+#include <FlexLexer.h>
+#include "script.h"
+
+#include "../shell/Shell.h"
+#include "GenesisParser.h"
+#include "GenesisParserWrapper.h"
+#include "../element/Neutral.h"
+#include "func_externs.h"
+#include <iostream>
+#include <fstream>
+	using namespace std;
+
+const Cinfo* initGenesisParserCinfo()
+{
+	/**
+	 * This is a shared message to talk to the Shell.
+	 */
+	static Finfo* parserShared[] =
+	{
+		// Setting cwe
+		new SrcFinfo( "cwe", Ftype1< Id >::global() ),
+		// Getting cwe back: First trigger a request
+		new SrcFinfo( "trigCwe", Ftype0::global() ),
+		// Then receive the cwe info
+		new DestFinfo( "recvCwe", Ftype1< Id >::global(),
+					RFCAST( &GenesisParserWrapper::recvCwe ) ),
+		// Setting pushe. This returns with the new cwe.
+		new SrcFinfo( "pushe", Ftype1< Id >::global() ),
+		// Doing pope. This returns with the new cwe.
+		new SrcFinfo( "pope", Ftype0::global() ),
+
+		// Getting a list of child ids: First send a request with
+		// the requested parent elm id.
+		new SrcFinfo( "trigLe", Ftype1< Id >::global() ),
+		// Then recv the vector of child ids. This function is
+		// shared by several other messages as all it does is dump
+		// the elist into a temporary local buffer.
+		new DestFinfo( "recvElist", 
+					Ftype1< vector< Id > >::global(), 
+					RFCAST( &GenesisParserWrapper::recvElist ) ),
+
+		///////////////////////////////////////////////////////////////
+		// Object heirarchy manipulation functions.
+		///////////////////////////////////////////////////////////////
+		// Creating an object: Send out the request.
+		new SrcFinfo( "create",
+				Ftype3< string, string, Id >::global() ),
+		// Creating an object: Recv the returned object id.
+		new SrcFinfo( "createArray",
+				Ftype4< string, string, Id, vector <double> >::global() ),
+		new SrcFinfo( "planarconnect", Ftype3< string, string, double >::global() ),
+		new SrcFinfo( "planardelay", Ftype2< string, double >::global() ),
+		new SrcFinfo( "planarweight", Ftype2< string, double >::global() ),
+		new SrcFinfo( "getSynCount", Ftype1< Id >::global() ),
+		new DestFinfo( "recvCreate",
+					Ftype1< Id >::global(),
+					RFCAST( &GenesisParserWrapper::recvCreate ) ),
+		// Deleting an object: Send out the request.
+		new SrcFinfo( "delete", Ftype1< Id >::global() ),
+
+		///////////////////////////////////////////////////////////////
+		// Value assignment: set and get.
+		///////////////////////////////////////////////////////////////
+		// Getting a field value as a string: send out request:
+		new SrcFinfo( "add", Ftype2<Id, string>::global() ),
+		new SrcFinfo( "get", Ftype2< Id, string >::global() ),
+		// Getting a field value as a string: Recv the value.
+		new DestFinfo( "recvField",
+					Ftype1< string >::global(),
+					RFCAST( &GenesisParserWrapper::recvField ) ),
+		// Setting a field value as a string: send out request:
+		new SrcFinfo( "set", // object, field, value 
+				Ftype3< Id, string, string >::global() ),
+
+
+		///////////////////////////////////////////////////////////////
+		// Clock control and scheduling
+		///////////////////////////////////////////////////////////////
+		// Setting values for a clock tick: setClock
+		new SrcFinfo( "setClock", // clockNo, dt, stage
+				Ftype3< int, double, int >::global() ),
+		// Assigning path and function to a clock tick: useClock
+		new SrcFinfo( "useClock", // tick id, path, function
+				Ftype3< Id, vector< Id >, string >::global() ),
+
+		// Getting a wildcard path of elements: send out request
+		// args are path, flag true for breadth-first list.
+		new SrcFinfo( "el", Ftype2< string, bool >::global() ),
+		// The return function for the wildcard past is the shared
+		// function recvElist
+
+		new SrcFinfo( "resched", Ftype0::global() ), // resched
+		new SrcFinfo( "reinit", Ftype0::global() ), // reinit
+		new SrcFinfo( "stop", Ftype0::global() ), // stop
+		new SrcFinfo( "step", Ftype1< double >::global() ),
+				// step, arg is time
+		new SrcFinfo( "requestClocks", 
+					Ftype0::global() ), //request clocks
+		new DestFinfo( "recvClocks", 
+					Ftype1< vector< double > >::global(), 
+					RFCAST( &GenesisParserWrapper::recvClocks ) ),
+		new SrcFinfo( "requestCurrentTime", Ftype0::global() ),
+		// Returns time in the default return value.
+		
+		///////////////////////////////////////////////////////////////
+		// Message info functions
+		///////////////////////////////////////////////////////////////
+		// Request message list: id elm, string field, bool isIncoming
+		new SrcFinfo( "listMessages", 
+					Ftype3< Id, string, bool >::global() ),
+		// Receive message list and string with remote fields for msgs
+		new DestFinfo( "recvMessageList",
+					Ftype2< vector < Id >, string >::global(), 
+					RFCAST( &GenesisParserWrapper::recvMessageList ) ),
+
+		///////////////////////////////////////////////////////////////
+		// Object heirarchy manipulation functions.
+		///////////////////////////////////////////////////////////////
+		// This function is for copying an element tree, complete with
+		// messages, onto another.
+		new SrcFinfo( "copy", Ftype3< Id, Id, string >::global() ),
+		new SrcFinfo( "copyIntoArray", Ftype4< Id, Id, string, vector <double> >::global() ),
+		// This function is for moving element trees.
+		new SrcFinfo( "move", Ftype3< Id, Id, string >::global() ),
+
+		///////////////////////////////////////////////////////////////
+		// Cell reader: filename cellpath
+		///////////////////////////////////////////////////////////////
+		new SrcFinfo( "readcell", Ftype3< string, string, 
+			vector< double > >::global() ),
+
+		///////////////////////////////////////////////////////////////
+		// Channel setup functions
+		///////////////////////////////////////////////////////////////
+		// setupalpha
+		new SrcFinfo( "setupAlpha", 
+					Ftype2< Id, vector< double > >::global() ),
+		// setuptau
+		new SrcFinfo( "setupTau", 
+					Ftype2< Id, vector< double > >::global() ),
+		// tweakalpha
+		new SrcFinfo( "tweakAlpha", Ftype1< Id >::global() ),
+		// tweaktau
+		new SrcFinfo( "tweakTau", Ftype1< Id >::global() ),
+
+		new SrcFinfo( "setupGate", 
+					Ftype2< Id, vector< double > >::global() ),
+
+		///////////////////////////////////////////////////////////////
+		// SimDump facilities
+		///////////////////////////////////////////////////////////////
+		// readDumpFile
+		new SrcFinfo( "readDumpFile", 
+					Ftype1< string >::global() ),
+		// writeDumpFile
+		new SrcFinfo( "writeDumpFile", 
+					Ftype2< string, string >::global() ),
+		// simObjDump
+		new SrcFinfo( "simObjDump",
+					Ftype1< string >::global() ),
+		// simundump
+		new SrcFinfo( "simUndump",
+					Ftype1< string >::global() ),
+		new SrcFinfo( "openfile", 
+			Ftype2< string, string >::global() ),
+		new SrcFinfo( "writefile", 
+			Ftype2< string, string >::global() ),
+		new SrcFinfo( "listfiles", 
+			Ftype0::global() ),
+		new SrcFinfo( "closefile", 
+			Ftype1< string >::global() ),
+		new SrcFinfo( "readfile", 
+			Ftype2< string, bool >::global() ),
+		///////////////////////////////////////////////////////////////
+		// Setting field values for a vector of objects
+		///////////////////////////////////////////////////////////////
+		// Setting a vec of field values as a string: send out request:
+		new SrcFinfo( "setVecField", // object, field, value 
+			Ftype3< vector< Id >, string, string >::global() ),
+		new SrcFinfo( "loadtab", 
+			Ftype1< string >::global() ),
+		new SrcFinfo( "tabop", 
+			Ftype4< Id, char, double, double >::global() ),
+	};
+	
+	static Finfo* genesisParserFinfos[] =
+	{
+		new SharedFinfo( "parser", parserShared,
+				sizeof( parserShared ) / sizeof( Finfo* ) ),
+		new DestFinfo( "readline",
+			Ftype1< string >::global(),
+			RFCAST( &GenesisParserWrapper::readlineFunc ) ),
+		new DestFinfo( "process",
+			Ftype0::global(),
+			RFCAST( &GenesisParserWrapper::processFunc ) ), 
+		new DestFinfo( "parse",
+			Ftype1< string >::global(),
+			RFCAST( &GenesisParserWrapper::parseFunc ) ), 
+		new SrcFinfo( "echo", Ftype1< string>::global() ),
+
+	};
+
+	static Cinfo genesisParserCinfo(
+		"GenesisParser",
+		"Upinder S. Bhalla, NCBS, 2004-2007",
+		"Object to handle the old Genesis parser",
+		initNeutralCinfo(),
+		genesisParserFinfos,
+		sizeof(genesisParserFinfos) / sizeof( Finfo* ),
+		ValueFtype1< GenesisParserWrapper >::global()
+	);
+
+	return &genesisParserCinfo;
+}
+
+static const Cinfo* genesisParserCinfo = initGenesisParserCinfo();
+static const unsigned int setCweSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.cwe" );
+static const unsigned int requestCweSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.trigCwe" );
+static const unsigned int requestLeSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.trigLe" );
+static const unsigned int pusheSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.pushe" );
+static const unsigned int popeSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.pope" );
+static const unsigned int createSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.create" );
+static const unsigned int createArraySlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.createArray" );
+static const unsigned int planarconnectSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.planarconnect" );
+static const unsigned int planardelaySlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.planardelay" );
+static const unsigned int planarweightSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.planarweight" );
+static const unsigned int getSynCountSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.getSynCount" );
+static const unsigned int deleteSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.delete" );
+static const unsigned int addfieldSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.add" );
+static const unsigned int requestFieldSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.get" );
+static const unsigned int setFieldSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.set" );
+static const unsigned int setClockSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.setClock" );
+static const unsigned int useClockSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.useClock" );
+static const unsigned int requestWildcardListSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.el" );
+static const unsigned int reschedSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.resched" );
+static const unsigned int reinitSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.reinit" );
+static const unsigned int stopSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.stop" );
+static const unsigned int stepSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.step" );
+static const unsigned int requestClocksSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.requestClocks" );
+static const unsigned int requestCurrentTimeSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.requestCurrentTime" );
+static const unsigned int listMessagesSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.listMessages" );
+static const unsigned int copySlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.copy" );
+static const unsigned int copyIntoArraySlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.copyIntoArray" );
+static const unsigned int moveSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.move" );
+static const unsigned int readCellSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.readcell" );
+
+static const unsigned int setupAlphaSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.setupAlpha" );
+static const unsigned int setupTauSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.setupTau" );
+static const unsigned int tweakAlphaSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.tweakAlpha" );
+static const unsigned int tweakTauSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.tweakTau" );
+static const unsigned int setupGateSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.setupGate" );
+
+static const unsigned int readDumpFileSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.readDumpFile" );
+static const unsigned int writeDumpFileSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.writeDumpFile" );
+static const unsigned int simObjDumpSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.simObjDump" );
+static const unsigned int simUndumpSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.simUndump" );
+
+static const unsigned int openFileSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.openfile" );
+static const unsigned int writeFileSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.writefile" );
+static const unsigned int listFilesSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.listfiles" );
+static const unsigned int closeFileSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.closefile" );
+static const unsigned int readFileSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.readfile" );
+static const unsigned int setVecFieldSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.setVecField" );
+static const unsigned int loadtabSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.loadtab" );
+static const unsigned int tabopSlot = 
+	initGenesisParserCinfo()->getSlotIndex( "parser.tabop" );
+
+
+//////////////////////////////////////////////////////////////////
+// Now we have the GenesisParserWrapper functions
+//////////////////////////////////////////////////////////////////
+
+/**
+ * This initialization also adds the id of the forthcoming element
+ * that the GenesisParserWrapper is going into. Note that the 
+ * GenesisParserWrapper is made just before the Element is, so the
+ * index is used directly. Note also that we assume that no funny
+ * threading happens here.
+ */
+GenesisParserWrapper::GenesisParserWrapper()
+		: returnCommandValue_( "" ), returnId_(),
+		cwe_(), createdElm_()
+{
+		loadBuiltinCommands();
+}
+
+void GenesisParserWrapper::readlineFunc( const Conn& c, string s )
+{
+	GenesisParserWrapper* data =
+	static_cast< GenesisParserWrapper* >( c.targetElement()->data() );
+
+	data->AddInput( s );
+}
+
+void GenesisParserWrapper::processFunc( const Conn& c )
+{
+	GenesisParserWrapper* data =
+	static_cast< GenesisParserWrapper* >( c.targetElement()->data() );
+
+	data->Process();
+}
+
+void GenesisParserWrapper::parseFunc( const Conn& c, string s )
+{
+	GenesisParserWrapper* data =
+	static_cast< GenesisParserWrapper* >( c.targetElement()->data() );
+
+	data->ParseInput( s );
+}
+
+void GenesisParserWrapper::setReturnId( const Conn& c, Id id )
+{
+	GenesisParserWrapper* data =
+	static_cast< GenesisParserWrapper* >( c.targetElement()->data() );
+
+	data->returnId_ = id;
+}
+
+
+//////////////////////////////////////////////////////////////////
+// GenesisParserWrapper utilities
+//////////////////////////////////////////////////////////////////
+
+char* copyString( const string& s )
+{
+	char* ret = ( char* ) calloc ( s.length() + 1, sizeof( char ) );
+	strcpy( ret, s.c_str() );
+	return ret;
+}
+
+void GenesisParserWrapper::print( const string& s, bool noNewLine )
+{
+	if ( testFlag_ ) {
+		printbuf_ = printbuf_ + s + " ";
+	} else {
+		cout << s;
+		if ( !noNewLine )
+				cout << endl;
+	}
+}
+
+//////////////////////////////////////////////////////////////////
+// GenesisParserWrapper Message recv functions
+//////////////////////////////////////////////////////////////////
+
+void GenesisParserWrapper::recvCwe( const Conn& c, Id cwe )
+{
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( c.targetElement()->data() );
+	gpw->cwe_ = cwe;
+}
+
+//
+//This is used for Le, for WildcardList, and others
+void GenesisParserWrapper::recvElist( const Conn& c, vector< Id > elist)
+{
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( c.targetElement()->data() );
+	gpw->elist_ = elist;
+}
+
+void GenesisParserWrapper::recvCreate( const Conn& c, Id e )
+{
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( c.targetElement()->data() );
+	gpw->createdElm_ = e;
+}
+
+void GenesisParserWrapper::recvField( const Conn& c, string value )
+{
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( c.targetElement()->data() );
+	gpw->fieldValue_ = value;
+}
+
+void GenesisParserWrapper::recvClocks( 
+				const Conn& c, vector< double > dbls)
+{
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( c.targetElement()->data() );
+	gpw->dbls_ = dbls;
+}
+
+void GenesisParserWrapper::recvMessageList( 
+				const Conn& c, vector< Id > elist, string s)
+{
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( c.targetElement()->data() );
+	gpw->elist_ = elist;
+	gpw->fieldValue_ = s;
+}
+
+//////////////////////////////////////////////////////////////////
+// GenesisParserWrapper Builtin commands
+//////////////////////////////////////////////////////////////////
+
+/**
+ * This map converts the old GENESIS message syntax into the MOOSE
+ * syntax for the source side of a message.
+ */
+map< string, string >& sliSrcLookup()
+{
+	static map< string, string > src;
+
+	if ( src.size() > 0 )
+		return src;
+	
+	src[ "REAC A B" ] = "sub";	// for reactions
+	src[ "SUBSTRATE n" ] = "";
+	src[ "SUBSTRATE n vol" ] = "reac"; // For concchans.
+	src[ "PRODUCT n vol" ] = "reac"; // For concchans.
+	src[ "NUMCHAN n" ] = "nOut"; // From molecules to concchans.
+	src[ "REAC B A" ] = "prd";
+	src[ "PRODUCT n" ] = "";
+
+	src[ "REAC sA B" ] = "sub";	// for enzymes
+	src[ "SUBSTRATE n" ] = "";
+	src[ "REAC eA B" ] = "";	// Target is molecule. Ignore as it
+								// only applies to explicit enz.
+	src[ "ENZYME n" ] = "reac"; // target is an enzyme. Use it.
+	src[ "PRODUCT n" ] = "";
+	src[ "MM_PRD pA" ] = "prd";
+
+	src[ "SUMTOTAL n nInit" ] = "nSrc";	// for molecules
+	src[ "SUMTOTAL output output" ] = "outputSrc";	// for tables
+	src[ "SLAVE output" ] = "outputSrc";	// for tables
+	src[ "INTRAMOL n" ] = "nOut"; 	// target is an enzyme.
+	src[ "CONSERVE n nInit" ] = ""; 	// Deprecated
+	src[ "CONSERVE nComplex nComplexInit" ] = ""; 	// Deprecated
+
+	// Some messages for compartments.
+	src[ "AXIAL Vm" ] = "axial";
+	src[ "AXIAL previous_state" ] = "axial";
+	src[ "RAXIAL Ra Vm" ] = "";
+	src[ "RAXIAL Ra previous_state" ] = "";
+	src[ "INJECT output" ] = "output";
+
+	// Some messages for channels.
+	src[ "VOLTAGE Vm" ] = "";
+	src[ "CHANNEL Gk Ek" ] = "channel";
+	src[ "SynChan.Mg_block.CHANNEL Gk Ek" ] = "origChannel";
+	src[ "MULTGATE m" ] = ""; // Have to handle specially. Don't make msg
+	src[ "MULTGATE output" ] = "gate"; 
+	src[ "useX.MULTGATE" ] = "gate";
+	src[ "useY.MULTGATE" ] = "gate";
+	src[ "useZ.MULTGATE" ] = "gate";
+	src[ "CONCEN Ca" ] = "concSrc";
+
+	// Message for synchan
+	src[ "SpikeGen.SPIKE" ] = "event";
+
+	// Some messages for gates, used in the squid demo. This 
+	// is used to set the reset value of Vm in the gates, which is 
+	// done already through the existing messaging.
+	src[ "EREST Vm" ] = "";
+
+	// Some messages for tables, specially used for I/O
+	src[ "SpikeGen.INPUT Vm" ] = "VmSrc";
+	src[ "INPUT Vm" ] = "Vm";
+	src[ "INPUT Ca" ] = "Ca";
+	src[ "INPUT Ik" ] = "Ik";
+	src[ "INPUT Gk" ] = "Gk";
+	src[ "INPUT n" ] = "n";
+	src[ "INPUT Co" ] = "conc";
+
+	// Messages for having tables pretend to be an xplot
+	src[ "PLOT Co" ] = "conc";
+	src[ "PLOT n" ] = "n";
+	src[ "PLOT Vm" ] = "Vm";
+	src[ "PLOT Ca" ] = "Ca";
+	src[ "PLOT Ik" ] = "Ik";
+	src[ "PLOT Gk" ] = "Gk";
+	return src;
+}
+
+/**
+ * This map converts the old GENESIS message syntax into the MOOSE
+ * syntax for the destination side of a message.
+ */
+map< string, string >& sliDestLookup()
+{
+	static map< string, string > dest;
+
+	if ( dest.size() > 0 )
+		return dest;
+
+	dest[ "SUBSTRATE n vol" ] = "influx"; // For channels.
+	dest[ "PRODUCT n vol" ] = "efflux";
+	dest[ "NUMCHAN n" ] = "nIn"; // From molecules to concchans.
+	
+	dest[ "REAC A B" ] = "reac";	// for reactions
+	dest[ "SUBSTRATE n" ] = "";
+	dest[ "REAC B A" ] = "reac";
+	dest[ "PRODUCT n" ] = "";
+
+	dest[ "REAC sA B" ] = "reac";	// for enzymes
+	dest[ "SUBSTRATE n" ] = "";
+	dest[ "REAC eA B" ] = "";		// Target is enzyme, but only used
+									// for explicit enzymes. Ignore.
+	dest[ "ENZYME n" ] = "enz"; 	// Used both for explicit and MM.
+	dest[ "PRODUCT n" ] = "";
+	dest[ "MM_PRD pA" ] = "prd";
+
+	dest[ "SUMTOTAL n nInit" ] = "sumTotal";	// for molecules
+	dest[ "SUMTOTAL output output" ] = "sumTotal";	// for molecules
+	dest[ "SLAVE output" ] = "sumTotal";	// for molecules
+	dest[ "INTRAMOL n" ] = "intramolIn"; 	// target is an enzyme.
+	dest[ "CONSERVE n nInit" ] = ""; 	// Deprecated
+	dest[ "CONSERVE nComplex nComplexInit" ] = ""; 	// Deprecated
+
+	// Some messages for compartments.
+	dest[ "AXIAL Vm" ] = "raxial";
+	dest[ "AXIAL previous_state" ] = "raxial";
+	dest[ "RAXIAL Ra Vm" ] = "";
+	dest[ "RAXIAL Ra previous_state" ] = "";
+	dest[ "INJECT output" ] = "injectMsg";
+
+	// Some messages for channels.
+	dest[ "VOLTAGE Vm" ] = "";
+	dest[ "CHANNEL Gk Ek" ] = "channel";
+
+	// Special messages for spikegen and synapse
+	dest[ "SpikeGen.SPIKE" ] = "synapse";
+	dest[ "SpikeGen.INPUT Vm" ] = "Vm";
+
+	// Some of these funny comparisons are inserted when the code finds
+	// cases which need special work.
+	dest[ "SynChan.Mg_block.CHANNEL Gk Ek" ] = "origChannel";
+	dest[ "MULTGATE m" ] = "";		// This needs to be handled specially,
+	// so block the use of this message.
+	dest[ "useX.MULTGATE" ] = "xGate";
+	dest[ "useY.MULTGATE" ] = "yGate";
+	dest[ "useZ.MULTGATE" ] = "zGate";
+	dest[ "MULTGATE output" ] = "zGate";	// Rare use case from table.
+	dest[ "CONCEN Ca" ] = "concen";
+
+	// Some messages for gates, used in the squid demo. This 
+	// is used to set the reset value of Vm in the gates, which is 
+	// done already through the existing messaging.
+	dest[ "EREST Vm" ] = "";
+
+	// Some messages for tables
+	dest[ "INPUT Vm" ] = "inputRequest";
+	dest[ "INPUT Ca" ] = "inputRequest";
+	dest[ "INPUT Ik" ] = "inputRequest";
+	dest[ "INPUT Gk" ] = "inputRequest";
+	dest[ "INPUT n" ] = "inputRequest";
+	dest[ "INPUT Co" ] = "inputRequest";
+
+	// Messages for having tables pretend to be an xplot
+	dest[ "PLOT Vm" ] = "inputRequest";
+	dest[ "PLOT Ca" ] = "inputRequest";
+	dest[ "PLOT Ik" ] = "inputRequest";
+	dest[ "PLOT Gk" ] = "inputRequest";
+	dest[ "PLOT n" ] = "inputRequest";
+	dest[ "PLOT Co" ] = "inputRequest";
+
+	return dest;
+}
+
+map< string, string >& sliClassNameConvert()
+{
+	static map< string, string > classnames;
+
+	if ( classnames.size() > 0 )
+		return classnames;
+	
+	classnames[ "neutral" ] = "Neutral";
+	classnames[ "pool" ] = "Molecule";
+	classnames[ "kpool" ] = "Molecule";
+	classnames[ "reac" ] = "Reaction";
+	classnames[ "kreac" ] = "Reaction";
+	classnames[ "enz" ] = "Enzyme";
+	classnames[ "kenz" ] = "Enzyme";
+	classnames[ "kchan" ] = "ConcChan";
+	classnames[ "conc_chan" ] = "ConcChan";
+	classnames[ "Ca_concen" ] = "CaConc";
+	classnames[ "compartment" ] = "Compartment";
+	classnames[ "symcompartment" ] = "SymCompartment";
+	classnames[ "hh_channel" ] = "HHChannel";
+	classnames[ "tabchannel" ] = "HHChannel";
+	classnames[ "vdep_channel" ] = "HHChannel";
+	classnames[ "vdep_gate" ] = "HHGate";
+	classnames[ "tabgate" ] = "HHGate";
+	classnames[ "spikegen" ] = "SpikeGen";
+	classnames[ "synchan" ] = "SynChan";
+	classnames[ "table" ] = "Table";
+	classnames[ "xbutton" ] = "Sli";
+	classnames[ "xdialog" ] = "Sli";
+	classnames[ "xlabel" ] = "Sli";
+	classnames[ "xform" ] = "Sli";
+	classnames[ "xtoggle" ] = "Sli";
+	classnames[ "xshape" ] = "Sli";
+	classnames[ "xgraph" ] = "Sli";
+	classnames[ "x1dialog" ] = "Sli";
+	classnames[ "x1button" ] = "Sli";
+	classnames[ "x1shape" ] = "Sli";
+	classnames[ "xtext" ] = "Sli";
+
+	return classnames;
+}
+
+
+map< string, string >& sliFieldNameConvert()
+{
+	static map< string, string > fieldnames;
+
+	if ( fieldnames.size() > 0 )
+		return fieldnames;
+	
+	fieldnames["Molecule.Co"] = "conc";
+	fieldnames["Molecule.CoInit"] = "concInit";
+	fieldnames["SpikeGen.thresh"] = "threshold";
+	fieldnames["SpikeGen.output_amp"] = "amplitude";
+	fieldnames["Table.table->dx"] = "dx";
+	fieldnames["Table.table->invdx"] = "";
+	fieldnames["Table.table->xmin"] = "xmin";
+	fieldnames["Table.table->xmax"] = "xmax";
+	fieldnames["Table.table->table"] = "table";
+	fieldnames["Table.table->xdivs"] = "xdivs";
+	fieldnames["Compartment.dia"] = "diameter";
+	fieldnames["Compartment.len"] = "length";
+	fieldnames["SymCompartment.dia"] = "diameter";
+	fieldnames["SymCompartment.len"] = "length";
+	fieldnames["SynChan.gmax"] = "Gbar";
+	fieldnames["HHChannel.gbar"] = "Gbar";
+	return fieldnames;
+}
+
+
+
+string sliMessage(
+	const string& msgType, map< string, string >& converter )
+{
+	map< string, string >::iterator i;
+	i = converter.find( msgType );
+	if ( i != converter.end() ) {
+		if ( i->second.length() == 0 ) // A redundant message 
+			return "";
+		else 
+			return i->second; // good message.
+	} else {
+		// Trim off bits of the message, see if it recognizes it.
+		// Require that at least one string be known.
+		// Always go with more specific first, then more general.
+		vector< string > args;
+		separateString( msgType, args, " " );
+		if ( args.size() == 1 ) {
+			cout << "Error:sliMessage: Unknown message " <<
+				msgType << "\n";
+		} else {
+			vector< string >::iterator j;
+			string subType = "";
+			for ( j = args.begin(); j != args.end() - 1; j++ ) {
+				if ( j == args.begin() )
+					subType = *j;
+				else
+					subType = subType + " " + *j;
+			}
+			return sliMessage( subType, converter );
+		}
+	}
+	return "";
+}
+
+void do_add( int argc, const char** const argv, Id s )
+{
+	Element* e = s();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( e->data() );
+	return gpw->doAdd( argc, argv, s );
+}
+
+bool GenesisParserWrapper::innerAdd(
+	Id src, const string& srcF, Id dest, const string& destF )
+{
+	if ( !src.bad() && !dest.bad() ) {
+		Element* se = src();
+		Element* de = dest();
+		const Finfo* sf = se->findFinfo( srcF );
+		if ( !sf ) return 0;
+		const Finfo* df = de->findFinfo( destF );
+		if ( !df ) return 0;
+
+		return se->findFinfo( srcF )->add( se, de, de->findFinfo( destF )) ;
+	}
+	return 0;
+}
+
+bool hasCa( string s ) {
+	return ( s.find( "ca" ) != string::npos || 
+		s.find( "Ca" ) != string::npos ||  
+		s.find( "CA" ) != string::npos );
+}
+
+
+string GenesisParserWrapper::handleMultGate( 
+	int argc, const char** const argv, Id s,
+	string& gate, double& gatePower )
+{
+	// The MULTGATE message has the crucial information
+	// about the power to use for the gate. But the info about
+	// which gate to use is only specified with the extended field
+	// addmsgs which come later. The whole thing is hideously ugly.
+
+	// We need to infer the following:
+	// - Which gate to use. 
+	// - Whether to set the useConcentration flag
+	// - Which power to use. This is the last arg in the message.
+
+	// Which gate to use: If there is a 'ca' in the name of the
+	// gate, then definitely use zGate and set useConc flag.
+	// If there is a 'ca' in the name of the channel, and the
+	// power is 1, then use zGate and set useConc 
+	// flag. If there is no Ca or the zGate is used, then use
+	// x.
+	// Use conc flag follows from rules above.
+
+	// - Which power to use. This is the last arg in the message.
+	gatePower = atof( argv[5] );
+
+	string msgType = "";
+	// Now the rest of the heuristics.
+	string srcName = Shell::tail( argv[1], "/" ); // This is the gate
+	string destName = argv[2]; // This is the channel
+	Id dest( destName );
+	bool useConc = 0;
+	bool zGateUsed = 0;
+	bool xGateUsed = 0;
+	send2< Id, string >( s(), requestFieldSlot, dest, "Zpower" );
+	if ( fieldValue_.length() > 0 ) {
+		if ( fieldValue_ != "0" )
+			zGateUsed = 1;
+	}
+
+	send2< Id, string >( s(), requestFieldSlot, dest, "Xpower" );
+	if ( fieldValue_.length() > 0 ) {
+		if ( fieldValue_ != "0" )
+			xGateUsed = 1;
+	}
+	
+	useConc = hasCa( srcName );
+	if ( hasCa( destName ) && gatePower == 1.0 ) {
+		useConc = 1;
+	}
+	if ( useConc && zGateUsed == 0 ) {
+		msgType = "useZ.MULTGATE";
+		gate = "Z";
+	} else if ( xGateUsed == 0 ) {
+		msgType = "useX.MULTGATE";
+		gate = "X";
+	} else {
+		msgType = "useY.MULTGATE";
+		gate = "Y";
+	}
+
+	if ( useConc )
+		send3< Id, string, string >( s(),
+			setFieldSlot, dest, "useConcentration", "1" );
+
+	return msgType;
+}
+
+void GenesisParserWrapper::doAdd(
+				int argc, const char** const argv, Id s )
+{
+	//if (argc >= 3) cout << argv[1] << " " << argv[2] << endl;
+	if ( argc == 3 ) {
+		string srcE = Shell::head( argv[1], "/" );
+		string srcF = Shell::tail( argv[1], "/" );
+		string destE = Shell::head( argv[2], "/" );
+		string destF = Shell::tail( argv[2], "/" );
+		Id src( srcE );
+		Id dest( destE );
+		// Id src = path2eid( srcE, s );
+		// Id dest = path2eid( destE, s );
+
+		// Should ideally send this off to the shell.
+		if ( !innerAdd( src, srcF, dest, destF ) )
+	 		cout << "Error in doAdd " << argv[1] << " " << argv[2] << endl;
+	} else if ( argc > 3 ) {
+	// Old-fashioned addmsg. Backward Compatibility conversions here.
+	// usage: addmsg source-element dest-delement msg-type [msg-fields]
+	// Most of these are handled using the info in the msg-type and
+	// msg fields. Often there are redundant messages which are now
+	// handled by shared messages. The redundant one is ignored.
+		string msgType = argv[3];
+
+		for ( int i = 4; i < argc; i++ )
+			msgType = msgType + " " + argv[ i ];
+
+		Id src( argv[1] );
+		Id dest( argv[2] );
+		if ( src.bad() ) {
+	 		cout << "Error in doAdd: " << argv[1]
+			     << " does not exist." << endl;
+			return;
+		}
+		if ( dest.bad() ) {
+	 		cout << "Error in doAdd: " << argv[2]
+			     << " does not exist." << endl;
+			return;
+		}
+
+		if ( msgType == "CHANNEL Gk Ek" && src()->className() == "SynChan" && dest()->className() == "Mg_block" )
+			msgType = src()->className() + "." + dest()->className() + "." + msgType;
+		if ( msgType == "SPIKE" && src()->className() == "SpikeGen" )
+			msgType = src()->className() + "." + msgType;
+		if ( msgType == "INPUT Vm" && dest()->className() == "SpikeGen" )
+			msgType = dest()->className() + "." + msgType;
+
+		bool usingMULTGATE = 0;
+		string gate = "";
+		double power = 0;
+		// Typically used between tabgate and vdep_channel.
+		if ( msgType.substr( 0, 10 ) == "MULTGATE m" ) {
+			msgType = handleMultGate( argc, argv, s, gate, power );
+			usingMULTGATE = 1;
+		}
+
+		string srcF = sliMessage( msgType, sliSrcLookup() );
+		string destF = sliMessage( msgType, sliDestLookup() );
+
+		if ( srcF.length() > 0 && destF.length() > 0 ) {
+			//Id src( argv[1] );
+			//Id dest( argv[2] );
+			// Id src = path2eid( argv[1], s );
+			// Id dest = path2eid( argv[2], s );
+	// 		cout << "in do_add " << src << ", " << dest << endl;
+			if ( !innerAdd( src, srcF, dest, destF ) )
+	 			cout << "Error in do_add " << argv[1] << " " << argv[2] << " " << msgType << endl;
+		}
+
+		if ( gate.length() == 1 && power > 0.0 ) {
+		// finish off multgate by assigning the gate power.
+			string field = gate + "power";
+			send3< Id, string, string >( s(), setFieldSlot, 
+				dest, field, argv[5] );
+		}
+
+		//	s->addFuncLocal( src, dest );
+	} else {
+		cout << "usage:: " << argv[0] << " src dest\n";
+		cout << "deprecated usage:: " << argv[0] << " source-element dest-element msg-type [msg-fields]";
+	}
+}
+
+void do_drop( int argc, const char** const argv, Id s )
+{
+	if ( argc == 3 ) {
+		// s->dropFuncLocal( argv[1], argv[2] );
+		cout << "In do_drop " << argv[1] << ", " << argv[2] << endl;
+	} else {
+		cout << "usage:: " << argv[0] << " src dest\n";
+	}
+}
+
+/**
+ * setfield [obj] field value [field value] ...
+ */
+void do_set( int argc, const char** const argv, Id s )
+{
+	Element* e = s();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( e->data() );
+	return gpw->doSet( argc, argv, s );
+}
+
+void GenesisParserWrapper::doSet( int argc, const char** argv, Id s )
+{
+	static map< string, string > tabmap;
+	tabmap[ "X_A" ] = "xGate/A";
+	tabmap[ "X_B" ] = "xGate/B";
+	tabmap[ "Y_A" ] = "yGate/A";
+	tabmap[ "Y_B" ] = "yGate/B";
+	tabmap[ "Z_A" ] = "zGate/A";
+	tabmap[ "Z_B" ] = "zGate/B"; 
+	tabmap[ "bet" ] = "B"; 	// Short for beta: truncated at 3 chars.
+	tabmap[ "alp" ] = "A"; 	// Short for alpha
+
+	Element* sh = s();
+	int start = 2;
+	if ( argc < 3 ) {
+		cout << argv[0] << ": Too few command arguments\n";
+		cout << "usage:: " << argv[0] << " [path] field value ...\n";
+		return;
+	}
+	if ( argc % 2 == 1 ) { // 'path' is left out, use current object.
+		send0( sh, requestCweSlot );
+		elist_.resize( 0 );
+		elist_.push_back( cwe_ );
+		// e = cwe_;
+		start = 1;
+	} else  {
+		string path = argv[1];
+		//Shell::getWildCardList(conn, path, 0);
+		send2< string, bool >( sh, requestWildcardListSlot, path, 0 );
+		if ( elist_.size() == 0 ) {
+			cout << "Error: " << argv[0] << " : cannot find element " <<
+				path << endl;
+			return;
+		}
+		// e = GenesisParserWrapper::path2eid( argv[1], s );
+		// Try wildcards
+		// if ( e == BAD_ID )
+			// return;
+		start = 2;
+	}
+
+	// Hack here to deal with the special case of filling tables
+	// in tabchannels. Example command looks like:
+	// 		setfield Ca Y_A->table[{i}] {y}
+	// so here we need to do setfield Ca/yGate/A table[{i}] {y}
+	
+	for ( int i = start; i < argc; i += 2 ) {
+		// s->setFuncLocal( path + "/" + argv[ i ], argv[ i + 1 ] );
+		string field = argv[i];
+		const string& className = elist_[0]()->className();
+		map< string, string >::iterator iter = 
+			sliFieldNameConvert().find( className + "." + field );
+		if ( iter != sliFieldNameConvert().end() ) 
+			field = iter->second;
+		//hack for synapse[i].weight type of fields
+		if (field.substr(0, 8) == "synapse["){
+			size_t pos = field.find(']');
+			if (pos != string::npos)
+				field = field.substr(pos+2) + '[' + field.substr(8, pos - 8) + ']';
+		}
+		string value = argv[ i+1 ];
+		if ( field.substr( 0, 12 ) == "table->table" ) { // regular table
+			field = field.substr( 7 ); // snip off the initial table->
+		} else {
+			string::size_type pos = field.find( "->" );
+			/*
+			string::size_type pos = field.find( "->table" );
+			if ( pos == string::npos )
+					pos = field.find( "->calc_mode" );
+			if ( pos == string::npos )
+					pos = field.find( "->sy" );
+			*/
+			if ( pos != string::npos ) { // Fill table
+				map< string, string >::iterator j = 
+						tabmap.find( field.substr( 0, 3 ) );
+				if ( j != tabmap.end() ) {
+					string path;
+					if ( start == 1 )
+						path = "./" + j->second;
+					else
+						path = string( argv[1] ) + "/" + j->second;
+					// Id e = GenesisParserWrapper::path2eid( path, s );
+					// Here we should expand the path with the new 
+					// additions. Note that we need to use a temporary
+					// elist for this so as not to interfere with the 
+					// original.
+					Id e( path );
+					vector< Id > el;
+					el.push_back( e );
+					field = field.substr( pos + 2 );
+					send3< vector< Id >, string, string >( s(),
+						setVecFieldSlot, el, field, value );
+					continue;
+				}
+			}
+		}
+		// cout << "in do_set " << path << "." << field << " " <<
+				// value << endl;
+		
+		if ( field.length() > 0 )
+		//Shell::setVecField(conn, elist_, field, value)
+			send3< vector< Id >, string, string >( s(),
+				setVecFieldSlot, elist_, field, value );
+	}
+}
+
+/** 
+ * tabCreate handles the allocation of tables.
+ * Returns true on success
+ * For channels the GENESIS command is something like 
+ * call /squid/Na TABCREATE X {NDIVS} {VMIN} {VMAX}
+ *
+ * For tables this is 
+ * call /Vm TABCREATE {NDIVS} {XMIN} {XMAX}
+ */
+bool GenesisParserWrapper::tabCreate( int argc, const char** argv, Id s)
+{
+	string path = argv[1];
+	// Id id = path2eid( path, s );
+	Id id( path );
+	if ( !id.zero() && !id.bad() ) {
+		send2< Id, string >( s(),
+			requestFieldSlot, id, "class" );
+		if ( fieldValue_.length() == 0 ) // Nothing came back
+			return 0;
+		if ( fieldValue_ == "HHChannel" && argc == 7 ) {
+			// TABCREATE on HHChannel requires the assignment of
+			// something like
+			// setfield /squid/Na/xGate/A xmin {XMIN}
+			// setfield /squid/Na/xGate/A xmax {XMAX}
+			// setfield /squid/Na/xGate/A xdivs {XDIVS}
+			if ( strlen( argv[3] ) != 1 ) {
+				cout << "usage: call element TABCREATE gate xdivs xmin xmax\n";
+				cout << "Error: Gate should be X, Y or Z\n";
+				return 0;
+			}
+			string tempA;
+			string tempB;
+			if ( string( argv[3] ) == "X" ) {
+				tempA = path + "/xGate/A";
+				tempB = path + "/xGate/B";
+			} else if ( string( argv[3] ) == "Y" ) {
+				tempA = path + "/yGate/A";
+				tempB = path + "/yGate/B";
+			} else if ( string( argv[3] ) == "Z" ) {
+				tempA = path + "/zGate/A";
+				tempB = path + "/zGate/B";
+			}
+			// id = path2eid( tempA, s );
+			id = Id( tempA );
+			if ( id.zero() || id.bad() ) { //creating the gates'
+				string name;
+				if ( string( argv[3] ) == "X" ) {
+					name = "xGate";
+				} else if ( string( argv[3] ) == "Y" ) {
+					name = "yGate";
+				} else if ( string( argv[3] ) == "Z" ) {
+					name = "zGate";
+				}
+				vector < Id > el;
+				el.push_back(Id(path));
+				send3< vector< Id >, string, string >( s(),
+						setVecFieldSlot, el, string(argv[3]) + "power", "1.0" );
+// 				set<double> (Id(path)(), "Xpower", 1.0);
+// 				send3< string, string, Id >( s(),
+// 				createSlot, "HHGate", name, Id(path) );
+				
+				id = Id( tempA );
+			}
+			if ( id.zero() || id.bad() ){ 
+				cout << "tabCreate::Error" << endl;
+				return 0; //Error msg here
+			}
+			send3< Id, string, string >( s(),
+				setFieldSlot, id, "xdivs", argv[4] );
+			send3< Id, string, string >( s(),
+				setFieldSlot, id, "xmin", argv[5] );
+			send3< Id, string, string >( s(),
+				setFieldSlot, id, "xmax", argv[6] );
+			// id = path2eid( tempB, s );
+			id = Id( tempB );
+			if ( id.zero() || id.bad() ){ 
+				cout << "tabCreate::Error" << endl;
+				return 0; //Error msg here
+			}
+			send3< Id, string, string >( s(),
+				setFieldSlot, id, "xdivs", argv[4] );
+			send3< Id, string, string >( s(),
+				setFieldSlot, id, "xmin", argv[5] );
+			send3< Id, string, string >( s(),
+				setFieldSlot, id, "xmax", argv[6] );
+			return 1;
+		}
+		if ( fieldValue_ == "Table" && argc == 6 ) {
+			send3< Id, string, string >( s(),
+				setFieldSlot, id, "xdivs", argv[3] );
+			send3< Id, string, string >( s(),
+				setFieldSlot, id, "xmin", argv[4] );
+			send3< Id, string, string >( s(),
+				setFieldSlot, id, "xmax", argv[5] );
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void do_call( int argc, const char** const argv, Id s )
+{
+	if ( argc < 3 ) {
+		cout << "usage:: " << argv[0] << " path field/Action [args...]\n";
+		return;
+	}
+	Element* e = s();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( e->data() );
+	// Ugly hack to avoid LOAD call for notes on kkit dumpfiles
+	if ( strcmp ( argv[2], "LOAD" ) == 0 ) {
+		// cout << "in do_call LOAD " << endl;
+		return;
+	}
+	
+	// Ugly hack to handle the TABCREATE calls, which get converted
+	// to three setfields, or six if it is a tabchannel. 
+	if ( strcmp ( argv[2], "TABCREATE" ) == 0 ) {
+		if ( !gpw->tabCreate( argc, argv, s ) )
+				cout << "Error: TABCREATE failed\n";
+	}
+
+	// Ugly hack to handle the TABFILL call, which need to be redirected
+	// to the two interpols of the HHGates.
+	// Deprecated.
+	// The call looks like:
+	// call KM_bsg_yka TABFILL X 3000 0
+	//
+	if ( strcmp ( argv[2], "TABFILL" ) == 0 ) {
+		if ( argc != 6 ) {
+			cout << "usage: " << argv[0] << 
+					" element TABFILL gate divs mode\n";
+			return;
+		}
+		string elmpath = argv[1];
+		string argstr = argv[4];
+		argstr = argstr + "," + argv[5];
+		int ndivs = atoi( argv[4] );
+		if ( ndivs < 1 )
+				return;
+		if ( argv[3][0] == 'X' )
+				elmpath = elmpath + "/xGate";
+		else if ( argv[3][0] == 'Y' )
+				elmpath = elmpath + "/yGate";
+		else if ( argv[3][0] == 'Z' )
+				elmpath = elmpath + "/zGate";
+		else {
+			cout << "Error: " << argv[0] << 
+					" unknown gate '" << argv[3] << "'\n";
+			return;
+		}
+		string temp = elmpath + "/A";
+		// Id gate = GenesisParserWrapper::path2eid( temp, s );
+		Id gate( temp );
+		if ( gate.bad() ) {
+			cout << "Error: " << argv[0] << 
+					" could not find object '" << temp << "'\n";
+			return;
+		}
+		send3< Id, string, string >( s(),
+			setFieldSlot, gate, "tabFill", argstr );
+
+		temp = elmpath + "/B";
+		// gate = GenesisParserWrapper::path2eid( temp, s );
+		gate = Id( temp );
+		if ( gate.bad() ) {
+			cout << "Error: " << argv[0] << 
+					" could not find object '" << temp << "'\n";
+			return;
+		}
+		send3< Id, string, string >( s(),
+			setFieldSlot, gate, "tabFill", argstr );
+
+		return;
+	}
+
+	// syntax: call table TABOP op [min max]
+	if ( strcmp ( argv[2], "TABOP" ) == 0 ) { 
+		Id table( argv[1] );
+		if ( table.bad() ) {
+			cout << "Error: " << argv[0] << 
+					" could not find object '" << table << "'\n";
+			return;
+		}
+		if ( argc == 4 ) {
+			send4< Id, char, double, double >( s(),
+				tabopSlot, table, argv[3][0], 0.0, 0.0 );
+		} else if ( argc == 6 ) {
+			double min = atof( argv[4] );
+			double max = atof( argv[5] );
+			send4< Id, char, double, double >( s(),
+				tabopSlot, table, argv[3][0], min, max );
+		} else {
+			cout << "usage: " << argv[0] << 
+					" element TABOP op [min max]\n";
+			cout << "valid operations:\n";
+			cout << "a = average, m = min, M = Max, r= range\n";
+			cout << "s = slope, i = intercept, f = freq\n";
+			cout << "S = Sqrt(sum of squares)\n";
+		}
+	}
+}
+
+int do_isa( int argc, const char** const argv, Id s )
+{
+	if ( argc == 3 ) {
+		cout << "in do_isa " << argv[1] << ", " << argv[2] << endl;
+		// return s->isaFuncLocal( argv[1], argv[2] );
+	} else {
+		cout << "usage:: " << argv[0] << " type field\n";
+	}
+	return 0;
+}
+
+bool GenesisParserWrapper::fieldExists(
+			Id eid, const string& field, Id s )
+{
+	//conversion of field
+	map< string, string >::iterator i = 
+			sliFieldNameConvert().find( eid()->className() + "." + field );
+	string newfield = field;
+	if ( i != sliFieldNameConvert().end() ) 
+		newfield = i->second;
+	//conversion of field, if needed, complete
+		
+	send2< Id, string >( s(), requestFieldSlot, eid, "fieldList" );
+	if ( fieldValue_.length() == 0 ) // Nothing came back
+		return 0;
+	return ( fieldValue_.find( newfield ) != string::npos );
+}
+
+int do_exists( int argc, const char** const argv, Id s )
+{
+	if ( argc == 2 ) { // Checking for element
+		// Id eid = GenesisParserWrapper::path2eid( argv[1], s );
+		Id eid( argv[1] );
+		return ( !eid.bad() );
+	} else if ( argc == 3 ) { // checking for element and field.
+		// Id eid = GenesisParserWrapper::path2eid( argv[1], s );
+		Id eid( argv[1] );
+		if ( !eid.bad() ) {
+			GenesisParserWrapper* gpw =
+				static_cast< GenesisParserWrapper* >( s()->data() );
+			return gpw->fieldExists( eid, argv[2], s );
+		}
+	} else {
+		cout << "usage:: " << argv[0] << " element [field]\n";
+	}
+	return 0;
+}
+
+/**
+ * getfield [obj] field
+ */
+char* do_get( int argc, const char** const argv, Id s )
+{
+	Element* e = s();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( e->data() );
+	return gpw->doGet( argc, argv, s );
+}
+
+
+
+char* GenesisParserWrapper::doGet( int argc, const char** argv, Id s )
+{
+	static map< string, string > tabmap;
+	tabmap[ "X_A" ] = "xGate/A";
+	tabmap[ "X_B" ] = "xGate/B";
+	tabmap[ "Y_A" ] = "yGate/A";
+	tabmap[ "Y_B" ] = "yGate/B";
+	tabmap[ "Z_A" ] = "zGate/A";
+	tabmap[ "Z_B" ] = "zGate/B"; 
+	tabmap[ "bet" ] = "B"; 	// Short for beta: truncated at 3 chars.
+	tabmap[ "alp" ] = "A"; 	// Short for alpha
+
+	string field;
+	string value;
+	Id e;
+	if ( argc == 3 ) {
+		// e = GenesisParserWrapper::path2eid( argv[1], s );
+		e = Id( argv[1] );
+		if ( e.bad() ) cout << "bad!!" << endl;
+		if ( e.bad() )
+			return copyString( "" );
+		field = argv[2];
+	} else if ( argc == 2 ) {
+		send0( s(), requestCweSlot );
+		e = cwe_;
+		field = argv[ 1 ];
+	} else {
+		cout << "usage:: " << argv[0] << " [element] field\n";
+		return copyString( "" );
+	}
+	map< string, string >::iterator i = 
+			sliFieldNameConvert().find( e()->className() + "." + field );
+	if ( i != sliFieldNameConvert().end() ) 
+		field = i->second;
+
+	// Hack section to handle table field lookups.
+	if ( field.substr( 0, 12 ) == "table->table" ) { // regular table
+		field = field.substr( 7 ); // snip off the initial table->
+	} else {
+		string::size_type pos = field.find( "->" );
+		if ( pos != string::npos ) { // Other table fields.
+			map< string, string >::iterator j = 
+					tabmap.find( field.substr( 0, 3 ) );
+			if ( j != tabmap.end() ) {
+				string path;
+				if ( argc == 2 )
+					path = "./" + j->second;
+				else
+					path = string( argv[1] ) + "/" + j->second;
+				e = Id( path );
+				field = field.substr( pos + 2 );
+			}
+		}
+	}
+
+	fieldValue_ = "";
+	send2< Id, string >( s(),
+		requestFieldSlot, e, field );
+	if ( fieldValue_.length() == 0 ) // Nothing came back
+		return 0;
+	return copyString( fieldValue_.c_str() );
+}
+
+char* do_getmsg( int argc, const char** const argv, Id s )
+{
+	static string space = " ";
+	if ( argc < 3 ) {
+		cout << "usage:: " << argv[0] << " element -incoming -outgoing -slot msg-number slot-number -count -type msg-number -destination msg-number -source msg-number -find srcelem type\n";
+		return "";
+	}
+	string field = argv[ 1];
+	string options = argv[ 2 ];
+	for ( int i = 3; i < argc; i++ )
+		options += space + argv[ i ];
+
+	// return copyString( s->getmsgFuncLocal( field, options ) );
+	return copyString( "" );
+}
+
+void do_showmsg( int argc, const char** const argv, Id s )
+{
+	Element* e = s();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( e->data() );
+	gpw->doShowMsg( argc, argv, s );
+}
+
+/**
+ * Displays information about incoming/outgoing messages.
+ * Unlike GENESIS, we can put in additional info about the message
+ * type, but we cannot put in all the current arguments without
+ * special effort.
+ * Form of output is
+ * INCOMING MESSAGES onto <mypath>
+ * MSG[0]:	into <destField> from [<path1>, <path2>, ...].<srcField>
+ * ...
+ *
+ * OUTGOING MESSAGES
+ * MSG[0]:	from <srcField> into [<path1>, <path2>, ...].<destField>
+ * ...
+ *
+ * Algorithm: ask Shell for list of all fields on object.
+ * Increment through each requesting incoming/outgoing messages.
+ * This uses the Shell::listMessages function.
+ */
+
+void printMessageList( const string& f1, const string& f2,
+		vector< Id >& elist, unsigned int& msgNum, bool isIncoming )
+{
+	vector< string > list;
+	separateString( f2, list, ", " );
+	if ( elist.size() > 0 ) {
+		assert( elist.size() == list.size() );
+		unsigned int i;
+		if ( isIncoming )
+			cout << "MSG[" << msgNum << "]:	into " << f1 << " from: ";
+		else
+			cout << "MSG[" << msgNum << "]:	from " << f1 << " into: ";
+		string lastField = "";
+		for ( i = 0; i < elist.size(); i++ ) {
+			if ( lastField != list[i] ) {
+				if ( lastField != "" )
+					cout << " ]." << lastField << "\n	[ ";
+				else
+					cout << "[ ";
+			} else {
+					cout << ", ";
+			}
+			// cout << GenesisParserWrapper::eid2path( elist[i] );
+			cout << elist[i].path();
+			lastField = list[i];
+		}
+		cout << " ]." << lastField << "\n";
+		msgNum++;
+	}
+}
+
+void GenesisParserWrapper::doShowMsg( int argc, const char** argv, Id s)
+{
+	Id e;
+	if ( argc == 1 ) {
+		send0( s(), requestCweSlot );
+		e = cwe_;
+	} else {
+		// e = path2eid( argv[1], s );
+		e = Id( argv[1] );
+		if ( e.bad() ) {
+			cout << "Error: " << argv[0] << ": unknown element " <<
+					argv[1] << endl;
+			return;
+		}
+	}
+	send2< Id, string >( s(), requestFieldSlot, e, "fieldList" );
+	vector< string > list;
+	vector< string >::iterator i;
+	separateString( fieldValue_, list, ", " );
+
+	// cout << "INCOMING MESSAGES onto " << eid2path( e ) << endl;
+	cout << "INCOMING MESSAGES onto " << e.path() << endl;
+	unsigned int msgNum = 0;
+	for ( i = list.begin(); i != list.end(); i++ ) {
+		if ( *i == "fieldList" )
+			continue;
+		send3< Id, string, bool >( s(), listMessagesSlot, e, *i, 1 );
+		// The return message puts the elements in elist_ and the 
+		// target field names in fieldValue_
+		printMessageList( *i, fieldValue_, elist_, msgNum, 1 );
+	}
+
+	// cout << "OUTGOING MESSAGES from " << eid2path( e ) << endl;
+	cout << "OUTGOING MESSAGES from " << e.path() << endl;
+	msgNum = 0;
+	for ( i = list.begin(); i != list.end(); i++ ) {
+		if ( *i == "fieldList" )
+			continue;
+		send3< Id, string, bool >( s(), listMessagesSlot, e, *i, 0 );
+		// The return message puts the elements in elist_ and the 
+		// target field name in fieldValue_
+		printMessageList( *i, fieldValue_, elist_, msgNum, 0);
+	}
+}
+
+void do_create( int argc, const char** const argv, Id s )
+{
+	if ( argc != 3 ) {
+		cout << "usage:: " << argv[0] << " class name\n";
+		return;
+	}
+
+	assert( strlen( argv[2] ) > 0 );
+	string className = argv[1];
+	if ( !Cinfo::find( className ) )  {
+		// Possibly it is aliased for backward compatibility.
+		map< string, string >::iterator i = 
+			sliClassNameConvert().find( argv[1] );
+		if ( i != sliClassNameConvert().end() ) {
+			className = i->second;
+			if ( className == "Sli" ) {
+				// We bail out of these classes as MOOSE does not
+				// yet handle them.
+				cout << "Do not know how to handle class: " << 
+						className << endl;
+				return;
+			}
+		} else {
+			cout << "GenesisParserWrapper::do_create: Do not know class: " << className << endl;
+			return;
+		}
+	}
+
+	string name = Shell::tail( argv[2], "/" );
+	if ( name.length() < 1 ) {
+		cout << "Error: invalid object name : " << name << endl;
+		return;
+	}
+	string parent = Shell::head( argv[2], "/" );
+	if ( argv[2][0] == '/' && parent == "" )
+		parent = "/";
+	// Id pa = GenesisParserWrapper::path2eid( parent, s );
+	Id pa( parent );
+
+	send3< string, string, Id >( s(),
+		createSlot, className, name, pa );
+
+		// The return function recvCreate gets the id of the
+		// returned elm, but
+		// the GenesisParser does not care.
+}
+
+void do_delete( int argc, const char** const argv, Id s )
+{
+	if ( argc == 2 ) {
+		// Id victim = GenesisParserWrapper::path2eid( argv[1], s );
+		Id victim( argv[1] );
+		if ( victim != Id() )
+			send1< Id >( s(), deleteSlot, victim );
+	} else {
+		cout << "usage:: " << argv[0] << " Element/path\n";
+	}
+}
+
+/**
+ * This function figures out destination and name for moves
+ * and copies. The rules are:
+ * 1. Target can be existing element, in which case name is retained.
+ *  In this case the childname is set to the empty string "".
+ * 2. Target might not exist. In this case the parent of the target
+ * 	must exist, and the object e is going to be renamed. This new
+ * 	name is returned in the childname.
+ */
+bool parseCopyMove( int argc, const char** const argv, Id s,
+		Id& e, Id& pa, string& childname )
+{
+	if ( argc == 3 ) {
+		// e = GenesisParserWrapper::path2eid( argv[1], s );
+		e = Id( argv[1] );
+		if ( !e.zero() && !e.bad() ) {
+			childname = "";
+			// pa = GenesisParserWrapper::path2eid( argv[2], s );
+			pa = Id( argv[2] );
+			if ( pa.bad() ) { // Possibly we are renaming it too.
+				string pastr = argv[2];
+				if ( pastr.find( "/" ) == string::npos ) {
+					pastr = ".";
+				} else {
+					pastr = Shell::head( argv[2], "/" );
+				}
+				if ( pastr == "" )
+						pastr = ".";
+				// pa = GenesisParserWrapper::path2eid( pastr, s );
+				pa = Id( pastr );
+				if ( pa.bad() ) { // Nope, even that doesn't work.
+					cout << "Error: " << argv[0] << 
+							": Parent element " << argv[2] << 
+							" not found\n";
+					return 0;
+				}
+				childname = Shell::tail( argv[2], "/" );
+			}
+			return 1;
+		} else {
+			cout << "Error: " << argv[0] << ": source element " <<
+					argv[1] << " not found\n";
+		}
+	} else {
+		cout << "usage:: " << argv[0] << " src dest\n";
+	}
+	return 0;
+}
+
+void do_move( int argc, const char** const argv, Id s )
+{
+	Id e;
+	Id pa;
+	string name;
+	if ( parseCopyMove( argc, argv, s, e, pa, name ) ) {
+		send3< Id, Id, string >( s(), moveSlot, e, pa, name );
+	}
+}
+
+void do_copy( int argc, const char** const argv, Id s )
+{
+	Id e;
+	Id pa;
+	string name;
+	if ( parseCopyMove( argc, argv, s, e, pa, name ) ) {
+		//Shell::copy(conn, e, pa, name);
+		send3< Id, Id, string >( s(), copySlot, e, pa, name );
+	}
+}
+
+void do_copy_shallow( int argc, const char** const argv, Id s )
+{
+	if ( argc == 3 ) {
+		// s->copyShallowFuncLocal( argv[1], argv[2] );
+	} else {
+		cout << "usage:: " << argv[0] << " src dest\n";
+	}
+}
+
+void do_copy_halo( int argc, const char** const argv, Id s )
+{
+	if ( argc == 3 ) {
+		// s->copyHaloFuncLocal( argv[1], argv[2] );
+	} else {
+		cout << "usage:: " << argv[0] << " src dest\n";
+	}
+}
+
+void do_ce( int argc, const char** const argv, Id s )
+{
+	if ( argc == 2 ) {
+		// Id e = GenesisParserWrapper::path2eid( argv[1], s );
+		Id e( argv[1] );
+		if ( e.bad() ) {
+			cout << "Error - cannot change to '" << argv[1] << "'\n";
+		} else {
+			send1< Id >( s(), setCweSlot, e );
+		}
+	} else {
+		cout << "usage:: " << argv[0] << " Element\n";
+	}
+}
+
+void do_pushe( int argc, const char** const argv, Id s )
+{
+	GenesisParserWrapper* gpw = 
+		static_cast< GenesisParserWrapper* > ( s()->data() );
+	if ( argc == 2 ) {
+		// s->pusheFuncLocal( argv[1] );
+		Id e( argv[1] );
+		if ( e.bad() ) {
+			gpw->print( string( "Error - cannot change to '" ) +
+				string( argv[1] ) + "'" );
+		} else {
+			send1< Id >( s(), pusheSlot, e );
+			gpw->printCwe();
+		}
+	} else {
+		cout << "usage:: " << argv[0] << " Element\n";
+	}
+}
+
+void do_pope( int argc, const char** const argv, Id s )
+{
+	if ( argc == 1 ) {
+		// s->popeFuncLocal( );
+		send0( s(), popeSlot );
+		GenesisParserWrapper* gpw = 
+			static_cast< GenesisParserWrapper* > ( s()->data() );
+		gpw->printCwe();
+	} else {
+		cout << "usage:: " << argv[0] << "\n";
+	}
+}
+
+void do_alias( int argc, const char** const argv, Id s )
+{
+	string alias = "";
+	string old = "";
+	if ( argc == 3 ) {
+		alias = argv[1];
+		old = argv[2];
+	} else if ( argc == 2 ) {
+		alias = argv[1];
+	}
+	Element* e = s();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( e->data() );
+	gpw->alias( alias, old );
+}
+
+void do_quit( int argc, const char** const argv, Id s )
+{
+	// s->quitFuncLocal( );
+		exit( 0 );
+}
+
+void do_stop( int argc, const char** const argv, Id s )
+{
+	if ( argc == 1 ) {
+		send0( s(), stopSlot );
+	} else {
+		cout << "usage:: " << argv[0] << "\n";
+	}
+}
+
+void do_reset( int argc, const char** const argv, Id s )
+{
+	if ( argc == 1 ) {
+		send0( s(), reschedSlot );
+		send0( s(), reinitSlot );
+		;
+	} else {
+		cout << "usage:: " << argv[0] << "\n";
+	}
+}
+
+void do_step( int argc, const char** const argv, Id s )
+{
+	Element* e = s();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( e->data() );
+	gpw->step( argc, argv );
+}
+
+void GenesisParserWrapper::step( int argc, const char** const argv )
+{
+	double runtime;
+	Element* e = element()();
+	if ( argc == 3 ) {
+		if ( strcmp( argv[ 2 ], "-t" ) == 0 || strcmp( argv[ 2 ], "-time" ) == 0) {
+			runtime = strtod( argv[ 1 ], 0 );
+		} else {
+			cout << "usage:: " << argv[0] << 
+					" time/nsteps [-t -s(default ]\n";
+			return;
+		}
+	} else {
+		send0( e, requestClocksSlot ); 
+		assert( dbls_.size() > 0 );
+		// This fills up a vector of doubles with the clock duration.
+		// Find the shortest dt.
+		double min = 1.0e10;
+		vector< double >::iterator i;
+		for ( i = dbls_.begin(); i != dbls_.end(); i++ )
+			if ( min > *i )
+					min = *i ;
+		if ( argc == 1 )
+			runtime = min;
+		else 
+			runtime = min * strtol( argv[1], 0, 10 );
+	}
+	if ( runtime < 0 ) {
+		cout << "Error: " << argv[0] << ": negative time is illegal\n";
+		return;
+	}
+
+	send1< double >( e, stepSlot, runtime );
+}
+
+void do_setclock( int argc, const char** const argv, Id s )
+{
+	if ( argc == 3 ) {
+			send3< int, double, int >( s(),
+				setClockSlot, 
+				atoi( argv[1] ), atof( argv[2] ), 0 );
+	} else if ( argc == 4 ) {
+			send3< int, double, int >( s(),
+				setClockSlot, 
+				atoi( argv[1] ), atof( argv[2] ), atoi( argv[3] ) );
+	} else {
+		cout << "usage:: " << argv[0] << " clockNum dt [stage]\n";
+	}
+}
+
+void GenesisParserWrapper::showClocks( Element* e )
+{
+	send0( e, requestClocksSlot ); 
+	// This fills up a vector of doubles with the clock duration.
+	cout << "ACTIVE CLOCKS\n";
+	cout << "-------------\n";
+	for ( unsigned int i = 0; i < dbls_.size(); i++ )
+		cout << "[" << i << "]	: " << dbls_[i] << endl;
+}
+
+void do_showclocks( int argc, const char** const argv, Id s )
+{
+	if ( argc == 1 ) {
+		Element* e = s();
+		GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+				( e->data() );
+		gpw->showClocks( e );
+
+	} else {
+		cout << "usage:: " << argv[0] << "\n";
+	}
+}
+
+void do_useclock( int argc, const char** const argv, Id s )
+{
+	char tickName[40];
+	string func = "process";
+	if ( argc == 3 ) {
+		sprintf( tickName, "/sched/cj/t%s", argv[2] );
+	} else if ( argc == 4 ) {
+		sprintf( tickName, "/sched/cj/t%s", argv[2] );
+		func = argv[3];
+	} else {
+		cout << "usage:: " << argv[0] << " path clockNum [funcname]\n";
+		return;
+	}
+
+	// Id tickId = GenesisParserWrapper::path2eid( tickName, s );
+	Id tickId( tickName );
+	if ( tickId.bad() ) {
+		cout << "Error:" << argv[0] << ": Invalid clockNumber " <<
+				tickName << "\n";
+		return;
+	}
+
+	string path = argv[1];
+	Element* e = s();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( e->data() );
+	gpw->useClock( tickId, path, func, s );
+}
+
+void GenesisParserWrapper::useClock(
+	Id tickId, const string& path, const string& func, Id s )
+{
+	Element* e = s();
+
+	// Here we use the default form which takes comma-separated lists
+	// but may scramble the order.
+	// This request elicits a return message to put the list in the
+	// elist_ field.
+
+	send2< string, bool >( e, requestWildcardListSlot, path, 0 );
+
+	send3< Id, vector< Id >, string >( 
+		s(), useClockSlot, tickId, elist_, func );
+}
+
+void do_show( int argc, const char** const argv, Id s )
+{
+	Element* e = s();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( e->data() );
+	gpw->doShow( argc, argv, s );
+}
+
+/**
+ * This function shows values for all fields of an element. It
+ * sends out a request for the FieldList, which comes back as one big
+ * string. It parses out the string and requests values for each field
+ * in turn to print out.
+ */
+void GenesisParserWrapper::showAllFields( Id e, Id s )
+{
+	char temp[80];
+	
+	// Ask for the list of fields as one big string
+	send2< Id, string >( s(), requestFieldSlot, e, "fieldList" );
+	vector< string > list;
+	vector< string >::iterator i;
+	separateString( fieldValue_, list, ", " );
+	for ( i = list.begin(); i != list.end(); i++ ) {
+		if ( *i == "fieldList" )
+			continue;
+		fieldValue_ = "";
+		//Shell::getField(conn, e->id(), *i)
+		send2< Id, string >( s(), requestFieldSlot, e, *i );
+		if ( fieldValue_.length() > 0 ) {
+			sprintf( temp, "%-25s%s", i->c_str(), "= " );
+			print( temp + fieldValue_ );
+		}
+	}
+}
+
+/**
+ * Decide if it is a specific field, or all.
+ * If specific, get the value for that specific field and print it.
+ * If all, first get the list of all fields (which is a field too),
+ * then get the value for each specific field in turn.
+ * The first arg could be a field, or it could be the object.
+ */
+void GenesisParserWrapper::doShow( int argc, const char** argv, Id s )
+{
+	Id e;
+	int firstField = 2;
+	char temp[80];
+
+	if ( argc < 2 ) {
+		print( "Usage: showfield [object/wildcard] [fields] -all" );
+		return;
+	}
+
+
+	if ( argc == 2 ) { // show fields of cwe.
+		send0( s(), requestCweSlot );
+		e = cwe_;
+		firstField = 1;
+	} else {
+		// e = path2eid( argv[1], s );
+		e = Id( argv[1] );
+		if ( e.bad() ) {
+			e = cwe_;
+			firstField = 1;
+		} else {
+			firstField = 2;
+		}
+	}
+	// print( "[ " + eid2path( e ) + " ]" );
+	print( "[ " + e.path() + " ]" );
+	for ( int i = firstField; i < argc; i++ ) {
+		if ( strcmp( argv[i], "*") == 0 ) {
+			showAllFields( e, s );
+		} else { // get specific field here.
+			fieldValue_ = "";
+			//Shell::getField(conn, e, argv[i])
+			string field = argv[i];
+			map< string, string >::iterator iter = 
+				sliFieldNameConvert().find( e()->className() + "." + field );
+			if ( iter != sliFieldNameConvert().end() ) 
+				field = iter->second;
+				
+			send2< Id, string >( s(), requestFieldSlot, e, field );
+			if ( fieldValue_.length() > 0 ) {
+				sprintf( temp, "%-25s%s", field.c_str(), "= " );//printing the new field name 
+				print( temp + fieldValue_ );
+			} else {
+				cout << "'" << field << "' is not an element or the field of the working element\n";
+				return;
+			}
+		}
+	}
+}
+
+void do_le( int argc, const char** const argv, Id s )
+{
+	Element* e = s();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( e->data() );
+	gpw->doLe( argc, argv, s );
+}
+
+void GenesisParserWrapper::doLe( int argc, const char** argv, Id s )
+{
+	if ( argc == 1 ) { // Look in the cwe first.
+		send0( s(), requestCweSlot );
+		send1< Id >( s(), requestLeSlot, cwe_ );
+	} else if ( argc >= 2 ) {
+		// Id e = path2eid( argv[1], s );
+		Id e( argv[1] );
+		/// \todo: Use better test for a bad path than this.
+		if ( e.bad() ) {
+			print( string( "cannot find object '" ) + argv[1] + "'" );
+			return;
+		}
+		send1< Id >( s(), requestLeSlot, e );
+	}
+	vector< Id >::iterator i = elist_.begin();
+	// This operation should really do it in a parallel-clean way.
+	/// \todo If any children, we should suffix the name with a '/'
+	for ( i = elist_.begin(); i != elist_.end(); i++ )
+		print( ( *i )()->name() );
+	elist_.resize( 0 );
+}
+
+void do_pwe( int argc, const char** const argv, Id s )
+{
+	// Here we need to wait for the shell to service this message
+	// request and put the requested value in the local cwe_.
+	send0( s(), requestCweSlot );
+	// print it out.
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data() );
+	gpw->printCwe();
+}
+
+/*
+void GenesisParserWrapper::doPwe( int argc, const char** argv, Id s )
+{
+	send0( s(), requestCweSlot );
+	// Here we need to wait for the shell to service this message
+	// request and put the requested value in the local cwe_.
+	
+	// print( GenesisParserWrapper::eid2path( cwe_ ) );
+	print( cwe_.path() );
+}
+*/
+
+void GenesisParserWrapper::printCwe()
+{
+	print( cwe_.path() );
+}
+
+void do_listcommands( int argc, const char** const argv, Id s )
+{
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data() );
+	gpw->listCommands( );
+}
+
+void do_listobjects( int argc, const char** const argv, Id s )
+{
+	;// s->listClassesFuncLocal( );
+}
+
+void do_echo( int argc, const char** const argv, Id s )
+{
+	// vector< string > vec;
+	int options = 0;
+	if ( argc > 1 && strncmp( argv[ argc - 1 ], "-n", 2 ) == 0 ) {
+		options = 1; // no newline
+		argc--;
+	}
+
+	string temp = "";
+	for (int i = 1; i < argc; i++ ) {
+		temp = temp + argv[i];
+		if ( i < argc - 1 )
+			temp = temp + " ";
+	}
+
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data() );
+	gpw->print( temp, options );
+
+	/*
+	for (int i = 1; i < argc; i++ )
+		vec.push_back( argv[i] );
+		*/
+
+	// s->echoFuncLocal( vec, options );
+}
+
+void do_tab2file( int argc, const char** const argv, Id s )
+{
+	if ( argc < 4 ) {
+		cout << argv[0] << ": Too few command arguments\n";
+		cout << "usage: " << argv[0] << " file-name element table -table2 table -table3 table -mode mode -nentries n -overwrite\n\n";
+		cout << "mode can be y, xy, alpha, beta, tau, minf index. 'y' is default\n";
+		return;
+	}
+	string fname = argv[1];
+	string elmname = argv[2];
+	string tabname = argv[3];
+
+	// Here we will later have to put in checks for tables on channels.
+	// Also lots of options remain.
+	// For now we just call the print command on the interpol
+	// Id e = GenesisParserWrapper::path2eid( elmname, s );
+	Id e( elmname );
+	if ( !e.zero() && !e.bad() )
+		send3< Id, string, string >( s(),
+			setFieldSlot, e, "print", fname );
+	else
+		cout << "Error: " << argv[0] << ": element not found: " <<
+				elmname << endl;
+}
+
+/**
+ * Utility function for returning an empty argv list
+ */
+char** NULLArgv()
+{
+	char** argv = (char** )malloc( sizeof( char* ) );
+	argv[0] = 0;
+	return argv;
+}
+
+/**
+ * This returns a space-separated list of individual element paths
+ * generated from the wildcard list of the 'path' argument.
+ * The path argument can be a comma-separated series of individual
+ * element paths, or wildcard paths.
+ * There is no guarantee about ordering of the result.
+ * There is a guarantee about there being no repeats.
+ *
+ * The original GENESIS version has additional arguments
+ * 	-listname listname'
+ * which I have no clue about and have not implemented.
+ */
+char** do_element_list( int argc, const char** const argv, Id s )
+{
+	static string space = " ";
+	if ( argc != 2 ) {
+		cout << "usage:: " << argv[0] << " path\n";
+		return NULLArgv();
+	}
+	string path = argv[1];
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data() );
+	return gpw->elementList( path, s );
+
+	// return copyString( s->getmsgFuncLocal( field, options ) );
+//	return copyString( ret.c_str() );
+}
+/**
+ * Allocates and returns an array of char* for the element list
+ * entries, just like the old GENESIS sim_list.c::do_construct_list
+ * function. There too I did not know how the list was supposed to be
+ * freed.
+ */
+char** GenesisParserWrapper::elementList( const string& path, Id s)
+{
+ 	//Shell::getWildCardList(conn, path, 0(ordered))
+ 	send2< string, bool >( s(), requestWildcardListSlot, path, 0 );
+	// bool first = 1;
+	vector< Id >::iterator i;
+	// Need to use old-style allocation because the genesis parser 
+	// just might free it in the old style.
+	if ( elist_.size() == 0 )
+		return( NULLArgv() );
+	char** ret = ( char** )calloc( elist_.size() + 1, sizeof( char * ) );
+	char** j = ret;
+	for ( i = elist_.begin(); i != elist_.end(); i++ ) {
+		*j++ = copyString( i->path().c_str() );
+		/*
+		if ( first )
+			ret = i->path(); // ret = eid2path( *i );
+		else
+			ret = ret + " " + i->path();
+			// ret = ret + " " + eid2path( *i );
+		first = 0;
+		*/
+	}
+	return ret;
+}
+
+/**
+ * This really sets up the scheduler to keep track of all specified
+ * objects in the wildcard, including those created after this command
+ * was issued. Here we fudge it using the same functionality of
+ * useclock.
+ */
+void do_addtask( int argc, const char** const argv, Id s )
+{
+	if (argc != 5 ) {
+		cout << "usage:: " << argv[0] << " Task path -action action\n";
+		return;
+	}
+	string action;
+	if ( strcmp( argv[4], "INIT" ) == 0 )
+		action = "init";
+	else if ( strcmp( argv[4], "PROCESS" ) == 0 )
+		action = "process";
+	else {
+		cout << "Error:: " << argv[0] << ": action " << argv[4] <<
+				" not known\n";
+		return;
+	}
+
+	const char* nargv[] = { argv[0], argv[2], "0", action.c_str() };
+	do_useclock( 4, nargv, s );
+	// for useclock the args are:
+	// cout << "usage:: " << argv[0] << " path clockNum [funcname]\n";
+}
+
+// Extracts the global values for the readcell parameters if defined.
+void GenesisParserWrapper::getReadcellGlobals( 
+	vector< double >& globalParms )
+{
+	globalParms.resize( 0 );
+	globalParms.resize( 5, 0.0 );
+
+	Result *rp;
+	Symtab* GlobalSymbols = getGlobalSymbols();
+
+	rp=SymtabLook(GlobalSymbols,"CM");
+	if (rp)
+		globalParms[0] = GetScriptDouble("CM");
+		
+	rp=SymtabLook(GlobalSymbols,"RM");
+	if (rp)
+		globalParms[1] = GetScriptDouble("RM");
+		
+	rp=SymtabLook(GlobalSymbols,"RA");
+	if (rp)
+		globalParms[2] = GetScriptDouble("RA");
+		
+	rp=SymtabLook(GlobalSymbols,"EREST_ACT");
+	if (rp)
+		globalParms[3] = GetScriptDouble("EREST_ACT");
+		
+	rp=SymtabLook(GlobalSymbols,"ELEAK");
+	if (rp)
+		globalParms[4] = GetScriptDouble("ELEAK");
+	else
+		globalParms[4] = globalParms[3];
+}
+
+void do_readcell( int argc, const char** const argv, Id s )
+{
+	if (argc != 3 ) {
+		cout << "usage:: " << argv[0] << " filename cellpath\n";
+		return;
+	}
+
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data() );
+	vector< double > globalParms;
+	gpw->getReadcellGlobals( globalParms );
+
+
+	string filename = argv[1];
+	string cellpath = argv[2];
+
+ 	send3< string, string, vector< double > >( 
+		s(), readCellSlot, filename, cellpath, globalParms );
+}
+
+Id findChanGateId( int argc, const char** const argv, Id s ) 
+{
+	assert( argc >= 3 );
+	// In MOOSE we only have tabchannels with gates, more like the
+	// good old tabgates and vdep_channels. Functionally equivalent,
+	// and here we merge the two cases.
+	
+	string gate = argv[1];
+	string type = "";
+	if ( argv[2][0] == 'X' )
+			type =  "xGate";
+	else if ( argv[2][0] == 'Y' )
+			type = "yGate";
+	else if ( argv[2][0] == 'Z' )
+			type = "zGate";
+	// Id gateId = GenesisParserWrapper::path2eid( gate, s );
+	
+	gate = gate + "/" + type;
+	Id gateId( gate );
+	if ( gateId.bad() ) {// Don't give up, it might be a tabgate or might not have been created
+		Id id = Id( argv[1] );
+		Element *el = id();
+		
+		if ( el->className() == "HHGate" )
+			gateId = id;
+		else if ( el->className() == "HHChannel" ) {
+			if (type != "") {
+				send3< string, string, Id >( s(),
+					createSlot, "HHGate", type, id );
+				gateId = Id(gate);
+			}
+			else
+				; // error
+		}
+	}
+	
+	if ( gateId.bad() ) { // Now give up
+			cout << "Error: findChanGateId: unable to find channel/gate '" << argv[1] << "/" << argv[2] << endl;
+			return gateId;
+	}
+	return gateId;
+}
+
+void setupChanFunc( int argc, const char** const argv, Id s, 
+				unsigned int slot )
+{
+	if (argc < 13 ) {
+		cout << "usage:: " << argv[0] << " channel-element gate AA AB AC AD AF BA BB BC BD BF -size n -range min max\n";
+		return;
+	}
+
+	Id gateId = findChanGateId( argc, argv, s );
+	if ( gateId.bad() )
+			return;
+
+	vector< double > parms;
+	parms.push_back( atof( argv[3] ) ); // AA
+	parms.push_back( atof( argv[4] ) ); // AB
+	parms.push_back( atof( argv[5] ) ); // AC
+	parms.push_back( atof( argv[6] ) ); // AD
+	parms.push_back( atof( argv[7] ) ); // AF
+	parms.push_back( atof( argv[8] ) ); // BA
+	parms.push_back( atof( argv[9] ) ); // BB
+	parms.push_back( atof( argv[10] ) ); // BC
+	parms.push_back( atof( argv[11] ) ); // BD
+	parms.push_back( atof( argv[12] ) ); // BF
+
+	double size = 3000.0;
+	double min = -0.100;
+	double max = 0.050;
+	int nextArg;
+	if ( argc >=15 ) {
+		if ( strncmp( argv[13], "-s", 2 ) == 0 ) {
+			size = atof( argv[14] );
+			nextArg = 15;
+		} else {
+			nextArg = 13;
+		}
+
+		if ( strncmp( argv[nextArg], "-r", 2 ) == 0 ) {
+			if ( argc == nextArg + 3 ) {
+				min = atof( argv[nextArg + 1] );
+				max = atof( argv[nextArg + 2] );
+			}
+		}
+	}
+	parms.push_back( size );
+	parms.push_back( min );
+	parms.push_back( max );
+
+ 	send2< Id, vector< double > >( s(), slot, gateId, parms );
+}
+
+
+void do_setupalpha( int argc, const char** const argv, Id s )
+{
+	setupChanFunc( argc, argv, s, setupAlphaSlot );
+}
+
+void do_setuptau( int argc, const char** const argv, Id s )
+{
+	setupChanFunc( argc, argv, s, setupTauSlot );
+}
+
+void tweakChanFunc( int argc, const char** const argv, Id s, 
+				unsigned int slot )
+{
+	if (argc < 3 ) {
+		cout << "usage:: " << argv[0] << " channel-element gate\n";
+		return;
+	}
+
+	Id gateId = findChanGateId( argc, argv, s );
+	if ( gateId.bad() )
+			return;
+
+ 	send1< Id >( s(), slot, gateId );
+}
+
+void do_tweakalpha( int argc, const char** const argv, Id s )
+{
+	tweakChanFunc( argc, argv, s, tweakAlphaSlot );
+}
+
+void do_tweaktau( int argc, const char** const argv, Id s )
+{
+	tweakChanFunc( argc, argv, s, tweakTauSlot );
+}
+
+void do_setupgate( int argc, const char** const argv, Id s ) 
+{
+	if (argc < 8 ) {
+		cout << "usage:: " << argv[0] << " channel-element table A B C D F -size n -range min max -noalloc\n";
+		return;
+	}
+
+	Id gateId = findChanGateId( argc, argv, s );
+	if ( gateId.bad() ) {
+		cout << "Error: " << argv[0] << ": Could not find gate " <<
+			argv[1] << "." << argv[2] << endl;
+			return;
+	}
+
+	vector< double > parms;
+	parms.push_back( atof( argv[3] ) ); // A
+	parms.push_back( atof( argv[4] ) ); // B
+	parms.push_back( atof( argv[5] ) ); // C
+	parms.push_back( atof( argv[6] ) ); // D
+	parms.push_back( atof( argv[7] ) ); // F
+
+	double size = 3000.0;
+	double min = -0.100;
+	double max = 0.050;
+	int nextArg;
+	if ( argc >=10 ) {
+		if ( strncmp( argv[8], "-s", 2 ) == 0 ) {
+			size = atof( argv[9] );
+			nextArg = 10;
+		} else {
+			nextArg = 8;
+		}
+
+		if ( strncmp( argv[nextArg], "-r", 2 ) == 0 ) {
+			if ( argc == nextArg + 3 ) {
+				min = atof( argv[nextArg + 1] );
+				max = atof( argv[nextArg + 2] );
+			}
+		}
+	}
+	parms.push_back( size );
+	parms.push_back( min );
+	parms.push_back( max );
+
+	if ( strcmp( argv[2], "beta" ) == 0 ) {
+		parms.push_back( 1.0 );
+	} else if ( strcmp( argv[2], "alpha" ) == 0 ) {
+		parms.push_back( 0.0 );
+	} else if ( strcmp( argv[2], "table" ) == 0 ) {
+		cout << "Warning: " << argv[0] << ": Moose cannot yet handle tables: " <<
+			argv[1] << "." << argv[2] << endl;
+			return;
+	} else {
+		cout << "Error: " << argv[0] << ": Could not find gate " <<
+			argv[1] << "." << argv[2] << endl;
+			return;
+	}
+
+ 	send2< Id, vector< double > >( s(), setupGateSlot, gateId, parms );
+}
+
+/**
+ * Equivalent to simdump
+ */
+void doWriteDump( int argc, const char** const argv, Id s )
+{
+	if (argc < 3 ) {
+		cout << "usage:: " << argv[0] << " file -path path -all\n";
+		return;
+	}
+
+	bool doAll = 0;
+	string filename = argv[1];
+	string path = "";
+	for ( int i = 2; i < argc; i++ ) {
+		if ( strncmp( argv[i], "-p", 2 ) == 0 ) {
+			if ( argc > i + 1 ) {
+				i++;
+				if ( path.length() == 0 )
+					path = argv[ i ];
+				else
+					path = path + "," + argv[ i ];
+			}
+		}
+		if ( strncmp( argv[i], "-a", 2 ) == 0 ) {
+			doAll = 1;
+		}
+	}
+	if ( doAll )
+	path = "/##";
+	send2< string, string >( s(), writeDumpFileSlot, filename, path );
+}
+
+/**
+ * The simdump command. Here we just munge all args into one big
+ * string to send to the shell
+ */
+void doSimUndump( int argc, const char** const argv, Id s )
+{
+	if (argc < 4 ) {
+		cout << "usage:: " << argv[0] << " object element ... x y z";
+		return;
+	}
+
+	string args = "";
+	for ( int i = 0; i < argc; i++ ) {
+		if ( args.length() == 0 ) {
+			args = argv[ i ];
+		} else {
+			string temp = argv[i];
+			if ( temp.find( " " ) == string::npos )
+				args = args + " " + temp;
+			else 
+				args = args + " \"" + temp + "\"";
+		}
+	}
+	send1< string >( s(), simUndumpSlot, args );
+}
+
+void doSimObjDump( int argc, const char** const argv, Id s )
+{
+	if (argc < 3 ) {
+		cout << "usage:: " << argv[0] << " object  -coords -default -noDUMP";
+		return;
+	}
+	bool coordsFlag = 0;
+	bool defaultFlag = 0;
+	bool noDumpFlag = 0;
+
+	string args = argv[0];
+	for ( int i = 1; i < argc; i++ ) {
+		if ( argv[i][0] == '-' ) {
+			if ( argv[i][1] == 'c' )
+				coordsFlag = 1;
+			if ( argv[i][1] == 'd' )
+				defaultFlag = 1;
+			if ( argv[i][1] == 'n' )
+				noDumpFlag = 1;
+			continue;
+		}
+		args = args + " " + argv[ i ];
+	}
+	if ( coordsFlag ) {
+		args = args + " x y z";
+	}
+	// At this point we don't handle default and noDump
+	send1< string >( s(), simObjDumpSlot, args );
+}
+
+/**
+ * New function, not present in GENESIS. Used when we want to treat
+ * the dumpfile as an isolated entity rather than as just another
+ * script file. Think of it as a counterpart of readcell.
+ */
+void doReadDump( int argc, const char** const argv, Id s )
+{
+	if (argc != 2 ) {
+		cout << "usage:: " << argv[0] << " file\n";
+		return;
+	}
+
+	string filename = argv[1];
+
+	send1< string >( s(), readDumpFileSlot, filename );
+}
+
+
+
+
+
+
+
+
+
+float do_exp( int argc, const char** const argv, Id s )
+{
+	if ( argc != 2 ) {
+; //		s->error( "exp: Too few command arguments\nusage: exp number" );
+		return 0.0;
+	} else {	
+		return exp( atof( argv[ 1 ] ) );
+	}
+}
+
+float do_log( int argc, const char** const argv, Id s )
+{
+	if ( argc != 2 ) {
+; //		s->error( "log: Too few command arguments\nusage: log number" );
+		return 0.0;
+	} else {	
+		return log( atof( argv[ 1 ] ) );
+	}
+}
+
+float do_log10( int argc, const char** const argv, Id s )
+{
+	if ( argc != 2 ) {
+; // 		s->error( "log10: Too few command arguments\nusage: log10 number" );
+		return 0.0;
+	} else {	
+		return log10( atof( argv[ 1 ] ) );
+	}
+}
+
+float do_sin( int argc, const char** const argv, Id s )
+{
+	if ( argc != 2 ) {
+		; // s->error( "sin: Too few command arguments\nusage: sin number" );
+		return 0.0;
+	} else {	
+		return sin( atof( argv[ 1 ] ) );
+	}
+}
+
+float do_cos( int argc, const char** const argv, Id s )
+{
+	if ( argc != 2 ) {
+		// s->error( "cos: Too few command arguments\nusage: cos number" );
+		return 0.0;
+	} else {	
+		return cos( atof( argv[ 1 ] ) );
+	}
+}
+
+float do_tan( int argc, const char** const argv, Id s )
+{
+	if ( argc != 2 ) {
+		// s->error( "tan: Too few command arguments\nusage: tan number" );
+		return 0.0;
+	} else {	
+		return tan( atof( argv[ 1 ] ) );
+	}
+}
+
+float do_sqrt( int argc, const char** const argv, Id s )
+{
+	if ( argc != 2 ) {
+		// s->error( "sqrt: Too few command arguments\nusage: sqrt number" );
+		return 0.0;
+	} else {	
+		return sqrt( atof( argv[ 1 ] ) );
+	}
+}
+
+float do_pow( int argc, const char** const argv, Id s )
+{
+	if ( argc != 3 ) {
+		// s->error( "pow: Too few command arguments\nusage: exp base exponent" );
+		return 0.0;
+	} else {	
+		return pow( atof( argv[ 1 ] ), atof( argv[ 2 ] ) );
+	}
+}
+
+float do_abs( int argc, const char** const argv, Id s )
+{
+	if ( argc != 2 ) {
+		// s->error( "abs: Too few command arguments\nusage: abs number" );
+		return 0.0;
+	} else {	
+		return fabs( atof( argv[ 1 ] ) );
+	}
+}
+
+char** doArgv( int argc, const char** const argv, Id s )
+{
+	return 0;
+}
+
+int doArgc( int argc, const char** const argv, Id s )
+{
+	return 0;
+}
+
+
+
+
+
+
+// Old GENESIS Usage: addfield [element] field-name -indirect element field -description text
+// Here we'll have a subset of it:
+// addfield [element] field-name -type field_type
+void do_addfield( int argc, const char** const argv, Id s )
+{
+/*	if ( argc == 2 ) {
+		// const char * nargv[] = { argv[0], ".", argv[1] };
+//		s->commandFuncLocal( 3, nargv );
+	} else if ( argc == 3 ) {
+		// s->commandFuncLocal( argc, argv );
+	} else if ( argc == 4 && strncmp( argv[2], "-f", 2 ) == 0 ) {
+		// const char * nargv[] = { argv[0], ".", argv[1], argv[3] };
+//		s->commandFuncLocal( 4, nargv );
+	} else if ( argc == 5 && strncmp( argv[3], "-f", 2 ) == 0 ) {
+		// const char * nargv[] = { argv[0], argv[1], argv[3], argv[4] };
+//		s->commandFuncLocal( 4, nargv );
+//	} else {
+		; // s->error( "usage: addfield [element] field-name -type field_type" );
+	}
+*/
+	string classname = argv[1];
+	string fieldname = argv[2];
+	send2<Id, string>(s(), addfieldSlot, Id(classname), fieldname);
+	
+}
+
+void do_loadtab ( int argc, const char** const argv, Id s )
+{
+	// cout << "in do_loadtab: argc = " << argc << endl;
+	string line = "";
+	for ( int i = 1 ; i < argc; i++ ) {
+		line.append( argv[i] );
+		line.append( " " );
+	}
+
+	send1< string >( s(), loadtabSlot, line );
+}
+
+void do_complete_loading( int argc, const char** const argv, Id s )
+{
+}
+
+void do_xshow ( int argc, const char** const argv, Id s )
+{
+	// s->error( "not implemented yet." );
+}
+
+void do_xhide ( int argc, const char** const argv, Id s )
+{
+	// s->error( "not implemented yet." );
+}
+
+void do_xshowontop ( int argc, const char** const argv, Id s )
+{
+	// s->error( "not implemented yet." );
+}
+
+void do_xupdate ( int argc, const char** const argv, Id s )
+{
+	// s->error( "not implemented yet." );
+}
+
+void do_xcolorscale ( int argc, const char** const argv, Id s )
+{
+	// s->error( "not implemented yet." );
+}
+
+void do_x1setuphighlight ( int argc, const char** const argv, Id s )
+{
+	// s->error( "not implemented yet." );
+}
+
+void do_xsendevent ( int argc, const char** const argv, Id s )
+{
+	//s->error( "not implemented yet." );
+}
+
+void do_xps ( int argc, const char** const argv, Id s ){
+	cout << "Not yet implemented!!" << endl;
+}
+
+void do_createmap(int argc, const char** const argv, Id s){
+//#define DEBUG
+	//createmap source dest 
+	//	Nx Ny 
+	//	-delta dx dy 
+	//	-origin x y
+	//	-object
+	
+	const char* source, *dest;
+	int Nx, Ny;
+	double dx, dy;
+	double xorigin, yorigin;
+	bool object = false;
+	vector <double> parameter;
+	
+	//if (argc != 11 && argc != 12) {/*error*/;}
+	
+	source = argv[1];
+	dest = argv[2];
+	Nx = atoi(argv[3]);
+	Ny = atoi(argv[4]);
+	
+	for(int i = 0; i < argc; i++){
+		if (strcmp(argv[i], "-delta") == 0){
+		if (i+2 >= argc) {/*error*/}
+		dx = atof(argv[i+1]);
+		dy = atof(argv[i+2]);
+		}	
+		else if (strcmp(argv[i], "-origin") == 0){
+			if (i+2 >= argc) {/*error*/}
+			xorigin = atof(argv[i+1]);
+			yorigin = atof(argv[i+2]);
+		}
+		else if (strcmp(argv[i], "-object") == 0){
+			object = true;
+		}
+	}
+	
+#ifdef DEBUG
+	cout << source << endl;
+	cout << dest << endl;
+	cout << Nx << " " << Ny << endl;
+	cout << dx << " " << dy << endl;
+	cout << xorigin << " " << yorigin << endl;
+	cout << object << endl;
+#endif //DEBUG
+	parameter.push_back(Nx);
+	parameter.push_back(Ny);
+	parameter.push_back(dx);
+	parameter.push_back(dy);
+	parameter.push_back(xorigin);
+	parameter.push_back(yorigin);
+	
+	string parent = dest;	
+	Id pa(parent);
+	if ( pa.bad()){
+		string headpath = Shell::head( dest, "/" );
+		//cout << "'" << headpath << "'" << endl;
+		Id head(headpath);
+		if (head.bad()){
+			cout << "'" << headpath  << "'" << " is not defined."  << dest << "." << endl;
+			return;
+		}
+		send3< string, string, Id >( s(),
+			createSlot, "Neutral", Shell::tail(dest, "/"), head );
+	}
+	if (object){
+		string className = source;
+		if ( !Cinfo::find( className ) )  {
+			/*WORK*/
+			map< string, string >::iterator i = 
+				sliClassNameConvert().find( argv[1] );
+			if ( i != sliClassNameConvert().end() ) {
+				className = i->second;
+				if ( className == "Sli" ) {
+					// We bail out of these classes as MOOSE does not
+					// yet handle them.
+					cout << "Do not know how to handle class: " << 
+							className << endl;
+					return;
+				}
+			} else {
+				cout << "GenesisParserWrapper::do_create: Do not know class: " << className << endl;
+				return;
+			}
+		}
+		//string name = Shell::tail(dest, "/");
+		string name;
+		if (className == "Neutral") {name = "proto";}
+		else name = source;
+		if ( name.length() < 1 ) {
+			cout << "Error: invalid object name : " << name << endl;
+			return;
+		}
+		//string parent = Shell::head( argv[2], "/" );
+		
+		pa = Id(parent);
+		if (pa.bad()) cout << "Too bad" <<endl;
+		//Shell::staticCreateArray( conn, className, name, pa, n )
+		send4< string, string, Id, vector <double> >( s(),
+		createArraySlot, className, name, pa, parameter );
+	}
+	else{
+		string name;
+		Id e;
+		Id pa;
+		if ( parseCopyMove( 3, argv, s, e, pa, name ) ) {
+			//Shell::copy(conn, e, pa, name);
+			send4< Id, Id, string, vector <double> >( s(), copyIntoArraySlot, e, pa, name, parameter );
+		}
+	}
+	//src = src_list[0];
+	//dst = dst_list[0];
+	
+	
+}
+
+void do_planarconnect( int argc, const char** const argv, Id s )
+{
+/*
+source-path dest-path -relative -sourcemask {box,ellipse} x1 y1 x2 y2 -sourcehole {box,ellipse} x1 y1 x2 y2 -destmask {box,ellipse} x1 y1 x2 y2 -desthole {box,ellipse} x1 y1 x2 y2 -probability p
+planarconnect / dest-path -relative -sourcemask box -1 -1 1 1 -destmask box 1 1 2 2 -probability 0.5
+*/
+	string source, dest;
+	source = argv[1];
+	dest = argv[2];
+	double probability = 0;
+	for (int i = 3; i < argc; i++ ){
+		if (strcmp(argv[i], "-probability") == 0 && (argc != i+1))
+			probability = atof(argv[i+1]);
+	}
+	//Shell::planarconnect(conn, source, dest, probability)
+	send3<string, string, double>(s(), planarconnectSlot, source, dest, probability);
+	//GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >( e->data() );
+	//return gpw->doPlanarConnect( argc, argv, s );
+	
+}
+
+void do_planardelay( int argc, const char** const argv, Id s )
+{
+	if (argc < 3){
+		cout << "usage:: planardelay <srcelements> -fixed <delay>" << endl;
+		return;
+	}	
+	string source;
+	source = argv[1];
+	//check whether argv[2] is proper float
+	double delay = atof(argv[3]);
+	send2<string, double>(s(), planardelaySlot, source, delay);
+}
+
+void do_planarweight( int argc, const char** const argv, Id s )
+{
+	if (argc < 3){
+		cout << "usage:: planarweight <srcelements> -fixed <weight>" << endl;
+		return;
+	}
+	string source;
+	source = argv[1];
+	//check whether argv[2] is proper float
+	double weight = atof(argv[3]);
+	send2<string, double>(s(), planarweightSlot, source, weight);
+}
+
+int do_getsyncount( int argc, const char** const argv, Id s )
+{
+	vector <Conn> conn;
+	if (argc == 3){
+		Element* src = Id(argv[1])();
+		Element* dst = Id(argv[2])();
+		if (!(src->className () == "SpikeGen" && dst->className() == "SynChan")){
+			cout << "getsyncount:: The elements' class types are not matching" << endl;
+			return 0;
+		}
+		src->findFinfo("event")->outgoingConns(src, conn);
+		unsigned int count = 0;
+		for(size_t i = 0; i < conn.size(); i++){
+			if(conn[i].targetElement() == dst)
+				count++;
+		}
+		return count;
+	}
+	else if (argc == 2){
+		Element* dest = Id(argv[1])();
+		if (dest->className() != "SynChan"){
+			cout << "getsyncount:: The src element is not of type SynChan." << endl;
+			return 0;
+		}
+		send1 <Id> (s(), getSynCountSlot, dest->id());
+		GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data() );
+		string value = gpw->getFieldValue();
+		int numSynapses = atoi(value.c_str());
+		return numSynapses;
+	}
+	return 0;
+	//send2<string, string>(s(), planarweightSlot, source, dest);
+}
+
+char* do_getsynsrc( int argc, const char** const argv, Id s ){
+//getsynsrc <postsynaptic-element> <index>
+	if (argc != 3) {
+		cout << "usage:: getsynsrc <postsynaptic-element> <index>" << endl;
+		string s = "";
+		return copyString(s.c_str()); 
+	}
+	vector <Conn> conn;
+	string ret = "";
+	Element *dst = Id(argv[1])();
+	if (dst->className() != "SynChan"){
+		cout << "getsynsrc:: The element's type is not matching"<< endl;
+		string s = "";
+		return copyString(s.c_str()); 
+	}
+	dst->findFinfo("synapse")->incomingConns(dst, conn);
+	unsigned int index = atoi(argv[2]);
+	if (index >= conn.size()){/*error*/}
+	Element *src = conn[index].targetElement();
+	ret = src->id().path();
+	return copyString(ret.c_str());
+}
+
+
+char* do_getsyndest( int argc, const char** const argv, Id s ){
+//getsynsrc <presynaptic-element> <index>
+	if (argc != 3) {
+		cout << "usage:: getsynsrc <presynaptic-element> <index>" << endl;
+		string s = "";
+		return copyString(s.c_str()); 
+	}
+	vector <Conn> conn;
+	string ret = "";
+	Element *src = Id(argv[1])();
+	if (src->className() != "SpikeGen"){
+		cout << "getsyndest:: The element's type is not matching"<< endl;
+		string s = "";
+		return copyString(s.c_str()); 
+	}
+	src->findFinfo("event")->outgoingConns(src, conn);
+	unsigned int index = atoi(argv[2]);
+	if (index >= conn.size()){/*error*/}
+	Element *dst = conn[index].targetElement();
+	ret = dst->id().path();
+	return copyString(ret.c_str());
+}
+
+int do_getsynindex( int argc, const char** const argv, Id s ){
+//getsynsrc <presynaptic-element> <postsynaptic-element> [-number n]
+	if (argc != 3) {
+		cout << "usage:: getsynsrc <presynaptic-element> <postsynaptic-element> [-number n]" << endl;
+		return -1; 
+	}
+	vector <Conn> conn;
+	Element *src = Id(argv[1])();
+	Element *dst = Id(argv[2])();
+	if (src == 0 || dst == 0){
+		cout << "Wrong paths!!" << endl;
+		return -1;
+	}
+	if (!(src->className() == "SpikeGen" && dst->className() == "SynChan")){
+		cout << "getsynindex:: The elements' type is not matching"<< endl;
+		return 0;
+	}
+	src->findFinfo("event")->outgoingConns(src, conn);
+	for(size_t i = 0; i < conn.size(); i++){
+		if (conn[i].targetElement() == dst){
+			return i;
+		}
+	}
+	return -1;
+}
+
+int do_strcmp(int argc, const char** const argv, Id s ){
+	if (argc != 3){
+		cout << "usage:: strcmp <str1> <str2>" << endl;
+		return 0;
+	}
+	return strcmp(argv[1], argv[2]);
+}
+
+int do_strlen(int argc, const char** const argv, Id s ){
+	if (argc != 2){
+		cout << "usage:: strlen <str>" << endl;
+		return 0;
+	}
+	return strlen(argv[1]);
+}
+
+char* do_strcat(int argc, const char** const argv, Id s ){
+	if (argc != 3){
+		cout << "usage:: strcat <str1> <str2>" << endl;
+		return 0;
+	}
+	string str1 = argv[1];
+	string str2 = argv[2];
+	string concat = str1 + str2;
+	return copyString(concat.c_str());
+}
+
+char* do_substring(int argc, const char** const argv, Id s ){
+	if (argc < 3 || argc > 4){
+		cout << "usage:: substring <str1> <start> <end>" << endl;
+		return 0;
+	}
+	string str = argv[1];
+	//check whether argv[2] and argv[3] are in correct format
+	size_t start = atoi(argv[2]);
+	size_t end = str.size();
+	if (argc == 4) 
+		end = atoi(argv[3]);
+	if (start > end){
+		cout << "You cannot start after end" << endl;
+		return 0;
+	}
+	if (start > str.size() || end > str.size()){
+		cout << "You string has only " << str.size() << " chars"  << endl;
+	}
+	string substr = str.substr(start, end);	
+	return copyString(substr.c_str());
+}
+
+char* do_getpath(int argc, const char** const argv, Id s ){
+	if ( argc != 3 ) {
+		cout << "usage:: " << argv[0] << " path -tail -head" << endl;
+		return 0;
+	}
+	bool doHead = 0;
+	if ( strncmp( argv[2], "-t", 2 ) == 0 )
+		doHead = 0;
+	else if ( strncmp( argv[2], "-h", 2 ) == 0 )
+		doHead = 1;
+	else {
+		cout << "usage:: " << argv[0] << " path -tail -head" << endl;
+		return 0;
+	}
+	string path = argv[1];
+	string::size_type pos = path.find_last_of( "/" );
+
+	if (pos == string::npos ) {
+		if ( doHead ) 
+			return copyString( "" );
+		else
+			return copyString( argv[1] );
+	}
+
+	/*
+	if ( pos == path.length() - 1 ) {
+		if ( doHead ) 
+			return copyString( argv[1] );
+		else
+			return copyString( "" );
+	}
+	*/
+	
+	string temp;
+	if ( doHead )
+		temp = path.substr( 0, pos + 1 );
+	else
+		temp = path.substr( pos + 1 );
+
+	return copyString( temp.c_str() );
+}
+
+ 
+int do_findchar(int argc, const char** const argv, Id s ){
+	if (argc != 3){
+		cout << "usage:: strcmp <str> <char>" << endl;
+		return 0;
+	}
+	string str1 = argv[1];
+	string str2 = argv[2];
+	size_t pos = str1.find(str2, 0); 	
+	if (pos == string::npos)
+		pos = -1;
+	return pos;
+}
+/*
+Function: opens file
+Question: Where will the file handle go?
+*/
+
+void do_openfile(int argc, const char** const argv, Id s){
+	if ( argc != 3 ){
+		cout << "usage:: openfile <filename> <mode>" << endl;
+		return;
+	}
+	string filename = argv[1];
+	string mode = argv[2];
+	send2<string, string>(s(), openFileSlot, filename, mode);
+}
+
+void do_writefile(int argc, const char** const argv, Id s){
+	//writefile <filename> text
+	if ( argc < 2 ) {
+		cout << "Too less arguments" << endl;
+		return;
+	}
+	bool newline = true;
+	bool userformat = false;
+	string format = "%s";
+	int max = argc;
+	for (int i = 2; i < argc; i++){
+		if (strcmp(argv[i], "-nonewline") == 0){
+			newline = false;
+			if (max > i) 
+				max = i;
+		}
+		if (strcmp(argv[i], "-format") == 0){
+			if (i+1 >= argc){
+				cout << "writefile::format not mentioned." << endl;
+				continue;
+			}
+			userformat = true;
+			format = argv[i+1];
+			if (max > i)
+				max = i;
+			i++;
+		}
+	}
+	
+	
+	string filename = argv[1];
+	string text = "";
+	for ( int i = 2; i < max; i++ ){ 
+		char e[100];
+		sprintf(e, format.c_str(), argv[i]);
+		text = text + e;
+		if (!userformat && i < max - 1)
+			text = text + " ";
+	}
+	if (newline)
+		text = text + "\n";
+	send2 < string, string > ( s(), writeFileSlot, filename, text );
+}
+
+
+void do_closefile(int argc, const char** const argv, Id s){
+	if ( argc != 2 ){
+		cout << "usage:: openfile <filename>" << endl;
+	}
+	string filename = argv[1];
+	send1< string > ( s(), closeFileSlot, filename );
+}
+
+void do_listfiles(int argc, const char** const argv, Id s){
+	if ( argc != 1 ){
+		cout << "usage:: openfile <filename> <mode>" << endl;
+	}
+	send0( s(), listFilesSlot );
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data() );
+	cout << gpw->getFieldValue();	
+}
+
+string GenesisParserWrapper::getFieldValue(){
+	return fieldValue_;
+}
+
+char* do_readfile(int argc, const char** const argv, Id s){
+	if ( argc < 2 ){
+		cout << "usage:: readfile <filename> -linemode" << endl;
+		return 0;
+	}
+	string filename = argv[1];
+	bool linemode = false;
+	if (argc == 3)
+		if (strcmp(argv[2], "-linemode") == 0) 
+			linemode = true;
+	send2< string , bool > ( s(), readFileSlot, filename, linemode );
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data() );
+	string text = "" + gpw->getFieldValue();
+	return copyString(text.c_str());
+}
+
+char* do_getarg( int argc, const char** const argv, Id s ){
+	if ( !( argc >= 2  && strcmp(argv[argc-1], "-count") == 0) &&
+		!( argc >= 3  && strcmp(argv[argc-2], "-arg") == 0 ) ){
+		cout << "usage:: getarg <list of argument> <-count OR -arg #>" << endl;
+		return 0;
+	}
+	if ( strcmp(argv[argc-1], "-count") == 0 ){
+		char e[5];
+		sprintf(e, "%d", argc-2);
+		return strdup(e);
+	}
+	if ( strcmp(argv[argc-2], "-arg") == 0 ){
+		// check whether argv[argc -1] is a number
+		int index = atoi(argv[argc-1]);
+		if (index > argc-2){
+			cout << "getarg:: Improper index" << endl;
+			return 0;
+		}
+		return strdup(argv[index]);
+	}
+	return 0;
+}
+
+int do_randseed( int argc, const char** const argv, Id s ){
+	if (argc == 1){
+		return static_cast <int> (mtrand()*294967296);
+	}
+	if (argc == 2){
+		//check whether argv[1] is an int in string!!
+		int seed = atoi(argv[1]);
+		//copied the error message from genesis
+		cout << "WARNING from init_rng: changing global seed value! Independence of streams is not guaranteed" << endl;
+		mtseed(seed);
+		return 0;
+	}
+	cout << "usage:: randseed [seed]" << endl;
+	return 0;
+}
+
+float do_rand( int argc, const char** const argv, Id s ){
+	if (argc != 3){
+		cout << "usage:: rand <lo> <hi>" << endl;
+		return 0;
+	}
+	//check whether argv[1] and argv[2] are in proper formats
+	double lo = atof(argv[1]);
+	double hi = atof(argv[2]);
+	//return lo + rand()*(hi - lo)/RAND_MAX;
+	return lo + mtrand()*(hi - lo);
+}
+
+void do_disable( int argc, const char** const argv, Id s ){
+	cout << "disable not yet implemented!!" << endl;
+}
+
+void do_setup_table2( int argc, const char** const argv, Id s ){
+	cout << "setup_table2 not yet implemented!!" << endl;
+}
+
+int do_INSTANTX(int argc, const char** const argv, Id s ){
+	if (argc != 1){
+		cout << "Error:: INSTANTX is a constant" << endl;
+	}
+	return 1;
+}
+
+int do_INSTANTY(int argc, const char** const argv, Id s ){
+	if (argc != 1){
+		cout << "Error:: INSTANTY is a constant" << endl;
+	}
+	return 2;
+}
+
+
+int do_INSTANTZ(int argc, const char** const argv, Id s ){
+	if (argc != 1){
+		cout << "Error:: INSTANTZ is a constant" << endl;
+	}
+	return 4;
+}
+
+void do_floatformat(int argc, const char** const argv, Id s ){
+	char *format;
+	char formtype;
+	
+	if (argc != 2){
+		cout << "usage::floatformat format-string"<< endl;
+		return;
+	}
+	
+	format = strdup(argv[1]);
+	formtype = format[strlen(format)-1];
+
+	if (format[0] != '%' || strrchr(format, '%') != format ||
+	    (formtype != 'f' && formtype != 'g')) {
+		cout << "\texample : floatformat %%0.5g" << endl;
+		printf("\tonly f and g formats are allowed\n");
+		return;
+	}
+
+	set_float_format(format);
+}
+
+float do_getstat(int argc, const char** const argv, Id s )
+{
+	send0( s(), requestCurrentTimeSlot );
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data() );
+	double ret = atof( gpw->getFieldValue().c_str() );	
+	return static_cast< float >( ret );
+}
+
+void do_showstat(int argc, const char** const argv, Id s )
+{
+	float time = do_getstat( argc, argv, s );
+	cout << "current simulation time = " << time << endl;
+}
+
+void do_help(int argc, const char** const argv, Id s ){
+	if (argc == 1){
+		cout << "For info on a particular command, type help <commandname>" << endl;
+		return;
+	}
+	char filename[40];
+	sprintf(filename, "../DOCS/documentation/%s.txt", argv[1]);
+	cout << filename << endl;
+	string line;
+	ifstream docfile("eval.cpp");
+	if (docfile.is_open()){
+		while (! docfile.eof() ){
+			getline (docfile,line);
+			cout << line << endl;
+		}
+    		docfile.close();
+	}
+	else {
+		cout << "Help not present for this command." << endl;
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////
+// GenesisParserWrapper load command
+//////////////////////////////////////////////////////////////////
+
+void GenesisParserWrapper::loadBuiltinCommands()
+{
+	AddFunc( "addmsg", do_add, "void" );
+	AddFunc( "deletemsg", do_drop, "void" );
+	AddFunc( "setfield", do_set, "void" );
+	AddFunc( "getfield", reinterpret_cast< slifunc >( do_get ), "char*" );
+	AddFunc( "getmsg", reinterpret_cast< slifunc >( do_getmsg ), "char*" );
+	AddFunc( "showmsg", do_showmsg, "void" );
+	AddFunc( "call", do_call, "void" );
+	AddFunc( "isa", reinterpret_cast< slifunc >( do_isa ), "int" );
+	AddFunc( "exists", reinterpret_cast< slifunc >( do_exists ), "int");
+	AddFunc( "showfield", do_show, "void" );
+	AddFunc( "create", do_create, "void" );
+	AddFunc( "delete", do_delete, "void" );
+	AddFunc( "move", do_move, "void" );
+	AddFunc( "copy", do_copy, "void" );
+	AddFunc( "copy_shallow", do_copy_shallow, "void" );
+	AddFunc( "copy_halo", do_copy_halo, "void" );
+	AddFunc( "ce", do_ce, "void" );
+	AddFunc( "pushe", do_pushe, "void" );
+	AddFunc( "pope", do_pope, "void" );
+	AddFunc( "addalias", do_alias, "void" );
+	AddFunc( "alias", do_alias, "void" );
+	AddFunc( "quit", do_quit, "void" );
+	AddFunc( "stop", do_stop, "void" );
+	AddFunc( "reset", do_reset, "void" );
+	AddFunc( "step", do_step, "void" );
+	AddFunc( "setclock", do_setclock, "void" );
+	AddFunc( "useclock", do_useclock, "void" );
+	AddFunc( "showclocks", do_showclocks, "void" );
+	AddFunc( "le", do_le, "void" );
+	AddFunc( "pwe", do_pwe, "void" );
+	AddFunc( "listcommands", do_listcommands, "void" );
+	AddFunc( "listobjects", do_listobjects, "void" );
+	AddFunc( "echo", do_echo, "void" );
+	AddFunc( "tab2file", do_tab2file, "void" );
+	AddFunc( "el",
+			reinterpret_cast< slifunc >( do_element_list ), "char**" );
+	AddFunc( "element_list",
+			reinterpret_cast< slifunc >( do_element_list ), "char*" );
+	AddFunc( "addtask", do_addtask, "void" );
+
+	AddFunc( "readcell", do_readcell, "void" );
+
+	AddFunc( "setupalpha", do_setupalpha, "void" );
+	AddFunc( "setup_tabchan", do_setupalpha, "void" );
+	AddFunc( "setuptau", do_setuptau, "void" );
+	AddFunc( "tweakalpha", do_tweakalpha, "void" );
+	AddFunc( "tweaktau", do_tweaktau, "void" );
+	AddFunc( "setupgate", do_setupgate, "void" );
+
+	AddFunc( "simdump", doWriteDump, "void" );
+	AddFunc( "simundump", doSimUndump, "void" );
+	AddFunc( "simobjdump", doSimObjDump, "void" );
+	AddFunc( "readdump", doReadDump, "void" ); // New command: not in GENESIS
+
+	AddFunc( "argv", 
+		reinterpret_cast< slifunc >( doArgv ), "char**" );
+	AddFunc( "argc", 
+		reinterpret_cast< slifunc >( doArgc ), "int" );
+
+	AddFunc( "loadtab", do_loadtab, "void" );
+	AddFunc( "addfield", do_addfield, "void" );
+	AddFunc( "complete_loading", do_complete_loading, "void" );
+	AddFunc( "exp", reinterpret_cast< slifunc>( do_exp ), "float" );
+	AddFunc( "log", reinterpret_cast< slifunc>( do_log ), "float" );
+	AddFunc( "log0", reinterpret_cast< slifunc>( do_log10 ), "float" );
+	AddFunc( "sin", reinterpret_cast< slifunc>( do_sin ), "float" );
+	AddFunc( "cos", reinterpret_cast< slifunc>( do_cos ), "float" );
+	AddFunc( "tan", reinterpret_cast< slifunc>( do_tan ), "float" );
+	AddFunc( "sqrt", reinterpret_cast< slifunc>( do_sqrt ), "float" );
+	AddFunc( "pow", reinterpret_cast< slifunc>( do_pow ), "float" );
+	AddFunc( "abs", reinterpret_cast< slifunc>( do_abs ), "float" );
+	AddFunc( "xshow", do_xshow, "void" );
+	AddFunc( "xhide", do_xhide, "void" );
+	AddFunc( "xshowontop", do_xshowontop, "void" );
+	AddFunc( "xupdate", do_xupdate, "void" );
+	AddFunc( "xcolorscale", do_xcolorscale, "void" );
+	AddFunc( "x1setuphighlight", do_x1setuphighlight, "void" );
+	AddFunc( "xsendevent", do_xsendevent, "void" );
+	AddFunc( "createmap", do_createmap, "void" );
+	AddFunc( "planarconnect", do_planarconnect, "void" );
+	AddFunc( "planardelay", do_planardelay, "void" );
+	AddFunc( "planarweight", do_planarweight, "void" );
+	AddFunc( "getsyncount", reinterpret_cast< slifunc >(do_getsyncount), "int" );
+	AddFunc( "getsynsrc", reinterpret_cast< slifunc >(do_getsynsrc), "char*" );
+	AddFunc( "getsyndest", reinterpret_cast< slifunc >(do_getsyndest), "char*" );
+	AddFunc( "getsynindex", reinterpret_cast< slifunc >(do_getsynindex), "int" );
+	AddFunc( "strcmp", reinterpret_cast< slifunc >(do_strcmp), "int" );
+	AddFunc( "strlen", reinterpret_cast< slifunc >(do_strlen), "int" );
+	AddFunc( "strcat", reinterpret_cast< slifunc >(do_strcat), "char*" );
+	AddFunc( "substring", reinterpret_cast< slifunc >(do_substring), "char*" );
+	AddFunc( "getpath", reinterpret_cast< slifunc >(do_getpath), "char*" );
+	
+	AddFunc( "findchar", reinterpret_cast< slifunc >(do_findchar), "int" );
+	AddFunc( "getelementlist", reinterpret_cast< slifunc >(do_element_list ), "char*");
+	AddFunc( "openfile", do_openfile, "void" );
+	AddFunc( "writefile", do_writefile, "void" );
+	AddFunc( "readfile", reinterpret_cast< slifunc >( do_readfile ), "char*");
+	AddFunc( "listfiles", do_listfiles, "void" );
+	AddFunc( "closefile", do_closefile, "void" );
+	AddFunc( "getarg", reinterpret_cast< slifunc >( do_getarg ), "char*" );
+	AddFunc( "randseed", reinterpret_cast< slifunc >( do_randseed ), "int" );
+	AddFunc( "rand", reinterpret_cast< slifunc >( do_rand ), "float" );
+	AddFunc( "xps", do_xps, "void" );
+	AddFunc( "disable", do_disable, "void" );
+	AddFunc( "setup_table2", do_setup_table2, "void" );
+	AddFunc( "INSTANTX", reinterpret_cast< slifunc > ( do_INSTANTX ), "int" );
+	AddFunc( "INSTANTY", reinterpret_cast< slifunc > ( do_INSTANTY ), "int" );
+	AddFunc( "INSTANTZ", reinterpret_cast< slifunc > ( do_INSTANTZ ), "int" );
+	AddFunc( "floatformat", do_floatformat, "void" );
+	AddFunc( "getstat", reinterpret_cast< slifunc > ( do_getstat ), "float" );
+	AddFunc( "showstat", do_showstat, "void" );
+	AddFunc( "help", do_help, "void" );
+}
+
+//////////////////////////////////////////////////////////////////
+// GenesisParserWrapper Field commands
+//////////////////////////////////////////////////////////////////
+
+/**
+ * Looks up the Id of the object specified by the string s.
+ * In most cases this call does not need to know about the 
+ * GenesisParserWrapper element g, but if it refers to the current
+ * working element of the shell then it does need g.
+ */
+/*
+Id GenesisParserWrapper::path2eid( const string& path, Id g )
+{
+	Element* e = g();
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+		( e->data() );
+	return gpw->innerPath2eid( path, g );
+}
+*/
+
+/*
+Id GenesisParserWrapper::innerPath2eid( const string& path, Id g )
+{
+	static string separator = "/";
+
+	if ( path == separator || path == separator + "root" )
+			return Id();
+
+	if ( path == "" || path == "." ) {
+		send0( g(), requestCweSlot );
+		return cwe_;
+	}
+
+	if ( path == "^" )
+		return createdElm_;
+
+	if ( path == ".." ) {
+		send0( g(), requestCweSlot );
+		if ( cwe_ == Id() )
+			return Id();
+		return Shell::parent( cwe_ );
+	}
+
+	vector< string > names;
+
+	Id start;
+	if ( path.substr( 0, separator.length() ) == separator ) {
+		start = Id();
+		separateString( path.substr( separator.length() ), names, separator );
+	} else if ( path.substr( 0, 5 ) == "/root" ) {
+		start = Id();
+		separateString( path.substr( 5 ), names, separator );
+	} else {
+		send0( g(), requestCweSlot );
+		start = cwe_;
+		separateString( path, names, separator );
+	}
+	Id ret = Shell::traversePath( start, names );
+	// if ( ret == BAD_ID ) print( string( "cannot find object '" ) + path + "'" );
+	return ret;
+}
+*/
+
+/*
+ * Should really refer to the shell for this in case we need to do
+ * node traversal.
+ */
+/*
+static Id parent( Id e )
+{
+	Element* elm = e();
+	Id ret;
+	
+	// Check if eid is on local node, otherwise go to remote node
+	if ( get< unsigned int >( elm, "parent", ret ) )
+		return ret;
+	return 0;
+}
+*/
+
+/*
+string GenesisParserWrapper::eid2path( Id eid ) 
+{
+	static const string slash = "/";
+	string n( "" );
+
+	if ( eid == Id() )
+		return "/";
+
+	while ( eid != Id() ) {
+		n = slash + eid()->name() + n;
+		eid = parent( eid );
+	}
+	return n;
+}
+*/
+
+/**
+ * Looks up the shell attached to the parser specified by g.
+ * Static func.
+ */
+Element* GenesisParserWrapper::getShell( Id g )
+{
+	/// \todo: shift connDestBegin function to base Element class.
+	SimpleElement* e = dynamic_cast< SimpleElement *>( g() );
+	assert ( e != 0 && e != Element::root() );
+	vector< Conn >::const_iterator i = e->connDestBegin( 3 );
+	Element* ret = i->targetElement();
+	return ret;
+}
+
+//////////////////////////////////////////////////////////////////
+// Utility function for creating a GenesisParserWrapper, and 
+// connecting it up to the shell.
+//////////////////////////////////////////////////////////////////
+
+/**
+ * This function is called from main() if there is a genesis parser.
+ * It passes in the initial string issued to the program, which
+ * the Genesis parser treats as a file argument for loading.
+ * Then the parser goes to its infinite loop using the Process call.
+ */
+Element* makeGenesisParser()
+{
+	// set< string, string >( Element::root(), "create", "Shell", "shell");
+	// Element* shell = Element::lastElement();
+	Id shellId = Id::shellId();
+	/*
+	lookupGet< Id, string >( Element::root(), "lookupChild",
+		shellId, "shell" );
+		*/
+	assert( !shellId.bad() );
+	Element* shell = shellId();
+
+#ifdef CRL_MPI
+	Element* sli = Neutral::create( "ParGenesisParser", "sli", shell, Id::scratchId() );
+#else
+	Element* sli = Neutral::create( "GenesisParser", "sli", shell, Id::scratchId() );
+#endif
+
+	// set< string, string >( shell, "create", "GenesisParser", "sli");
+	// Element* sli = Element::lastElement();
+	static_cast< GenesisParserWrapper* >( sli->data() )->
+		setElement( sli->id() );
+
+	unsigned int ret = shell->findFinfo( "parser" )->add( shell, sli, 
+		sli->findFinfo( "parser" ) );
+	assert( ret );
+
+#ifdef DO_UNIT_TESTS
+	static_cast< GenesisParserWrapper* >( sli->data() )->unitTest();
+#endif
+
+	return sli;
+
+	// The original infinite event loop. Now shifted out to the 'main'
+	// set( sli, "process" );
+}
+
+//////////////////////////////////////////////////////////////////
+// GenesisParserWrapper unit tests
+//////////////////////////////////////////////////////////////////
+
+#ifdef DO_UNIT_TESTS
+void GenesisParserWrapper::gpAssert(
+		const string& command, const string& ret )
+{
+	testFlag_ = 1;
+	printbuf_ = "";
+	ParseInput( command );
+	if ( ! (printbuf_ == ret) )
+		cout << "printbuf_ = '" << printbuf_ << "', ret = '" << ret <<
+			"'\n" << flush;
+	assert( printbuf_ == ret );
+	testFlag_ = 0;
+	cout << ".";
+}
+
+void GenesisParserWrapper::unitTest()
+{
+#ifdef USE_MPI
+	string lestr = "shell postmasters sched library proto solvers ";
+#else
+	string lestr = "shell sched library proto solvers ";
+#endif
+	cout << "\nDoing GenesisParserWrapper tests";
+	gpAssert( "le", lestr );
+	gpAssert( "create neutral /foo", "" );
+	gpAssert( "le", lestr + "foo " );
+	gpAssert( "ce /foo", "" );
+	gpAssert( "le", "" );
+	gpAssert( "pwe", "/foo " );
+	gpAssert( "create neutral ./bar", "" );
+	gpAssert( "le", "bar " );
+	gpAssert( "le /foo", "bar " );
+	gpAssert( "le ..", lestr + "foo " );
+
+	gpAssert( "create neutral /hop", "" );
+	gpAssert( "le", "bar " );
+	gpAssert( "le /foo", "bar " );
+	gpAssert( "le ..", lestr + "foo hop " );
+	gpAssert( "delete /hop", "" );
+	gpAssert( "le ..", lestr + "foo " );
+
+	gpAssert( "ce bar", "" );
+	gpAssert( "pwe", "/foo/bar " );
+	gpAssert( "ce ../..", "" );
+	// gpAssert( "le", "sched shell foo " );
+	gpAssert( "le", lestr + "foo " );
+	gpAssert( "delete /foo", "" );
+	gpAssert( "le", lestr );
+	gpAssert( "le /foo", "cannot find object '/foo' " );
+	gpAssert( "echo foo", "foo " );
+	gpAssert( "echo bar -n", "bar " );
+	gpAssert( "echo {2 + 3}", "5 " );
+	gpAssert( "echo {sqrt { 13 - 4 }}", "3 " );
+	gpAssert( "echo {sin 1.5 }", "0.997495 " );
+	gpAssert( "echo {log 3 }", "1.09861 " );
+	gpAssert( "create compartment /compt", "" );
+	gpAssert( "echo {getfield /compt Vm}", "-0.06 " );
+	gpAssert( "setfield /compt Vm 1.234", "" );
+	gpAssert( "echo {getfield /compt Vm}", "1.234 " );
+	gpAssert( "setfield /compt Cm 3.1415", "" );
+	gpAssert( "echo {getfield /compt Cm}", "3.1415 " );
+	gpAssert( "ce /compt", "" );
+	gpAssert( "echo {getfield Cm}", "3.1415 " );
+	gpAssert( "echo {getfield Vm}", "1.234 " );
+	gpAssert( "setfield Rm 0.1", "" );
+	gpAssert( "echo {getfield Rm}", "0.1 " );
+	gpAssert( "ce /", "" );
+	gpAssert( "showfield /compt Vm",
+					"[ /compt ] Vm                       = 1.234 " );
+	gpAssert( "showfield compt Em Cm Rm",
+					"[ /compt ] Em                       = -0.06 Cm                       = 3.1415 Rm                       = 0.1 " );
+	gpAssert( "alias shf showfield", "" );
+	gpAssert( "shf /compt Em",
+					"[ /compt ] Em                       = -0.06 " );
+	gpAssert( "alias gf getfield", "" );
+	gpAssert( "alias", "gf\tgetfield shf\tshowfield " );
+	gpAssert( "alias gf", "getfield " );
+	gpAssert( "le /sched/cj", "t0 t1 " );
+//	Autoscheduling causes solver to spawn here
+//	gpAssert( "setclock 1 0.1", "" );
+	// gpAssert( "le /sched/cj", "t0 t1 t2 t3 t4 t5 " );
+	gpAssert( "echo {getfield /sched/cj/t0 dt}", "1 " );
+//	Autoscheduling interferes with these tests
+//	gpAssert( "echo {getfield /sched/cj/t1 dt}", "0.1 " );
+//	gpAssert( "useclock /##[TYPE=Compartment] 1", "" );
+	gpAssert( "delete /compt", "" );
+	gpAssert( "le", lestr );
+	gpAssert( "echo {strcmp \"hello\" \"hello\"} ", "0 " );
+	gpAssert( "echo {strcmp \"hello\" \"hell\"} ", "1 " );
+	gpAssert( "echo {strcmp \"hell\" \"hello\"} ", "-1 " );
+
+	gpAssert( "echo {getpath /foo/bar -tail}", "bar " );
+	gpAssert( "echo {getpath /foo/bar -head}", "/foo/ " );
+	gpAssert( "echo {getpath foo -tail}", "foo " );
+	gpAssert( "echo {getpath foo -head}", " " );
+	gpAssert( "echo {getpath /foo -tail}", "foo " );
+	gpAssert( "echo {getpath /foo -head}", "/ " );
+	gpAssert( "echo {getpath /foo/ -tail}", " " );
+	gpAssert( "echo {getpath /foo/ -head}", "/foo/ " );
+
+	// Checking pushe/pope
+	gpAssert( "pushe /proto", "/proto " );
+	gpAssert( "pwe", "/proto " );
+	gpAssert( "pope", "/ " );
+	gpAssert( "pwe", "/ " );
+	gpAssert( "pushe /foobarzod", "Error - cannot change to '/foobarzod' " );
+	gpAssert( "pwe", "/ " );
+
+	// Checking copy syntax
+	gpAssert( "create neutral /a", "" );
+	gpAssert( "create neutral /a/b", "" );
+	gpAssert( "create neutral /c", "" );
+	gpAssert( "copy /a/b /c/d", "" );
+	gpAssert( "le /c", "d " );
+	gpAssert( "copy /a/b /c/d", "" );
+	gpAssert( "le /c", "d " );
+	gpAssert( "le /c/d", "b " );
+	gpAssert( "copy /a/b c", "" );
+	gpAssert( "le /c", "d b " );
+
+	gpAssert( "ce /a", "" );
+	gpAssert( "le", "b " );
+	gpAssert( "copy b q", "" );
+	gpAssert( "le", "b q " );
+	gpAssert( "ce /", "" );
+	gpAssert( "delete /a", "" );
+	gpAssert( "delete /c", "" );
+	
+	cout << "\n";
+}
+#endif
