@@ -71,12 +71,12 @@ void connTest()
 
 	ASSERT( e1.lookupConn( ic1 )->sourceElement() == &e1,
 					"sourceElement()" );
-	ASSERT( e1.lookupConn( ic1 )->sourceIndex( &e1 ) == ic1,
+	ASSERT( e1.lookupConn( ic1 )->sourceIndex( ) == ic1,
 					"sourceIndex()" );
 
 	ASSERT( e2.lookupConn( ic2 )->sourceElement() == &e2,
 					"sourceElement()" );
-	ASSERT( e2.lookupConn( ic2 )->sourceIndex( &e2 ) == ic2,
+	ASSERT( e2.lookupConn( ic2 )->sourceIndex( ) == ic2,
 					"sourceIndex()" );
 
 	SimpleElement e3(  Id::scratchId(), "e3", 2, 2 );
@@ -94,17 +94,17 @@ void connTest()
 
 	ASSERT( e1.lookupConn( ic1 )->sourceElement() == &e1,
 					"sourceElement()" );
-	ASSERT( e1.lookupConn( ic1 )->sourceIndex( &e1 ) == ic1,
+	ASSERT( e1.lookupConn( ic1 )->sourceIndex( ) == ic1,
 					"sourceIndex()" );
 
 	ASSERT( e2.lookupConn( ic2 )->sourceElement() == &e2,
 					"sourceElement()" );
-	ASSERT( e2.lookupConn( ic2 )->sourceIndex( &e2 ) == ic2,
+	ASSERT( e2.lookupConn( ic2 )->sourceIndex( ) == ic2,
 					"sourceIndex()" );
 
 	ASSERT( e3.lookupConn( ic3 )->sourceElement() == &e3,
 					"sourceElement()" );
-	ASSERT( e3.lookupConn( ic3 )->sourceIndex( &e3 ) == ic3,
+	ASSERT( e3.lookupConn( ic3 )->sourceIndex( ) == ic3,
 					"sourceIndex()" );
 
 	/*
@@ -147,21 +147,21 @@ void connTest()
 
 	ASSERT( e1.lookupConn( 0 )->sourceElement() == &e1,
 					"sourceElement()" );
-	ASSERT( e1.lookupConn( 0 )->sourceIndex( &e1 ) == 0,
+	ASSERT( e1.lookupConn( 0 )->sourceIndex( ) == 0,
 					"sourceIndex()" );
 
 	ASSERT( e2.lookupConn( 0 )->sourceElement() == &e2,
 					"sourceElement()" );
-	ASSERT( e2.lookupConn( 0 )->sourceIndex( &e2 ) == 0,
+	ASSERT( e2.lookupConn( 0 )->sourceIndex( ) == 0,
 					"sourceIndex()" );
 	ASSERT( e2.lookupConn( 1 )->sourceElement() == &e2,
 					"sourceElement()" );
-	ASSERT( e2.lookupConn( 1 )->sourceIndex( &e2 ) == 1,
+	ASSERT( e2.lookupConn( 1 )->sourceIndex( ) == 1,
 					"sourceIndex()" );
 
 	ASSERT( e3.lookupConn( 0 )->sourceElement() == &e3,
 					"sourceElement()" );
-	ASSERT( e3.lookupConn( 0 )->sourceIndex( &e3 ) == 0,
+	ASSERT( e3.lookupConn( 0 )->sourceIndex( ) == 0,
 					"sourceIndex()" );
 }
 

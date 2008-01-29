@@ -21,12 +21,12 @@ Conn* Conn::targetConn()
 {
 	return e_->connPtr( index_ );
 }
-*/
 
 unsigned int Conn::sourceIndex( const Element* e ) const
 {
 	return e->connIndex( this );
 }
+*/
 
 unsigned int Conn::sourceIndex( ) const
 {
@@ -40,16 +40,18 @@ unsigned int Conn::sourceIndex( ) const
  */
 void Conn::updateIndex( unsigned int j )
 {
-	assert( sourceIndex( sourceElement() ) == j );
+	assert( sourceIndex( ) == j );
 	e_->lookupVariableConn( index_ )->index_ = j;
 }
 
+/*
 void Conn::set( Element* e, unsigned int index )
 {
 	e_ = e;
 	assert( e_ != 0 );
 	index_ = index;
 }
+*/
 
 void* Conn::data() const
 {

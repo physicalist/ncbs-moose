@@ -62,8 +62,8 @@ void SrcFinfo::dropAll( Element* e ) const
 	unsigned int begin;
 	unsigned int end;
 	if ( srcIndex_ > 0 ) {
-		begin = e->connSrcBegin( srcIndex_ )->sourceIndex( e );
-		end = e->connSrcVeryEnd( srcIndex_ )->sourceIndex( e );
+		begin = e->connSrcBegin( srcIndex_ )->sourceIndex( );
+		end = e->connSrcVeryEnd( srcIndex_ )->sourceIndex( );
 		for ( unsigned int j = end; j > begin; j-- )
 			e->disconnect( j - 1 );
 	}
@@ -75,8 +75,8 @@ void SrcFinfo::dropAll( Element* e ) const
  */
 bool SrcFinfo::drop( Element* e, unsigned int i ) const
 {
-	unsigned int begin = e->connSrcBegin( srcIndex_ )->sourceIndex( e );
-	unsigned int end = e->connSrcVeryEnd( srcIndex_ )->sourceIndex( e );
+	unsigned int begin = e->connSrcBegin( srcIndex_ )->sourceIndex( );
+	unsigned int end = e->connSrcVeryEnd( srcIndex_ )->sourceIndex( );
 	i += begin;
 	if ( i < end ) {
 		e->disconnect( i );

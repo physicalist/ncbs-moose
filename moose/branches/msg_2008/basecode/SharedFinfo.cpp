@@ -265,13 +265,22 @@ void SharedFinfo::dropAll( Element* e ) const
 			return;
 
 	if ( numSrc_ == 0 ) { // Messages are on the MsgDest vector.
-		begin = e->connDestBegin( msgIndex_ )->sourceIndex( e );
-		end = e->connDestEnd( msgIndex_ )->sourceIndex( e );
+		i = e->connDestBegin( msgIndex_ );
+		begin = e->connIndex( &( *i ) );
+		i = e->connDestEnd( msgIndex_ );
+		end = e->connIndex( &( *i ) );
+		// begin = e->connDestBegin( msgIndex_ )->sourceIndex( );
+		// end = e->connDestEnd( msgIndex_ )->sourceIndex( );
 		for ( unsigned int j = end; j > begin; j-- )
 			e->disconnect( j - 1 );
 	} else { // Otherwise put on msgSrc Vector
-		begin = e->connSrcBegin( msgIndex_ )->sourceIndex( e );
-		end = e->connSrcVeryEnd( msgIndex_ )->sourceIndex( e );
+		i = e->connSrcBegin( msgIndex_ );
+		begin = e->connIndex( &( *i ) );
+		i = e->connSrcVeryEnd( msgIndex_ );
+		end = e->connIndex( &( *i ) );
+
+		// begin = e->connSrcBegin( msgIndex_ )->sourceIndex( );
+		// end = e->connSrcVeryEnd( msgIndex_ )->sourceIndex( );
 		for ( unsigned int j = end; j > begin; j-- )
 			e->disconnect( j - 1 );
 	}
@@ -296,11 +305,11 @@ bool SharedFinfo::drop( Element* e, unsigned int i ) const
 	unsigned int begin;
 	unsigned int end;
 	if ( numSrc_ == 0 ) { // Messages are on the MsgDest vector
-		begin = e->connDestBegin( msgIndex_ )->sourceIndex( e );
-		end = e->connDestEnd( msgIndex_ )->sourceIndex( e );
+		begin = e->connDestBegin( msgIndex_ )->sourceIndex( );
+		end = e->connDestEnd( msgIndex_ )->sourceIndex( );
 	} else {
-		begin = e->connSrcBegin( msgIndex_ )->sourceIndex( e );
-		end = e->connSrcVeryEnd( msgIndex_ )->sourceIndex( e );
+		begin = e->connSrcBegin( msgIndex_ )->sourceIndex( );
+		end = e->connSrcVeryEnd( msgIndex_ )->sourceIndex( );
 	}
 
 	i += begin;

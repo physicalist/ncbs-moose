@@ -231,14 +231,22 @@ void DynamicFinfo::dropAll( Element* e ) const
 	unsigned int begin;
 	unsigned int end;
 	if ( destIndex_ > 0 ) {
-		begin = e->connDestBegin( destIndex_ )->sourceIndex( e );
-		end = e->connDestEnd( destIndex_ )->sourceIndex( e );
+		i = e->connDestBegin( destIndex_ );
+		begin = e->connIndex( &( *i ) );
+		i = e->connDestEnd( destIndex_ );
+		end = e->connIndex( &( *i ) );
+		// begin = e->connDestBegin( destIndex_ )->sourceIndex( );
+		// end = e->connDestEnd( destIndex_ )->sourceIndex( );
 		for ( unsigned int j = end; j > begin; j-- )
 			e->disconnect( j - 1 );
 	}
 	if ( srcIndex_ > 0 ) {
-		begin = e->connSrcBegin( srcIndex_ )->sourceIndex( e );
-		end = e->connSrcVeryEnd( srcIndex_ )->sourceIndex( e );
+		i = e->connSrcBegin( srcIndex_ );
+		begin = e->connIndex( &( *i ) );
+		i = e->connSrcVeryEnd( srcIndex_ );
+		end = e->connIndex( &( *i ) );
+		// begin = e->connSrcBegin( srcIndex_ )->sourceIndex( );
+		// end = e->connSrcVeryEnd( srcIndex_ )->sourceIndex( );
 		for ( unsigned int j = end; j > begin; j-- )
 			e->disconnect( j - 1 );
 	}
@@ -266,8 +274,8 @@ bool DynamicFinfo::drop( Element* e, unsigned int i ) const
 	unsigned int begin;
 	unsigned int end;
 	if ( destIndex_ > 0 ) {
-		begin = e->connDestBegin( destIndex_ )->sourceIndex( e );
-		end = e->connDestEnd( destIndex_ )->sourceIndex( e );
+		begin = e->connDestBegin( destIndex_ )->sourceIndex( );
+		end = e->connDestEnd( destIndex_ )->sourceIndex( );
 		i += begin;
 		if ( i < end ) {
 			e->disconnect( i );
@@ -275,8 +283,8 @@ bool DynamicFinfo::drop( Element* e, unsigned int i ) const
 		}
 	}
 	if ( srcIndex_ > 0 ) {
-		begin = e->connSrcBegin( srcIndex_ )->sourceIndex( e );
-		end = e->connSrcVeryEnd( srcIndex_ )->sourceIndex( e );
+		begin = e->connSrcBegin( srcIndex_ )->sourceIndex( );
+		end = e->connSrcVeryEnd( srcIndex_ )->sourceIndex( );
 		i += begin;
 		if ( i < end ) {
 			e->disconnect( i );
