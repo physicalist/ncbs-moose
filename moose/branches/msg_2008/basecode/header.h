@@ -48,6 +48,7 @@ class IdManager;
 // extern IdManager* idManager();
 
 #include "RecvFunc.h"
+#include "ConnInfo.h"
 #include "Conn.h"
 #include "Ftype.h"
 #include "FunctionData.h"

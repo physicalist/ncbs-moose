@@ -5578,4 +5578,20 @@ Recompiled the whole mess back down to -g, no optimization, so as to get
 back to using unit tests and doing development. This clears unit tests and
 regression tests.
 
+Checked in as revision 377 with unit test flags on, Smoldyn off, -g ,GSL
+
+==============================================================================
+24 Jan 2008
+Set up a branch, msg_2008, for doing development on improved messaging design.
+This will mess up everything so best to do it in isolation.
+This is based on revision 390.
+The first revision here is 391.
+
+Now working on incremental implementation as far as it can go. For now,
+setting up new data structs for Conn without messing with the other parts
+of the message. Still unable to compile, see SimpleElement.cpp:465
+==============================================================================
+29 Jan 2008.
+Conn now set up, working after numerous headaches arising from deprecating
+the Conn::sourceIndex( Element* ) function. Cleared unit and regression tests.
 ==============================================================================

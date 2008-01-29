@@ -461,9 +461,10 @@ void SimpleElement::connect( unsigned int myConn,
 	assert( targetElement != 0 );
 	assert( targetElement->connSize() > targetConn );
 
-	conn_[myConn].set( targetElement, targetConn );
-	targetElement->lookupVariableConn( targetConn )->
-			set( this, myConn );
+	// conn_[myConn].set( targetElement, targetConn );
+	conn_[myConn] = Conn( targetElement, targetConn );
+	*( targetElement->lookupVariableConn( targetConn ) ) = 
+			Conn( this, myConn );
 }
 
 /**

@@ -63,9 +63,12 @@ void DestFinfo::dropAll( Element* e ) const
 	vector< Conn >::const_iterator i;
 
 	i = e->connDestBegin( destIndex_ );
-	unsigned int begin = i->sourceIndex( e );
+	// unsigned int begin = i->sourceIndex( );
+	unsigned int begin = e->connIndex( &( *i ) );
+
 	i = e->connDestEnd( destIndex_ );
-	unsigned int end = i->sourceIndex( e );
+	// unsigned int end = i->sourceIndex( );
+	unsigned int end = e->connIndex( &( *i ) );
 
 	for ( unsigned int j = end; j > begin; j-- )
 		e->disconnect( j - 1 );
@@ -82,9 +85,9 @@ bool DestFinfo::drop( Element* e, unsigned int i ) const
 	vector< Conn >::const_iterator k;
 
 	k = e->connDestBegin( destIndex_ );
-	unsigned int begin = k->sourceIndex( e );
+	unsigned int begin = k->sourceIndex( );
 	k = e->connDestEnd( destIndex_ );
-	unsigned int end = k->sourceIndex( e );
+	unsigned int end = k->sourceIndex( );
 
 	i += begin;
 	if ( i < end ) {

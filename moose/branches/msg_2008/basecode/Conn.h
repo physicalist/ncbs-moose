@@ -26,9 +26,8 @@ class Element;
  * The Conn structure has two design requirements: 
  * First, it must provide complete traversability in either direction.
  * This is achieved because we can identify the remote Conn with the
- * combination of Element* and target index. With a little more work
- * involving lookup of matching indices on the Element, we can also
- * identify the remote MsgDest or MsgSrc.
+ * combination of Element*, target index, and index of MsgSrc/MsgDest
+ * provided by the ConnInfo.
  * Second, it must provide complete information for the RecvFunc
  * that handles message operations on the destination object. 
  * Most RecvFuncs operate only on the Element*, but some need to know
@@ -44,9 +43,10 @@ class Conn
 {
 		public:
 			Conn()
-					: e_( 0 ), index_( 0 )
+					: e_( 0 ), eIndex_( 0 ), index_( 0 )
 			{;}
 
+			///\todo Need to extend to specify msgsrc/dest
 			Conn( Element* e, unsigned int targetConnIndex )
 					: e_( e ), index_( targetConnIndex )
 			{;}
@@ -55,6 +55,7 @@ class Conn
 			/**
 			 * Returns the originating Element for this Conn
 			 * Used infrequently, involves multiple lookups.
+			 * Refers to ConnInfo because the conn may be composite.
 			 */
 			Element* sourceElement() const;
 
@@ -67,14 +68,19 @@ class Conn
 			}
 
 			/**
-			 * Returns the index of this Conn on the originating
-			 * Element.
+			 * Returns the index of the originating Element for this Conn
 			 * Used infrequently, involves multiple lookups.
-			 * Use this call only if you have already got a handle
-			 * on the originating Element.
+			 * Refers to ConnInfo.
 			 */
-			unsigned int sourceIndex( const Element* e ) const;
-			
+			unsigned int sourceEindex() const;
+
+			/**
+			 * Returns the index of the target Element for this Conn. Fast.
+			 */
+			unsigned int targetEindex() const {
+					return eIndex_;
+			}
+
 			/**
 			 * Returns the index of this Conn on the originating
 			 * Element, using internal information only.
@@ -92,12 +98,33 @@ class Conn
 			}
 
 			/**
+			 * Returns index of source slot. The first few slots are
+			 * the MsgSrcs, and the rest are Dests.
+			 * As usual, needs to look up the matching Conn to get this 
+			 * info, so it is slow.
+			 */
+			unsigned int sourceSlotIndex() const;
+			
+			/**
+			 * Returns index of target slot. The first few slots are
+			 * the MsgSrcs, and the rest are Dests.
+			 * Finds this by looking up the index in the ConnInfo.
+			 * Generic messages just have a templated instance of the
+			 * basic ConnInfo that returns the index as specified by 
+			 * templating. Such instances are shared.
+			 * Composite messages are independently allocated, easy to
+			 * set up index.
+			 */
+			unsigned int targetSlotIndex() const;
+
+			/**
 			 * This function tells the target conn that the 
 			 * index of the source has changed to j.
 			 */
 			void updateIndex( unsigned int j );
 			
-			void set( Element* e, unsigned int index );
+			// Deprecated
+			// void set( Element* e, unsigned int index );
 
 			/**
 			 * This utility function gets the data pointer from the
@@ -117,11 +144,33 @@ class Conn
 			/// e_ points to the target element.
 			Element* e_;
 
+			/// Index of target entry for array elements.
+			unsigned int eIndex_;
 
-			/** index_ is the absolute index of the target conn, in
-			 * the conn_ array on the target element.
+
+			/**
+			 * index_ is the index of the return Conn on the MsgSrc or Dest.
+			 * No absolute index any more. This is more useful too,
+			 * for things like synapse lookup, which use relative index.
+			 * Minor issue crops up with shared messages when we have
+			 * inputs from multiple source FuncLists, in which case the
+			 * lookup index has to be cumulated. Ugh.
 			 */
 			unsigned int index_;	
+
+			/**
+			 * The ConnInfo points to extra information about this 
+			 * connection. It is actually instantiated as an element
+			 * somewhere, but I haven't worked out where as yet.
+			 * ConnInfo can specify full connection matrix.
+			 * Can also work through on-the-fly calculations for 
+			 * source and dest without any specific storage.
+			 * In principle, could set up connections dynamically,
+			 * say all targets that meet some criterion. 
+			 * This would only work if the targets point to the same
+			 * ConnInfo.
+			 */
+			ConnInfo* info_;
 };
 
 #endif // _CONN_H

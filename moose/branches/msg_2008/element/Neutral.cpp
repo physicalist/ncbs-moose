@@ -426,7 +426,7 @@ void Neutral::lookupChild( const Conn& c, const string s )
 	for ( i = begin; i != end; i++ ) {
 		if ( i->targetElement()->name() == s ) {
 			// For neutral, src # 1 is the shared message.
-			sendTo1< Id >( e, 1, c.sourceIndex( e ), 
+			sendTo1< Id >( e, 1, c.sourceIndex( ), 
 				i->targetElement()->id() );
 			return;
 		}
@@ -434,7 +434,7 @@ void Neutral::lookupChild( const Conn& c, const string s )
 	// Hm. What is the best thing to do if it fails? Return an
 	// error value, or not return anything at all?
 	// Perhaps best to be consistent about returning something.
-	sendTo1< Id >( e, 1, c.sourceIndex( e ), Id::badId() );
+	sendTo1< Id >( e, 1, c.sourceIndex( ), Id::badId() );
 }
 
 vector< Id > Neutral::getChildList( const Element* e )
