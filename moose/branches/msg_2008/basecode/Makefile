@@ -19,6 +19,7 @@ OBJ = \
 	Id.o	\
 	IdManager.o	\
 	Conn.o	\
+	ConnInfo.o	\
 	RecvFunc.o \
 	SimpleElement.o	\
 	ArrayElement.o	\
