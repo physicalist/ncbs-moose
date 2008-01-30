@@ -43,13 +43,27 @@ class Conn
 {
 		public:
 			Conn()
-					: e_( 0 ), eIndex_( 0 ), index_( 0 )
+					: e_( 0 ), eIndex_( 0 ), index_( 0 ),
+						info_( getSimpleConnInfo( 0 ) )
+			{;}
+
+			Conn( ConnInfo* ci )
+					: e_( 0 ), eIndex_( 0 ), index_( 0 ), info_( ci )
 			{;}
 
 			///\todo Need to extend to specify msgsrc/dest
 			Conn( Element* e, unsigned int targetConnIndex )
-					: e_( e ), index_( targetConnIndex )
+					: e_( e ), index_( targetConnIndex ), 
+					info_( getSimpleConnInfo( 0 ) )
 			{;}
+
+			~Conn()
+			{
+				// Calls the virtual function that decides if the ConnInfo
+				// should really be deallocated.
+				if ( info_ != 0 )
+					info_->freeMe();
+			}
 
 			
 			/**

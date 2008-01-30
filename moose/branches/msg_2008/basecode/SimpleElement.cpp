@@ -419,12 +419,15 @@ unsigned int SimpleElement::insertConn(
 	assert( nSrc + nDest > 0 );
 
 	unsigned int location;
-	if ( nSrc > 0 )
+	if ( nSrc > 0 ) {
 			location = src_[ src ].end();
-	else // if ( nDest > 0 ) is always true, given the above assertion.
+			conn_.insert( conn_.begin() + location, 
+				Conn( getSimpleConnInfo( src ) ) );
+	} else { // if ( nDest > 0 ) is always true, given the above assertion.
 			location = dest_[ dest ].end();
-
-	conn_.insert( conn_.begin() + location, Conn() );
+			conn_.insert( conn_.begin() + location, 
+				Conn( getSimpleConnInfo( dest ) ) );
+	}
 
 	// Update the src_ and dest_ ranges. This is the easy part.
 	vector< MsgSrc >::iterator i;
@@ -453,6 +456,7 @@ unsigned int SimpleElement::insertConn(
 /**
  * Take two naive Conns, and assign their values so that they point
  * to each other
+ * \todo This function is deprecated as it does not assign a ConnInfo.
  */
 void SimpleElement::connect( unsigned int myConn, 
 				Element* targetElement, unsigned int targetConn)
