@@ -48,6 +48,7 @@ OBJ = \
 	FunctionData.o \
 	ParallelDummy.o \
 	Class.o	\
+	FuncVec.o \
 
 HEADERS = \
 	header.h \
@@ -92,6 +93,8 @@ IdManager.o:	Id.h IdManager.h ArrayWrapperElement.h
 ArrayElement.o:	ArrayElement.h SimpleElement.h MsgSrc.h MsgDest.h DeletionMarkerFinfo.h
 ArrayWrapperElement.o:	ArrayWrapperElement.h SimpleElement.h MsgSrc.h MsgDest.h DeletionMarkerFinfo.h
 Class.o: Class.h Cinfo.h Cinfo.cpp
+FuncVec.o: RecvFunc.h Ftype.h FuncVec.h
+
 .cpp.o:
 	$(CXX) $(CFLAGS) $< -c
 

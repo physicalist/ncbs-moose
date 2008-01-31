@@ -5599,3 +5599,57 @@ Checked in as revision 395 with unit test flags on, Smoldyn off, -g, GSL
 
 Next to flesh out ConnInfo and its variants.
 ==============================================================================
+30 Jan 2008.
+First pass done for ConnInfo and SimpleConnInfo. The latter is now 
+automatically inserted as a global pointer in regular conns, which is what they
+all are for now. However, there is an element::connect function which 
+does not do so. This function needs to be deprecated.
+
+Stuff that can still be done before breaking everything:
+	- FuncList code. Note I had done a FuncData struct for parallel stuff.
+		- Has to harvest all functions in SharedFinfos
+		- Has to manage the FuncLists
+		- Has to provide a way to sync lists across nodes.
+	- Slot upgrade to include FuncList specification
+	- Add further kinds of ConnInfos that could in principle handle
+		complex messaging.
+
+Stuff to look at before the transition:
+	- Element::connect function. It does not have a way to tie 
+		src/dest index to Conns.
+	- MsgSrc/Dest Id sorting out for ConnInfos
+
+Stuff that will break everything
+	- Replace MsgSrc and MsgDest with new forms.
+
+Stuff to do after transition
+	- Benchmark simple messaging with old and new versions.
+
+
+Perhaps I should use a pointer for Conns. Several issues either way.
+- Will need to refer to a virtual class ptr for ConnInfo anyway for data access
+Minor memory considerations
+	- Save one ptr in SimpleConn struct, lose it again in virtual table.
+	- Possibly save a uint in element index for SimpleConn.
+	- Lose space in ptr table and then allocation info.
+Speed considerations
+	- One or two less indirections for data
+	- one more indirection for element info.
+	- Cache hopping if conns are widely separated/created far apart.
+Organization considerations
+	- Cleaner data structs and access. Expandable.
+	- Memory management headaches: frees and copies
+	- May need special constructor to be efficient.
+
+For now hold off. Doing this will break a lot of stuff.
+
+
+Setting off on FuncList code. Turns out we have a FuncList name, so I
+called it the FuncVec. To set things up automatically in the cinfo 
+initialization I still need to
+	- modify Cinfo::Cinfo to set up a funcVec for all Shared and 
+		Src Finfos.
+	- Add a virtual function to the Finfo base class to set up and
+		incorporate a FuncVec.
+	- Add operations for Ftype::parFuncSync  and Ftype::parFuncAsync
+==============================================================================
