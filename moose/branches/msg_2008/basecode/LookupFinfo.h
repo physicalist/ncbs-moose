@@ -176,9 +176,12 @@ class LookupFinfo: public Finfo
 				return new LookupFinfo( *this );
 			}
 
+			void addFuncVec( const string& cname );
+
 		private:
 			GetFunc get_;
 			RecvFunc set_;
+			FuncVec* fv_;
 };
 
 #endif // _LOOKUP_FINFO_H

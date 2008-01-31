@@ -136,11 +136,14 @@ class SharedFinfo: public Finfo
 				return new SharedFinfo( *this );
 			}
 
+			void addFuncVec( const string& cname );
+
 		private:
 			unsigned int numSrc_;
 			FuncList rfuncs_;
 			unsigned int msgIndex_;
 			vector < string > names_;
+			FuncVec* fv_;
 };
 
 #endif // _SHARED_FINFO_H

@@ -51,7 +51,8 @@ class IdManager;
 #include "ConnInfo.h"
 #include "Conn.h"
 #include "Ftype.h"
-#include "FunctionData.h"
+#include "FunctionData.h" // Likely to be phased out, replaced by FuncVec
+#include "FuncVec.h"
 #include "Finfo.h"
 #include "Id.h"
 #include "Element.h"

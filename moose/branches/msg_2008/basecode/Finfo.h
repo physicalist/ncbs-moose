@@ -257,6 +257,17 @@ class Finfo
 			 */
 			virtual Finfo* copy() const = 0;
 
+			/**
+			 * This function sets up a FuncVec for the Finfo
+			 * classes that might be targets for messages. The
+			 * FuncVec organizes all the RecvFuncs that handle incoming
+			 * messages. The argument is the name of the parent Cinfo,
+			 * essential to avoid naming conflicts among the FuncVecs.
+			 * This function alters the internal state of the Finfo, so
+			 * it should only be called at set up time.
+			 */
+			virtual void addFuncVec( const string& cname ) = 0;
+
 		private:
 			string name_;
 			const Ftype* ftype_;

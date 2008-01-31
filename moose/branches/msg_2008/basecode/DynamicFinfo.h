@@ -187,6 +187,15 @@ class DynamicFinfo: public Finfo
 			 */
 			Finfo* copy() const;
 
+			/**
+			 * For the DynamicFinfo, we should pass in an existing
+			 * FuncVec for set, get ,and recv. This will need changes
+			 * in constructor and associated code. We do not expect to
+			 * create a new FuncVec here.
+			 */
+			void addFuncVec( const string& cname )
+			{;}
+
 			/////////////////////////////////////////////////////////
 			// Here we define the functions that are unique to this
 			// class.

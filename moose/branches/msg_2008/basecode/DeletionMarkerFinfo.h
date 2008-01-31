@@ -100,6 +100,9 @@ class DeletionMarkerFinfo: public Finfo
 				return new DeletionMarkerFinfo( *this );
 			}
 
+			void addFuncVec( const string& cname )
+			{;}
+
 			///////////////////////////////////////////////////////
 			// Class-specific functions below
 			///////////////////////////////////////////////////////

@@ -190,6 +190,15 @@ class ExtFieldFinfo: public Finfo
 				return new ExtFieldFinfo( *this );
 			}
 
+			/**
+			 * For the ExtFieldFinfo, we should pass in an existing
+			 * FuncVec for set, get, and recv. This will need changes
+			 * in constructor and associated code. We do not expect to
+			 * create a new FuncVec here.
+			 */
+			void addFuncVec( const string& cname )
+			{;}
+
 		private:
 			const Finfo* origFinfo_;
 

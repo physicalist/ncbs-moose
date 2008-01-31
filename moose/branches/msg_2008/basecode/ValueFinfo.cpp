@@ -137,3 +137,9 @@ bool ValueFinfo::drop( Element* e, unsigned int i ) const
 bool ValueFinfo::inherit( const Finfo* baseFinfo ) {
 	return ftype()->isSameType( baseFinfo->ftype() );
 }
+
+void ValueFinfo::addFuncVec( const string& cname )
+{
+	fv_ = new FuncVec( cname, name() );
+	fv_->addFunc( set_, ftype() );
+}

@@ -97,6 +97,11 @@ bool LookupFinfo::drop( Element* e, unsigned int i ) const
 		return 0;
 }
 
+void LookupFinfo::addFuncVec( const string& cname )
+{
+	fv_ = new FuncVec( cname, name() );
+	fv_->addFunc( set_, ftype() );
+}
 
 #ifdef DO_UNIT_TESTS
 

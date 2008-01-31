@@ -49,6 +49,9 @@ class SolveFinfo: public ThisFinfo
 			return new SolveFinfo( *this );
 		}
 
+		void addFuncVec( const string& cname )
+		{;}
+
 		////////////////////////////////////////////////////
 		// Special functions for SolveFinfo
 		////////////////////////////////////////////////////
