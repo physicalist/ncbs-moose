@@ -103,8 +103,11 @@ static bool fvcmp( const FuncVec* a, const FuncVec* b )
 }
 /**
  * sortFuncVec puts them in order and assigns ids.
+ * Must be called before any messaging is begun, because we'll need
+ * the FuncVecs for that.
  */
 void FuncVec::sortFuncVec( )
 {
 	sort( funcVecLookup().begin(), funcVecLookup().end(), fvcmp );
+	cout << funcVecLookup().size() << " FuncVecs built.\n";
 }

@@ -149,6 +149,10 @@ Cinfo::Cinfo(const std::string& name,
 
 	for ( i = 0 ; i < nFinfos; i++ ) {
             finfoArray[i]->countMessages( nSrc_, nDest_ );
+			// This sends in the new Cinfo name needed to set up the
+			// FuncVecs within the finfoArray.
+			finfoArray[i]->addFuncVec( name );
+
             finfos_.push_back( finfoArray[i] );
 #ifdef GENERATE_WRAPPERS                
             if ( created )

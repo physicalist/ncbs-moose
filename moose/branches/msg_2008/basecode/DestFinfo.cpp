@@ -167,3 +167,9 @@ bool DestFinfo::getSlotIndex( const string& name, unsigned int& ret ) const
 	ret = destIndex_;
 	return 1;
 }
+
+void DestFinfo::addFuncVec( const string& cname )
+{
+	fv_ = new FuncVec( cname, name() );
+	fv_->addFunc( rfunc_, ftype() );
+}

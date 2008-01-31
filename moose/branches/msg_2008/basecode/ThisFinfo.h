@@ -110,6 +110,9 @@ class ThisFinfo: public Finfo
 				return new ThisFinfo( *this );
 			}
 
+			void addFuncVec( const string& cname )
+			{;}
+
 		private:
 			const Cinfo* cinfo_;
 			bool noDeleteFlag_;

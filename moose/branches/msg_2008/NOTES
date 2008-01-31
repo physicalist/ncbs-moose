@@ -5653,3 +5653,9 @@ initialization I still need to
 		incorporate a FuncVec.
 	- Add operations for Ftype::parFuncSync  and Ftype::parFuncAsync
 ==============================================================================
+31 Jan 2008.
+
+Checked in first part of FuncVec implementation,
+as revision 398 with unit test flags on, Smoldyn off, -g, GSL
+
+

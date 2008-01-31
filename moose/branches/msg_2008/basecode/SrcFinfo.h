@@ -93,6 +93,9 @@ class SrcFinfo: public Finfo
 				return new SrcFinfo( *this );
 			}
 
+			void addFuncVec( const string& cname )
+			{;}
+
 		private:
 			unsigned int srcIndex_;
 };

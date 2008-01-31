@@ -129,9 +129,12 @@ class ValueFinfo: public Finfo
 				return new ValueFinfo( *this );
 			}
 
+			void addFuncVec( const string& cname );
+
 		private:
 			GetFunc get_;
 			RecvFunc set_;
+			FuncVec* fv_;
 };
 
 #endif // _VALUE_FINFO_H

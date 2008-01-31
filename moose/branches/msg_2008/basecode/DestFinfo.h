@@ -103,9 +103,27 @@ class DestFinfo: public Finfo
 				return new DestFinfo( *this );
 			}
 
+			/**
+			 * Sets up the FuncVec on the DestFinfo, by filling in the
+			 * name and RecvFunc.
+			 */
+			void addFuncVec( const string& cname );
+
 		private:
+			/**
+			 * This is the function executed when a message arrives at this
+			 * Finfo.
+			 */
 			RecvFunc rfunc_;
+			/**
+			 * This is the slot index of this Finfo in the MsgDest vector.
+			 */
 			unsigned int destIndex_;
+
+			/**
+			 * The FuncVec data structure manages RecvFuncs
+			 */
+			FuncVec* fv_;
 };
 
 #endif // _DEST_FINFO_H
