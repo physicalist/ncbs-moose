@@ -161,14 +161,14 @@ const Cinfo* initParSynChanCinfo()
 
 static const Cinfo* synChanCinfo = initParSynChanCinfo();
 
-static const unsigned int channelSlot =
-	initParSynChanCinfo()->getSlotIndex( "channel" );
-static const unsigned int origChannelSlot =
-	initParSynChanCinfo()->getSlotIndex( "origChannel" );
-static const unsigned int ikSlot =
-	initParSynChanCinfo()->getSlotIndex( "IkSrc" );
-static const unsigned int synapseSlot =
-	initParSynChanCinfo()->getSlotIndex( "synapse" );
+static const Slot channelSlot =
+	initParSynChanCinfo()->getSlot( "channel" );
+static const Slot origChannelSlot =
+	initParSynChanCinfo()->getSlot( "origChannel" );
+static const Slot ikSlot =
+	initParSynChanCinfo()->getSlot( "IkSrc" );
+static const Slot synapseSlot =
+	initParSynChanCinfo()->getSlot( "synapse" );
 
 static const double SynE = 2.7182818284590452354;
 static const int SPIKE_TAG = 3;

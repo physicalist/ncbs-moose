@@ -572,9 +572,9 @@ NeuroHub* NeuroHub::getHubFromZombie(
 		e->getThisFinfo() );
 	if ( !f ) return 0;
 	const Conn& c = f->getSolvedConn( e );
-	unsigned int slot;
-	srcFinfo->getSlotIndex( srcFinfo->name(), slot );
+	Slot slot;
+	srcFinfo->getSlot( srcFinfo->name(), slot );
 	Element* hub = c.targetElement();
-	index = hub->connSrcRelativeIndex( c, slot );
+	index = hub->connSrcRelativeIndex( c, slot.msg() );
 	return static_cast< NeuroHub* >( hub->data() );
 }

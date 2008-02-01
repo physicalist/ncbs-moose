@@ -86,8 +86,7 @@ class SrcFinfo: public Finfo
 			 */
 			bool inherit( const Finfo* baseFinfo );
 
-			bool getSlotIndex( const string& name, 
-					unsigned int& ret ) const;
+			bool getSlot( const string& name, Slot& ret ) const;
 
 			Finfo* copy() const {
 				return new SrcFinfo( *this );

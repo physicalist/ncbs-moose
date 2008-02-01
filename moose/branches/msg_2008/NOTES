@@ -5606,10 +5606,10 @@ all are for now. However, there is an element::connect function which
 does not do so. This function needs to be deprecated.
 
 Stuff that can still be done before breaking everything:
-	- FuncList code. Note I had done a FuncData struct for parallel stuff.
-		- Has to harvest all functions in SharedFinfos
-		- Has to manage the FuncLists
-		- Has to provide a way to sync lists across nodes.
+	* FuncList code. Note I had done a FuncData struct for parallel stuff.
+		* Has to harvest all functions in SharedFinfos
+		* Has to manage the FuncLists
+		* Has to provide a way to sync lists across nodes.
 	- Slot upgrade to include FuncList specification
 	- Add further kinds of ConnInfos that could in principle handle
 		complex messaging.
@@ -5647,9 +5647,9 @@ For now hold off. Doing this will break a lot of stuff.
 Setting off on FuncList code. Turns out we have a FuncList name, so I
 called it the FuncVec. To set things up automatically in the cinfo 
 initialization I still need to
-	- modify Cinfo::Cinfo to set up a funcVec for all Shared and 
+	* modify Cinfo::Cinfo to set up a funcVec for all Shared and 
 		Src Finfos.
-	- Add a virtual function to the Finfo base class to set up and
+	* Add a virtual function to the Finfo base class to set up and
 		incorporate a FuncVec.
 	- Add operations for Ftype::parFuncSync  and Ftype::parFuncAsync
 ==============================================================================
@@ -5658,4 +5658,21 @@ initialization I still need to
 Checked in first part of FuncVec implementation,
 as revision 398 with unit test flags on, Smoldyn off, -g, GSL
 
+Checked in second part of FuncVec implementation. Still need to complete
+other messy tie-ups needed for handling FuncVecs for SharedFinfo.
 
+Checked in as revision 399 with unit test flags on, Smoldyn off, -g, GSL
+
+Now begun on setting up Slots. This involves changes everywhere.
+A huge number of hacks at this point. Especially when it comes to
+assigning msgIndexes.
+
+Now I've marched the compilation through to Compartment.cpp
+
+==============================================================================
+1 Feb 2008
+Now done biophysics, into kinetics.
+Now done the whole lot. Compiles and runs. When I convert to the new form I
+will have to undo some intermediate hacks done to get it to work.
+
+==============================================================================

@@ -148,9 +148,9 @@ bool SrcFinfo::inherit( const Finfo* baseFinfo )
 }
 
 
-bool SrcFinfo::getSlotIndex( const string& name, unsigned int& ret ) const
+bool SrcFinfo::getSlot( const string& name, Slot& ret ) const
 {
 	if ( name != this->name() ) return 0;
-	ret = srcIndex_;
+	ret = Slot( srcIndex_, 0 );
 	return 1;
 }

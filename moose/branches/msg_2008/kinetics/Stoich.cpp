@@ -180,28 +180,28 @@ const Cinfo* initStoichCinfo()
 
 static const Cinfo* stoichCinfo = initStoichCinfo();
 
-static const unsigned int rateTermInfoSlot =
-	initStoichCinfo()->getSlotIndex( "hub.rateTermInfoSrc" );
-static const unsigned int rateSizeSlot =
-	initStoichCinfo()->getSlotIndex( "hub.rateSizeSrc" );
-static const unsigned int molSizeSlot =
-	initStoichCinfo()->getSlotIndex( "hub.molSizeSrc" );
-static const unsigned int molConnectionSlot =
-	initStoichCinfo()->getSlotIndex( "hub.molConnectionSrc" );
-static const unsigned int reacConnectionSlot =
-	initStoichCinfo()->getSlotIndex( "hub.reacConnectionSrc" );
-static const unsigned int enzConnectionSlot =
-	initStoichCinfo()->getSlotIndex( "hub.enzConnectionSrc" );
-static const unsigned int mmEnzConnectionSlot =
-	initStoichCinfo()->getSlotIndex( "hub.mmEnzConnectionSrc" );
-static const unsigned int completeSetupSlot =
-	initStoichCinfo()->getSlotIndex( "hub.completeSetupSrc" );
-static const unsigned int clearSlot =
-	initStoichCinfo()->getSlotIndex( "hub.clearSrc" );
-static const unsigned int allocateSlot =
-	initStoichCinfo()->getSlotIndex( "integrate.allocate" );
-static const unsigned int assignStoichSlot =
-	initStoichCinfo()->getSlotIndex( "gsl.assignStoich" );
+static const Slot rateTermInfoSlot =
+	initStoichCinfo()->getSlot( "hub.rateTermInfoSrc" );
+static const Slot rateSizeSlot =
+	initStoichCinfo()->getSlot( "hub.rateSizeSrc" );
+static const Slot molSizeSlot =
+	initStoichCinfo()->getSlot( "hub.molSizeSrc" );
+static const Slot molConnectionSlot =
+	initStoichCinfo()->getSlot( "hub.molConnectionSrc" );
+static const Slot reacConnectionSlot =
+	initStoichCinfo()->getSlot( "hub.reacConnectionSrc" );
+static const Slot enzConnectionSlot =
+	initStoichCinfo()->getSlot( "hub.enzConnectionSrc" );
+static const Slot mmEnzConnectionSlot =
+	initStoichCinfo()->getSlot( "hub.mmEnzConnectionSrc" );
+static const Slot completeSetupSlot =
+	initStoichCinfo()->getSlot( "hub.completeSetupSrc" );
+static const Slot clearSlot =
+	initStoichCinfo()->getSlot( "hub.clearSrc" );
+static const Slot allocateSlot =
+	initStoichCinfo()->getSlot( "integrate.allocate" );
+static const Slot assignStoichSlot =
+	initStoichCinfo()->getSlot( "gsl.assignStoich" );
 
 ///////////////////////////////////////////////////
 // Class function definitions

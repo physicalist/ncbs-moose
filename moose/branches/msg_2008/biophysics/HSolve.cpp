@@ -97,10 +97,10 @@ const Cinfo* initHSolveCinfo()
 
 static const Cinfo* hsolveCinfo = initHSolveCinfo();
 
-static const unsigned int readModelSlot =
-	initHSolveCinfo()->getSlotIndex( "readModel" );
-static const unsigned int comptListSlot =
-	initHSolveCinfo()->getSlotIndex( "cell-solve.comptList" );
+static const Slot readModelSlot =
+	initHSolveCinfo()->getSlot( "readModel" );
+static const Slot comptListSlot =
+	initHSolveCinfo()->getSlot( "cell-solve.comptList" );
 
 ///////////////////////////////////////////////////
 // Field function definitions

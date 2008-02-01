@@ -95,10 +95,7 @@ const Cinfo* initMathFuncCinfo()
 
 static const Cinfo* mathFuncCinfo = initMathFuncCinfo();
 
-static const unsigned int outputSlot =
-	initMathFuncCinfo()->getSlotIndex( "output" );
-	
-
+static const Slot outputSlot = initMathFuncCinfo()->getSlot( "output" );
 
 void MathFunc::processFunc( const Conn& c, ProcInfo info )
 {

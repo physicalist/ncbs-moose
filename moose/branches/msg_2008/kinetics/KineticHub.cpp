@@ -201,11 +201,11 @@ static const Finfo* mmEnzSolveFinfo =
 static const Finfo* molSumFinfo = 
 	initKineticHubCinfo()->findFinfo( "molSum" );
 
-static const unsigned int molSumSlot =
-	initKineticHubCinfo()->getSlotIndex( "molSum" );
+static const Slot molSumSlot =
+	initKineticHubCinfo()->getSlot( "molSum" );
 
-static const unsigned int fluxSlot =
-	initKineticHubCinfo()->getSlotIndex( "flux.efflux" );
+static const Slot fluxSlot =
+	initKineticHubCinfo()->getSlot( "flux.efflux" );
 
 void redirectDestMessages(
 	Element* hub, Element* e, const Finfo* hubFinfo, const Finfo* eFinfo,
@@ -275,7 +275,7 @@ void KineticHub::childFunc( const Conn& c, int stage )
 void KineticHub::molSum( const Conn& c, double val )
 {
 	Element* hub = c.targetElement();
-	unsigned int index = hub->connDestRelativeIndex( c, molSumSlot );
+	unsigned int index = hub->connDestRelativeIndex( c, molSumSlot.msg() );
 	KineticHub* kh = static_cast< KineticHub* >( hub->data() );
 
 	assert( index < kh->molSumMap_.size() );
@@ -330,7 +330,7 @@ void KineticHub::molSum( const Conn& c, double val )
 void KineticHub::flux( const Conn& c, vector< double > influx )
 {
 	Element* hub = c.targetElement();
-	unsigned int index = hub->connDestRelativeIndex( c, fluxSlot );
+	unsigned int index = hub->connDestRelativeIndex( c, fluxSlot.msg() );
 	KineticHub* kh = static_cast< KineticHub* >( hub->data() );
 
 	assert( index < kh->flux_.size() );
@@ -823,10 +823,10 @@ KineticHub* getHubFromZombie( const Element* e, const Finfo* srcFinfo,
 			       	e->getThisFinfo() );
 	if ( !f ) return 0;
 	const Conn& c = f->getSolvedConn( e );
-	unsigned int slot;
-       	srcFinfo->getSlotIndex( srcFinfo->name(), slot );
+	Slot slot;
+   	srcFinfo->getSlot( srcFinfo->name(), slot );
 	Element* hub = c.targetElement();
-	index = hub->connSrcRelativeIndex( c, slot );
+	index = hub->connSrcRelativeIndex( c, slot.msg() );
 	return static_cast< KineticHub* >( hub->data() );
 }
 

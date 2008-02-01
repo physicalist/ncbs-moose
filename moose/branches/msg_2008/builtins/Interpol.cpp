@@ -119,10 +119,9 @@ const Cinfo* initInterpolCinfo()
 
 static const Cinfo* interpolCinfo = initInterpolCinfo();
 
-static const unsigned int lookupReturnSlot = 
-	initInterpolCinfo()->getSlotIndex( "lookupReturn" );
-static const unsigned int lookupSlot = 
-	initInterpolCinfo()->getSlotIndex( "lookupSrc" );
+static const Slot lookupReturnSlot = 
+	initInterpolCinfo()->getSlot( "lookupReturn" );
+static const Slot lookupSlot = initInterpolCinfo()->getSlot( "lookupSrc" );
 
 ////////////////////////////////////////////////////////////////////
 // Here we set up Interpol value fields

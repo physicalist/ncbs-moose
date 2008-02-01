@@ -89,8 +89,7 @@ const Cinfo* initAverageCinfo()
 
 static const Cinfo* averageCinfo = initAverageCinfo();
 
-static const unsigned int outputSlot =
-	initAverageCinfo()->getSlotIndex( "output" );
+static const Slot outputSlot = initAverageCinfo()->getSlot( "output" );
 
 ///////////////////////////////////////////////////
 // Class function definitions

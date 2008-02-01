@@ -228,101 +228,101 @@ const Cinfo* initGenesisParserCinfo()
 }
 
 static const Cinfo* genesisParserCinfo = initGenesisParserCinfo();
-static const unsigned int setCweSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.cwe" );
-static const unsigned int requestCweSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.trigCwe" );
-static const unsigned int requestLeSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.trigLe" );
-static const unsigned int pusheSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.pushe" );
-static const unsigned int popeSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.pope" );
-static const unsigned int createSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.create" );
-static const unsigned int createArraySlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.createArray" );
-static const unsigned int planarconnectSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.planarconnect" );
-static const unsigned int planardelaySlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.planardelay" );
-static const unsigned int planarweightSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.planarweight" );
-static const unsigned int getSynCountSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.getSynCount" );
-static const unsigned int deleteSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.delete" );
-static const unsigned int addfieldSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.add" );
-static const unsigned int requestFieldSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.get" );
-static const unsigned int setFieldSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.set" );
-static const unsigned int setClockSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.setClock" );
-static const unsigned int useClockSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.useClock" );
-static const unsigned int requestWildcardListSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.el" );
-static const unsigned int reschedSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.resched" );
-static const unsigned int reinitSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.reinit" );
-static const unsigned int stopSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.stop" );
-static const unsigned int stepSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.step" );
-static const unsigned int requestClocksSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.requestClocks" );
-static const unsigned int requestCurrentTimeSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.requestCurrentTime" );
-static const unsigned int listMessagesSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.listMessages" );
-static const unsigned int copySlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.copy" );
-static const unsigned int copyIntoArraySlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.copyIntoArray" );
-static const unsigned int moveSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.move" );
-static const unsigned int readCellSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.readcell" );
+static const Slot setCweSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.cwe" );
+static const Slot requestCweSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.trigCwe" );
+static const Slot requestLeSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.trigLe" );
+static const Slot pusheSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.pushe" );
+static const Slot popeSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.pope" );
+static const Slot createSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.create" );
+static const Slot createArraySlot = 
+	initGenesisParserCinfo()->getSlot( "parser.createArray" );
+static const Slot planarconnectSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.planarconnect" );
+static const Slot planardelaySlot = 
+	initGenesisParserCinfo()->getSlot( "parser.planardelay" );
+static const Slot planarweightSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.planarweight" );
+static const Slot getSynCountSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.getSynCount" );
+static const Slot deleteSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.delete" );
+static const Slot addfieldSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.add" );
+static const Slot requestFieldSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.get" );
+static const Slot setFieldSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.set" );
+static const Slot setClockSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.setClock" );
+static const Slot useClockSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.useClock" );
+static const Slot requestWildcardListSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.el" );
+static const Slot reschedSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.resched" );
+static const Slot reinitSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.reinit" );
+static const Slot stopSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.stop" );
+static const Slot stepSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.step" );
+static const Slot requestClocksSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.requestClocks" );
+static const Slot requestCurrentTimeSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.requestCurrentTime" );
+static const Slot listMessagesSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.listMessages" );
+static const Slot copySlot = 
+	initGenesisParserCinfo()->getSlot( "parser.copy" );
+static const Slot copyIntoArraySlot = 
+	initGenesisParserCinfo()->getSlot( "parser.copyIntoArray" );
+static const Slot moveSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.move" );
+static const Slot readCellSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.readcell" );
 
-static const unsigned int setupAlphaSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.setupAlpha" );
-static const unsigned int setupTauSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.setupTau" );
-static const unsigned int tweakAlphaSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.tweakAlpha" );
-static const unsigned int tweakTauSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.tweakTau" );
-static const unsigned int setupGateSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.setupGate" );
+static const Slot setupAlphaSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.setupAlpha" );
+static const Slot setupTauSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.setupTau" );
+static const Slot tweakAlphaSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.tweakAlpha" );
+static const Slot tweakTauSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.tweakTau" );
+static const Slot setupGateSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.setupGate" );
 
-static const unsigned int readDumpFileSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.readDumpFile" );
-static const unsigned int writeDumpFileSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.writeDumpFile" );
-static const unsigned int simObjDumpSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.simObjDump" );
-static const unsigned int simUndumpSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.simUndump" );
+static const Slot readDumpFileSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.readDumpFile" );
+static const Slot writeDumpFileSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.writeDumpFile" );
+static const Slot simObjDumpSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.simObjDump" );
+static const Slot simUndumpSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.simUndump" );
 
-static const unsigned int openFileSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.openfile" );
-static const unsigned int writeFileSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.writefile" );
-static const unsigned int listFilesSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.listfiles" );
-static const unsigned int closeFileSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.closefile" );
-static const unsigned int readFileSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.readfile" );
-static const unsigned int setVecFieldSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.setVecField" );
-static const unsigned int loadtabSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.loadtab" );
-static const unsigned int tabopSlot = 
-	initGenesisParserCinfo()->getSlotIndex( "parser.tabop" );
+static const Slot openFileSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.openfile" );
+static const Slot writeFileSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.writefile" );
+static const Slot listFilesSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.listfiles" );
+static const Slot closeFileSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.closefile" );
+static const Slot readFileSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.readfile" );
+static const Slot setVecFieldSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.setVecField" );
+static const Slot loadtabSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.loadtab" );
+static const Slot tabopSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.tabop" );
 
 
 //////////////////////////////////////////////////////////////////
@@ -2253,7 +2253,7 @@ Id findChanGateId( int argc, const char** const argv, Id s )
 }
 
 void setupChanFunc( int argc, const char** const argv, Id s, 
-				unsigned int slot )
+				Slot slot )
 {
 	if (argc < 13 ) {
 		cout << "usage:: " << argv[0] << " channel-element gate AA AB AC AD AF BA BB BC BD BF -size n -range min max\n";
@@ -2313,8 +2313,7 @@ void do_setuptau( int argc, const char** const argv, Id s )
 	setupChanFunc( argc, argv, s, setupTauSlot );
 }
 
-void tweakChanFunc( int argc, const char** const argv, Id s, 
-				unsigned int slot )
+void tweakChanFunc( int argc, const char** const argv, Id s, Slot slot )
 {
 	if (argc < 3 ) {
 		cout << "usage:: " << argv[0] << " channel-element gate\n";

@@ -53,6 +53,7 @@ class IdManager;
 #include "Ftype.h"
 #include "FunctionData.h" // Likely to be phased out, replaced by FuncVec
 #include "FuncVec.h"
+#include "Slot.h"
 #include "Finfo.h"
 #include "Id.h"
 #include "Element.h"

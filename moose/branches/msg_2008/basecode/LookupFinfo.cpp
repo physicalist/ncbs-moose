@@ -174,13 +174,14 @@ class LookupTestClass
 				// This sends the double value out to a target
 				// dsumout == 0, but we make it one because of
 				// base neutral class adding fields.
-				send1< double >( e, 1, tc->dval );
+				// Ugh, what a hack.
+				send1< double >( e, Slot( 1, 0 ), tc->dval );
 
 				// This just sends a trigger to the remote object.
 				// procout == 1, but set to 2 because of base class
 				// Either it will trigger dproc itself, or it
 				// could trigger a getfunc.
-				send0( e, 2 );
+				send0( e, Slot( 2, 0 ) );
 			}
 
 		private:
@@ -384,7 +385,7 @@ void lookupFinfoTest()
 	// new one is used for the messaging.
 	ASSERT( a1->listLocalFinfos( flist ) == 4, "Counting DynFinfos" );
 
-	unsigned int procOutSlot = lookuptestclass.getSlotIndex( "procout");
+	Slot procOutSlot = lookuptestclass.getSlot( "procout");
 
 	send0( a1, procOutSlot ); // procout
 	// Here a2->dval should simply become the sum of its lookup entries.

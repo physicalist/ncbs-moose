@@ -170,25 +170,20 @@ const Cinfo* initTickCinfo()
 
 static const Cinfo* tickCinfo = initTickCinfo();
 
-static const unsigned int nextSlot = 
-	initTickCinfo()->getSlotIndex( "next.increment" );
-static const unsigned int requestNextTimeSlot = 
-	initTickCinfo()->getSlotIndex( "next.nextTimeSrc" );
-static const unsigned int reschedSlot = 
-	initTickCinfo()->getSlotIndex( "next.resched" );
-static const unsigned int reinitNextSlot = 
-	initTickCinfo()->getSlotIndex( "next.reinit" );
+static const Slot nextSlot = initTickCinfo()->getSlot( "next.increment" );
+static const Slot requestNextTimeSlot = 
+	initTickCinfo()->getSlot( "next.nextTimeSrc" );
+static const Slot reschedSlot = initTickCinfo()->getSlot( "next.resched" );
+static const Slot reinitNextSlot = 
+	initTickCinfo()->getSlot( "next.reinit" );
 
-static const unsigned int returnNextTimeSlot = 
-	initTickCinfo()->getSlotIndex( "prev.nextTimeSrc" );
+static const Slot returnNextTimeSlot = 
+	initTickCinfo()->getSlot( "prev.nextTimeSrc" );
 	
-static const unsigned int updateDtSlot = 
-	initTickCinfo()->getSlotIndex( "updateDt" );
-
-static const unsigned int processSlot = 
-	initTickCinfo()->getSlotIndex( "process.process" );
-static const unsigned int reinitSlot = 
-	initTickCinfo()->getSlotIndex( "process.reinit" );
+static const Slot updateDtSlot = initTickCinfo()->getSlot( "updateDt" );
+static const Slot processSlot = 
+	initTickCinfo()->getSlot( "process.process" );
+static const Slot reinitSlot = initTickCinfo()->getSlot( "process.reinit" );
 
 ///////////////////////////////////////////////////
 // Tick class definition functions
@@ -370,7 +365,7 @@ void Tick::updateNextTickTime( Element* e )
 	// SimpleElement* se = static_cast< SimpleElement* >( e );
 	
 	next_ = ( 
-		e->connSrcBegin( nextSlot ) < e->connSrcEnd( nextSlot )
+		e->connSrcBegin( nextSlot.msg() ) < e->connSrcEnd( nextSlot.msg() )
 	);
 	if ( next_ ) {
 		// This asks for the nextTime_ of the next tick

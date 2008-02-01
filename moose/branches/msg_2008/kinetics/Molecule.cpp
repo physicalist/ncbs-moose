@@ -150,12 +150,10 @@ const Cinfo* initMoleculeCinfo()
 
 static const Cinfo* moleculeCinfo = initMoleculeCinfo();
 
-static const unsigned int reacSlot =
-	initMoleculeCinfo()->getSlotIndex( "reac.n" );
-static const unsigned int nSlot =
-	initMoleculeCinfo()->getSlotIndex( "nSrc" );
-static const unsigned int extentSlot =
-	initMoleculeCinfo()->getSlotIndex( "extent.requestExtent" );
+static const Slot reacSlot = initMoleculeCinfo()->getSlot( "reac.n" );
+static const Slot nSlot = initMoleculeCinfo()->getSlot( "nSrc" );
+static const Slot extentSlot =
+	initMoleculeCinfo()->getSlot( "extent.requestExtent" );
 
 ///////////////////////////////////////////////////
 // Class function definitions

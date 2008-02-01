@@ -99,18 +99,18 @@ const Cinfo* initNeuroScanCinfo()
 
 static const Cinfo* neuroScanCinfo = initNeuroScanCinfo();
 
-static const unsigned int hubCompartmentSlot =
-	initNeuroScanCinfo()->getSlotIndex( "hub.compartment" );
-static const unsigned int hubChannelSlot =
-	initNeuroScanCinfo()->getSlotIndex( "hub.channel" );
-static const unsigned int hubSpikegenSlot =
-	initNeuroScanCinfo()->getSlotIndex( "hub.spikegen" );
-static const unsigned int hubSynchanSlot =
-	initNeuroScanCinfo()->getSlotIndex( "hub.synchan" );
-static const unsigned int gateVmSlot =
-	initNeuroScanCinfo()->getSlotIndex( "gate.Vm" );
-static const unsigned int gateSlot =
-	initNeuroScanCinfo()->getSlotIndex( "gate" );
+static const Slot hubCompartmentSlot =
+	initNeuroScanCinfo()->getSlot( "hub.compartment" );
+static const Slot hubChannelSlot =
+	initNeuroScanCinfo()->getSlot( "hub.channel" );
+static const Slot hubSpikegenSlot =
+	initNeuroScanCinfo()->getSlot( "hub.spikegen" );
+static const Slot hubSynchanSlot =
+	initNeuroScanCinfo()->getSlot( "hub.synchan" );
+static const Slot gateVmSlot =
+	initNeuroScanCinfo()->getSlot( "gate.Vm" );
+static const Slot gateSlot =
+	initNeuroScanCinfo()->getSlot( "gate" );
 
 static const Finfo* gateFinfo =
 	initNeuroScanCinfo()->findFinfo( "gate" );
@@ -337,7 +337,7 @@ void NeuroScan::rates(
 	double Vm, double& A, double& B )
 {
 	unsigned int connIndex =
-		scanElm_->connSrcBegin( gateSlot ) -
+		scanElm_->connSrcBegin( gateSlot.msg() ) -
 		scanElm_->lookupConn( 0 ) +
 		gateInfo_[ gate ].rIndex;
 	

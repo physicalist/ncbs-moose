@@ -79,8 +79,8 @@ const Cinfo* initNernstCinfo()
 }
 
 static const Cinfo* nernstCinfo = initNernstCinfo();
-static const unsigned int eSrcSlot =
-	initNernstCinfo()->getSlotIndex( "ESrc" );
+static const Slot eSrcSlot =
+	initNernstCinfo()->getSlot( "ESrc" );
 
 ///////////////////////////////////////////////////
 // Field function definitions

@@ -89,10 +89,10 @@ const Cinfo* initReactionCinfo()
 
 static const Cinfo* reactionCinfo = initReactionCinfo();
 
-static const unsigned int substrateSlot =
-	initReactionCinfo()->getSlotIndex( "sub.reac" );
-static const unsigned int productSlot =
-	initReactionCinfo()->getSlotIndex( "prd.reac" );
+static const Slot substrateSlot =
+	initReactionCinfo()->getSlot( "sub.reac" );
+static const Slot productSlot =
+	initReactionCinfo()->getSlot( "prd.reac" );
 
 ///////////////////////////////////////////////////
 // Field function definitions

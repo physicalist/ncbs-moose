@@ -74,8 +74,8 @@ const Cinfo* initHHGateCinfo()
 }
 
 static const Cinfo* hhGateCinfo = initHHGateCinfo();
-static const unsigned int gateSlot =
-	initHHGateCinfo()->getSlotIndex( "gate" );
+static const Slot gateSlot =
+	initHHGateCinfo()->getSlot( "gate" );
 
 
 ///////////////////////////////////////////////////

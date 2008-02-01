@@ -20,7 +20,8 @@ SolveFinfo::SolveFinfo(
 	for ( unsigned int i = 0; i < nFinfos; i++ ) {
 		finfos_.push_back( finfos[i] );
 	}
-	procSlot_ = tf->cinfo()->getSlotIndex( "process" );
+	/// \todo Need to fix.
+	procSlot_ = tf->cinfo()->getSlot( "process" ).msg();
 }
 
 const Finfo* SolveFinfo::match( Element* e, const string& name ) const

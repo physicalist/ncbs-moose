@@ -450,17 +450,17 @@ void Cinfo::listFinfos( vector< const Finfo* >& flist ) const
  * Finfo class. Used to set up named static indices for various
  * finfos, for use in the send() functions
  */
-unsigned int Cinfo::getSlotIndex( const string& name ) const
+Slot Cinfo::getSlot( const string& name ) const
 {
 	vector< Finfo* >::const_iterator i;
-	unsigned int ret = 0;
+	Slot ret;
 	for ( i = finfos_.begin() ; i < finfos_.end(); i++ ) {
-		if ( (*i)->getSlotIndex( name, ret ) )
+		if ( (*i)->getSlot( name, ret ) )
 			return ret;
 //		if ( (*i)->name() == name )
 //			return (*i)->getSlotIndex();
 	}
-	return 0;
+	return ret;
 }
 
 bool Cinfo::isA( const Cinfo* other ) const {

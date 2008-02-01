@@ -440,8 +440,7 @@ bool SharedFinfo::inherit( const Finfo* baseFinfo )
  * where the two names are separated by a dot.
  * Note that this refers only to Src fields.
  */
-bool SharedFinfo::getSlotIndex( const string& field, 
-					unsigned int& ret ) const
+bool SharedFinfo::getSlot( const string& field, Slot& ret ) const
 {
 	string::size_type len = this->name().length();
 	if ( field.length() < len )
@@ -449,7 +448,7 @@ bool SharedFinfo::getSlotIndex( const string& field,
 
 	if ( field.substr( 0, len ) == this->name() ) { 
 		if ( field.length() == len ) { // this is the whole SharedFinfo
-			ret = msgIndex_;
+			ret = Slot( msgIndex_, 0 );
 			return 1;
 		} else { // Look for a string within the original, skipping a dot.
 			if ( field[len] != '.' )
@@ -461,7 +460,11 @@ bool SharedFinfo::getSlotIndex( const string& field,
 			if ( i == names_.end() ) {
 				return 0;
 			} else {
-				ret = msgIndex_ + ( i - names_.begin() );
+				// temporary: add the indices because this is what
+				//the older version uses.
+				// ret = msgIndex_ + ( i - names_.begin() );
+				ret = Slot( msgIndex_ + ( i - names_.begin() ),
+					( i - names_.begin() ) );
 				return 1;
 			}
 		}
@@ -533,7 +536,7 @@ class SharedTest
 			Element* e = c.targetElement();
 			// 0 is the readVal trig MsgSrc., but we have to
 			// increment it to 1 because of base class.
-			send0( e, 1 );
+			send0( e, Slot( 1, 0 ) );
 		}
 
 		static void pingPong( const Conn& c ) {
@@ -542,14 +545,14 @@ class SharedTest
 				static_cast< SharedTest* >( e->data() );
 			// 1 is the pingPong dval MsgSrc. We have to increment it to
 			// 2 because of the base class
-			send1< double >( e, 2, st->dval_ );
+			send1< double >( e, Slot( 2, 0 ), st->dval_ );
 		}
 
 		static void trigPing( const Conn& c ) {
 			Element* e = c.targetElement();
 			// 2 is the pingPong trig MsgSrc. We have to increment it
 			// to 3 because of the base class.
-			send0( e, 3 );
+			send0( e, Slot( 3, 0 ) );
 		}
 
 		private:

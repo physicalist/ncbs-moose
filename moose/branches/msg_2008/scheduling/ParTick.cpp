@@ -154,22 +154,22 @@ const Cinfo* initParTickCinfo()
 
 static const Cinfo* parTickCinfo = initParTickCinfo();
 
-static const unsigned int processSlot = 
-	initParTickCinfo()->getSlotIndex( "process" ) + 0;
-static const unsigned int reinitSlot = 
-	initParTickCinfo()->getSlotIndex( "process" ) + 1;
+static const Slot processSlot = 
+	initParTickCinfo()->getSlot( "process.process" );
+static const Slot reinitSlot = 
+	initParTickCinfo()->getSlot( "process.reinit" );
 
-static const unsigned int outgoingProcessSlot = 
-	initParTickCinfo()->getSlotIndex( "outgoingProcess.process" );
-static const unsigned int outgoingReinitSlot = 
-	initParTickCinfo()->getSlotIndex( "outgoingProcess.reinit" );
+static const Slot outgoingProcessSlot = 
+	initParTickCinfo()->getSlot( "outgoingProcess.process" );
+static const Slot outgoingReinitSlot = 
+	initParTickCinfo()->getSlot( "outgoingProcess.reinit" );
 
-static const unsigned int iRecvSlot = 
-	initParTickCinfo()->getSlotIndex( "parTick.postIrecv" );
-static const unsigned int sendSlot = 
-	initParTickCinfo()->getSlotIndex( "parTick.postSend" );
-static const unsigned int pollSlot = 
-	initParTickCinfo()->getSlotIndex( "parTick.poll" );
+static const Slot iRecvSlot = 
+	initParTickCinfo()->getSlot( "parTick.postIrecv" );
+static const Slot sendSlot = 
+	initParTickCinfo()->getSlot( "parTick.postSend" );
+static const Slot pollSlot = 
+	initParTickCinfo()->getSlot( "parTick.poll" );
 
 ///////////////////////////////////////////////////
 // Field function definitions

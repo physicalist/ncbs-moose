@@ -125,14 +125,14 @@ const Cinfo* initEnzymeCinfo()
 
 static const Cinfo* enzymeCinfo = initEnzymeCinfo();
 
-static const unsigned int subSlot =
-	initEnzymeCinfo()->getSlotIndex( "sub.reac" );
-static const unsigned int enzSlot =
-	initEnzymeCinfo()->getSlotIndex( "enz.reac" );
-static const unsigned int cplxSlot =
-	initEnzymeCinfo()->getSlotIndex( "cplx.reac" );
-static const unsigned int prdSlot =
-	initEnzymeCinfo()->getSlotIndex( "prd" );
+static const Slot subSlot =
+	initEnzymeCinfo()->getSlot( "sub.reac" );
+static const Slot enzSlot =
+	initEnzymeCinfo()->getSlot( "enz.reac" );
+static const Slot cplxSlot =
+	initEnzymeCinfo()->getSlot( "cplx.reac" );
+static const Slot prdSlot =
+	initEnzymeCinfo()->getSlot( "prd" );
 
 ///////////////////////////////////////////////////
 // Enzyme class function definitions

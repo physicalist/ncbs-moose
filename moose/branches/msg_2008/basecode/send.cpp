@@ -15,26 +15,27 @@
 #include "SimpleElement.h"
 #include "send.h"
 
-void send0( const Element* eIn, unsigned int src )
+void send0( const Element* eIn, Slot src )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 
 	do {
-		RecvFunc rf = e->srcRecvFunc( src );
+		RecvFunc rf = e->srcRecvFunc( src.msg() );
 		vector< Conn >::const_iterator j;
-		for_each ( e->connSrcBegin( src ), e->connSrcEnd( src ), rf );
+		for_each ( e->connSrcBegin( src.msg() ), 
+			e->connSrcEnd( src.msg() ), rf );
 		/*
 		for ( j = e->connSrcBegin( src );
 				j != e->connSrcEnd( src ); j++ )
 			rf( *j );
 			*/
-		src = e->nextSrc( src );
-	} while ( src != 0 );
+		src = Slot( e->nextSrc( src.msg() ), src.func() );
+	} while ( src.msg() != 0 );
 }
 
-void sendTo0( const Element* eIn, unsigned int src, unsigned int conn )
+void sendTo0( const Element* eIn, Slot src, unsigned int conn )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
-	RecvFunc rf = e->lookupRecvFunc( src, conn );
+	RecvFunc rf = e->lookupRecvFunc( src.msg(), conn );
 		rf( *( e->lookupConn( conn ) ) );
 }

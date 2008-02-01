@@ -64,8 +64,7 @@ class Neutral
 			static void lookupChild( const Conn&, const string s );
 			static Id getChildByName( const Element* e, const string& s );
 
-			static const unsigned int childSrcIndex;
-			static const unsigned int childIndex;
+			// static const unsigned int childIndex;
 			static vector< string > getFieldList( const Element* elm );
 };
 

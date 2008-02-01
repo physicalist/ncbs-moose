@@ -108,8 +108,8 @@ const Cinfo* initCaConcCinfo()
 
 static const Cinfo* caConcCinfo = initCaConcCinfo();
 
-static const unsigned int concSlot =
-	initCaConcCinfo()->getSlotIndex( "concSrc" );
+static const Slot concSlot =
+	initCaConcCinfo()->getSlot( "concSrc" );
 
 ///////////////////////////////////////////////////
 // Field function definitions

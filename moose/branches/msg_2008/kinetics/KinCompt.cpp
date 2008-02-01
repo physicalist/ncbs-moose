@@ -124,8 +124,8 @@ const Cinfo* initKinComptCinfo()
 
 static const Cinfo* kinComptCinfo = initKinComptCinfo();
 
-static const unsigned int extentSlot =
-	initKinComptCinfo()->getSlotIndex( "extent.returnExtent" );
+static const Slot extentSlot =
+	initKinComptCinfo()->getSlot( "extent.returnExtent" );
 
 ///////////////////////////////////////////////////
 // Class function definitions

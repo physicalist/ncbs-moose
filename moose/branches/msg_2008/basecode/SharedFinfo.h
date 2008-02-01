@@ -122,15 +122,9 @@ class SharedFinfo: public Finfo
 			 * Returns true if the named MsgSrc is present
 			 * on the SharedFinfo, or if the name is the name
 			 * of the SharedFinfo itself. Passes back the
-			 * index in the 'ret' field if true.
+			 * Slot in the 'ret' field if found.
 			 */
-			bool getSlotIndex( const string& name, 
-					unsigned int& ret ) const;
-			/*
-			unsigned int getSlotIndex() const {
-					return msgIndex_;
-			}
-			*/
+			bool getSlot( const string& name, Slot& ret ) const;
 
 			Finfo* copy() const {
 				return new SharedFinfo( *this );
