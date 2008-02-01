@@ -348,33 +348,28 @@ const Cinfo* initShellCinfo()
 static const Cinfo* shellCinfo = initShellCinfo();
 
 
-static const unsigned int cweSlot =
-	initShellCinfo()->getSlotIndex( "parser.cweSrc" );
-static const unsigned int elistSlot =
-	initShellCinfo()->getSlotIndex( "parser.leSrc" );
+static const Slot cweSlot = initShellCinfo()->getSlot( "parser.cweSrc" );
+static const Slot elistSlot = initShellCinfo()->getSlot( "parser.leSrc" );
 
 // Returns the id of the created object
-static const unsigned int createSlot =
-	initShellCinfo()->getSlotIndex( "parser.createSrc" );
-static const unsigned int getFieldSlot =
-	initShellCinfo()->getSlotIndex( "parser.getSrc" );
-static const unsigned int clockSlot =
-	initShellCinfo()->getSlotIndex( "parser.returnClocksSrc" );
-static const unsigned int listMessageSlot =
-	initShellCinfo()->getSlotIndex( "parser.listMessagesSrc" );
-static const unsigned int rCreateSlot =
-	initShellCinfo()->getSlotIndex( "master.create" );
-static const unsigned int rGetSlot =
-	initShellCinfo()->getSlotIndex( "master.get" );
-static const unsigned int rSetSlot =
-	initShellCinfo()->getSlotIndex( "master.set" );
-static const unsigned int rAddSlot =
-	initShellCinfo()->getSlotIndex( "master.add" );
-static const unsigned int recvGetSlot =
-	initShellCinfo()->getSlotIndex( "slave.recvGet" );
+static const Slot createSlot =
+	initShellCinfo()->getSlot( "parser.createSrc" );
+static const Slot getFieldSlot =
+	initShellCinfo()->getSlot( "parser.getSrc" );
+static const Slot clockSlot =
+	initShellCinfo()->getSlot( "parser.returnClocksSrc" );
+static const Slot listMessageSlot =
+	initShellCinfo()->getSlot( "parser.listMessagesSrc" );
+static const Slot rCreateSlot =
+	initShellCinfo()->getSlot( "master.create" );
+static const Slot rGetSlot = initShellCinfo()->getSlot( "master.get" );
+static const Slot rSetSlot = initShellCinfo()->getSlot( "master.set" );
+static const Slot rAddSlot = initShellCinfo()->getSlot( "master.add" );
+static const Slot recvGetSlot =
+	initShellCinfo()->getSlot( "slave.recvGet" );
 
-static const unsigned int pollSlot =
-	initShellCinfo()->getSlotIndex( "pollSrc" );
+static const Slot pollSlot =
+	initShellCinfo()->getSlot( "pollSrc" );
 
 
 void printNodeInfo( const Conn& c );
@@ -719,7 +714,7 @@ void Shell::staticCreate( const Conn& c, string type,
 		OffNodeInfo* oni = static_cast< OffNodeInfo* >( child->data() );
 		// Element* post = oni->post;
 		unsigned int target = 
-		e->connSrcBegin( rCreateSlot ) - e->lookupConn( 0 ) +
+		e->connSrcBegin( rCreateSlot.msg() ) - e->lookupConn( 0 ) +
 			id.node() - 1;
 		sendTo4< string , string, Id, Id>( 
 			e, rCreateSlot, target,
@@ -763,7 +758,7 @@ void Shell::staticCreateArray( const Conn& c, string type,
 			OffNodeInfo* oni = static_cast< OffNodeInfo* >( child->data() );
 			// Element* post = oni->post;
 			unsigned int target = 
-			e->connSrcBegin( rCreateSlot ) - e->lookupConn( 0 ) +
+			e->connSrcBegin( rCreateSlot.msg() ) - e->lookupConn( 0 ) +
 				id.node() - 1;
 			sendTo4< string , string, Id, Id>( 
 				e, rCreateSlot, target,
@@ -811,7 +806,7 @@ void Shell::staticCreateArray1( const Conn& c, string type,
 		OffNodeInfo* oni = static_cast< OffNodeInfo* >( child->data() );
 		// Element* post = oni->post;
 		unsigned int target = 
-		e->connSrcBegin( rCreateSlot ) - e->lookupConn( 0 ) +
+		e->connSrcBegin( rCreateSlot.msg() ) - e->lookupConn( 0 ) +
 			id.node() - 1;
 		sendTo4< string , string, Id, Id>( 
 			e, rCreateSlot, target,
@@ -968,7 +963,7 @@ void testMess( Element* e, unsigned int numNodes )
 	/*
 	 * Here we create a set of neutrals on all the slave nodes.
 	*/
-	unsigned int startConn = e->connSrcBegin( rCreateSlot ) - 
+	unsigned int startConn = e->connSrcBegin( rCreateSlot.msg() ) - 
 		e->lookupConn( 0 );
 	vector< Id > offNodeObjs( numNodes );
 	for ( unsigned int i = 1; i < numNodes; i++ ) {
@@ -989,7 +984,7 @@ void testMess( Element* e, unsigned int numNodes )
 	/*
 	 * Here we assign new names to each of these neutrals
 	*/
-	startConn = e->connSrcBegin( rSetSlot ) - e->lookupConn( 0 );
+	startConn = e->connSrcBegin( rSetSlot.msg() ) - e->lookupConn( 0 );
 	for ( unsigned int i = 1; i < numNodes; i++ ) {
 		char name[20];
 		sprintf( name, "OffNodeCreateTest_%d", i );
@@ -1002,7 +997,7 @@ void testMess( Element* e, unsigned int numNodes )
 	/*
 	 * Here we check the names of the neutrals.
 	*/
-	startConn = e->connSrcBegin( rGetSlot ) - e->lookupConn( 0 );
+	startConn = e->connSrcBegin( rGetSlot.msg() ) - e->lookupConn( 0 );
 	for ( unsigned int i = 1; i < numNodes; i++ ) {
 		char name[20];
 		sprintf( name, "OffNodeCreateTest_%d", i );

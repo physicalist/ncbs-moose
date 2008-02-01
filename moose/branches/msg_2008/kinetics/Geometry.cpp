@@ -80,10 +80,10 @@ const Cinfo* initGeometryCinfo()
 
 static const Cinfo* geometryCinfo = initGeometryCinfo();
 
-static const unsigned int epsilonSlot =
-	initGeometryCinfo()->getSlotIndex( "geom.epsilonSrc" );
-static const unsigned int neighDistSlot =
-	initGeometryCinfo()->getSlotIndex( "geom.neighDistSrc" );
+static const Slot epsilonSlot =
+	initGeometryCinfo()->getSlot( "geom.epsilonSrc" );
+static const Slot neighDistSlot =
+	initGeometryCinfo()->getSlot( "geom.neighDistSrc" );
 
 ///////////////////////////////////////////////////
 // Class function definitions

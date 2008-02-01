@@ -57,7 +57,7 @@ const Cinfo * initRandGeneratorCinfo()
     return &randGeneratorCinfo;
 }
 
-static const unsigned int outputSlot = initRandGeneratorCinfo()->getSlotIndex("output");
+static const Slot outputSlot = initRandGeneratorCinfo()->getSlot("output");
 
 RandGenerator::RandGenerator()
 {

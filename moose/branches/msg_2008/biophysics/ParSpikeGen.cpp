@@ -104,8 +104,7 @@ const Cinfo* initParSpikeGenCinfo()
 
 static const int SPIKE_TAG = 3;
 static const Cinfo* spikeGenCinfo = initParSpikeGenCinfo();
-static const unsigned int eventSlot =
-	initParSpikeGenCinfo()->getSlotIndex( "event" );
+static const Slot eventSlot = initParSpikeGenCinfo()->getSlot( "event" );
 
 ParSpikeGen::ParSpikeGen()
 {

@@ -119,8 +119,8 @@ const Cinfo* initCellCinfo()
 
 static const Cinfo* cellCinfo = initCellCinfo();
 
-static const unsigned int solveInitSlot =
-	initCellCinfo()->getSlotIndex( "cell-solve.solveInit" );
+static const Slot solveInitSlot =
+	initCellCinfo()->getSlot( "cell-solve.solveInit" );
 
 ///////////////////////////////////////////////////
 // Class function definitions

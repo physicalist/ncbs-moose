@@ -168,14 +168,14 @@ const Cinfo* initStochSynchanCinfo()
 
 static const Cinfo* stochSynchanCinfo = initStochSynchanCinfo();
 
-static const unsigned int channelSlot =
-	initStochSynchanCinfo()->getSlotIndex( "channel" );
-static const unsigned int origChannelSlot =
-	initStochSynchanCinfo()->getSlotIndex( "origChannel" );
-static const unsigned int ikSlot =
-	initStochSynchanCinfo()->getSlotIndex( "IkSrc" );
-static const unsigned int synapseSlot =
-	initStochSynchanCinfo()->getSlotIndex( "synapse" );
+static const Slot channelSlot =
+	initStochSynchanCinfo()->getSlot( "channel" );
+static const Slot origChannelSlot =
+	initStochSynchanCinfo()->getSlot( "origChannel" );
+static const Slot ikSlot =
+	initStochSynchanCinfo()->getSlot( "IkSrc" );
+static const Slot synapseSlot =
+	initStochSynchanCinfo()->getSlot( "synapse" );
 
 
 ///////////////////////////////////////////////////
@@ -411,7 +411,7 @@ void StochSynchan::reinitFunc( const Conn& c, ProcInfo p )
 void StochSynchan::innerSynapseFunc( const Conn& c, double time )
 {
 	unsigned int index = 
-            c.targetElement()->connDestRelativeIndex( c, synapseSlot );
+            c.targetElement()->connDestRelativeIndex( c, synapseSlot.msg() );
 	// Actually we should simply ignore any message where the
 	// index is bigger than synapses_.size(), because the syn
 	// strength will not yet have been set.

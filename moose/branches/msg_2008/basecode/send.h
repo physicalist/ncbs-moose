@@ -18,35 +18,35 @@
 /**
  * This function sends zero-argument messages.
  */
-extern void send0( const Element* eIn, unsigned int src );
+extern void send0( const Element* eIn, Slot src );
 
 /**
  * This function sends zero-argument messages to a specific target.
  * The target index is given by the absolute index in the local conn_
  * vector.
  */
-extern void sendTo0( const Element* eIn, unsigned int src, 
+extern void sendTo0( const Element* eIn, Slot src, 
 				unsigned int index);
 
 /**
  * This templated function sends single-argument messages.
  */
 template < class T > void send1(
-				const Element* eIn, unsigned int src, T val )
+				const Element* eIn, Slot src, T val )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 
 	do {
 		void( *rf )( const Conn&, T ) = 
 				reinterpret_cast< void ( * )( const Conn&, T ) >(
-				e->srcRecvFunc( src ) ); 
+				e->srcRecvFunc( src.msg() ) ); 
 		/// \todo This should be replaced by the STL binder and foreach
 		vector< Conn >::const_iterator j;
-		for ( j = e->connSrcBegin( src );
-						j != e->connSrcEnd( src ); j++ )
+		for ( j = e->connSrcBegin( src.msg() );
+						j != e->connSrcEnd( src.msg() ); j++ )
 				rf( *j, val );
-		src = e->nextSrc( src );
-	} while ( src != 0 );
+		src = Slot( e->nextSrc( src.msg() ), src.func() );
+	} while ( src.msg() != 0 );
 }
 
 /**
@@ -55,12 +55,12 @@ template < class T > void send1(
  * to the index in the local conn_ vector.
  */
 template< class T > void sendTo1(
-		const Element* eIn, unsigned int src, unsigned int conn, T val )
+		const Element* eIn, Slot src, unsigned int conn, T val )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 	void( *rf )( const Conn&, T ) = 
 			reinterpret_cast< void ( * )( const Conn&, T ) >(
-			e->lookupRecvFunc( src, conn ) );
+			e->lookupRecvFunc( src.msg(), conn ) );
 		rf( *( e->lookupConn( conn ) ),  val );
 }
 
@@ -68,21 +68,21 @@ template< class T > void sendTo1(
  * This templated function sends two-argument messages.
  */
 template < class T1, class T2 > void send2(
-			const Element* eIn, unsigned int src, T1 val1, T2 val2 )
+			const Element* eIn, Slot src, T1 val1, T2 val2 )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 
 	do {
 		void( *rf )( const Conn&, T1, T2 ) = 
 				reinterpret_cast< void ( * )( const Conn&, T1, T2 ) >(
-				e->srcRecvFunc( src ) ); 
+				e->srcRecvFunc( src.msg() ) ); 
 		/// \todo Are there STL binders for 2 values?
 		vector< Conn >::const_iterator j;
-		for ( j = e->connSrcBegin( src );
-						j != e->connSrcEnd( src ); j++ )
+		for ( j = e->connSrcBegin( src.msg() );
+						j != e->connSrcEnd( src.msg() ); j++ )
 				rf( *j, val1, val2 );
-		src = e->nextSrc( src );
-	} while ( src != 0 );
+		src = Slot( e->nextSrc( src.msg() ), src.func() );
+	} while ( src.msg() != 0 );
 }
 
 /**
@@ -91,13 +91,13 @@ template < class T1, class T2 > void send2(
  * to the index in the local conn_ vector.
  */
 template< class T1, class T2 > void sendTo2(
-		const Element* eIn, unsigned int src, unsigned int conn,
+		const Element* eIn, Slot src, unsigned int conn,
 		T1 val1, T2 val2 )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 	void( *rf )( const Conn&, T1, T2 ) = 
 			reinterpret_cast< void ( * )( const Conn&, T1, T2 ) >(
-			e->lookupRecvFunc( src, conn ) );
+			e->lookupRecvFunc( src.msg(), conn ) );
 		rf( *( e->lookupConn( conn ) ),  val1, val2 );
 }
 
@@ -105,7 +105,7 @@ template< class T1, class T2 > void sendTo2(
  * This templated function sends three-argument messages.
  */
 template < class T1, class T2, class T3 > void send3(
-			const Element* eIn, unsigned int src,
+			const Element* eIn, Slot src,
 			T1 val1, T2 val2, T3 val3 )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
@@ -113,14 +113,14 @@ template < class T1, class T2, class T3 > void send3(
 	do {
 		void( *rf )( const Conn&, T1, T2, T3 ) = 
 			reinterpret_cast< void ( * )( const Conn&, T1, T2, T3 ) >(
-				e->srcRecvFunc( src ) ); 
+				e->srcRecvFunc( src.msg() ) ); 
 		/// \todo Are there STL binders for 2 values?
 		vector< Conn >::const_iterator j;
-		for ( j = e->connSrcBegin( src );
-						j != e->connSrcEnd( src ); j++ )
+		for ( j = e->connSrcBegin( src.msg() );
+						j != e->connSrcEnd( src.msg() ); j++ )
 				rf( *j, val1, val2, val3 );
-		src = e->nextSrc( src );
-	} while ( src != 0 );
+		src = Slot( e->nextSrc( src.msg() ), src.func() );
+	} while ( src.msg() != 0 );
 }
 
 /**
@@ -129,13 +129,13 @@ template < class T1, class T2, class T3 > void send3(
  * to the index in the local conn_ vector.
  */
 template< class T1, class T2, class T3 > void sendTo3(
-		const Element* eIn, unsigned int src, unsigned int conn,
+		const Element* eIn, Slot src, unsigned int conn,
 		T1 val1, T2 val2, T3 val3 )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 	void( *rf )( const Conn&, T1, T2, T3 ) = 
 			reinterpret_cast< void ( * )( const Conn&, T1, T2, T3 ) >(
-			e->lookupRecvFunc( src, conn ) );
+			e->lookupRecvFunc( src.msg(), conn ) );
 		rf( *( e->lookupConn( conn ) ),  val1, val2, val3 );
 }
 
@@ -143,7 +143,7 @@ template< class T1, class T2, class T3 > void sendTo3(
  * This templated function sends four-argument messages.
  */
 template < class T1, class T2, class T3, class T4 > void send4(
-			const Element* eIn, unsigned int src,
+			const Element* eIn, Slot src,
 			T1 val1, T2 val2, T3 val3, T4 val4 )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
@@ -151,14 +151,14 @@ template < class T1, class T2, class T3, class T4 > void send4(
 	do {
 		void( *rf )( const Conn&, T1, T2, T3, T4 ) = 
 			reinterpret_cast< void ( * )( const Conn&, T1, T2, T3, T4 ) >(
-				e->srcRecvFunc( src ) ); 
+				e->srcRecvFunc( src.msg() ) ); 
 		/// \todo Are there STL binders for 2 values?
 		vector< Conn >::const_iterator j;
-		for ( j = e->connSrcBegin( src );
-						j != e->connSrcEnd( src ); j++ )
+		for ( j = e->connSrcBegin( src.msg() );
+						j != e->connSrcEnd( src.msg() ); j++ )
 				rf( *j, val1, val2, val3, val4 );
-		src = e->nextSrc( src );
-	} while ( src != 0 );
+		src = Slot( e->nextSrc( src.msg() ), src.func() );
+	} while ( src.msg() != 0 );
 }
 
 /**
@@ -167,13 +167,13 @@ template < class T1, class T2, class T3, class T4 > void send4(
  * to the index in the local conn_ vector.
  */
 template< class T1, class T2, class T3, class T4 > void sendTo4(
-		const Element* eIn, unsigned int src, unsigned int conn,
+		const Element* eIn, Slot src, unsigned int conn,
 		T1 val1, T2 val2, T3 val3, T4 val4 )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 	void( *rf )( const Conn&, T1, T2, T3, T4 ) = 
 			reinterpret_cast< void ( * )( const Conn&, T1, T2, T3, T4 ) >(
-			e->lookupRecvFunc( src, conn ) );
+			e->lookupRecvFunc( src.msg(), conn ) );
 		rf( *( e->lookupConn( conn ) ),  val1, val2, val3, val4 );
 }
 

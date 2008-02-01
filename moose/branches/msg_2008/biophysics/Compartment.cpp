@@ -248,14 +248,14 @@ const Cinfo* initCompartmentCinfo()
 
 static const Cinfo* compartmentCinfo = initCompartmentCinfo();
 
-static const unsigned int channelSlot =
-	initCompartmentCinfo()->getSlotIndex( "channel.Vm" );
-static const unsigned int axialSlot =
-	initCompartmentCinfo()->getSlotIndex( "axial.axialSrc" );
-static const unsigned int raxialSlot =
-	initCompartmentCinfo()->getSlotIndex( "raxial.raxialSrc" );
-static const unsigned int VmSlot =
-	initCompartmentCinfo()->getSlotIndex( "VmSrc" );
+static const Slot channelSlot =
+	initCompartmentCinfo()->getSlot( "channel.Vm" );
+static const Slot axialSlot =
+	initCompartmentCinfo()->getSlot( "axial.axialSrc" );
+static const Slot raxialSlot =
+	initCompartmentCinfo()->getSlot( "raxial.raxialSrc" );
+static const Slot VmSlot =
+	initCompartmentCinfo()->getSlot( "VmSrc" );
 
 //////////////////////////////////////////////////////////////////
 // Here we put the Compartment class functions.

@@ -227,18 +227,9 @@ static const Finfo* enzSolveFinfo =
 static const Finfo* mmEnzSolveFinfo = 
 	initSmoldynHubCinfo()->findFinfo( "mmEnzSolve" );
 
-static const unsigned int molSumSlot =
-	initSmoldynHubCinfo()->getSlotIndex( "molSum" );
-
-static const unsigned int fluxSlot =
-	initSmoldynHubCinfo()->getSlotIndex( "flux.efflux" );
-
-/*
-static const unsigned int reacSlot =
-	initSmoldynHubCinfo()->getSlotIndex( "reac.n" );
-static const unsigned int nSlot =
-	initSmoldynHubCinfo()->getSlotIndex( "nSrc" );
-*/
+static const Slot molSumSlot = initSmoldynHubCinfo()->getSlot( "molSum" );
+static const Slot fluxSlot =
+	initSmoldynHubCinfo()->getSlot( "flux.efflux" );
 
 void redirectDestMessages(
 	Element* hub, Element* e, const Finfo* hubFinfo, const Finfo* eFinfo,

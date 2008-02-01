@@ -98,8 +98,8 @@ const Cinfo* initSpikeGenCinfo()
 
 static const Cinfo* spikeGenCinfo = initSpikeGenCinfo();
 
-static const unsigned int eventSlot =
-	initSpikeGenCinfo()->getSlotIndex( "event" );
+static const Slot eventSlot =
+	initSpikeGenCinfo()->getSlot( "event" );
 
 //////////////////////////////////////////////////////////////////
 // Here we put the SpikeGen class functions.

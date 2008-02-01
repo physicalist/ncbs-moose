@@ -34,7 +34,8 @@ template < class T > class ValueFtype1: public Ftype1<T>
 									f->innerGetFunc()
 					);
 				Element* e = c.targetElement();
-				send1<T>( e, f->srcIndex(), getValue( e ) );
+				///\todo Hack here to be fixed by getting a proper slot
+				send1<T>( e, Slot( f->srcIndex(), 0 ), getValue( e ) );
 			}
 
 			/**

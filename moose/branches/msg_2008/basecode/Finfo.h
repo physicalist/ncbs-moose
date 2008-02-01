@@ -223,10 +223,9 @@ class Finfo
 			 * Finfo has a suitable srcIndex or destIndex
 			 * to pass back in the 'ret' argument.
 			 * Many Finfos do not have such a number, 
-			 * so it returns 0 by default.
+			 * so it returns 0 by default to indicate failure.
 			 */
-			virtual bool getSlotIndex( const string& name, 
-					unsigned int& ret ) const {
+			virtual bool getSlot( const string& name, Slot& ret ) const {
 				return 0;
 			}
 

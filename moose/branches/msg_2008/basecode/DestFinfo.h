@@ -82,13 +82,7 @@ class DestFinfo: public Finfo
 				destIndex_ = destNum++;
 			}
 
-			bool getSlotIndex( const string& name, 
-					unsigned int& ret ) const;
-			/*
-			unsigned int getSlotIndex() const {
-				return destIndex_;
-			}
-			*/
+			bool getSlot( const string& name, Slot& ret ) const;
 
 			const Finfo* match( 
 				const Element* e, unsigned int connIndex ) const;

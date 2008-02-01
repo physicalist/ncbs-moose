@@ -71,7 +71,7 @@ void BinomialRng::setN(const Conn& c, double n)
     BinomialRng* gen = static_cast<BinomialRng*>(c.data());
     if ( gen )
     {
-        gen->innerSetN((int)n);        
+        gen->innerSetN(static_cast< unsigned long>( n ) );        
     }
     else
     {
@@ -79,7 +79,7 @@ void BinomialRng::setN(const Conn& c, double n)
     }
 }
 
-void BinomialRng::innerSetN(int n)
+void BinomialRng::innerSetN(unsigned long n)
 {
     if ( n <= 0 )
     {

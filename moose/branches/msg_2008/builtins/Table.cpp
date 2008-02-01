@@ -185,10 +185,10 @@ const Cinfo* initTableCinfo()
 
 static const Cinfo* tableCinfo = initTableCinfo();
 
-static const unsigned int outputSlot = 
-	initTableCinfo()->getSlotIndex( "outputSrc" );
-static const unsigned int inputRequestSlot = 
-	initTableCinfo()->getSlotIndex( "inputRequest.requestInput" );
+static const Slot outputSlot = 
+	initTableCinfo()->getSlot( "outputSrc" );
+static const Slot inputRequestSlot = 
+	initTableCinfo()->getSlot( "inputRequest.requestInput" );
 
 ////////////////////////////////////////////////////////////////////
 // Here we set up Table class functions

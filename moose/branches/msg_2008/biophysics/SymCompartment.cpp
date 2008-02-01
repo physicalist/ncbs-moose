@@ -138,19 +138,19 @@ const Cinfo* initSymCompartmentCinfo()
 
 static const Cinfo* symCompartmentCinfo = initSymCompartmentCinfo();
 
-static const unsigned int raxialSlot =
-	initSymCompartmentCinfo()->getSlotIndex( "raxial1.raxialSrc" );
-static const unsigned int sumRaxialSlot =
-	initSymCompartmentCinfo()->getSlotIndex( "raxial1.sumRaxialSrc" );
-static const unsigned int sumRaxialSlotRequest =
-	initSymCompartmentCinfo()->getSlotIndex( "raxial1.sumRaxialRequestSrc");
+static const Slot raxialSlot =
+	initSymCompartmentCinfo()->getSlot( "raxial1.raxialSrc" );
+static const Slot sumRaxialSlot =
+	initSymCompartmentCinfo()->getSlot( "raxial1.sumRaxialSrc" );
+static const Slot sumRaxialSlotRequest =
+	initSymCompartmentCinfo()->getSlot( "raxial1.sumRaxialRequestSrc");
 
-static const unsigned int raxial2Slot =
-	initSymCompartmentCinfo()->getSlotIndex( "raxial2.raxial2Src" );
-static const unsigned int sumRaxial2Slot =
-	initSymCompartmentCinfo()->getSlotIndex( "raxial2.sumRaxial2Src" );
-static const unsigned int sumRaxial2SlotRequest =
-	initSymCompartmentCinfo()->getSlotIndex( "raxial2.sumRaxial2RequestSrc" );
+static const Slot raxial2Slot =
+	initSymCompartmentCinfo()->getSlot( "raxial2.raxial2Src" );
+static const Slot sumRaxial2Slot =
+	initSymCompartmentCinfo()->getSlot( "raxial2.sumRaxial2Src" );
+static const Slot sumRaxial2SlotRequest =
+	initSymCompartmentCinfo()->getSlot( "raxial2.sumRaxial2RequestSrc" );
 
 //////////////////////////////////////////////////////////////////
 // Here we put the SymCompartment class functions.

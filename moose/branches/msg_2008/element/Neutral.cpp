@@ -120,11 +120,11 @@ const Cinfo* initNeutralCinfo()
 
 static const Cinfo* neutralCinfo = initNeutralCinfo();
 static const Element* root = Element::root();
-const unsigned int Neutral::childSrcIndex = initNeutralCinfo()->
-	getSlotIndex( "childSrc" );
-const unsigned int Neutral::childIndex = initNeutralCinfo()->
-	getSlotIndex( "child" );
+// const Slot Neutral::childIndex = initNeutralCinfo()->
+//	getSlotIndex( "child" );
 
+static const Slot childSrcSlot = initNeutralCinfo()->
+	getSlot( "childSrc" );
 
 //////////////////////////////////////////////////////////////////
 // Here we put the Neutral class functions.
@@ -148,15 +148,15 @@ void Neutral::childFunc( const Conn& c , int stage )
 
 		switch ( stage ) {
 				case MARK_FOR_DELETION:
-					send1< int >( e, 0, MARK_FOR_DELETION );
+					send1< int >( e, childSrcSlot, MARK_FOR_DELETION );
 					e->prepareForDeletion( 0 );
 				break;
 				case CLEAR_MESSAGES:
-					send1< int >( e, 0, CLEAR_MESSAGES );
+					send1< int >( e, childSrcSlot, CLEAR_MESSAGES );
 					e->prepareForDeletion( 1 );
 				break;
 				case COMPLETE_DELETION:
-					send1< int >( e, 0, COMPLETE_DELETION );
+					send1< int >( e, childSrcSlot, COMPLETE_DELETION );
 					///\todo: Need to cleanly delete the data part too.
 					delete e;
 				break;
@@ -426,7 +426,7 @@ void Neutral::lookupChild( const Conn& c, const string s )
 	for ( i = begin; i != end; i++ ) {
 		if ( i->targetElement()->name() == s ) {
 			// For neutral, src # 1 is the shared message.
-			sendTo1< Id >( e, 1, c.sourceIndex( ), 
+			sendTo1< Id >( e, Slot( 1, 0 ), c.sourceIndex( ), 
 				i->targetElement()->id() );
 			return;
 		}
@@ -434,7 +434,7 @@ void Neutral::lookupChild( const Conn& c, const string s )
 	// Hm. What is the best thing to do if it fails? Return an
 	// error value, or not return anything at all?
 	// Perhaps best to be consistent about returning something.
-	sendTo1< Id >( e, 1, c.sourceIndex( ), Id::badId() );
+	sendTo1< Id >( e, Slot( 1, 0 ), c.sourceIndex( ), Id::badId() );
 }
 
 vector< Id > Neutral::getChildList( const Element* e )
@@ -546,7 +546,7 @@ void testNeutral()
 
 		// Send the command to mark selected children for deletion.
 		// In this case the selected child should be n2.
-		sendTo1< int >( n1, 0, 0, 0 );
+		sendTo1< int >( n1, Slot( 0, 0 ), 0, 0 );
 
 		// At this point n1 still has both n2 and n3 as children
 		ASSERT( n1->connSize() == 3, "Should still have 2 children and parent" );
@@ -555,7 +555,7 @@ void testNeutral()
 
 		// Send the command to clean up messages. This still does
 		// not delete anything.
-		sendTo1< int >( n1, 0, 0, 1 );
+		sendTo1< int >( n1, Slot( 0, 0 ), 0, 1 );
 		ASSERT( n1->connSize() == 2, "As far as n1 is concerned, n2 is removed" );
 		// n2 still has n1 as parent, and n21 and n22 as children
 		ASSERT( n2->connSize() == 3, "2 kids and a parent" );

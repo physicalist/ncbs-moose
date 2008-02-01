@@ -60,6 +60,7 @@ HEADERS = \
 	Element.h \
 	Id.h \
 	Class.h \
+	Slot.h \
 
 #	AssignFinfo.h
 #	ArrayFinfo.o \

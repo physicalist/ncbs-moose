@@ -197,16 +197,16 @@ const Cinfo* initClockJobCinfo()
 
 static const Cinfo* clockJobCinfo = initClockJobCinfo();
 
-static const unsigned int startSlot = 
-	initClockJobCinfo()->getSlotIndex( "startSrc" );
-static const unsigned int incrementSlot = 
-	initClockJobCinfo()->getSlotIndex( "tick.incrementTick" );
-static const unsigned int requestNextTimeSlot = 
-	initClockJobCinfo()->getSlotIndex( "tick.nextTime" );
-static const unsigned int reschedSlot = 
-	initClockJobCinfo()->getSlotIndex( "tick.resched" );
-static const unsigned int reinitSlot = 
-	initClockJobCinfo()->getSlotIndex( "tick.reinit" );
+static const Slot startSlot = 
+	initClockJobCinfo()->getSlot( "startSrc" );
+static const Slot incrementSlot = 
+	initClockJobCinfo()->getSlot( "tick.incrementTick" );
+static const Slot requestNextTimeSlot = 
+	initClockJobCinfo()->getSlot( "tick.nextTime" );
+static const Slot reschedSlot = 
+	initClockJobCinfo()->getSlot( "tick.resched" );
+static const Slot reinitSlot = 
+	initClockJobCinfo()->getSlot( "tick.reinit" );
 
 ///////////////////////////////////////////////////
 // Field function definitions

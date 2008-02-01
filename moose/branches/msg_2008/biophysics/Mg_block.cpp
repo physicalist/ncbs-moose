@@ -88,8 +88,8 @@ const Cinfo* initMg_blockCinfo()
 
 static const Cinfo* Mg_blockCinfo = initMg_blockCinfo();
 
-static const unsigned int channelSlot =
-	initMg_blockCinfo()->getSlotIndex( "channel.channel" );
+static const Slot channelSlot =
+	initMg_blockCinfo()->getSlot( "channel.channel" );
 
 
 ///////////////////////////////////////////////////

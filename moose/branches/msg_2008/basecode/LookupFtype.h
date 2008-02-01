@@ -101,7 +101,9 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 				Element* e = c.targetElement();
 				const T2* index = static_cast< const T2* >(
 								f->generalIndex() );
-				send1< T1 >( e, f->srcIndex(), getLookup( e, *index ) );
+				///\todo Fix hack involving Slot.
+				send1< T1 >( e, Slot( f->srcIndex(), 0 ), 
+					getLookup( e, *index ) );
 			}
 
 			RecvFunc recvFunc() const {

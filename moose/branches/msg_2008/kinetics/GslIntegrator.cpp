@@ -104,11 +104,11 @@ const Cinfo* initGslIntegratorCinfo()
 static const Cinfo* gslIntegratorCinfo = initGslIntegratorCinfo();
 
 /*
-static const unsigned int integrateSlot =
-	initGslIntegratorCinfo()->getSlotIndex( "integrateSrc" );
+static const Slot integrateSlot =
+	initGslIntegratorCinfo()->getSlot( "integrateSrc" );
 	*/
-static const unsigned int reinitSlot =
-	initGslIntegratorCinfo()->getSlotIndex( "gsl.reinitSrc" );
+static const Slot reinitSlot =
+	initGslIntegratorCinfo()->getSlot( "gsl.reinitSrc" );
 
 
 ///////////////////////////////////////////////////

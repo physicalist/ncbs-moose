@@ -168,8 +168,7 @@ class DynamicFinfo: public Finfo
 					return 1;
 			}
 
-			bool getSlotIndex( const string& name, 
-					unsigned int& ret ) const;
+			bool getSlot( const string& name, Slot& ret ) const;
 
 			/**
 			 * This operation makes no sense for the DynamicFinfo

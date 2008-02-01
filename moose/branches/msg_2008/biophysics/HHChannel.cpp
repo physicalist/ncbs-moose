@@ -189,16 +189,16 @@ const Cinfo* initHHChannelCinfo()
 
 static const Cinfo* hhChannelCinfo = initHHChannelCinfo();
 
-static const unsigned int channelSlot =
-	initHHChannelCinfo()->getSlotIndex( "channel.channel" );
-static const unsigned int xGateSlot =
-	initHHChannelCinfo()->getSlotIndex( "xGate.Vm" );
-static const unsigned int yGateSlot =
-	initHHChannelCinfo()->getSlotIndex( "yGate.Vm" );
-static const unsigned int zGateSlot =
-	initHHChannelCinfo()->getSlotIndex( "zGate.Vm" );
-static const unsigned int ikSlot =
-	initHHChannelCinfo()->getSlotIndex( "IkSrc" );
+static const Slot channelSlot =
+	initHHChannelCinfo()->getSlot( "channel.channel" );
+static const Slot xGateSlot =
+	initHHChannelCinfo()->getSlot( "xGate.Vm" );
+static const Slot yGateSlot =
+	initHHChannelCinfo()->getSlot( "yGate.Vm" );
+static const Slot zGateSlot =
+	initHHChannelCinfo()->getSlot( "zGate.Vm" );
+static const Slot ikSlot =
+	initHHChannelCinfo()->getSlot( "IkSrc" );
 
 
 ///////////////////////////////////////////////////
