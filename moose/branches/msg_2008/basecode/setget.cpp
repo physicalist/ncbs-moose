@@ -27,7 +27,7 @@ bool set( Element* e, const Finfo* f )
 		RecvFunc rf = f->recvFunc();
 		if ( rf ) {
 			Conn c( e, MAXUINT );
-			rf( c );
+			rf( &c );
 			return 1;
 		}
 	}

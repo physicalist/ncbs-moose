@@ -135,10 +135,10 @@ class LookupTestClass
 			}
 
 			static void setDmap( 
-						const Conn& c, double val, const string& s ) {
+						const Conn* c, double val, const string& s ) {
 				LookupTestClass* atc = 
 					static_cast< LookupTestClass* >(
-									c.targetElement()->data() );
+									c->data() );
 				map< string, double >::iterator i = atc->dmap.find( s );
 				if ( i != atc->dmap.end() )
 					i->second = val;
@@ -149,23 +149,22 @@ class LookupTestClass
 			static double getDval( const Element* e ) {
 				return static_cast< LookupTestClass* >( e->data() )->dval;
 			}
-			static void setDval( const Conn& c, double val ) {
-				static_cast< LookupTestClass* >( 
-					c.targetElement()->data() )->dval = val;
+			static void setDval( const Conn* c, double val ) {
+				static_cast< LookupTestClass* >( c->data() )->dval = val;
 			}
 
 			// A proper message, adds incoming val to dval.
-			static void dsum( const Conn& c, double val ) {
-				static_cast< LookupTestClass* >( 
-					c.targetElement()->data() )->dval += val;
+			static void dsum( const Conn* c, double val ) {
+				static_cast< LookupTestClass* >( c->data() )->dval += val;
 			}
 
 			// another proper message. Triggers a local operation,
 			// triggers sending of dval, and triggers a trigger out.
-			static void proc( const Conn& c ) {
-				Element* e = c.targetElement();
+			static void proc( const Conn* c ) {
+				Element* e = c->targetElement();
+				void* data = c->data();
 				LookupTestClass* tc =
-						static_cast< LookupTestClass* >( e->data() );
+						static_cast< LookupTestClass* >( data );
 				tc->dval = 0.0;
 				map< string, double >::iterator i;
 				for ( i = tc->dmap.begin(); i != tc->dmap.end(); i++ )

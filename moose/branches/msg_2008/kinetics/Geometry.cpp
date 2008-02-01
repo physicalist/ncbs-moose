@@ -98,13 +98,13 @@ Geometry::Geometry()
 // Field access functions.
 ///////////////////////////////////////////////////
 		
-void Geometry::setEpsilon( const Conn& c, double value )
+void Geometry::setEpsilon( const Conn* c, double value )
 {
 	if ( value >= 0.0 )
-		static_cast< Geometry* >( c.data() )->epsilon_ = value;
+		static_cast< Geometry* >( c->data() )->epsilon_ = value;
 	
 	// Send the update over to the solver
-	send1< double >( c.targetElement(), epsilonSlot, value );
+	send1< double >( c->targetElement(), epsilonSlot, value );
 }
 
 double Geometry::getEpsilon( const Element* e )
@@ -112,13 +112,13 @@ double Geometry::getEpsilon( const Element* e )
 	return static_cast< Geometry* >( e->data() )->epsilon_;
 }
 
-void Geometry::setNeighDist( const Conn& c, double value )
+void Geometry::setNeighDist( const Conn* c, double value )
 {
 	if ( value >= 0.0 )
-		static_cast< Geometry* >( c.data() )->neighDist_ = value;
+		static_cast< Geometry* >( c->data() )->neighDist_ = value;
 	
 	// Send the update over to the solver
-	send1< double >( c.targetElement(), neighDistSlot, value );
+	send1< double >( c->targetElement(), neighDistSlot, value );
 }
 
 double Geometry::getNeighDist( const Element* e )

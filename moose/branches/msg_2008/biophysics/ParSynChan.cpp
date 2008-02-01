@@ -190,9 +190,9 @@ ParSynChan::ParSynChan()
 {
 }
 
-void ParSynChan::recvRank( const Conn& c, int rank )
+void ParSynChan::recvRank( const Conn* c, int rank )
 {
-        static_cast< ParSynChan* >( c.data() )->recvRank_.push_back(rank);
+        static_cast< ParSynChan* >( c->data() )->recvRank_.push_back(rank);
 }
 
 void ParSynChan::innerProcessFunc( Element* e, ProcInfo info )
@@ -258,10 +258,10 @@ unsigned int ParSynChan::updateNumSynapse( const Element* e )
         return synapses_.size();
 }
 
-void ParSynChan::processFunc( const Conn& c, ProcInfo p )
+void ParSynChan::processFunc( const Conn* c, ProcInfo p )
 {
-        Element* e = c.targetElement();
-        static_cast< ParSynChan* >( e->data() )->innerProcessFunc( e, p );
+        Element* e = c->targetElement();
+        static_cast< ParSynChan* >( c->data() )->innerProcessFunc( e, p );
 }
 
 /*
@@ -297,9 +297,9 @@ void ParSynChan::innerReinitFunc( Element* e, ProcInfo info )
 		pendingEvents_.pop();
 }
 
-void ParSynChan::reinitFunc( const Conn& c, ProcInfo p )
+void ParSynChan::reinitFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c.targetElement();
-	static_cast< ParSynChan* >( e->data() )->innerReinitFunc( e, p );
+	Element* e = c->targetElement();
+	static_cast< ParSynChan* >( c->data() )->innerReinitFunc( e, p );
 }
 

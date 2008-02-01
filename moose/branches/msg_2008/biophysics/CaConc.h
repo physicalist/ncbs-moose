@@ -47,27 +47,27 @@ class CaConc
 		///////////////////////////////////////////////////////////////
 		// Message handling functions
 		///////////////////////////////////////////////////////////////
-		static void reinitFunc( const Conn& c, ProcInfo info );
-		void innerReinitFunc( const Conn& c );
-		static void processFunc( const Conn& c, ProcInfo info );
-		void innerProcessFunc( const Conn& conn, ProcInfo info );
+		static void reinitFunc( const Conn* c, ProcInfo info );
+		void innerReinitFunc( const Conn* c );
+		static void processFunc( const Conn* c, ProcInfo info );
+		void innerProcessFunc( const Conn* conn, ProcInfo info );
 
-		static void currentFunc( const Conn& c, double I );
+		static void currentFunc( const Conn* c, double I );
 		static void currentFractionFunc(
-				const Conn& c, double I, double fraction );
-		static void increaseFunc( const Conn& c, double I );
-		static void decreaseFunc( const Conn& c, double I );
-		static void basalMsgFunc( const Conn& c, double value );
+				const Conn* c, double I, double fraction );
+		static void increaseFunc( const Conn* c, double I );
+		static void decreaseFunc( const Conn* c, double I );
+		static void basalMsgFunc( const Conn* c, double value );
 		///////////////////////////////////////////////////////////////
 		// Field handling functions
 		///////////////////////////////////////////////////////////////
-		static void setCa( const Conn& c, double val );
+		static void setCa( const Conn* c, double val );
 		static double getCa( const Element* e );
-		static void setCaBasal( const Conn& c, double val );
+		static void setCaBasal( const Conn* c, double val );
 		static double getCaBasal( const Element* e );
-		static void setTau( const Conn& c, double val );
+		static void setTau( const Conn* c, double val );
 		static double getTau( const Element* e );
-		static void setB( const Conn& c, double val );
+		static void setB( const Conn* c, double val );
 		static double getB( const Element* e );
 
 	private:

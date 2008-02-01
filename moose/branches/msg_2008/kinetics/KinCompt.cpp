@@ -141,11 +141,11 @@ KinCompt::KinCompt()
 // Field access functions.
 ///////////////////////////////////////////////////
 		
-void KinCompt::setVolume( const Conn& c, double value )
+void KinCompt::setVolume( const Conn* c, double value )
 {
 	if ( value < 0.0 )
 		return;
-	static_cast< KinCompt* >( c.data() )->innerSetVolume( value );
+	static_cast< KinCompt* >( c->data() )->innerSetVolume( value );
 }
 
 void KinCompt::innerSetVolume( double value )
@@ -160,11 +160,11 @@ double KinCompt::getVolume( const Element* e )
 	return static_cast< KinCompt* >( e->data() )->volume_;
 }
 
-void KinCompt::setArea( const Conn& c, double value )
+void KinCompt::setArea( const Conn* c, double value )
 {
 	if ( value < 0.0 )
 		return;
-	static_cast< KinCompt* >( c.data() )->innerSetArea( value );
+	static_cast< KinCompt* >( c->data() )->innerSetArea( value );
 }
 
 void KinCompt::innerSetArea( double value )
@@ -180,11 +180,11 @@ double KinCompt::getArea( const Element* e )
 }
 
 
-void KinCompt::setPerimeter( const Conn& c, double value )
+void KinCompt::setPerimeter( const Conn* c, double value )
 {
 	if ( value < 0.0 )
 		return;
-	static_cast< KinCompt* >( c.data() )->innerSetPerimeter( value );
+	static_cast< KinCompt* >( c->data() )->innerSetPerimeter( value );
 }
 
 void KinCompt::innerSetPerimeter( double value )
@@ -200,11 +200,11 @@ double KinCompt::getPerimeter( const Element* e )
 }
 
 
-void KinCompt::setSize( const Conn& c, double value )
+void KinCompt::setSize( const Conn* c, double value )
 {
 	if ( value < 0.0 )
 		return;
-	static_cast< KinCompt* >( c.data() )->innerSetSize( value );
+	static_cast< KinCompt* >( c->data() )->innerSetSize( value );
 }
 
 void KinCompt::innerSetSize( double value )
@@ -223,11 +223,11 @@ double KinCompt::getSize( const Element* e )
 	return static_cast< KinCompt* >( e->data() )->size_;
 }
 
-void KinCompt::setNumDimensions( const Conn& c, unsigned int value )
+void KinCompt::setNumDimensions( const Conn* c, unsigned int value )
 {
 	if ( value == 0 || value > 3 )
 		return;
-	static_cast< KinCompt* >( c.data() )->numDimensions_ = value;
+	static_cast< KinCompt* >( c->data() )->numDimensions_ = value;
 }
 
 unsigned int KinCompt::getNumDimensions( const Element* e )
@@ -240,10 +240,10 @@ unsigned int KinCompt::getNumDimensions( const Element* e )
 // MsgDest functions.
 ///////////////////////////////////////////////////
 
-void KinCompt::requestExtent( const Conn& c )
+void KinCompt::requestExtent( const Conn* c )
 {
-	static_cast< KinCompt* >( c.data() )->
-		innerRequestExtent( c.targetElement() );
+	static_cast< KinCompt* >( c->data() )->
+		innerRequestExtent( c->targetElement() );
 }
 
 void KinCompt::innerRequestExtent( const Element* e ) const 
@@ -265,9 +265,9 @@ void KinCompt::localExteriorFunction( double v1, double v2, double v3 )
 }
 
 void KinCompt::exteriorFunction( 
-	const Conn& c, double v1, double v2, double v3 )
+	const Conn* c, double v1, double v2, double v3 )
 {
-	static_cast< KinCompt* >( c.data() )->localExteriorFunction( v1, v2, v3 );
+	static_cast< KinCompt* >( c->data() )->localExteriorFunction( v1, v2, v3 );
 }
 
 void KinCompt::localInteriorFunction( double v1, double v2, double v3 )
@@ -286,7 +286,7 @@ void KinCompt::localInteriorFunction( double v1, double v2, double v3 )
 }
 
 void KinCompt::interiorFunction( 
-	const Conn& c, double v1, double v2, double v3 )
+	const Conn* c, double v1, double v2, double v3 )
 {
-	static_cast< KinCompt* >( c.data() )->localInteriorFunction( v1, v2, v3 );
+	static_cast< KinCompt* >( c->data() )->localInteriorFunction( v1, v2, v3 );
 }

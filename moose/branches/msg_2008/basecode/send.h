@@ -37,14 +37,14 @@ template < class T > void send1(
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 
 	do {
-		void( *rf )( const Conn&, T ) = 
-				reinterpret_cast< void ( * )( const Conn&, T ) >(
+		void( *rf )( const Conn*, T ) = 
+				reinterpret_cast< void ( * )( const Conn*, T ) >(
 				e->srcRecvFunc( src.msg() ) ); 
 		/// \todo This should be replaced by the STL binder and foreach
 		vector< Conn >::const_iterator j;
 		for ( j = e->connSrcBegin( src.msg() );
 						j != e->connSrcEnd( src.msg() ); j++ )
-				rf( *j, val );
+				rf( &( *j ), val );
 		src = Slot( e->nextSrc( src.msg() ), src.func() );
 	} while ( src.msg() != 0 );
 }
@@ -58,10 +58,10 @@ template< class T > void sendTo1(
 		const Element* eIn, Slot src, unsigned int conn, T val )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
-	void( *rf )( const Conn&, T ) = 
-			reinterpret_cast< void ( * )( const Conn&, T ) >(
+	void( *rf )( const Conn*, T ) = 
+			reinterpret_cast< void ( * )( const Conn*, T ) >(
 			e->lookupRecvFunc( src.msg(), conn ) );
-		rf( *( e->lookupConn( conn ) ),  val );
+		rf( &( *( e->lookupConn( conn ) ) ),  val );
 }
 
 /**
@@ -73,14 +73,14 @@ template < class T1, class T2 > void send2(
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 
 	do {
-		void( *rf )( const Conn&, T1, T2 ) = 
-				reinterpret_cast< void ( * )( const Conn&, T1, T2 ) >(
+		void( *rf )( const Conn*, T1, T2 ) = 
+				reinterpret_cast< void ( * )( const Conn*, T1, T2 ) >(
 				e->srcRecvFunc( src.msg() ) ); 
 		/// \todo Are there STL binders for 2 values?
 		vector< Conn >::const_iterator j;
 		for ( j = e->connSrcBegin( src.msg() );
 						j != e->connSrcEnd( src.msg() ); j++ )
-				rf( *j, val1, val2 );
+				rf( &( *j ), val1, val2 );
 		src = Slot( e->nextSrc( src.msg() ), src.func() );
 	} while ( src.msg() != 0 );
 }
@@ -95,10 +95,10 @@ template< class T1, class T2 > void sendTo2(
 		T1 val1, T2 val2 )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
-	void( *rf )( const Conn&, T1, T2 ) = 
-			reinterpret_cast< void ( * )( const Conn&, T1, T2 ) >(
+	void( *rf )( const Conn*, T1, T2 ) = 
+			reinterpret_cast< void ( * )( const Conn*, T1, T2 ) >(
 			e->lookupRecvFunc( src.msg(), conn ) );
-		rf( *( e->lookupConn( conn ) ),  val1, val2 );
+		rf( &( *( e->lookupConn( conn ) ) ),  val1, val2 );
 }
 
 /**
@@ -111,14 +111,14 @@ template < class T1, class T2, class T3 > void send3(
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 
 	do {
-		void( *rf )( const Conn&, T1, T2, T3 ) = 
-			reinterpret_cast< void ( * )( const Conn&, T1, T2, T3 ) >(
+		void( *rf )( const Conn*, T1, T2, T3 ) = 
+			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3 ) >(
 				e->srcRecvFunc( src.msg() ) ); 
 		/// \todo Are there STL binders for 2 values?
 		vector< Conn >::const_iterator j;
 		for ( j = e->connSrcBegin( src.msg() );
 						j != e->connSrcEnd( src.msg() ); j++ )
-				rf( *j, val1, val2, val3 );
+				rf( &( *j ), val1, val2, val3 );
 		src = Slot( e->nextSrc( src.msg() ), src.func() );
 	} while ( src.msg() != 0 );
 }
@@ -133,10 +133,10 @@ template< class T1, class T2, class T3 > void sendTo3(
 		T1 val1, T2 val2, T3 val3 )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
-	void( *rf )( const Conn&, T1, T2, T3 ) = 
-			reinterpret_cast< void ( * )( const Conn&, T1, T2, T3 ) >(
+	void( *rf )( const Conn*, T1, T2, T3 ) = 
+			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3 ) >(
 			e->lookupRecvFunc( src.msg(), conn ) );
-		rf( *( e->lookupConn( conn ) ),  val1, val2, val3 );
+		rf( &( *( e->lookupConn( conn ) ) ),  val1, val2, val3 );
 }
 
 /**
@@ -149,14 +149,14 @@ template < class T1, class T2, class T3, class T4 > void send4(
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 
 	do {
-		void( *rf )( const Conn&, T1, T2, T3, T4 ) = 
-			reinterpret_cast< void ( * )( const Conn&, T1, T2, T3, T4 ) >(
+		void( *rf )( const Conn*, T1, T2, T3, T4 ) = 
+			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3, T4 ) >(
 				e->srcRecvFunc( src.msg() ) ); 
 		/// \todo Are there STL binders for 2 values?
 		vector< Conn >::const_iterator j;
 		for ( j = e->connSrcBegin( src.msg() );
 						j != e->connSrcEnd( src.msg() ); j++ )
-				rf( *j, val1, val2, val3, val4 );
+				rf( &( *j ), val1, val2, val3, val4 );
 		src = Slot( e->nextSrc( src.msg() ), src.func() );
 	} while ( src.msg() != 0 );
 }
@@ -171,10 +171,10 @@ template< class T1, class T2, class T3, class T4 > void sendTo4(
 		T1 val1, T2 val2, T3 val3, T4 val4 )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
-	void( *rf )( const Conn&, T1, T2, T3, T4 ) = 
-			reinterpret_cast< void ( * )( const Conn&, T1, T2, T3, T4 ) >(
+	void( *rf )( const Conn*, T1, T2, T3, T4 ) = 
+			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3, T4 ) >(
 			e->lookupRecvFunc( src.msg(), conn ) );
-		rf( *( e->lookupConn( conn ) ),  val1, val2, val3, val4 );
+		rf( &( *( e->lookupConn( conn ) ) ),  val1, val2, val3, val4 );
 }
 
 #endif // _SEND_H

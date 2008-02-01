@@ -238,14 +238,15 @@ Element* SimpleElement::copy( Element* parent, const string& newName )
 	vector< DupInfo > globalConns;
 	for ( j = delConns.begin(); j != delConns.end(); j++ ) {
 		// Check for global targets
-		const Conn& c = *( j->first->lookupConn( j->second ) );
-		Element* tgt = c.targetElement();
+		// Ugly hack for the transition
+		const Conn* c = &( *( j->first->lookupConn( j->second ) ) );
+		Element* tgt = c->targetElement();
 		if ( tgt->isGlobal() ) {
 			DupInfo di;
 			di.tgt = tgt;
-			di.orig = c.sourceElement();
+			di.orig = c->sourceElement();
 			di.dup = j->first;
-			di.connIdx = c.targetIndex();
+			di.connIdx = c->targetIndex();
 			globalConns.push_back( di );
 		}
 		j->first->deleteHalfConn( j->second );
@@ -264,7 +265,8 @@ Element* SimpleElement::copy( Element* parent, const string& newName )
 	*/
 	vector< DupInfo >::iterator k;
 	for ( k = globalConns.begin(); k != globalConns.end(); k++ ) {
-		k->tgt->innerCopyMsg( *k->tgt->lookupConn( k->connIdx ), k->orig, k->dup );
+		k->tgt->innerCopyMsg( &( *k->tgt->lookupConn( k->connIdx ) ), 
+			k->orig, k->dup );
 	}
 	
 	// Fourth pass: stick the copied tree onto the parent Element.
@@ -371,7 +373,7 @@ void SimpleElement::copyMsg( map< const Element*, Element* >& tree )
 		j = lookupVariableConn( i );
 		k = tree.find( j->targetElement() );
 		if ( k != tree.end() )
-			this->innerCopyMsg( *j, k->first, k->second );
+			this->innerCopyMsg( &( *j ), k->first, k->second );
 	}
 }
 
@@ -382,13 +384,13 @@ void SimpleElement::copyMsg( map< const Element*, Element* >& tree )
  * Still need to check if it handles all cases of src/dest finfos.
  */
 bool SimpleElement::innerCopyMsg(
-	const Conn& c, const Element* orig, Element* dup )
+	const Conn* c, const Element* orig, Element* dup )
 {
 	assert( orig != dup );
 	assert( orig->className() == dup->className() );
 	// Start out by trying to find Finfo on local element
 	// We don't know yet if this is msgsrc or msgdest.
-	const Finfo* temp = findFinfo( connIndex( &c ) );
+	const Finfo* temp = findFinfo( connIndex( c ) );
 	assert( temp );
 	if ( temp->name() == "child" || temp->name() == "childSrc" )
 		return 0;
@@ -396,10 +398,10 @@ bool SimpleElement::innerCopyMsg(
 	const Finfo* destFinfo;
 	if ( dynamic_cast< const SrcFinfo* >( temp ) != 0 ) {
 		srcFinfo = temp;
-		destFinfo = orig->findFinfo( c.targetIndex() );
+		destFinfo = orig->findFinfo( c->targetIndex() );
 		return srcFinfo->add( this, dup, destFinfo );
 	} else {
-		srcFinfo = orig->findFinfo( c.targetIndex() );
+		srcFinfo = orig->findFinfo( c->targetIndex() );
 		destFinfo = temp;
 		return srcFinfo->add( dup, this, destFinfo );
 	}

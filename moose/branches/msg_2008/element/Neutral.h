@@ -25,7 +25,7 @@ class Neutral
 			Neutral( )
 			{;}
 
-			static void childFunc( const Conn& c, int stage );
+			static void childFunc( const Conn* c, int stage );
 			static const string getName( const Element* e );
 			static const string getClass( const Element* e );
 			static Id getParent( const Element* e );
@@ -34,13 +34,13 @@ class Neutral
 			static unsigned int getDataMem( const Element* e );
 			static unsigned int getMsgMem( const Element* e );
 			// static unsigned int getNode( const Element* e );
-			// static void setNode( const Conn& c, unsigned int node );
+			// static void setNode( const Conn* c, unsigned int node );
 
 			// The m in the name is to avoid confusion with the utility
 			// function create below.
-			static void mcreate( const Conn&,
+			static void mcreate( const Conn*,
 							const string cinfo, const string name );
-			static void mcreateArray( const Conn&,
+			static void mcreateArray( const Conn*,
 							const string cinfo, const string name, int n );
 			
 			/**
@@ -59,9 +59,9 @@ class Neutral
 			static Element* createArray(
 				const string& cinfo, const string& name, 
 				Element* parent, int n );
-			static void destroy( const Conn& c );
-			static void setName( const Conn&, const string s );
-			static void lookupChild( const Conn&, const string s );
+			static void destroy( const Conn* c );
+			static void setName( const Conn*, const string s );
+			static void lookupChild( const Conn*, const string s );
 			static Id getChildByName( const Element* e, const string& s );
 
 			// static const unsigned int childIndex;

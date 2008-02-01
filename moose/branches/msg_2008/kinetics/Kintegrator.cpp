@@ -100,9 +100,9 @@ string Kintegrator::getMethod( const Element* e )
 {
 	return static_cast< const Kintegrator* >( e->data() )->method_;
 }
-void Kintegrator::setMethod( const Conn& c, string method )
+void Kintegrator::setMethod( const Conn* c, string method )
 {
-	static_cast< Kintegrator* >( c.data() )->innerSetMethod( method );
+	static_cast< Kintegrator* >( c->data() )->innerSetMethod( method );
 }
 
 void Kintegrator::innerSetMethod( const string& method )
@@ -115,9 +115,9 @@ void Kintegrator::innerSetMethod( const string& method )
 // Dest function definitions
 ///////////////////////////////////////////////////
 
-void Kintegrator::allocateFunc( const Conn& c, vector< double >* y )
+void Kintegrator::allocateFunc( const Conn* c, vector< double >* y )
 {
-	static_cast< Kintegrator* >( c.data() )->allocateFuncLocal( y );
+	static_cast< Kintegrator* >( c->data() )->allocateFuncLocal( y );
 }
 void Kintegrator::allocateFuncLocal( vector< double >*  y )
 {
@@ -127,10 +127,10 @@ void Kintegrator::allocateFuncLocal( vector< double >*  y )
 			isInitialized_ = 1;
 }
 
-void Kintegrator::processFunc( const Conn& c, ProcInfo info )
+void Kintegrator::processFunc( const Conn* c, ProcInfo info )
 {
-	Element* e = c.targetElement();
-	static_cast< Kintegrator* >( e->data() )->innerProcessFunc( e, info );
+	Element* e = c->targetElement();
+	static_cast< Kintegrator* >( c->data() )->innerProcessFunc( e, info );
 }
 
 void Kintegrator::innerProcessFunc( Element* e, ProcInfo info )
@@ -150,7 +150,7 @@ void Kintegrator::innerProcessFunc( Element* e, ProcInfo info )
 			*/
 }
 
-void Kintegrator::reinitFunc( const Conn& c, ProcInfo info )
+void Kintegrator::reinitFunc( const Conn* c, ProcInfo info )
 {
-	send0( c.targetElement(), reinitSlot );
+	send0( c->targetElement(), reinitSlot );
 }

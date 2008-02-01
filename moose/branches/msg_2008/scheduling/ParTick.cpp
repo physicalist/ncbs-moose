@@ -180,9 +180,9 @@ static const Slot pollSlot =
 // Dest function definitions
 ///////////////////////////////////////////////////
 
-void ParTick::pollFunc( const Conn& c, unsigned int node ) 
+void ParTick::pollFunc( const Conn* c, unsigned int node ) 
 {
-	static_cast< ParTick* >( c.data() )->innerPollFunc( node );
+	static_cast< ParTick* >( c->data() )->innerPollFunc( node );
 }
 
 void ParTick::innerPollFunc( unsigned int node ) 

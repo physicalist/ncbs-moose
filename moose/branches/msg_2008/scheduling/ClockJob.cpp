@@ -217,9 +217,9 @@ static const Slot reinitSlot =
  * Perhaps this should not be assignable, but readonly.
  * Or The assignment should be a message.
  */
-void ClockJob::setRunTime( const Conn& c, double v )
+void ClockJob::setRunTime( const Conn* c, double v )
 {
-	static_cast< ClockJob* >( c.data() )->runTime_ = v;
+	static_cast< ClockJob* >( c->data() )->runTime_ = v;
 }
 double ClockJob::getRunTime( const Element* e )
 {
@@ -237,9 +237,9 @@ double ClockJob::getCurrentTime( const Element* e )
  * Or The assignment should be a message.
  * It is a variant of the runtime function.
  */
-void ClockJob::setNsteps( const Conn& c, int v )
+void ClockJob::setNsteps( const Conn* c, int v )
 {
-	static_cast< ClockJob* >( c.data() )->nSteps_ = v;
+	static_cast< ClockJob* >( c->data() )->nSteps_ = v;
 }
 int ClockJob::getNsteps( const Element* e )
 {
@@ -255,15 +255,15 @@ int ClockJob::getCurrentStep( const Element* e )
 // Dest function definitions
 ///////////////////////////////////////////////////
 
-void ClockJob::receiveNextTime( const Conn& c, double time )
+void ClockJob::receiveNextTime( const Conn* c, double time )
 {
-	static_cast< ClockJob* >( c.data() )->nextTime_ = time;
+	static_cast< ClockJob* >( c->data() )->nextTime_ = time;
 }
 
-void ClockJob::startFunc( const Conn& c, double runtime)
+void ClockJob::startFunc( const Conn* c, double runtime)
 {
-	static_cast< ClockJob* >( c.data() )->startFuncLocal( 
-					c.targetElement(), runtime );
+	static_cast< ClockJob* >( c->data() )->startFuncLocal( 
+					c->targetElement(), runtime );
 }
 
 void ClockJob::startFuncLocal( Element* e, double runTime )
@@ -281,10 +281,10 @@ void ClockJob::startFuncLocal( Element* e, double runTime )
 	*/
 }
 
-void ClockJob::stepFunc( const Conn& c, int nsteps )
+void ClockJob::stepFunc( const Conn* c, int nsteps )
 {
-	ClockJob* cj = static_cast< ClockJob* >( c.data() );
-	cj->startFuncLocal( c.targetElement(), nsteps * cj->dt_ );
+	ClockJob* cj = static_cast< ClockJob* >( c->data() );
+	cj->startFuncLocal( c->targetElement(), nsteps * cj->dt_ );
 }
 
 /**
@@ -292,10 +292,10 @@ void ClockJob::stepFunc( const Conn& c, int nsteps )
  * reorder any of the clock ticks, it assumes that they are scheduled
  * correctly
  */
-void ClockJob::reinitFunc( const Conn& c )
+void ClockJob::reinitFunc( const Conn* c )
 {
-	static_cast< ClockJob* >( c.data() )->reinitFuncLocal(
-					c.targetElement() );
+	static_cast< ClockJob* >( c->data() )->reinitFuncLocal(
+					c->targetElement() );
 }
 void ClockJob::reinitFuncLocal( Element* e )
 {
@@ -313,10 +313,10 @@ void ClockJob::reinitFuncLocal( Element* e )
  * This function does NOT mess with the current simulation time: you
  * can resched an ongoing simulation.
  */
-void ClockJob::reschedFunc( const Conn& c )
+void ClockJob::reschedFunc( const Conn* c )
 {
-	static_cast< ClockJob* >( c.data() )->reschedFuncLocal(
-					c.targetElement() );
+	static_cast< ClockJob* >( c->data() )->reschedFuncLocal(
+					c->targetElement() );
 }
 
 class TickSeq {
@@ -424,10 +424,10 @@ void ClockJob::buildMessages( Element* last, Element* e )
  * it must redo the ordering of the ticks and call a resched on them.
  * \todo Currently only a placeholder.
  */
-void ClockJob::dtFunc( const Conn& c, double dt )
+void ClockJob::dtFunc( const Conn* c, double dt )
 {
-	static_cast< ClockJob* >( c.data() )->dtFuncLocal(
-					c.targetElement(), dt );
+	static_cast< ClockJob* >( c->data() )->dtFuncLocal(
+					c->targetElement(), dt );
 }
 void ClockJob::dtFuncLocal( Element* e, double dt )
 {

@@ -106,9 +106,9 @@ const string Class::getName(const Element* e)
         return "";
     }    
 }
-void Class::setName(const Conn& conn, string name)
+void Class::setName(const Conn* conn, string name)
 {
-    Class* obj = static_cast<Class*> (conn.targetElement()->data());
+    Class* obj = static_cast<Class*> (conn->data());
     
     map < string, Cinfo* >::iterator i = Cinfo::lookup().find(name);
     if ( i != Cinfo::lookup().end())
@@ -121,38 +121,8 @@ void Class::setName(const Conn& conn, string name)
         cerr << "ERROR: " << name << " no such class exists." << endl;
     }
 }
-
-
-
-// SchedInfo* Class::getSchedInfo(int index)
-// {
-//     if ( index < classInfo_->scheduling_.size() )
-//     {
-//         return &(classInfo_->scheduling_[index]);
-//     }
-//     else 
-//     {
-//         return 0;        
-//     }    
-// }
-
-/// Sets the tick and the stage of the named SchedInfo
-// void Class::setSchedInfo(string name, unsigned int tick, unsigned int stage)
-// {
-//     for (vector<SchedInfo>::iterator i = classInfo_->scheduling_.begin(); i != classInfo_->scheduling_.end(); ++i)
-//     {
-//         const Finfo* finfo = i->finfo;
-//         if ( name == finfo->name())
-//         {
-//             // TODO: validate the tick and stage here?
-//             finfo->tick = tick;
-//             finfo->stage = stage;            
-//         }        
-//     }    
-// }
-
 /// Set the SchedInfo for the class such that it is scheduled to clock specified by tickId
-void Class::setClock(const Conn& conn, string function, Id tickId)
+void Class::setClock(const Conn* conn, string function, Id tickId)
 {
     assert (!tickId.zero());
     string tickPath = tickId.path();
@@ -160,7 +130,7 @@ void Class::setClock(const Conn& conn, string function, Id tickId)
     unsigned int tick = clockNo / 2;
     unsigned int stage = clockNo % 2;
     
-    Class* obj = static_cast<Class*>(conn.targetElement()->data());
+    Class* obj = static_cast<Class*>(conn->data());
     SchedInfo* schedInfo;
     if (!obj->classInfo_)
     {
@@ -214,10 +184,10 @@ unsigned int Class::getTick(const Element* e)
 }
 
 /// Sets the tick no. of the process SchedInfo
-void Class::setTick(const Conn& conn, unsigned int tick)
+void Class::setTick(const Conn* conn, unsigned int tick)
 {
     string name = "process";
-    Class * obj = static_cast<Class*> (conn.targetElement()->data());
+    Class * obj = static_cast<Class*> (conn->data());
     
     if (!obj->classInfo_)
     {
@@ -261,10 +231,10 @@ unsigned int Class::getStage(const Element* e)
 
 
 /// Set the stage of the process function in SchedInfo
-void Class::setStage(const Conn& conn, unsigned int stage)
+void Class::setStage(const Conn* conn, unsigned int stage)
 {
     string name = "process";
-    Class* obj = static_cast<Class*>(conn.targetElement()->data());
+    Class* obj = static_cast<Class*>(conn->data());
     
     if (!obj->classInfo_)
     {

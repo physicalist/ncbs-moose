@@ -45,7 +45,7 @@ class Panel
 		/// Returns number of neighbors of panel
 		static unsigned int getNneighbors( const Element* e );
 
-		static void setPos( const Conn& c, double value, 
+		static void setPos( const Conn* c, double value, 
 				unsigned int i, unsigned int dim );
 		void localSetPos( double value, unsigned int i, unsigned int dim );
 
@@ -53,11 +53,11 @@ class Panel
 				unsigned int dim);
 		double localGetPos( unsigned int i, unsigned int dim);
 
-		static void setX( const Conn& c, double val, const unsigned int& i);
+		static void setX( const Conn* c, double val, const unsigned int& i);
 		static double getX( const Element* e, const unsigned int& i );
-		static void setY( const Conn& c, double val, const unsigned int& i);
+		static void setY( const Conn* c, double val, const unsigned int& i);
 		static double getY( const Element* e, const unsigned int& i );
-		static void setZ( const Conn& c, double val, const unsigned int& i);
+		static void setZ( const Conn* c, double val, const unsigned int& i);
 		static double getZ( const Element* e, const unsigned int& i );
 		static vector< double > getCoords( const Element* e );
 

@@ -146,10 +146,9 @@ void Cell::addMethod(
 // Field function definitions
 ///////////////////////////////////////////////////
 
-void Cell::setMethod( const Conn& c, string method )
+void Cell::setMethod( const Conn* c, string method )
 {
-	static_cast< Cell* >( c.data() )->
-		innerSetMethod( method );
+	static_cast< Cell* >( c->data() )->innerSetMethod( method );
 }
 
 void Cell::innerSetMethod( string value )
@@ -192,10 +191,10 @@ string Cell::getDescription( const Element* e )
 // Dest function definitions
 ///////////////////////////////////////////////////
 
-void Cell::reinitFunc( const Conn& c, ProcInfo p )
+void Cell::reinitFunc( const Conn* c, ProcInfo p )
 {
-	static_cast< Cell* >( c.data() )->
-		innerReinitFunc( c.targetElement()->id() );
+	static_cast< Cell* >( c->data() )->
+		innerReinitFunc( c->targetElement()->id() );
 }
 
 void Cell::innerReinitFunc( const Id& cell )

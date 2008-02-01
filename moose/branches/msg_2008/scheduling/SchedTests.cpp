@@ -21,8 +21,8 @@ class TickTest {
 		TickTest()
 				{;}
 
-		static void process( const Conn& c, ProcInfo p );
-		static void reinit( const Conn& c, ProcInfo p );
+		static void process( const Conn* c, ProcInfo p );
+		static void reinit( const Conn* c, ProcInfo p );
 		static unsigned int count_;
 		static unsigned int countReinit_;
 	private:
@@ -31,7 +31,7 @@ class TickTest {
 unsigned int TickTest::count_ = 0;
 unsigned int TickTest::countReinit_ = 0;
 
-void TickTest::process( const Conn& c, ProcInfo p )
+void TickTest::process( const Conn* c, ProcInfo p )
 {
 	static const string schedResponse[] = {
 			"t1a  t = 0, dt = 1",
@@ -68,13 +68,13 @@ void TickTest::process( const Conn& c, ProcInfo p )
 	};
 	char line[200];
 	sprintf( line, "%-4s t = %g, dt = %g",
-		c.sourceElement()->name().c_str(), p->currTime_, p->dt_ );
+		c->sourceElement()->name().c_str(), p->currTime_, p->dt_ );
 	if ( count_ < sizeof( schedResponse )/sizeof( string ) )
 		ASSERT( schedResponse[ count_++ ] == string( line ), line );
 	countReinit_ = 0;
 }
 
-void TickTest::reinit( const Conn& c, ProcInfo p )
+void TickTest::reinit( const Conn* c, ProcInfo p )
 {
 	static const string schedResponse[] = {
 			"t1a  t = 0, dt = 1, reinit",
@@ -84,7 +84,7 @@ void TickTest::reinit( const Conn& c, ProcInfo p )
 	};
 	char line[200];
 	sprintf( line, "%-4s t = %g, dt = %g, reinit",
-		c.sourceElement()->name().c_str(), p->currTime_, p->dt_ );
+		c->sourceElement()->name().c_str(), p->currTime_, p->dt_ );
 	if ( countReinit_ < sizeof( schedResponse )/sizeof( string ) )
 		ASSERT( schedResponse[ countReinit_++ ] == string( line ),
 						line );
@@ -202,34 +202,34 @@ static string reinitSeq[] = {
 static string* seqStr;
 static unsigned int seqCount;
 
-void processCall0( const Conn& c, ProcInfo p )
+void processCall0( const Conn* c, ProcInfo p )
 {
 	char line[40];
 	sprintf( line, "Process0: %s at %g",
-			c.targetElement()->name().c_str(), p->currTime_ );
+			c->targetElement()->name().c_str(), p->currTime_ );
 	ASSERT( seqStr[ seqCount++ ] == line , "process0" );
 }
 
-void processCall1( const Conn& c, ProcInfo p )
+void processCall1( const Conn* c, ProcInfo p )
 {
 	char line[40];
 	sprintf( line, "Process1: %s at %g",
-			c.targetElement()->name().c_str(), p->currTime_ );
+			c->targetElement()->name().c_str(), p->currTime_ );
 	ASSERT( seqStr[ seqCount++ ] == line , "process1" );
 }
 
-void processCall2( const Conn& c, ProcInfo p )
+void processCall2( const Conn* c, ProcInfo p )
 {
 	char line[40];
 	sprintf( line, "Process2: %s at %g",
-			c.targetElement()->name().c_str(), p->currTime_ );
+			c->targetElement()->name().c_str(), p->currTime_ );
 	ASSERT( seqStr[ seqCount++ ] == line , "process2" );
 }
 
-void reinitCall( const Conn& c, ProcInfo p )
+void reinitCall( const Conn* c, ProcInfo p )
 {
 	char line[40];
-	sprintf( line, "Reinit: %s", c.targetElement()->name().c_str() );
+	sprintf( line, "Reinit: %s", c->targetElement()->name().c_str() );
 	ASSERT( seqStr[ seqCount++ ] == line , "reinit" );
 }
 
@@ -368,16 +368,16 @@ void testSchedProcess()
 	Id t0Id = Neutral::getChildByName( cjId(), "t0" );
 	ASSERT( !t0Id.zero() && !t0Id.bad(), "find t0Id" );
 
-	Shell::useClock( c, t0Id, path, string( "process" ) );
-	Shell::resched( c );
+	Shell::useClock( &c, t0Id, path, string( "process" ) );
+	Shell::resched( &c );
 	seqStr = reinitSeq;
 	seqCount = 0;
-	Shell::reinit( c );
+	Shell::reinit( &c );
 	ASSERT( seqCount == 4, "sequencing" );
 
 	seqStr = procSeq1;
 	seqCount = 0;
-	Shell::step( c, 3.0 );
+	Shell::step( &c, 3.0 );
 
 	ASSERT( seqCount == 16, "sequencing" );
 	ASSERT( set( n, "destroy" ), "cleanup" );

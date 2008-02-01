@@ -29,20 +29,20 @@ class Nernst
 	static double getE( const Element* e );
 
 	void localSetTemperature( double value );
-	static void setTemperature( const Conn& c, double value );
+	static void setTemperature( const Conn* c, double value );
 	static double getTemperature( const Element* e );
 
 	void localSetValence( int value );
-	static void setValence( const Conn& c, int value );
+	static void setValence( const Conn* c, int value );
 	static int getValence( const Element* e );
 
-	static void setCin( const Conn& c, double value );
+	static void setCin( const Conn* c, double value );
 	static double getCin( const Element* e );
 
-	static void setCout( const Conn& c, double value );
+	static void setCout( const Conn* c, double value );
 	static double getCout( const Element* e );
 
-	static void setScale( const Conn& c, double value );
+	static void setScale( const Conn* c, double value );
 	static double getScale( const Element* e );
 
 
@@ -50,11 +50,11 @@ class Nernst
 	// Dest function definitions
 	///////////////////////////////////////////////////
 
-	void cinFuncLocal( const Conn& c, double conc );
-	static void cinFunc( const Conn& c, double value );
+	void cinFuncLocal( const Conn* c, double conc );
+	static void cinFunc( const Conn* c, double value );
 
-	void coutFuncLocal( const Conn& c, double conc );
-	static void coutFunc( const Conn& c, double value );
+	void coutFuncLocal( const Conn* c, double conc );
+	static void coutFunc( const Conn* c, double value );
 
 	private:
 		void updateE( );

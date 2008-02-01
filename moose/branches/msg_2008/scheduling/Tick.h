@@ -29,30 +29,30 @@ class Tick
 		///////////////////////////////////////////////////////
 		// Functions for handling field assignments.
 		///////////////////////////////////////////////////////
-		static void setDt( const Conn& c, double v );
+		static void setDt( const Conn* c, double v );
 		static double getDt( const Element* e );
-		static void setStage( const Conn& c, int v );
+		static void setStage( const Conn* c, int v );
 		static int getStage( const Element* e );
 		static int getOrdinal( const Element* e );
 		static double getNextTime( const Element* e );
 
-		static void setPath( const Conn& c, string v );
+		static void setPath( const Conn* c, string v );
 		static string getPath( const Element* e );
 
 		///////////////////////////////////////////////////////
 		// Functions for handling messages
 		///////////////////////////////////////////////////////
 
-		static void receiveNextTime( const Conn& c, double v );
-		static void incrementTick( const Conn& c, ProcInfo p, double v);
+		static void receiveNextTime( const Conn* c, double v );
+		static void incrementTick( const Conn* c, ProcInfo p, double v);
 		void innerIncrementTick( Element* e, ProcInfo p, double v );
-		static void resched( const Conn& c);
+		static void resched( const Conn* c);
 		void updateNextTickTime( Element* e );
-		static void reinit( const Conn& c, ProcInfo p );
+		static void reinit( const Conn* c, ProcInfo p );
 
-		static void handleNextTimeRequest( const Conn& c );
+		static void handleNextTimeRequest( const Conn* c );
 
-		static void start( const Conn& c, ProcInfo p, double maxTime );
+		static void start( const Conn* c, ProcInfo p, double maxTime );
 		void innerStart( Element* e, ProcInfo p, double maxTime );
 		///////////////////////////////////////////////////////
 		// Utility function

@@ -30,25 +30,25 @@ class Stoich
 		static unsigned int getNenz( const Element* e );
 		static unsigned int getNmmEnz( const Element* e );
 		static unsigned int getNexternalRates( const Element* e );
-		static void setUseOneWayReacs( const Conn& c, int value );
+		static void setUseOneWayReacs( const Conn* c, int value );
 		static bool getUseOneWayReacs( const Element* e );
 		static string getPath( const Element* e );
-		static void setPath( const Conn& c, string value );
+		static void setPath( const Conn* c, string value );
 		static unsigned int getRateVectorSize( const Element* e );
 
 		///////////////////////////////////////////////////
 		// Msg Dest function definitions
 		///////////////////////////////////////////////////
-		static void scanTicks( const Conn& c );
-		static void reinitFunc( const Conn& c );
+		static void scanTicks( const Conn* c );
+		static void reinitFunc( const Conn* c );
 		static void integrateFunc( 
-			const Conn& c, vector< double >* v, double dt );
+			const Conn* c, vector< double >* v, double dt );
 
 		unsigned int nVarMols() const {
 			return nVarMols_;
 		}
 		void clear( Element* stoich );
-		// static void rebuild( const Conn& c );
+		// static void rebuild( const Conn* c );
 		// void localRebuild( Element* stoich );
 
 		///////////////////////////////////////////////////

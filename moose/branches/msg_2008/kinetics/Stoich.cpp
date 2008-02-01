@@ -257,8 +257,8 @@ unsigned int Stoich::getNmmEnz( const Element* e ) {
 unsigned int Stoich::getNexternalRates( const Element* e ) {
 	return static_cast< const Stoich* >( e->data() )->nExternalRates_;
 }
-void Stoich::setUseOneWayReacs( const Conn& c, int value ) {
-	static_cast< Stoich* >( c.data() )->useOneWayReacs_ = value;
+void Stoich::setUseOneWayReacs( const Conn* c, int value ) {
+	static_cast< Stoich* >( c->data() )->useOneWayReacs_ = value;
 }
 
 bool Stoich::getUseOneWayReacs( const Element* e ) {
@@ -269,9 +269,9 @@ string Stoich::getPath( const Element* e ) {
 	return static_cast< const Stoich* >( e->data() )->path_;
 }
 
-void Stoich::setPath( const Conn& c, string value ) {
-	Element* e = c.targetElement();
-	static_cast< Stoich* >( e->data() )->localSetPath( e, value);
+void Stoich::setPath( const Conn* c, string value ) {
+	Element* e = c->targetElement();
+	static_cast< Stoich* >( c->data() )->localSetPath( e, value);
 }
 
 unsigned int Stoich::getRateVectorSize( const Element* e ) {
@@ -283,17 +283,16 @@ unsigned int Stoich::getRateVectorSize( const Element* e ) {
 ///////////////////////////////////////////////////
 
 /*
-void Stoich::rebuild( const Conn& c ) {
-	Element* e = c.targetElement();
-	static_cast< Stoich* >( e->data() )->localRebuild( e );
+void Stoich::rebuild( const Conn* c ) {
+	Element* e = c->targetElement();
+	static_cast< Stoich* >( c->data() )->localRebuild( e );
 }
 */
 
 // Static func
-void Stoich::reinitFunc( const Conn& c )
+void Stoich::reinitFunc( const Conn* c )
 {
-	Element* e = c.targetElement();
-	Stoich* s = static_cast< Stoich* >( e->data() );
+	Stoich* s = static_cast< Stoich* >( c->data() );
 	s->S_ = s->Sinit_;
 	// send1< vector< double >* >( e, allocateSlot, &s->S_ );
 	// send1< void* >( e, assignStoichSlot, e->data() );
@@ -303,9 +302,9 @@ void Stoich::reinitFunc( const Conn& c )
 }
 
 // static func
-void Stoich::integrateFunc( const Conn& c, vector< double >* v, double dt )
+void Stoich::integrateFunc( const Conn* c, vector< double >* v, double dt )
 {
-	Stoich* s = static_cast< Stoich* >( c.data() );
+	Stoich* s = static_cast< Stoich* >( c->data() );
 	s->updateRates( v, dt );
 }
 

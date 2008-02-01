@@ -21,14 +21,14 @@ void send0( const Element* eIn, Slot src )
 
 	do {
 		RecvFunc rf = e->srcRecvFunc( src.msg() );
-		vector< Conn >::const_iterator j;
+		/*
 		for_each ( e->connSrcBegin( src.msg() ), 
 			e->connSrcEnd( src.msg() ), rf );
-		/*
-		for ( j = e->connSrcBegin( src );
-				j != e->connSrcEnd( src ); j++ )
-			rf( *j );
 			*/
+		vector< Conn >::const_iterator j;
+		for ( j = e->connSrcBegin( src.msg() );
+				j != e->connSrcEnd( src.msg() ); j++ )
+			rf( &( *j ) );
 		src = Slot( e->nextSrc( src.msg() ), src.func() );
 	} while ( src.msg() != 0 );
 }
@@ -37,5 +37,5 @@ void sendTo0( const Element* eIn, Slot src, unsigned int conn )
 {
 	const SimpleElement* e = static_cast< const SimpleElement* >( eIn );
 	RecvFunc rf = e->lookupRecvFunc( src.msg(), conn );
-		rf( *( e->lookupConn( conn ) ) );
+		rf( &( *( e->lookupConn( conn ) ) ) );
 }

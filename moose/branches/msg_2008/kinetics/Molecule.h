@@ -19,39 +19,39 @@ class Molecule
 		// Field assignment functions
 		///////////////////////////////////////////////////
 		
-		static void setNinit( const Conn& c, double value );
+		static void setNinit( const Conn* c, double value );
 		static double getNinit( const Element* e );
-		static void setVolumeScale( const Conn& c, double value );
+		static void setVolumeScale( const Conn* c, double value );
 		static double getVolumeScale( const Element* e );
-		static void setN( const Conn& c, double value );
+		static void setN( const Conn* c, double value );
 		static double getN( const Element* e );
-		static void setMode( const Conn& c, int value );
+		static void setMode( const Conn* c, int value );
 		static int getMode( const Element* e );
 		int localGetMode( const Element* e );
 		double localGetConc() const;
 		static double getConc( const Element* e );
 		void localSetConc( double value );
-		static void setConc( const Conn& c, double value );
+		static void setConc( const Conn* c, double value );
 		double localGetConcInit() const;
 		static double getConcInit( const Element* e );
 		void localSetConcInit( double value );
-		static void setConcInit( const Conn& c, double value );
+		static void setConcInit( const Conn* c, double value );
 		static double getD( const Element* e );
-		static void setD( const Conn& c, double value );
+		static void setD( const Conn* c, double value );
 		
 		///////////////////////////////////////////////////
 		// Dest function definitions
 		///////////////////////////////////////////////////
 		
-		static void reacFunc( const Conn& c, double A, double B );
-		static void sumTotalFunc( const Conn& c, double n );
+		static void reacFunc( const Conn* c, double A, double B );
+		static void sumTotalFunc( const Conn* c, double n );
 		// void sumProcessFuncLocal( );
-		// static void sumProcessFunc( const Conn& c, ProcInfo info );
-		static void reinitFunc( const Conn& c, ProcInfo info );
+		// static void sumProcessFunc( const Conn* c, ProcInfo info );
+		static void reinitFunc( const Conn* c, ProcInfo info );
 		void reinitFuncLocal( Element* e );
-		static void processFunc( const Conn& c, ProcInfo info );
+		static void processFunc( const Conn* c, ProcInfo info );
 		void processFuncLocal( Element* e, ProcInfo info );
-		static void extentFunc( const Conn& c, 
+		static void extentFunc( const Conn* c, 
 			double size, unsigned int dim );
 		void extentFuncLocal( Element* e, double size, unsigned int dim);
 

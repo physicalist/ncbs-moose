@@ -213,12 +213,12 @@ bool Tick::operator==( const Tick& other ) const
  * we ask the parent ClockJob to re-sort the clock ticks to
  * put them back in order.
  */
-void Tick::setDt( const Conn& c, double newdt )
+void Tick::setDt( const Conn* c, double newdt )
 {
-	Tick* t = static_cast< Tick* >( c.data() );
+	Tick* t = static_cast< Tick* >( c->data() );
 	t->nextTime_ += newdt - t->dt_;
 	t->dt_ = newdt;
-	send0( c.targetElement(), updateDtSlot );
+	send0( c->targetElement(), updateDtSlot );
 }
 /**
  * The getDt just looks up the local dt, much less involved than
@@ -234,11 +234,11 @@ double Tick::getDt( const Element* e )
  * Like the setDt, it has to ask the parent ClockJob to
  * re-sort the clock ticks to put them back in order.
  */
-void Tick::setStage( const Conn& c, int v )
+void Tick::setStage( const Conn* c, int v )
 {
 	
-	static_cast< Tick* >( c.data() )->stage_ = v;
-	send0( c.targetElement(), updateDtSlot );
+	static_cast< Tick* >( c->data() )->stage_ = v;
+	send0( c->targetElement(), updateDtSlot );
 }
 
 /**
@@ -275,9 +275,9 @@ double Tick::getNextTime( const Element* e )
  * GENESIS syntax. For now, put in dummy functions.
  * \todo How to do this operation with the new MOOSE syntax?
  */
-void Tick::setPath( const Conn& c, string v )
+void Tick::setPath( const Conn* c, string v )
 {
-	static_cast< Tick* >( c.data() )->path_ = v;
+	static_cast< Tick* >( c->data() )->path_ = v;
 }
 string Tick::getPath( const Element* e )
 {
@@ -292,9 +292,9 @@ string Tick::getPath( const Element* e )
  * The receiveNextTime message comes from the 'next' tick, as a return
  * message when we need to update the nextTickTime_
  */
-void Tick::receiveNextTime( const Conn& c, double v )
+void Tick::receiveNextTime( const Conn* c, double v )
 {
-	static_cast< Tick* >( c.data() )->nextTickTime_ = v;
+	static_cast< Tick* >( c->data() )->nextTickTime_ = v;
 }
 
 /**
@@ -302,10 +302,10 @@ void Tick::receiveNextTime( const Conn& c, double v )
  * and calls all the target object Process functions,
  * and also ensures that all ticks get called, in order.
  */
-void Tick::incrementTick( const Conn& c, ProcInfo p, double v )
+void Tick::incrementTick( const Conn* c, ProcInfo p, double v )
 {
-	static_cast< Tick* >( c.data() )->innerIncrementTick( 
-					c.targetElement(), p, v );
+	static_cast< Tick* >( c->data() )->innerIncrementTick( 
+					c->targetElement(), p, v );
 }
 
 void Tick::innerIncrementTick(
@@ -346,10 +346,10 @@ void Tick::innerIncrementTick(
  * the timings have to be updated: we may need to resched during a
  * run without missing a beat.
  */
-void Tick::resched( const Conn& c )
+void Tick::resched( const Conn* c )
 {
-	static_cast< Tick* >( c.data() )->
-			updateNextTickTime( c.targetElement() );
+	static_cast< Tick* >( c->data() )->
+			updateNextTickTime( c->targetElement() );
 }
 
 /**
@@ -385,17 +385,17 @@ void Tick::updateNextTickTime( Element* e )
  * Reinit is used to set the simulation time back to zero for itself,
  * and to trigger reinit in all targets, and to go on to the next tick
  */
-void Tick::reinit( const Conn& c, ProcInfo info )
+void Tick::reinit( const Conn* c, ProcInfo info )
 {
-	Tick* t = static_cast< Tick* >( c.data() );
+	Tick* t = static_cast< Tick* >( c->data() );
 	t->nextTime_ = 0.0;
 	t->nextTickTime_ = 0.0;
 	info->currTime_ = 0.0;
 	info->dt_ = t->dt_;
 	// send1< ProcInfo >( c.targetElement(), reinitSlot, info );
-	t->innerReinitFunc( c.targetElement(), info );
+	t->innerReinitFunc( c->targetElement(), info );
 	if ( t->next_ )
-		send1< ProcInfo >( c.targetElement(), reinitNextSlot, info );
+		send1< ProcInfo >( c->targetElement(), reinitNextSlot, info );
 }
 
 /**
@@ -403,10 +403,10 @@ void Tick::reinit( const Conn& c, ProcInfo info )
  * nextTime_ field to the requesting tick, which is the previous
  * one in the sequence.
  */
-void Tick::handleNextTimeRequest( const Conn& c )
+void Tick::handleNextTimeRequest( const Conn* c )
 {
-	send1< double >( c.targetElement(), returnNextTimeSlot,
-					static_cast< Tick* >( c.data() )->nextTime_ );
+	send1< double >( c->targetElement(), returnNextTimeSlot,
+					static_cast< Tick* >( c->data() )->nextTime_ );
 }
 
 /**
@@ -415,10 +415,10 @@ void Tick::handleNextTimeRequest( const Conn& c )
  * stage_ number. The start function is the main loop for
  * advancing time through itself and all the ticks.
  */
-void Tick::start( const Conn& c, ProcInfo info, double maxTime )
+void Tick::start( const Conn* c, ProcInfo info, double maxTime )
 {
-	static_cast< Tick* >( c.data() )->innerStart( 
-					c.targetElement(), info, maxTime );
+	static_cast< Tick* >( c->data() )->innerStart( 
+					c->targetElement(), info, maxTime );
 }
 
 void Tick::innerStart( Element* e, ProcInfo info, double maxTime )

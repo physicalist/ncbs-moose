@@ -40,8 +40,8 @@ class Finfo;
 // This is here because parallel messaging needs a way to
 // access PostMaster buffer from within all the templated
 // Ftypes. Ugly.
-extern void* getParBuf( const Conn& c, unsigned int size );
-extern void* getAsyncParBuf( const Conn& c, unsigned int size );
+extern void* getParBuf( const Conn* c, unsigned int size );
+extern void* getAsyncParBuf( const Conn* c, unsigned int size );
 
 // Another ugly global, this one for accessing the ids.
 class IdManager;

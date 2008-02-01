@@ -257,9 +257,9 @@ void KineticManager::addMethod( const char* name,
 // Field function definitions
 ///////////////////////////////////////////////////
 
-void KineticManager::setAuto( const Conn& c, bool value )
+void KineticManager::setAuto( const Conn* c, bool value )
 {
-	static_cast< KineticManager* >( c.data() )->auto_ = value;
+	static_cast< KineticManager* >( c->data() )->auto_ = value;
 }
 
 bool KineticManager::getAuto( const Element* e )
@@ -267,9 +267,9 @@ bool KineticManager::getAuto( const Element* e )
 	return static_cast< KineticManager* >( e->data() )->auto_;
 }
 
-void KineticManager::setStochastic( const Conn& c, bool value )
+void KineticManager::setStochastic( const Conn* c, bool value )
 {
-	static_cast< KineticManager* >( c.data() )->stochastic_ = value;
+	static_cast< KineticManager* >( c->data() )->stochastic_ = value;
 }
 
 bool KineticManager::getStochastic( const Element* e )
@@ -277,9 +277,9 @@ bool KineticManager::getStochastic( const Element* e )
 	return static_cast< KineticManager* >( e->data() )->stochastic_;
 }
 
-void KineticManager::setSpatial( const Conn& c, bool value )
+void KineticManager::setSpatial( const Conn* c, bool value )
 {
-	static_cast< KineticManager* >( c.data() )->spatial_ = value;
+	static_cast< KineticManager* >( c->data() )->spatial_ = value;
 }
 
 bool KineticManager::getSpatial( const Element* e )
@@ -287,11 +287,11 @@ bool KineticManager::getSpatial( const Element* e )
 	return static_cast< KineticManager* >( e->data() )->spatial_;
 }
 
-void KineticManager::setMethod( const Conn& c, string value )
+void KineticManager::setMethod( const Conn* c, string value )
 {
-	Element* e = c.targetElement();
+	Element* e = c->targetElement();
 
-	static_cast< KineticManager* >( e->data() )->innerSetMethod( e, value );
+	static_cast< KineticManager* >( c->data() )->innerSetMethod( e, value );
 }
 
 string KineticManager::getMethod( const Element* e )
@@ -329,9 +329,9 @@ double KineticManager::getRecommendedDt( const Element* e )
 	return static_cast< KineticManager* >( e->data() )->recommendedDt_;
 }
 
-void KineticManager::setEulerError( const Conn& c, double value )
+void KineticManager::setEulerError( const Conn* c, double value )
 {
-	static_cast< KineticManager* >( c.data() )->eulerError_ = value;
+	static_cast< KineticManager* >( c->data() )->eulerError_ = value;
 }
 
 double KineticManager::getEulerError( const Element* e )
@@ -560,10 +560,10 @@ void KineticManager::setupDt( Element* e, double dt )
  * Reinit Function restarts the simulation from time 0.
  */
 
-void KineticManager::reinitFunc( const Conn& c, ProcInfo info )
+void KineticManager::reinitFunc( const Conn* c, ProcInfo info )
 {
-	static_cast< KineticManager* >( c.data() )->reinitFuncLocal( 
-					c.targetElement() );
+	static_cast< KineticManager* >( c->data() )->reinitFuncLocal( 
+					c->targetElement() );
 }
 
 void KineticManager::reinitFuncLocal( Element* e )
@@ -575,10 +575,10 @@ void KineticManager::reinitFuncLocal( Element* e )
  * Resched Function makes sure that all child elements are scheduled,
  * either directly from the clock ticks, or through a solver.
  */
-void KineticManager::reschedFunc( const Conn& c )
+void KineticManager::reschedFunc( const Conn* c )
 {
-	static_cast< KineticManager* >( c.data() )->reschedFuncLocal( 
-					c.targetElement() );
+	static_cast< KineticManager* >( c->data() )->reschedFuncLocal( 
+					c->targetElement() );
 }
 
 void KineticManager::reschedFuncLocal( Element* e )
@@ -594,7 +594,7 @@ void KineticManager::reschedFuncLocal( Element* e )
 /**
  * processFunc doesn't do anything.
  */
-void KineticManager::processFunc( const Conn& c, ProcInfo info )
+void KineticManager::processFunc( const Conn* c, ProcInfo info )
 {
 	;
 //	Element* e = c.targetElement();
