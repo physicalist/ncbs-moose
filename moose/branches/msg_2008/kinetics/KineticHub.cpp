@@ -23,7 +23,7 @@
 #include "SolveFinfo.h"
 #include "../utility/utility.h"
 
-void dummyStringFunc( const Conn& c, string s )
+void dummyStringFunc( const Conn* c, string s )
 {
 	;
 }
@@ -233,7 +233,7 @@ KineticHub::KineticHub()
  * This should really just use the clearFunc. Try it once the
  * Smoldyn stuff is done.
  */
-void KineticHub::destroy( const Conn& c)
+void KineticHub::destroy( const Conn* c)
 {
 	static Finfo* origMolFinfo =
 		const_cast< Finfo* >(
@@ -241,7 +241,7 @@ void KineticHub::destroy( const Conn& c)
 	static Finfo* origReacFinfo =
 		const_cast< Finfo* >(
 		initReactionCinfo()->getThisFinfo( ) );
-	Element* hub = c.targetElement();
+	Element* hub = c->targetElement();
 	vector< Conn > targets;
 	vector< Conn >::iterator i;
 
@@ -258,7 +258,7 @@ void KineticHub::destroy( const Conn& c)
 	Neutral::destroy( c );
 }
 
-void KineticHub::childFunc( const Conn& c, int stage )
+void KineticHub::childFunc( const Conn* c, int stage )
 {
 	if ( stage == 1 ) // clear messages: first clean out zombies before
 		// the messages are all deleted.
@@ -272,9 +272,9 @@ void KineticHub::childFunc( const Conn& c, int stage )
  * the SumTot input to a molecule when it is used for controlling its
  * number. It is not meant as a substitute for SumTot between molecules.
  */
-void KineticHub::molSum( const Conn& c, double val )
+void KineticHub::molSum( const Conn* c, double val )
 {
-	Element* hub = c.targetElement();
+	Element* hub = c->targetElement();
 	unsigned int index = hub->connDestRelativeIndex( c, molSumSlot.msg() );
 	KineticHub* kh = static_cast< KineticHub* >( hub->data() );
 
@@ -327,9 +327,9 @@ void KineticHub::molSum( const Conn& c, double val )
  * equivalent flux operation.
  */
 
-void KineticHub::flux( const Conn& c, vector< double > influx )
+void KineticHub::flux( const Conn* c, vector< double > influx )
 {
-	Element* hub = c.targetElement();
+	Element* hub = c->targetElement();
 	unsigned int index = hub->connDestRelativeIndex( c, fluxSlot.msg() );
 	KineticHub* kh = static_cast< KineticHub* >( hub->data() );
 
@@ -461,22 +461,22 @@ unsigned int KineticHub::getNenz( const Element* e )
 // Dest function definitions
 ///////////////////////////////////////////////////
 
-void KineticHub::reinitFunc( const Conn& c, ProcInfo info )
+void KineticHub::reinitFunc( const Conn* c, ProcInfo info )
 {
 	// Element* e = c.targetElement();
 	// static_cast< KineticHub* >( e->data() )->processFuncLocal( e, info );
 }
 
-void KineticHub::processFunc( const Conn& c, ProcInfo info )
+void KineticHub::processFunc( const Conn* c, ProcInfo info )
 {
 	// Element* e = c.targetElement();
 	// static_cast< KineticHub* >( e->data() )->processFuncLocal( e, info );
 }
 
-void KineticHub::rateTermFunc( const Conn& c,
+void KineticHub::rateTermFunc( const Conn* c,
 	vector< RateTerm* >* rates, SparseMatrix* N,  bool useHalfReacs )
 {
-	KineticHub* kh = static_cast< KineticHub* >( c.data() );
+	KineticHub* kh = static_cast< KineticHub* >( c->data() );
 	kh->rates_ = rates;
 	kh->useHalfReacs_ = useHalfReacs;
 }
@@ -487,10 +487,10 @@ void KineticHub::rateTermFunc( const Conn& c,
  * assign the correct messages. The next call should come from the
  * molConnectionFunc which will provide the actual vectors.
  */
-void KineticHub::molSizeFunc(  const Conn& c,
+void KineticHub::molSizeFunc(  const Conn* c,
 	unsigned int nMol, unsigned int nBuf, unsigned int nSumTot )
 {
-	static_cast< KineticHub* >( c.data() )->molSizeFuncLocal(
+	static_cast< KineticHub* >( c->data() )->molSizeFuncLocal(
 			nMol, nBuf, nSumTot );
 }
 void KineticHub::molSizeFuncLocal( 
@@ -501,12 +501,12 @@ void KineticHub::molSizeFuncLocal(
 	nSumTot_ = nSumTot;
 }
 
-void KineticHub::molConnectionFunc( const Conn& c,
+void KineticHub::molConnectionFunc( const Conn* c,
 	       	vector< double >*  S, vector< double >*  Sinit, 
 		vector< Element *>*  elist )
 {
-	Element* e = c.targetElement();
-	static_cast< KineticHub* >( e->data() )->
+	Element* e = c->targetElement();
+	static_cast< KineticHub* >( c->data() )->
 		molConnectionFuncLocal( e, S, Sinit, elist );
 }
 
@@ -576,11 +576,11 @@ void KineticHub::molConnectionFuncLocal( Element* hub,
 	}
 }
 
-void KineticHub::rateSizeFunc(  const Conn& c,
+void KineticHub::rateSizeFunc(  const Conn* c,
 	unsigned int nReac, unsigned int nEnz, unsigned int nMmEnz )
 {
-	static_cast< KineticHub* >( c.data() )->rateSizeFuncLocal(
-		c.targetElement(), nReac, nEnz, nMmEnz );
+	static_cast< KineticHub* >( c->data() )->rateSizeFuncLocal(
+		c->targetElement(), nReac, nEnz, nMmEnz );
 }
 void KineticHub::rateSizeFuncLocal( Element* hub, 
 	unsigned int nReac, unsigned int nEnz, unsigned int nMmEnz )
@@ -594,11 +594,11 @@ void KineticHub::rateSizeFuncLocal( Element* hub,
 	// cout << "in rateSizeFuncLocal\n";
 }
 
-void KineticHub::reacConnectionFunc( const Conn& c,
+void KineticHub::reacConnectionFunc( const Conn* c,
 	unsigned int index, Element* reac )
 {
-	Element* e = c.targetElement();
-	static_cast< KineticHub* >( e->data() )->
+	Element* e = c->targetElement();
+	static_cast< KineticHub* >( c->data() )->
 		reacConnectionFuncLocal( e, index, reac );
 }
 
@@ -637,20 +637,20 @@ void KineticHub::reacConnectionFuncLocal(
 	reacMap_[connIndex - 1] = rateTermIndex;
 }
 
-void KineticHub::enzConnectionFunc( const Conn& c,
+void KineticHub::enzConnectionFunc( const Conn* c,
 	unsigned int index, Element* enz )
 {
-	Element* e = c.targetElement();
-	static_cast< KineticHub* >( e->data() )->
+	Element* e = c->targetElement();
+	static_cast< KineticHub* >( c->data() )->
 		enzConnectionFuncLocal( e, index, enz );
 }
 
-void KineticHub::mmEnzConnectionFunc( const Conn& c,
+void KineticHub::mmEnzConnectionFunc( const Conn* c,
 	unsigned int index, Element* mmEnz )
 {
 	// cout << "in mmEnzConnectionFunc for " << mmEnz->name() << endl;
-	Element* e = c.targetElement();
-	static_cast< KineticHub* >( e->data() )->
+	Element* e = c->targetElement();
+	static_cast< KineticHub* >( c->data() )->
 		mmEnzConnectionFuncLocal( e, index, mmEnz );
 }
 
@@ -752,9 +752,9 @@ void KineticHub::mmEnzConnectionFuncLocal(
 	mmEnzMap_[connIndex - 1] = rateTermIndex;
 }
 
-void unzombify( const Conn& c )
+void unzombify( const Conn* c )
 {
-	Element* e = c.targetElement();
+	Element* e = c->targetElement();
 	const Cinfo* ci = e->cinfo();
 	bool ret = ci->schedule( e );
 	assert( ret );
@@ -766,10 +766,10 @@ void unzombify( const Conn& c )
 /**
  * Clears out all the messages to zombie objects
  */
-void KineticHub::clearFunc( const Conn& c )
+void KineticHub::clearFunc( const Conn* c )
 {
 	// cout << "Starting clearFunc for " << c.targetElement()->name() << endl;
-	Element* e = c.targetElement();
+	Element* e = c->targetElement();
 
 	// First unzombify all targets
 	vector< Conn > list;
@@ -778,22 +778,26 @@ void KineticHub::clearFunc( const Conn& c )
 	molSolveFinfo->outgoingConns( e, list );
 	// cout << "clearFunc: molSolveFinfo unzombified " << list.size() << " elements\n";
 	molSolveFinfo->dropAll( e );
-	for_each ( list.begin(), list.end(), unzombify );
+	// for_each ( list.begin(), list.end(), unzombify );
+	for ( i = list.begin(); i != list.end(); i++ ) unzombify( &( *i ) );
 
 	reacSolveFinfo->outgoingConns( e, list );
 	// cout << "clearFunc: reacFinfo unzombified " << list.size() << " elements\n";
 	reacSolveFinfo->dropAll( e );
-	for_each ( list.begin(), list.end(), unzombify );
+	// for_each ( list.begin(), list.end(), unzombify );
+	for ( i = list.begin(); i != list.end(); i++ ) unzombify( &( *i ) );
 
 	enzSolveFinfo->outgoingConns( e, list );
 	// cout << "clearFunc: enzFinfo unzombified " << list.size() << " elements\n";
 	enzSolveFinfo->dropAll( e );
-	for_each ( list.begin(), list.end(), unzombify );
+	// for_each ( list.begin(), list.end(), unzombify );
+	for ( i = list.begin(); i != list.end(); i++ ) unzombify( &( *i ) );
 
 	mmEnzSolveFinfo->outgoingConns( e, list );
 	// cout << "clearFunc: mmEnzFinfo unzombified " << list.size() << " elements\n";
 	mmEnzSolveFinfo->dropAll( e );
-	for_each ( list.begin(), list.end(), unzombify );
+	// for_each ( list.begin(), list.end(), unzombify );
+	for ( i = list.begin(); i != list.end(); i++ ) unzombify( &( *i ) );
 
 
 	// Need the original molecule info. Where is that?
@@ -822,10 +826,10 @@ KineticHub* getHubFromZombie( const Element* e, const Finfo* srcFinfo,
 	const SolveFinfo* f = dynamic_cast< const SolveFinfo* > (
 			       	e->getThisFinfo() );
 	if ( !f ) return 0;
-	const Conn& c = f->getSolvedConn( e );
+	const Conn* c = f->getSolvedConn( e );
 	Slot slot;
    	srcFinfo->getSlot( srcFinfo->name(), slot );
-	Element* hub = c.targetElement();
+	Element* hub = c->targetElement();
 	index = hub->connSrcRelativeIndex( c, slot.msg() );
 	return static_cast< KineticHub* >( hub->data() );
 }
@@ -837,11 +841,11 @@ KineticHub* getHubFromZombie( const Element* e, const Finfo* srcFinfo,
  * For the molecule set/get operations, the lookup order is identical
  * to the message order. So we don't need an intermediate table.
  */
-void KineticHub::setMolN( const Conn& c, double value )
+void KineticHub::setMolN( const Conn* c, double value )
 {
 	unsigned int molIndex;
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), molSolveFinfo, molIndex );
+		c->targetElement(), molSolveFinfo, molIndex );
 	if ( kh && kh->S_ ) {
 		assert ( molIndex < kh->S_->size() );
 		( *kh->S_ )[molIndex] = value;
@@ -860,11 +864,11 @@ double KineticHub::getMolN( const Element* e )
 	return 0.0;
 }
 
-void KineticHub::setMolNinit( const Conn& c, double value )
+void KineticHub::setMolNinit( const Conn* c, double value )
 {
 	unsigned int molIndex;
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), molSolveFinfo, molIndex );
+		c->targetElement(), molSolveFinfo, molIndex );
 	if ( kh && kh->Sinit_ ) {
 		assert ( molIndex < kh->Sinit_->size() );
 		( *kh->Sinit_ )[molIndex] = value;
@@ -895,11 +899,11 @@ double KineticHub::getMolNinit( const Element* e )
  * different from the message order. So we need an intermediate
  * table, the reacMap_, to map from one to the other.
  */
-void KineticHub::setReacKf( const Conn& c, double value )
+void KineticHub::setReacKf( const Conn* c, double value )
 {
 	unsigned int index;
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), reacSolveFinfo, index );
+		c->targetElement(), reacSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->reacMap_.size() );
 		index = kh->reacMap_[ index ];
@@ -926,11 +930,11 @@ double KineticHub::getReacKf( const Element* e )
 	return 0.0;
 }
 
-void KineticHub::setReacKb( const Conn& c, double value )
+void KineticHub::setReacKb( const Conn* c, double value )
 {
 	unsigned int index;
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), reacSolveFinfo, index );
+		c->targetElement(), reacSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->reacMap_.size() );
 		index = kh->reacMap_[ index ];
@@ -965,12 +969,12 @@ double KineticHub::getReacKb( const Element* e )
  * different from the message order. So we need an intermediate
  * table, the enzMap_, to map from one to the other.
  */
-void KineticHub::setEnzK1( const Conn& c, double value )
+void KineticHub::setEnzK1( const Conn* c, double value )
 {
 	unsigned int index;
 	// cout << "in setEnzK1\n";
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), enzSolveFinfo, index );
+		c->targetElement(), enzSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->enzMap_.size() );
 		index = kh->enzMap_[ index ];
@@ -998,12 +1002,12 @@ double KineticHub::getEnzK1( const Element* e )
 	return 0.0;
 }
 
-void KineticHub::setEnzK2( const Conn& c, double value )
+void KineticHub::setEnzK2( const Conn* c, double value )
 {
 	unsigned int index;
 	// cout << "in setEnzK2\n";
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), enzSolveFinfo, index );
+		c->targetElement(), enzSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->enzMap_.size() );
 		index = kh->enzMap_[ index ];
@@ -1027,12 +1031,12 @@ double KineticHub::getEnzK2( const Element* e )
 	return 0.0;
 }
 
-void KineticHub::setEnzK3( const Conn& c, double value )
+void KineticHub::setEnzK3( const Conn* c, double value )
 {
 	unsigned int index;
 	// cout << "in setEnzK3\n";
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), enzSolveFinfo, index );
+		c->targetElement(), enzSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->enzMap_.size() );
 		index = kh->enzMap_[ index ];
@@ -1058,12 +1062,12 @@ double KineticHub::getEnzK3( const Element* e )
 
 // This function does rather nasty scaling of all rates so as to
 // end up with the same overall Km when k3 is changed.
-void KineticHub::setEnzKcat( const Conn& c, double value )
+void KineticHub::setEnzKcat( const Conn* c, double value )
 {
 	unsigned int index;
 	// cout << "in setEnzKcat\n";
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), enzSolveFinfo, index );
+		c->targetElement(), enzSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->enzMap_.size() );
 		index = kh->enzMap_[ index ];
@@ -1086,12 +1090,12 @@ void KineticHub::setEnzKcat( const Conn& c, double value )
 
 // This function does rather nasty scaling of all rates so as to
 // end up with the same overall Km when k3 is changed.
-void KineticHub::setEnzKm( const Conn& c, double value )
+void KineticHub::setEnzKm( const Conn* c, double value )
 {
 	unsigned int index;
 	// cout << "in setEnzKm\n";
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), enzSolveFinfo, index );
+		c->targetElement(), enzSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->enzMap_.size() );
 		index = kh->enzMap_[ index ];
@@ -1130,18 +1134,18 @@ double KineticHub::getEnzKm( const Element* e )
 // Here we set up stuff for mmEnzymes. It is similar, but not identical,
 // to what we did for ordinary enzymes.
 //////////////////////////////////////////////////////////////////
-void KineticHub::setMmEnzK1( const Conn& c, double value )
+void KineticHub::setMmEnzK1( const Conn* c, double value )
 {
 	unsigned int index;
 	// cout << "in setEnzK1\n";
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), enzSolveFinfo, index );
+		c->targetElement(), enzSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->mmEnzMap_.size() );
 		index = kh->mmEnzMap_[ index ];
 		assert ( index < kh->rates_->size() );
 		if ( value > 0.0 ) {
-			double oldK1 = Enzyme::getKm( c.targetElement() );
+			double oldK1 = Enzyme::getKm( c->targetElement() );
 			double oldKm = ( *kh->rates_ )[ index ]->getR1();
 			double Km = oldKm * oldK1 / value;
 			( *kh->rates_ )[index]->setR1( Km );
@@ -1158,17 +1162,17 @@ double KineticHub::getMmEnzK1( const Element* e )
 }
 
 // Ugh. Should perhaps ignore this mess.
-void KineticHub::setMmEnzK2( const Conn& c, double value )
+void KineticHub::setMmEnzK2( const Conn* c, double value )
 {
 	unsigned int index;
 	// cout << "in setEnzK2\n";
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), enzSolveFinfo, index );
+		c->targetElement(), enzSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->mmEnzMap_.size() );
 		index = kh->mmEnzMap_[ index ];
 		assert ( index < kh->rates_->size() );
-		Element* e = c.targetElement();
+		Element* e = c->targetElement();
 		double k1 = Enzyme::getK1( e );
 		double k3 = Enzyme::getK3( e );
 		double Km = ( value + k3 ) / k1;
@@ -1184,17 +1188,17 @@ double KineticHub::getMmEnzK2( const Element* e )
 
 // Note that this differs from assigning kcat. k3 leads to changes
 // in Km and kcat, whereas kcat only affects kcat.
-void KineticHub::setMmEnzK3( const Conn& c, double value )
+void KineticHub::setMmEnzK3( const Conn* c, double value )
 {
 	unsigned int index;
 	// cout << "in setEnzK3\n";
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), enzSolveFinfo, index );
+		c->targetElement(), enzSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->mmEnzMap_.size() );
 		index = kh->mmEnzMap_[ index ];
 		assert ( index < kh->rates_->size() );
-		Element* e = c.targetElement();
+		Element* e = c->targetElement();
 		double k1 = Enzyme::getK1( e );
 		double k2 = Enzyme::getK2( e );
 		double Km = ( k2 + value ) / k1;
@@ -1219,12 +1223,12 @@ double KineticHub::getMmEnzKcat( const Element* e )
 	return 0.0;
 }
 
-void KineticHub::setMmEnzKcat( const Conn& c, double value )
+void KineticHub::setMmEnzKcat( const Conn* c, double value )
 {
 	unsigned int index;
 	// cout << "in setEnzKcat\n";
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), mmEnzSolveFinfo, index );
+		c->targetElement(), mmEnzSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->mmEnzMap_.size() );
 		index = kh->mmEnzMap_[ index ];
@@ -1238,12 +1242,12 @@ void KineticHub::setMmEnzKcat( const Conn& c, double value )
 
 // This function does rather nasty scaling of all rates so as to
 // end up with the same overall Km when k3 is changed.
-void KineticHub::setMmEnzKm( const Conn& c, double value )
+void KineticHub::setMmEnzKm( const Conn* c, double value )
 {
 	unsigned int index;
 	// cout << "in setEnzKm\n";
 	KineticHub* kh = getHubFromZombie( 
-		c.targetElement(), mmEnzSolveFinfo, index );
+		c->targetElement(), mmEnzSolveFinfo, index );
 	if ( kh && kh->rates_ ) {
 		assert ( index < kh->mmEnzMap_.size() );
 		index = kh->mmEnzMap_[ index ];

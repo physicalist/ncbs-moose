@@ -177,32 +177,32 @@ unsigned int funcCounter = 0;
 const char* sourceName = "";
 const char* targetName = "";
 
-void commonTestFunc( const Conn& c, unsigned int f )
+void commonTestFunc( const Conn* c, unsigned int f )
 {
-	ASSERT( c.sourceElement()->name() == sourceName, "commonTestFunc: sourceElement" );
-	ASSERT( c.targetElement()->name() == targetName, "commonTestFunc: targetElement" );
-	ASSERT( c.targetIndex() == targetIndex[ funcCounter ], "commonTestFunc: targetIndex" );
+	ASSERT( c->sourceElement()->name() == sourceName, "commonTestFunc: sourceElement" );
+	ASSERT( c->targetElement()->name() == targetName, "commonTestFunc: targetElement" );
+	ASSERT( c->targetIndex() == targetIndex[ funcCounter ], "commonTestFunc: targetIndex" );
 	ASSERT( f == funcNum[ funcCounter++ ], "commonTestFunc: funcNum" );
 }
 
-void msgSrcTestFunc1( const Conn& c ) {
+void msgSrcTestFunc1( const Conn* c ) {
 	commonTestFunc( c, 1 );
 }
 
-void msgSrcTestFunc2( const Conn& c ) {
+void msgSrcTestFunc2( const Conn* c ) {
 	commonTestFunc( c, 2 );
 }
 
-void msgSrcTestFunc3( const Conn& c ) {
+void msgSrcTestFunc3( const Conn* c ) {
 	commonTestFunc( c, 3 );
 }
 
-void msgSrcTestFunc4( const Conn& c ) {
+void msgSrcTestFunc4( const Conn* c ) {
 	commonTestFunc( c, 4 );
 }
 
-void msgSrcTestFuncDbl( const Conn& c, double v ) {
-	*static_cast< double* >( c.targetElement()->data() ) = v;
+void msgSrcTestFuncDbl( const Conn* c, double v ) {
+	*static_cast< double* >( c->data() ) = v;
 	commonTestFunc( c, 5 );
 }
 
@@ -434,15 +434,15 @@ void msgFinfoTest()
 }
 
 #define DATA(e) reinterpret_cast< double* >( e->data() )
-static void sum( Conn& c, double val ) {
-	*static_cast< double* >( c.targetElement()->data() ) += val;
+static void sum( Conn* c, double val ) {
+	*static_cast< double* >( c->data() ) += val;
 }
 
-static void sub( Conn& c, double val ) {
-	*static_cast< double* >( c.targetElement()->data() ) -= val;
+static void sub( Conn* c, double val ) {
+	*static_cast< double* >( c->data() ) -= val;
 }
 
-void print( const Conn& c )
+void print( const Conn* c )
 {
 	// Now this is done in the unit tests, so user doesn't need to see
 	/*
@@ -452,17 +452,17 @@ void print( const Conn& c )
 	*/
 }
 
-void proc( const Conn& c )
+void proc( const Conn* c )
 {
 	double ret = 
-			*static_cast< double* >( c.targetElement()->data() );
+			*static_cast< double* >( c->data() );
 	// It is a bad idea to use absolute indices here, because
 	// these depend on what Finfos in a base class might do.
 	// For now I'll set them to the correct value, but you should
 	// suspect these if there are any further problems with the
 	// unit tests.
-	send1< double >( c.targetElement(), Slot( 1, 0 ), ret );
-	send1< double >( c.targetElement(), Slot( 2, 0 ), ret );
+	send1< double >( c->targetElement(), Slot( 1, 0 ), ret );
+	send1< double >( c->targetElement(), Slot( 2, 0 ), ret );
 }
 
 #include <map>
@@ -892,36 +892,33 @@ class TestClass
 			static double getDval( const Element* e ) {
 				return static_cast< TestClass* >( e->data() )->dval;
 			}
-			static void setDval( const Conn& c, double val ) {
-				static_cast< TestClass* >( 
-					c.targetElement()->data() )->dval = val;
+			static void setDval( const Conn* c, double val ) {
+				static_cast< TestClass* >( c->data() )->dval = val;
 			}
 
 			static int getIval( const Element* e ) {
 				return static_cast< TestClass* >( e->data() )->ival;
 			}
-			static void setIval( const Conn& c, int val ) {
-				static_cast< TestClass* >( 
-					c.targetElement()->data() )->ival = val;
+			static void setIval( const Conn* c, int val ) {
+				static_cast< TestClass* >( c->data() )->ival = val;
 			}
 
 			// A proper message, adds incoming val to dval.
-			static void dsum( const Conn& c, double val ) {
-				static_cast< TestClass* >( 
-					c.targetElement()->data() )->dval += val;
+			static void dsum( const Conn* c, double val ) {
+				static_cast< TestClass* >( c->data() )->dval += val;
 			}
 
 			// Another proper message, just assignes incomving ival.
-			static void iset( const Conn& c, int val ) {
-				static_cast< TestClass* >( 
-					c.targetElement()->data() )->ival = val;
+			static void iset( const Conn* c, int val ) {
+				static_cast< TestClass* >( c->data() )->ival = val;
 			}
 
 			// another proper message. Triggers a local operation,
 			// triggers sending of dval, and triggers a trigger out.
-			static void proc( const Conn& c ) {
-				Element* e = c.targetElement();
-				TestClass* tc = static_cast< TestClass* >( e->data() );
+			static void proc( const Conn* c ) {
+				Element* e = c->targetElement();
+				void* data = c->data();
+				TestClass* tc = static_cast< TestClass* >( data );
 					tc->dval *= tc->ival;
 
 					// This sends the double value out to a target
@@ -1350,10 +1347,9 @@ class ArrayTestClass
 			}
 
 			static void setDvec( 
-						const Conn& c, double val, unsigned int i ) {
+						const Conn* c, double val, unsigned int i ) {
 				ArrayTestClass* atc = 
-					static_cast< ArrayTestClass* >(
-									c.targetElement()->data() );
+					static_cast< ArrayTestClass* >( c->data() );
 				if ( i < atc->dvec.size() )
 					atc->dvec[i] = val ;
 				else
@@ -1363,31 +1359,30 @@ class ArrayTestClass
 			static double getDval( const Element* e ) {
 				return static_cast< ArrayTestClass* >( e->data() )->dval;
 			}
-			static void setDval( const Conn& c, double val ) {
-				static_cast< ArrayTestClass* >( 
-					c.targetElement()->data() )->dval = val;
+			static void setDval( const Conn* c, double val ) {
+				static_cast< ArrayTestClass* >( c->data() )->dval = val;
 			}
 
 			static int getIval( const Element* e ) {
 				return static_cast< ArrayTestClass* >( e->data() )->
 						dvec.size();
 			}
-			static void setIval( const Conn& c, int val ) {
+			static void setIval( const Conn* c, int val ) {
 				static_cast< ArrayTestClass* >( 
-					c.targetElement()->data() )->dvec.resize( val );
+					c->data() )->dvec.resize( val );
 			}
 
 			// A proper message, adds incoming val to dval.
-			static void dsum( const Conn& c, double val ) {
-				static_cast< ArrayTestClass* >( 
-					c.targetElement()->data() )->dval += val;
+			static void dsum( const Conn* c, double val ) {
+				static_cast< ArrayTestClass* >( c->data() )->dval += val;
 			}
 
 			// another proper message. Triggers a local operation,
 			// triggers sending of dval, and triggers a trigger out.
-			static void proc( const Conn& c ) {
-				Element* e = c.targetElement();
-				ArrayTestClass* tc = static_cast< ArrayTestClass* >( e->data() );
+			static void proc( const Conn* c ) {
+				Element* e = c->targetElement();
+				void* data = c->data();
+				ArrayTestClass* tc = static_cast< ArrayTestClass* >( data);
 					tc->dval = 0.0;
 					for ( unsigned int i = 0; i < tc->dvec.size(); i++ )
 						tc->dval += tc->dvec[i];

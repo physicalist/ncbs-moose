@@ -97,8 +97,8 @@ void Nernst::localSetTemperature( double value ) {
 		factor_ = scale_ * R_OVER_F * Temperature_ / valence_;
 	}
 }
-void Nernst::setTemperature( const Conn& c, double value ) {
-	static_cast< Nernst* >( c.data() )->localSetTemperature( value );
+void Nernst::setTemperature( const Conn* c, double value ) {
+	static_cast< Nernst* >( c->data() )->localSetTemperature( value );
 }
 double Nernst::getTemperature( const Element* e ) {
 	return static_cast< Nernst* >( e->data() )->Temperature_;
@@ -110,29 +110,29 @@ void Nernst::localSetValence( int value ) {
 		factor_ = scale_ * R_OVER_F * Temperature_ / valence_;
 	}
 }
-void Nernst::setValence( const Conn& c, int value ) {
-	static_cast< Nernst* >( c.data() )->localSetValence( value );
+void Nernst::setValence( const Conn* c, int value ) {
+	static_cast< Nernst* >( c->data() )->localSetValence( value );
 }
 int Nernst::getValence( const Element* e ) {
 	return static_cast< Nernst* >( e->data() )->valence_;
 }
 
-void Nernst::setCin( const Conn& c, double value ) {
-	static_cast< Nernst* >( c.data() )->Cin_ = value;
+void Nernst::setCin( const Conn* c, double value ) {
+	static_cast< Nernst* >( c->data() )->Cin_ = value;
 }
 double Nernst::getCin( const Element* e ) {
 	return static_cast< const Nernst* >( e->data() )->Cin_;
 }
 
-void Nernst::setCout( const Conn& c, double value ) {
-	static_cast< Nernst* >( c.data() )->Cout_ = value;
+void Nernst::setCout( const Conn* c, double value ) {
+	static_cast< Nernst* >( c->data() )->Cout_ = value;
 }
 double Nernst::getCout( const Element* e ) {
 	return static_cast< const Nernst* >( e->data() )->Cout_;
 }
 
-void Nernst::setScale( const Conn& c, double value ) {
-	static_cast< Nernst* >( c.data() )->scale_ = value;
+void Nernst::setScale( const Conn* c, double value ) {
+	static_cast< Nernst* >( c->data() )->scale_ = value;
 }
 double Nernst::getScale( const Element* e ) {
 	return static_cast< const Nernst* >( e->data() )->scale_;
@@ -147,24 +147,24 @@ void Nernst::updateE( )
 	E_ = factor_ * log( Cout_ / Cin_ );
 }
 
-void Nernst::cinFuncLocal( const Conn& c, double conc )
+void Nernst::cinFuncLocal( const Conn* c, double conc )
 {
 	Cin_ = conc;
 	updateE();
-	send1< double >( c.targetElement(), eSrcSlot, E_ );
+	send1< double >( c->targetElement(), eSrcSlot, E_ );
 }
-void Nernst::cinFunc( const Conn& c, double value ) {
-	static_cast< Nernst* >( c.data() )->cinFuncLocal( c, value );
+void Nernst::cinFunc( const Conn* c, double value ) {
+	static_cast< Nernst* >( c->data() )->cinFuncLocal( c, value );
 }
 
-void Nernst::coutFuncLocal( const Conn& c, double conc )
+void Nernst::coutFuncLocal( const Conn* c, double conc )
 {
 	Cout_ = conc;
 	updateE();
-	send1< double >( c.targetElement(), eSrcSlot, E_ );
+	send1< double >( c->targetElement(), eSrcSlot, E_ );
 }
-void Nernst::coutFunc( const Conn& c, double value ) {
-	static_cast< Nernst* >( c.data() )->coutFuncLocal( c, value );
+void Nernst::coutFunc( const Conn* c, double value ) {
+	static_cast< Nernst* >( c->data() )->coutFuncLocal( c, value );
 }
 
 
@@ -184,9 +184,9 @@ void testNernst()
 		Id::scratchId() );
 	Conn c( nernst, 0 );
 	ASSERT( nernst != 0, "creating Nernst" );
-	Nernst::setValence( c, 1 );
-	Nernst::setCin( c, 0.01 );
-	Nernst::setCout( c, 1.0 );
+	Nernst::setValence( &c, 1 );
+	Nernst::setCin( &c, 0.01 );
+	Nernst::setCout( &c, 1.0 );
 	double E = Nernst::getE( nernst );
 	ASSERT( fabs( E - 0.0585 * 2.0 ) < 0.001, "Testing Nernst" );
 

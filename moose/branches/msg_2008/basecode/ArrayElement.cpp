@@ -337,24 +337,24 @@ unsigned int ArrayElement::connIndex( const Conn* c ) const
  * This finds the relative index of a conn arriving at this element.
  */
 unsigned int ArrayElement::connDestRelativeIndex(
-				const Conn& c, unsigned int slot ) const
+				const Conn* c, unsigned int slot ) const
 {
 	assert ( slot < dest_.size() );
 	assert ( conn_.size() >= dest_[ slot ].begin() );
-	assert ( c.targetIndex() >= dest_[ slot ].begin() );
-	return c.targetIndex() - dest_[ slot ].begin();
+	assert ( c->targetIndex() >= dest_[ slot ].begin() );
+	return c->targetIndex() - dest_[ slot ].begin();
 }
 /**
  * This finds the relative index of a conn arriving at this element on the
  * MsgSrc vector.
  */
 unsigned int ArrayElement::connSrcRelativeIndex(
-				const Conn& c, unsigned int slot ) const
+				const Conn* c, unsigned int slot ) const
 {
 	assert ( slot < src_.size() );
 	assert ( conn_.size() >= src_[ slot ].begin() );
-	assert ( c.targetIndex() >= src_[ slot ].begin() );
-	return c.targetIndex() - src_[ slot ].begin();
+	assert ( c->targetIndex() >= src_[ slot ].begin() );
+	return c->targetIndex() - src_[ slot ].begin();
 }
 
 //////////////////////////////////////////////////////////////////
@@ -839,7 +839,7 @@ Element* ArrayElement::innerCopy(int n) const
 }
 
 bool ArrayElement::innerCopyMsg( 
-	const Conn& c, const Element* orig, Element* dup )
+	const Conn* c, const Element* orig, Element* dup )
 {
 	return 0;
 }

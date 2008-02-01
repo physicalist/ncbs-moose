@@ -145,9 +145,9 @@ string GslIntegrator::getMethod( const Element* e )
 {
 	return static_cast< const GslIntegrator* >( e->data() )->method_;
 }
-void GslIntegrator::setMethod( const Conn& c, string method )
+void GslIntegrator::setMethod( const Conn* c, string method )
 {
-	static_cast< GslIntegrator* >( c.data() )->innerSetMethod( method );
+	static_cast< GslIntegrator* >( c->data() )->innerSetMethod( method );
 }
 
 void GslIntegrator::innerSetMethod( const string& method )
@@ -188,36 +188,36 @@ double GslIntegrator::getRelativeAccuracy( const Element* e )
 {
 	return static_cast< const GslIntegrator* >( e->data() )->relAccuracy_;
 }
-void GslIntegrator::setRelativeAccuracy( const Conn& c, double value )
+void GslIntegrator::setRelativeAccuracy( const Conn* c, double value )
 {
-	static_cast< GslIntegrator* >( c.data() )->relAccuracy_ = value;
+	static_cast< GslIntegrator* >( c->data() )->relAccuracy_ = value;
 }
 
 double GslIntegrator::getAbsoluteAccuracy( const Element* e )
 {
 	return static_cast< const GslIntegrator* >( e->data() )->absAccuracy_;
 }
-void GslIntegrator::setAbsoluteAccuracy( const Conn& c, double value )
+void GslIntegrator::setAbsoluteAccuracy( const Conn* c, double value )
 {
-	static_cast< GslIntegrator* >( c.data() )->absAccuracy_ = value;
+	static_cast< GslIntegrator* >( c->data() )->absAccuracy_ = value;
 }
 
 double GslIntegrator::getInternalDt( const Element* e )
 {
 	return static_cast< const GslIntegrator* >( e->data() )->internalStepSize_;
 }
-void GslIntegrator::setInternalDt( const Conn& c, double value )
+void GslIntegrator::setInternalDt( const Conn* c, double value )
 {
-	static_cast< GslIntegrator* >( c.data() )->internalStepSize_ = value;
+	static_cast< GslIntegrator* >( c->data() )->internalStepSize_ = value;
 }
 
 ///////////////////////////////////////////////////
 // Dest function definitions
 ///////////////////////////////////////////////////
 
-void GslIntegrator::assignStoichFunc( const Conn& c, void* stoich )
+void GslIntegrator::assignStoichFunc( const Conn* c, void* stoich )
 {
-	static_cast< GslIntegrator* >( c.data() )->
+	static_cast< GslIntegrator* >( c->data() )->
 		assignStoichFuncLocal( stoich );
 }
 
@@ -274,10 +274,10 @@ void GslIntegrator::assignStoichFuncLocal( void* stoich )
 	gslSys_.params = stoich;
 }
 
-void GslIntegrator::processFunc( const Conn& c, ProcInfo info )
+void GslIntegrator::processFunc( const Conn* c, ProcInfo info )
 {
-	Element* e = c.targetElement();
-	static_cast< GslIntegrator* >( e->data() )->innerProcessFunc( e, info );
+	Element* e = c->targetElement();
+	static_cast< GslIntegrator* >( c->data() )->innerProcessFunc( e, info );
 }
 
 /**
@@ -307,10 +307,10 @@ void GslIntegrator::innerProcessFunc( Element* e, ProcInfo info )
 	}        
 }
 
-void GslIntegrator::reinitFunc( const Conn& c, ProcInfo info )
+void GslIntegrator::reinitFunc( const Conn* c, ProcInfo info )
 {
     // Everything is done in assignStoichFuncLocal
 	// But the init function should somehow move here.
-	send0( c.targetElement(), reinitSlot );
+	send0( c->targetElement(), reinitSlot );
 	// y_[] = yprime_[]
 }

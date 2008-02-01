@@ -108,9 +108,9 @@ Average::Average()
 // Field function definitions
 ///////////////////////////////////////////////////
 
-void Average::setTotal( const Conn& c, double value )
+void Average::setTotal( const Conn* c, double value )
 {
-	static_cast< Average* >( c.data() )->total_ = value;
+	static_cast< Average* >( c->data() )->total_ = value;
 }
 
 double Average::getTotal( const Element* e )
@@ -118,9 +118,9 @@ double Average::getTotal( const Element* e )
 	return static_cast< Average* >( e->data() )->total_;
 }
 
-void Average::setBaseline( const Conn& c, double value )
+void Average::setBaseline( const Conn* c, double value )
 {
-	static_cast< Average* >( c.data() )->baseline_ = value;
+	static_cast< Average* >( c->data() )->baseline_ = value;
 }
 
 double Average::getBaseline( const Element* e )
@@ -128,9 +128,9 @@ double Average::getBaseline( const Element* e )
 	return static_cast< Average* >( e->data() )->baseline_;
 }
 
-void Average::setN( const Conn& c, unsigned int value )
+void Average::setN( const Conn* c, unsigned int value )
 {
-	static_cast< Average* >( c.data() )->n_ = value;
+	static_cast< Average* >( c->data() )->n_ = value;
 }
 
 unsigned int Average::getN( const Element* e )
@@ -153,15 +153,15 @@ void Average::inputLocal( double value )
 	++n_;
 }
 
-void Average::input( const Conn& c, double value )
+void Average::input( const Conn* c, double value )
 {
-	static_cast< Average* >( c.data() )->inputLocal( value );
+	static_cast< Average* >( c->data() )->inputLocal( value );
 }
 
 
-void Average::reinitFunc( const Conn& c, ProcInfo info )
+void Average::reinitFunc( const Conn* c, ProcInfo info )
 {
-	static_cast< Average* >( c.data() )->reinitFuncLocal( );
+	static_cast< Average* >( c->data() )->reinitFuncLocal( );
 }
 void Average::reinitFuncLocal( )
 {
@@ -169,10 +169,10 @@ void Average::reinitFuncLocal( )
 	n_ = 0;
 }
 
-void Average::processFunc( const Conn& c, ProcInfo info )
+void Average::processFunc( const Conn* c, ProcInfo info )
 {
-	Element* e = c.targetElement();
-	static_cast< Average* >( e->data() )->processFuncLocal( e, info );
+	Element* e = c->targetElement();
+	static_cast< Average* >( c->data() )->processFuncLocal( e, info );
 }
 
 double Average::mean() const
@@ -231,9 +231,9 @@ void testAverage()
 	ret = m2->findFinfo( "output" )->add( m2, m0, m0->findFinfo( "input" ) );
 	ASSERT( ret, "adding msg 3" );
 
-	Average::reinitFunc( cm0, &p );
-	Average::reinitFunc( cm1, &p );
-	Average::reinitFunc( cm2, &p );
+	Average::reinitFunc( &cm0, &p );
+	Average::reinitFunc( &cm1, &p );
+	Average::reinitFunc( &cm2, &p );
 
 	unsigned int i = 0;
 	for ( p.currTime_ = 0.0; p.currTime_ < 10.0; p.currTime_ += p.dt_ ) 
@@ -241,9 +241,9 @@ void testAverage()
 //		double n0 = Average::getMean( m0 );
 //		double n1 = Average::getMean( m1 );
 		double n2 = Average::getMean( m2 );
-		Average::processFunc( cm0, &p );
-		Average::processFunc( cm1, &p );
-		Average::processFunc( cm2, &p );
+		Average::processFunc( &cm0, &p );
+		Average::processFunc( &cm1, &p );
+		Average::processFunc( &cm2, &p );
 //		cout << p.currTime_ << "	" << n0 << "	" << n1 << "	" << n2 << "	" << check[i] << endl;
 		ASSERT( fabs ( n2 - check[ i ] ) < EPSILON, "testing example/average values" );
 		i++;

@@ -46,13 +46,13 @@ class KineticManager
 		// Field assignment functions
 		///////////////////////////////////////////////////
 		
-		static void setAuto( const Conn& c, bool value );
+		static void setAuto( const Conn* c, bool value );
 		static bool getAuto( const Element* e );
-		static void setStochastic( const Conn& c, bool value );
+		static void setStochastic( const Conn* c, bool value );
 		static bool getStochastic( const Element* e );
-		static void setSpatial( const Conn& c, bool value );
+		static void setSpatial( const Conn* c, bool value );
 		static bool getSpatial( const Element* e );
-		static void setMethod( const Conn& c, string value );
+		static void setMethod( const Conn* c, string value );
 		static string getMethod( const Element* e );
 
 		// Some readonly fields with more info about the methods.
@@ -62,7 +62,7 @@ class KineticManager
 		static bool getImplicit( const Element* e );
 		static string getDescription( const Element* e );
 		static double getRecommendedDt( const Element* e );
-		static void setEulerError( const Conn& c, double value );
+		static void setEulerError( const Conn* c, double value );
 		static double getEulerError( const Element* e );
 
 		// static string getMethodList( const Element* e );
@@ -80,13 +80,13 @@ class KineticManager
 		// Dest function definitions
 		///////////////////////////////////////////////////
 		
-		static void reinitFunc( const Conn& c, ProcInfo info );
+		static void reinitFunc( const Conn* c, ProcInfo info );
 		void reinitFuncLocal( Element* e );
-		static void processFunc( const Conn& c, ProcInfo info );
+		static void processFunc( const Conn* c, ProcInfo info );
 		/*
 		void processFuncLocal( Element* e, ProcInfo info );
 		*/
-		static void reschedFunc( const Conn& c );
+		static void reschedFunc( const Conn* c );
 		void reschedFuncLocal( Element* e );
 
  // static void addMethod( name, description,

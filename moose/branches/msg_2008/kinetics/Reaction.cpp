@@ -98,9 +98,9 @@ static const Slot productSlot =
 // Field function definitions
 ///////////////////////////////////////////////////
 
-void Reaction::setKf( const Conn& c, double value )
+void Reaction::setKf( const Conn* c, double value )
 {
-	static_cast< Reaction* >( c.data() )->kf_ = value;
+	static_cast< Reaction* >( c->data() )->kf_ = value;
 }
 
 double Reaction::getKf( const Element* e )
@@ -108,9 +108,9 @@ double Reaction::getKf( const Element* e )
 	return static_cast< Reaction* >( e->data() )->kf_;
 }
 
-void Reaction::setKb( const Conn& c, double value )
+void Reaction::setKb( const Conn* c, double value )
 {
-	static_cast< Reaction* >( c.data() )->kb_ = value;
+	static_cast< Reaction* >( c->data() )->kb_ = value;
 }
 
 double Reaction::getKb( const Element* e )
@@ -130,10 +130,10 @@ void Reaction::innerProcessFunc( Element* e, ProcInfo info )
 			B_ = kb_;
 }
 
-void Reaction::processFunc( const Conn& c, ProcInfo p )
+void Reaction::processFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c.targetElement();
-	static_cast< Reaction* >( e->data() )->innerProcessFunc( e, p );
+	Element* e = c->targetElement();
+	static_cast< Reaction* >( c->data() )->innerProcessFunc( e, p );
 }
 
 void Reaction::innerReinitFunc( )
@@ -142,31 +142,31 @@ void Reaction::innerReinitFunc( )
 	   	B_ = kb_;
 }
 		
-void Reaction::reinitFunc( const Conn& c, ProcInfo p )
+void Reaction::reinitFunc( const Conn* c, ProcInfo p )
 {
-	static_cast< Reaction* >( c.data() )->innerReinitFunc( );
+	static_cast< Reaction* >( c->data() )->innerReinitFunc( );
 }
 
-void Reaction::substrateFunc( const Conn& c, double n )
+void Reaction::substrateFunc( const Conn* c, double n )
 {
-	static_cast< Reaction* >( c.data() )->A_ *= n;
+	static_cast< Reaction* >( c->data() )->A_ *= n;
 }
 
-void Reaction::productFunc( const Conn& c, double n )
+void Reaction::productFunc( const Conn* c, double n )
 {
-	static_cast< Reaction* >( c.data() )->B_ *= n;
+	static_cast< Reaction* >( c->data() )->B_ *= n;
 }
 
 ///////////////////////////////////////////////////
 // Dest function definitions
 ///////////////////////////////////////////////////
 
-void Reaction::scaleKfFunc( const Conn& c, double k )
+void Reaction::scaleKfFunc( const Conn* c, double k )
 {
-	static_cast< Reaction* >( c.data() )->A_ *= k;
+	static_cast< Reaction* >( c->data() )->A_ *= k;
 }
 
-void Reaction::scaleKbFunc( const Conn& c, double k )
+void Reaction::scaleKbFunc( const Conn* c, double k )
 {
-	static_cast< Reaction* >( c.data() )->B_ *= k;
+	static_cast< Reaction* >( c->data() )->B_ *= k;
 }

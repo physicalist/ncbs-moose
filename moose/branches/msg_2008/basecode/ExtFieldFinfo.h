@@ -224,6 +224,6 @@ class ExtFieldFinfo: public Finfo
 /**
  * This function looks up the ExtFieldFonfo matching the incoming Conn
  */
-//extern const ExtFieldFinfo* getDF( const Conn& );
+//extern const ExtFieldFinfo* getDF( const Conn* );
 
 #endif // _EXT_FIELD_FINFO_H

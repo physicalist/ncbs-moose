@@ -33,7 +33,7 @@ enum FinfoIdentifier { VALUE_SET, VALUE_TRIG,
  * Index looks up the message slot (MsgSrc) to send from.
  */
 typedef const void* ( *IncomingFunc )( 
-			const Conn& c, const void* data, RecvFunc rf );
+			const Conn* c, const void* data, RecvFunc rf );
 
 /**
  * Virtual base class for typing information. 

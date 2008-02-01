@@ -118,13 +118,13 @@ ParSpikeGen::~ParSpikeGen()
 	request_.clear();
 }
 
-void ParSpikeGen::sendRank( const Conn& c, int rank )
+void ParSpikeGen::sendRank( const Conn* c, int rank )
 {
-        static_cast< ParSpikeGen* >( c.data() )->sendRank_.push_back(rank);
-        static_cast< ParSpikeGen* >( c.data() )->request_.push_back( new MPI_Request);
+        static_cast< ParSpikeGen* >( c->data() )->sendRank_.push_back(rank);
+        static_cast< ParSpikeGen* >( c->data() )->request_.push_back( new MPI_Request);
 }
 
-void ParSpikeGen::innerProcessFunc( const Conn& c, ProcInfo p )
+void ParSpikeGen::innerProcessFunc( const Conn* c, ProcInfo p )
 {
         static double t;
 	unsigned int i;
@@ -133,8 +133,6 @@ void ParSpikeGen::innerProcessFunc( const Conn& c, ProcInfo p )
 	//int iMyRank;
 
         if ( V_ > threshold_ && t >= lastEvent_ + refractT_ ) {
-
-
 		//MPI_Comm_rank(MPI_COMM_WORLD, &iMyRank);
                 //cout<<endl<<"V_ "<<V_<<" threshold "<<threshold_<<" t "<<t<<flush;
 
@@ -158,7 +156,7 @@ void ParSpikeGen::innerProcessFunc( const Conn& c, ProcInfo p )
                 }
 
 
-                send1< double >( c.targetElement(), eventSlot, t );
+                send1< double >( c->targetElement(), eventSlot, t );
                 lastEvent_ = t;
                 state_ = amplitude_;
         } else {
@@ -166,8 +164,8 @@ void ParSpikeGen::innerProcessFunc( const Conn& c, ProcInfo p )
         }
 }
 
-void ParSpikeGen::processFunc( const Conn& c, ProcInfo p )
+void ParSpikeGen::processFunc( const Conn* c, ProcInfo p )
 {
-        static_cast< ParSpikeGen* >( c.data() )->innerProcessFunc( c, p );
+        static_cast< ParSpikeGen* >( c->data() )->innerProcessFunc( c, p );
 }
 

@@ -63,7 +63,7 @@ class Element
 		 * have an index of 0.
 		 */
 		virtual unsigned int connDestRelativeIndex(
-				const Conn& c, unsigned int slot ) const = 0;
+				const Conn* c, unsigned int slot ) const = 0;
 
 		/**
 		 * Finds the relative index of a conn arriving at this
@@ -73,7 +73,7 @@ class Element
 		 * have an index of 0.
 		 */
 		virtual unsigned int connSrcRelativeIndex(
-				const Conn& c, unsigned int slot ) const = 0;
+				const Conn* c, unsigned int slot ) const = 0;
 		
 		/// Returns the size of the conn vector.
 		virtual unsigned int connSize() const = 0;
@@ -413,7 +413,7 @@ class Element
 		 */
 		virtual void dumpMsgInfo() const = 0;
 		virtual bool innerCopyMsg(
-				const Conn& c, const Element* orig, Element* dup ) = 0;
+				const Conn* c, const Element* orig, Element* dup ) = 0;
 	protected:
 		/**
 		 * This function copies the element, its data and its

@@ -343,34 +343,34 @@ GenesisParserWrapper::GenesisParserWrapper()
 		loadBuiltinCommands();
 }
 
-void GenesisParserWrapper::readlineFunc( const Conn& c, string s )
+void GenesisParserWrapper::readlineFunc( const Conn* c, string s )
 {
 	GenesisParserWrapper* data =
-	static_cast< GenesisParserWrapper* >( c.targetElement()->data() );
+	static_cast< GenesisParserWrapper* >( c->data() );
 
 	data->AddInput( s );
 }
 
-void GenesisParserWrapper::processFunc( const Conn& c )
+void GenesisParserWrapper::processFunc( const Conn* c )
 {
 	GenesisParserWrapper* data =
-	static_cast< GenesisParserWrapper* >( c.targetElement()->data() );
+	static_cast< GenesisParserWrapper* >( c->data() );
 
 	data->Process();
 }
 
-void GenesisParserWrapper::parseFunc( const Conn& c, string s )
+void GenesisParserWrapper::parseFunc( const Conn* c, string s )
 {
 	GenesisParserWrapper* data =
-	static_cast< GenesisParserWrapper* >( c.targetElement()->data() );
+	static_cast< GenesisParserWrapper* >( c->data() );
 
 	data->ParseInput( s );
 }
 
-void GenesisParserWrapper::setReturnId( const Conn& c, Id id )
+void GenesisParserWrapper::setReturnId( const Conn* c, Id id )
 {
 	GenesisParserWrapper* data =
-	static_cast< GenesisParserWrapper* >( c.targetElement()->data() );
+	static_cast< GenesisParserWrapper* >( c->data() );
 
 	data->returnId_ = id;
 }
@@ -402,49 +402,49 @@ void GenesisParserWrapper::print( const string& s, bool noNewLine )
 // GenesisParserWrapper Message recv functions
 //////////////////////////////////////////////////////////////////
 
-void GenesisParserWrapper::recvCwe( const Conn& c, Id cwe )
+void GenesisParserWrapper::recvCwe( const Conn* c, Id cwe )
 {
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( c.targetElement()->data() );
+			( c->data() );
 	gpw->cwe_ = cwe;
 }
 
 //
 //This is used for Le, for WildcardList, and others
-void GenesisParserWrapper::recvElist( const Conn& c, vector< Id > elist)
+void GenesisParserWrapper::recvElist( const Conn* c, vector< Id > elist)
 {
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( c.targetElement()->data() );
+			( c->data() );
 	gpw->elist_ = elist;
 }
 
-void GenesisParserWrapper::recvCreate( const Conn& c, Id e )
+void GenesisParserWrapper::recvCreate( const Conn* c, Id e )
 {
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( c.targetElement()->data() );
+			( c->data() );
 	gpw->createdElm_ = e;
 }
 
-void GenesisParserWrapper::recvField( const Conn& c, string value )
+void GenesisParserWrapper::recvField( const Conn* c, string value )
 {
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( c.targetElement()->data() );
+			( c->data() );
 	gpw->fieldValue_ = value;
 }
 
 void GenesisParserWrapper::recvClocks( 
-				const Conn& c, vector< double > dbls)
+				const Conn* c, vector< double > dbls)
 {
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( c.targetElement()->data() );
+			( c->data() );
 	gpw->dbls_ = dbls;
 }
 
 void GenesisParserWrapper::recvMessageList( 
-				const Conn& c, vector< Id > elist, string s)
+				const Conn* c, vector< Id > elist, string s)
 {
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( c.targetElement()->data() );
+			( c->data() );
 	gpw->elist_ = elist;
 	gpw->fieldValue_ = s;
 }

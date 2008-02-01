@@ -242,6 +242,6 @@ class DynamicFinfo: public Finfo
 /**
  * This function looks up the DynamicFinfo matching the incoming Conn
  */
-extern const DynamicFinfo* getDF( const Conn& );
+extern const DynamicFinfo* getDF( const Conn* );
 
 #endif // _DYNAMIC_FINFO_H

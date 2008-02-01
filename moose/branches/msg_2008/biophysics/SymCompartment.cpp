@@ -206,28 +206,28 @@ void SymCompartment::innerReinitFunc( Element* e, ProcInfo p )
 	coeff2_ = ( 1 + coeff2_ ) / 2.0;
 }
 
-void SymCompartment::sumRaxialRequest( const Conn& c )
+void SymCompartment::sumRaxialRequest( const Conn* c )
 {
-	Element* e = c.targetElement();
-	double Ra = static_cast< SymCompartment* >( e->data() )->Ra_;
+	Element* e = c->targetElement();
+	double Ra = static_cast< SymCompartment* >( c->data() )->Ra_;
 	send1< double >( e, sumRaxialSlot, Ra );
 }
 
-void SymCompartment::sumRaxial2Request( const Conn& c )
+void SymCompartment::sumRaxial2Request( const Conn* c )
 {
-	Element* e = c.targetElement();
-	double Ra = static_cast< SymCompartment* >( e->data() )->Ra_;
+	Element* e = c->targetElement();
+	double Ra = static_cast< SymCompartment* >( c->data() )->Ra_;
 	send1< double >( e, sumRaxial2Slot, Ra );
 }
 
-void SymCompartment::sumRaxial( const Conn& c, double Ra )
+void SymCompartment::sumRaxial( const Conn* c, double Ra )
 {
-	static_cast< SymCompartment* >( c.data() )->coeff_ += 1.0 / Ra;
+	static_cast< SymCompartment* >( c->data() )->coeff_ += 1.0 / Ra;
 }
 
-void SymCompartment::sumRaxial2( const Conn& c, double Ra )
+void SymCompartment::sumRaxial2( const Conn* c, double Ra )
 {
-	static_cast< SymCompartment* >( c.data() )->coeff2_ += 1.0 / Ra;
+	static_cast< SymCompartment* >( c->data() )->coeff2_ += 1.0 / Ra;
 }
 
 // Alternates with the 'process' message
@@ -256,9 +256,9 @@ void SymCompartment::innerRaxial2Func( double Ra, double Vm)
 	Im_ += ( Vm - Vm_ ) / Ra;
 }
 
-void SymCompartment::raxial2Func( const Conn& c, double Ra, double Vm)
+void SymCompartment::raxial2Func( const Conn* c, double Ra, double Vm)
 {
-	static_cast< SymCompartment* >( c.targetElement()->data() )->
+	static_cast< SymCompartment* >( c->data() )->
 			innerRaxial2Func( Ra, Vm );
 }
 
@@ -282,12 +282,12 @@ void testSymCompartment()
 	ProcInfoBase p;
 	Conn c( c0, 0 );
 	p.dt_ = 0.002;
-	Compartment::setInject( c, 1.0 );
-	Compartment::setRm( c, 1.0 );
-	Compartment::setRa( c, 0.0025 );
-	Compartment::setCm( c, 1.0 );
-	Compartment::setEm( c, 0.0 );
-	Compartment::setVm( c, 0.0 );
+	Compartment::setInject( &c, 1.0 );
+	Compartment::setRm( &c, 1.0 );
+	Compartment::setRa( &c, 0.0025 );
+	Compartment::setCm( &c, 1.0 );
+	Compartment::setEm( &c, 0.0 );
+	Compartment::setVm( &c, 0.0 );
 
 	// Get rid of all the compartments.
 	set( n, "destroy" );

@@ -169,10 +169,10 @@ vector< double > Panel::getCoords( const Element* e )
 
 // We don't have dynamic shapes yet, so this update to the solver is
 // not needed. Furthermore we don't want to tie this to Smoldyn.
-void Panel::setPos( const Conn& c, double value, 
+void Panel::setPos( const Conn* c, double value, 
 	unsigned int i, unsigned int dim )
 {
-	static_cast< Panel* >( c.data() )->localSetPos( value, i, dim );
+	static_cast< Panel* >( c->data() )->localSetPos( value, i, dim );
 }
 
 void Panel::localSetPos( double value, unsigned int i, unsigned int dim )
@@ -181,17 +181,17 @@ void Panel::localSetPos( double value, unsigned int i, unsigned int dim )
 	coords_[ i * nDims_ + dim ] = value;
 }
 
-void Panel::setX( const Conn& c, double value, const unsigned int& i )
+void Panel::setX( const Conn* c, double value, const unsigned int& i )
 {
 	setPos( c, value, i, 0 );
 }
 
-void Panel::setY( const Conn& c, double value, const unsigned int& i )
+void Panel::setY( const Conn* c, double value, const unsigned int& i )
 {
 	setPos( c, value, i, 1 );
 }
 
-void Panel::setZ( const Conn& c, double value, const unsigned int& i )
+void Panel::setZ( const Conn* c, double value, const unsigned int& i )
 {
 	setPos( c, value, i, 2 );
 }

@@ -20,7 +20,7 @@
  * The get_ and set_ funcs are similar to those for the ValueFinfo,
  * but have an extra argument for the index, which can be any type.
  * So, we have: T1 ( *get )( const Element*, const T2& index )
- * and void( *set )( const Conn&, T1 v, const T2& index )
+ * and void( *set )( const Conn*, T1 v, const T2& index )
  *
  * The ArrayFinfo is a special case of LookupFinfo, with an
  * unsigned int index.

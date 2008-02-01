@@ -510,21 +510,21 @@ class SharedTest
 		SharedTest()
 				: dval_( 1.0 )
 		{;}
-		static void tenXdval( const Conn& c, double val ) {
+		static void tenXdval( const Conn* c, double val ) {
 			SharedTest* st = 
-				static_cast< SharedTest* >(c.targetElement()->data() );
+				static_cast< SharedTest* >(c->data() );
 			st->dval_ += 10.0 * val;
 		}
 
-		static void twoXdval( const Conn& c, double val ) {
+		static void twoXdval( const Conn* c, double val ) {
 			SharedTest* st = 
-				static_cast< SharedTest* >(c.targetElement()->data() );
+				static_cast< SharedTest* >(c->data() );
 			st->dval_ += 2.0 * val;
 		}
 
-		static void setDval( const Conn& c, double val ) {
+		static void setDval( const Conn* c, double val ) {
 			SharedTest* st = 
-				static_cast< SharedTest* >(c.targetElement()->data() );
+				static_cast< SharedTest* >(c->data() );
 			st->dval_ = val;
 		}
 
@@ -532,15 +532,15 @@ class SharedTest
 				return static_cast< SharedTest* >( e->data() )->dval_;
 		}
 
-		static void trigRead( const Conn& c ) {
-			Element* e = c.targetElement();
+		static void trigRead( const Conn* c ) {
+			Element* e = c->targetElement();
 			// 0 is the readVal trig MsgSrc., but we have to
 			// increment it to 1 because of base class.
 			send0( e, Slot( 1, 0 ) );
 		}
 
-		static void pingPong( const Conn& c ) {
-			Element* e = c.targetElement();
+		static void pingPong( const Conn* c ) {
+			Element* e = c->targetElement();
 			SharedTest* st = 
 				static_cast< SharedTest* >( e->data() );
 			// 1 is the pingPong dval MsgSrc. We have to increment it to
@@ -548,8 +548,8 @@ class SharedTest
 			send1< double >( e, Slot( 2, 0 ), st->dval_ );
 		}
 
-		static void trigPing( const Conn& c ) {
-			Element* e = c.targetElement();
+		static void trigPing( const Conn* c ) {
+			Element* e = c->targetElement();
 			// 2 is the pingPong trig MsgSrc. We have to increment it
 			// to 3 because of the base class.
 			send0( e, Slot( 3, 0 ) );

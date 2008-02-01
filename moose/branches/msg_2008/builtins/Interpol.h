@@ -27,35 +27,35 @@ class Interpol
 		////////////////////////////////////////////////////////////
 		// Here are the interface functions for the MOOSE class
 		////////////////////////////////////////////////////////////
-		static void setXmin( const Conn& c, double value );
+		static void setXmin( const Conn* c, double value );
 		static double getXmin( const Element* e );
-		static void setXmax( const Conn& c, double value );
+		static void setXmax( const Conn* c, double value );
 		static double getXmax( const Element* e );
-		static void setXdivs( const Conn& c, int value );
+		static void setXdivs( const Conn* c, int value );
 		static int getXdivs( const Element* e );
-		static void setDx( const Conn& c, double value );
+		static void setDx( const Conn* c, double value );
 		static double getDx( const Element* e );
-		static void setSy( const Conn& c, double value );
+		static void setSy( const Conn* c, double value );
 		static double getSy( const Element* e );
-		static void setMode( const Conn& c, int value );
+		static void setMode( const Conn* c, int value );
 		static int getMode( const Element* e );
 
 		static void setTable(
-					const Conn& c, double val, const unsigned int& i );
+					const Conn* c, double val, const unsigned int& i );
 		static double getTable(
 					const Element* e,const unsigned int& i );
-		static void setTableVector( const Conn& c, vector< double > value );
+		static void setTableVector( const Conn* c, vector< double > value );
 
 		static vector< double > getTableVector( const Element* e );
 
 		////////////////////////////////////////////////////////////
 		// Here are the Interpol Destination functions
 		////////////////////////////////////////////////////////////
-		static void lookupReturn( const Conn& c, double val );
-		static void lookup( const Conn& c, double val );
-		static void tabFill( const Conn& c, int xdivs, int mode );
-		static void print( const Conn& c, string fname );
-		static void appendTableVector( const Conn& c, 
+		static void lookupReturn( const Conn* c, double val );
+		static void lookup( const Conn* c, double val );
+		static void tabFill( const Conn* c, int xdivs, int mode );
+		static void print( const Conn* c, string fname );
+		static void appendTableVector( const Conn* c, 
 			vector< double > value );
 
 		////////////////////////////////////////////////////////////

@@ -97,9 +97,9 @@ static const Cinfo* mathFuncCinfo = initMathFuncCinfo();
 
 static const Slot outputSlot = initMathFuncCinfo()->getSlot( "output" );
 
-void MathFunc::processFunc( const Conn& c, ProcInfo info )
+void MathFunc::processFunc( const Conn* c, ProcInfo info )
 {
-	Element* e = c.targetElement();
+	Element* e = c->targetElement();
 	static_cast< MathFunc* >( e->data() )->process( e, info );
 }
 
@@ -136,10 +136,10 @@ void MathFunc::process (Element *e, ProcInfo info){
   v.clear();
 }
 
-void MathFunc::reinitFunc( const Conn& c, ProcInfo info )
+void MathFunc::reinitFunc( const Conn* c, ProcInfo info )
 {
-	static_cast< MathFunc* >( c.data() )->reinitFuncLocal( 
-					c.targetElement() );
+	static_cast< MathFunc* >( c->data() )->reinitFuncLocal( 
+					c->targetElement() );
 }
 
 void MathFunc::reinitFuncLocal(Element *e){
@@ -152,9 +152,9 @@ void MathFunc::reinitFuncLocal(Element *e){
 // MOOSE function definitions.
 //////////////////////////////////////////////////////////////////
 
-void MathFunc::setMathMl( const Conn& c, string value )
+void MathFunc::setMathMl( const Conn* c, string value )
 {
-	static_cast< MathFunc* >( c.data() )->innerSetMMLString( value );
+	static_cast< MathFunc* >( c->data() )->innerSetMMLString( value );
 }
 
 string MathFunc::getMathML( const Element* e )
@@ -166,7 +166,7 @@ double MathFunc::getR(const Element* e){
   return static_cast< MathFunc* >( e->data() )->result_;
 }
 
-void MathFunc::setR(const Conn& c, double ss){
+void MathFunc::setR(const Conn* c, double ss){
   ;
 }
 
@@ -174,8 +174,9 @@ string MathFunc::getFunction(const Element* e){
   return static_cast< MathFunc* >( e->data() )->fn_; 
 }
 
-void MathFunc::setFunction(const Conn& c, string functionstring){
-  static_cast< MathFunc* >( c.data() )->innerSetFunctionString(functionstring);
+void MathFunc::setFunction(const Conn* c, string functionstring){
+  static_cast< MathFunc* >( c->data() )->
+  	innerSetFunctionString(functionstring);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -192,13 +193,13 @@ void MathFunc::innerSetFunctionString(string value){
   status_ = FNSTRING;
 }
 
-void MathFunc::argFunc(const Conn& c, double d){
-  MathFunc *m = static_cast< MathFunc* >( c.data() );
+void MathFunc::argFunc(const Conn* c, double d){
+  MathFunc *m = static_cast< MathFunc* >( c->data() );
   m->v.push_back(&d);
 }
 
-void MathFunc::arg1Func(const Conn& c, double d){
-  MathFunc *m = static_cast< MathFunc* >( c.data() );
+void MathFunc::arg1Func(const Conn* c, double d){
+  MathFunc *m = static_cast< MathFunc* >( c->data() );
   double *d1 = new double;
   *d1 = d;
   //if (m->v.size() == 0) m->v.push_back(&d);
@@ -206,22 +207,22 @@ void MathFunc::arg1Func(const Conn& c, double d){
   m->v[0] = d1;
 }
 
-void MathFunc::arg2Func(const Conn& c, double d){
-  MathFunc *m = static_cast< MathFunc* >( c.data() );
+void MathFunc::arg2Func(const Conn* c, double d){
+  MathFunc *m = static_cast< MathFunc* >( c->data() );
   double *d2 = new double;  *d2 = d;
   while (m->v.size() != 2) m->v.push_back(&d);
   m->v[1] = d2;
 }
 
-void MathFunc::arg3Func(const Conn& c, double d){
-  MathFunc *m = static_cast< MathFunc* >( c.data() );
+void MathFunc::arg3Func(const Conn* c, double d){
+  MathFunc *m = static_cast< MathFunc* >( c->data() );
   double *d3 = new double;  *d3 = d;
   while (m->v.size() != 3) m->v.push_back(&d);
   m->v[2] = d3;
 }
 
-void MathFunc::arg4Func(const Conn& c, double d){
-  MathFunc *m = static_cast< MathFunc* >( c.data() );
+void MathFunc::arg4Func(const Conn* c, double d){
+  MathFunc *m = static_cast< MathFunc* >( c->data() );
   double *d4 = new double;  *d4 = d;
   while (m->v.size() != 4) m->v.push_back(&d);
   m->v[3] = d4;
@@ -1126,7 +1127,7 @@ void testMathFunc(){
 	set< double >( m, "arg1", 1);
 	set< double >( m, "arg2", 2 );
 	set< double >( m, "arg3", 3 );
-	MathFunc::processFunc(c, &p);
+	MathFunc::processFunc( &c, &p);
 	ASSERT(get<double>(m, "result", d), "Getting result");
 	ASSERT(d == 7.0, "Testing f(x, y, z) = x + y*z");
 	
@@ -1135,7 +1136,7 @@ void testMathFunc(){
 	set< string >( m, "mathML", "<eq/> <apply><ci type=\"function\"> f </ci> <ci> x </ci> <ci> y </ci></apply><apply><plus/>  <ci>x</ci>  <apply><times/><ci>y</ci>  <cn>57</cn> </apply></apply> " );
 	set< double >( m, "arg1", 1);
 	set< double >( m, "arg2", 2 );
-	MathFunc::processFunc(c, &p);
+	MathFunc::processFunc( &c, &p);
 	ASSERT(get<double>(m, "result", d), "Getting result");
 	ASSERT(d == 115, "Testing mmlstring");
 	
@@ -1145,7 +1146,7 @@ void testMathFunc(){
 	set< double >( m, "arg2", 2);
 	set< double >( m, "arg3", 3);
 	set< double >( m, "arg4", 4);
-	MathFunc::processFunc(c, &p);
+	MathFunc::processFunc( &c, &p);
 	ASSERT(get<double>(m, "result", d), "Getting result");
 	ASSERT(d ==  1/(1+0.02*(2.33*(2 + 3)+1.2E1*4)), "Testing Tyson infix function");
 	
@@ -1153,7 +1154,7 @@ void testMathFunc(){
 	set< string >( m, "function", "f(ERG, DRG) = 0.5*(0.1*ERG + ((0.2*(DRG/0.3)^2)/(1 + (DRG/0.3)^2)))");
 	set< double >( m, "arg1", 1);
 	set< double >( m, "arg2", 2);
-	MathFunc::processFunc(c, &p);
+	MathFunc::processFunc( &c, &p);
 	ASSERT(get<double>(m, "result", d), "Getting result");
 	ASSERT(d ==  0.5*(0.1*1 + (0.2*(2/0.3)*(2/0.3))/(1 + (2/0.3)*(2/0.3))), "Testing Tyson infix function");
 	
@@ -1162,7 +1163,7 @@ void testMathFunc(){
 	set< string >( m, "mathML", "<eq/> <apply> <ci type=\"function\"> f </ci> <ci> ERG </ci> <ci> DRG </ci> </apply> <apply><times/> <cn>0.5</cn> <apply><plus/> <apply><times/> <cn>0.1</cn> <ci>ERG<ci> </apply> <apply><divide/> <apply><times/> <cn>0.2</cn> <apply><power/> <apply><divide/> <ci>DRG</ci> <cn>0.3</cn> </apply> <cn>2</cn> </apply> </apply> <apply><plus/> <cn>1</cn> <apply><power/> <apply><divide/> <ci>DRG</ci> <cn>0.3</cn> </apply> <cn>2</cn> </apply> </apply> </apply> </apply> </apply>" );
 	set< double >( m, "arg1", 1);
 	set< double >( m, "arg2", 2);
-	MathFunc::processFunc(c, &p);
+	MathFunc::processFunc( &c, &p);
 	ASSERT(get<double>(m, "result", d), "Getting result");
 	//cout << d << endl;
 	//cout << 0.5*(0.1*1 + (0.2*(2/0.3)*(2/0.3))/(1 + (2/0.3)*(2/0.3))) << endl;

@@ -48,10 +48,10 @@ void SolveFinfo::listFinfos( vector< const Finfo* >& flist ) const
 /**
 * Returns the Conn going from solved object e to the solver
 */
-const Conn& SolveFinfo::getSolvedConn( const Element* e ) const
+const Conn* SolveFinfo::getSolvedConn( const Element* e ) const
 {
 	vector< Conn >::const_iterator i = 
 		e->connDestBegin( procSlot_ );
 	assert( e->connDestEnd( procSlot_ ) != i );
-	return *i;
+	return &( *i );
 }

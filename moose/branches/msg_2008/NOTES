@@ -5610,13 +5610,16 @@ Stuff that can still be done before breaking everything:
 		* Has to harvest all functions in SharedFinfos
 		* Has to manage the FuncLists
 		* Has to provide a way to sync lists across nodes.
-	- Slot upgrade to include FuncList specification
+	* Slot upgrade to include FuncList specification
 	- Add further kinds of ConnInfos that could in principle handle
 		complex messaging.
+	- Change Conn access to pointers.
 
 Stuff to look at before the transition:
-	- Element::connect function. It does not have a way to tie 
+	* Element::connect function. It does not have a way to tie 
 		src/dest index to Conns.
+		- Checked. Need to work out how we're handling Conns to figure
+		this one out.
 	- MsgSrc/Dest Id sorting out for ConnInfos
 
 Stuff that will break everything
@@ -5674,5 +5677,12 @@ Now I've marched the compilation through to Compartment.cpp
 Now done biophysics, into kinetics.
 Now done the whole lot. Compiles and runs. When I convert to the new form I
 will have to undo some intermediate hacks done to get it to work.
+
+Checked in as revision 400 with unit test flags on, Smoldyn off, -g, GSL
+
+Another thing to do before messing it all up: convert conns to pointers.
+
+Got through: parser, basecode, biophysics, kinetics, all the rest.
+Astonishingly it not only compiled, it ran and cleared unit tests first time.
 
 ==============================================================================

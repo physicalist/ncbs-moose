@@ -14,7 +14,7 @@
 class Conn;
 class Element;
 
-typedef void ( *RecvFunc )( const Conn& );
+typedef void ( *RecvFunc )( const Conn* );
 
 #define RFCAST(x) reinterpret_cast< RecvFunc >( x )
 
@@ -24,6 +24,6 @@ typedef double ( *GetFunc )( const Element* );
 
 typedef std::vector < RecvFunc > FuncList;
 
-void dummyFunc( const Conn& c );
+void dummyFunc( const Conn* c );
 
 #endif

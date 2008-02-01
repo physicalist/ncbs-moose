@@ -155,9 +155,9 @@ string SharedFtype::typeStr() const
 #ifdef DO_UNIT_TESTS
 #include "ProcInfo.h"
 #include "DerivedFtype.h"
-void tempFunc( const Conn& c )
+void tempFunc( const Conn* c )
 {
-		string s = c.targetElement()->name();
+		string s = c->targetElement()->name();
 		s = s + ".foo";
 }
 

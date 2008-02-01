@@ -24,7 +24,7 @@ class ParTick: public Tick
 		///////////////////////////////////////////////////////
 		// Functions for DestMessages
 		///////////////////////////////////////////////////////
-		static void pollFunc( const Conn& c, unsigned int node );
+		static void pollFunc( const Conn* c, unsigned int node );
 
 		///////////////////////////////////////////////////////
 		// Virtual functions for handling scheduling of PostMaster,

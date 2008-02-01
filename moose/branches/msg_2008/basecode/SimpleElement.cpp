@@ -306,24 +306,24 @@ unsigned int SimpleElement::connIndex( const Conn* c ) const
  * This finds the relative index of a conn arriving at this element.
  */
 unsigned int SimpleElement::connDestRelativeIndex(
-				const Conn& c, unsigned int slot ) const
+				const Conn* c, unsigned int slot ) const
 {
 	assert ( slot < dest_.size() );
 	assert ( conn_.size() >= dest_[ slot ].begin() );
-	assert ( c.targetIndex() >= dest_[ slot ].begin() );
-	return c.targetIndex() - dest_[ slot ].begin();
+	assert ( c->targetIndex() >= dest_[ slot ].begin() );
+	return c->targetIndex() - dest_[ slot ].begin();
 }
 /**
  * This finds the relative index of a conn arriving at this element on the
  * MsgSrc vector.
  */
 unsigned int SimpleElement::connSrcRelativeIndex(
-				const Conn& c, unsigned int slot ) const
+				const Conn* c, unsigned int slot ) const
 {
 	assert ( slot < src_.size() );
 	assert ( conn_.size() >= src_[ slot ].begin() );
-	assert ( c.targetIndex() >= src_[ slot ].begin() );
-	return c.targetIndex() - src_[ slot ].begin();
+	assert ( c->targetIndex() >= src_[ slot ].begin() );
+	return c->targetIndex() - src_[ slot ].begin();
 }
 
 //////////////////////////////////////////////////////////////////
@@ -456,7 +456,6 @@ unsigned int SimpleElement::insertConn(
 /**
  * Take two naive Conns, and assign their values so that they point
  * to each other
- * \todo This function is deprecated as it does not assign a ConnInfo.
  */
 void SimpleElement::connect( unsigned int myConn, 
 				Element* targetElement, unsigned int targetConn)

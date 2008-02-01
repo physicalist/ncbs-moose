@@ -291,7 +291,7 @@ void testStoich()
 	ProcInfoBase p;
 	p.dt_ = 0.001;
 	p.currTime_ = 0.0;
-	Table::process( c, &p );
+	Table::process( &c, &p );
 	// Check that the value has been added to the correct molecule
 	ret = get< double >( m[5], "n", dret );
 	ASSERT( ret, "Getting value" );
@@ -362,7 +362,7 @@ void testStoich()
 	// Here we finally check that the return message to the
 	// DynamicFinfo can look up the solver.
 	s->S_[molNum] = 192939.5;
-	Table::process( c1, &p );
+	Table::process( &c1, &p );
 	ret = get< double >( table, "input", dret );
 	ASSERT( ret, "DynamicFinfo message redirect" );
 	ASSERT( dret == 192939.5, "DynamicFinfo message redirect" );
@@ -397,7 +397,7 @@ void testStoich()
 	ASSERT( ret, "New DynamicFinfo message redirect" );
 	ASSERT( dret == 0, New "DynamicFinfo message redirect" );
 
-	Table::process( c2, &p );
+	Table::process( &c2, &p );
 
 	ret = get< double >( table2, "input", dret );
 	ASSERT( ret, "new DynamicFinfo message redirect" );
@@ -520,11 +520,11 @@ void testKintegrator()
 	p.dt_ = 0.05;
 	p.currTime_ = 0.0;
 
-	Kintegrator::reinitFunc( ci, &p );
+	Kintegrator::reinitFunc( &ci, &p );
 
 	for ( p.currTime_ = 0.0; p.currTime_ < RUNTIME; p.currTime_ += p.dt_ ) {
-		Kintegrator::processFunc( ci, &p );
-		Table::process( ct, &p );
+		Kintegrator::processFunc( &ci, &p );
+		Table::process( &ct, &p );
 	}
 	double tot = 0.0;
 	double dx = totalMols / (NUM_COMPT - 1);
@@ -562,7 +562,7 @@ void testKintegrator()
 
 static const unsigned int NUM_COMPT = 21;
 void doGslRun( const string& method, Element* integ, Element* stoich,
-	const Conn& ct, vector< Element* >& m, double accuracy );
+	const Conn* ct, vector< Element* >& m, double accuracy );
 
 void testGslIntegrator()
 {
@@ -659,19 +659,19 @@ void testGslIntegrator()
 	struct timeval tv2;
 	gettimeofday( &tv1, 0 );
         
-	doGslRun( "rk2", integ, stoich, ct, m, 1.0e-6 );
-	doGslRun( "rk4", integ, stoich, ct, m, 1.0e-4 );
-	doGslRun( "rk5", integ, stoich, ct, m, 1.0e-6 );
-	doGslRun( "rkck", integ, stoich, ct, m, 1.0e-8 );
-	doGslRun( "rk8pd", integ, stoich, ct, m, 1.0e-7 );
+	doGslRun( "rk2", integ, stoich, &ct, m, 1.0e-6 );
+	doGslRun( "rk4", integ, stoich, &ct, m, 1.0e-4 );
+	doGslRun( "rk5", integ, stoich, &ct, m, 1.0e-6 );
+	doGslRun( "rkck", integ, stoich, &ct, m, 1.0e-8 );
+	doGslRun( "rk8pd", integ, stoich, &ct, m, 1.0e-7 );
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         //!! BUG : in 64 bit machine if rk2imp is run before rk4imp  !!
         //!! the unit test fails with total error exceeding EPSILON  !!
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	doGslRun( "rk4imp", integ, stoich, ct, m, 1.0e-4 );                                                             
-	doGslRun( "rk2imp", integ, stoich, ct, m, 1.0e-6 );
-	doGslRun( "gear1", integ, stoich, ct, m, 1.0e-6 );
-	doGslRun( "gear2", integ, stoich, ct, m, 2.0e-4 );
+	doGslRun( "rk4imp", integ, stoich, &ct, m, 1.0e-4 );                                                             
+	doGslRun( "rk2imp", integ, stoich, &ct, m, 1.0e-6 );
+	doGslRun( "gear1", integ, stoich, &ct, m, 1.0e-6 );
+	doGslRun( "gear2", integ, stoich, &ct, m, 2.0e-4 );
 	gettimeofday( &tv2, 0 );
 	unsigned long time = tv2.tv_sec - tv1.tv_sec;
 	time *= 1000000;
@@ -687,7 +687,7 @@ void testGslIntegrator()
 }
 
 void doGslRun( const string& method, Element* integ, Element* stoich,
-	const Conn& ct, vector< Element* >& m, double accuracy )
+	const Conn* ct, vector< Element* >& m, double accuracy )
 {
 	double EPSILON = accuracy * 50.0;
 	const double RUNTIME = 500.0;
@@ -709,10 +709,10 @@ void doGslRun( const string& method, Element* integ, Element* stoich,
 	set< double >( integ, "relativeAccuracy", accuracy );
 	set< double >( integ, "absoluteAccuracy", accuracy );
 	cout << method << "." << flush;
-	GslIntegrator::reinitFunc( ci, &p );
+	GslIntegrator::reinitFunc( &ci, &p );
 
 	for ( p.currTime_ = 0.0; p.currTime_ < RUNTIME; p.currTime_ += p.dt_ ) {
-		GslIntegrator::processFunc( ci, &p );
+		GslIntegrator::processFunc( &ci, &p );
 		Table::process( ct, &p );
 	}
 	double tot = 0.0;

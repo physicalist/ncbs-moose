@@ -205,36 +205,36 @@ Table::Table()
 // Here we set up Table value fields
 ////////////////////////////////////////////////////////////////////
 
-void Table::setInput( const Conn& c, double input ) 
+void Table::setInput( const Conn* c, double input ) 
 {
-	static_cast< Table* >( c.data() )->input_ = input;
+	static_cast< Table* >( c->data() )->input_ = input;
 }
 double Table::getInput( const Element* e )
 {
 	return static_cast< Table* >( e->data() )->input_;
 }
 
-void Table::setOutput( const Conn& c, double output ) 
+void Table::setOutput( const Conn* c, double output ) 
 {
-	static_cast< Table* >( c.data() )->output_ = output;
+	static_cast< Table* >( c->data() )->output_ = output;
 }
 double Table::getOutput( const Element* e )
 {
 	return static_cast< Table* >( e->data() )->output_;
 }
 
-void Table::setStepMode( const Conn& c, int value ) 
+void Table::setStepMode( const Conn* c, int value ) 
 {
-	static_cast< Table* >( c.data() )->stepMode_ = value;
+	static_cast< Table* >( c->data() )->stepMode_ = value;
 }
 int Table::getStepMode( const Element* e )
 {
 	return static_cast< Table* >( e->data() )->stepMode_;
 }
 
-void Table::setStepsize( const Conn& c, double val ) 
+void Table::setStepsize( const Conn* c, double val ) 
 {
-	static_cast< Table* >( c.data() )->stepSize_ = val;
+	static_cast< Table* >( c->data() )->stepSize_ = val;
 }
 double Table::getStepsize( const Element* e )
 {
@@ -250,36 +250,36 @@ double Table::getLookup( const Element* e, const double& x )
 // Here we set up Table Destination functions
 ////////////////////////////////////////////////////////////////////
 
-void Table::sum( const Conn& c, double x )
+void Table::sum( const Conn* c, double x )
 {
-	static_cast< Table* >( c.data() )->sy_ += x;
+	static_cast< Table* >( c->data() )->sy_ += x;
 }
 
-void Table::prd( const Conn& c, double x )
+void Table::prd( const Conn* c, double x )
 {
-	static_cast< Table* >( c.data() )->py_ *= x;
+	static_cast< Table* >( c->data() )->py_ *= x;
 }
 
-void Table::input2( const Conn& c, double y, unsigned int x )
+void Table::input2( const Conn* c, double y, unsigned int x )
 {
-	Table* t = static_cast< Table* >( c.data() );
+	Table* t = static_cast< Table* >( c->data() );
 	t->setTableValue( y, x );
 }
 
-void Table::process( const Conn& c, ProcInfo p )
+void Table::process( const Conn* c, ProcInfo p )
 {
-	static_cast< Table* >( c.data() )->
-			innerProcess( c.targetElement(), p );
+	static_cast< Table* >( c->data() )->
+			innerProcess( c->targetElement(), p );
 }
 
-void Table::reinit( const Conn& c, ProcInfo p )
+void Table::reinit( const Conn* c, ProcInfo p )
 {
-	static_cast< Table* >( c.data() )->innerReinit( c, p );
+	static_cast< Table* >( c->data() )->innerReinit( c, p );
 }
 
-void Table::tabop( const Conn& c, char op, double min, double max )
+void Table::tabop( const Conn* c, char op, double min, double max )
 {
-	static_cast< Table* >( c.data() )->innerTabop( op, min, max );
+	static_cast< Table* >( c->data() )->innerTabop( op, min, max );
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -414,7 +414,7 @@ unsigned long Table::expandTable( Element* e, double size )
 	return index;
 }
 
-void Table::innerReinit( const Conn& c, ProcInfo p )
+void Table::innerReinit( const Conn* c, ProcInfo p )
 {
 	counter_ = 0;
 	sy_ = 0.0;
@@ -565,7 +565,7 @@ void testTable()
 	bool ret;
 	ret = set< int >( t, "step_mode", TAB_IO ); assert( ret );
 	ret = set< double >( t, "input", 2.5 ); assert( ret );
-	Table::process( c, &pb );
+	Table::process( &c, &pb );
 	double v = 0.0;
 	get< double >( t, "input", v );
 	ASSERT( v == 2.5 , "TAB_IO" );
@@ -577,7 +577,7 @@ void testTable()
 	// Testing table lookup with addition of output
 	ret = set< double >( t, "input", 3.5 ); assert( ret ); // (9 + 16) / 2 = 12.5
 	ret = set< double >( t, "sum", 2.5 ); assert( ret ); // 12.5 + 2.5 = 15.0
-	Table::process( c, &pb );
+	Table::process( &c, &pb );
 	v = 0.0;
 	get< double >( t, "output", v );
 	ASSERT( fabs( v - 15.0 ) < 1e-8 , "sum" );
@@ -587,7 +587,7 @@ void testTable()
 	// Testing table lookup with scaling of output
 	ret = set< double >( t, "input", 4.5 ); assert( ret ); // (16 + 25) / 2 = 20.5
 	ret = set< double >( t, "prd", 2.0 ); assert( ret ); // 20.5 * 2.0 = 41.0
-	Table::process( c, &pb );
+	Table::process( &c, &pb );
 	v = 0.0;
 	get< double >( t, "output", v );
 	ASSERT( fabs( v - 41.0 ) < 1e-8 , "sum" );
@@ -608,11 +608,11 @@ void testTable()
 	unsigned int k;
 	for ( i = 0; i < 20; i++ ) {
 		pb.currTime_ = pb.dt_ * i;
-		Table::process( c, &pb );
+		Table::process( &c, &pb );
 		get< double >( t, "output", v );
 		k = i % 10;
 		ASSERT( fabs( v - k * k ) < 1e-8 , "TAB_LOOP" );
-		Table::process( c2, &pb );
+		Table::process( &c2, &pb );
 	}
 	get< double >( t2, "output", v );
 	ASSERT( fabs( v - 20.0 ) < 1e-8 , "TAB_BUF" );
@@ -644,18 +644,18 @@ void testTable()
 	ret = set< double >( t2, "xmax", 1.0 ); assert( ret );
 	ret = set< double >( t2, "xmin", 0.0 ); assert( ret );
 	ret = set< int >( t2, "xdivs", 10 ); assert( ret );
-	Table::reinit( c2, &pb );
+	Table::reinit( &c2, &pb );
 
 	double temp;
 	for ( i = 0; i < 40; i++ ) {
 		pb.currTime_ = pb.dt_ * i;
-		Table::process( c, &pb );
+		Table::process( &c, &pb );
 		get< double >( t, "input", v );
 		ASSERT( fabs( v +1.5 - i * 0.5 ) < 1e-8 , "TAB_LOOP" );
 		get< double >( t, "output", v );
 		temp = calcWaveform( i );
 		ASSERT( fabs( v - temp ) < 1e-8 , "TAB_LOOP" );
-		Table::process( c2, &pb );
+		Table::process( &c2, &pb );
 		get< double >( t2, "output", v );
 		temp = calcWaveform( static_cast< int >( i ) - 10 );
 		ASSERT( fabs( v - temp ) < 1e-8 , "TAB_DELAY" );
@@ -665,7 +665,7 @@ void testTable()
 	ret = set< int >( t, "stepmode", TAB_SPIKE ); assert( ret );
 	ret = set< double >( t, "threshold", 8.5 ); assert( ret );
 	ret = set< double >( t, "output", 0.0 ); assert( ret );
-	Table::reinit( c, &pb );
+	Table::reinit( &c, &pb );
 	for ( i = 0; i < 100; i++ ) {
 		pb.currTime_ = pb.dt_ * i;
 
@@ -673,7 +673,7 @@ void testTable()
 		ret = set< double >( t, "input", 
 				static_cast< double >( ( i % 5 ) * ( i % 5 ) ) );
 		assert( ret );
-		Table::process( c, &pb );
+		Table::process( &c, &pb );
 	}
 
 	for ( i = 0; i < 20; i++ ) {
@@ -694,7 +694,7 @@ void testTable()
 	);
 	ASSERT( set< double >( t, "output", 42.345 ) , "inputRequest" );
 	Conn c3( t3, 0 );
-	Table::process( c3, &pb );
+	Table::process( &c3, &pb );
 	get< double >( t3, "input", v );
 	ASSERT( v == 42.345, "inputRequest" );
 

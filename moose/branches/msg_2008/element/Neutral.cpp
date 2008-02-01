@@ -141,9 +141,9 @@ static const Slot childSrcSlot = initNeutralCinfo()->
  * local Conn arrays.
  * 3. Delete.
  */
-void Neutral::childFunc( const Conn& c , int stage )
+void Neutral::childFunc( const Conn* c , int stage )
 {
-		Element* e = c.targetElement();
+		Element* e = c->targetElement();
 		assert( stage == 0 || stage == 1 || stage == 2 );
 
 		switch ( stage ) {
@@ -171,9 +171,9 @@ const string Neutral::getName( const Element* e )
 		return e->name();
 }
 
-void Neutral::setName( const Conn& c, const string s )
+void Neutral::setName( const Conn* c, const string s )
 {
-	c.targetElement()->setName( s );
+	c->targetElement()->setName( s );
 }
 
 const string Neutral::getClass( const Element* e )
@@ -188,10 +188,10 @@ const string Neutral::getClass( const Element* e )
 // Perhaps this should take a Cinfo* for the first arg, except that
 // I don't want to add yet another class into the header.
 // An alternative would be to use an indexed lookup for all Cinfos
-void Neutral::mcreate( const Conn& conn,
+void Neutral::mcreate( const Conn* conn,
 				const string cinfo, const string name )
 {
-	create( cinfo, name, conn.targetElement(), Id::scratchId() );
+	create( cinfo, name, conn->targetElement(), Id::scratchId() );
 /*
 		Element* e = conn.targetElement();
 
@@ -210,10 +210,10 @@ void Neutral::mcreate( const Conn& conn,
 */
 }
 
-void Neutral::mcreateArray( const Conn& conn,
+void Neutral::mcreateArray( const Conn* conn,
 				const string cinfo, const string name, int n )
 {
-		createArray( cinfo, name, conn.targetElement(), n );
+		createArray( cinfo, name, conn->targetElement(), n );
 }
 
 
@@ -290,7 +290,7 @@ Element* Neutral::createArray(
 }
 
 
-void Neutral::destroy( const Conn& c )
+void Neutral::destroy( const Conn* c )
 {
 	childFunc( c, MARK_FOR_DELETION );
 	childFunc( c, CLEAR_MESSAGES );
@@ -411,10 +411,10 @@ Id Neutral::getChildByName( const Element* elm, const string& s )
  * Looks up the child with the specified name, and sends its eid
  * in a message back to sender.
  */
-void Neutral::lookupChild( const Conn& c, const string s )
+void Neutral::lookupChild( const Conn* c, const string s )
 {
 	SimpleElement* e =
-			dynamic_cast< SimpleElement* >( c.targetElement() );
+			dynamic_cast< SimpleElement* >( c->targetElement() );
 	assert( e != 0 );
 	// assert that the element is a neutral.
 
@@ -426,7 +426,7 @@ void Neutral::lookupChild( const Conn& c, const string s )
 	for ( i = begin; i != end; i++ ) {
 		if ( i->targetElement()->name() == s ) {
 			// For neutral, src # 1 is the shared message.
-			sendTo1< Id >( e, Slot( 1, 0 ), c.sourceIndex( ), 
+			sendTo1< Id >( e, Slot( 1, 0 ), c->sourceIndex( ), 
 				i->targetElement()->id() );
 			return;
 		}
@@ -434,7 +434,7 @@ void Neutral::lookupChild( const Conn& c, const string s )
 	// Hm. What is the best thing to do if it fails? Return an
 	// error value, or not return anything at all?
 	// Perhaps best to be consistent about returning something.
-	sendTo1< Id >( e, Slot( 1, 0 ), c.sourceIndex( ), Id::badId() );
+	sendTo1< Id >( e, Slot( 1, 0 ), c->sourceIndex( ), Id::badId() );
 }
 
 vector< Id > Neutral::getChildList( const Element* e )

@@ -24,46 +24,46 @@ class Compartment
 			virtual ~Compartment() {;}
 
 			// Value Field access function definitions.
-			static void setVm( const Conn& c, double Vm );
+			static void setVm( const Conn* c, double Vm );
 			static double getVm( const Element* );
-			static void setEm( const Conn& c, double Em );
+			static void setEm( const Conn* c, double Em );
 			static double getEm( const Element* );
-			static void setCm( const Conn& c, double Cm );
+			static void setCm( const Conn* c, double Cm );
 			static double getCm( const Element* );
-			static void setRm( const Conn& c, double Rm );
+			static void setRm( const Conn* c, double Rm );
 			static double getRm( const Element* );
-			static void setRa( const Conn& c, double Ra );
+			static void setRa( const Conn* c, double Ra );
 			static double getRa( const Element* );
-			static void setIm( const Conn& c, double Im );
+			static void setIm( const Conn* c, double Im );
 			static double getIm( const Element* );
-			static void setInject( const Conn& c, double Inject );
+			static void setInject( const Conn* c, double Inject );
 			static double getInject( const Element* );
-			static void setInitVm( const Conn& c, double initVm );
+			static void setInitVm( const Conn* c, double initVm );
 			static double getInitVm( const Element* );
-			static void setDiameter( const Conn& c, double diameter );
+			static void setDiameter( const Conn* c, double diameter );
 			static double getDiameter( const Element* );
-			static void setLength( const Conn& c, double length );
+			static void setLength( const Conn* c, double length );
 			static double getLength( const Element* );
-			static void setX( const Conn& c, double value );
+			static void setX( const Conn* c, double value );
 			static double getX( const Element* );
-			static void setY( const Conn& c, double value );
+			static void setY( const Conn* c, double value );
 			static double getY( const Element* );
-			static void setZ( const Conn& c, double value );
+			static void setZ( const Conn* c, double value );
 			static double getZ( const Element* );
 
 			// Dest function definitions.
-			static void processFunc( const Conn& c, ProcInfo p );
-			static void reinitFunc( const Conn& c, ProcInfo p );
-			static void initFunc( const Conn& c, ProcInfo p );
-			static void initReinitFunc( const Conn& c, ProcInfo p );
-			static void channelFunc( const Conn& c, double Gk, double Ek);
-			static void raxialFunc(const Conn& c, double Ra, double Vm);
-			static void axialFunc(const Conn& c, double Vm);
-			static void injectMsgFunc(const Conn& c, double I);
-			static void randInjectFunc(const Conn& c, double prob, double I);
+			static void processFunc( const Conn* c, ProcInfo p );
+			static void reinitFunc( const Conn* c, ProcInfo p );
+			static void initFunc( const Conn* c, ProcInfo p );
+			static void initReinitFunc( const Conn* c, ProcInfo p );
+			static void channelFunc( const Conn* c, double Gk, double Ek);
+			static void raxialFunc(const Conn* c, double Ra, double Vm);
+			static void axialFunc(const Conn* c, double Vm);
+			static void injectMsgFunc(const Conn* c, double I);
+			static void randInjectFunc(const Conn* c, double prob, double I);
 			// A utility function
 			static bool rangeWarning( 
-					const Conn& c, const string& field, double value );
+					const Conn* c, const string& field, double value );
 
 	protected:
 			double Ra_;

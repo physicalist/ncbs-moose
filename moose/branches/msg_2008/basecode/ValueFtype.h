@@ -27,13 +27,13 @@ template < class T > class ValueFtype1: public Ftype1<T>
 			 * - A pointer back to the original Finfo. This gives
 			 *   us access to its getFunc so we can extract the value.
 			 */
-			static void valueTrigFunc( const Conn& c ) {
+			static void valueTrigFunc( const Conn* c ) {
 				const DynamicFinfo* f = getDF( c );
 				T ( *getValue )( const Element* ) =
 					reinterpret_cast< T (*)( const Element* ) > (
 									f->innerGetFunc()
 					);
-				Element* e = c.targetElement();
+				Element* e = c->targetElement();
 				///\todo Hack here to be fixed by getting a proper slot
 				send1<T>( e, Slot( f->srcIndex(), 0 ), getValue( e ) );
 			}

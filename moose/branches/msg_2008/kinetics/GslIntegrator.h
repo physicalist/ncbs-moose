@@ -20,26 +20,26 @@ class GslIntegrator
 ///////////////////////////////////////////////////
 		static bool getIsInitialized( const Element* e );
 		static string getMethod( const Element* e );
-		static void setMethod( const Conn& c, string method );
+		static void setMethod( const Conn* c, string method );
 		void innerSetMethod( const string& method );
 		static double getRelativeAccuracy( const Element* e );
-		static void setRelativeAccuracy( const Conn& c, double value );
+		static void setRelativeAccuracy( const Conn* c, double value );
 		static double getAbsoluteAccuracy( const Element* e );
-		static void setAbsoluteAccuracy( const Conn& c, double value );
+		static void setAbsoluteAccuracy( const Conn* c, double value );
 		static double getInternalDt( const Element* e );
-		static void setInternalDt( const Conn& c, double value );
+		static void setInternalDt( const Conn* c, double value );
 
 ///////////////////////////////////////////////////
 // Dest function definitions
 ///////////////////////////////////////////////////
 
-		static void allocateFunc( const Conn& c, vector< double >* y );
+		static void allocateFunc( const Conn* c, vector< double >* y );
 		void allocateFuncLocal( vector< double >*  y );
-		static void processFunc( const Conn& c, ProcInfo info );
+		static void processFunc( const Conn* c, ProcInfo info );
 		void innerProcessFunc( Element* e, ProcInfo info );
-		static void reinitFunc( const Conn& c, ProcInfo info  );
+		static void reinitFunc( const Conn* c, ProcInfo info  );
 
-		static void assignStoichFunc( const Conn& c, void* stoich );
+		static void assignStoichFunc( const Conn* c, void* stoich );
 		void assignStoichFuncLocal( void* stoich );
 
 	private:

@@ -24,11 +24,11 @@ class SymCompartment: public Compartment
 			~SymCompartment() {;}
 
 			// Dest function definitions.
-			static void raxial2Func(const Conn& c, double Ra, double Vm);
-			static void sumRaxial( const Conn& c, double Ra );
-			static void sumRaxialRequest( const Conn& c );
-			static void sumRaxial2( const Conn& c, double Ra );
-			static void sumRaxial2Request( const Conn& c );
+			static void raxial2Func(const Conn* c, double Ra, double Vm);
+			static void sumRaxial( const Conn* c, double Ra );
+			static void sumRaxialRequest( const Conn* c );
+			static void sumRaxial2( const Conn* c, double Ra );
+			static void sumRaxial2Request( const Conn* c );
 
 	private:
 			// These functions override the virtual equivalents from the
