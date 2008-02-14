@@ -50,12 +50,12 @@ class ValueFinfo: public Finfo
 			
 			bool respondToAdd(
 					Element* e, Element* src, const Ftype *srcType,
-					FuncList& srcFl, FuncList& returnFl,
+					unsigned int& srcFuncId, unsigned int& returnFuncId,
 					unsigned int& destIndex, unsigned int& numDest
 			) const;
 
-			void dropAll( Element* e ) const;
-			bool drop( Element* e, unsigned int i ) const;
+			// Will have to set up a DynamicFinfo here.
+			unsigned int msg() const;
 
 			/**
 			 * The Ftype knows how to do this conversion.
@@ -69,43 +69,6 @@ class ValueFinfo: public Finfo
 			bool strGet( const Element* e, std::string &s ) const
 			{
 					return ftype()->strGet( e, this, s );
-			}
-
-			unsigned int numIncoming( const Element* e ) const {
-					return 0;
-			}
-
-			unsigned int numOutgoing( const Element* e ) const {
-					return 0;
-			}
-
-			unsigned int incomingConns(
-					const Element* e, vector< Conn >& list ) const {
-					return 0;
-			}
-			unsigned int outgoingConns(
-					const Element* e, vector< Conn >& list ) const {
-					return 0;
-			}
-
-			/**
-			 * We don't need to do anything here because ValueFinfo
-			 * does not deal with messages directly. If we need to
-			 * send messages to a ValueFinfo, then a DynamicFinfo
-			 * must be created
-			 */
-			void countMessages( 
-					unsigned int& srcNum, unsigned int& destNum )
-			{ ; }
-
-			/**
-			 * The ValueFinfo never has messages going to or from it:
-			 * they all go via DynamicFinfo if needed. So it cannot
-			 * match any connIndex.
-			 */
-			const Finfo* match( 
-				const Element* e, unsigned int connIndex ) const {
-				return 0;
 			}
 
 			bool isTransient() const {
@@ -130,6 +93,22 @@ class ValueFinfo: public Finfo
 			}
 
 			void addFuncVec( const string& cname );
+
+			/**
+			 * Returns the identifier for its FuncVec, which handles
+			 * its RecvFunc.
+			 */
+			unsigned int funcId() const {
+				return fv_->id();
+			}
+
+			/**
+			 * The ValueFinfo does not handle any messages itself, so
+			 * does not need to allocate any on the parent object.
+			 */
+			void countMessages( unsigned int& num ) {
+				;
+			}
 
 		private:
 			GetFunc get_;

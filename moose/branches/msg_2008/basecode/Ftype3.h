@@ -56,7 +56,7 @@ template < class T1, class T2, class T3 > class Ftype3: public Ftype
 					>(
 									f->recvFunc()
 					);
-				Conn c( e, MAXUINT );
+				SetConn c( e, 0 );
 				set( &c, v1, v2, v3 );
 				return 1;
 			}

@@ -75,7 +75,7 @@ class GenesisParserWrapper: public myFlexLexer
 //		static Id path2eid( const string& path, Id i );
 //		Id innerPath2eid( const string& path, Id g );
 //		static string eid2path( Id i );
-		static Element* getShell( Id g );
+//		static Element* getShell( Id g );
 
 		/**
 		 * This utility function directs output either to cout, or

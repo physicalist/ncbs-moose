@@ -10,27 +10,33 @@
 #ifndef _MSGSRC_H
 #define _MSGSRC_H
 
+
 /**
  * The MsgSrc class specifies the ranges of conns to be used for
- * messaging, and specifies which function to be used within the
+ * messaging, and specifies which functions to be used within the
  * range. In case there are additional ranges with different funcs
  * but the same src, we use the next_ index to point to a location
  * further up in the array, past the predefined src range.
+ * Used for the source of simple messages, and for either end of 
+ * bidirectional shared messages.
  */
 class MsgSrc
 {
 		public:
-			MsgSrc( unsigned int begin,
-					unsigned int end,
-					RecvFunc rf )
-					: begin_( begin ), end_( end ), next_( 0 ),
-					recvFunc_( rf )
+			MsgSrc( const FuncVec* fv )
+					: fv_( fv ), next_( 0 )
 			{;}
 			
 			MsgSrc( )
-					: begin_( 0 ), end_( 0 ), next_( 0 ),
-					recvFunc_( dummyFunc )
+					: fv_( 0 ), next_( 0 )
 			{;}
+
+			RecvFunc recvFunc( unsigned int func ) const {
+					return fl->func( func );
+			}
+
+			Conn** nextConn() {
+			}
 
 			unsigned int begin() const {
 					return begin_;
@@ -44,9 +50,6 @@ class MsgSrc
 					return next_;
 			}
 
-			RecvFunc recvFunc() const {
-					return recvFunc_;
-			}
 
 			void insertWithin() {
 				++end_;
@@ -83,10 +86,10 @@ class MsgSrc
 			}
 
 		private:
-			unsigned int begin_;
-			unsigned int end_;
-			unsigned int next_; /// Offset of next range, or 0 if none.
-			RecvFunc recvFunc_;
+			vector< Conn* > c_;
+			const FuncVec* fv_; // Points to a global FuncList.
+			unsigned int next_; // Could use index or ptr here.
 };
 
 #endif // _MSGSRC_H
+

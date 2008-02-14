@@ -47,8 +47,7 @@ const Finfo* LookupFinfo::match( Element* e, const string& s ) const
 		DynamicFinfo* ret = 
 				DynamicFinfo::setupDynamicFinfo(
 					e, n, this, 
-					set_, get_,
-					ftype()->recvFunc(), ftype()->trigFunc(),
+					get_,
 					index
 				);
 		// ret->setGeneralIndex( index );
@@ -75,23 +74,9 @@ bool LookupFinfo::add(
 */
 bool LookupFinfo::respondToAdd(
 		Element* e, Element* src, const Ftype *srcType,
-		FuncList& srcFl, FuncList& returnFl,
+		unsigned int& srcFuncId, unsigned int& returnFuncId,
 		unsigned int& destIndex, unsigned int& numDest
 ) const
-{
-		assert( 0 );
-		return 0;
-}
-
-
-/// Dummy function: DynamicFinfo should handle
-void LookupFinfo::dropAll( Element* e ) const
-{
-		assert( 0 );
-}
-
-/// Dummy function: DynamicFinfo should handle
-bool LookupFinfo::drop( Element* e, unsigned int i ) const
 {
 		assert( 0 );
 		return 0;
@@ -125,7 +110,7 @@ class LookupTestClass
 			static double getDmap( const Element* e, const string& s ) {
 				map< string, double >::iterator i;
 				LookupTestClass* atc = 
-						static_cast< LookupTestClass* >( e->data() );
+						static_cast< LookupTestClass* >( e->data( 0 ) );
 				i = atc->dmap.find( s );
 				if ( i != atc->dmap.end() )
 					return i->second;
@@ -137,8 +122,7 @@ class LookupTestClass
 			static void setDmap( 
 						const Conn* c, double val, const string& s ) {
 				LookupTestClass* atc = 
-					static_cast< LookupTestClass* >(
-									c->data() );
+					static_cast< LookupTestClass* >( c->data( ) );
 				map< string, double >::iterator i = atc->dmap.find( s );
 				if ( i != atc->dmap.end() )
 					i->second = val;
@@ -147,22 +131,22 @@ class LookupTestClass
 			}
 
 			static double getDval( const Element* e ) {
-				return static_cast< LookupTestClass* >( e->data() )->dval;
+				return static_cast< LookupTestClass* >( e->data( 0 ) )->dval;
 			}
 			static void setDval( const Conn* c, double val ) {
-				static_cast< LookupTestClass* >( c->data() )->dval = val;
+				static_cast< LookupTestClass* >( c->data( ) )->dval = val;
 			}
 
 			// A proper message, adds incoming val to dval.
 			static void dsum( const Conn* c, double val ) {
-				static_cast< LookupTestClass* >( c->data() )->dval += val;
+				static_cast< LookupTestClass* >( c->data( ) )->dval += val;
 			}
 
 			// another proper message. Triggers a local operation,
 			// triggers sending of dval, and triggers a trigger out.
 			static void proc( const Conn* c ) {
 				Element* e = c->targetElement();
-				void* data = c->data();
+				void* data = c->data( );
 				LookupTestClass* tc =
 						static_cast< LookupTestClass* >( data );
 				tc->dval = 0.0;
@@ -174,13 +158,13 @@ class LookupTestClass
 				// dsumout == 0, but we make it one because of
 				// base neutral class adding fields.
 				// Ugh, what a hack.
-				send1< double >( e, Slot( 1, 0 ), tc->dval );
+				send1< double >( e, 0, Slot( 1, 0 ), tc->dval );
 
 				// This just sends a trigger to the remote object.
 				// procout == 1, but set to 2 because of base class
 				// Either it will trigger dproc itself, or it
 				// could trigger a getfunc.
-				send0( e, Slot( 2, 0 ) );
+				send0( e, 0, Slot( 2, 0 ) );
 			}
 
 		private:
@@ -386,7 +370,7 @@ void lookupFinfoTest()
 
 	Slot procOutSlot = lookuptestclass.getSlot( "procout");
 
-	send0( a1, procOutSlot ); // procout
+	send0( a1, 0, procOutSlot ); // procout
 	// Here a2->dval should simply become the sum of its lookup entries.
 	// As this has just been initialized, the sum should be 1.0.
 	// Bad Upi: should never test for equality of doubles.

@@ -47,20 +47,14 @@ class ExtFieldFinfo: public Finfo
 			 */
 			bool respondToAdd(
 					Element* e, Element* src, const Ftype *srcType,
-					FuncList& srcfl, FuncList& returnFl,
+					unsigned int& srcFuncId, unsigned int& returnFuncId,
 					unsigned int& destIndex, unsigned int& numDest
 			) const
 			{ return true; }
 
-			void dropAll( Element* e ) const	{;}
-			bool drop( Element* e, unsigned int i ) const	{ return true;}
-			
-			unsigned int numIncoming( const Element* e ) const	{return 0;}
-			unsigned int numOutgoing( const Element* e ) const	{return 0;}
-			unsigned int incomingConns(
-					const Element* e, vector< Conn >& list ) const	{return 0;}
-			unsigned int outgoingConns(
-					const Element* e, vector< Conn >& list ) const	{return 0;}
+
+			///\todo figure out what to do here.
+			unsigned int msg() const;
 
 			/**
 			 * The Ftype knows how to do this conversion.
@@ -134,12 +128,13 @@ class ExtFieldFinfo: public Finfo
 					return 0;
 			}
 
-			const Finfo* match( 
-				const Element* e, unsigned int connIndex ) const
-				{return 0;}
-
-			void countMessages( 
-				unsigned int& srcIndex, unsigned int& destIndex ){;}
+			/**
+			 * The ExtFieldFinfo does not handle any messages itself, so
+			 * does not need to allocate any on the parent object.
+			 */
+			void countMessages( unsigned int& num ) {
+				;
+			}
 
 			/**
 			 * The ExtFieldFinfo is one of the few Finfos that has

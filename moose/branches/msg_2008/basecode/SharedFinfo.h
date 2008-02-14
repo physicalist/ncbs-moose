@@ -29,16 +29,6 @@ class SharedFinfo: public Finfo
 		public:
 
 			/**
-			 * This variant is deprecated
-			 * In the constructor, we need to build up a composite
-			 * Ftype that manages the local vector of Ftypes. We
-			 * also make a vector of RecvFuncs that will be used
-			 * when adding messages.
-			 */
-			SharedFinfo( const string& name,
-				pair< const Ftype*, RecvFunc >* types, 
-				unsigned int nTypes );
-			/**
 			 * Here we construct the list of RecvFuncs for the
 			 * SharedFinfo based on a list of either Src or
 			 * DestFinfos.
@@ -53,25 +43,15 @@ class SharedFinfo: public Finfo
 					Element* e, Element* destElm, const Finfo* destFinfo
 			) const;
 
-			bool addSeparateConns(
-					Element* e, Element* destElm, const Finfo* destFinfo
-			) const;
-
 			bool respondToAdd(
 					Element* e, Element* src, const Ftype *srcType,
-					FuncList& srcfl, FuncList& returnFl,
+					unsigned int& srcFuncId, unsigned int& returnFuncId,
 					unsigned int& destIndex, unsigned int& numDest
 			) const;
 			
-			void dropAll( Element* e ) const;
-			bool drop( Element* e, unsigned int i ) const;
-
-			unsigned int numIncoming( const Element* e ) const;
-			unsigned int numOutgoing( const Element* e ) const;
-			unsigned int incomingConns(
-					const Element* e, vector< Conn >& list ) const;
-			unsigned int outgoingConns(
-					const Element* e, vector< Conn >& list ) const;
+			unsigned int msg() const {
+				return msg_;
+			}
 
 			/**
 			 * Send a message with the arguments in the string.
@@ -90,21 +70,12 @@ class SharedFinfo: public Finfo
 			}
 			
 			/**
-			 * In the case of the SharedFinfo, we need to assign
-			 * MsgSrcs for every src entry in the types list. 
-			 * These are identified by the entries where the RecvFunc
-			 * is zero. These src entries are mostly redundant,
-			 * because they all specify the same conn range. The
-			 * only distinguishing feature is that each manages a
-			 * different RecvFunc from the target.
-			 * When the SharedFinfo has no MsgSrcs, then we set up
-			 * a single MsgDest to deal with it all.
+			 * The SharedFinfo does handles a message.
 			 */
-			void countMessages( 
-					unsigned int& srcNum, unsigned int& destNum );
+			void countMessages( unsigned int& num );
 
 			const Finfo* match( 
-				const Element* e, unsigned int connIndex ) const;
+				const Element* e, const ConnTainer* c ) const;
 
 			bool isTransient() const {
 					return 0;
@@ -132,12 +103,20 @@ class SharedFinfo: public Finfo
 
 			void addFuncVec( const string& cname );
 
+			/**
+			 * Returns the identifier for its FuncVec, which handles
+			 * all the destination functions.
+			 */
+			unsigned int funcId() const {
+				return fv_->id();
+			}
+
 		private:
-			unsigned int numSrc_;
 			FuncList rfuncs_;
-			unsigned int msgIndex_;
+			unsigned int msg_;
 			vector < string > names_;
 			FuncVec* fv_;
+			bool isDest_;
 };
 
 #endif // _SHARED_FINFO_H

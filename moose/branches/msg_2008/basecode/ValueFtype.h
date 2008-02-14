@@ -35,7 +35,9 @@ template < class T > class ValueFtype1: public Ftype1<T>
 					);
 				Element* e = c->targetElement();
 				///\todo Hack here to be fixed by getting a proper slot
-				send1<T>( e, Slot( f->srcIndex(), 0 ), getValue( e ) );
+				// send1<T>( e, Slot( f->srcIndex(), 0 ), getValue( e ) );
+				sendBack1< T >( e, 
+					Slot( c->targetMsg(), 0 ), c, getValue( e ) );
 			}
 
 			/**

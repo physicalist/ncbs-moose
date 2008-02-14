@@ -17,6 +17,8 @@
 
 using namespace std;
 
+static const unsigned int EMPTY_ID = 0;
+
 /**
  * This function manages a static vector of FuncVecs.
  */
@@ -108,6 +110,24 @@ static bool fvcmp( const FuncVec* a, const FuncVec* b )
  */
 void FuncVec::sortFuncVec( )
 {
-	sort( funcVecLookup().begin(), funcVecLookup().end(), fvcmp );
-	cout << funcVecLookup().size() << " FuncVecs built.\n";
+	vector< FuncVec* >& fv = funcVecLookup();
+	sort( fv.begin(), fv.end(), fvcmp );
+	FuncVec* empty = new FuncVec( "empty", "empty" );
+	fv.insert( fv.begin(), empty );
+	// Note that 'empty' is at zero.
+	for ( unsigned int i = 0; i < fv.size(); i++ ) {
+		if ( fv[i]->size() == 0 )
+			fv[i]->id_ = EMPTY_ID;
+		else
+			fv[i]->id_ = i;
+	}
+	cout << fv.size() << " FuncVecs built.\n";
+}
+
+/**
+* This static identifies a FuncVec without entries.
+*/
+unsigned int FuncVec::emptyId()
+{
+	return EMPTY_ID;
 }

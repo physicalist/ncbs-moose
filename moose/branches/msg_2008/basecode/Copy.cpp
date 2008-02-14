@@ -29,10 +29,10 @@ bool SimpleElement::isDescendant( const Element* ancestor ) const
 			return 0;
 	const Finfo* f = constFindFinfo( "child" );
 	assert( f != 0 );
-	vector< Conn > list;
-	f->incomingConns( this, list );
+	vector< pair< Element*, unsigned int> > list;
+	msg( f->msg() )->targets( list );
 	assert( list.size() > 0 );
-	const Element* parent = list[0].targetElement();
+	const Element* parent = list[0].first;
 
 	/*
 	assert( connDestBegin( 0 ) != connDestEnd( 0 ) );
@@ -71,24 +71,17 @@ Element* SimpleElement::innerCopy() const
 
 Element* SimpleElement::innerCopy(int n) const
 {	
+	return 0;
+	/*
 	assert( finfo_.size() > 0 );
 	assert( dynamic_cast< ThisFinfo* >( finfo_[0] ) != 0 );
-	void *data = finfo_[0]->ftype()->copyIntoArray( data_, 1, n );
+	// void *data = finfo_[0]->ftype()->copyIntoArray( data_, 1, n );
 	ArrayElement* ret = new ArrayElement( name_, src_, dest_, conn_, finfo_, data, n, 0 );
 	//cout <<  "IDS "<< ret->id() << " " << id() << endl;
 	//cout << (ret->id())()->id() << endl;
 	//ret->CopyFinfosSimpleToArray(this);
 	return ret;
-}
-
-//obsolete::delete it 
-void ArrayElement::CopyFinfosSimpleToArray(const SimpleElement *se){
-	vector< const Finfo* > flist;
-	se->listFinfos(flist);
-	for (size_t i = 0; i < flist.size(); i++ ){
-		//cout << i << " " << flist.size() << endl;
-		this->finfo_.push_back(flist[i]->copy());
-	}
+	*/
 }
 
 
@@ -97,7 +90,9 @@ void ArrayElement::CopyFinfosSimpleToArray(const SimpleElement *se){
  * all its descendants. Returns the root element of the copied tree.
  * The first entry in the map is the original
  * The second entry in the map is the copy.
- * The function does NOT fix up the messages.
+ * The function does NOT fix up the messages. 
+ *
+ * All messages, even parent-child messages, are blank in the copy.
  *
  * The function has to be careful if the element is a global. When
  * the global occurs at the root of the tree, it is assumed that we
@@ -108,6 +103,11 @@ void ArrayElement::CopyFinfosSimpleToArray(const SimpleElement *se){
 Element* SimpleElement::innerDeepCopy(
 	map< const Element*, Element* >& tree ) const
 {
+	static unsigned int childSrcMsg = 
+		initNeutralCinfo()->getSlot( "childSrc" ).msg();
+
+	assert ( childSrcMsg == 0 );
+
 	if ( isGlobal() && tree.size() >= 0 ) {
 		Element* cme = const_cast< SimpleElement* >( this );
 		// RDWORRY: What about the ArrayElement*?
@@ -117,17 +117,22 @@ Element* SimpleElement::innerDeepCopy(
 
 	Element* duplicate = innerCopy();
 	tree[ this ] = duplicate;
-	
-	// The 0 slot in the MsgSrc array is for child elements.
-	vector< Conn >::const_iterator i;
-	vector< Conn >::const_iterator begin = connSrcBegin( 0 );
-	vector< Conn >::const_iterator end = connSrcVeryEnd( 0 );
-	for ( i = begin; i != end; i++ ) {
-		// Watch out for loops.
-		if ( tree.find( i->targetElement() ) != tree.end() )
-			cout << "Warning: SimpleElement::innerDeepCopy: Loop in element tree at " << i->targetElement()->name() << endl;
+
+	const Msg* childMsg = msg( childSrcMsg );
+	assert( childMsg != 0 );
+	assert( childMsg->isDest() == 0 );
+
+	/**
+	 * Note that we iterate through ConnTainers here. Each unique child,
+	 * whether simple or array, is stored in an individual ConnTainer.
+	 */
+	vector< ConnTainer* >::const_iterator i;
+	for ( i = childMsg->begin(); i != childMsg->end(); i++ ) {
+		Element* tgt = ( *i )->e2();
+		if ( tree.find( tgt ) != tree.end() )
+			cout << "Warning: SimpleElement::innerDeepCopy: Loop in element tree at " << tgt->name() << endl;
 		else 
-			i->targetElement()->innerDeepCopy( tree );
+			tgt->innerDeepCopy( tree );
 	}
 	return duplicate;
 }
@@ -135,6 +140,8 @@ Element* SimpleElement::innerDeepCopy(
 Element* SimpleElement::innerDeepCopy(
 	map< const Element*, Element* >& tree, int n ) const
 {
+	return 0;
+/*
 	if ( isGlobal() && tree.size() >= 0 ) {
 		Element* cme = const_cast< SimpleElement* >( this );
 		// RDWORRY: What about the ArrayElement*?
@@ -157,6 +164,29 @@ Element* SimpleElement::innerDeepCopy(
 			i->targetElement()->innerDeepCopy( tree, n );
 	}
 	return duplicate;
+	*/
+}
+
+/**
+ * Copies messages from current element to duplicate provided dest is
+ * also on tree.
+ */
+void SimpleElement::copyMessages( Element* dup, 
+	map< const Element*, Element* >& origDup ) const
+{
+	map< const Element*, Element* >::iterator k;
+	vector< Msg >::const_iterator m;
+	for ( m = msg_.begin(); m != msg_.end(); m++ ) {
+		if ( m->isDest() )
+			continue;
+		vector< ConnTainer* >::const_iterator c;
+		for ( c = m->begin(); c != m->end(); c++ ) {
+			k = origDup.find( ( *c )->e2() );
+			if ( k != origDup.end() ) {
+				m->copy( *c, dup, k->second );
+			}
+		}
+	}
 }
 
 /**
@@ -185,15 +215,10 @@ Element* SimpleElement::innerDeepCopy(
  * it is single-node stuff.
  */
 
-	struct DupInfo {
-		Element* tgt;
-		Element* orig;
-		Element* dup;
-		unsigned int connIdx;
-	};
 Element* SimpleElement::copy( Element* parent, const string& newName )
 		const
 {
+	// Phase 0: Set up and check stuff for the copy.
 	static const Element* library = Id( "/library" )();
 	static const Element* proto = Id( "/proto" )();
 
@@ -214,71 +239,40 @@ Element* SimpleElement::copy( Element* parent, const string& newName )
 		return 0;
 	}
 
+	// Phase 1. Copy Elements, but not building up parent-child info.
 	// First is original, second is copy
-	map< const Element*, Element* > tree;
+	// However, if it was a Global, both original and second are the same.
+	map< const Element*, Element* > origDup;
 	map< const Element*, Element* >::iterator i;
+
 	vector< pair< Element*, unsigned int > > delConns;
 
-	Element* child = innerDeepCopy( tree );
+	Element* child = innerDeepCopy( origDup );
 	child->setName( nm );
 
-	// First pass: Replace copy pointers so that the dup is set up right
-	for ( i = tree.begin(); i != tree.end(); i++ ) {
+	// Phase 2. Copy over messages that are within the tree.
+	// Here we need only copy from message sources.
+	for ( i = origDup.begin(); i != origDup.end(); i++ ) {
 		if ( i->first != i->second ) {
-			i->second->replaceCopyPointers( tree, delConns );
+			i->first->copyMessages( i->second, origDup );
 		}
 	}
 
-	// Second pass: Delete any outgoing messages or messages to globals
-	// If it is to a global, we need to store the message for rebuilding.
-	vector< pair< Element*, unsigned int > >::iterator j;
-
-	// The Conn is between the original Element and the global
-	// The Element is the duplicate element
-	vector< DupInfo > globalConns;
-	for ( j = delConns.begin(); j != delConns.end(); j++ ) {
-		// Check for global targets
-		// Ugly hack for the transition
-		const Conn* c = &( *( j->first->lookupConn( j->second ) ) );
-		Element* tgt = c->targetElement();
-		if ( tgt->isGlobal() ) {
-			DupInfo di;
-			di.tgt = tgt;
-			di.orig = c->sourceElement();
-			di.dup = j->first;
-			di.connIdx = c->targetIndex();
-			globalConns.push_back( di );
-		}
-		j->first->deleteHalfConn( j->second );
-	}
 	
-	// Third pass: Copy over messages to any global elements.
-	// This includes target global elements which were on the original 
-	// tree, as well as messages which were originally connected up to
-	// globals which were not on the tree.
-	/*
-	for ( i = tree.begin(); i != tree.end(); i++ ) {
-		if ( i->first == i->second ) { // a global
-			i->second->copyMsg( tree );
-		}
-	}
-	*/
-	vector< DupInfo >::iterator k;
-	for ( k = globalConns.begin(); k != globalConns.end(); k++ ) {
-		k->tgt->innerCopyMsg( &( *k->tgt->lookupConn( k->connIdx ) ), 
-			k->orig, k->dup );
-	}
+	// Phase 3 : Copy over messages to any global elements that were
+	// not on the original tree.
+	// Still to fill in.
 	
-	// Fourth pass: stick the copied tree onto the parent Element.
+	// Phase 4: stick the copied tree onto the parent Element.
 	ret = parent->findFinfo( "childSrc" )->add(
 					parent, child, child->findFinfo( "child" ) );
 	assert( ret );
 
-	// Fifth pass: Schedule all the objects
+	// Phase 5: Schedule all the objects
 	if ( !( 
 		parent->isDescendant( library ) || parent->isDescendant( proto )
 		) ) {
-		for ( i = tree.begin(); i != tree.end(); i++ ) {
+		for ( i = origDup.begin(); i != origDup.end(); i++ ) {
 			if ( i->first != i->second ) // a global
 				i->second->cinfo()->schedule( i->second );
 		}
@@ -290,6 +284,8 @@ Element* SimpleElement::copy( Element* parent, const string& newName )
 Element* SimpleElement::copyIntoArray( Element* parent, const string& newName, int n )
 		const
 {
+	return 0;
+/*
 	static const Element* library = Id( "/library" )();
 	static const Element* proto = Id( "/proto" )();
 
@@ -352,124 +348,7 @@ Element* SimpleElement::copyIntoArray( Element* parent, const string& newName, i
 		}
 	}
 	return child;
-}
-
-/**
- * Takes all the messages between this element and the
- * key (original) portion of the tree, and duplicate them to go
- * between the current element and the data (copied) portion of
- * the tree. Exclude child messages.
- * Note that this is about the
- * opposite of the criterion for halo messages, which are all messages
- * except those going into the tree.
- */
-void SimpleElement::copyMsg( map< const Element*, Element* >& tree ) 
-{
-	unsigned int i;
-	vector< Conn >::iterator j;
-	map< const Element*, Element* >::iterator k;
-	// Skip the child connection, so start at 1.
-	for ( i = 1; i < connSize(); i++ ) {
-		j = lookupVariableConn( i );
-		k = tree.find( j->targetElement() );
-		if ( k != tree.end() )
-			this->innerCopyMsg( &( *j ), k->first, k->second );
-	}
-}
-
-/**
- * Coming into this function, the Conn c goes between this and orig.
- * When it is done, a new Conn is set up between this and the
- * duplicated Element. Returns true if addmsg worked.
- * Still need to check if it handles all cases of src/dest finfos.
- */
-bool SimpleElement::innerCopyMsg(
-	const Conn* c, const Element* orig, Element* dup )
-{
-	assert( orig != dup );
-	assert( orig->className() == dup->className() );
-	// Start out by trying to find Finfo on local element
-	// We don't know yet if this is msgsrc or msgdest.
-	const Finfo* temp = findFinfo( connIndex( c ) );
-	assert( temp );
-	if ( temp->name() == "child" || temp->name() == "childSrc" )
-		return 0;
-	const Finfo* srcFinfo;
-	const Finfo* destFinfo;
-	if ( dynamic_cast< const SrcFinfo* >( temp ) != 0 ) {
-		srcFinfo = temp;
-		destFinfo = orig->findFinfo( c->targetIndex() );
-		return srcFinfo->add( this, dup, destFinfo );
-	} else {
-		srcFinfo = orig->findFinfo( c->targetIndex() );
-		destFinfo = temp;
-		return srcFinfo->add( dup, this, destFinfo );
-	}
-	return 0;
-}
-
-/**
- * This function replaces Element* pointers in the conn_ vector
- * with corresponding ones from the copied tree.
- *
- * While doing so it also fills out a vector to keep track of conns
- * that need to be deleted. This vector has to be filled out now,
- * because the information on targetElement can only be found from the
- * tree before the targets are replaced here. However, the deletion of
- * the conns cannot be done till the entire tree has had its targets
- * replaces. So the vector is filled here and executed later.
- *
- * In the case of the HaloCopy (yet to be implemented ) we would
- * instead create new exterior conns to duplicate the linkages
- * of the old ones.
- */
-
-void SimpleElement::replaceCopyPointers(
-	map< const Element*, Element* >& tree,
-	vector< pair< Element*, unsigned int > >& delConns )
-{
-	if ( conn_.size() == 0 ) return;
-	map< const Element*, Element* >::iterator j;
-	
-	unsigned int i = conn_.size();
-	while ( i > 0 ) {
-		--i;
-		j = tree.find( conn_[ i ].targetElement() );
-		if ( j != tree.end() ) { // Inside the tree. Just replace ptrs.
-			if ( j->first != j->second ) // Don't mess with globals.
-				conn_[ i ].replaceElement( j->second );
-			else // Globals must have their conns deleted
-				delConns.push_back( 
-					pair< Element*, unsigned int >( this, i ) );
-		} else { // Objects outside the tree must have their conns deleted
-			delConns.push_back( 
-				pair< Element*, unsigned int >( this, i ) );
-		}
-	}
-}
-
-void ArrayElement::replaceCopyPointers(
-	map< const Element*, Element* >& tree,
-	vector< pair< Element*, unsigned int > >& delConns )
-{
-	if ( conn_.size() == 0 ) return;
-	map< const Element*, Element* >::iterator j;
-	
-	unsigned int i = conn_.size();
-	while ( i > 0 ) {
-		--i;
-		j = tree.find( conn_[ i ].targetElement() );
-		if ( j != tree.end() ) { // Inside the tree. Just replace ptrs.
-			if ( j->first != j->second ) // Don't mess with globals.
-				conn_[ i ].replaceElement( j->second );
-			else // Globals must have their conns deleted
-				delConns.push_back( 
-					pair< Element*, unsigned int >( this, i ) );
-		} else { // Objects outside the tree must have their conns deleted
-			delConns.push_back( 
-				pair< Element*, unsigned int >( this, i ) );
-		}
-	}
+*/
 }
 
 #ifdef DO_UNIT_TESTS
@@ -497,7 +376,7 @@ void copyTest()
 	ASSERT( yGate != 0, "yGate formed" );
 
 	ProcInfoBase p;
-	Conn c( c0, 0 );
+	SetConn c( c0, 0 );
 	p.dt_ = 0.002;
 	set< double >( c0, "inject", 1.0 );
 	set< double >( c0, "Rm", 2.0 );
@@ -552,6 +431,8 @@ void copyTest()
 	temp = Neutral::getChildByName( e, "yGate" )( );
 	ASSERT( temp == 0, "copied global child: should not exist" );
 
+// Need to redo all these tests for the new messaging.
+#if 0
 	// See if the messages go to the original Gates.
 	vector< Conn > clist;
 	const Finfo* xGateFinfo = ch->findFinfo( "xGate" );
@@ -579,6 +460,7 @@ void copyTest()
 	numConns = yGateFinfo->incomingConns( e, clist );
 	ASSERT( numConns == 1, "Shifted connections on y gate" );
 	ASSERT( temp == clist[0].targetElement(), "Testing that gate msg is to same place as orig gate" );
+#endif
 
 	//////////////////////////////////////////////////////////////////
 	// Test out second-generation copies which have a message going to
@@ -620,6 +502,8 @@ void copyTest()
 	temp = Neutral::getChildByName( e, "yGate" )( );
 	ASSERT( temp == 0, "copied global child: should not exist" );
 
+/// More changes due to new messaging.
+#if 0
 	// See if the messages go to the original Gates. 
 	// ch is the original channel
 	clist.resize( 0 );
@@ -635,6 +519,7 @@ void copyTest()
 	const Finfo* hhGateFinfo = xGate->findFinfo( "gate" );
 	numConns = hhGateFinfo->incomingConns( xGate, clist );
 	ASSERT( numConns == 3, "Accumulated connections on x gate" );
+#endif
 
 	//////////////////////////////////////////////////////////////////
 	// Check copy preserving old name. Copy c0 onto c1.

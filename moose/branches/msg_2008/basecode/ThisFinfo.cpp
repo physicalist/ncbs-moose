@@ -21,7 +21,7 @@
  */
 bool ThisFinfo::respondToAdd(
 					Element* e, Element* src, const Ftype *srcType,
-					FuncList& srcfl, FuncList& returnFl,
+					unsigned int& srcFuncId, unsigned int& returnFuncId,
 					unsigned int& destIndex, unsigned int& numThis
 ) const
 {
@@ -30,41 +30,6 @@ bool ThisFinfo::respondToAdd(
 		destIndex, numThis, this );
 		*/
 		return 0;
-}
-
-/// Dummy function: Do not handle as yet.
-void ThisFinfo::dropAll( Element* e ) const
-{
-		assert( 0 );
-}
-
-/// Dummy function: Do not handle as yet.
-bool ThisFinfo::drop( Element* e, unsigned int i ) const
-{
-		assert( 0 );
-		return 0;
-}
-
-unsigned int ThisFinfo::numIncoming( const Element* e ) const
-{
-		return 0;
-}
-
-unsigned int ThisFinfo::numOutgoing( const Element* e ) const
-{
-		return 0;
-}
-			
-unsigned int ThisFinfo::incomingConns(
-					const Element* e, vector< Conn >& list ) const
-{
-	return list.size();
-}
-
-unsigned int ThisFinfo::outgoingConns(
-					const Element* e, vector< Conn >& list ) const
-{
-	return list.size();
 }
 
 /**
@@ -89,9 +54,9 @@ const Finfo* ThisFinfo::match( Element* e, const string& name ) const
 }
 
 const Finfo* ThisFinfo::match( 
-				const Element* e, unsigned int connIndex) const
+				const Element* e, const ConnTainer* c ) const
 {
-	return cinfo_->findFinfo( e, connIndex );
+	return cinfo_->findFinfo( e, c );
 }
 
 void ThisFinfo::listFinfos( vector< const Finfo* >& flist ) const

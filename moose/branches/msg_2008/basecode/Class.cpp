@@ -96,7 +96,7 @@ Class::Class(string name)
 
 const string Class::getName(const Element* e)
 {
-    Class* obj = static_cast<Class*>(e->data());
+    Class* obj = static_cast<Class*>(e->data( 0 ));
     if ( obj->classInfo_)
     {
         return obj->classInfo_->name();
@@ -162,7 +162,7 @@ void Class::setClock(const Conn* conn, string function, Id tickId)
 /// Returns the tick of the process SchedInfo
 unsigned int Class::getTick(const Element* e)
 {
-    Class* obj = static_cast<Class*>(e->data());
+    Class* obj = static_cast<Class*>(e->data( 0 ));
     
     string name = "process";    
     
@@ -211,7 +211,7 @@ void Class::setTick(const Conn* conn, unsigned int tick)
 unsigned int Class::getStage(const Element* e)
 {
     string name = "process";
-    Class* obj = static_cast<Class*> (e->data());
+    Class* obj = static_cast<Class*> (e->data( 0 ));
     
     if (!obj->classInfo_)
     {
@@ -258,7 +258,7 @@ void Class::setStage(const Conn* conn, unsigned int stage)
 vector <string> Class::getFieldList(const Element* e)
 {
     vector <string> fieldList;
-    Class *obj = static_cast<Class*> (e->data());
+    Class *obj = static_cast<Class*> (e->data( 0 ));
     
     if (!obj->classInfo_)
     {
@@ -280,7 +280,7 @@ vector <string> Class::getFieldList(const Element* e)
 /// Returns the name of the author of the class as passed to the Cinfo constructor.
 const string Class::getAuthor(const Element* e)
 {
-    Class * obj = static_cast<Class*> ( e->data());
+    Class * obj = static_cast<Class*> ( e->data( 0 ) );
     
     if (!obj->classInfo_)
     {
@@ -293,7 +293,7 @@ const string Class::getAuthor(const Element* e)
 /// Returns the description of the Class as passed to the Cinfo constructor
 const string Class::getDescription(const Element* e)
 {
-    Class * obj = static_cast<Class* > ( e->data());
+    Class * obj = static_cast<Class* > ( e->data( 0 ) );
     
     if (!obj->classInfo_)
     {

@@ -69,10 +69,10 @@ class Cinfo
 					const;
 
 			/**
-			 * Finds Finfo on an element based on the connIndex.
+			 * Finds Finfo on an element based on the ConnTainer.
 			 */
 			const Finfo* findFinfo( 
-					const Element* e, unsigned int connIndex) const;
+					const Element* e, const ConnTainer* c ) const;
 
 			/**
 			 * Finds Finfo by name in the list for this class, 
@@ -130,9 +130,7 @@ class Cinfo
 			 */
 			Finfo* thisFinfo_;
 			Finfo* noDelFinfo_;
-			unsigned int nSrc_;
-			unsigned int nDest_;
-
+			unsigned int nMsg_;
 			static std::map< std::string, Cinfo* >& lookup();
 };
 

@@ -46,20 +46,11 @@ class DestFinfo: public Finfo
 			
 			bool respondToAdd(
 					Element* e, Element* dest, const Ftype *destType,
-					FuncList& destfl, FuncList& returnFl,
-					unsigned int& destIndex, unsigned int& numDest
+					unsigned int& myFuncId, unsigned int& returnFuncId,
+					unsigned int& destMsgId, unsigned int& numDest
 			) const;
 			
-			void dropAll( Element* e ) const;
-			bool drop( Element* e, unsigned int i ) const;
-
-			unsigned int numIncoming( const Element* e ) const;
-			unsigned int numOutgoing( const Element* e ) const;
-			unsigned int incomingConns(
-					const Element* e, vector< Conn >& list ) const;
-			unsigned int outgoingConns(
-					const Element* e, vector< Conn >& list ) const;
-
+			unsigned int msg() const;
 
 			/**
 			 * Call the RecvFunc with the arguments in the string.
@@ -76,16 +67,12 @@ class DestFinfo: public Finfo
 					return rfunc_;
 			}
 
-			void countMessages( 
-					unsigned int& srcNum, unsigned int& destNum )
-			{
-				destIndex_ = destNum++;
-			}
+			void countMessages( unsigned int& num );
 
 			bool getSlot( const string& name, Slot& ret ) const;
 
 			const Finfo* match( 
-				const Element* e, unsigned int connIndex ) const;
+				const Element* e, const ConnTainer* c ) const;
 
 			bool isTransient() const {
 					return 0;
@@ -103,16 +90,24 @@ class DestFinfo: public Finfo
 			 */
 			void addFuncVec( const string& cname );
 
+			/**
+			 * Returns the func id of this DestFinfo.
+			 */
+			unsigned int funcId() const {
+				return fv_->id();
+			}
+
 		private:
 			/**
 			 * This is the function executed when a message arrives at this
 			 * Finfo.
 			 */
 			RecvFunc rfunc_;
+
 			/**
-			 * This is the slot index of this Finfo in the MsgDest vector.
+			 * This identifies the msg associated with this DestFinfo.
 			 */
-			unsigned int destIndex_;
+			unsigned int msg_;
 
 			/**
 			 * The FuncVec data structure manages RecvFuncs
