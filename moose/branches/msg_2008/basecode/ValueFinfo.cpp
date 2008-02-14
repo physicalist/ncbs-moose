@@ -40,8 +40,7 @@ bool ValueFinfo::add(
 	DynamicFinfo *df = DynamicFinfo::setupDynamicFinfo(
 					e,
 					name(), this,
-					set_, get_,
-					set_, ftype()->trigFunc() );
+					get_);
 	/*
 	DynamicFinfo *df = new DynamicFinfo( name(), this,
 					set_, get_,
@@ -96,39 +95,24 @@ bool ValueFinfo::add(
  */
 bool ValueFinfo::respondToAdd(
 		Element* e, Element* src, const Ftype *srcType,
-		FuncList& srcFl, FuncList& returnFl,
+		unsigned int& srcFuncId, unsigned int& returnFuncId,
 		unsigned int& destIndex, unsigned int& numDest
 ) const
 {
 	assert( srcType != 0 );
 	assert( src != 0 && e != 0 );
-	assert( returnFl.size() == 0 );
 	DynamicFinfo *df = DynamicFinfo::setupDynamicFinfo(
 					e,
 					name(), this,
-					set_, get_,
-					set_, ftype()->trigFunc() );
+					get_ );
 	/*
 	DynamicFinfo *df = new DynamicFinfo( name(), this,
 					set_, get_,
 					set_, ftype()->trigFunc() );
 	e->addFinfo( df );
 	*/
-	return df->respondToAdd( e, src, srcType, srcFl, returnFl,
+	return df->respondToAdd( e, src, srcType, srcFuncId, returnFuncId,
 					destIndex, numDest );
-}
-
-/// Dummy function: DynamicFinfo should handle
-void ValueFinfo::dropAll( Element* e ) const
-{
-		assert( 0 );
-}
-
-/// Dummy function: DynamicFinfo should handle
-bool ValueFinfo::drop( Element* e, unsigned int i ) const
-{
-		assert( 0 );
-		return 0;
 }
 
 /**

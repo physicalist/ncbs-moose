@@ -82,15 +82,12 @@ class LookupFinfo: public Finfo
 			
 			bool respondToAdd(
 					Element* e, Element* src, const Ftype *srcType,
-					FuncList& srcFl, FuncList& returnFl,
+					unsigned int& srcFuncId, unsigned int& returnFuncId,
 					unsigned int& destIndex, unsigned int& numDest
 			) const;
 
-			/// This is a dummy function. The Dynamic Finfo handles it.
-			void dropAll( Element* e ) const;
-
-			/// This is a dummy function. The Dynamic Finfo handles it.
-			bool drop( Element* e, unsigned int i ) const;
+			// Have to refer to DynamicFinfo here.
+			unsigned int msg() const;
 
 			/**
 			 * The Ftype knows how to do this conversion.
@@ -106,51 +103,12 @@ class LookupFinfo: public Finfo
 					return 0;
 			}
 
-			// The following 4 functions are dummies because the
-			// DynamicFinfo deals with them.
-			unsigned int numIncoming( const Element* e ) const {
-					return 0;
-			}
-
-			unsigned int numOutgoing( const Element* e ) const {
-					return 0;
-			}
-
-			unsigned int incomingConns(
-					const Element* e, vector< Conn >& list ) const {
-					return 0;
-			}
-			unsigned int outgoingConns(
-					const Element* e, vector< Conn >& list ) const {
-					return 0;
-			}
-
-			/**
-			 * We don't need to do anything here because LookupFinfo
-			 * does not deal with messages directly. If we need to
-			 * send messages to a LookupFinfo, then a DynamicFinfo
-			 * must be created
-			 */
-			void countMessages( 
-					unsigned int& srcNum, unsigned int& destNum )
-			{ ; }
-
 			/** The LookupFinfo must handle indexing at this
 			 * stage. It returns a DynamicFinfo to deal with it.
 			 * It is up to the calling function to decide if the
 			 * Dynamic Finfo should stay or be cleared out.
 			 */
 			const Finfo* match( Element* e, const string& name ) const;
-			
-			/**
-			 * The LookupFinfo never has messages going to or from it:
-			 * they all go via DynamicFinfo if needed. So it cannot
-			 * match any connIndex.
-			 */
-			const Finfo* match( 
-				const Element* e, unsigned int connIndex ) const {
-				return 0;
-			}
 
 			RecvFunc recvFunc() const {
 					return set_;
@@ -177,6 +135,22 @@ class LookupFinfo: public Finfo
 			}
 
 			void addFuncVec( const string& cname );
+
+			/**
+			 * Returns the identifier for its FuncVec, which handles
+			 * its set_ RecvFunc
+			 */
+			unsigned int funcId() const {
+				return fv_->id();
+			}
+
+			/**
+			 * The LookupFinfo does not handle any messages itself, so
+			 * does not need to allocate any on the parent object.
+			 */
+			void countMessages( unsigned int& num ) {
+				;
+			}
 
 		private:
 			GetFunc get_;

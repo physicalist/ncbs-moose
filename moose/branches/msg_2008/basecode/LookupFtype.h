@@ -70,7 +70,7 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 				void (*rf)( const Conn* c, T1 v, const T2& index ) =
 					reinterpret_cast<
 					void (*)( const Conn*, T1, const T2& ) > (
-									f->innerSetFunc() );
+									f->recvFunc() );
 				rf( c, v, *index );
 			}
 
@@ -101,8 +101,8 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 				Element* e = c->targetElement();
 				const T2* index = static_cast< const T2* >(
 								f->generalIndex() );
-				///\todo Fix hack involving Slot.
-				send1< T1 >( e, Slot( f->srcIndex(), 0 ), 
+				///\todo Fix hack involving Slot
+				send1< T1 >( e, c->targetIndex(), Slot( f->msg(), 0 ), 
 					getLookup( e, *index ) );
 			}
 
@@ -161,9 +161,9 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 				void (*set)( const Conn*, T1 v, const T2& ) =
 					reinterpret_cast<
 					void (*)( const Conn*, T1, const T2& ) >(
-						df->innerSetFunc()
+						df->recvFunc()
 					);
-				Conn c( e, 0 );
+				SetConn c( e, 0 );
 				const T2* index = static_cast< const T2* >(
 								df->generalIndex() );
 				set( &c, v, *index );
@@ -275,12 +275,12 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 					if ( df ) {
 						set = reinterpret_cast<
 							void (*)( const Conn*, T1 v, const T2& ) >(
-									df->innerSetFunc()
+									df->recvFunc()
 							);
 					}
 				}
 				if ( set != 0 ) {
-					Conn c( e, 0 );
+					SetConn c( e, 0 );
 					set( &c , v, index );
 					return 1;
 				}

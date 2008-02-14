@@ -2,10 +2,8 @@
 #include <iostream>
 #include <map>
 #include "Cinfo.h"
-#include "MsgSrc.h"
-#include "MsgDest.h"
 #include "SimpleElement.h"
-#include "send.h"
+#include "Send.h"
 #include "DynamicFinfo.h"
 #include "ProcInfo.h"
 #include "DerivedFtype.h"

@@ -26,11 +26,9 @@
  * MsgSrc, MsgDest and SimpleElement, if the Element is expanded
  * to give an interface to the Conn lookup functions.
  */
-#include "MsgSrc.h"
-#include "MsgDest.h"
 #include "SimpleElement.h"
-#include "ArrayElement.h"
-#include "ArrayWrapperElement.h"
+// #include "ArrayElement.h"
+// #include "ArrayWrapperElement.h"
 
 #include "DynamicFinfo.h"
 #include "ValueFinfo.h"
@@ -38,7 +36,8 @@
 #include "ExtFieldFinfo.h"
 
 #include "ProcInfo.h"
-#include "send.h"
+#include "Send.h"
+#include "SetConn.h"
 #include "DerivedFtype.h"
 #include "Ftype2.h"
 #include "Ftype3.h"

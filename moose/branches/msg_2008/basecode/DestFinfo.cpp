@@ -13,10 +13,10 @@
 #include "DestFinfo.h"
 
 DestFinfo::DestFinfo( const string& name, const Ftype *f, 
-							RecvFunc rfunc, unsigned int destIndex )
+							RecvFunc rfunc, unsigned int msg )
 	: Finfo( name, f ), 
 	rfunc_( rfunc ), 
-	destIndex_( destIndex )
+	msg_( msg )
 {
 	// Save the function data.
 	getFunctionDataManager()->add( rfunc, this );
@@ -28,107 +28,32 @@ DestFinfo::DestFinfo( const string& name, const Ftype *f,
  */
 bool DestFinfo::respondToAdd(
 					Element* e, Element* src, const Ftype *srcType,
-					FuncList& srcFl, FuncList& returnFl,
-					unsigned int& destIndex, unsigned int& numDest
+					unsigned int& srcFuncId, unsigned int & returnFuncId,
+					unsigned int& destMsgId, unsigned int& numDest
 ) const
 {
 	assert ( srcType != 0 );
 
-	if ( ftype()->isSameType( srcType ) && srcFl.size() == 0 ) {
+	if ( ftype()->isSameType( srcType ) && 
+		FuncVec::getFuncVec( srcFuncId )->size() == 0 ) {
 		assert ( src != 0 && e != 0 );
-		assert ( returnFl.size() == 0 );
-		returnFl.push_back( rfunc_ );
-		destIndex = destIndex_;
+		returnFuncId = fv_->id();
+		destMsgId = msg_;
+		e->checkMsgAlloc( msg_ );
 		numDest = 1;
 		return 1;
 	}
 	return 0;
 }
 
-/**
- * Deletes all connections for this DestFinfo by iterating through the
- * list of connections. This is non-trivial, because the connection
- * indices change as we delete them.
- * We use two attributes of the connections: 
- * First, they are sequential.
- * Second, deleting higher connections does not affect lower connection
- * indices.
- * So we just find the range and delete them in reverse order.
- * Note that we do not notify the target Finfo or Element that these
- * connections are being deleted. This operation must be guaranteed to 
- * have no other side effects.
- */
-void DestFinfo::dropAll( Element* e ) const
+void DestFinfo::countMessages( unsigned int& num )
 {
-	vector< Conn >::const_iterator i;
-
-	i = e->connDestBegin( destIndex_ );
-	// unsigned int begin = i->sourceIndex( );
-	unsigned int begin = e->connIndex( &( *i ) );
-
-	i = e->connDestEnd( destIndex_ );
-	// unsigned int end = i->sourceIndex( );
-	unsigned int end = e->connIndex( &( *i ) );
-
-	for ( unsigned int j = end; j > begin; j-- )
-		e->disconnect( j - 1 );
+	msg_ = num++;
 }
 
-/**
- * Deletes a specific connection into this DestFinfo. The index is 
- * numbered within this Finfo because the most common use case is to
- * pick a specific index from a vector of Conns coming into this
- * Finfo.
- */
-bool DestFinfo::drop( Element* e, unsigned int i ) const
+unsigned int DestFinfo::msg() const
 {
-	vector< Conn >::const_iterator k;
-
-	k = e->connDestBegin( destIndex_ );
-	unsigned int begin = k->sourceIndex( );
-	k = e->connDestEnd( destIndex_ );
-	unsigned int end = k->sourceIndex( );
-
-	i += begin;
-	if ( i < end ) {
-		e->disconnect( i );
-		return 1;
-	}
-	return 0;
-}
-
-unsigned int DestFinfo::numIncoming( const Element* e ) const
-{
-	return ( e->connDestEnd( destIndex_ ) - e->connDestBegin( destIndex_ ) );
-}
-
-// Doesn't handle outgoing messages yet, probably a DynamicFinfo task.
-unsigned int DestFinfo::numOutgoing( const Element* e ) const
-{
-	return 0;
-}
-			
-/**
- * incomingConns does a simple insertion of the dest Conn list for this
- * Finfo into the vector. It does NOT check for duplications as
- * that would turn it into an n^2 operation.
- */
-unsigned int DestFinfo::incomingConns(
-					const Element* e, vector< Conn >& list ) const
-{
-	list.resize( 0 );
-	list.insert( list.end(), e->connDestBegin( destIndex_ ),
-					e->connDestEnd( destIndex_ ) );
-	return list.size();
-}
-
-/**
- * does not do anything: this is a job for DynamicFinfo.
- */
-unsigned int DestFinfo::outgoingConns(
-					const Element* e, vector< Conn >& list ) const
-{
-	return list.size();
+	return msg_;
 }
 
 /**
@@ -144,10 +69,17 @@ bool DestFinfo::strSet( Element* e, const std::string &s ) const
 	return ftype()->strSet( e, this, s );
 }
 
-const Finfo* DestFinfo::match( 
-	const Element* e, unsigned int connIndex ) const
+const Finfo* DestFinfo::match( const Element* e, const ConnTainer* c ) const
 {
-	return ( e->isConnOnDest( destIndex_, connIndex ) ? this : 0 );
+	const Msg* m = e->msg( msg() ); 
+	assert ( m->isDest() ); // This is a DestFinfo so it must be a dest.
+	// If we wanted to be really really picky we should go through the
+	// ConnTainer vector on the msg, and find 'c' on it. But this is
+	// fast and should work provided we're not in the middle of rebuilding
+	// the messaging.
+	if ( c->e2() == e && c->msg2() == msg() )
+		return this;
+	return 0;
 }
 
 bool DestFinfo::inherit( const Finfo* baseFinfo )
@@ -155,7 +87,7 @@ bool DestFinfo::inherit( const Finfo* baseFinfo )
 	const DestFinfo* other =
 			dynamic_cast< const DestFinfo* >( baseFinfo );
 	if ( other && ftype()->isSameType( baseFinfo->ftype() ) ) {
-			destIndex_ = other->destIndex_;
+			msg_ = other->msg_;
 			return 1;
 	} 
 	return 0;
@@ -164,7 +96,7 @@ bool DestFinfo::inherit( const Finfo* baseFinfo )
 bool DestFinfo::getSlot( const string& name, Slot& ret ) const
 {
 	if ( name != this->name() ) return 0;
-	ret = Slot( destIndex_, 0 );
+	ret = Slot( msg_, 0 );
 	return 1;
 }
 

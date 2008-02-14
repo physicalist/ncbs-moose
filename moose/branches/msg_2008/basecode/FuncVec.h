@@ -24,6 +24,10 @@ class FuncVec
 		/// addFunc pushes a new function onto the FuncVec.
 		void addFunc( RecvFunc func, const Ftype* ftype );
 
+		unsigned int size() const {
+			return func_.size();
+		}
+
 		/// func returns the indexed function.
 		RecvFunc func( unsigned int funcNum ) const;
 
@@ -57,6 +61,10 @@ class FuncVec
 			return id_;
 		}
 
+		bool isDest() const {
+			return isDest_;
+		}
+
 		/**
 		 * fType returns a vector of Ftypes for the functions
 		 */
@@ -79,6 +87,10 @@ class FuncVec
 		 */
 		static void sortFuncVec();
 
+		/**
+		 * This static identifies a FuncVec without entries. Returns a zero
+		 */
+		static unsigned int emptyId();
 
 	private:
 		string name_; // className.finfoName
@@ -87,6 +99,7 @@ class FuncVec
 		vector< RecvFunc > parFuncAsync_;
 		vector< const Ftype* > funcType_;
 		unsigned int id_; // Identifier for it across nodes.
+		bool isDest_;	// Is the Finfo a destination?
 };
 
 #endif // _FUNC_VEC_H

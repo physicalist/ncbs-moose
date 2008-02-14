@@ -10,12 +10,6 @@
 
 #ifndef _ARRAY_ELEMENT_H
 #define _ARRAY_ELEMENT_H
-#include <climits>
-#include <string>
-#include "SimpleElement.h"
-#include "Cinfo.h"
-#include "MsgSrc.h"
-#include "MsgDest.h"
 
 /**
  * The ArrayElement class implements Element functionality in the

@@ -5613,7 +5613,7 @@ Stuff that can still be done before breaking everything:
 	* Slot upgrade to include FuncList specification
 	- Add further kinds of ConnInfos that could in principle handle
 		complex messaging.
-	- Change Conn access to pointers.
+	* Change Conn access to pointers.
 
 Stuff to look at before the transition:
 	* Element::connect function. It does not have a way to tie 
@@ -5683,6 +5683,243 @@ Checked in as revision 400 with unit test flags on, Smoldyn off, -g, GSL
 Another thing to do before messing it all up: convert conns to pointers.
 
 Got through: parser, basecode, biophysics, kinetics, all the rest.
-Astonishingly it not only compiled, it ran and cleared unit tests first time.
+Astonishingly it ran and cleared unit tests first time.
+Checked in as revision 402 with unit test flags on, Smoldyn off, -g, GSL
+
+Designing iteration through Conn vector and through composite Conns on it.
+- Iterate through vector as usual. Need to check for empty Conns.
+- Iterate then through special Conns, each of which have their own
+	iterators.
+- The iterator needs to present a Conn to the target: A simple looking Conn
+	with all the usual access funcs.
+- We need to be thread-safe. The iterator must refer to the primary Conn.
+
+
+==============================================================================
+2 Feb
+Considering a still more radical overhaul of messaging, now possible because
+conns are done through pointers. This is the old idea that the conn info
+should be shared. Now doable because both sides of the message can point to the
+same Conn. In principle this can also do away with the need for 
+Conn indexes, which were originally so that the two sides of the conn could
+point to each other. 
+Cases where indexing remains critical
+	- Synapses and any conn-specific target operations.
+		We need a stable index here to look up weight etc.
+		Note that the index need not be tied to position in Conn vector.
+	- SendTo calls
+		- Most of these are return calls, trivially (and faster)
+		handled through the conn pointer itself if it has full info.
+		- Some of these, like synapses, have conn-specific data
+		to go out on specific lines. These include solver control
+		of specific zombies, and shell sending distinct info to
+		specific nodes.
+		Here the index does need to be tied to position in Conn
+		vector, so it can look it up.
+		- Here is an example. Solvers send messages to zombies that
+		are used for bidirectional value assignment.
+			- If solver calls a zombie:
+				Solver must know which internal object is
+				tied to which Conn#
+			- If a zombie calls a solver:
+				Target (on solver) must have indexing so that
+				solver knows which zombie made the request.
+
+A related point: If we do away with Conn indices and have a unitary Conn
+seen by both source and dest of each message, we need extra care in our
+use of 'source' and 'target' terms. This is doable in the code, provided
+we have a well-defined direction in which all messages always must go,
+even if they are nominally bidirectional like shared messages.
+
+==============================================================================
+4 Feb 2008
+Wrote a preliminary document for describing messaging for MOOSE programmers.
+
+Issues to solve in the connections
+- Separate MsgSrc/Dest tables?
+	No. Too messy. have just a Msg table.
+- Related: How to identify Src/Dest in Slots?
+	Problem goes away if there is just a Msg table.
+- How to type-protect Slots?
+- How to manage flexible allocation of MsgSrc/Dest?
+- How do we ensure that SharedMessages are always connected with the same
+	directionality?
+	Take the first entry in the SharedMessage. If it is a Src, the
+	Shared Msg is a source, and vice versa.
+- What is target/dest in a Conn that can be seen from either side?
+	The ConnTainer::conn() function takes an argument indicating if it is
+	forward or reverse direction, as per info in each Msg.
+	Thus the ConnTainer creates different classes of Conn depending on
+	direction.
+- Can we identify when targets need indexing from Conns, and use the
+	appropriate Conns on the fly?
+	Not on the fly. But the target Finfo will have enough info to decide.
+- How to manage Conn indexing in messages with multiple kinds of Conn? 
+	Double index? Cumulative index?
+- How to handle Conn iteration on Send?
+	See below.
+- How to protect against iterator corruption when operations modify conns?
+	See below.
+- How to set up the msg indices? We need to pre-allocate a certain number
+	of msg slots, but many of them are rarely used so it would be
+	wasteful to always allocate all. One option is a 'prealloc' 
+	argument somewhere in the Cinfo. Somewhere a check will be needed...
+	OK, put the check at the message add or respondToAdd step.
+
+==============================================================================
+5 Feb 2008
+
+Kinds of aggregate Conns (ConnTainers)
+Simple Conns:
+- VectorConn: Just a set of simple Conns.
+- RegionConnectSimpleConn: Manages regionconnect between simple objects.
+	Probably just a VectorConn with additional info about setup call.
+Simple objects to arrays:
+- One2SomeConn: Single simple Element to some subset in an array.
+- One2AllConn: Single simple Element to all in an array.
+Arrays to Arrays:
+- One2OneMapConn: Both sides are arrays, and there is a one-to-one mapping.
+- SparseMatrixConn: Sparse connectivity matrix between arrays
+- MatrixConn: Dense connectivity matrix between arrays
+- All2AllConn: Both sides are arrays and there is complete connectivity.
+- GeomRuleConn: Geometric rule connection. Static vs dynamic.
+- RandMatrixConn: Partial connectivity matrix with random rules
+- RegionConnectConn: Implementation of regionconnect between arrays.
+
+Iteration Requirements:
+- Sequentially go through all connections (send)
+- Go to a specific connection, identified by src and dest. Search is OK.
+- Go to a specific connection, identified by index. Must be fast.
+- Thread safe. Must store info locally.
+- Handle insertions and removals. Options here are: 
+	- queue for operations.
+		Register # of iterators, and handle queue when they go to zero.
+		Issue that the queued conns may point to defunct objects...
+		So queue would have to be entire operation, and managed by
+		clock ticks, not on individual Msgs
+	- Register each active iterator and update it as needed
+		Expensive.
+	- Flag for removed entries. Doesn't deal with insertions. 
+	- Integer indexing. Slow.
+
+If I use a Conn as an iterator, I will need distinct variants for each
+of these. That means I'll still need the 3-tier version: A ConnIterator,
+which is on the stack, a Conn, which is what the RecvFuncs see, and then
+the aggregate ConnTainers.
+
+==============================================================================
+7 Feb
+
+Things taking shape. Some more qs:
+- At what level do we specify the type of ConnTainer? Does the user do
+it explicitly (ugh) or do have special funcs that do certain containers,
+and let the Msg figure out the rest itself (ugh too).
+	- User specifies indirectly, by the src, dest and form of the 
+		message 'add' command (post-genesis especially). For example 
+		a single to an array[]
+		or just array object would set up a One2AllConn. All this needs
+		to be parsed ahead of time.
+	- User also specifies indirectly by the use of special commands like
+		regionconnect.
+	- System specifies magically when doing createmap type commands.
+	- Msg has to do some figuring if the src or dest is array, in case
+		there is an expandable array connection like 
+		SparseMatrix, FullMatrix, RandMatrix, One2Some.
+		Actually, the operation on Msg should be selected by virtual func
+		of Element* so that it does add, addOne2Array, addOne2All etc.
+
+
+==============================================================================
+8 Feb 2008
+
+Current best implementation is All2AllConn.h. It handles the issue of reverse
+messaging. 
+Need to use this to look closely at VectorConns to see if they still work.
+Seems OK.
+
+Now coordinating many code files to begin to pull together the new messaging
+stuff. Looking at send.cpp
+==============================================================================
+9 Feb 2008
+Slow progress on VectorConn, which is the most like the old connection scheme.
+Working through the functions, the Drop and Traverse functions need to know
+the target Msg. This can be done with no extra storage if we template it
+in, but if we use local VectorConnEntries instead of pointers we have to
+store the remote msg info explicitly. Also we need to decide if the 
+two ConnEntries are going to be complementary like the old variant, or
+comprehensive with full info. If the latter then we may need to go to the
+pointer variant.
+
+I'll keep this issue pending and work through the create/delete/find process
+on the All2All to see where things should match up.
+
+Some thoughts:
+Need to expand the interface for Conn* to include src and dest Msg#.
+Should shift the SimpleConns back to the ConnTainer vector because they
+are isomorphic to OneToOne Conns. This will also bring uniformity in the
+assumption that each ConnTainer has a unique src and dest element. We can
+optimize stuff later.
+One issue is that the higher-level description for things like RegionConnect
+won't work as planned unless all the created SimpleConns have a pointer to
+the RegionConnect object. Hm.
+
+
+Starting to take shape.
+Status:
+Msg.cpp, .h: Need to figure out how it stores isDest flag.
+ConnTainer.h: OK
+Conn.h: OK	:
+SimpleConn.h: OK. May need to implement .cpp
+All2AllConn.h: OK. May need to implement .cpp
+Element: Getting there
+SimpleElement: Getting there
+send.cpp: OK
+send.h: Need to put in the higher N sends.
+Finfo.h: Much to do. Shifting a lot of things out of it, let the Msg
+	handle all the operations relating to Conns. Add operations remain.
+SrcFinfo.cpp: All to do: esp, add func.
+DestFinfo.cpp: All to do.
+SharedFinfo.cpp: All to do, esp assigning isDest.
+
+
+==============================================================================
+10 Feb 2008.
+
+Marching through. Now doing compilation.
+
+Now working on Copy.cpp.
+
+The ConnTainer::add commands for SimpleConnTainer and All2AllConnTainer
+are wrong.
+
+Still need to fix issues of handling 'next' in Msg.
+
+Copy.cpp compiles but only after excising several aspects of copy handling,
+especially to do with msg to globals that are not in the tree.
+
+==============================================================================
+11 Feb 2008.
+
+Moved the isDest flag to FuncVec, which is a natural place for it.
+Still struggling with handling of 'next' Msgs.
+
+Compilation proceeding up to DynamicFinfo.cpp. About halfway through the
+.cpp files of the basecode.
+
+==============================================================================
+13 Feb 2008
+
+DynamicFinfo is a mess. Currently trying to clean up the 'add' function
+at the point where it figures out the FuncId for the trig func, which is
+of course created using templating.
+For now I'll have to bypass it in order to compile.
+Much bypassing later, now getting to UnitTests.cpp. This too is full of stuff
+that will need complete rewriting.
+Bypassed. Now masses of errors in SharedFinfo.
+
+==============================================================================
+14 Feb 2008
+Compilation has reached UnitTests in basecode. I should check in as it is
+a private branch and there has been so much work.
 
 ==============================================================================

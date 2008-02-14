@@ -7,11 +7,8 @@
 ** GNU General Public License version 2
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
-#include <iostream>
 #include <fstream>
-#include <map>
 #include "moose.h"
-#include "Cinfo.h"
 #include "ThisFinfo.h"
 #ifdef GENERATE_WRAPPERS
 #include "filecheck.h"
@@ -20,16 +17,9 @@
 // requiring an instantiable Element class. Could get worse if we
 // permit multiple variants of Element, say an array form.
 
-#include "MsgSrc.h"
-#include "MsgDest.h"
-#include "SimpleElement.h"
 #include "../element/Neutral.h"
 
 // These includes are needed to call set
-#include <algorithm>
-#include "DerivedFtype.h"
-#include "Ftype2.h"
-#include "setget.h"
 
 //////////////////////////////////////////////////////////////////
 // Cinfo is the class info for the MOOSE classes.
@@ -56,12 +46,11 @@ Cinfo::Cinfo(const std::string& name,
 )
 		: name_(name), author_(author), 
 		description_(description), baseCinfo_(baseCinfo),
-		ftype_( ftype ), nSrc_( 0 ), nDest_( 0 )
+		ftype_( ftype ), nMsg_( 0 )
 {
 	unsigned int i;
 	if ( baseCinfo ) {
-		nSrc_ = baseCinfo->nSrc_;
-		nDest_ = baseCinfo->nDest_;
+		nMsg_ = baseCinfo->nMsg_;
 		for ( i = 0; i < baseCinfo->finfos_.size(); i++ ) {
 			Finfo* f = findMatchingFinfo(
 				baseCinfo->finfos_[i]->name(), finfoArray, nFinfos );
@@ -148,7 +137,7 @@ Cinfo::Cinfo(const std::string& name,
 #endif
 
 	for ( i = 0 ; i < nFinfos; i++ ) {
-            finfoArray[i]->countMessages( nSrc_, nDest_ );
+            finfoArray[i]->countMessages( nMsg_ );
 			// This sends in the new Cinfo name needed to set up the
 			// FuncVecs within the finfoArray.
 			finfoArray[i]->addFuncVec( name );
@@ -247,11 +236,11 @@ const Finfo* Cinfo::findFinfo( Element* e, const string& name ) const
 }
 
 const Finfo* Cinfo::findFinfo( 
-		const Element* e, unsigned int connIndex) const
+		const Element* e, const ConnTainer* c ) const
 {
 	vector< Finfo* >::const_iterator i;
 	for ( i = finfos_.begin(); i != finfos_.end(); i++ ) {
-		const Finfo* ret = (*i)->match( e, connIndex );
+		const Finfo* ret = (*i)->match( e, c );
 		if ( ret )
 			return ret;
 	}
@@ -344,7 +333,7 @@ Element* Cinfo::create( Id id, const std::string& name,
 			void* data, bool noDeleteFlag ) const
 {
 	SimpleElement* ret = 
-		new SimpleElement( id, name, nSrc_, nDest_, data );
+		new SimpleElement( id, name, data );
 	if ( noDeleteFlag )
 		ret->addFinfo( noDelFinfo_ );
 	else
@@ -371,9 +360,10 @@ Element* Cinfo::createArray( Id id, const std::string& name,
 			void* data, unsigned int numEntries, size_t objectSize,
 			bool noDeleteFlag ) const
 {
+	return 0;
+	/*
 	ArrayElement* ret = 
-		new ArrayElement( id, name, nSrc_, nDest_, data, 
-			numEntries, objectSize );
+		new ArrayElement( id, name, nMsg_, data, numEntries, objectSize );
 	if ( noDeleteFlag )
 		ret->addFinfo( noDelFinfo_ );
 	else
@@ -381,6 +371,7 @@ Element* Cinfo::createArray( Id id, const std::string& name,
 	set( ret, "postCreate" );
 	
 	return ret;
+	*/
 }
 
 /**

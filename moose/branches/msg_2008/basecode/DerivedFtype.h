@@ -330,7 +330,7 @@ template < class T > class Ftype1: public Ftype
 				void (*set)( const Conn*, T v ) =
 					reinterpret_cast< void (*)( const Conn*, T ) >(
 									f->recvFunc() );
-				Conn c( e, MAXUINT );
+				SetConn c( e, 0 );
 				set( &c, v );
 				return 1;
 			}

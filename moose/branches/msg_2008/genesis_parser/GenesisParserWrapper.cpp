@@ -726,7 +726,7 @@ void do_add( int argc, const char** const argv, Id s )
 {
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( e->data() );
+			( e->data( 0 ) );
 	return gpw->doAdd( argc, argv, s );
 }
 
@@ -786,13 +786,13 @@ string GenesisParserWrapper::handleMultGate(
 	bool useConc = 0;
 	bool zGateUsed = 0;
 	bool xGateUsed = 0;
-	send2< Id, string >( s(), requestFieldSlot, dest, "Zpower" );
+	send2< Id, string >( s(), 0, requestFieldSlot, dest, "Zpower" );
 	if ( fieldValue_.length() > 0 ) {
 		if ( fieldValue_ != "0" )
 			zGateUsed = 1;
 	}
 
-	send2< Id, string >( s(), requestFieldSlot, dest, "Xpower" );
+	send2< Id, string >( s(), 0, requestFieldSlot, dest, "Xpower" );
 	if ( fieldValue_.length() > 0 ) {
 		if ( fieldValue_ != "0" )
 			xGateUsed = 1;
@@ -814,7 +814,7 @@ string GenesisParserWrapper::handleMultGate(
 	}
 
 	if ( useConc )
-		send3< Id, string, string >( s(),
+		send3< Id, string, string >( s(), 0,
 			setFieldSlot, dest, "useConcentration", "1" );
 
 	return msgType;
@@ -893,7 +893,7 @@ void GenesisParserWrapper::doAdd(
 		if ( gate.length() == 1 && power > 0.0 ) {
 		// finish off multgate by assigning the gate power.
 			string field = gate + "power";
-			send3< Id, string, string >( s(), setFieldSlot, 
+			send3< Id, string, string >( s(), 0, setFieldSlot,
 				dest, field, argv[5] );
 		}
 
@@ -921,7 +921,7 @@ void do_set( int argc, const char** const argv, Id s )
 {
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( e->data() );
+			( e->data( 0 ) );
 	return gpw->doSet( argc, argv, s );
 }
 
@@ -945,7 +945,7 @@ void GenesisParserWrapper::doSet( int argc, const char** argv, Id s )
 		return;
 	}
 	if ( argc % 2 == 1 ) { // 'path' is left out, use current object.
-		send0( sh, requestCweSlot );
+		send0( sh, 0, requestCweSlot );
 		elist_.resize( 0 );
 		elist_.push_back( cwe_ );
 		// e = cwe_;
@@ -953,7 +953,7 @@ void GenesisParserWrapper::doSet( int argc, const char** argv, Id s )
 	} else  {
 		string path = argv[1];
 		//Shell::getWildCardList(conn, path, 0);
-		send2< string, bool >( sh, requestWildcardListSlot, path, 0 );
+		send2< string, bool >( sh, 0, requestWildcardListSlot, path, 0 );
 		if ( elist_.size() == 0 ) {
 			cout << "Error: " << argv[0] << " : cannot find element " <<
 				path << endl;
@@ -1015,7 +1015,7 @@ void GenesisParserWrapper::doSet( int argc, const char** argv, Id s )
 					vector< Id > el;
 					el.push_back( e );
 					field = field.substr( pos + 2 );
-					send3< vector< Id >, string, string >( s(),
+					send3< vector< Id >, string, string >( s(), 0,
 						setVecFieldSlot, el, field, value );
 					continue;
 				}
@@ -1026,7 +1026,7 @@ void GenesisParserWrapper::doSet( int argc, const char** argv, Id s )
 		
 		if ( field.length() > 0 )
 		//Shell::setVecField(conn, elist_, field, value)
-			send3< vector< Id >, string, string >( s(),
+			send3< vector< Id >, string, string >( s(), 0,
 				setVecFieldSlot, elist_, field, value );
 	}
 }
@@ -1046,7 +1046,7 @@ bool GenesisParserWrapper::tabCreate( int argc, const char** argv, Id s)
 	// Id id = path2eid( path, s );
 	Id id( path );
 	if ( !id.zero() && !id.bad() ) {
-		send2< Id, string >( s(),
+		send2< Id, string >( s(), 0,
 			requestFieldSlot, id, "class" );
 		if ( fieldValue_.length() == 0 ) // Nothing came back
 			return 0;
@@ -1086,10 +1086,10 @@ bool GenesisParserWrapper::tabCreate( int argc, const char** argv, Id s)
 				}
 				vector < Id > el;
 				el.push_back(Id(path));
-				send3< vector< Id >, string, string >( s(),
+				send3< vector< Id >, string, string >( s(), 0,
 						setVecFieldSlot, el, string(argv[3]) + "power", "1.0" );
 // 				set<double> (Id(path)(), "Xpower", 1.0);
-// 				send3< string, string, Id >( s(),
+// 				send3< string, string, Id >( s(), 0,
 // 				createSlot, "HHGate", name, Id(path) );
 				
 				id = Id( tempA );
@@ -1098,11 +1098,11 @@ bool GenesisParserWrapper::tabCreate( int argc, const char** argv, Id s)
 				cout << "tabCreate::Error" << endl;
 				return 0; //Error msg here
 			}
-			send3< Id, string, string >( s(),
+			send3< Id, string, string >( s(), 0,
 				setFieldSlot, id, "xdivs", argv[4] );
-			send3< Id, string, string >( s(),
+			send3< Id, string, string >( s(), 0,
 				setFieldSlot, id, "xmin", argv[5] );
-			send3< Id, string, string >( s(),
+			send3< Id, string, string >( s(), 0,
 				setFieldSlot, id, "xmax", argv[6] );
 			// id = path2eid( tempB, s );
 			id = Id( tempB );
@@ -1110,20 +1110,20 @@ bool GenesisParserWrapper::tabCreate( int argc, const char** argv, Id s)
 				cout << "tabCreate::Error" << endl;
 				return 0; //Error msg here
 			}
-			send3< Id, string, string >( s(),
+			send3< Id, string, string >( s(), 0,
 				setFieldSlot, id, "xdivs", argv[4] );
-			send3< Id, string, string >( s(),
+			send3< Id, string, string >( s(), 0,
 				setFieldSlot, id, "xmin", argv[5] );
-			send3< Id, string, string >( s(),
+			send3< Id, string, string >( s(), 0,
 				setFieldSlot, id, "xmax", argv[6] );
 			return 1;
 		}
 		if ( fieldValue_ == "Table" && argc == 6 ) {
-			send3< Id, string, string >( s(),
+			send3< Id, string, string >( s(), 0,
 				setFieldSlot, id, "xdivs", argv[3] );
-			send3< Id, string, string >( s(),
+			send3< Id, string, string >( s(), 0,
 				setFieldSlot, id, "xmin", argv[4] );
-			send3< Id, string, string >( s(),
+			send3< Id, string, string >( s(), 0,
 				setFieldSlot, id, "xmax", argv[5] );
 			return 1;
 		}
@@ -1139,7 +1139,7 @@ void do_call( int argc, const char** const argv, Id s )
 	}
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( e->data() );
+			( e->data( 0 ) );
 	// Ugly hack to avoid LOAD call for notes on kkit dumpfiles
 	if ( strcmp ( argv[2], "LOAD" ) == 0 ) {
 		// cout << "in do_call LOAD " << endl;
@@ -1190,7 +1190,7 @@ void do_call( int argc, const char** const argv, Id s )
 					" could not find object '" << temp << "'\n";
 			return;
 		}
-		send3< Id, string, string >( s(),
+		send3< Id, string, string >( s(), 0,
 			setFieldSlot, gate, "tabFill", argstr );
 
 		temp = elmpath + "/B";
@@ -1201,7 +1201,7 @@ void do_call( int argc, const char** const argv, Id s )
 					" could not find object '" << temp << "'\n";
 			return;
 		}
-		send3< Id, string, string >( s(),
+		send3< Id, string, string >( s(), 0,
 			setFieldSlot, gate, "tabFill", argstr );
 
 		return;
@@ -1216,12 +1216,12 @@ void do_call( int argc, const char** const argv, Id s )
 			return;
 		}
 		if ( argc == 4 ) {
-			send4< Id, char, double, double >( s(),
+			send4< Id, char, double, double >( s(), 0,
 				tabopSlot, table, argv[3][0], 0.0, 0.0 );
 		} else if ( argc == 6 ) {
 			double min = atof( argv[4] );
 			double max = atof( argv[5] );
-			send4< Id, char, double, double >( s(),
+			send4< Id, char, double, double >( s(), 0,
 				tabopSlot, table, argv[3][0], min, max );
 		} else {
 			cout << "usage: " << argv[0] << 
@@ -1256,7 +1256,7 @@ bool GenesisParserWrapper::fieldExists(
 		newfield = i->second;
 	//conversion of field, if needed, complete
 		
-	send2< Id, string >( s(), requestFieldSlot, eid, "fieldList" );
+	send2< Id, string >( s(), 0, requestFieldSlot, eid, "fieldList" );
 	if ( fieldValue_.length() == 0 ) // Nothing came back
 		return 0;
 	return ( fieldValue_.find( newfield ) != string::npos );
@@ -1273,7 +1273,7 @@ int do_exists( int argc, const char** const argv, Id s )
 		Id eid( argv[1] );
 		if ( !eid.bad() ) {
 			GenesisParserWrapper* gpw =
-				static_cast< GenesisParserWrapper* >( s()->data() );
+				static_cast< GenesisParserWrapper* >( s()->data( 0 ) );
 			return gpw->fieldExists( eid, argv[2], s );
 		}
 	} else {
@@ -1289,7 +1289,7 @@ char* do_get( int argc, const char** const argv, Id s )
 {
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( e->data() );
+			( e->data( 0 ) );
 	return gpw->doGet( argc, argv, s );
 }
 
@@ -1318,7 +1318,7 @@ char* GenesisParserWrapper::doGet( int argc, const char** argv, Id s )
 			return copyString( "" );
 		field = argv[2];
 	} else if ( argc == 2 ) {
-		send0( s(), requestCweSlot );
+		send0( s(), 0, requestCweSlot );
 		e = cwe_;
 		field = argv[ 1 ];
 	} else {
@@ -1351,7 +1351,7 @@ char* GenesisParserWrapper::doGet( int argc, const char** argv, Id s )
 	}
 
 	fieldValue_ = "";
-	send2< Id, string >( s(),
+	send2< Id, string >( s(), 0,
 		requestFieldSlot, e, field );
 	if ( fieldValue_.length() == 0 ) // Nothing came back
 		return 0;
@@ -1378,7 +1378,7 @@ void do_showmsg( int argc, const char** const argv, Id s )
 {
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( e->data() );
+			( e->data( 0 ) );
 	gpw->doShowMsg( argc, argv, s );
 }
 
@@ -1436,7 +1436,7 @@ void GenesisParserWrapper::doShowMsg( int argc, const char** argv, Id s)
 {
 	Id e;
 	if ( argc == 1 ) {
-		send0( s(), requestCweSlot );
+		send0( s(), 0, requestCweSlot );
 		e = cwe_;
 	} else {
 		// e = path2eid( argv[1], s );
@@ -1447,7 +1447,7 @@ void GenesisParserWrapper::doShowMsg( int argc, const char** argv, Id s)
 			return;
 		}
 	}
-	send2< Id, string >( s(), requestFieldSlot, e, "fieldList" );
+	send2< Id, string >( s(), 0, requestFieldSlot, e, "fieldList" );
 	vector< string > list;
 	vector< string >::iterator i;
 	separateString( fieldValue_, list, ", " );
@@ -1458,7 +1458,7 @@ void GenesisParserWrapper::doShowMsg( int argc, const char** argv, Id s)
 	for ( i = list.begin(); i != list.end(); i++ ) {
 		if ( *i == "fieldList" )
 			continue;
-		send3< Id, string, bool >( s(), listMessagesSlot, e, *i, 1 );
+		send3< Id, string, bool >( s(), 0, listMessagesSlot, e, *i, 1 );
 		// The return message puts the elements in elist_ and the 
 		// target field names in fieldValue_
 		printMessageList( *i, fieldValue_, elist_, msgNum, 1 );
@@ -1470,7 +1470,7 @@ void GenesisParserWrapper::doShowMsg( int argc, const char** argv, Id s)
 	for ( i = list.begin(); i != list.end(); i++ ) {
 		if ( *i == "fieldList" )
 			continue;
-		send3< Id, string, bool >( s(), listMessagesSlot, e, *i, 0 );
+		send3< Id, string, bool >( s(), 0, listMessagesSlot, e, *i, 0 );
 		// The return message puts the elements in elist_ and the 
 		// target field name in fieldValue_
 		printMessageList( *i, fieldValue_, elist_, msgNum, 0);
@@ -1516,7 +1516,7 @@ void do_create( int argc, const char** const argv, Id s )
 	// Id pa = GenesisParserWrapper::path2eid( parent, s );
 	Id pa( parent );
 
-	send3< string, string, Id >( s(),
+	send3< string, string, Id >( s(), 0,
 		createSlot, className, name, pa );
 
 		// The return function recvCreate gets the id of the
@@ -1530,7 +1530,7 @@ void do_delete( int argc, const char** const argv, Id s )
 		// Id victim = GenesisParserWrapper::path2eid( argv[1], s );
 		Id victim( argv[1] );
 		if ( victim != Id() )
-			send1< Id >( s(), deleteSlot, victim );
+			send1< Id >( s(), 0, deleteSlot, victim );
 	} else {
 		cout << "usage:: " << argv[0] << " Element/path\n";
 	}
@@ -1591,7 +1591,7 @@ void do_move( int argc, const char** const argv, Id s )
 	Id pa;
 	string name;
 	if ( parseCopyMove( argc, argv, s, e, pa, name ) ) {
-		send3< Id, Id, string >( s(), moveSlot, e, pa, name );
+		send3< Id, Id, string >( s(), 0, moveSlot, e, pa, name );
 	}
 }
 
@@ -1602,7 +1602,7 @@ void do_copy( int argc, const char** const argv, Id s )
 	string name;
 	if ( parseCopyMove( argc, argv, s, e, pa, name ) ) {
 		//Shell::copy(conn, e, pa, name);
-		send3< Id, Id, string >( s(), copySlot, e, pa, name );
+		send3< Id, Id, string >( s(), 0, copySlot, e, pa, name );
 	}
 }
 
@@ -1632,7 +1632,7 @@ void do_ce( int argc, const char** const argv, Id s )
 		if ( e.bad() ) {
 			cout << "Error - cannot change to '" << argv[1] << "'\n";
 		} else {
-			send1< Id >( s(), setCweSlot, e );
+			send1< Id >( s(), 0, setCweSlot, e );
 		}
 	} else {
 		cout << "usage:: " << argv[0] << " Element\n";
@@ -1642,7 +1642,7 @@ void do_ce( int argc, const char** const argv, Id s )
 void do_pushe( int argc, const char** const argv, Id s )
 {
 	GenesisParserWrapper* gpw = 
-		static_cast< GenesisParserWrapper* > ( s()->data() );
+		static_cast< GenesisParserWrapper* > ( s()->data( 0 ) );
 	if ( argc == 2 ) {
 		// s->pusheFuncLocal( argv[1] );
 		Id e( argv[1] );
@@ -1650,7 +1650,7 @@ void do_pushe( int argc, const char** const argv, Id s )
 			gpw->print( string( "Error - cannot change to '" ) +
 				string( argv[1] ) + "'" );
 		} else {
-			send1< Id >( s(), pusheSlot, e );
+			send1< Id >( s(), 0, pusheSlot, e );
 			gpw->printCwe();
 		}
 	} else {
@@ -1662,9 +1662,9 @@ void do_pope( int argc, const char** const argv, Id s )
 {
 	if ( argc == 1 ) {
 		// s->popeFuncLocal( );
-		send0( s(), popeSlot );
+		send0( s(), 0, popeSlot );
 		GenesisParserWrapper* gpw = 
-			static_cast< GenesisParserWrapper* > ( s()->data() );
+			static_cast< GenesisParserWrapper* > ( s()->data( 0 ) );
 		gpw->printCwe();
 	} else {
 		cout << "usage:: " << argv[0] << "\n";
@@ -1683,7 +1683,7 @@ void do_alias( int argc, const char** const argv, Id s )
 	}
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( e->data() );
+			( e->data( 0 ) );
 	gpw->alias( alias, old );
 }
 
@@ -1696,7 +1696,7 @@ void do_quit( int argc, const char** const argv, Id s )
 void do_stop( int argc, const char** const argv, Id s )
 {
 	if ( argc == 1 ) {
-		send0( s(), stopSlot );
+		send0( s(), 0, stopSlot );
 	} else {
 		cout << "usage:: " << argv[0] << "\n";
 	}
@@ -1705,8 +1705,8 @@ void do_stop( int argc, const char** const argv, Id s )
 void do_reset( int argc, const char** const argv, Id s )
 {
 	if ( argc == 1 ) {
-		send0( s(), reschedSlot );
-		send0( s(), reinitSlot );
+		send0( s(), 0, reschedSlot );
+		send0( s(), 0, reinitSlot );
 		;
 	} else {
 		cout << "usage:: " << argv[0] << "\n";
@@ -1717,7 +1717,7 @@ void do_step( int argc, const char** const argv, Id s )
 {
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( e->data() );
+			( e->data( 0 ) );
 	gpw->step( argc, argv );
 }
 
@@ -1734,7 +1734,7 @@ void GenesisParserWrapper::step( int argc, const char** const argv )
 			return;
 		}
 	} else {
-		send0( e, requestClocksSlot ); 
+		send0( e, 0, requestClocksSlot ); 
 		assert( dbls_.size() > 0 );
 		// This fills up a vector of doubles with the clock duration.
 		// Find the shortest dt.
@@ -1753,17 +1753,17 @@ void GenesisParserWrapper::step( int argc, const char** const argv )
 		return;
 	}
 
-	send1< double >( e, stepSlot, runtime );
+	send1< double >( e, 0, stepSlot, runtime );
 }
 
 void do_setclock( int argc, const char** const argv, Id s )
 {
 	if ( argc == 3 ) {
-			send3< int, double, int >( s(),
+			send3< int, double, int >( s(), 0,
 				setClockSlot, 
 				atoi( argv[1] ), atof( argv[2] ), 0 );
 	} else if ( argc == 4 ) {
-			send3< int, double, int >( s(),
+			send3< int, double, int >( s(), 0,
 				setClockSlot, 
 				atoi( argv[1] ), atof( argv[2] ), atoi( argv[3] ) );
 	} else {
@@ -1773,7 +1773,7 @@ void do_setclock( int argc, const char** const argv, Id s )
 
 void GenesisParserWrapper::showClocks( Element* e )
 {
-	send0( e, requestClocksSlot ); 
+	send0( e, 0, requestClocksSlot ); 
 	// This fills up a vector of doubles with the clock duration.
 	cout << "ACTIVE CLOCKS\n";
 	cout << "-------------\n";
@@ -1786,7 +1786,7 @@ void do_showclocks( int argc, const char** const argv, Id s )
 	if ( argc == 1 ) {
 		Element* e = s();
 		GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-				( e->data() );
+				( e->data( 0 ) );
 		gpw->showClocks( e );
 
 	} else {
@@ -1819,7 +1819,7 @@ void do_useclock( int argc, const char** const argv, Id s )
 	string path = argv[1];
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( e->data() );
+			( e->data( 0 ) );
 	gpw->useClock( tickId, path, func, s );
 }
 
@@ -1833,17 +1833,17 @@ void GenesisParserWrapper::useClock(
 	// This request elicits a return message to put the list in the
 	// elist_ field.
 
-	send2< string, bool >( e, requestWildcardListSlot, path, 0 );
+	send2< string, bool >( e, 0, requestWildcardListSlot, path, 0 );
 
 	send3< Id, vector< Id >, string >( 
-		s(), useClockSlot, tickId, elist_, func );
+		s(), 0, useClockSlot, tickId, elist_, func );
 }
 
 void do_show( int argc, const char** const argv, Id s )
 {
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( e->data() );
+			( e->data( 0 ) );
 	gpw->doShow( argc, argv, s );
 }
 
@@ -1858,7 +1858,7 @@ void GenesisParserWrapper::showAllFields( Id e, Id s )
 	char temp[80];
 	
 	// Ask for the list of fields as one big string
-	send2< Id, string >( s(), requestFieldSlot, e, "fieldList" );
+	send2< Id, string >( s(), 0, requestFieldSlot, e, "fieldList" );
 	vector< string > list;
 	vector< string >::iterator i;
 	separateString( fieldValue_, list, ", " );
@@ -1867,7 +1867,7 @@ void GenesisParserWrapper::showAllFields( Id e, Id s )
 			continue;
 		fieldValue_ = "";
 		//Shell::getField(conn, e->id(), *i)
-		send2< Id, string >( s(), requestFieldSlot, e, *i );
+		send2< Id, string >( s(), 0, requestFieldSlot, e, *i );
 		if ( fieldValue_.length() > 0 ) {
 			sprintf( temp, "%-25s%s", i->c_str(), "= " );
 			print( temp + fieldValue_ );
@@ -1895,7 +1895,7 @@ void GenesisParserWrapper::doShow( int argc, const char** argv, Id s )
 
 
 	if ( argc == 2 ) { // show fields of cwe.
-		send0( s(), requestCweSlot );
+		send0( s(), 0, requestCweSlot );
 		e = cwe_;
 		firstField = 1;
 	} else {
@@ -1922,7 +1922,7 @@ void GenesisParserWrapper::doShow( int argc, const char** argv, Id s )
 			if ( iter != sliFieldNameConvert().end() ) 
 				field = iter->second;
 				
-			send2< Id, string >( s(), requestFieldSlot, e, field );
+			send2< Id, string >( s(), 0, requestFieldSlot, e, field );
 			if ( fieldValue_.length() > 0 ) {
 				sprintf( temp, "%-25s%s", field.c_str(), "= " );//printing the new field name 
 				print( temp + fieldValue_ );
@@ -1938,15 +1938,15 @@ void do_le( int argc, const char** const argv, Id s )
 {
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( e->data() );
+			( e->data( 0 ) );
 	gpw->doLe( argc, argv, s );
 }
 
 void GenesisParserWrapper::doLe( int argc, const char** argv, Id s )
 {
 	if ( argc == 1 ) { // Look in the cwe first.
-		send0( s(), requestCweSlot );
-		send1< Id >( s(), requestLeSlot, cwe_ );
+		send0( s(), 0, requestCweSlot );
+		send1< Id >( s(), 0, requestLeSlot, cwe_ );
 	} else if ( argc >= 2 ) {
 		// Id e = path2eid( argv[1], s );
 		Id e( argv[1] );
@@ -1955,7 +1955,7 @@ void GenesisParserWrapper::doLe( int argc, const char** argv, Id s )
 			print( string( "cannot find object '" ) + argv[1] + "'" );
 			return;
 		}
-		send1< Id >( s(), requestLeSlot, e );
+		send1< Id >( s(), 0, requestLeSlot, e );
 	}
 	vector< Id >::iterator i = elist_.begin();
 	// This operation should really do it in a parallel-clean way.
@@ -1969,17 +1969,17 @@ void do_pwe( int argc, const char** const argv, Id s )
 {
 	// Here we need to wait for the shell to service this message
 	// request and put the requested value in the local cwe_.
-	send0( s(), requestCweSlot );
+	send0( s(), 0, requestCweSlot );
 	// print it out.
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( s()->data() );
+			( s()->data( 0 ) );
 	gpw->printCwe();
 }
 
 /*
 void GenesisParserWrapper::doPwe( int argc, const char** argv, Id s )
 {
-	send0( s(), requestCweSlot );
+	send0( s(), 0, requestCweSlot );
 	// Here we need to wait for the shell to service this message
 	// request and put the requested value in the local cwe_.
 	
@@ -1996,7 +1996,7 @@ void GenesisParserWrapper::printCwe()
 void do_listcommands( int argc, const char** const argv, Id s )
 {
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( s()->data() );
+			( s()->data( 0 ) );
 	gpw->listCommands( );
 }
 
@@ -2022,7 +2022,7 @@ void do_echo( int argc, const char** const argv, Id s )
 	}
 
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( s()->data() );
+			( s()->data( 0 ) );
 	gpw->print( temp, options );
 
 	/*
@@ -2051,7 +2051,7 @@ void do_tab2file( int argc, const char** const argv, Id s )
 	// Id e = GenesisParserWrapper::path2eid( elmname, s );
 	Id e( elmname );
 	if ( !e.zero() && !e.bad() )
-		send3< Id, string, string >( s(),
+		send3< Id, string, string >( s(), 0,
 			setFieldSlot, e, "print", fname );
 	else
 		cout << "Error: " << argv[0] << ": element not found: " <<
@@ -2089,7 +2089,7 @@ char** do_element_list( int argc, const char** const argv, Id s )
 	}
 	string path = argv[1];
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( s()->data() );
+			( s()->data( 0 ) );
 	return gpw->elementList( path, s );
 
 	// return copyString( s->getmsgFuncLocal( field, options ) );
@@ -2104,7 +2104,7 @@ char** do_element_list( int argc, const char** const argv, Id s )
 char** GenesisParserWrapper::elementList( const string& path, Id s)
 {
  	//Shell::getWildCardList(conn, path, 0(ordered))
- 	send2< string, bool >( s(), requestWildcardListSlot, path, 0 );
+ 	send2< string, bool >( s(), 0, requestWildcardListSlot, path, 0 );
 	// bool first = 1;
 	vector< Id >::iterator i;
 	// Need to use old-style allocation because the genesis parser 
@@ -2197,7 +2197,7 @@ void do_readcell( int argc, const char** const argv, Id s )
 	}
 
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( s()->data() );
+			( s()->data( 0 ) );
 	vector< double > globalParms;
 	gpw->getReadcellGlobals( globalParms );
 
@@ -2206,7 +2206,7 @@ void do_readcell( int argc, const char** const argv, Id s )
 	string cellpath = argv[2];
 
  	send3< string, string, vector< double > >( 
-		s(), readCellSlot, filename, cellpath, globalParms );
+		s(), 0, readCellSlot, filename, cellpath, globalParms );
 }
 
 Id findChanGateId( int argc, const char** const argv, Id s ) 
@@ -2236,7 +2236,7 @@ Id findChanGateId( int argc, const char** const argv, Id s )
 			gateId = id;
 		else if ( el->className() == "HHChannel" ) {
 			if (type != "") {
-				send3< string, string, Id >( s(),
+				send3< string, string, Id >( s(), 0,
 					createSlot, "HHGate", type, id );
 				gateId = Id(gate);
 			}
@@ -2299,7 +2299,7 @@ void setupChanFunc( int argc, const char** const argv, Id s,
 	parms.push_back( min );
 	parms.push_back( max );
 
- 	send2< Id, vector< double > >( s(), slot, gateId, parms );
+ 	send2< Id, vector< double > >( s(), 0, slot, gateId, parms );
 }
 
 
@@ -2324,7 +2324,7 @@ void tweakChanFunc( int argc, const char** const argv, Id s, Slot slot )
 	if ( gateId.bad() )
 			return;
 
- 	send1< Id >( s(), slot, gateId );
+ 	send1< Id >( s(), 0, slot, gateId );
 }
 
 void do_tweakalpha( int argc, const char** const argv, Id s )
@@ -2395,7 +2395,7 @@ void do_setupgate( int argc, const char** const argv, Id s )
 			return;
 	}
 
- 	send2< Id, vector< double > >( s(), setupGateSlot, gateId, parms );
+ 	send2< Id, vector< double > >( s(), 0, setupGateSlot, gateId, parms );
 }
 
 /**
@@ -2427,7 +2427,7 @@ void doWriteDump( int argc, const char** const argv, Id s )
 	}
 	if ( doAll )
 	path = "/##";
-	send2< string, string >( s(), writeDumpFileSlot, filename, path );
+	send2< string, string >( s(), 0, writeDumpFileSlot, filename, path );
 }
 
 /**
@@ -2453,7 +2453,7 @@ void doSimUndump( int argc, const char** const argv, Id s )
 				args = args + " \"" + temp + "\"";
 		}
 	}
-	send1< string >( s(), simUndumpSlot, args );
+	send1< string >( s(), 0, simUndumpSlot, args );
 }
 
 void doSimObjDump( int argc, const char** const argv, Id s )
@@ -2483,7 +2483,7 @@ void doSimObjDump( int argc, const char** const argv, Id s )
 		args = args + " x y z";
 	}
 	// At this point we don't handle default and noDump
-	send1< string >( s(), simObjDumpSlot, args );
+	send1< string >( s(), 0, simObjDumpSlot, args );
 }
 
 /**
@@ -2500,7 +2500,7 @@ void doReadDump( int argc, const char** const argv, Id s )
 
 	string filename = argv[1];
 
-	send1< string >( s(), readDumpFileSlot, filename );
+	send1< string >( s(), 0, readDumpFileSlot, filename );
 }
 
 
@@ -2638,7 +2638,7 @@ void do_addfield( int argc, const char** const argv, Id s )
 */
 	string classname = argv[1];
 	string fieldname = argv[2];
-	send2<Id, string>(s(), addfieldSlot, Id(classname), fieldname);
+	send2<Id, string>(s(), 0, addfieldSlot, Id(classname), fieldname);
 	
 }
 
@@ -2651,7 +2651,7 @@ void do_loadtab ( int argc, const char** const argv, Id s )
 		line.append( " " );
 	}
 
-	send1< string >( s(), loadtabSlot, line );
+	send1< string >( s(), 0, loadtabSlot, line );
 }
 
 void do_complete_loading( int argc, const char** const argv, Id s )
@@ -2760,7 +2760,7 @@ void do_createmap(int argc, const char** const argv, Id s){
 			cout << "'" << headpath  << "'" << " is not defined."  << dest << "." << endl;
 			return;
 		}
-		send3< string, string, Id >( s(),
+		send3< string, string, Id >( s(), 0,
 			createSlot, "Neutral", Shell::tail(dest, "/"), head );
 	}
 	if (object){
@@ -2796,7 +2796,7 @@ void do_createmap(int argc, const char** const argv, Id s){
 		pa = Id(parent);
 		if (pa.bad()) cout << "Too bad" <<endl;
 		//Shell::staticCreateArray( conn, className, name, pa, n )
-		send4< string, string, Id, vector <double> >( s(),
+		send4< string, string, Id, vector <double> >( s(), 0,
 		createArraySlot, className, name, pa, parameter );
 	}
 	else{
@@ -2805,7 +2805,7 @@ void do_createmap(int argc, const char** const argv, Id s){
 		Id pa;
 		if ( parseCopyMove( 3, argv, s, e, pa, name ) ) {
 			//Shell::copy(conn, e, pa, name);
-			send4< Id, Id, string, vector <double> >( s(), copyIntoArraySlot, e, pa, name, parameter );
+			send4< Id, Id, string, vector <double> >( s(), 0, copyIntoArraySlot, e, pa, name, parameter );
 		}
 	}
 	//src = src_list[0];
@@ -2829,8 +2829,8 @@ planarconnect / dest-path -relative -sourcemask box -1 -1 1 1 -destmask box 1 1 
 			probability = atof(argv[i+1]);
 	}
 	//Shell::planarconnect(conn, source, dest, probability)
-	send3<string, string, double>(s(), planarconnectSlot, source, dest, probability);
-	//GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >( e->data() );
+	send3<string, string, double>(s(), 0, planarconnectSlot, source, dest, probability);
+	//GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >( e->data( 0 ) );
 	//return gpw->doPlanarConnect( argc, argv, s );
 	
 }
@@ -2845,7 +2845,7 @@ void do_planardelay( int argc, const char** const argv, Id s )
 	source = argv[1];
 	//check whether argv[2] is proper float
 	double delay = atof(argv[3]);
-	send2<string, double>(s(), planardelaySlot, source, delay);
+	send2<string, double>(s(), 0, planardelaySlot, source, delay);
 }
 
 void do_planarweight( int argc, const char** const argv, Id s )
@@ -2858,11 +2858,13 @@ void do_planarweight( int argc, const char** const argv, Id s )
 	source = argv[1];
 	//check whether argv[2] is proper float
 	double weight = atof(argv[3]);
-	send2<string, double>(s(), planarweightSlot, source, weight);
+	send2<string, double>(s(), 0, planarweightSlot, source, weight);
 }
 
 int do_getsyncount( int argc, const char** const argv, Id s )
 {
+	cout << "getsyncount:: under repair\n";
+	/*
 	vector <Conn> conn;
 	if (argc == 3){
 		Element* src = Id(argv[1])();
@@ -2885,19 +2887,23 @@ int do_getsyncount( int argc, const char** const argv, Id s )
 			cout << "getsyncount:: The src element is not of type SynChan." << endl;
 			return 0;
 		}
-		send1 <Id> (s(), getSynCountSlot, dest->id());
+		send1 <Id> (s(), 0, getSynCountSlot, dest->id());
 		GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( s()->data() );
+			( s()->data( 0 ) );
 		string value = gpw->getFieldValue();
 		int numSynapses = atoi(value.c_str());
 		return numSynapses;
 	}
+	*/
 	return 0;
-	//send2<string, string>(s(), planarweightSlot, source, dest);
+	//send2<string, string>(s(), 0, planarweightSlot, source, dest);
 }
 
 char* do_getsynsrc( int argc, const char** const argv, Id s ){
 //getsynsrc <postsynaptic-element> <index>
+	cout << "getsynsrc : under repair\n";
+	return copyString( "foo" );
+	/*
 	if (argc != 3) {
 		cout << "usage:: getsynsrc <postsynaptic-element> <index>" << endl;
 		string s = "";
@@ -2913,15 +2919,21 @@ char* do_getsynsrc( int argc, const char** const argv, Id s ){
 	}
 	dst->findFinfo("synapse")->incomingConns(dst, conn);
 	unsigned int index = atoi(argv[2]);
-	if (index >= conn.size()){/*error*/}
+	if (index >= conn.size()){
+		assert( 0 )
+	}
 	Element *src = conn[index].targetElement();
 	ret = src->id().path();
 	return copyString(ret.c_str());
+	*/
 }
 
 
 char* do_getsyndest( int argc, const char** const argv, Id s ){
 //getsynsrc <presynaptic-element> <index>
+	cout << "getsynsrc: under repair\n";
+	return copyString( "foo" );
+	/*
 	if (argc != 3) {
 		cout << "usage:: getsynsrc <presynaptic-element> <index>" << endl;
 		string s = "";
@@ -2937,14 +2949,20 @@ char* do_getsyndest( int argc, const char** const argv, Id s ){
 	}
 	src->findFinfo("event")->outgoingConns(src, conn);
 	unsigned int index = atoi(argv[2]);
-	if (index >= conn.size()){/*error*/}
+	if (index >= conn.size()){ 
+		assert( 0 ) }
 	Element *dst = conn[index].targetElement();
 	ret = dst->id().path();
 	return copyString(ret.c_str());
+	*/
 }
 
 int do_getsynindex( int argc, const char** const argv, Id s ){
 //getsynsrc <presynaptic-element> <postsynaptic-element> [-number n]
+	cout << "getsynsrc: under repair\n";
+	return 0;
+
+/*
 	if (argc != 3) {
 		cout << "usage:: getsynsrc <presynaptic-element> <postsynaptic-element> [-number n]" << endl;
 		return -1; 
@@ -2967,6 +2985,7 @@ int do_getsynindex( int argc, const char** const argv, Id s ){
 		}
 	}
 	return -1;
+	*/
 }
 
 int do_strcmp(int argc, const char** const argv, Id s ){
@@ -3085,7 +3104,7 @@ void do_openfile(int argc, const char** const argv, Id s){
 	}
 	string filename = argv[1];
 	string mode = argv[2];
-	send2<string, string>(s(), openFileSlot, filename, mode);
+	send2<string, string>(s(), 0, openFileSlot, filename, mode);
 }
 
 void do_writefile(int argc, const char** const argv, Id s){
@@ -3129,7 +3148,7 @@ void do_writefile(int argc, const char** const argv, Id s){
 	}
 	if (newline)
 		text = text + "\n";
-	send2 < string, string > ( s(), writeFileSlot, filename, text );
+	send2 < string, string > ( s(), 0, writeFileSlot, filename, text );
 }
 
 
@@ -3138,16 +3157,16 @@ void do_closefile(int argc, const char** const argv, Id s){
 		cout << "usage:: openfile <filename>" << endl;
 	}
 	string filename = argv[1];
-	send1< string > ( s(), closeFileSlot, filename );
+	send1< string > ( s(), 0, closeFileSlot, filename );
 }
 
 void do_listfiles(int argc, const char** const argv, Id s){
 	if ( argc != 1 ){
 		cout << "usage:: openfile <filename> <mode>" << endl;
 	}
-	send0( s(), listFilesSlot );
+	send0( s(), 0, listFilesSlot );
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( s()->data() );
+			( s()->data( 0 ) );
 	cout << gpw->getFieldValue();	
 }
 
@@ -3165,9 +3184,9 @@ char* do_readfile(int argc, const char** const argv, Id s){
 	if (argc == 3)
 		if (strcmp(argv[2], "-linemode") == 0) 
 			linemode = true;
-	send2< string , bool > ( s(), readFileSlot, filename, linemode );
+	send2< string , bool > ( s(), 0, readFileSlot, filename, linemode );
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( s()->data() );
+			( s()->data( 0 ) );
 	string text = "" + gpw->getFieldValue();
 	return copyString(text.c_str());
 }
@@ -3277,9 +3296,9 @@ void do_floatformat(int argc, const char** const argv, Id s ){
 
 float do_getstat(int argc, const char** const argv, Id s )
 {
-	send0( s(), requestCurrentTimeSlot );
+	send0( s(), 0, requestCurrentTimeSlot );
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
-			( s()->data() );
+			( s()->data( 0 ) );
 	double ret = atof( gpw->getFieldValue().c_str() );	
 	return static_cast< float >( ret );
 }
@@ -3462,7 +3481,7 @@ Id GenesisParserWrapper::innerPath2eid( const string& path, Id g )
 			return Id();
 
 	if ( path == "" || path == "." ) {
-		send0( g(), requestCweSlot );
+		send0( g(), 0, requestCweSlot );
 		return cwe_;
 	}
 
@@ -3470,7 +3489,7 @@ Id GenesisParserWrapper::innerPath2eid( const string& path, Id g )
 		return createdElm_;
 
 	if ( path == ".." ) {
-		send0( g(), requestCweSlot );
+		send0( g(), 0, requestCweSlot );
 		if ( cwe_ == Id() )
 			return Id();
 		return Shell::parent( cwe_ );
@@ -3486,7 +3505,7 @@ Id GenesisParserWrapper::innerPath2eid( const string& path, Id g )
 		start = Id();
 		separateString( path.substr( 5 ), names, separator );
 	} else {
-		send0( g(), requestCweSlot );
+		send0( g(), 0, requestCweSlot );
 		start = cwe_;
 		separateString( path, names, separator );
 	}
@@ -3534,6 +3553,7 @@ string GenesisParserWrapper::eid2path( Id eid )
  * Looks up the shell attached to the parser specified by g.
  * Static func.
  */
+/*
 Element* GenesisParserWrapper::getShell( Id g )
 {
 	/// \todo: shift connDestBegin function to base Element class.
@@ -3543,6 +3563,7 @@ Element* GenesisParserWrapper::getShell( Id g )
 	Element* ret = i->targetElement();
 	return ret;
 }
+*/
 
 //////////////////////////////////////////////////////////////////
 // Utility function for creating a GenesisParserWrapper, and 
@@ -3575,7 +3596,7 @@ Element* makeGenesisParser()
 
 	// set< string, string >( shell, "create", "GenesisParser", "sli");
 	// Element* sli = Element::lastElement();
-	static_cast< GenesisParserWrapper* >( sli->data() )->
+	static_cast< GenesisParserWrapper* >( sli->data( 0 ) )->
 		setElement( sli->id() );
 
 	unsigned int ret = shell->findFinfo( "parser" )->add( shell, sli, 
@@ -3583,7 +3604,7 @@ Element* makeGenesisParser()
 	assert( ret );
 
 #ifdef DO_UNIT_TESTS
-	static_cast< GenesisParserWrapper* >( sli->data() )->unitTest();
+	static_cast< GenesisParserWrapper* >( sli->data( 0 ) )->unitTest();
 #endif
 
 	return sli;

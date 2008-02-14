@@ -22,11 +22,10 @@ class SrcFinfo: public Finfo
 {
 		public:
 #ifdef DO_UNIT_TESTS
-			friend void cinfoTest(); // wants to look at srcIndex_
+			friend void cinfoTest(); // wants to look at msg_
 #endif
-			SrcFinfo( const string& name, const Ftype *f, 
-							unsigned int srcIndex = 0 )
-					: Finfo( name, f ), srcIndex_( srcIndex )
+			SrcFinfo( const string& name, const Ftype *f )
+					: Finfo( name, f ), msg_( 0 )
 			{;}
 
 			~SrcFinfo()
@@ -38,19 +37,13 @@ class SrcFinfo: public Finfo
 
 			bool respondToAdd(
 					Element* e, Element* src, const Ftype *srcType,
-					FuncList& srcfl, FuncList& returnFl,
+					unsigned int& srcFuncId, unsigned int& returnFuncId,
 					unsigned int& destIndex, unsigned int& numDest
 			) const;
 			
-			void dropAll( Element* e ) const;
-			bool drop( Element* e, unsigned int i ) const;
-
-			unsigned int numIncoming( const Element* e ) const;
-			unsigned int numOutgoing( const Element* e ) const;
-			unsigned int incomingConns(
-					const Element* e, vector< Conn >& list ) const;
-			unsigned int outgoingConns(
-					const Element* e, vector< Conn >& list ) const;
+			unsigned int msg() const {
+				return msg_;
+			}
 
 			/**
 			 * Send a message with the arguments in the string.
@@ -68,13 +61,12 @@ class SrcFinfo: public Finfo
 					return 0;
 			}
 			
-			void countMessages( 
-					unsigned int& srcNum, unsigned int& destNum ) {
-				srcIndex_ = srcNum++;
+			void countMessages( unsigned int& num ) {
+				msg_ = num++;
 			}
 
 			const Finfo* match( 
-				const Element* e, unsigned int connIndex ) const;
+				const Element* e, const ConnTainer* c ) const;
 
 			bool isTransient() const {
 					return 0;
@@ -96,7 +88,7 @@ class SrcFinfo: public Finfo
 			{;}
 
 		private:
-			unsigned int srcIndex_;
+			unsigned int msg_;
 };
 
 #endif // _SRC_FINFO_H

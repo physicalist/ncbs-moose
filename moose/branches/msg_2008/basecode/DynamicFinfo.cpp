@@ -12,12 +12,12 @@
 #include <iostream>
 #include <map>
 #include "Cinfo.h"
-#include "MsgSrc.h"
-#include "MsgDest.h"
 #include "SimpleElement.h"
-#include "send.h"
+#include "Send.h"
 #include "DynamicFinfo.h"
+#include "SetConn.h"
 #include "ProcInfo.h"
+#include "DestFinfo.h"
 #include "DerivedFtype.h"
 #include "SharedFtype.h"
 #include "LookupFinfo.h"
@@ -34,8 +34,7 @@ DynamicFinfo::~DynamicFinfo()
 
 DynamicFinfo* DynamicFinfo::setupDynamicFinfo(
 	Element* e, const string& name, const Finfo* origFinfo,
-	RecvFunc setFunc, GetFunc getFunc,
-	RecvFunc recvFunc, RecvFunc trigFunc, void* index )
+	GetFunc getFunc, void* index )
 {
 	assert( e != 0 );
 
@@ -43,9 +42,7 @@ DynamicFinfo* DynamicFinfo::setupDynamicFinfo(
 	// Note that we create this with a null index. This is because
 	// the DynamicFinfo is a temporary and we don't want to lose
 	// the index when we destroy it.
-	DynamicFinfo* ret = new DynamicFinfo(
-		name, origFinfo, setFunc, getFunc, recvFunc, trigFunc, 0
-	);
+	DynamicFinfo* ret = new DynamicFinfo( name, origFinfo, getFunc, 0);
 
 	// Here we check if there is a vacant Dynamic Finfo to use
 	vector< Finfo* > flist;
@@ -61,10 +58,8 @@ DynamicFinfo* DynamicFinfo::setupDynamicFinfo(
 				delete ret;
 				return df;
 			}
-			if ( df->numIncoming( e ) == 0 &&
-							df->numOutgoing( e ) == 0 ) {
-				ret->srcIndex_ = df->srcIndex_;
-				ret->destIndex_ = df->destIndex_;
+			if ( e->msg( df->msg() )->size() == 0 ) {
+				ret->msg_ = df->msg_;
 				if ( df->generalIndex_ != 0 ) {
 					df->ftype()->destroyIndex( df->generalIndex_ );
 				}
@@ -96,49 +91,39 @@ DynamicFinfo* DynamicFinfo::setupDynamicFinfo(
 bool DynamicFinfo::add( 
 		Element* e, Element* destElm, const Finfo* destFinfo) const
 {
-		FuncList srcFl;
-		FuncList destFl;
-		unsigned int destIndex;
+		unsigned int srcFuncId;
+		unsigned int destFuncId;
+		unsigned int destMsg;
 		unsigned int numDest;
 
 		// How do we know what the target expects: a simple message
 		// or a shared one? Here we use the respondToAdd to query it.
 		
 		if ( destFinfo->respondToAdd( destElm, e, ftype(),
-								srcFl, destFl,
-								destIndex, numDest ) )
+								srcFuncId, destFuncId,
+								destMsg, numDest ) )
 		{
-			assert( srcFl.size() == 0 );
-			assert( destFl.size() == 1 );
 			assert( numDest == 1 );
 			// First we handle the case where this just sends out its
 			// value to the target.
-			unsigned int srcConn =
-				e->insertConnOnSrc( srcIndex_, destFl, 0, 0);
-			unsigned int destConn =
-				destElm->insertConnOnDest( destIndex, 1 );
-			e->connect( srcConn, destElm, destConn );
-			return 1;
+			return Msg::add( e, destElm, msg_, destMsg );
 		} else {
 			// Here we make a SharedFtype on the fly for passing in the
 			// respondToAdd.
-			pair< const Ftype*, RecvFunc >
-					p1( Ftype0::global(), trigFunc_ );
-			pair< const Ftype*, RecvFunc >
-					p2( ftype(), 0 );
-			TypeFuncPair tfp[2] = {
-					p1, p2
-			};
-			SharedFtype sf( tfp, 2 );
-			assert ( srcFl.size() == 0 );
-			srcFl.push_back( trigFunc_ );
+			static DestFinfo trigFinfo( "trig", Ftype0::global(), &dummyFunc );
+			Finfo* shared[] = { &trigFinfo, const_cast< Finfo* >( 
+				origFinfo_ ) };
+			SharedFtype sf ( shared, 2 );
+			assert ( FuncVec::getFuncVec( srcFuncId )->size() == 0 );
+			/*
+			srcFuncId = FuncVec::getFuncVec( origFinfo_->funcId() )->trigFuncId();
 			if ( destFinfo->respondToAdd( destElm, e, &sf,
-								srcFl, destFl,
-								destIndex, numDest ) ) {
+								srcFuncId, destFuncId,
+								destMsg, numDest ) ) {
 				// This is the SharedFinfo case where the incoming
 				// message should be a Trigger to request the return.
 				unsigned int originatingConn =
-					e->insertConnOnSrc( srcIndex_, destFl, 0, 0);
+					e->insertConnOnSrc( msg_, destFl, 0, 0);
 				// Here we know that the target is source to the
 				// trigger message. So its Conn must be on
 				// its MsgSrc vector.
@@ -147,6 +132,7 @@ bool DynamicFinfo::add(
 				e->connect( originatingConn, destElm, targetConn );
 				return 1;
 			}
+			*/
 		}
 		return 0;
 }
@@ -164,18 +150,18 @@ bool DynamicFinfo::add(
  */
 bool DynamicFinfo::respondToAdd(
 					Element* e, Element* src, const Ftype *srcType,
-					FuncList& srcFl, FuncList& returnFl,
+					unsigned int& srcFuncId, unsigned int& returnFuncId,
 					unsigned int& destIndex, unsigned int& numDest
 ) const
 {
 	assert ( src != 0 && e != 0 );
-	assert ( returnFl.size() == 0 );
 
 	// Handle assignment message inputs when ftype is the the same
 	// as the original Finfo
-	if ( srcType->isSameType( ftype() ) && srcFl.size() == 0 ) {
-		returnFl.push_back( recvFunc_ );
-		destIndex = destIndex_;
+	const FuncVec* fv = FuncVec::getFuncVec( srcFuncId );
+	if ( srcType->isSameType( ftype() ) && fv->size() == 0 ) {
+		returnFuncId = origFinfo_->funcId();
+		destIndex = msg_;
 		numDest = 1;
 		return 1;
 	}
@@ -185,21 +171,27 @@ bool DynamicFinfo::respondToAdd(
 	// a ValueFinfo. Otherwise it should be a dummyFunc. The
 	// function will check for a dummyFunc and complain if it is
 	// found.
-	if ( Ftype0::isA( srcType ) && srcFl.size() == 0 )
+	/**
+	 * \todo: need to figure out what to do here.
+	if ( Ftype0::isA( srcType ) && fv->size() == 0 )
 	{
 		if ( trigFunc_ == dummyFunc )
 			return 0;
+		returnFuncId = orig->funcId()->trigId;
 		returnFl.push_back( trigFunc_ );
 		destIndex = destIndex_;
 		numDest = 1;
 		return 1;
 	}
+	*/
 
 	// Handle SharedFinfo requests. The srcFl should have one
 	// RecvFunc designed to handle the returned value. The
 	// src Ftype is a SharedFtype that we will have to match.
-	if ( srcFl.size() == 1 )
+	if ( FuncVec::getFuncVec( srcFuncId )->size() == 1 )
 	{
+	/**
+	 * \todo: need to figure out what to do here.
 		if ( trigFunc_ == dummyFunc )
 			return 0;
 
@@ -217,79 +209,7 @@ bool DynamicFinfo::respondToAdd(
 			numDest = 0;
 			return 1;
 		}
-	}
-	return 0;
-}
-
-/**
- * Disconnects all messages into and out of this DynamicFinfo.
- * This includes incoming as well as outgoing messages.
- */
-void DynamicFinfo::dropAll( Element* e ) const
-{
-	vector< Conn >::const_iterator i;
-	unsigned int begin;
-	unsigned int end;
-	if ( destIndex_ > 0 ) {
-		i = e->connDestBegin( destIndex_ );
-		begin = e->connIndex( &( *i ) );
-		i = e->connDestEnd( destIndex_ );
-		end = e->connIndex( &( *i ) );
-		// begin = e->connDestBegin( destIndex_ )->sourceIndex( );
-		// end = e->connDestEnd( destIndex_ )->sourceIndex( );
-		for ( unsigned int j = end; j > begin; j-- )
-			e->disconnect( j - 1 );
-	}
-	if ( srcIndex_ > 0 ) {
-		i = e->connSrcBegin( srcIndex_ );
-		begin = e->connIndex( &( *i ) );
-		i = e->connSrcVeryEnd( srcIndex_ );
-		end = e->connIndex( &( *i ) );
-		// begin = e->connSrcBegin( srcIndex_ )->sourceIndex( );
-		// end = e->connSrcVeryEnd( srcIndex_ )->sourceIndex( );
-		for ( unsigned int j = end; j > begin; j-- )
-			e->disconnect( j - 1 );
-	}
-}
-
-/**
- * drop has somewhat tricky semantics for the DynamicFinfo, because
- * we do not know ahead of time whether it has incoming, outgoing or
- * both kinds of messages. From the principle of least surprise, we
- * will assume that it eliminates the specified indexed message, whether
- * incoming or outgoing. If there are both kinds of messages and there
- * exists one on each with the same index then we complain.
- */
-bool DynamicFinfo::drop( Element* e, unsigned int i ) const
-{
-	if ( destIndex_ == 0 && srcIndex_ == 0 ) {
-		cout << "DynamicFinfo::drop: No messages found\n";
-		return 0;
-	}
-	if ( destIndex_ > 0 && srcIndex_ > 0 ) {
-		cout << "DynamicFinfo::drop: Ambiguous because both source and dest messages present\n";
-		return 0;
-	}
-
-	unsigned int begin;
-	unsigned int end;
-	if ( destIndex_ > 0 ) {
-		begin = e->connDestBegin( destIndex_ )->sourceIndex( );
-		end = e->connDestEnd( destIndex_ )->sourceIndex( );
-		i += begin;
-		if ( i < end ) {
-			e->disconnect( i );
-			return 1;
-		}
-	}
-	if ( srcIndex_ > 0 ) {
-		begin = e->connSrcBegin( srcIndex_ )->sourceIndex( );
-		end = e->connSrcVeryEnd( srcIndex_ )->sourceIndex( );
-		i += begin;
-		if ( i < end ) {
-			e->disconnect( i );
-			return 1;
-		}
+	*/
 	}
 	return 0;
 }
@@ -304,45 +224,6 @@ Finfo* DynamicFinfo::copy() const
 	ret->generalIndex_ = ge;
 	return ret;
 }
-
-unsigned int DynamicFinfo::numIncoming( const Element* e ) const
-{
-	if ( destIndex_ != 0 ) {
-		return ( e->connDestEnd( destIndex_ ) -
-						e->connDestBegin( destIndex_ ) );
-	}
-	return 0;
-}
-
-unsigned int DynamicFinfo::numOutgoing( const Element* e ) const
-{
-	if ( srcIndex_ != 0 ) {
-		return ( e->connSrcVeryEnd( srcIndex_ ) -
-						e->connSrcBegin( srcIndex_ ) );
-	}
-	return 0;
-}
-			
-unsigned int DynamicFinfo::incomingConns(
-	const Element* e, vector< Conn >& list ) const
-{
-	if ( destIndex_ != 0 ) {
-		list.insert( list.end(), e->connDestBegin( destIndex_ ),
-					e->connDestEnd( destIndex_ ) );
-	}
-	return list.size();
-}
-
-unsigned int DynamicFinfo::outgoingConns(
-	const Element* e, vector< Conn >& list ) const
-{
-	if ( srcIndex_ != 0 ) {
-		list.insert( list.end(), e->connSrcBegin( srcIndex_ ),
-					e->connSrcVeryEnd( srcIndex_ ) );
-	}
-	return list.size();
-}
-
 
 /**
 * The Ftype of the OrigFinfo knows how to do this conversion.
@@ -367,11 +248,9 @@ bool DynamicFinfo::strGet( const Element* e, std::string &s ) const {
  * \todo: Update ConnIndex_ if there is a change in conn_
  */
 ///\todo this needs to be defined according to the funcs.
-void DynamicFinfo::countMessages( 
-	unsigned int& srcIndex, unsigned int& destIndex )
+void DynamicFinfo::countMessages( unsigned int& num )
 {
-	srcIndex_ = srcIndex++;
-	destIndex_ = destIndex++;
+	msg_ = num++;
 }
 
 const Finfo* DynamicFinfo:: match( Element* e, const string& n ) const 
@@ -391,12 +270,16 @@ const Finfo* DynamicFinfo:: match( Element* e, const string& n ) const
  * \todo Need to do benchmarking to see if this needs optimising
  */
 const Finfo* DynamicFinfo::match( 
-				const Element* e, unsigned int connIndex ) const
+				const Element* e, const ConnTainer* c) const
 {
-	if ( e->isConnOnDest( destIndex_, connIndex ) )
+	const Msg* m = e->msg( msg() );
+	if ( m->isDest() ) {
+		if ( c->e2() == e && c->msg2() == msg() )
 			return this;
-	if ( e->isConnOnSrc( srcIndex_, connIndex ) )
+	} else {
+		if ( c->e1() == e && c->msg1() == msg() )
 			return this;
+	}
 	return 0;
 }	
 	
@@ -413,24 +296,26 @@ void* DynamicFinfo::traverseIndirection( void* data ) const
 }
 */
 
+/*
 const DynamicFinfo* getDF( const Conn* c )
 {
 	// The MAXUINT index is used to show that this conn is a dummy
 	// one and must not be used for finding DynamicFinfos.
 	assert( c->targetIndex() != MAXUINT );
 	Element* e = c->targetElement();
+	Msg* m = e->msg( c->targetMsg() );
+
 	const Finfo* temp = e->findFinfo( c->targetIndex() );
 	const DynamicFinfo* f = dynamic_cast< const DynamicFinfo* >( temp );
 	assert( f != 0 );
 	return f;
 }
+*/
 
 bool DynamicFinfo::getSlot( const string& name, Slot& ret ) const
 {
 	if ( name != this->name() ) return 0;
-	if ( destIndex_ != 0 )
-		ret = Slot( destIndex_, 0 );
-	else 
-		ret = Slot( srcIndex_, 0 );
+	if ( msg_ != 0 )
+		ret = Slot( msg_, 0 );
 	return 1;
 }

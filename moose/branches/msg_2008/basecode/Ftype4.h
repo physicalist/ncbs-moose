@@ -58,7 +58,7 @@ template < class T1, class T2, class T3, class T4 >
 					>(
 									f->recvFunc()
 					);
-				Conn c( e, MAXUINT );
+				SetConn c( e, 0 );
 				set( &c, v1, v2, v3, v4 );
 				return 1;
 			}

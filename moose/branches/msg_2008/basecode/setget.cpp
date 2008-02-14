@@ -10,23 +10,16 @@
 #include "header.h"
 #include <algorithm>
 
-#include "MsgSrc.h"
-#include "MsgDest.h"
-#include "SimpleElement.h"
-#include "send.h"
 #include "ProcInfo.h"
+#include "SetConn.h"
 #include "DerivedFtype.h"
-#include "Ftype2.h"
-#include "Ftype3.h"
-#include "Ftype4.h"
-#include "setget.h"
 
 bool set( Element* e, const Finfo* f )
 {
 	if ( Ftype0::isA( f->ftype() ) ) {
 		RecvFunc rf = f->recvFunc();
 		if ( rf ) {
-			Conn c( e, MAXUINT );
+			SetConn c( e, MAXUINT );
 			rf( &c );
 			return 1;
 		}

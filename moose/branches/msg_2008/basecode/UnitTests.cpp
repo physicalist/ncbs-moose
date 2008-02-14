@@ -12,24 +12,6 @@
 
 #include "moose.h"
 
-/*
-#include "header.h"
-#include <iostream>
-#include <algorithm>
-#include <map>
-#include "Cinfo.h"
-#include "MsgSrc.h"
-#include "MsgDest.h"
-#include "SimpleElement.h"
-#include "send.h"
-#include "DynamicFinfo.h"
-#include "ValueFinfo.h"
-#include "DerivedFtype.h"
-#include "ValueFtype.h"
-#include "Ftype2.h"
-#include "setget.h"
-*/
-
 
 /**
  * Unit tests for the Conn and SimpleElement.
@@ -38,12 +20,12 @@ void connTest()
 {
 	// SimpleElement( name, srcSize, destSize );
 	cout << "Testing conn basic stuff";
-	SimpleElement e1( Id::scratchId(), "e1", 2, 2);
-	SimpleElement e2( Id::scratchId(), "e2", 2, 2);
-	Conn c1( &e1, 1234 );
-	Conn c2( &e2, 3241 );
+	SimpleElement e1( Id::scratchId(), "e1" );
+	SimpleElement e2( Id::scratchId(), "e2" );
+	SetConn c1( &e1, 1234 );
+	SetConn c2( &e2, 3241 );
 	ASSERT( c1.targetElement() == &e1, "targetElement access" );
-	ASSERT( c1.targetIndex() == 1234, "targetIndex access" );
+	ASSERT( c1.targetEindex() == 1234, "targetIndex access" );
 	
 	unsigned int ic1 = e1.insertConn( 0, 1, 0, 0 );
 	unsigned int ic2 = e2.insertConn( 0, 0, 0, 1 );

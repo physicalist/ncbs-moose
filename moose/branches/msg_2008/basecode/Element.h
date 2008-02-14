@@ -40,114 +40,23 @@ class Element
 		/// Returns the name of the element class
 		virtual const std::string& className( ) const = 0;
 
-		/// Returns the class infor of the element class.
+		/// Returns the class info of the element class.
 		virtual const Cinfo* cinfo( ) const = 0;
 
-		/// Looks up the specific indexed conn
-		virtual vector< Conn >::const_iterator 
-				lookupConn( unsigned int i ) const = 0;
-
-		/// Looks up the specific indexed conn, allows modification.
-		virtual vector< Conn >::iterator 
-				lookupVariableConn( unsigned int i ) = 0;
-
-		/// Finds the index of the specified conn
-		virtual unsigned int 
-				connIndex( const Conn* ) const = 0;
+		/**
+		 * Returns the identified Msg
+		 */
+		virtual const Msg* msg( unsigned int msgNum ) const = 0;
 
 		/**
-		 * Finds the relative index of a conn arriving at this
-		 * element onto a MsgDest entry identified by slot.
-		 * Relative index means it is based on the specified
-		 * MsgDest slot, so that the first conn in this slot would
-		 * have an index of 0.
+		 * Ensures that the requested msg is allocated
 		 */
-		virtual unsigned int connDestRelativeIndex(
-				const Conn* c, unsigned int slot ) const = 0;
+		virtual void checkMsgAlloc( unsigned int num ) = 0;
 
-		/**
-		 * Finds the relative index of a conn arriving at this
-		 * element onto a MsgSrc entry identified by the slot.
-		 * Relative index means it is based on the specified
-		 * MsgSrc slot, so that the first conn in this slot would
-		 * have an index of 0.
-		 */
-		virtual unsigned int connSrcRelativeIndex(
-				const Conn* c, unsigned int slot ) const = 0;
+		///////////////////////////////////////////////////////////////
+		// Information functions
+		///////////////////////////////////////////////////////////////
 		
-		/// Returns the size of the conn vector.
-		virtual unsigned int connSize() const = 0;
-
-		/**
-		 * This function returns the iterator to conn_ at the beginning
-		 * of the Src range specified by i. Note that we don't need
-		 * to know how the Element handles MsgSrcs here.
-		 */
-		virtual vector< Conn >::const_iterator
-				connSrcBegin( unsigned int src ) const = 0;
-
-		/**
-		 * This function returns the iterator to conn_ at the end
-		 * of the Src range specified by the src arg.
-		 * End here is in the same
-		 * sense as the end() operator on vectors: one past the last
-		 * entry. Note that we don't need
-		 * to know how the Element handles MsgSrcs here.
-		 * Note also that this call does NOT follow the linked list of
-		 * Srcs to the very end. It applies only to the Conns that are
-		 * on the src_ entry given by the src argument.
-		 * If you want to follow the linked list, use the nextSrc
-		 * function.
-		 * If you want to go to the very end of the linked list, use
-		 * connSrcVeryEnd
-		 */
-		virtual vector< Conn >::const_iterator
-				connSrcEnd( unsigned int src ) const = 0;
-
-		/**
-		 * This function returns to the iterator to conn_ at the end
-		 * of the linked list of srcs starting with the src arg.
-		 * End here is in the same
-		 * sense as the end() operator on vectors: one past the last.
-		 */
-		virtual vector< Conn >::const_iterator
-				connSrcVeryEnd( unsigned int src ) const = 0;
-
-		/**
-		 * Returns the index of the next src entry on this
-		 * linked list of srcs.
-		 * Returns zero at the end of the list.
-		 */
-		virtual unsigned int nextSrc( unsigned int src ) const = 0;
-		
-		virtual unsigned int destSize() const = 0;
-		
-		/**
-		 * This function returns the iterator to conn_ at the beginning
-		 * of the Dest range specified by i.
-		 */
-		virtual vector< Conn >::const_iterator
-				connDestBegin( unsigned int dest ) const = 0;
-
-		/**
-		 * This function returns the iterator to conn_ at the end
-		 * of the Dest range specified by i. End here is in the same
-		 * sense as the end() operator on vectors: one past the last
-		 * entry.
-		 */
-		virtual vector< Conn >::const_iterator
-				connDestEnd( unsigned int dest ) const = 0;
-
-		/// Sets up a connection between previously created Conn entries
-		virtual void connect( unsigned int myConn,
-			Element* targetElement, unsigned int targetConn) = 0;
-
-		/// Deletes a connection, one side has enough info.
-		virtual void disconnect( unsigned int connIndex ) = 0;
-
-		/// Deletes the local half of the connection.
-		virtual void deleteHalfConn( unsigned int connIndex ) = 0;
-
 		/// True if element is marked for deletion.
 		virtual bool isMarkedForDeletion() const = 0;
 
@@ -157,43 +66,10 @@ class Element
 		/// Before actual delete, mark all victims for message cleanup.
 		virtual void prepareForDeletion( bool stage ) = 0;
 
-		/** Makes a source conn and returns the index of the new conn.
-		 * It is placed on the appropriate location
-		 * according to which MsgSrc and MsgDests (if any) are involved
-		 * in this message. The FuncList of recvFuncs is compared
-		 * with existing ones to see if the new conn can just be
-		 * appended on an existing MsgSrc, or if a new one needs to
-		 * be set up to handle it.
-		 * The MsgDests have to be included here
-		 * because the conn may be for a shared message.
-		 * All the Srcs and Dests are updated in case the new Conn
-		 * has altered indices.
-		 */
-		virtual unsigned int insertConnOnSrc(
-				unsigned int src, FuncList& rf,
-				unsigned int dest, unsigned int nDest
-		) = 0;
-
-		virtual unsigned int insertSeparateConnOnSrc(
-				unsigned int src, FuncList& rf,
-				unsigned int dest, unsigned int nDest
-		) = 0;
-
-		/** Makes a dest conn and returns the index of the new conn.
-		 * Here we only have to worry about placing it on one or more
-		 * dests. If it were a shared message with any srcs then the
-		 * insertConnOnSrc function would have applied.
-		 * All the Dests are updated in case the new Conn
-		 * has altered indices. The Srcs are safe in the lower indices.
-		 */
-		virtual unsigned int insertConnOnDest(
-				unsigned int dest, unsigned int nDest
-		) = 0;
-
 		/**
 		 * Returns a pointer to the data stored on this Element.
 		 */
-		virtual void* data() const = 0;
+		virtual void* data( unsigned int eIndex ) const = 0;
 
 		/**
 		 * Returns number of entries in the data. 1 for SimpleElement,
@@ -201,9 +77,6 @@ class Element
 		 */
 		virtual unsigned int numEntries() const = 0;
 		
-		virtual unsigned int index() const = 0;
-
-
 		/** Returns a Finfo that matches the path given by 'name'.
 		 * This can be a general path including field indirection
 		 * and indices. If necessary the function will generate
@@ -218,19 +91,6 @@ class Element
 		 * merit that it is a const function
 		 */
 		virtual const Finfo* constFindFinfo( const string& name ) const = 0;
-
-		/**
-		 * Returns finfo ptr associated with specified conn index.
-		 * For ordinary finfos, this is a messy matter of comparing
-		 * the conn index with the ranges of MsgSrc or MsgDest
-		 * entries associated with the finfo. However, this search
-		 * happens after the dynamic finfos on the local element.
-		 * For Dynamic Finfos, this is fast: it just scans through
-		 * all finfos on the local finfo_ vector to find the one that 
-		 * has the matching connIndex.
-		 */
-		virtual const Finfo* findFinfo( unsigned int connIndex )
-				const = 0;
 
 		/**
 		 * Returns finfo ptr on local vector of Finfos. 0 if we are out
@@ -296,20 +156,6 @@ class Element
 		 */
 		virtual const Finfo* getThisFinfo() const = 0;
 
-
-		/**
-		 * Returns true if the specified connection is on the specified
-		 * MsgSrc
-		 */
-		virtual bool isConnOnSrc(
-			unsigned int src, unsigned int conn ) const = 0;
-
-		/**
-		 * Returns true if the specified connection is on the specified
-		 * MsgDest
-		 */
-		virtual bool isConnOnDest(
-			unsigned int dest, unsigned int conn ) const = 0;
 
 		/**
 		 * Returns the root element. This function is declared
@@ -379,7 +225,7 @@ class Element
 		virtual Element* innerDeepCopy( 
 				map< const Element*, Element* >& tree, int n )
 				const = 0;
-
+#if 0
 		/**
 		 * This function replaces Element* pointers in the conn_ vector
 		 * with corresponding ones from the copied tree.
@@ -400,6 +246,14 @@ class Element
 		 * Excludes child messages.
 		 */
 		virtual void copyMsg( map< const Element*, Element* >& tree ) = 0;
+#endif
+
+		/**
+ 		* Copies messages from current element to duplicate provided dest is
+ 		* also on tree.
+ 		*/
+		virtual void copyMessages( Element* dup, 
+			map< const Element*, Element* >& origDup ) const = 0;
 		
 		/**
 		 * Returns the memory use of the Element and its messages, 

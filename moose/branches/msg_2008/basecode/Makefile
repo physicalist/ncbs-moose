@@ -18,14 +18,10 @@ OBJ = \
 	Element.o	\
 	Id.o	\
 	IdManager.o	\
-	Conn.o	\
-	ConnInfo.o	\
 	RecvFunc.o \
 	SimpleElement.o	\
-	ArrayElement.o	\
-	ArrayWrapperElement.o	\
 	Copy.o \
-	send.o \
+	Send.o \
 	SrcFinfo.o \
 	DestFinfo.o \
 	ValueFinfo.o \
@@ -35,9 +31,6 @@ OBJ = \
 	GlobalMarkerFinfo.o \
 	Cinfo.o \
 	DynamicFinfo.o \
-	ExtFieldFinfo.o \
-	UnitTests.o \
-	TestBasecode.o \
 	strconv.o \
 	DerivedFtype.o \
 	SharedFtype.o \
@@ -49,6 +42,8 @@ OBJ = \
 	ParallelDummy.o \
 	Class.o	\
 	FuncVec.o \
+	UnitTests.o \
+	TestBasecode.o \
 
 HEADERS = \
 	header.h \
@@ -64,6 +59,9 @@ HEADERS = \
 
 #	AssignFinfo.h
 #	ArrayFinfo.o \
+#	ArrayElement.o	\
+#	ArrayWrapperElement.o	\
+#	ExtFieldFinfo.o \
 
 default: $(TARGET)
 
@@ -74,14 +72,14 @@ SrcFinfo.o:		SrcFinfo.h
 DestFinfo.o: 	DestFinfo.h
 ThisFinfo.o: 	ThisFinfo.h
 DynamicFinfo.o:	DynamicFinfo.h
-ValueFinfo.o:	ValueFinfo.h DynamicFinfo.h send.h
+ValueFinfo.o:	ValueFinfo.h DynamicFinfo.h Send.h
 ExtFieldFinfo.o:	ExtFieldFinfo.h
 DerivedFtype.o:	DerivedFtype.h
 SharedFtype.o:	SharedFtype.h
 SharedFinfo.o:	SharedFinfo.h SharedFtype.h
 SolveFinfo.o:	ThisFinfo.h SolveFinfo.h
 Cinfo.o:		Cinfo.h
-UnitTests.o:	MsgSrc.h MsgDest.h SimpleElement.h DerivedFtype.h SrcFinfo.h DestFinfo.h Cinfo.h DynamicFinfo.h ValueFinfo.h send.h ValueFtype.h
+UnitTests.o:	MsgSrc.h MsgDest.h SimpleElement.h DerivedFtype.h SrcFinfo.h DestFinfo.h Cinfo.h DynamicFinfo.h ValueFinfo.h Send.h ValueFtype.h
 LookupFinfo.o:	LookupFinfo.h DynamicFinfo.h LookupFtype.h
 DeletionMarkerFinfo.o: DeletionMarkerFinfo.h
 GlobalMarkerFinfo.o: DeletionMarkerFinfo.h GlobalMarkerFinfo.h
