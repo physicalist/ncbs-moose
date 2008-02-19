@@ -152,7 +152,7 @@ class All2AllConnTainer: public ConnTainer
 			ConnTainer( e1, e2, msg1, msg2 )
 		{;}
 
-		Conn* conn( unsigned int eIndex, bool isReverse ) {
+		Conn* conn( unsigned int eIndex, bool isReverse ) const {
 			numIter_++; // For reference counting. Do we need it?
 			if ( isReverse )
 				return new ReverseAll2AllConn( this, eIndex );
