@@ -146,7 +146,7 @@ class SimpleConnTainer: public ConnTainer
 			i1_( i1 ), i2_( i2 )
 		{;}
 
-		Conn* conn( unsigned int eIndex, bool isReverse ) {
+		Conn* conn( unsigned int eIndex, bool isReverse ) const {
 			numIter_++; // For reference counting. Do we need it?
 			if ( isReverse )
 				return new ReverseSimpleConn( this, eIndex );

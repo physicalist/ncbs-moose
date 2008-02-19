@@ -47,6 +47,7 @@ class Element
 		 * Returns the identified Msg
 		 */
 		virtual const Msg* msg( unsigned int msgNum ) const = 0;
+		virtual Msg* varMsg( unsigned int msgNum ) = 0;
 
 		/**
 		 * Ensures that the requested msg is allocated

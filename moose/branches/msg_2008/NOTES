@@ -5922,4 +5922,15 @@ Bypassed. Now masses of errors in SharedFinfo.
 Compilation has reached UnitTests in basecode. I should check in as it is
 a private branch and there has been so much work.
 
+Checked in as revision 411 with unit test flags on, Smoldyn off, -g, GSL
+
+==============================================================================
+18 Feb 2008
+Slowly inching through the debugging/compiling process for UnitTests.cpp
+
+==============================================================================
+19 Feb 2008
+Completed compilation of basecode. Much of the UnitTests have been removed,
+because the calls don't make sense in the new messaging.
+
 ==============================================================================

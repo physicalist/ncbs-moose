@@ -26,8 +26,6 @@ class SimpleElement: public Element
 			friend void finfoLookupTest(); // to do these tests
 			static int numInstances;
 #endif
-		SimpleElement( Id id, const string& name );
-
 		SimpleElement(
 				Id id,
 				const std::string& name, 
@@ -68,6 +66,7 @@ class SimpleElement: public Element
 		 * Returns a pointer to the specified msg.
 		 */
 		const Msg* msg( unsigned int msgNum ) const;
+		Msg* varMsg( unsigned int msgNum );
 
 		void checkMsgAlloc( unsigned int num );
 

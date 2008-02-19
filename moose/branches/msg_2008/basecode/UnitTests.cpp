@@ -19,132 +19,53 @@
 void connTest()
 {
 	// SimpleElement( name, srcSize, destSize );
-	cout << "Testing conn basic stuff";
+	cout << "Testing connections basic stuff";
 	SimpleElement e1( Id::scratchId(), "e1" );
 	SimpleElement e2( Id::scratchId(), "e2" );
-	SetConn c1( &e1, 1234 );
-	SetConn c2( &e2, 3241 );
-	ASSERT( c1.targetElement() == &e1, "targetElement access" );
-	ASSERT( c1.targetEindex() == 1234, "targetIndex access" );
-	
-	unsigned int ic1 = e1.insertConn( 0, 1, 0, 0 );
-	unsigned int ic2 = e2.insertConn( 0, 0, 0, 1 );
-	e1.connect( ic1, &e2, ic2 );
-	ASSERT( e1.lookupConn( ic1 )->targetElement() == &e2,
-					"connected targetElement" );
-	ASSERT( e1.lookupConn( ic1 )->targetIndex() == ic2,
-					"connected targetIndex" );
+	SetConn sc1( &e1, 1234 );
+	SetConn sc2( &e2, 3241 );
+	ASSERT( sc1.targetElement() == &e1, "targetElement access" );
+	ASSERT( sc1.targetEindex() == 1234, "targetIndex access" );
 
 	/**
-	 * Here we set up a conn at range 1, to see if it correctly handles
-	 * updating conn indices when we subsequently add conns at range 0.
+	 * Checking ConnTainers after an addmsg
 	 */
-	ic1 = e1.insertConn( 1, 1, 0, 0 );
-	ic2 = e2.insertConn( 0, 0, 1, 1 );
-	e1.connect( ic1, &e2, ic2 );
-	ASSERT( e1.lookupConn( ic1 )->targetIndex() == ic2,
-					"Testing conn indices following insert: 1" );
-	ASSERT( e1.lookupConn( ic2 )->targetIndex() == ic1,
-					"Testing conn indices following insert: 2" );
-	ASSERT( e1.lookupConn( ic1 )->targetIndex() == 1,
-					"Testing conn indices following insert: 3" );
-	ASSERT( e2.lookupConn( ic2 )->targetIndex() == 1,
-					"Testing conn indices following insert: 4" );
+	bool ret = Msg::add( &e1, &e2, 1, 2 );
+	ASSERT( ret, "connected srcElement" );
+	Msg* m1 = e1.varMsg( 1 );
+	Msg* m2 = e2.varMsg( 2 );
+	const ConnTainer* ct1 = *( m1->begin() );
+	const ConnTainer* ct2 = *( m2->begin() );
+	ASSERT( ct1 == ct2, "checking ConnTainers" );
 
-	ASSERT( e1.lookupConn( ic1 )->sourceElement() == &e1,
-					"sourceElement()" );
-	ASSERT( e1.lookupConn( ic1 )->sourceIndex( ) == ic1,
-					"sourceIndex()" );
+	ASSERT( ct1->e1() == &e1, "connected srcElement" );
+	ASSERT( ct1->e2() == &e2, "connected targetElement" );
+	ASSERT( ct1->msg1() == 1, "SrcMsg right" );
+	ASSERT( ct1->msg2() == 2, "DestMsg OK" );
 
-	ASSERT( e2.lookupConn( ic2 )->sourceElement() == &e2,
-					"sourceElement()" );
-	ASSERT( e2.lookupConn( ic2 )->sourceIndex( ) == ic2,
-					"sourceIndex()" );
+	ASSERT( ct1->size() == 1, "ConnTainer size" );
 
-	SimpleElement e3(  Id::scratchId(), "e3", 2, 2 );
-	unsigned int ic3 = e3.insertConn( 0, 1, 0, 0 );
-	ic2 = e2.insertConn( 0, 0, 0, 1 );
-	e3.connect( ic3, &e2, ic2 );
-	ASSERT( ic3 == 0 && ic2 == 1,
-					"Testing conn indices following insert: 5" );
-	ASSERT( e3.lookupConn( ic3 )->targetIndex() == 1,
-					"Testing conn indices following insert: 6" );
+	Conn* c1 = ct1->conn( 0, 0 );
+	Conn* c2 = ct2->conn( 0, 0 );
 
-	ASSERT( e1.lookupConn( ic1 )->targetIndex() == 2,
-		"Testing conn indices following insert: This is the key one" );
+	ASSERT( c1->targetElement() == &e2, "Conn: targetElement" );
+	ASSERT( c2->targetElement() == &e1, "Conn: targetElement" );
+	ASSERT( c1->targetEindex() == 0, "Conn: targetElement" );
+	ASSERT( c2->targetEindex() == 0, "Conn: targetElement" );
+	ASSERT( c1->targetMsg() == 0, "Conn: targetElement" );
+	ASSERT( c2->targetMsg() == 0, "Conn: targetElement" );
 
-
-	ASSERT( e1.lookupConn( ic1 )->sourceElement() == &e1,
-					"sourceElement()" );
-	ASSERT( e1.lookupConn( ic1 )->sourceIndex( ) == ic1,
-					"sourceIndex()" );
-
-	ASSERT( e2.lookupConn( ic2 )->sourceElement() == &e2,
-					"sourceElement()" );
-	ASSERT( e2.lookupConn( ic2 )->sourceIndex( ) == ic2,
-					"sourceIndex()" );
-
-	ASSERT( e3.lookupConn( ic3 )->sourceElement() == &e3,
-					"sourceElement()" );
-	ASSERT( e3.lookupConn( ic3 )->sourceIndex( ) == ic3,
-					"sourceIndex()" );
-
-	/*
-	 * The current connections are:
-	 * e1_r0_c0 -> e2_r0_c0
-	 * e3_r0_c0 -> e2_r0_c1
-	 * e1_r1_c1 -> e2_r1_c2
-	 */
-	
-	ASSERT( e2.lookupConn( 0 )->targetIndex() == 0, "e2 target" );
-	ASSERT( e2.lookupConn( 0 )->targetElement() == &e1, "e2 target" );
-	ASSERT( e2.lookupConn( 1 )->targetIndex() == 0, "Check e2 target 2" );
-	ASSERT( e2.lookupConn( 1 )->targetElement() == &e3, "Check e2 target 2" );
-	ASSERT( e2.lookupConn( 2 )->targetIndex() == 1, "Check e2 target 3" );
-	ASSERT( e2.lookupConn( 2 )->targetElement() == &e1, "Check e2 target 3" );
 	
 	/**
 	 * Here we delete a conn and check that the ranges and indices
 	 * are properly fixed up.
 	 */
-	e1.disconnect( 0 );
+	m1->drop( static_cast< unsigned int >( 0 ) );
 	/*
 	 * This should leave us with:
 	 * e3_r0_c0 -> e2_r0_c0
 	 * e1_r1_c0 -> e2_r1_c1
 	 */
-	ASSERT( e1.connSize() == 1, "Check conn size after delete" );
-	ASSERT( e2.connSize() == 2, "Check conn size after delete" );
-	ASSERT( e3.connSize() == 1, "Check conn size after delete" );
-
-	ASSERT( e1.lookupConn( 0 )->targetIndex() == 1, "Check e1 target" );
-	ASSERT( e1.lookupConn( 0 )->targetElement() == &e2, "Check e1 target" );
-	ASSERT( e2.lookupConn( 0 )->targetIndex() == 0, "Check e2 target" );
-	ASSERT( e2.lookupConn( 0 )->targetElement() == &e3, "Check e2 target" );
-	ASSERT( e2.lookupConn( 1 )->targetIndex() == 0, "Check e2 target 2" );
-	ASSERT( e2.lookupConn( 1 )->targetElement() == &e1, "Check e2 target 2" );
-	ASSERT( e3.lookupConn( 0 )->targetIndex() == 0, "Check e3 target" );
-	ASSERT( e3.lookupConn( 0 )->targetElement() == &e2, "Check e3 target" );
-
-
-	ASSERT( e1.lookupConn( 0 )->sourceElement() == &e1,
-					"sourceElement()" );
-	ASSERT( e1.lookupConn( 0 )->sourceIndex( ) == 0,
-					"sourceIndex()" );
-
-	ASSERT( e2.lookupConn( 0 )->sourceElement() == &e2,
-					"sourceElement()" );
-	ASSERT( e2.lookupConn( 0 )->sourceIndex( ) == 0,
-					"sourceIndex()" );
-	ASSERT( e2.lookupConn( 1 )->sourceElement() == &e2,
-					"sourceElement()" );
-	ASSERT( e2.lookupConn( 1 )->sourceIndex( ) == 1,
-					"sourceIndex()" );
-
-	ASSERT( e3.lookupConn( 0 )->sourceElement() == &e3,
-					"sourceElement()" );
-	ASSERT( e3.lookupConn( 0 )->sourceIndex( ) == 0,
-					"sourceIndex()" );
 }
 
 /**
@@ -202,157 +123,8 @@ void msgSrcTest()
 
 	// SimpleElement( name, srcSize, destSize );
 
-	SimpleElement e1(  Id::scratchId(), "e1", 4, 2 );
-	SimpleElement e2(  Id::scratchId(), "e2", 4, 2 );
-
-	// unsigned int insertConnOnSrc( src, FuncList& rf, dest, nDest );
-	unsigned int ic1 = e1.insertConnOnSrc( 1, fl, 0, 1 );
-	unsigned int ic2 = e2.insertConnOnDest( 0, 1 );
-
-	cout << "\nTesting Conn creation on shared src and dest";
-
-	ASSERT( e1.src_[ 1 ].begin() == 0, "Conn creation on src" );
-	ASSERT( e1.src_[ 1 ].end() == 1, "Conn creation on src" );
-	ASSERT( e1.src_[ 2 ].begin() == 0, "Conn creation on src" );
-	ASSERT( e1.src_[ 2 ].end() == 1, "Conn creation on src" );
-	ASSERT( e1.src_[ 3 ].begin() == 0, "Conn creation on src" );
-	ASSERT( e1.src_[ 3 ].end() == 1, "Conn creation on src" );
-
-	ASSERT( e1.dest_[ 0 ].begin() == 0, "Shared dest creation" );
-	ASSERT( e1.dest_[ 0 ].end() == 1, "Shared dest creation" );
-
-
-	e1.connect( ic1, &e2, ic2 );
-
-	ASSERT( e1.lookupConn( ic1 )->targetElement() == &e2,
-					"connected targetElement" );
-	ASSERT( e1.lookupConn( ic1 )->targetIndex() == ic2,
-					"connected targetIndex" );
-
-	targetIndex.push_back( 0 );
-	funcNum.push_back( 1 );
-	funcCounter = 0;
-	sourceName = "e1";
-	targetName = "e2";
-	send0( &e1, Slot( 1, 0 ) );
-
-	// Something funny here about msgdest ordering wrt msgsrc
-	cout << "\nTesting insertion of conns and increment of later srcs";
-	SimpleElement e3(  Id::scratchId(), "e3", 4, 2 );
-	FuncList fl2;
-	fl2.push_back( &msgSrcTestFunc2 );
-	unsigned int ic1a = e1.insertConnOnSrc( 0, fl2, 0, 0 );
-	unsigned int ic3 = e3.insertConnOnDest( 0, 1 );
-	
-	e1.connect( ic1a, &e3, ic3 );
-
-
-	ASSERT( e1.src_[ 0 ].begin() == 0, "Conn increment" );
-	ASSERT( e1.src_[ 0 ].end() == 1, "Conn increment" );
-	ASSERT( e1.src_[ 1 ].begin() == 1, "Conn increment on src" );
-	ASSERT( e1.src_[ 1 ].end() == 2, "Conn increment on src" );
-	ASSERT( e1.src_[ 2 ].begin() == 1, "Conn increment on src" );
-	ASSERT( e1.src_[ 2 ].end() == 2, "Conn increment on src" );
-	ASSERT( e1.src_[ 3 ].begin() == 1, "Conn increment on src" );
-	ASSERT( e1.src_[ 3 ].end() == 2, "Conn increment on src" );
-	
-	ASSERT( e1.dest_[ 0 ].begin() == 1, "Shared dest creation" );
-	ASSERT( e1.dest_[ 0 ].end() == 2, "Shared dest creation" );
-
-	targetIndex[0] = 0;
-	funcNum[0] = 2;
-	funcCounter = 0;
-	sourceName = "e1";
-	targetName = "e3";
-	send0( &e1, Slot( 0, 0 ) );
-
-	targetIndex[0] = 0;
-	funcNum[0] = 1;
-	funcCounter = 0;
-	sourceName = "e1";
-	targetName = "e2";
-	send0( &e1, Slot( 1, 0 ) );
-
-	// Here try out the formation of link lists on the src.
-	// We make a unique combination of src funcs and add a new conn
-	// with it.
-	cout << "\nTesting MsgSrc link list formation for shared msgs";
-	fl[2] = msgSrcTestFunc4;
-	unsigned int ic1b = e1.insertConnOnSrc( 1, fl, 0, 1 );
-	unsigned int ic2b = e2.insertConnOnDest( 0, 1 );
-	e1.connect( ic1b, &e2, ic2b );
-
-	targetIndex[0] = 0;
-	targetIndex.push_back( 1 );
-	funcNum[0] = 1;
-	funcNum.push_back( 1 );
-	funcCounter = 0;
-	sourceName = "e1";
-	targetName = "e2";
-	send0( &e1, Slot( 1, 0 ) );
-
-	targetIndex[0] = 0;
-	targetIndex[1] = 1;
-	funcNum[0] = 2;
-	funcNum[1] = 2;
-	funcCounter = 0;
-	sourceName = "e1";
-	targetName = "e2";
-	send0( &e1, Slot( 2, 0 ) );
-
-	targetIndex[0] = 0;
-	targetIndex[1] = 1;
-	funcNum[0] = 3;
-	funcNum[1] = 4;
-	funcCounter = 0;
-	sourceName = "e1";
-	targetName = "e2";
-	send0( &e1, Slot( 3, 0 ) );
-
-	ASSERT( e1.src_.size() == 7, "Check formation of link list");
-	ASSERT( e1.src_[ 0 ].begin() == 0, "Conn increment" );
-	ASSERT( e1.src_[ 0 ].end() == 1, "Conn increment" );
-	ASSERT( e1.src_[ 1 ].begin() == 1, "Conn increment on src" );
-	ASSERT( e1.src_[ 1 ].end() == 2, "Conn increment on src" );
-	ASSERT( e1.src_[ 2 ].begin() == 1, "Conn increment on src" );
-	ASSERT( e1.src_[ 2 ].end() == 2, "Conn increment on src" );
-	ASSERT( e1.src_[ 3 ].begin() == 1, "Conn increment on src" );
-	ASSERT( e1.src_[ 3 ].end() == 2, "Conn increment on src" );
-
-
-	ASSERT( e1.src_[ 4 ].begin() == 2, "Conn increment on src" );
-	ASSERT( e1.src_[ 4 ].end() == 3, "Conn increment on src" );
-	ASSERT( e1.src_[ 5 ].begin() == 2, "Conn increment on src" );
-	ASSERT( e1.src_[ 5 ].end() == 3, "Conn increment on src" );
-	ASSERT( e1.src_[ 6 ].begin() == 2, "Conn increment on src" );
-	ASSERT( e1.src_[ 6 ].end() == 3, "Conn increment on src" );
-
-	ASSERT( e1.dest_[ 0 ].begin() == 1, "Shared dest creation" );
-	ASSERT( e1.dest_[ 0 ].end() == 3, "Shared dest creation" );
-
-
-	cout << "\nTesting conn deletion and updates of src and dests";
-	e1.disconnect( ic1a );
-
-	ASSERT( e1.src_[ 0 ].begin() == 0, "Conn delete" );
-	ASSERT( e1.src_[ 0 ].end() == 0, "Conn delete" );
-	ASSERT( e1.src_[ 1 ].begin() == 0, "Conn delete on src" );
-	ASSERT( e1.src_[ 1 ].end() == 1, "Conn delete on src" );
-	ASSERT( e1.src_[ 2 ].begin() == 0, "Conn delete on src" );
-	ASSERT( e1.src_[ 2 ].end() == 1, "Conn delete on src" );
-	ASSERT( e1.src_[ 3 ].begin() == 0, "Conn delete on src" );
-	ASSERT( e1.src_[ 3 ].end() == 1, "Conn delete on src" );
-
-
-	ASSERT( e1.src_[ 4 ].begin() == 1, "Conn delete on src" );
-	ASSERT( e1.src_[ 4 ].end() == 2, "Conn delete on src" );
-	ASSERT( e1.src_[ 5 ].begin() == 1, "Conn delete on src" );
-	ASSERT( e1.src_[ 5 ].end() == 2, "Conn delete on src" );
-	ASSERT( e1.src_[ 6 ].begin() == 1, "Conn delete on src" );
-	ASSERT( e1.src_[ 6 ].end() == 2, "Conn delete on src" );
-
-	ASSERT( e1.dest_[ 0 ].begin() == 0, "Shared dest update on delete" );
-	ASSERT( e1.dest_[ 0 ].end() == 2, "Shared dest update on delete" );
+	SimpleElement e1(  Id::scratchId(), "e1" );
+	SimpleElement e2(  Id::scratchId(), "e2" );
 
 	cout << "\nCompleted msgSrcTest()\n";
 }
@@ -372,13 +144,13 @@ void msgFinfoTest()
 	
 	double e2data = 1.5;
 
-	SimpleElement e1(  Id::scratchId(), "e1", 4, 2 );
-	SimpleElement e2(  Id::scratchId(), "e2", 4, 2, &e2data );
+	SimpleElement e1(  Id::scratchId(), "e1" );
+	SimpleElement e2(  Id::scratchId(), "e2", &e2data );
 	Ftype0 zft;
 	ValueFtype1< double > dft;
 
-	SrcFinfo sf1( "sf1", &zft, 0 );
-	SrcFinfo sf2( "sf2", &dft, 1 );
+	SrcFinfo sf1( "sf1", &zft );
+	SrcFinfo sf2( "sf2", &dft );
 
 	DestFinfo df1( "df1", &zft, msgSrcTestFunc1, 0 );
 	DestFinfo df2( "df2", &dft, 
@@ -393,11 +165,14 @@ void msgFinfoTest()
 	ASSERT (sf2.add( &e1, &e2, &df2 ) == 1,
 					"dbl to dbl message" );
 
-	ASSERT( e1.src_[ 0 ].begin() == 0, "Finfo Msg" );
-	ASSERT( e1.src_[ 0 ].end() == 1, "Finfo Msg" );
-	ASSERT( e1.src_[ 1 ].begin() == 1, "Finfo Msg" );
-	ASSERT( e1.src_[ 1 ].end() == 2, "Finfo Msg" );
+	ASSERT( e1.msg_[ 0 ].size() == 1, "Finfo Msg" );
+	ASSERT( e1.msg_[ 1 ].size() == 1, "Finfo Msg" );
+	ASSERT( e1.msg_[ 2 ].size() == 1, "Finfo Msg" );
+	ASSERT( e1.msg_[ 3 ].size() == 1, "Finfo Msg" );
 
+
+	ASSERT( ( *e1.msg_[ 0 ].begin() )->size() == 1, "Finfo Msg" );
+	ASSERT( ( *e1.msg_[ 1 ].begin() )->size() == 1, "Finfo Msg" );
 
 	targetIndex[0] = 1;
 	targetIndex[1] = 0;
@@ -409,13 +184,13 @@ void msgFinfoTest()
 
 	ASSERT( e2data == 1.5, "Testing before double message passing" );
 
-	send1< double >( &e1, Slot( 1, 0 ), 1234.5678 );
+	send1< double >( &e1, 0, Slot( 1, 0 ), 1234.5678 );
 
 	ASSERT( e2data == 1234.5678, "Testing after double message passing" );
 	cout << "\nCompleted msgFinfoTest()\n";
 }
 
-#define DATA(e) reinterpret_cast< double* >( e->data() )
+#define DATA(e) reinterpret_cast< double* >( e->data( 0 ) )
 static void sum( Conn* c, double val ) {
 	*static_cast< double* >( c->data() ) += val;
 }
@@ -443,8 +218,8 @@ void proc( const Conn* c )
 	// For now I'll set them to the correct value, but you should
 	// suspect these if there are any further problems with the
 	// unit tests.
-	send1< double >( c->targetElement(), Slot( 1, 0 ), ret );
-	send1< double >( c->targetElement(), Slot( 2, 0 ), ret );
+	send1< double >( c->targetElement(), 0, Slot( 1, 0 ), ret );
+	send1< double >( c->targetElement(), 0, Slot( 2, 0 ), ret );
 }
 
 #include <map>
@@ -499,16 +274,16 @@ void cinfoTest()
 	ASSERT( startIndex == sumSlotIndex, 
 					"getFinfoIndex during cinfo initialization" );
 	ASSERT( dynamic_cast< DestFinfo* >( testFinfos[0] )->
-					destIndex_ == 0 + startIndex.msg(),
+					msg_ == 0 + startIndex.msg(),
 					"msg counting during cinfo inititialization" );
 	ASSERT( dynamic_cast< DestFinfo* >( testFinfos[1] )->
-					destIndex_ == 1 + startIndex.msg(),
+					msg_ == 1 + startIndex.msg(),
 					"msg counting during cinfo inititialization" );
 	ASSERT( dynamic_cast< DestFinfo* >( testFinfos[2] )->
-					destIndex_ == 2 + startIndex.msg(),
+					msg_ == 2 + startIndex.msg(),
 					"msg counting during cinfo inititialization" );
 	ASSERT( dynamic_cast< DestFinfo* >( testFinfos[3] )->
-					destIndex_ == 3 + startIndex.msg(),
+					msg_ == 3 + startIndex.msg(),
 					"msg counting during cinfo inititialization" );
 
 	// startIndex.msg() = testFinfos[4]->getSlot();
@@ -522,16 +297,16 @@ void cinfoTest()
 					"sumOutIndex during cinfo initialization" );
 
 	ASSERT( dynamic_cast< SrcFinfo* >( testFinfos[4] )->
-					srcIndex_ == 0 + startIndex.msg(),
+					msg_ == 0 + startIndex.msg(),
 					"msg counting during cinfo inititialization" );
 	ASSERT( dynamic_cast< SrcFinfo* >( testFinfos[5] )->
-					srcIndex_ == 1 + startIndex.msg(),
+					msg_ == 1 + startIndex.msg(),
 					"msg counting during cinfo inititialization" );
 	ASSERT( dynamic_cast< SrcFinfo* >( testFinfos[6] )->
-					srcIndex_ == 2 + startIndex.msg(),
+					msg_ == 2 + startIndex.msg(),
 					"msg counting during cinfo inititialization" );
 	ASSERT( dynamic_cast< SrcFinfo* >( testFinfos[7] )->
-					srcIndex_ == 3 + startIndex.msg(),
+					msg_ == 3 + startIndex.msg(),
 					"msg counting during cinfo inititialization" );
 
 	Element* clock = testclass.create(  Id::scratchId(), "clock" );
@@ -564,20 +339,11 @@ void cinfoTest()
 	SimpleElement* se1 = static_cast< SimpleElement* >( e1 );
 
 	testFinfos[4]->add( e1, e2, testFinfos[0] );
-	ASSERT( se1->src_.size() == 4 + startIndex.msg(), "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].begin() == 0 , "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].end() == 1 , "" );
-	ASSERT( se1->conn_.size() == 1, "" );
-	ASSERT( se1->conn_[0].targetElement()->name() == "e2", "" );
-	ASSERT( se1->conn_[0].targetIndex() == 0, "" );
+	ASSERT( se1->msg_.size() == 4 + startIndex.msg(), "" );
+	// Fill in stuff here for checking that the Conn points where it should
 
 	testFinfos[4]->add( e1, e3, testFinfos[0] );
-	ASSERT( se1->src_.size() == 4 + startIndex.msg(), "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].begin() == 0 , "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].end() == 2 , "" );
-	ASSERT( se1->conn_.size() == 2, "" );
-	ASSERT( se1->conn_[1].targetElement()->name() == "e3", "" );
-	ASSERT( se1->conn_[1].targetIndex() == 0, "" );
+	ASSERT( se1->msg_.size() == 4 + startIndex.msg(), "" );
 
 	testFinfos[4]->add( e2, e3, testFinfos[0] );
 	testFinfos[5]->add( e3, e1, testFinfos[1] );
@@ -593,75 +359,46 @@ void cinfoTest()
 	Slot printOutSlotIndex = testclass.getSlot( "printout" );
 	Slot procOutSlotIndex = testclass.getSlot( "procout" );
 
-	ASSERT( se1->src_.size() == 4 + startIndex.msg(), "" );
-	ASSERT( se1->conn_.size() == 5, "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].begin() == 0 , "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].end() == 2 , "" );
-	ASSERT( se1->src_[subOutSlotIndex.msg()].begin() == 2 , "" );
-	ASSERT( se1->src_[subOutSlotIndex.msg()].end() == 2 , "" );
-	ASSERT( se1->src_[printOutSlotIndex.msg()].begin() == 2 , "" );
-	ASSERT( se1->src_[printOutSlotIndex.msg()].end() == 2 , "" );
-	ASSERT( se1->src_[procOutSlotIndex.msg()].begin() == 2 , "" );
-	ASSERT( se1->src_[procOutSlotIndex.msg()].end() == 2 , "" );
+	ASSERT( se1->msg_.size() == 4 + startIndex.msg(), "" );
 
-	
 	Slot subSlotIndex = testclass.getSlot( "sub" );
 	Slot printSlotIndex = testclass.getSlot( "print" );
 	Slot procSlotIndex = testclass.getSlot( "proc" );
-	ASSERT( se1->dest_.size() == 4 + sumSlotIndex.msg(), "" );
-	ASSERT( se1->dest_[sumSlotIndex.msg()].begin() == 2 , "" );
-	ASSERT( se1->dest_[sumSlotIndex.msg()].end() == 2 , "" );
-	ASSERT( se1->dest_[subSlotIndex.msg()].begin() == 2 , "" );
-	ASSERT( se1->dest_[subSlotIndex.msg()].end() == 3 , "" );
-	ASSERT( se1->dest_[printSlotIndex.msg()].begin() == 3 , "" );
-	ASSERT( se1->dest_[printSlotIndex.msg()].end() == 4 , "" );
-	ASSERT( se1->dest_[procSlotIndex.msg()].begin() == 4 , "" );
-	ASSERT( se1->dest_[procSlotIndex.msg()].end() == 5 , "" );
-	ASSERT( se1->conn_.size() == 5, "" );
+	ASSERT( se1->msg_.size() == 4 + sumSlotIndex.msg(), "" );
 
 	// e2->conn[0] goes to e3 as it is a msgsrc
-	ASSERT( se1->conn_[0].targetElement()->name() == "e2", "" );
-	ASSERT( se1->conn_[0].targetIndex() == 1, "" );
 
 	// e3->conn[0] goes to e1 as it is a msgsrc, so this comes after.
-	ASSERT( se1->conn_[1].targetElement()->name() == "e3", "" );
-	ASSERT( se1->conn_[1].targetIndex() == 1, "" );
 
 	// Now we are into the msgdests on e1.
 	// e3->conn[0] goes to e1 as it is a msgsrc.
-	ASSERT( se1->conn_[2].targetElement()->name() == "e3", "" );
-	ASSERT( se1->conn_[2].targetIndex() == 0, "" );
-	ASSERT( se1->conn_[3].targetElement()->name() == "clock", "" );
-	ASSERT( se1->conn_[3].targetIndex() == 0, "" );
-	ASSERT( se1->conn_[4].targetElement()->name() == "clock", "" );
-	ASSERT( se1->conn_[4].targetIndex() == 3, "" );
 
 	*DATA( e1 ) = 1;
 	*DATA( e2 ) = 1;
 	*DATA( e3 ) = 1;
 
-	send0( clock, printOutSlotIndex ); // print
-	ASSERT( *reinterpret_cast< double* >( e1->data() ) == 1, "msg1" );
-	ASSERT( *reinterpret_cast< double* >( e2->data() ) == 1, "msg2" );
-	ASSERT( *reinterpret_cast< double* >( e3->data() ) == 1, "msg3" );
+	send0( clock, 0, printOutSlotIndex ); // print
+	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 1, "msg1" );
+	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 1, "msg2" );
+	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 1, "msg3" );
 
-	send0( clock, procOutSlotIndex ); // process
-	send0( clock, printOutSlotIndex ); // print
-	ASSERT( *reinterpret_cast< double* >( e1->data() ) == -3, "msg1" );
-	ASSERT( *reinterpret_cast< double* >( e2->data() ) == 2, "msg2" );
-	ASSERT( *reinterpret_cast< double* >( e3->data() ) == 4, "msg3" );
+	send0( clock, 0, procOutSlotIndex ); // process
+	send0( clock, 0, printOutSlotIndex ); // print
+	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == -3, "msg1" );
+	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 2, "msg2" );
+	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 4, "msg3" );
 
-	send0( clock, procOutSlotIndex ); // process
-	send0( clock, printOutSlotIndex ); // print
-	ASSERT( *reinterpret_cast< double* >( e1->data() ) == -3, "msg1" );
-	ASSERT( *reinterpret_cast< double* >( e2->data() ) == -1, "msg2" );
-	ASSERT( *reinterpret_cast< double* >( e3->data() ) == 0, "msg3" );
+	send0( clock, 0, procOutSlotIndex ); // process
+	send0( clock, 0, printOutSlotIndex ); // print
+	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == -3, "msg1" );
+	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == -1, "msg2" );
+	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 0, "msg3" );
 
-	send0( clock, procOutSlotIndex ); // process
-	send0( clock, printOutSlotIndex ); // print
-	ASSERT( *reinterpret_cast< double* >( e1->data() ) == 4, "msg1" );
-	ASSERT( *reinterpret_cast< double* >( e2->data() ) == -4, "msg2" );
-	ASSERT( *reinterpret_cast< double* >( e3->data() ) == -7, "msg3" );
+	send0( clock, 0, procOutSlotIndex ); // process
+	send0( clock, 0, printOutSlotIndex ); // print
+	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 4, "msg1" );
+	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == -4, "msg2" );
+	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == -7, "msg3" );
 
 	cout << "\nCompleted cinfoTest() including some messaging\n";
 }
@@ -749,21 +486,11 @@ void finfoLookupTest()
 	
 	Slot sumOutSlotIndex = testclass.getSlot( "sumout" );
 
-	ASSERT( se1->src_.size() == 4 + sumOutSlotIndex.msg(), "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].begin() == 0 , "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].end() == 1 , "" );
-	ASSERT( se1->conn_.size() == 1, "" );
-	ASSERT( se1->conn_[0].targetElement()->name() == "e2", "" );
-	ASSERT( se1->conn_[0].targetIndex() == 0, "" );
+	ASSERT( se1->msg_.size() == 4 + sumOutSlotIndex.msg(), "" );
 
 	e1->findFinfo( "sumout" )->add( e1, e3, e3->findFinfo( "sum" ) );
 	// testFinfos[4]->add( e1, e3, testFinfos[0] );
-	ASSERT( se1->src_.size() == 4 + sumOutSlotIndex.msg(), "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].begin() == 0 , "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].end() == 2 , "" );
-	ASSERT( se1->conn_.size() == 2, "" );
-	ASSERT( se1->conn_[1].targetElement()->name() == "e3", "" );
-	ASSERT( se1->conn_[1].targetIndex() == 0, "" );
+	ASSERT( se1->msg_.size() == 4 + sumOutSlotIndex.msg(), "" );
 
 	e2->findFinfo( "sumout" )->add( e2, e3, e3->findFinfo( "sum" ) );
 	e3->findFinfo( "subout" )->add( e3, e1, e1->findFinfo( "sub" ) );
@@ -787,76 +514,48 @@ void finfoLookupTest()
 	Slot printOutSlotIndex = testclass.getSlot( "printout" );
 	Slot procOutSlotIndex = testclass.getSlot( "procout" );
 
-	ASSERT( se1->src_.size() == 4 + sumOutSlotIndex.msg(), "" );
-	ASSERT( se1->conn_.size() == 5, "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].begin() == 0 , "" );
-	ASSERT( se1->src_[sumOutSlotIndex.msg()].end() == 2 , "" );
-	ASSERT( se1->src_[subOutSlotIndex.msg()].begin() == 2 , "" );
-	ASSERT( se1->src_[subOutSlotIndex.msg()].end() == 2 , "" );
-	ASSERT( se1->src_[printOutSlotIndex.msg()].begin() == 2 , "" );
-	ASSERT( se1->src_[printOutSlotIndex.msg()].end() == 2 , "" );
-	ASSERT( se1->src_[procOutSlotIndex.msg()].begin() == 2 , "" );
-	ASSERT( se1->src_[procOutSlotIndex.msg()].end() == 2 , "" );
+	ASSERT( se1->msg_.size() == 4 + sumOutSlotIndex.msg(), "" );
 
 	Slot sumSlotIndex = testclass.getSlot( "sum" );
 	Slot subSlotIndex = testclass.getSlot( "sub" );
 	Slot printSlotIndex = testclass.getSlot( "print" );
 	Slot procSlotIndex = testclass.getSlot( "proc" );
 
-	ASSERT( se1->dest_.size() == 4 + sumSlotIndex.msg(), "" );
-	ASSERT( se1->dest_[sumSlotIndex.msg()].begin() == 2 , "" );
-	ASSERT( se1->dest_[sumSlotIndex.msg()].end() == 2 , "" );
-	ASSERT( se1->dest_[subSlotIndex.msg()].begin() == 2 , "" );
-	ASSERT( se1->dest_[subSlotIndex.msg()].end() == 3 , "" );
-	ASSERT( se1->dest_[printSlotIndex.msg()].begin() == 3 , "" );
-	ASSERT( se1->dest_[printSlotIndex.msg()].end() == 4 , "" );
-	ASSERT( se1->dest_[procSlotIndex.msg()].begin() == 4 , "" );
-	ASSERT( se1->dest_[procSlotIndex.msg()].end() == 5 , "" );
-	ASSERT( se1->conn_.size() == 5, "" );
+	ASSERT( se1->msg_.size() == 4 + sumSlotIndex.msg(), "" );
 
 	// e2->conn[0] goes to e3 as it is a msgsrc
-	ASSERT( se1->conn_[0].targetElement()->name() == "e2", "" );
-	ASSERT( se1->conn_[0].targetIndex() == 1, "" );
 
 	// e3->conn[0] goes to e1 as it is a msgsrc, so this comes after.
-	ASSERT( se1->conn_[1].targetElement()->name() == "e3", "" );
-	ASSERT( se1->conn_[1].targetIndex() == 1, "" );
 
 	// Now we are into the msgdests on e1.
 	// e3->conn[0] goes to e1 as it is a msgsrc.
-	ASSERT( se1->conn_[2].targetElement()->name() == "e3", "" );
-	ASSERT( se1->conn_[2].targetIndex() == 0, "" );
-	ASSERT( se1->conn_[3].targetElement()->name() == "clock", "" );
-	ASSERT( se1->conn_[3].targetIndex() == 0, "" );
-	ASSERT( se1->conn_[4].targetElement()->name() == "clock", "" );
-	ASSERT( se1->conn_[4].targetIndex() == 3, "" );
 
 	*DATA( e1 ) = 1;
 	*DATA( e2 ) = 1;
 	*DATA( e3 ) = 1;
 
-	send0( clock, printOutSlotIndex ); // print
-	ASSERT( *reinterpret_cast< double* >( e1->data() ) == 1, "msg1" );
-	ASSERT( *reinterpret_cast< double* >( e2->data() ) == 1, "msg2" );
-	ASSERT( *reinterpret_cast< double* >( e3->data() ) == 1, "msg3" );
+	send0( clock, 0, printOutSlotIndex ); // print
+	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 1, "msg1" );
+	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 1, "msg2" );
+	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 1, "msg3" );
 
-	send0( clock, procOutSlotIndex ); // process
-	send0( clock, printOutSlotIndex ); // print
-	ASSERT( *reinterpret_cast< double* >( e1->data() ) == -3, "msg1" );
-	ASSERT( *reinterpret_cast< double* >( e2->data() ) == 2, "msg2" );
-	ASSERT( *reinterpret_cast< double* >( e3->data() ) == 4, "msg3" );
+	send0( clock, 0, procOutSlotIndex ); // process
+	send0( clock, 0, printOutSlotIndex ); // print
+	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == -3, "msg1" );
+	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 2, "msg2" );
+	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 4, "msg3" );
 
-	send0( clock, procOutSlotIndex ); // process
-	send0( clock, printOutSlotIndex ); // print
-	ASSERT( *reinterpret_cast< double* >( e1->data() ) == -3, "msg1" );
-	ASSERT( *reinterpret_cast< double* >( e2->data() ) == -1, "msg2" );
-	ASSERT( *reinterpret_cast< double* >( e3->data() ) == 0, "msg3" );
+	send0( clock, 0, procOutSlotIndex ); // process
+	send0( clock, 0, printOutSlotIndex ); // print
+	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == -3, "msg1" );
+	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == -1, "msg2" );
+	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 0, "msg3" );
 
-	send0( clock, procOutSlotIndex ); // process
-	send0( clock, printOutSlotIndex ); // print
-	ASSERT( *reinterpret_cast< double* >( e1->data() ) == 4, "msg1" );
-	ASSERT( *reinterpret_cast< double* >( e2->data() ) == -4, "msg2" );
-	ASSERT( *reinterpret_cast< double* >( e3->data() ) == -7, "msg3" );
+	send0( clock, 0, procOutSlotIndex ); // process
+	send0( clock, 0, printOutSlotIndex ); // print
+	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 4, "msg1" );
+	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == -4, "msg2" );
+	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == -7, "msg3" );
 
 	cout << "\nCompleted finfoLookupTest() including some messaging\n";
 }
@@ -872,14 +571,14 @@ class TestClass
 					: dval( 1234.5 ), ival( 56789 )
 			{;}
 			static double getDval( const Element* e ) {
-				return static_cast< TestClass* >( e->data() )->dval;
+				return static_cast< TestClass* >( e->data( 0 ) )->dval;
 			}
 			static void setDval( const Conn* c, double val ) {
 				static_cast< TestClass* >( c->data() )->dval = val;
 			}
 
 			static int getIval( const Element* e ) {
-				return static_cast< TestClass* >( e->data() )->ival;
+				return static_cast< TestClass* >( e->data( 0 ) )->ival;
 			}
 			static void setIval( const Conn* c, int val ) {
 				static_cast< TestClass* >( c->data() )->ival = val;
@@ -905,11 +604,11 @@ class TestClass
 
 					// This sends the double value out to a target
 					// dsumout == 0, but base class changes it
-					send1< double >( e, Slot( 1, 0 ), tc->dval );
+					send1< double >( e, 0, Slot( 1, 0 ), tc->dval );
 
 					// This sends the int value out to a target
 					// isetout == 1, but base class changes it
-					send1< int >( e, Slot( 2, 0 ), tc->ival );
+					send1< int >( e, 0, Slot( 2, 0 ), tc->ival );
 
 					// This just sends a trigger to the remote object.
 					// procout == 2, but base class changes it.
@@ -919,7 +618,7 @@ class TestClass
 					// Again, it is a bad idea to use a literal index
 					// here because the actual index depends on
 					// base classes.
-					send0( e, Slot( 3, 0 ) );
+					send0( e, 0, Slot( 3, 0 ) );
 			}
 
 		private:
@@ -1067,7 +766,7 @@ void valueFinfoTest()
 	set< int >( e2, e2->findFinfo( "ival" ), -2 );
 	clock->findFinfo( "procout" )->add( clock, e1, e1->findFinfo( "proc" ) );
 	e1->findFinfo( "dsumout" )->add( e1, e2, e2->findFinfo( "dsum" ) );
-	send0( clock, procOutSlotIndex ); // procout
+	send0( clock, 0, procOutSlotIndex ); // procout
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
 	ASSERT( dret == -1.0, "proc--> e1/dsumout --> e2/dsum" );
 	get< int >( e1, e1->findFinfo( "ival" ), iret );
@@ -1090,7 +789,7 @@ void valueFinfoTest()
 	ASSERT( iret == -3, "proc--> e1/isetout --> e3/ival" );
 
 	e1->findFinfo( "isetout" )->add( e1, e3, e3->findFinfo( "ival" ) );
-	send0( clock, procOutSlotIndex ); // procout
+	send0( clock, 0, procOutSlotIndex ); // procout
 
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
 	ASSERT( dret == 1.0, "proc--> e1/isetout --> e3/ival" );
@@ -1133,7 +832,7 @@ void valueFinfoTest()
 	get< double >( e0, e0->findFinfo( "dval" ), dret );
 	ASSERT( dret == 2.0,"--proc--> e1/procout --> e0/dval --> e4/dsum");
 
-	send0( clock, procOutSlotIndex ); // procout
+	send0( clock, 0, procOutSlotIndex ); // procout
 
 
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
@@ -1183,7 +882,7 @@ void valueFinfoTest()
 	get< double >( e5, e5->findFinfo( "dval" ), dret );
 	ASSERT( dret == 5.0,"--proc--> e1/procout --> e5/dval --> e6/dsum");
 
-	send0( clock, procOutSlotIndex ); // procout
+	send0( clock, 0, procOutSlotIndex ); // procout
 
 
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
@@ -1233,7 +932,7 @@ void valueFinfoTest()
 	get< double >( e7, e7->findFinfo( "dval" ), dret );
 	ASSERT( dret == 7.0,"--proc--> e1/procout --> e7/dval --> e8/dsum");
 
-	send0( clock, procOutSlotIndex ); // procout
+	send0( clock, 0, procOutSlotIndex ); // procout
 
 
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
@@ -1283,7 +982,7 @@ void valueFinfoTest()
 	get< double >( e9, e9->findFinfo( "dval" ), dret );
 	ASSERT( dret == 9.0,"--proc--> e1/procout --> e9/dval --> e10/dsum");
 
-	send0( clock, procOutSlotIndex ); // procout
+	send0( clock, 0, procOutSlotIndex ); // procout
 
 
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
@@ -1320,7 +1019,7 @@ class ArrayTestClass
 
 			static double getDvec( const Element* e, unsigned int i ) {
 				ArrayTestClass* atc = 
-						static_cast< ArrayTestClass* >( e->data() );
+						static_cast< ArrayTestClass* >( e->data( 0 ) );
 				if ( i < atc->dvec.size() )
 					return atc->dvec[i];
 
@@ -1339,14 +1038,14 @@ class ArrayTestClass
 			}
 
 			static double getDval( const Element* e ) {
-				return static_cast< ArrayTestClass* >( e->data() )->dval;
+				return static_cast< ArrayTestClass* >( e->data( 0 ) )->dval;
 			}
 			static void setDval( const Conn* c, double val ) {
 				static_cast< ArrayTestClass* >( c->data() )->dval = val;
 			}
 
 			static int getIval( const Element* e ) {
-				return static_cast< ArrayTestClass* >( e->data() )->
+				return static_cast< ArrayTestClass* >( e->data( 0 ) )->
 						dvec.size();
 			}
 			static void setIval( const Conn* c, int val ) {
@@ -1371,13 +1070,13 @@ class ArrayTestClass
 
 					// This sends the double value out to a target
 					// dsumout == 0, but base class shifts it.
-					send1< double >( e, Slot( 1, 0 ), tc->dval );
+					send1< double >( e, 0, Slot( 1, 0 ), tc->dval );
 
 					// This just sends a trigger to the remote object.
 					// procout == 1, but base class shifts it.
 					// Either it will trigger dproc itself, or it
 					// could trigger a getfunc.
-					send0( e, Slot( 2, 0 ) );
+					send0( e, 0, Slot( 2, 0 ) );
 			}
 
 		private:
@@ -1621,7 +1320,7 @@ class TestTransientFinfo: public DynamicFinfo
 			static int numInstances;
 
 			TestTransientFinfo( Finfo* temp )
-					: DynamicFinfo( "foo", temp, 0, 0, 0, 0, 0)
+					: DynamicFinfo( "foo", temp, 0, 0)
 			{
 					numInstances++;
 			}

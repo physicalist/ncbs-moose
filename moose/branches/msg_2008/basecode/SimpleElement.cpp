@@ -23,15 +23,6 @@ static const unsigned int INITIAL_MSG_SIZE = 4;
 int SimpleElement::numInstances = 0;
 #endif
 
-SimpleElement::SimpleElement( Id id, const std::string& name )
-	: Element( id ), name_( name ), data_( 0 ), msg_( INITIAL_MSG_SIZE )
-{
-#ifdef DO_UNIT_TESTS
-		numInstances++;
-#endif
-		;
-}
-
 SimpleElement::SimpleElement(
 				Id id,
 				const std::string& name, 
@@ -113,6 +104,12 @@ const Cinfo* SimpleElement::cinfo( ) const
 //////////////////////////////////////////////////////////////////
 
 const Msg* SimpleElement::msg( unsigned int msgNum ) const
+{
+	assert ( msgNum < msg_.size() );
+	return ( &( msg_[ msgNum ] ) );
+}
+
+Msg* SimpleElement::varMsg( unsigned int msgNum )
 {
 	assert ( msgNum < msg_.size() );
 	return ( &( msg_[ msgNum ] ) );
