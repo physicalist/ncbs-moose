@@ -5932,5 +5932,11 @@ Slowly inching through the debugging/compiling process for UnitTests.cpp
 19 Feb 2008
 Completed compilation of basecode. Much of the UnitTests have been removed,
 because the calls don't make sense in the new messaging.
+Checked in as revision 413 with unit test flags on, Smoldyn off, -g, GSL
+
+==============================================================================
+23 Feb 2008
+Completed compilation of Shell. Several things have been left only as
+placeholders, specially stuff to do with array operations like planarconnect.
 
 ==============================================================================

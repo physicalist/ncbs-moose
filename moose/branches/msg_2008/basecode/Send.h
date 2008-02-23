@@ -144,7 +144,7 @@ template< class T1, class T2 > void sendBack2( const Element* e, Slot src,
 			reinterpret_cast< void ( * )( const Conn*, T1, T2 ) >(
 			m->func( src.func() )
 		);
-	Conn* flip = c->flip();
+	const Conn* flip = c->flip();
 	rf( flip, v1, v2 );
 	delete flip;
 }
@@ -202,7 +202,7 @@ template< class T1, class T2, class T3 >
 			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3 ) >(
 			m->func( src.func() )
 		);
-	Conn* flip = c->flip();
+	const Conn* flip = c->flip();
 	rf( flip, v1, v2, v3 );
 	delete flip;
 }
@@ -260,7 +260,7 @@ template< class T1, class T2, class T3, class T4 >
 			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3, T4 ) >(
 			m->func( src.func() )
 		);
-	Conn* flip = c->flip();
+	const Conn* flip = c->flip();
 	rf( flip, v1, v2, v3, v4 );
 	delete flip;
 }
