@@ -87,6 +87,11 @@ class Element
 		virtual const Finfo* findFinfo( const string& name ) = 0;
 
 		/**
+		 * Returns finfo ptr associated with specified ConnTainer.
+		 */
+		virtual const Finfo* findFinfo( const ConnTainer* c ) const = 0;
+
+		/**
 		 * Returns a Finfo as above, except that it cannot handle any
 		 * dynamic Finfo thus limiting it to predefined finfos. Has the
 		 * merit that it is a const function
