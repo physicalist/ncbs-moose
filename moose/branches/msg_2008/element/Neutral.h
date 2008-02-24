@@ -28,7 +28,17 @@ class Neutral
 			static void childFunc( const Conn* c, int stage );
 			static const string getName( const Element* e );
 			static const string getClass( const Element* e );
+
+			/**
+			 * getParent is a static utility function to return the
+			 * parent of an element. Should really be on SimpleElement
+			 * and should be a regular function.
+			 */
 			static Id getParent( const Element* e );
+
+			/**
+			 * Returns a vector of child ids for this element
+			 */
 			static vector< Id > getChildList( const Element* e );
 			static double getCpu( const Element* e );
 			static unsigned int getDataMem( const Element* e );
@@ -62,6 +72,11 @@ class Neutral
 			static void destroy( const Conn* c );
 			static void setName( const Conn*, const string s );
 			static void lookupChild( const Conn*, const string s );
+
+			/**
+ 			* Looks up the child with the specified name, and returns its
+			* id. For now don't deal with indices.
+ 			*/
 			static Id getChildByName( const Element* e, const string& s );
 
 			// static const unsigned int childIndex;
