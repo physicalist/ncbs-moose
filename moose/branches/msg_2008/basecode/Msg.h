@@ -130,6 +130,7 @@ class Msg
 
 		/**
 		 * Lists out all the target Elements with their indices.
+		 * Shouldn't this be a vector of ids?
 		 */
 		unsigned int targets(
 			vector< pair< Element*, unsigned int> >& list,

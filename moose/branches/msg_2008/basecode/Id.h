@@ -86,7 +86,10 @@ class Id
 		 */
 		static Id shellId();
 
-		Id assignIndex( unsigned int index );
+		/**
+		 * This creates a new Id with the same element id but a new index
+		 */
+		Id assignIndex( unsigned int index ) const;
 		
 		void setIndex( unsigned int index );
 

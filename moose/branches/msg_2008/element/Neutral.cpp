@@ -148,15 +148,15 @@ void Neutral::childFunc( const Conn* c , int stage )
 
 		switch ( stage ) {
 				case MARK_FOR_DELETION:
-					send1< int >( e, childSrcSlot, MARK_FOR_DELETION );
+					send1< int >( e, 0, childSrcSlot, MARK_FOR_DELETION );
 					e->prepareForDeletion( 0 );
 				break;
 				case CLEAR_MESSAGES:
-					send1< int >( e, childSrcSlot, CLEAR_MESSAGES );
+					send1< int >( e, 0, childSrcSlot, CLEAR_MESSAGES );
 					e->prepareForDeletion( 1 );
 				break;
 				case COMPLETE_DELETION:
-					send1< int >( e, childSrcSlot, COMPLETE_DELETION );
+					send1< int >( e, 0, childSrcSlot, COMPLETE_DELETION );
 					///\todo: Need to cleanly delete the data part too.
 					delete e;
 				break;
@@ -299,57 +299,28 @@ void Neutral::destroy( const Conn* c )
 
 Id Neutral::getParent( const Element* e )
 {
-	if ( e->id().index() > 0 ){
-		Id i = e->id().assignIndex(0);
-		e = i();
-	}
-	const Element *se = e;
-	//const SimpleElement* se = dynamic_cast< const SimpleElement* >( e );
-	/*if (se == 0){//to allow array elements
-		const ArrayElement* ae = dynamic_cast< const ArrayElement* >( e );
-		assert(ae != 0);
-		assert( ae->destSize() > 0 );//Why do we need it?
-		// The zero dest is the child dest.
-		assert( ae->connDestEnd( 0 ) > ae->connDestBegin( 0 ) );
-		return ae->connDestBegin( 0 )->targetElement()->id();
-	}*/
 	
-	assert( se != 0 );
-	assert( se->destSize() > 0 );
-
-	const Finfo* f = se->constFindFinfo( "child" );
-	assert( f != 0 );
-	vector< Conn > list;
-
-	f->incomingConns( se, list );
-	assert( list.size() > 0 );
-	return list[0].targetElement()->id();
-
-	/*
-	// The zero dest is the child dest.
-	assert( se->connDestEnd( 0 ) > se->connDestBegin( 0 ) );
-
-	return se->connDestBegin( 0 )->targetElement()->id();
-	*/
+	assert( e != 0 );
+	const Finfo* cf = e->constFindFinfo( "child" );
+	assert( cf != 0 );
+	const Msg* m = e->msg( cf->msg() );
+	assert( m != 0 );
+	assert( m->size() == 1 ); // May need to change later to handle multiple parents.
+	return( ( ( *m->begin() )->e1( ) )->id() );
 }
 
 /**
- * Looks up the child with the specified name, and returns the eid.
+ * Looks up the child with the specified name, and returns its id.
  */
-Id Neutral::getChildByName( const Element* elm, const string& s )
+Id Neutral::getChildByName( const Element* e, const string& s )
 {
-	// const SimpleElement* e = dynamic_cast< const SimpleElement *>(elm);
-	// assert( e != 0 );
-	// assert that the element is a neutral.
-
-	// Here we should put in one of the STL algorithms.
-	vector< Conn >::const_iterator i;
-	// For neutral, src # 0 is the childSrc.
-	vector< Conn >::const_iterator begin = elm->connSrcBegin( 0 );
-	vector< Conn >::const_iterator end = elm->connSrcVeryEnd( 0 );
-
-	string name;
+	assert( e != 0 );
 	assert( s.length() > 0 );
+	const Msg* m = e->msg( childSrcSlot.msg() );
+	assert( m != 0 );
+	vector< ConnTainer* >::const_iterator i;
+	
+	string name;
 	unsigned int index = 0;
 	if ( s[s.length() - 1] == ']' ) {
 		string::size_type pos = s.rfind( '[' );
@@ -367,43 +338,10 @@ Id Neutral::getChildByName( const Element* elm, const string& s )
 		name = s;
 		index = 0;
 	}
-	for ( i = begin; i != end; i++ ) {
-		Element* kid = i->targetElement();
-		const string& n = kid->name();
-		assert( n.length() > 0 );
-		if ( n[ n.length() - 1 ] == ']' ) { // name-indexing
-			if ( n == s )
-		// But note this forestalls the use of foo[ i ][ j ] type indexing.
-		// Note also multiple use cases.
-				return kid->id();
-		} else if ( i->targetElement()->name() == name ) {
-			// Four cases here:
-			// index == 0, elm->index == 0: simple element return
-			// index == 0, elm->index > 0
-			// index > 0, elm->index == 0
-			// index > 0, elm->index > 0
-			if ( elm->numEntries() == 0 ) {
-				// index == 0, elm->index == 0: simple element return
-				if ( index == 0 )
-					return kid->id();
-				else{ // index > 0, elm->index == 0: Child should be an array
-					// Here we might have explicit name indexing, so go
-					// around again.
-					if ( kid->numEntries() < index )
-						continue;
-					else
-						return kid->id().assignIndex( index );
-				}
-			} else {
-				if ( index == 0 ) // Here the child id inherits the parent indx
-					return kid->id().assignIndex( elm->id().index() );
-				else{ // Nasty: indices for parent as well as child. Work out later.
-					return Id::badId();
-				}
-			}
-		}
-	}
-	// Failure option: return BAD_ID.
+
+	for ( i = m->begin(); i != m->end(); i++ )
+		if ( ( *i )->e2()->name() == name )
+			return ( *i )->e2()->id().assignIndex( index );
 	return Id::badId();
 }
 
@@ -413,47 +351,23 @@ Id Neutral::getChildByName( const Element* elm, const string& s )
  */
 void Neutral::lookupChild( const Conn* c, const string s )
 {
-	SimpleElement* e =
-			dynamic_cast< SimpleElement* >( c->targetElement() );
-	assert( e != 0 );
-	// assert that the element is a neutral.
-
-	// Here we should put in one of the STL algorithms.
-	vector< Conn >::const_iterator i;
-	// For neutral, src # 0 is the childSrc.
-	vector< Conn >::const_iterator begin = e->connSrcBegin( 0 );
-	vector< Conn >::const_iterator end = e->connSrcVeryEnd( 0 );
-	for ( i = begin; i != end; i++ ) {
-		if ( i->targetElement()->name() == s ) {
-			// For neutral, src # 1 is the shared message.
-			sendTo1< Id >( e, Slot( 1, 0 ), c->sourceIndex( ), 
-				i->targetElement()->id() );
-			return;
-		}
-	}
-	// Hm. What is the best thing to do if it fails? Return an
-	// error value, or not return anything at all?
-	// Perhaps best to be consistent about returning something.
-	sendTo1< Id >( e, Slot( 1, 0 ), c->sourceIndex( ), Id::badId() );
+	Id ret = getChildByName( c->targetElement(), s );
+	sendBack1< Id >( c->targetElement(), childSrcSlot, c, ret );
 }
 
 vector< Id > Neutral::getChildList( const Element* e )
 {
-	// const SimpleElement* e = dynamic_cast< const SimpleElement *>(elm);
-	// assert( e != 0 );
+	assert( e != 0 );
+	const Msg* m = e->msg( childSrcSlot.msg() );
+	assert( m != 0 );
+	vector< pair< Element*, unsigned int > > list;
+	vector< pair< Element*, unsigned int > >::iterator i;
 
-	vector< Conn >::const_iterator i;
-	// For neutral, src # 0 is the childSrc.
-	vector< Conn >::const_iterator begin = e->connSrcBegin( 0 );
-	vector< Conn >::const_iterator end = e->connSrcVeryEnd( 0 );
-
+	m->targets( list );
 	vector< Id > ret;
-	if ( end == begin ) // zero children
-			return ret;
-	ret.reserve( end - begin );
-	for ( i = begin; i != end; i++ )
-		ret.push_back( i->targetElement()->id() );
-
+	ret.reserve( list.size() );
+	for ( i = list.begin(); i != list.end(); i++ )
+		ret.push_back( i->first->id() );
 	return ret;
 }
 
@@ -539,26 +453,26 @@ void testNeutral()
 		ret = childSrcFinfo->add( n2, n22, n22->findFinfo( "child" ) );
 		ASSERT( ret, "adding child");
 
-		ASSERT( n1->connSize() == 3, "count children and parent" );
+		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 3, "count children and parent" );
 
 		// n2 has n1 as parent, and n21 and n22 as children
-		ASSERT( n2->connSize() == 3, "count children" );
+		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 3, "count children" );
 
 		// Send the command to mark selected children for deletion.
 		// In this case the selected child should be n2.
-		sendTo1< int >( n1, Slot( 0, 0 ), 0, 0 );
+		sendTo1< int >( n1, 0, Slot( 0, 0 ), 0, 0 );
 
 		// At this point n1 still has both n2 and n3 as children
-		ASSERT( n1->connSize() == 3, "Should still have 2 children and parent" );
+		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 3, "Should still have 2 children and parent" );
 		// and n2 still has n1 as parent, and n21 and n22 as children
-		ASSERT( n2->connSize() == 3, "2 kids and a parent" );
+		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 3, "2 kids and a parent" );
 
 		// Send the command to clean up messages. This still does
 		// not delete anything.
-		sendTo1< int >( n1, Slot( 0, 0 ), 0, 1 );
-		ASSERT( n1->connSize() == 2, "As far as n1 is concerned, n2 is removed" );
+		sendTo1< int >( n1, 0, Slot( 0, 0 ), 0, 1 );
+		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 2, "As far as n1 is concerned, n2 is removed" );
 		// n2 still has n1 as parent, and n21 and n22 as children
-		ASSERT( n2->connSize() == 3, "2 kids and a parent" );
+		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 3, "2 kids and a parent" );
 
 
 		int initialNumInstances = SimpleElement::numInstances;
@@ -566,7 +480,7 @@ void testNeutral()
 		// any more because the handle has gone off n1.
 		set< int >( n2, n2->findFinfo( "child" ), 2 );
 		// Now we've gotten rid of n2.
-		ASSERT( n1->connSize() == 2, "Now only 1 child." );
+		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 2, "Now only 1 child." );
 
 		// Now check that n2, n21, and n22 are really gwan.
 
