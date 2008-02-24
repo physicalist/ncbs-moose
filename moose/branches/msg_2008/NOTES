@@ -5945,3 +5945,10 @@ Checked in as revision 417 with unit test flags on, Smoldyn off, -g, GSL
 24 Feb 2008
 Completed remaining library compilation: element and maindir. Huge number of
 errors remain in the linking stage.
+
+Checked in as revision 418 with unit test flags on, Smoldyn off, -g, GSL
+
+Compiled and linked. It crashes at once when run, but major step forward
+anyway.
+
+==============================================================================

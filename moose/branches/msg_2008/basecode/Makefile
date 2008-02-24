@@ -19,6 +19,8 @@ OBJ = \
 	Id.o	\
 	IdManager.o	\
 	RecvFunc.o \
+	Msg.o \
+	SimpleConn.o	\
 	SimpleElement.o	\
 	Copy.o \
 	Send.o \
@@ -42,6 +44,7 @@ OBJ = \
 	ParallelDummy.o \
 	Class.o	\
 	FuncVec.o \
+	ExtFieldFinfo.o \
 	UnitTests.o \
 	TestBasecode.o \
 
@@ -61,7 +64,6 @@ HEADERS = \
 #	ArrayFinfo.o \
 #	ArrayElement.o	\
 #	ArrayWrapperElement.o	\
-#	ExtFieldFinfo.o \
 
 default: $(TARGET)
 

@@ -86,8 +86,12 @@ class LookupFinfo: public Finfo
 					unsigned int& destIndex, unsigned int& numDest
 			) const;
 
-			// Have to refer to DynamicFinfo here.
-			unsigned int msg() const;
+			/**
+			 * Returns a flag for a bad msg.
+			 */
+			unsigned int msg() const {
+				return MAXUINT;
+			}
 
 			/**
 			 * The Ftype knows how to do this conversion.

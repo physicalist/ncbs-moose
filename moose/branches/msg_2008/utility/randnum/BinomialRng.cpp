@@ -118,7 +118,7 @@ void BinomialRng::innerSetN(unsigned long n)
  */
 double BinomialRng::getN(const Element* e)
 {
-    return (int)(static_cast <BinomialRng*>(e->data())->n_);
+    return (int)(static_cast <BinomialRng*>(e->data( 0 ))->n_);
 }
 
 int BinomialRng::innerGetN()
@@ -183,7 +183,7 @@ void BinomialRng::innerSetP(double p)
 */
 double BinomialRng::getP(const Element* e)
 {
-    return static_cast <BinomialRng*>(e->data())->p_;
+    return static_cast <BinomialRng*>(e->data( 0 ))->p_;
 }
 
 

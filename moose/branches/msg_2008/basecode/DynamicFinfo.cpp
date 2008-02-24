@@ -296,21 +296,23 @@ void* DynamicFinfo::traverseIndirection( void* data ) const
 }
 */
 
-/*
 const DynamicFinfo* getDF( const Conn* c )
 {
 	// The MAXUINT index is used to show that this conn is a dummy
 	// one and must not be used for finding DynamicFinfos.
 	assert( c->targetIndex() != MAXUINT );
 	Element* e = c->targetElement();
-	Msg* m = e->msg( c->targetMsg() );
+	const Msg* m = e->msg( c->targetMsg() );
 
+	return 0;
+
+	/*
 	const Finfo* temp = e->findFinfo( c->targetIndex() );
 	const DynamicFinfo* f = dynamic_cast< const DynamicFinfo* >( temp );
 	assert( f != 0 );
 	return f;
+	*/
 }
-*/
 
 bool DynamicFinfo::getSlot( const string& name, Slot& ret ) const
 {

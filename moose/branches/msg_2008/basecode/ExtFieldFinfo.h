@@ -37,8 +37,7 @@ class ExtFieldFinfo: public Finfo
 			 */
 			bool add( 
 					Element* e, Element* destElm, const Finfo* destFinfo
-			) const
-			{ return true; }
+			) const;
 			
 			/**
 			 * Again, this should be similar to the regular
@@ -49,12 +48,14 @@ class ExtFieldFinfo: public Finfo
 					Element* e, Element* src, const Ftype *srcType,
 					unsigned int& srcFuncId, unsigned int& returnFuncId,
 					unsigned int& destIndex, unsigned int& numDest
-			) const
-			{ return true; }
+			) const;
 
-
-			///\todo figure out what to do here.
-			unsigned int msg() const;
+			/**
+			 * Returns a flag for a bad msg.
+			 */
+			unsigned int msg() const {
+				return MAXUINT;
+			}
 
 			/**
 			 * The Ftype knows how to do this conversion.
