@@ -190,7 +190,7 @@ class SimpleElement: public Element
 		///////////////////////////////////////////////////////////////
 		void dumpMsgInfo() const;
 
-		bool innerCopyMsg( const Conn* c, const Element* orig, Element* dup );
+		// bool innerCopyMsg( const Conn* c, const Element* orig, Element* dup );
 	protected:
 		Element* innerCopy() const;
 		Element* innerCopy(int n) const;

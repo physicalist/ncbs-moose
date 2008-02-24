@@ -54,8 +54,12 @@ class ValueFinfo: public Finfo
 					unsigned int& destIndex, unsigned int& numDest
 			) const;
 
-			// Will have to set up a DynamicFinfo here.
-			unsigned int msg() const;
+			/**
+			 * Returns a flag for a bad msg.
+			 */
+			unsigned int msg() const {
+				return MAXUINT;
+			}
 
 			/**
 			 * The Ftype knows how to do this conversion.

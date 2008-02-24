@@ -272,8 +272,10 @@ class Element
 		 * for this element.
 		 */
 		virtual void dumpMsgInfo() const = 0;
+		/*
 		virtual bool innerCopyMsg(
 				const Conn* c, const Element* orig, Element* dup ) = 0;
+	*/
 	protected:
 		/**
 		 * This function copies the element, its data and its

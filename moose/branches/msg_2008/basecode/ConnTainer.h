@@ -32,7 +32,17 @@ class ConnTainer
 		 */
 		virtual Conn* conn( unsigned int eIndex, bool isReverse ) const = 0;
 
-		virtual bool add( Element* e1, Element* e2 ) = 0;
+		/**
+		 * Generates an iterator for this ConnTainer. The eIndex
+		 * specifies the index of the originating element.
+		 * The isReverse flag is passed in from the Msg and specifies
+		 * if we are going forward or back along the direction of the Msg.
+		 * The connIndex specifies a conn within this ConnTainer.
+		 */
+		virtual Conn* conn( unsigned int eIndex, bool isReverse, 
+			unsigned int connIndex ) const = 0;
+
+		// virtual bool add( Element* e1, Element* e2 ) = 0;
 
 		virtual Element* e1() const {
 			return e1_;
@@ -60,7 +70,7 @@ class ConnTainer
 		 * e1 must be the new source element.
 		 * Returns true on success.
 		 */
-		virtual bool copy( Element* e1, Element* e2 ) = 0;
+		virtual bool copy( Element* e1, Element* e2 ) const = 0;
 		
 	private:
 		Element* e1_;

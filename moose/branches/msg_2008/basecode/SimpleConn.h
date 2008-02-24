@@ -11,10 +11,54 @@
 #ifndef _SIMPLE_CONN_H
 #define _SIMPLE_CONN_H
 
+
+class SimpleConnTainer: public ConnTainer
+{
+	public:
+		SimpleConnTainer( Element* e1, Element* e2, 
+			unsigned int msg1, unsigned int msg2,
+			unsigned int eI1 = 0, unsigned int eI2 = 0,
+			unsigned int i1 = 0, unsigned int i2 = 0 );
+
+		Conn* conn( unsigned int eIndex, bool isReverse ) const;
+		Conn* conn( unsigned int eIndex, bool isReverse,
+			unsigned int connIndex ) const;
+
+		bool add( Element* e1, Element* e2 );
+
+		unsigned int size() const {
+			return 1;
+		}
+
+		unsigned int eI1() const {
+			return eI1_;
+		}
+
+		unsigned int eI2() const {
+			return eI2_;
+		}
+
+		unsigned int i1() const {
+			return i1_;
+		}
+
+		unsigned int i2() const {
+			return i2_;
+		}
+
+		bool copy( Element* e1, Element* e2 ) const;
+		
+	private:
+		unsigned int eI1_;
+		unsigned int eI2_;
+		unsigned int i1_;
+		unsigned int i2_;
+};
+
 class SimpleConn: public Conn
 {
 	public:
-		SimpleConn( SimpleConnTainer* s )
+		SimpleConn( const SimpleConnTainer* s )
 			: s_( s )
 		{;}
 
@@ -37,7 +81,7 @@ class SimpleConn: public Conn
 			return s_->e1();
 		}
 		unsigned int sourceEindex() const {
-			return s_->eI1;
+			return s_->eI1();
 		}
 		unsigned int sourceIndex() const {
 			return s_->i1();
@@ -50,32 +94,31 @@ class SimpleConn: public Conn
 		}
 
 		/**
-		 * increment() updates internal counter, used in iterating through
-		 * targets.
+		 * operator++() updates internal counter, used in iterating through
+		 * targets. Since we have a single entry in the SimpleConn, all
+		 * this has to do is to invalidate further good() calls.
 		 */
 		void operator++() {
 			s_ = 0;
 		}
 		bool good() const {
-			return s_ != 0;
+			return ( s_ != 0 );
 		}
 
 		/**
 		 * Returns a Conn with e1 and e2 flipped so that return messages
 		 * traverse back with the correct args.
 		 */
-		const Conn* flip() const {
-			return new ReverseSimpleConn( s_ );
-		}
+		const Conn* flip() const;
 
 	private:
-		SimpleConnTainer* s_;
+		const SimpleConnTainer* s_;
 };
 
 class ReverseSimpleConn: public Conn
 {
 	public:
-		ReverseSimpleConn( SimpleConnTainer* s )
+		ReverseSimpleConn( const SimpleConnTainer* s )
 			: s_( s ) 
 		{;}
 
@@ -114,10 +157,11 @@ class ReverseSimpleConn: public Conn
 		 * increment() updates internal counter, used in iterating through
 		 * targets.
 		 */
-		void increment() {
+		void operator++() {
 			s_ = 0;
 		}
-		bool good() {
+
+		bool good() const {
 			return ( s_ != 0 );
 		}
 
@@ -130,59 +174,7 @@ class ReverseSimpleConn: public Conn
 		}
 
 	private:
-		SimpleContainer* a_;
-};
-
-class SimpleConnTainer: public ConnTainer
-{
-	public:
-		SimpleConnTainer( Element* e1, Element* e2, 
-			unsigned int msg1, unsigned int msg2,
-			unsigned int eI1 = 0, unsigned int eI2 = 0,
-			unsigned int i1 = 0, unsigned int i2 = 0 )
-			: 
-			ConnTainer( e1, e2, msg1, msg2 ),
-			eI1_( eI1 ), eI2_( eI2 ),
-			i1_( i1 ), i2_( i2 )
-		{;}
-
-		Conn* conn( unsigned int eIndex, bool isReverse ) const {
-			numIter_++; // For reference counting. Do we need it?
-			if ( isReverse )
-				return new ReverseSimpleConn( this, eIndex );
-			else
-				return new SimpleConn( this, eIndex );
-		}
-
-		bool add( Element* e1, Element* e2 ) {
-			SimpleConnTainer ce( e1, e2 );
-		}
-
-		unsigned int eI1() const {
-			return eI1_;
-		}
-
-		unsigned int eI2() const {
-			return eI2_;
-		}
-
-		unsigned int i1() const {
-			return i1_;
-		}
-
-		unsigned int i2() const {
-			return i2_;
-		}
-
-		bool copy( Element* e1, Element* e2 ) {
-			Msg::add( e1, e2, msg1(), msg2() );
-		}
-		
-	private:
-		unsigned int eI1_;
-		unsigned int eI2_;
-		unsigned int i1_;
-		unsigned int i2_;
+		const SimpleConnTainer* s_;
 };
 
 #endif // _SIMPLE_CONN_H

@@ -63,10 +63,9 @@ class Msg
 
 		/**
 		 * Size of the ConnTainer vector
+		 * \todo: Should we include the 'next' size here too?
 		 */
-		unsigned int size() const {
-			return c_.size();
-		}
+		unsigned int size() const;
 
 		/**
 		 * Iterator to the conn selected by the 'tgt' index.
@@ -76,7 +75,7 @@ class Msg
 		/**
 		 * Add a new message/
 		 */
-		static bool add( Element* thisE, Element* otherE, 
+		static ConnTainer* add( Element* thisE, Element* otherE, 
 			unsigned int thisM, unsigned int otherM );
 
 		// This is invoked by the remote Msg.

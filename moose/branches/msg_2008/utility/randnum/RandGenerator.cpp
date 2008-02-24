@@ -74,7 +74,7 @@ RandGenerator::~RandGenerator()
 
 double RandGenerator::getMean(const Element* e)
 {
-    Probability* gen = static_cast<RandGenerator*>(e->data())->rng_;
+    Probability* gen = static_cast<RandGenerator*>(e->data( 0 ))->rng_;
     
     if (gen)
     {
@@ -89,7 +89,7 @@ double RandGenerator::getMean(const Element* e)
 
 double RandGenerator::getVariance(const Element* e)
 {
-    Probability* gen = static_cast<RandGenerator*>(e->data())->rng_;
+    Probability* gen = static_cast<RandGenerator*>(e->data( 0 ))->rng_;
     if (gen)
     {
         return gen->getVariance();    
@@ -105,7 +105,7 @@ double RandGenerator::getVariance(const Element* e)
 
 double RandGenerator::getSample(const Element* e)
 {
-    Probability* gen = static_cast<RandGenerator*>(e->data())->rng_;
+    Probability* gen = static_cast<RandGenerator*>(e->data( 0 ))->rng_;
     if (gen)
     {
         return gen->getNextSample();
@@ -119,7 +119,7 @@ double RandGenerator::getSample(const Element* e)
 
 void RandGenerator::processFunc( const Conn& c, ProcInfo info )
 {
-    send1<double>(c.targetElement(), outputSlot, getSample(c.targetElement()));    
+    send1<double>(c.targetElement(), 0, outputSlot, getSample(c.targetElement()));    
 }
 
 void RandGenerator::reinitFunc(const Conn& c, ProcInfo info)
