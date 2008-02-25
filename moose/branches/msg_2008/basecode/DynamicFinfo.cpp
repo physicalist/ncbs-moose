@@ -106,7 +106,8 @@ bool DynamicFinfo::add(
 			assert( numDest == 1 );
 			// First we handle the case where this just sends out its
 			// value to the target.
-			return Msg::add( e, destElm, msg_, destMsg );
+			return Msg::add( e, destElm, msg_, destMsg,
+				srcFuncId, destFuncId );
 		} else {
 			// Here we make a SharedFtype on the fly for passing in the
 			// respondToAdd.
@@ -296,6 +297,9 @@ void* DynamicFinfo::traverseIndirection( void* data ) const
 }
 */
 
+/**
+ * Still to finish
+ */
 const DynamicFinfo* getDF( const Conn* c )
 {
 	// The MAXUINT index is used to show that this conn is a dummy

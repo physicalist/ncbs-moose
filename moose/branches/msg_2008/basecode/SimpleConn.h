@@ -46,6 +46,14 @@ class SimpleConnTainer: public ConnTainer
 			return i2_;
 		}
 
+		/**
+		 * Creates a duplicate ConnTainer for message(s) between 
+		 * new elements e1 and e2, and adds this new container to the
+		 * targets. It checks the original version for which msgs to put 
+		 * the new one on.
+		 * e1 must be the new source element.
+		 * Returns true on success.
+		 */
 		bool copy( Element* e1, Element* e2 ) const;
 		
 	private:
@@ -94,11 +102,11 @@ class SimpleConn: public Conn
 		}
 
 		/**
-		 * operator++() updates internal counter, used in iterating through
+		 * increment() updates internal counter, used in iterating through
 		 * targets. Since we have a single entry in the SimpleConn, all
 		 * this has to do is to invalidate further good() calls.
 		 */
-		void operator++() {
+		void increment() {
 			s_ = 0;
 		}
 		bool good() const {
@@ -157,7 +165,7 @@ class ReverseSimpleConn: public Conn
 		 * increment() updates internal counter, used in iterating through
 		 * targets.
 		 */
-		void operator++() {
+		void increment() {
 			s_ = 0;
 		}
 

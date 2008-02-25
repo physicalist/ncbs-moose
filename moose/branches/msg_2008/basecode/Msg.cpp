@@ -12,6 +12,7 @@
 #include "Msg.h"
 
 Msg::Msg()
+	: fv_( FuncVec::getFuncVec( 0 ) ), next_( 0 )
 {;}
 
 Msg::~Msg()
@@ -19,18 +20,50 @@ Msg::~Msg()
 	dropAll();
 }
 
-ConnTainer* Msg::add( Element* e1, Element* e2, 
-	unsigned int m1Index, unsigned int m2Index )
+void Msg::assignMsgByFuncId( 
+	Element* e, unsigned int funcId, ConnTainer* ct )
 {
-	Msg* current = e1->varMsg( m1Index );
-	if ( !current ) return 0;
+	if ( fv_->id() == 0 )
+		fv_ = FuncVec::getFuncVec( funcId );
 
-	Msg* other = e2->varMsg( m2Index );
-	if ( !other ) return 0;
+	if ( fv_->id() == funcId ) {
+		c_.push_back( ct );
+		return;
+	}
 
+	if ( next_ )
+		// do stuff here.
+		;
+	cout << "next msg stuff not yet working in Msg::assignMsgByFuncId\n";
+}
+
+/**
+* Add a new message from e1 (source ) to e2 (dest).
+* The m1 and m2 indicate source and dest msg indices.
+* The funcId1 is the source funcId, which is going to be used
+* at the dest, but is optional so it may be zero.
+* The funcId2 is the dest funcId, which must be nonzero and will
+* be used when the source calls the dest.
+* Later I may relax the directional restrictions.
+*/
+ConnTainer* Msg::add( Element* e1, Element* e2, 
+	unsigned int m1Index, unsigned int m2Index,
+	unsigned int funcId1, unsigned int funcId2 )
+{
+	// Must always have a nonzero func on the destination
+	assert( funcId2 != 0 );
+
+	Msg* m1 = e1->varMsg( m1Index );
+	if ( !m1 ) return 0;
+
+	Msg* m2 = e2->varMsg( m2Index );
+	if ( !m2 ) return 0;
+
+	// Here need to check that the funcId matches.
 	SimpleConnTainer* ct = new SimpleConnTainer( e1, e2, m1Index, m2Index );
-	current->c_.push_back( ct );
-	other->c_.push_back( ct );
+
+	m1->assignMsgByFuncId( e1, funcId2, ct );
+	m2->assignMsgByFuncId( e2, funcId1, ct );
 	return ct;
 }
 
@@ -149,6 +182,13 @@ Conn* Msg::findConn( unsigned int eIndex, unsigned int tgt ) const
 		}
 	}
 	return 0;
+}
+
+const Msg* Msg::next( const Element* e ) const
+{
+	if ( next_ == 0 )
+		return 0;
+	return e->msg( next_ );
 }
 
 unsigned int Msg::targets( vector< pair< Element*, unsigned int > >& list,

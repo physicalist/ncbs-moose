@@ -30,7 +30,7 @@ void connTest()
 	/**
 	 * Checking ConnTainers after an addmsg
 	 */
-	bool ret = Msg::add( &e1, &e2, 1, 2 );
+	bool ret = Msg::add( &e1, &e2, 1, 2, 0, 1 );
 	ASSERT( ret, "connected srcElement" );
 	Msg* m1 = e1.varMsg( 1 );
 	Msg* m2 = e2.varMsg( 2 );
@@ -45,15 +45,16 @@ void connTest()
 
 	ASSERT( ct1->size() == 1, "ConnTainer size" );
 
+	// ct1->conn( eIndex, isDest );
 	Conn* c1 = ct1->conn( 0, 0 );
-	Conn* c2 = ct2->conn( 0, 0 );
+	Conn* c2 = ct2->conn( 0, 1 );
 
 	ASSERT( c1->targetElement() == &e2, "Conn: targetElement" );
 	ASSERT( c2->targetElement() == &e1, "Conn: targetElement" );
 	ASSERT( c1->targetEindex() == 0, "Conn: targetElement" );
 	ASSERT( c2->targetEindex() == 0, "Conn: targetElement" );
-	ASSERT( c1->targetMsg() == 0, "Conn: targetElement" );
-	ASSERT( c2->targetMsg() == 0, "Conn: targetElement" );
+	ASSERT( c1->targetMsg() == 2, "Conn: targetElement" );
+	ASSERT( c2->targetMsg() == 1, "Conn: targetElement" );
 
 	
 	/**
@@ -61,6 +62,8 @@ void connTest()
 	 * are properly fixed up.
 	 */
 	m1->drop( static_cast< unsigned int >( 0 ) );
+	ASSERT( m1->size() == 0, "Drop succeeded" );
+	ASSERT( m2->size() == 0, "Drop succeeded" );
 	/*
 	 * This should leave us with:
 	 * e3_r0_c0 -> e2_r0_c0
@@ -139,7 +142,7 @@ void msgSrcTest()
  */
 void msgFinfoTest()
 {
-	cout << "Testing use of Finfos in making messages";
+	cout << "Testing use of Finfos in making messages\n";
 	// SimpleElement( name, srcSize, destSize );
 	
 	double e2data = 1.5;
@@ -152,9 +155,23 @@ void msgFinfoTest()
 	SrcFinfo sf1( "sf1", &zft );
 	SrcFinfo sf2( "sf2", &dft );
 
+
 	DestFinfo df1( "df1", &zft, msgSrcTestFunc1, 0 );
 	DestFinfo df2( "df2", &dft, 
 		reinterpret_cast< RecvFunc >( msgSrcTestFuncDbl ), 0 );
+
+	unsigned int nMsgs = 0;
+	sf1.countMessages( nMsgs );
+	sf2.countMessages( nMsgs );
+	df1.countMessages( nMsgs );
+	df2.countMessages( nMsgs );
+
+	sf1.addFuncVec( "sf1" );
+	sf2.addFuncVec( "sf2" );
+	df1.addFuncVec( "df1" );
+	df2.addFuncVec( "df2" );
+
+	FuncVec::sortFuncVec();
 
 	ASSERT (sf1.add( &e1, &e2, &df1 ) == 1,
 					"zero to zero ftype message" );
@@ -167,15 +184,22 @@ void msgFinfoTest()
 
 	ASSERT( e1.msg_[ 0 ].size() == 1, "Finfo Msg" );
 	ASSERT( e1.msg_[ 1 ].size() == 1, "Finfo Msg" );
-	ASSERT( e1.msg_[ 2 ].size() == 1, "Finfo Msg" );
-	ASSERT( e1.msg_[ 3 ].size() == 1, "Finfo Msg" );
+	ASSERT( e1.msg_[ 2 ].size() == 0, "Finfo Msg" );
+	ASSERT( e1.msg_[ 3 ].size() == 0, "Finfo Msg" );
+
+	ASSERT( e2.msg_[ 0 ].size() == 0, "Finfo Msg" );
+	ASSERT( e2.msg_[ 1 ].size() == 0, "Finfo Msg" );
+	ASSERT( e2.msg_[ 2 ].size() == 1, "Finfo Msg" );
+	ASSERT( e2.msg_[ 3 ].size() == 1, "Finfo Msg" );
 
 
 	ASSERT( ( *e1.msg_[ 0 ].begin() )->size() == 1, "Finfo Msg" );
 	ASSERT( ( *e1.msg_[ 1 ].begin() )->size() == 1, "Finfo Msg" );
 
-	targetIndex[0] = 1;
+	targetIndex.resize( 2 );
+	targetIndex[0] = 0;
 	targetIndex[1] = 0;
+	funcNum.resize( 2 );
 	funcNum[0] = 5;
 	funcNum[1] = 0;
 	funcCounter = 0;

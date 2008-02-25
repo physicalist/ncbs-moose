@@ -53,7 +53,7 @@ class Element;
  * also permits the Conn to be skipped altogether, which is important
  * when we delete Conns but don't want to mess up iterators.
  * These functions are
- * void operator++()
+ * void increment()
  * bool good()
  *
  * Then, the Conn must provide for return messages, where the e1 and e2
@@ -113,7 +113,7 @@ class Conn
 		 * increment() updates internal counter, used in iterating through
 		 * targets.
 		 */
-		virtual void operator++() = 0;
+		virtual void increment() = 0;
 
 		/**
 		 * True while the iteration should continue

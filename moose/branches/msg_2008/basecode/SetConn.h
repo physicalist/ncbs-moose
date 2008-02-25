@@ -57,7 +57,7 @@ class SetConn: public Conn
 		 * increment() updates internal counter, used in iterating through
 		 * targets.
 		 */
-		void operator++() {
+		void increment() {
 			;
 		}
 		bool good() const {
