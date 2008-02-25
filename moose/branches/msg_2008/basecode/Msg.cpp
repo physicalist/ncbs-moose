@@ -149,11 +149,12 @@ void Msg::dropAll()
 	Msg* remoteMsg;
 
 	for ( i = c_.begin(); i != c_.end(); i++ ) {
-		if ( fv_->isDest() )
-			remoteMsg = ( *i )->e1()->varMsg( ( *i )->msg1() );
-		else 
+		if ( fv_->isDest() ) // that is, the current msg is source.
 			remoteMsg = ( *i )->e2()->varMsg( ( *i )->msg2() );
+		else 
+			remoteMsg = ( *i )->e1()->varMsg( ( *i )->msg1() );
 		assert( remoteMsg != 0 );
+		assert( remoteMsg != this );
 
 		bool ret = remoteMsg->drop( *i );
 		if ( ret )
@@ -182,6 +183,20 @@ Conn* Msg::findConn( unsigned int eIndex, unsigned int tgt ) const
 		}
 	}
 	return 0;
+}
+
+/**
+* True if this is the nominal destination of a message.
+* The definition of message source and dest is done at Finfo
+* setup time. For simple messages no problem. For Shared Finfos,
+* the one that has the first 'source' entry is the source.
+*
+* Note that the value is the complement of funcVec flag, because
+* the funcVec has comve from the _remote_ object.
+*/
+bool Msg::isDest() const
+{
+	return !( fv_->isDest() );
 }
 
 const Msg* Msg::next( const Element* e ) const

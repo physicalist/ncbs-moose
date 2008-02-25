@@ -127,14 +127,12 @@ class Msg
 
 
 		/**
-		 * True if this is the nominal destination of a message.
+		 * True if this is the destination of a message.
 		 * The definition of message source and dest is done at Finfo
 		 * setup time. For simple messages no problem. For Shared Finfos,
 		 * the one that has the first 'source' entry is the source.
 		 */
-		bool isDest() const {
-			return fv_->isDest();
-		}
+		bool isDest() const;
 
 		/**
 		 * Returns the ptr to the next Msg in the list.

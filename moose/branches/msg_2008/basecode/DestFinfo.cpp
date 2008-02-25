@@ -104,4 +104,5 @@ void DestFinfo::addFuncVec( const string& cname )
 {
 	fv_ = new FuncVec( cname, name() );
 	fv_->addFunc( rfunc_, ftype() );
+	fv_->setDest();
 }

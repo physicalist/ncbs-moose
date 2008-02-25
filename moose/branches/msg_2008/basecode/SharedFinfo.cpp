@@ -39,6 +39,7 @@ SharedFinfo::SharedFinfo( const string& name, Finfo** finfos,
 			names_.push_back( finfos[i]->name() );
 		} else {
 			rfuncs_.push_back( df->recvFunc() );
+			destTypes_.push_back( df->ftype() );
 		}
 	}
 }
@@ -203,17 +204,15 @@ bool SharedFinfo::getSlot( const string& field, Slot& ret ) const
 ///\todo: Still to implement most of these operations.
 void SharedFinfo::addFuncVec( const string& cname )
 {
-	/*
+	fv_ = new FuncVec( cname, name() );
 	if ( rfuncs_.size() > 0 ) {
-		fv_ = new FuncVec( cname, name() );
-		vector< const Ftype* > destTypes_ = ftype()->destTypes();
+		// vector< const Ftype* > destTypes_ = ftype()->destTypes();
 		assert ( rfuncs_.size() == destTypes_.size() );
 		for ( unsigned int i = 0; i != rfuncs_.size(); i++ )
 			fv_->addFunc( rfuncs_[i], destTypes_[i] );
-	} else {
-		fv_ = FuncVec::dummy();
 	}
-	*/
+	if ( isDest_ )
+		fv_->setDest();
 }
 
 ////////////////////////////////////////////////////////////////////
