@@ -15,6 +15,9 @@
  * typically a SrcFinfo or a SharedFinfo. The system sets up unique
  * ids for each FuncVec that are independent of setup order of the
  * various FuncVecs.
+ * The FuncVec also holds a flag 'isDest' to indicate whether it is a 
+ * destination or a source. This is usually true, but if it is empty
+ * or if it is part of a shared message on the source side it is false.
  */
 class FuncVec
 {
@@ -25,7 +28,7 @@ class FuncVec
 		void addFunc( RecvFunc func, const Ftype* ftype );
 
 		unsigned int size() const {
-			return func_.size();
+			return static_cast< unsigned int >( func_.size() );
 		}
 
 		/// func returns the indexed function.
@@ -74,6 +77,14 @@ class FuncVec
 		 * name returns the name string, consisting of className.finfoName
 		 */
 		const string& name() const;
+
+		void setDest() {
+			isDest_ = 1;
+		}
+
+	////////////////////////////////////////////////////////////////////
+	//  Some static functions here.
+	////////////////////////////////////////////////////////////////////
 
 		/**
  		* This function returns the FuncVec belonging to the specified id

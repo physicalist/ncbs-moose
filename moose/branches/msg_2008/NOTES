@@ -5958,5 +5958,10 @@ Slow steady progress going through unit tests.
 25 Feb 2008
 Sent first message, after considerable fixing up of related code. However
 ~Msg() barfs. Long way to go yet.
+Checked in as revision 420 with unit test flags on, Smoldyn off, -g, GSL
+
+Fixed ~Msg. Involved a fair amount of fixing to get the logic of the isDest
+sorted out on various Finfos and in the initialization code. Now we're
+partly into the class formation tests.
 
 ==============================================================================

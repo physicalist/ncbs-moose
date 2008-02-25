@@ -30,6 +30,7 @@ static vector< FuncVec* >& funcVecLookup()
 }
 
 FuncVec::FuncVec( const string& className, const string& finfoName )
+	: isDest_( 0 )
 {
 	name_ = className + "." + finfoName;
 	funcVecLookup().push_back( this );

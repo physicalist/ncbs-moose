@@ -116,6 +116,7 @@ class SharedFinfo: public Finfo
 			unsigned int msg_;
 			vector < string > names_;
 			FuncVec* fv_;
+			vector< const Ftype* > destTypes_;
 			bool isDest_;
 };
 
