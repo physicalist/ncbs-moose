@@ -73,10 +73,25 @@ class Msg
 		Conn* findConn( unsigned int eIndex, unsigned int tgt ) const;
 
 		/**
-		 * Add a new message/
+		 * Add a new message from e1 (source ) to e2 (dest).
+		 * The m1 and m2 indicate source and dest msg indices.
+		 * The funcId1 is the source funcId, which is going to be used
+		 * at the dest, but is optional so it may be zero.
+		 * The funcId2 is the dest funcId, which must be nonzero and will
+		 * be used when the source calls the dest.
+		 * Later I may relax the directional restrictions.
+		 *
+		 * Returns the newly created ConnTainer pointer. Note that the
+		 * ConnTainer type depends on the type of the elements and
+		 * possibly also on additional info, yet to be determined.
+		 * For example, a message between SimpleElements will use a
+		 * SimpleConnTainer.
+		 * A message between ArrayElements may use SparseConnTainer or
+		 * One2OneConnTainer, or various others.
 		 */
-		static ConnTainer* add( Element* thisE, Element* otherE, 
-			unsigned int thisM, unsigned int otherM );
+		static ConnTainer* add( Element* e1, Element* e2, 
+			unsigned int m1, unsigned int m2,
+			unsigned int funcId1, unsigned int funcId2 );
 
 		// This is invoked by the remote Msg.
 		// It is also used in Copy.
@@ -93,6 +108,15 @@ class Msg
 		 * to deleting self.
 		 */
 		void dropAll();
+
+		/**
+		 * Utility function for putting a new ConnTainer onto a msg as
+		 * specified by the funcId. If necessary it traverses through the
+		 * 'next' message looking for a funcId match,  and allocates a
+		 * new 'next' message for the FuncId if there are no matches.
+		 */
+		void assignMsgByFuncId( 
+			Element* e, unsigned int funcId, ConnTainer* ct );
 
 		/**
 		 * Returns the function identified by funcNum.
@@ -113,12 +137,9 @@ class Msg
 		}
 
 		/**
-		 * Returns the ptr to the next Msg in the list...
-		 * \todo: need to fix and use relative indexes?
+		 * Returns the ptr to the next Msg in the list.
 		 */
-		Msg* next() const {
-			return next_;
-		}
+		const Msg* next( const Element* e ) const;
 
 		/**
 		 * Returns the Id of the FuncVec
@@ -152,12 +173,12 @@ class Msg
 		/**
 		 * Points to a global FuncList.
 		 */
-		FuncVec *fv_; 
+		const FuncVec *fv_; 
 
 		/**
 		 * Could use index or ptr here. need to sort it out.
 		 */
-		Msg* next_; 
+		unsigned int next_; 
 };
 
 #endif // _MSG_H

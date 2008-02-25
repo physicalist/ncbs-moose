@@ -74,9 +74,11 @@ bool SharedFinfo::add(
 		assert ( names_.size() > 0 );
 
 		if ( isDest_ ) {
-			return Msg::add( destElm, e, destMsg, msg_ );
+			return Msg::add( destElm, e, destMsg, msg_,
+				destFuncId, srcFuncId );
 		} else {
-			return Msg::add( e, destElm, msg_, destMsg );
+			return Msg::add( e, destElm, msg_, destMsg,
+				srcFuncId, destFuncId );
 		}
 		return 1;
 	}

@@ -50,7 +50,8 @@ class Element
 		virtual Msg* varMsg( unsigned int msgNum ) = 0;
 
 		/**
-		 * Ensures that the requested msg is allocated
+		 * Ensures that the requested msg is allocated. If it isn't,
+		 * it allocates it.
 		 */
 		virtual void checkMsgAlloc( unsigned int num ) = 0;
 

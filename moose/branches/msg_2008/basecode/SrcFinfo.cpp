@@ -21,7 +21,7 @@ bool SrcFinfo::add(
 
 	e->checkMsgAlloc( msg_ );
 
-	unsigned int srcFuncId;
+	unsigned int srcFuncId = 0;
 	unsigned int destFuncId;
 	unsigned int destMsg;
 	unsigned int numDest;
@@ -35,7 +35,8 @@ bool SrcFinfo::add(
 		assert( FuncVec::getFuncVec( destFuncId )->size() == 1 );
 		assert( numDest == 1 );
 
-		return Msg::add( e, destElm, msg_, destMsg );
+		return Msg::add( e, destElm, msg_, destMsg,
+			srcFuncId, destFuncId );
 	}
 	return 0;
 }

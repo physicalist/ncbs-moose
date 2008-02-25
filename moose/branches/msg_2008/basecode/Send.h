@@ -55,11 +55,11 @@ template < class T > void send1(
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
 			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() );
-				j->good(); j++ )
+				j->good(); j->increment() )
 				rf( j, val );
 		}
 	// Yes, it is an assignment, not a comparison
-	} while ( ( m = m->next() ) ); 
+	} while ( ( m = m->next( e ) ) ); 
 }
 
 /**
@@ -111,11 +111,11 @@ template < class T1, class T2 > void send2(
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
 			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() );
-				j->good(); j++ )
+				j->good(); j->increment() )
 				rf( j, v1, v2 );
 		}
 	// Yes, it is an assignment, not a comparison
-	} while ( ( m = m->next() ) ); 
+	} while ( ( m = m->next( e ) ) ); 
 }
 
 /**
@@ -168,11 +168,11 @@ template < class T1, class T2, class T3 > void send3(
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
 			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() );
-				j->good(); j++ )
+				j->good(); j->increment() )
 				rf( j, v1, v2, v3 );
 		}
 	// Yes, it is an assignment, not a comparison
-	} while ( ( m = m->next() ) ); 
+	} while ( ( m = m->next( e ) ) ); 
 }
 
 /**
@@ -226,11 +226,11 @@ template < class T1, class T2, class T3, class T4 > void send4(
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
 			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() );
-				j->good(); j++ )
+				j->good(); j->increment() )
 				rf( j, v1, v2, v3, v4 );
 		}
 	// Yes, it is an assignment, not a comparison
-	} while ( ( m = m->next() ) );
+	} while ( ( m = m->next( e ) ) );
 }
 
 /**

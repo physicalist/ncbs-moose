@@ -21,10 +21,11 @@ void send0( const Element* e, unsigned int eIndex, Slot src )
 		vector< ConnTainer* >::const_iterator i;
 		// Going through the MsgSrc vector of ConnTainers
 		for ( i = m->begin( ); i != m->end( ); i++ ) {
-			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() ); j->good(); j++ )
+			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() ); 
+				j->good(); j->increment() )
 				rf( j );
 		}
-	} while ( ( m = m->next() ) ); // An assignment, not a comparison.
+	} while ( ( m = m->next( e ) ) ); // An assignment, not a comparison.
 }
 
 void sendTo0( const Element* e, unsigned int eIndex, Slot src,

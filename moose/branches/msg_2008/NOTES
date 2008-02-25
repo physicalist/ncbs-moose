@@ -5950,5 +5950,13 @@ Checked in as revision 418 with unit test flags on, Smoldyn off, -g, GSL
 
 Compiled and linked. It crashes at once when run, but major step forward
 anyway.
+Checked in as revision 419 with unit test flags on, Smoldyn off, -g, GSL
+
+Slow steady progress going through unit tests.
+
+==============================================================================
+25 Feb 2008
+Sent first message, after considerable fixing up of related code. However
+~Msg() barfs. Long way to go yet.
 
 ==============================================================================
