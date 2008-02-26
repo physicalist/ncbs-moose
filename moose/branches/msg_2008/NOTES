@@ -5964,4 +5964,25 @@ Fixed ~Msg. Involved a fair amount of fixing to get the logic of the isDest
 sorted out on various Finfos and in the initialization code. Now we're
 partly into the class formation tests.
 
+Checked in as revision 421 with unit test flags on, Smoldyn off, -g, GSL
+
+Somewhat stuck some way on in FinfoTest, I suspect that a bad ptr access
+has corrupted things. Yup, valgrind confirms that I'm sending data that has
+been freed.
+
+==============================================================================
+26 Feb
+Fixed. It was a problem with the ~Msg(), which was doing a dropAll. Cannot do
+so because the Msg vector gets resized, and we don't want to lose messages
+when that happens.
+New issue: We can attempt to send messages that have not yet been allocated.
+One option is to always put SrcFinfos first. As all elements must be a child
+of something, the Msg array will always have the places allocated. But this
+won't work if we interleave src and dests, which will happen for inheritance.
+
+Could force all Srcs to be allocated during the create function.
+Did so. Now have the issue of ballooning # of Msg slots preallocated. Defer.
+
+More serious problem: Need to sort out multi-target-class messages.
+
 ==============================================================================

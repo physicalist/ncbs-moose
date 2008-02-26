@@ -46,11 +46,12 @@ Cinfo::Cinfo(const std::string& name,
 )
 		: name_(name), author_(author), 
 		description_(description), baseCinfo_(baseCinfo),
-		ftype_( ftype ), nMsg_( 0 )
+		ftype_( ftype ), nMsg_( 0 ), predefinedMsgs_( 0 )
 {
 	unsigned int i;
 	if ( baseCinfo ) {
 		nMsg_ = baseCinfo->nMsg_;
+		predefinedMsgs_ = baseCinfo->predefinedMsgs_;
 		for ( i = 0; i < baseCinfo->finfos_.size(); i++ ) {
 			Finfo* f = findMatchingFinfo(
 				baseCinfo->finfos_[i]->name(), finfoArray, nFinfos );
@@ -141,6 +142,12 @@ Cinfo::Cinfo(const std::string& name,
 			// This sends in the new Cinfo name needed to set up the
 			// FuncVecs within the finfoArray.
 			finfoArray[i]->addFuncVec( name );
+			if ( finfoArray[i]->funcId() != 0 ) {
+				if ( baseCinfo_ )
+					predefinedMsgs_ = nMsg_ + baseCinfo_->predefinedMsgs_;
+				else
+					predefinedMsgs_ = nMsg_;
+			}
 
             finfos_.push_back( finfoArray[i] );
 #ifdef GENERATE_WRAPPERS                
@@ -334,6 +341,7 @@ Element* Cinfo::create( Id id, const std::string& name,
 {
 	SimpleElement* ret = 
 		new SimpleElement( id, name, data );
+	ret->checkMsgAlloc( predefinedMsgs_ );
 	if ( noDeleteFlag )
 		ret->addFinfo( noDelFinfo_ );
 	else

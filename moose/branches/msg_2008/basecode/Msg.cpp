@@ -15,10 +15,14 @@ Msg::Msg()
 	: fv_( FuncVec::getFuncVec( 0 ) ), next_( 0 )
 {;}
 
+/**
+ * Originally the ~Msg performed a dropAll. However, every time we 
+ * resize the Msg vector we delete and recreate messages, so this is
+ * wrong. Instead we need to do the dropAll explicitly when the object
+ * is being deleted, but not when the individual msg is.
+ */
 Msg::~Msg()
-{
-	dropAll();
-}
+{ ; }
 
 void Msg::assignMsgByFuncId( 
 	Element* e, unsigned int funcId, ConnTainer* ct )
