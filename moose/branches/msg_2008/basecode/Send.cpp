@@ -21,6 +21,7 @@ void send0( const Element* e, unsigned int eIndex, Slot src )
 		vector< ConnTainer* >::const_iterator i;
 		// Going through the MsgSrc vector of ConnTainers
 		for ( i = m->begin( ); i != m->end( ); i++ ) {
+			Conn* foo = ( *i )->conn( eIndex, m->isDest() ); 
 			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() ); 
 				j->good(); j->increment() )
 				rf( j );

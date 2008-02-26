@@ -130,7 +130,8 @@ class Cinfo
 			 */
 			Finfo* thisFinfo_;
 			Finfo* noDelFinfo_;
-			unsigned int nMsg_;
+			unsigned int nMsg_; // All messages
+			unsigned int predefinedMsgs_; // Highest index of SrcFinfos: need to preallocate at least this many.
 			static std::map< std::string, Cinfo* >& lookup();
 };
 

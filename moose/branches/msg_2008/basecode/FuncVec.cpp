@@ -30,7 +30,7 @@ static vector< FuncVec* >& funcVecLookup()
 }
 
 FuncVec::FuncVec( const string& className, const string& finfoName )
-	: isDest_( 0 )
+	: id_( 0 ), isDest_( 0 )
 {
 	name_ = className + "." + finfoName;
 	funcVecLookup().push_back( this );
@@ -42,6 +42,7 @@ void FuncVec::addFunc( RecvFunc func, const Ftype* ftype )
 {
 	func_.push_back( func );
 	funcType_.push_back( ftype );
+	id_ = 1; // Temporary hack to set up non-zero id when func is live.
 	// parFuncSync_.push_back( ftype->parFuncSync() );
 	// parFuncAsync_.push_back( ftype->parFuncAsync() );
 }

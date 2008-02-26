@@ -242,8 +242,10 @@ void proc( const Conn* c )
 	// For now I'll set them to the correct value, but you should
 	// suspect these if there are any further problems with the
 	// unit tests.
-	send1< double >( c->targetElement(), 0, Slot( 1, 0 ), ret );
-	send1< double >( c->targetElement(), 0, Slot( 2, 0 ), ret );
+	// The first slot is supposed to represent sumout
+	// The second slot is supposed to represent subout.
+	send1< double >( c->targetElement(), 0, Slot( 10, 0 ), ret );
+	send1< double >( c->targetElement(), 0, Slot( 11, 0 ), ret );
 }
 
 #include <map>
@@ -287,6 +289,8 @@ void cinfoTest()
 	// I want to check the indexing of srcIndex_ and destIndex_ here
 	// but the fields are private. So I've made this function their
 	// friend.
+	
+	FuncVec::sortFuncVec();
 	
 	Slot startIndex;
 	ASSERT( testFinfos[0]->getSlot( "sum", startIndex ), "test getSlot" );
@@ -363,11 +367,11 @@ void cinfoTest()
 	SimpleElement* se1 = static_cast< SimpleElement* >( e1 );
 
 	testFinfos[4]->add( e1, e2, testFinfos[0] );
-	ASSERT( se1->msg_.size() == 4 + startIndex.msg(), "" );
+	ASSERT( se1->msg_.size() == 7 + startIndex.msg(), "" );
 	// Fill in stuff here for checking that the Conn points where it should
 
 	testFinfos[4]->add( e1, e3, testFinfos[0] );
-	ASSERT( se1->msg_.size() == 4 + startIndex.msg(), "" );
+	ASSERT( se1->msg_.size() == 7 + startIndex.msg(), "" );
 
 	testFinfos[4]->add( e2, e3, testFinfos[0] );
 	testFinfos[5]->add( e3, e1, testFinfos[1] );
@@ -383,12 +387,12 @@ void cinfoTest()
 	Slot printOutSlotIndex = testclass.getSlot( "printout" );
 	Slot procOutSlotIndex = testclass.getSlot( "procout" );
 
-	ASSERT( se1->msg_.size() == 4 + startIndex.msg(), "" );
+	ASSERT( se1->msg_.size() == 7 + startIndex.msg(), "" );
 
 	Slot subSlotIndex = testclass.getSlot( "sub" );
 	Slot printSlotIndex = testclass.getSlot( "print" );
 	Slot procSlotIndex = testclass.getSlot( "proc" );
-	ASSERT( se1->msg_.size() == 4 + sumSlotIndex.msg(), "" );
+	ASSERT( se1->msg_.size() == 11 + sumSlotIndex.msg(), "" );
 
 	// e2->conn[0] goes to e3 as it is a msgsrc
 

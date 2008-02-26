@@ -79,6 +79,15 @@ SimpleElement::~SimpleElement()
 		}
 	}
 
+	/**
+	 * Need to explicitly drop messages, because we cannot tie the 
+	 * operation to the Msg destructor. This is because the Msg vector
+	 * changes size all the time but the Msgs themselves should not
+	 * be removed.
+	 */
+	vector< Msg >::iterator m;
+	for ( m = msg_.begin(); m!= msg_.end(); m++ )
+		m->dropAll();
 
 	// Check if Finfo is one of the transient set, if so, clean it up.
 	vector< Finfo* >::iterator i;
@@ -118,8 +127,8 @@ Msg* SimpleElement::varMsg( unsigned int msgNum )
 void SimpleElement::checkMsgAlloc( unsigned int num )
 {
 	assert( num < 100 ); // Should actually compare with # of Finfos.
-	if ( msg_.size() < num )
-		msg_.resize( num );
+	if ( msg_.size() <= num )
+		msg_.resize( num + 1 );
 }
 
 //////////////////////////////////////////////////////////////////
