@@ -472,6 +472,7 @@ void finfoLookupTest()
 					ValueFtype1< double >::global() );
 
 
+	FuncVec::sortFuncVec();
 
 	Element* clock = testclass.create(  Id::scratchId(), "clock" );
 	Element* e1 = testclass.create( Id::scratchId(), "e1" );
@@ -510,20 +511,20 @@ void finfoLookupTest()
 	SimpleElement* se1 = static_cast< SimpleElement* >( e1 );
 
 	e1->findFinfo( "sumout" )->add( e1, e2, e2->findFinfo( "sum" ) );
-	// testFinfos[4]->add( e1, e2, testFinfos[0] );
 	
 	Slot sumOutSlotIndex = testclass.getSlot( "sumout" );
 
-	ASSERT( se1->msg_.size() == 4 + sumOutSlotIndex.msg(), "" );
+	ASSERT( se1->msg( sumOutSlotIndex.msg() )->size() == 1, "" );
 
 	e1->findFinfo( "sumout" )->add( e1, e3, e3->findFinfo( "sum" ) );
-	// testFinfos[4]->add( e1, e3, testFinfos[0] );
-	ASSERT( se1->msg_.size() == 4 + sumOutSlotIndex.msg(), "" );
+	ASSERT( se1->msg( sumOutSlotIndex.msg() )->size() == 2, "" );
 
 	e2->findFinfo( "sumout" )->add( e2, e3, e3->findFinfo( "sum" ) );
 	e3->findFinfo( "subout" )->add( e3, e1, e1->findFinfo( "sub" ) );
-	// testFinfos[4]->add( e2, e3, testFinfos[0] );
-	// testFinfos[5]->add( e3, e1, testFinfos[1] );
+	ASSERT( e2->msg( sumOutSlotIndex.msg() )->size() == 1, "" );
+
+	Slot subOutSlotIndex = testclass.getSlot( "subout" );
+	ASSERT( e3->msg( subOutSlotIndex.msg() )->size() == 1, "" );
 
 	clock->findFinfo( "printout" )->add( clock, e1, e1->findFinfo( "print" ) );
 	clock->findFinfo( "printout" )->add( clock, e2, e2->findFinfo( "print" ) );
@@ -538,18 +539,13 @@ void finfoLookupTest()
 	// testFinfos[7]->add( clock, e2, testFinfos[3] );
 	// testFinfos[7]->add( clock, e3, testFinfos[3] );
 	//
-	Slot subOutSlotIndex = testclass.getSlot( "subout" );
 	Slot printOutSlotIndex = testclass.getSlot( "printout" );
 	Slot procOutSlotIndex = testclass.getSlot( "procout" );
-
-	ASSERT( se1->msg_.size() == 4 + sumOutSlotIndex.msg(), "" );
 
 	Slot sumSlotIndex = testclass.getSlot( "sum" );
 	Slot subSlotIndex = testclass.getSlot( "sub" );
 	Slot printSlotIndex = testclass.getSlot( "print" );
 	Slot procSlotIndex = testclass.getSlot( "proc" );
-
-	ASSERT( se1->msg_.size() == 4 + sumSlotIndex.msg(), "" );
 
 	// e2->conn[0] goes to e3 as it is a msgsrc
 
@@ -688,6 +684,7 @@ void valueFinfoTest()
 					ValueFtype1< TestClass >::global() );
 
 
+	FuncVec::sortFuncVec();
 
 	Element* clock = testclass.create( Id::scratchId(), "clock" );
 	string sret = "";
