@@ -16,6 +16,7 @@
 void send0( const Element* e, unsigned int eIndex, Slot src )
 {
 	const Msg* m = e->msg( src.msg() );
+	if ( m->size() == 0 ) return;
 	do {
 		RecvFunc rf = m->func( src.func() );
 		vector< ConnTainer* >::const_iterator i;

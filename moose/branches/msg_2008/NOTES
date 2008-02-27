@@ -5983,6 +5983,22 @@ won't work if we interleave src and dests, which will happen for inheritance.
 Could force all Srcs to be allocated during the create function.
 Did so. Now have the issue of ballooning # of Msg slots preallocated. Defer.
 
-More serious problem: Need to sort out multi-target-class messages.
+Checked in as revision 422 with unit test flags on, Smoldyn off, -g, GSL
+
+More serious problem: Need to sort out multi-target-class messages that use
+the next_ field.
+Linked list with ptrs: 
+	- Need special updates in copies
+	- Need special updates when deleting.
+	- But all these are local to the msg.
+Linked list on main Msg array
+	- Need special updates when inserting a new msg.
+	- Not local to the msg.
+
+==============================================================================
+27 Feb 2008
+More unit tests now work. Messaging with Finfo::add now works.
+Current issue is with the messaging into regular ValueFinfosb in other works
+how the DynamicFinfo handles it. See line 800 of UnitTests.cpp
 
 ==============================================================================
