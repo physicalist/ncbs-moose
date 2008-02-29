@@ -124,10 +124,10 @@ bool Msg::drop( unsigned int doomed )
 	if ( doomed < c_.size() ) {
 		ConnTainer* d = c_[ doomed ];
 		Msg* remoteMsg;
-		if ( fv_->isDest() )
-			remoteMsg = d->e1()->varMsg( d->msg1() );
-		else 
+		if ( fv_->isDest() ) // The current msg is the source
 			remoteMsg = d->e2()->varMsg( d->msg2() );
+		else 
+			remoteMsg = d->e1()->varMsg( d->msg1() );
 
 		assert( remoteMsg != 0 );
 		if ( remoteMsg->drop( d ) ) {
@@ -153,7 +153,7 @@ void Msg::dropAll()
 	Msg* remoteMsg;
 
 	for ( i = c_.begin(); i != c_.end(); i++ ) {
-		if ( fv_->isDest() ) // that is, the current msg is source.
+		if ( fv_->isDest() ) // The current msg is source.
 			remoteMsg = ( *i )->e2()->varMsg( ( *i )->msg2() );
 		else 
 			remoteMsg = ( *i )->e1()->varMsg( ( *i )->msg1() );

@@ -19,6 +19,7 @@ DestFinfo::DestFinfo( const string& name, const Ftype *f,
 	msg_( msg )
 {
 	// Save the function data.
+	// Deprecated
 	getFunctionDataManager()->add( rfunc, this );
 }
 

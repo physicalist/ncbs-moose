@@ -626,23 +626,23 @@ class TestClass
 				TestClass* tc = static_cast< TestClass* >( data );
 					tc->dval *= tc->ival;
 
-					// This sends the double value out to a target
-					// dsumout == 0, but base class changes it
-					send1< double >( e, 0, Slot( 1, 0 ), tc->dval );
+					// Sends a double out to the target
+					// dsumOutSlotIndex = 6
+					send1< double >( e, 0, Slot( 6, 0 ), tc->dval );
 
 					// This sends the int value out to a target
-					// isetout == 1, but base class changes it
-					send1< int >( e, 0, Slot( 2, 0 ), tc->ival );
+					// isetOutSlotIndex = 7
+					send1< int >( e, 0, Slot( 7, 0 ), tc->ival );
 
 					// This just sends a trigger to the remote object.
-					// procout == 2, but base class changes it.
 					// Either it will trigger dproc itself, or it
 					// could trigger a getfunc.
 					// 
 					// Again, it is a bad idea to use a literal index
 					// here because the actual index depends on
 					// base classes.
-					send0( e, 0, Slot( 3, 0 ) );
+					// procOutSlotIndex = 8
+					send0( e, 0, Slot( 8, 0 ) );
 			}
 
 		private:
@@ -686,10 +686,15 @@ void valueFinfoTest()
 
 	FuncVec::sortFuncVec();
 
+	Slot dsumOutSlotIndex = testclass.getSlot( "dsumout" );
+	Slot isetOutSlotIndex = testclass.getSlot( "isetout" );
+	Slot procOutSlotIndex = testclass.getSlot( "procout" );
+
 	Element* clock = testclass.create( Id::scratchId(), "clock" );
 	string sret = "";
 	double dret = 0;
 	int iret;
+	bool bret;
 
 	get< double >( clock, clock->findFinfo( "dval" ), dret );
 	ASSERT( dret == 1234.5, "test get1");
@@ -778,19 +783,26 @@ void valueFinfoTest()
 	// 				Here we set up dval first, then the trigger msg.
 	/////////////////////////////////////////////////////////////
 	
-	Slot procOutSlotIndex = testclass.getSlot( "procout" );
 
 	Element* e1 = testclass.create( Id::scratchId(), "e1" );
 	Element* e2 = testclass.create( Id::scratchId(), "e2" );
 	set< double >( e1, e1->findFinfo( "dval" ), 1 );
-	set< int >( e1, e1->findFinfo( "ival" ), -1 );
+	bret = set< int >( e1, e1->findFinfo( "ival" ), -1 );
+	ASSERT( bret, "assignment" );
 
-	get< int >( e1, e1->findFinfo( "ival" ), iret );
+	bret = get< int >( e1, e1->findFinfo( "ival" ), iret );
+	ASSERT( bret, "lookup" );
+	ASSERT( iret == -1, "proc--> e1/dsumout --> e2/dsum" );
 
-	set< double >( e2, e2->findFinfo( "dval" ), 2 );
-	set< int >( e2, e2->findFinfo( "ival" ), -2 );
-	clock->findFinfo( "procout" )->add( clock, e1, e1->findFinfo( "proc" ) );
-	e1->findFinfo( "dsumout" )->add( e1, e2, e2->findFinfo( "dsum" ) );
+	bret = set< double >( e2, e2->findFinfo( "dval" ), 2 );
+	ASSERT( bret, "assignment" );
+	bret = set< int >( e2, e2->findFinfo( "ival" ), -2 );
+	ASSERT( bret, "assignment" );
+	bret = clock->findFinfo( "procout" )->add( clock, e1, e1->findFinfo( "proc" ) );
+	ASSERT( bret, "adding msg" );
+	bret = e1->findFinfo( "dsumout" )->add( e1, e2, e2->findFinfo( "dsum" ) );
+	ASSERT( bret, "adding msg" );
+	
 	send0( clock, 0, procOutSlotIndex ); // procout
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
 	ASSERT( dret == -1.0, "proc--> e1/dsumout --> e2/dsum" );
@@ -813,7 +825,8 @@ void valueFinfoTest()
 	get< int >( e3, e3->findFinfo( "ival" ), iret );
 	ASSERT( iret == -3, "proc--> e1/isetout --> e3/ival" );
 
-	e1->findFinfo( "isetout" )->add( e1, e3, e3->findFinfo( "ival" ) );
+	bret = e1->findFinfo( "isetout" )->add( e1, e3, e3->findFinfo( "ival" ) );
+	ASSERT( bret, "adding msg" );
 	send0( clock, 0, procOutSlotIndex ); // procout
 
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
