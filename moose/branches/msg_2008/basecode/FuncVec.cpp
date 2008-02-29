@@ -7,13 +7,20 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#include <algorithm>
+#include "header.h"
+#include "ProcInfo.h"
+#include "SetConn.h"
+#include "DerivedFtype.h"
+/*
 #include <string>
 #include <vector>
-#include <algorithm>
 #include <cassert>
 #include "RecvFunc.h"
 #include "Ftype.h"
+#include "SetConn.h"
 #include "FuncVec.h"
+*/
 
 using namespace std;
 
@@ -109,27 +116,41 @@ static bool fvcmp( const FuncVec* a, const FuncVec* b )
  * sortFuncVec puts them in order and assigns ids.
  * Must be called before any messaging is begun, because we'll need
  * the FuncVecs for that.
+ * It is OK (if wasteful) to call it again later, provided no internode
+ * messages have been sent and no-one is using the funcIds elsewhere,
+ * as they will change.
  */
 void FuncVec::sortFuncVec( )
 {
 	vector< FuncVec* >& fv = funcVecLookup();
-	sort( fv.begin(), fv.end(), fvcmp );
-	FuncVec* empty = new FuncVec( "empty", "empty" );
-	fv.insert( fv.begin(), empty );
-	// Note that 'empty' is at zero.
+	// Check if it has already been done. 
+	if ( fv.size() > 2 && 
+		fv[0]->name() == "empty" && fv[1]->name() == "dummy" ) {
+		sort( fv.begin() + 2, fv.end(), fvcmp );
+		cout << fv.size() << " FuncVecs rebuilt \n";
+	} else {
+		sort( fv.begin(), fv.end(), fvcmp );
+
+		// Put it in at the beginning
+		FuncVec* empty = new FuncVec( "empty", "empty" );
+		fv[ fv.size() - 1 ] = fv[0];
+		fv[0] = empty;
+
+		// Put it in at number 1.
+		FuncVec* dummy = new FuncVec( "dummy", "dummy" );
+		fv[ fv.size() - 1 ] = fv[1];
+		fv[1] = dummy;
+
+		dummy->addFunc( &dummyFunc, Ftype0::global() );
+		dummy->setDest();
+		cout << fv.size() << " FuncVecs built for the first time\n";
+	}
+	// Note that 'empty' is at zero and 'dummy' at one.
 	for ( unsigned int i = 0; i < fv.size(); i++ ) {
 		if ( fv[i]->size() == 0 )
 			fv[i]->id_ = EMPTY_ID;
 		else
 			fv[i]->id_ = i;
 	}
-	cout << fv.size() << " FuncVecs built.\n";
 }
 
-/**
-* This static identifies a FuncVec without entries.
-*/
-unsigned int FuncVec::emptyId()
-{
-	return EMPTY_ID;
-}

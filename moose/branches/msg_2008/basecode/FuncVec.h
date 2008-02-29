@@ -98,10 +98,6 @@ class FuncVec
 		 */
 		static void sortFuncVec();
 
-		/**
-		 * This static identifies a FuncVec without entries. Returns a zero
-		 */
-		static unsigned int emptyId();
 
 	private:
 		string name_; // className.finfoName

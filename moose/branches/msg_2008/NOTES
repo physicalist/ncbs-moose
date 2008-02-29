@@ -6001,4 +6001,17 @@ More unit tests now work. Messaging with Finfo::add now works.
 Current issue is with the messaging into regular ValueFinfosb in other works
 how the DynamicFinfo handles it. See line 800 of UnitTests.cpp
 
+Checked in as revision 423 with unit test flags on, Smoldyn off, -g, GSL
+
 ==============================================================================
+28 Feb 2008
+Currently stuck at UnitTest.cpp:830, but the real issue is that in Send.h
+a FuncVec claims isDest() == 0 when it clearly should be 1.
+
+==============================================================================
+29 Feb 2008
+Fixed the bug. It had ramifications in many places:
+Cleaned up FuncVec initialization.
+Cleaned up DynamicFinfo message handling.
+Cleaned up earlier unit tests
+Now bug has moved on to another stage.

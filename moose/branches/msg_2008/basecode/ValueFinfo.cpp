@@ -20,6 +20,7 @@ ValueFinfo::ValueFinfo(
 	: Finfo( name, f ), get_( get ), set_( set )
 {
 	// Save the function data.
+	// Deprecated
 	getFunctionDataManager()->add( set, this );
 }
 
@@ -126,4 +127,5 @@ void ValueFinfo::addFuncVec( const string& cname )
 {
 	fv_ = new FuncVec( cname, name() );
 	fv_->addFunc( set_, ftype() );
+	fv_->setDest();
 }
