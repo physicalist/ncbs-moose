@@ -840,6 +840,10 @@ void valueFinfoTest()
 
 	
 	/////////////////////////////////////////////////////////////////// 
+	// This set is deprecated. We only have incoming value msgs and
+	// shared msgs now.
+	/////////////////////////////////////////////////////////////////// 
+	/*
 	cout << "\nTesting trig then dval: --proc--> e1/procout --> e0/dval --> e4/dsum";
 	// --proc--> e1/procout --> e0/dval --> e4/dsum
 	Element* e0 = testclass.create( Id::scratchId(), "e0" );
@@ -1037,6 +1041,7 @@ void valueFinfoTest()
 	ASSERT( dret == 9.0,"--proc--> e1/procout --> e9/dval --> e10/dsum");
 	get< int >( e10, e10->findFinfo( "ival" ), iret );
 	ASSERT( iret == -10, "--proc--> e1/procout --> e9/dval --> e10/dsum");
+	*/
 }
 
 /**

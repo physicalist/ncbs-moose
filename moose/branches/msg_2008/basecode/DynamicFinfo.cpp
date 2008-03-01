@@ -23,6 +23,7 @@
 #include "LookupFinfo.h"
 // #include "LookupFtype.h"
 
+static DestFinfo trigFinfo( "trig", Ftype0::global(), &dummyFunc );
 
 DynamicFinfo::~DynamicFinfo()
 {
@@ -91,51 +92,47 @@ DynamicFinfo* DynamicFinfo::setupDynamicFinfo(
 bool DynamicFinfo::add( 
 		Element* e, Element* destElm, const Finfo* destFinfo) const
 {
-		unsigned int srcFuncId;
-		unsigned int destFuncId;
-		unsigned int destMsg;
-		unsigned int numDest;
+	unsigned int srcFuncId;
+	unsigned int destFuncId;
+	unsigned int destMsg;
+	unsigned int numDest;
 
-		// How do we know what the target expects: a simple message
-		// or a shared one? Here we use the respondToAdd to query it.
-		
-		if ( destFinfo->respondToAdd( destElm, e, ftype(),
-								srcFuncId, destFuncId,
-								destMsg, numDest ) )
+	// How do we know what the target expects: a simple message
+	// or a shared one? Here we use the respondToAdd to query it.
+	
+	e->checkMsgAlloc( msg_ );
+	/*
+	 * Remove the single message case. Only shared message allowed.
+	if ( destFinfo->respondToAdd( destElm, e, ftype(),
+							srcFuncId, destFuncId,
+							destMsg, numDest ) )
+	{
+		assert( numDest == 1 );
+		// First we handle the case where this just sends out its
+		// value to the target.
+		return Msg::add( e, destElm, msg_, destMsg, srcFuncId, destFuncId );
+	} else { // Try with a Shared message.
+	*/
+		// Here we make a SharedFtype on the fly for passing in the
+		// respondToAdd.
+		Finfo* shared[] = { 
+			&trigFinfo, const_cast< Finfo* >( origFinfo_ )
+		};
+		SharedFtype sf ( shared, 2 );
+		srcFuncId = FuncVec::getFuncVec( origFinfo_->funcId() )->trigId();
+		assert ( FuncVec::getFuncVec( srcFuncId )->size() == 0 );
+		if ( destFinfo->respondToAdd( destElm, e, &sf,
+							srcFuncId, destFuncId,
+							destMsg, numDest ) )
 		{
 			assert( numDest == 1 );
-			// First we handle the case where this just sends out its
-			// value to the target.
-			return Msg::add( e, destElm, msg_, destMsg,
-				srcFuncId, destFuncId );
-		} else {
-			// Here we make a SharedFtype on the fly for passing in the
-			// respondToAdd.
-			static DestFinfo trigFinfo( "trig", Ftype0::global(), &dummyFunc );
-			Finfo* shared[] = { &trigFinfo, const_cast< Finfo* >( 
-				origFinfo_ ) };
-			SharedFtype sf ( shared, 2 );
-			assert ( FuncVec::getFuncVec( srcFuncId )->size() == 0 );
-			/*
-			srcFuncId = FuncVec::getFuncVec( origFinfo_->funcId() )->trigFuncId();
-			if ( destFinfo->respondToAdd( destElm, e, &sf,
-								srcFuncId, destFuncId,
-								destMsg, numDest ) ) {
-				// This is the SharedFinfo case where the incoming
-				// message should be a Trigger to request the return.
-				unsigned int originatingConn =
-					e->insertConnOnSrc( msg_, destFl, 0, 0);
-				// Here we know that the target is source to the
-				// trigger message. So its Conn must be on
-				// its MsgSrc vector.
-				unsigned int targetConn =
-					destElm->insertConnOnSrc( destIndex, srcFl, 0, 0 );
-				e->connect( originatingConn, destElm, targetConn );
-				return 1;
-			}
-			*/
+			// Note that the Dynamic Finfo must be the dest, even
+			// if it was called as the originator.
+			return Msg::add( destElm, e, destMsg, msg_,
+				destFuncId, srcFuncId );
 		}
-		return 0;
+	// }
+	return 0;
 }
 
 
@@ -157,7 +154,8 @@ bool DynamicFinfo::respondToAdd(
 {
 	assert ( src != 0 && e != 0 );
 
-	// Handle assignment message inputs when ftype is the the same
+	e->checkMsgAlloc( msg_ );
+	// Handle assignment message inputs when ftype is the same
 	// as the original Finfo
 	const FuncVec* fv = FuncVec::getFuncVec( srcFuncId );
 	if ( srcType->isSameType( ftype() ) && fv->size() == 0 ) {
@@ -167,20 +165,18 @@ bool DynamicFinfo::respondToAdd(
 		return 1;
 	}
 
-	// Handle trigger message inputs. The trigger function was
-	// passed in at creation time if the originating object was
-	// a ValueFinfo. Otherwise it should be a dummyFunc. The
-	// function will check for a dummyFunc and complain if it is
-	// found.
-	/**
-	 * \todo: need to figure out what to do here.
-	if ( Ftype0::isA( srcType ) && fv->size() == 0 )
-	{
-		if ( trigFunc_ == dummyFunc )
-			return 0;
-		returnFuncId = orig->funcId()->trigId;
-		returnFl.push_back( trigFunc_ );
-		destIndex = destIndex_;
+	unsigned int trigId = 
+		FuncVec::getFuncVec( origFinfo_->funcId() )->trigId();
+	/*
+	 * Disable the capability for independent trigger.
+	// Handle trigger message when ftype is an Ftype0 and original
+	// object was a ValueFinfo or related.
+	if ( fv->size() == 0 && srcType->isSameType( Ftype0::global() ) && 
+		ftype()->nValues() == 1 &&
+		trigId != 0 )
+		{
+		returnFuncId = trigId;
+		destIndex = msg_;
 		numDest = 1;
 		return 1;
 	}
@@ -189,28 +185,16 @@ bool DynamicFinfo::respondToAdd(
 	// Handle SharedFinfo requests. The srcFl should have one
 	// RecvFunc designed to handle the returned value. The
 	// src Ftype is a SharedFtype that we will have to match.
-	if ( FuncVec::getFuncVec( srcFuncId )->size() == 1 )
+	// Here we make a SharedFtype on the fly for comparing with the
+	// incoming ftype.
+	Finfo* shared[] = { &trigFinfo, const_cast< Finfo* >( origFinfo_ ) };
+	SharedFtype sf ( shared, 2 );
+	if ( fv->size() == 1  && trigId != 0 && sf.isSameType( srcType ) )
 	{
-	/**
-	 * \todo: need to figure out what to do here.
-		if ( trigFunc_ == dummyFunc )
-			return 0;
-
-		TypeFuncPair respondArray[2] = {
-			TypeFuncPair( ftype(), 0 ),
-			TypeFuncPair( Ftype0::global(), trigFunc_ )
-		};
-		SharedFtype sf( respondArray, 2 );
-		if ( sf.isSameType( srcType ) ) {
-			returnFl.push_back( trigFunc_ );
-			// We have to put this end of the message into the
-			// MsgSrc array because there is a MsgSrc for the value.
-			destIndex = srcIndex_;
-			// I don't think numDest is used.
-			numDest = 0;
-			return 1;
-		}
-	*/
+		returnFuncId = trigId;
+		destIndex = msg_;
+		numDest = 1;
+		return 1;
 	}
 	return 0;
 }
@@ -306,7 +290,15 @@ const DynamicFinfo* getDF( const Conn* c )
 	// one and must not be used for finding DynamicFinfos.
 	assert( c->targetIndex() != MAXUINT );
 	Element* e = c->targetElement();
-	const Msg* m = e->msg( c->targetMsg() );
+	// const Msg* m = e->msg( c->targetMsg() );
+
+	const Finfo* f;
+	unsigned int i = 1;
+	while ( ( f = e->localFinfo( i ) ) ) {
+		if ( f->msg() == c->targetMsg() || f->msg() == c->sourceMsg() )
+			return dynamic_cast< const DynamicFinfo* >( f );
+		i++;
+	}
 
 	return 0;
 
