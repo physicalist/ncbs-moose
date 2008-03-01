@@ -42,12 +42,6 @@ bool ValueFinfo::add(
 					e,
 					name(), this,
 					get_);
-	/*
-	DynamicFinfo *df = new DynamicFinfo( name(), this,
-					set_, get_,
-					set_, ftype()->trigFunc() );
-	e->addFinfo( df );
-	*/
 	return df->add( e, destElm, destFinfo );
 }
 			
@@ -102,6 +96,7 @@ bool ValueFinfo::respondToAdd(
 {
 	assert( srcType != 0 );
 	assert( src != 0 && e != 0 );
+
 	DynamicFinfo *df = DynamicFinfo::setupDynamicFinfo(
 					e,
 					name(), this,
@@ -128,4 +123,5 @@ void ValueFinfo::addFuncVec( const string& cname )
 	fv_ = new FuncVec( cname, name() );
 	fv_->addFunc( set_, ftype() );
 	fv_->setDest();
+	fv_->makeTrig(); // Special operation to make a trigger funcVec too.
 }

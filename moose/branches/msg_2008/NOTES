@@ -6014,4 +6014,39 @@ Fixed the bug. It had ramifications in many places:
 Cleaned up FuncVec initialization.
 Cleaned up DynamicFinfo message handling.
 Cleaned up earlier unit tests
-Now bug has moved on to another stage.
+Checked in as revision 424 with unit test flags on, Smoldyn off, -g, GSL
+
+Now bug has moved on to another stage, line 863.
+This bug looks like it has to do with other cases for adding dynamic finfo:
+adding a trigger message to a value field.
+
+This boils down to asking how we are going to represent trigger func ids.
+At present there are no such ids, but we could easily generate the actual
+function in the FuncVec.
+For the respondToAdd I could: 
+	- return the original func id with the idea that the requester knows
+	what it wants
+	- create a set of dummy funcIds which signify that we really want the
+	trigger func
+	- Create an additional funcVec with its own id, that holds the 
+		trigFunc. The original funcVec would point to this
+		id if it exists. This would be an additional verification that
+		the Finfo supports trig funcs.
+
+Implemented the third option, it is pretty clean.
+Got trig messages into the DynamicFinfo to work.
+Next: 
+	- Add messages to go out of the DynamicFinfo
+	- Handle Shared messages into dynamicFinfo.
+
+Decided to get rid of single outgoing or single trig incoming messages
+to DynamicFinfo: complicated and unlikely.
+
+That advanced things to SharedFinfos. Where they are stuck.
+==============================================================================
+1 March 2008
+Fixed SharedFinfos. One key restriction now is that we cannot have a Shared
+Finfo sending to itself even on a different element. This is because we
+require each Finfo to have directionality: it is either a src or a dest.
+
+==============================================================================

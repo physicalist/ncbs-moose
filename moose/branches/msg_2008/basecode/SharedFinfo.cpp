@@ -228,7 +228,7 @@ void SharedFinfo::addFuncVec( const string& cname )
 // and has a dest to recieve it. The other part has a Ftype0 to
 // trigger the send of the double, and a dest to recieve that.
 // This message ping-pongs doubles back and forth, every time the
-// trigger is set off. The recieving dval is set to 2x the value.
+// trigger is set off. The recieving dval is incremented by 2x the value.
 
 class SharedTest
 {
@@ -258,75 +258,43 @@ class SharedTest
 				return static_cast< SharedTest* >( e->data( 0 ) )->dval_;
 		}
 
-		static void trigRead( const Conn* c ) {
-			Element* e = c->targetElement();
-			// 0 is the readVal trig MsgSrc., but we have to
-			// increment it to 1 because of base class.
-			send0( e, 0, Slot( 1, 0 ) );
-		}
-
-		static void pingPong( const Conn* c ) {
-			Element* e = c->targetElement();
-			SharedTest* st = 
-				static_cast< SharedTest* >( c->data() );
-			// 1 is the pingPong dval MsgSrc. We have to increment it to
-			// 2 because of the base class
-			send1< double >( e, 0, Slot( 2, 0 ), st->dval_ );
-		}
-
-		static void trigPing( const Conn* c ) {
-			Element* e = c->targetElement();
-			// 2 is the pingPong trig MsgSrc. We have to increment it
-			// to 3 because of the base class.
-			send0( e, 0, Slot( 3, 0 ) );
-		}
+		static void trigRead( const Conn* c );
+		static void pingPong( const Conn* c );
+		static void trigPing( const Conn* c );
 
 		private:
 				double dval_;
 };
 
-// We should get the following alignment of MsgSrcs:
-// 0: readVal: trigger
-// 1: pingPong: sending dval
-// 2: pingPong: trigger.
+/*
+ * A bit of a hack to get the Slots set up as globals.
+ */
+static Slot tenXdvalSrcSlot;
+static Slot pingPongTrigSlot;
+static Slot pingPongDataSlot;
 
 void sharedFinfoTest()
 {
 	static Finfo* readValShared[] =
 	{
+			new SrcFinfo( "tenXdvalSrc", Ftype0::global() ),
 			new DestFinfo( "tenXdval", Ftype1< double >::global(), 
 							RFCAST( &SharedTest::tenXdval ) ),
-			new SrcFinfo( "tenXdvalSrc", Ftype0::global() )
 	};
-	/*
-	static TypeFuncPair readValTypes[] = 
-	{ 	// Receive the double, and trigger its sending.
-			TypeFuncPair( Ftype1< double >::global(), 
-							RFCAST( &SharedTest::tenXdval ) ),
-			TypeFuncPair( Ftype0::global(), 0 )
-	};
-	*/
 
-	static Finfo* pingPongShared[] = 
-	{ 	// Send and receive the double, send and receive the trigger.
+	static Finfo* pingPongSrcShared[] = 
+	{ 	// Send trigger, receive double
+			new SrcFinfo( "trig", Ftype0::global() ),
 			new DestFinfo( "recv", Ftype1< double >::global(), 
 							RFCAST( &SharedTest::twoXdval ) ),
-			new SrcFinfo( "send", Ftype1< double >::global() ),
-			new DestFinfo( "trig", 
-							Ftype0::global(), &SharedTest::pingPong ),
-			new SrcFinfo( "trigSrc", Ftype0::global() ),
 	};
 
-	/*
-	static TypeFuncPair pingPongTypes[] = 
-	{ 	// Send and receive the double, send and receive the trigger.
-			TypeFuncPair( Ftype1< double >::global(), 
-							RFCAST( &SharedTest::twoXdval ) ),
-			TypeFuncPair( Ftype1< double >::global(), 0 ),
-			TypeFuncPair( Ftype0::global(), &SharedTest::pingPong ),
-			TypeFuncPair( Ftype0::global(), 0 ),
+	static Finfo* pingPongDestShared[] = 
+	{ 	// Receive trigger, send double.
+			new DestFinfo( "trig", 
+							Ftype0::global(), &SharedTest::pingPong ),
+			new SrcFinfo( "send", Ftype1< double >::global() ),
 	};
-	*/
 
 	static Finfo* testFinfos[] = 
 	{
@@ -334,8 +302,10 @@ void sharedFinfoTest()
 			SharedTest::getDval, RFCAST( &SharedTest::setDval ) ),
 		new SharedFinfo( "readVal", readValShared, 
 			sizeof( readValShared ) / sizeof( Finfo* ) ),
-		new SharedFinfo( "pingPong", pingPongShared,
-			sizeof( pingPongShared ) / sizeof( Finfo* ) ),
+		new SharedFinfo( "pingPongSrc", pingPongSrcShared,
+			sizeof( pingPongSrcShared ) / sizeof( Finfo* ) ),
+		new SharedFinfo( "pingPong", pingPongDestShared,
+			sizeof( pingPongDestShared ) / sizeof( Finfo* ) ),
 		// new SharedFinfo( "readVal", readValTypes, 2 ),
 		// new SharedFinfo( "pingPong", pingPongTypes, 4 ),
 		new DestFinfo( "trigRead", Ftype0::global(), 
@@ -350,17 +320,29 @@ void sharedFinfoTest()
 					sizeof( testFinfos ) / sizeof( Finfo*),
 					ValueFtype1< SharedTest >::global() );
 
+	FuncVec::sortFuncVec();
+
+	tenXdvalSrcSlot = sfc.getSlot( "readVal.tenXdvalSrc" );
+	pingPongTrigSlot = sfc.getSlot( "pingPongSrc.trig" );
+	pingPongDataSlot = sfc.getSlot( "pingPong.send" );
+
 	Element* e1 = sfc.create( Id::scratchId(), "e1" );
 	Element* e2 = sfc.create( Id::scratchId(), "e2" );
 
 	cout << "\nTesting SharedFinfo";
 
+
 	const Finfo* readVal = e1->findFinfo( "readVal" );
+	const Finfo* pingPongSrc = e1->findFinfo( "pingPongSrc" );
 	const Finfo* pingPong = e1->findFinfo( "pingPong" );
 	ASSERT( readVal->add( e1, e2, e2->findFinfo( "dval" ) ),
 					"Adding readVal to dval" );
-	ASSERT( pingPong->add( e1, e2, pingPong ),
-					"Adding pingPong to pingPong" );
+	ASSERT( pingPongSrc->add( e1, e2, pingPong ),
+					"Adding pingPongSrc to pingPong" );
+	
+	// Note that here we test adding a Shared message backward.
+	ASSERT( pingPong->add( e1, e2, pingPongSrc ),
+					"reverse Adding pingPongSrc to pingPong" );
 
 	set< double >( e1, "dval", 1.0 );
 	set< double >( e2, "dval", 2.0 );
@@ -370,17 +352,60 @@ void sharedFinfoTest()
 	get< double >( e2, "dval", ret );
 	ASSERT( ret == 2.0, "initial e2 setup" );
 
+	// e1.readVal->e2.dval: This is a Shared finfo asking e2 for its dval
+	//     and adding 10x the result to e1.dval.
+	// trigRead on e1 calls a value trigger on e2, which responds by
+	// sending its dval back. This is multiplied by 10 and added to e2.dval
 	set( e1, "trigRead" );
 	get< double >( e1, "dval", ret );
-	ASSERT( ret == 21.0, "after trigRead on shared message" );
-
-	set( e2, "trigPing" );
+	ASSERT( ret == 21.0, "e1.dval after trigRead on shared message" );
 	get< double >( e2, "dval", ret );
-	ASSERT( ret == 44.0, "after trigPing on shared message" );
+	ASSERT( ret == 2.0, "e2.dval after trigRead on shared message" );
 
+	// e1.pingPong->e2.pingPong: This is a SharedFinfo too.
+	// trigPing sets off the call to the pingPong function on 
+	// the target, e2. This just returns its current dval.
+	// The return function in e1 is twoXdval, which doubles dval and
+	// adds it to the current dval of e1. e2 is unchanged.
 	set( e1, "trigPing" );
 	get< double >( e1, "dval", ret );
-	ASSERT( ret == 109.0, "after trigPing on shared message" );
+	ASSERT( ret == 25.0, "after trigPing on shared message" );
+	get< double >( e2, "dval", ret );
+	ASSERT( ret == 2.0, "e2.dval after trigPing on shared message" );
+
+	// Same as above, but starting at e2 instead.
+	set( e2, "trigPing" );
+	get< double >( e1, "dval", ret );
+	ASSERT( ret == 25.0, "after trigPing on shared message" );
+	get< double >( e2, "dval", ret );
+	ASSERT( ret == 52.0, "e2.dval after trigPing on shared message" );
+}
+
+void SharedTest::trigRead( const Conn* c ) {
+			Element* e = c->targetElement();
+			// 0 is the readVal trig MsgSrc., but we have to
+			// increment it to 1 because of base class.
+			// Slot tenXdvalSrcSlot = sfc.getSlot( "readVal.tenXdvalSrc" );
+			// send0( e, 0, Slot( 6, 0 ) );
+			send0( e, 0, tenXdvalSrcSlot );
+}
+
+void SharedTest::pingPong( const Conn* c ) {
+			Element* e = c->targetElement();
+			SharedTest* st = 
+				static_cast< SharedTest* >( c->data() );
+			// 7 is the pingPong dval MsgSrc. We have to increment it to
+			// Slot sendSlot = sfc.getSlot( "pingPong.send" );
+			// send1< double >( e, 0, Slot( 7, 0 ), st->dval_ );
+			send1< double >( e, 0, pingPongDataSlot, st->dval_ );
+}
+
+void SharedTest::trigPing( const Conn* c ) {
+			Element* e = c->targetElement();
+			// 7 is the pingPong trig MsgSrc. We have to increment it
+			// Slot trigSrcSlot = sfc.getSlot( "pingPong.trigSrc" );
+			// send0( e, 0, Slot( 7, 1 ) );
+			send0( e, 0, pingPongTrigSlot );
 }
 
 #endif

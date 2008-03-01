@@ -47,6 +47,11 @@ class Ftype
 			virtual ~Ftype()
 			{;}
 
+			/**
+			 * nValues is the number of arguments in the FecvFunc for
+			 * this Ftype. It is zero for trigger functions, one for
+			 * value functions, and so on.
+			 */
 			virtual unsigned int nValues() const = 0;
 
 			/**

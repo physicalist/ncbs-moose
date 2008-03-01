@@ -30,8 +30,14 @@ class FuncVec
 		unsigned int size() const {
 			return static_cast< unsigned int >( func_.size() );
 		}
+		/**
+ 		* Makes a trigger FuncVec from the current one. Used by ValueFinfos.
+ 		*/
+		void makeTrig();
 
-		/// func returns the indexed function.
+		/**
+		 * Looks up the function specified by funcNum
+		 */
 		RecvFunc func( unsigned int funcNum ) const;
 
 		/**
@@ -63,6 +69,11 @@ class FuncVec
 		unsigned int id() const {
 			return id_;
 		}
+
+		/**
+		 * trigId returns the identifier of the trigFuncVec if it exists.
+		 */
+		unsigned int trigId() const;
 
 		bool isDest() const {
 			return isDest_;
@@ -107,6 +118,7 @@ class FuncVec
 		vector< const Ftype* > funcType_;
 		unsigned int id_; // Identifier for it across nodes.
 		bool isDest_;	// Is the Finfo a destination?
+		FuncVec* trigFuncVec_; // Points to trigger FuncVec if it exists.
 };
 
 #endif // _FUNC_VEC_H

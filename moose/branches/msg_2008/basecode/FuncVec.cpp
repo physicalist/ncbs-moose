@@ -37,7 +37,7 @@ static vector< FuncVec* >& funcVecLookup()
 }
 
 FuncVec::FuncVec( const string& className, const string& finfoName )
-	: id_( 0 ), isDest_( 0 )
+	: id_( 0 ), isDest_( 0 ), trigFuncVec_( 0 )
 {
 	name_ = className + "." + finfoName;
 	funcVecLookup().push_back( this );
@@ -52,6 +52,22 @@ void FuncVec::addFunc( RecvFunc func, const Ftype* ftype )
 	id_ = 1; // Temporary hack to set up non-zero id when func is live.
 	// parFuncSync_.push_back( ftype->parFuncSync() );
 	// parFuncAsync_.push_back( ftype->parFuncAsync() );
+}
+
+/**
+ * Makes a trigger FuncVec from the current one. Used by ValueFinfos.
+ */
+void FuncVec::makeTrig( )
+{
+	// Checks that this is set up from a ValueFinfo.
+	assert( func_.size() == 1 );
+	assert( funcType_.size() == 1 );
+	assert( funcType_[0]->nValues() == 1 );
+	trigFuncVec_ = new FuncVec( name_, "trig" );
+	trigFuncVec_->addFunc( funcType_[0]->trigFunc(), Ftype0::global() );
+	// Just to be sure that we've set it up.
+	isDest_ = 1;
+	trigFuncVec_->isDest_ = 1;
 }
 
 /// func returns the indexed function.
@@ -83,6 +99,15 @@ RecvFunc FuncVec::parFuncAsync( unsigned int funcNum ) const
 {
 	assert( funcNum < func_.size() );
 	return parFuncAsync_[ funcNum ];
+}
+
+// trigId returns the identifier of the trigFuncVec if it exists.
+unsigned int FuncVec::trigId() const 
+{
+	if ( trigFuncVec_ )
+		return trigFuncVec_->id();
+
+	return 0;
 }
 
 /**
@@ -125,7 +150,7 @@ void FuncVec::sortFuncVec( )
 	vector< FuncVec* >& fv = funcVecLookup();
 	// Check if it has already been done. 
 	if ( fv.size() > 2 && 
-		fv[0]->name() == "empty" && fv[1]->name() == "dummy" ) {
+		fv[0]->name() == "empty.empty" && fv[1]->name() == "dummy.dummy" ) {
 		sort( fv.begin() + 2, fv.end(), fvcmp );
 		cout << fv.size() << " FuncVecs rebuilt \n";
 	} else {
