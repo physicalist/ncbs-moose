@@ -60,6 +60,9 @@ class ConnTainer
 			return msg2_;
 		}
 
+		/**
+		 * Returns the number of targets on this ConnTainer
+		 */
 		virtual unsigned int size() const = 0;
 
 		/**

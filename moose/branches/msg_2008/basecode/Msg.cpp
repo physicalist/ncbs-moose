@@ -225,6 +225,19 @@ unsigned int Msg::targets( vector< pair< Element*, unsigned int > >& list,
 	return list.size();
 }
 
+unsigned int Msg::numTargets( const Element* e ) const
+{
+	vector< ConnTainer* >::const_iterator i;
+	unsigned int ret = 0;
+	for ( i = c_.begin(); i != c_.end(); i++ ) {
+		ret += ( *i )->size();
+	}
+	if ( next_ )
+		ret += e->msg( next_ )->numTargets( e );
+
+	return ret;
+}
+
 bool Msg::copy( const ConnTainer* c, Element* e1, Element* e2 ) const
 {
 	e1->checkMsgAlloc( c->msg1() );

@@ -223,12 +223,12 @@ void ClockJob::setRunTime( const Conn* c, double v )
 }
 double ClockJob::getRunTime( const Element* e )
 {
-	return static_cast< ClockJob* >( e->data() )->runTime_;
+	return static_cast< ClockJob* >( e->data( 0 ) )->runTime_;
 }
 
 double ClockJob::getCurrentTime( const Element* e )
 {
-	return static_cast< ClockJob* >( e->data() )->info_.currTime_;
+	return static_cast< ClockJob* >( e->data( 0 ) )->info_.currTime_;
 }
 
 /**
@@ -243,12 +243,12 @@ void ClockJob::setNsteps( const Conn* c, int v )
 }
 int ClockJob::getNsteps( const Element* e )
 {
-	return static_cast< ClockJob* >( e->data() )->nSteps_;
+	return static_cast< ClockJob* >( e->data( 0 ) )->nSteps_;
 }
 
 int ClockJob::getCurrentStep( const Element* e )
 {
-	return static_cast< ClockJob* >( e->data() )->currentStep_;
+	return static_cast< ClockJob* >( e->data( 0 ) )->currentStep_;
 }
 
 ///////////////////////////////////////////////////
@@ -270,7 +270,7 @@ void ClockJob::startFuncLocal( Element* e, double runTime )
 {
 	// cout << "starting run for " << runTime << " sec.\n";
 
-	send2< ProcInfo, double >( e, startSlot, &info_, 
+	send2< ProcInfo, double >( e, 0, startSlot, &info_, 
 					info_.currTime_ + runTime );
 	/*
 	info_.currTime_ = currentTime_;
@@ -302,7 +302,7 @@ void ClockJob::reinitFuncLocal( Element* e )
 	currentTime_ = 0.0;
 	nextTime_ = 0.0;
 	currentStep_ = 0;
-	send1< ProcInfo >( e, reinitSlot, &info_ );
+	send1< ProcInfo >( e, 0, reinitSlot, &info_ );
 }
 
 /**
@@ -373,7 +373,7 @@ void ClockJob::reschedFuncLocal( Element* e )
 	for ( i = childList.begin(); i != childList.end(); i++ ) {
 		const Finfo* procFinfo = (*i)()->findFinfo( "process" );
 		assert ( procFinfo != 0 );
-		unsigned int numTargets = procFinfo->numOutgoing( (*i)() );
+		unsigned int numTargets = ( *i )()->msg( procFinfo->msg() )->size();
 		if ( numTargets > 0 )
 			tickList.push_back( TickSeq( *i ) );
 	}
@@ -394,7 +394,7 @@ void ClockJob::reschedFuncLocal( Element* e )
 			buildMessages( last, j->element() );
 			last = j->element();
 	}
-	send0( e, reschedSlot );
+	send0( e, 0, reschedSlot );
 }
 
 /**
@@ -404,8 +404,17 @@ void ClockJob::reschedFuncLocal( Element* e )
  */
 void ClockJob::clearMessages( Element* e )
 {
-	e->findFinfo( "prev" )->dropAll( e );
-	e->findFinfo( "start" )->dropAll( e );
+	const Finfo* f = e->findFinfo( "prev" );
+	assert( f != 0 );
+	Msg* m = e->varMsg( f->msg() );
+	assert( m != 0 );
+	m->dropAll();
+
+	f = e->findFinfo( "start" );
+	assert( f != 0 );
+	m = e->varMsg( f->msg() );
+	assert( m != 0 );
+	m->dropAll();
 }
 
 /**

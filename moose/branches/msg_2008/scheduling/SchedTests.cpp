@@ -93,18 +93,17 @@ void TickTest::reinit( const Conn* c, ProcInfo p )
 
 void testSched()
 {
-	static TypeFuncPair processTypes[] =
+	static Finfo* processShared[] =
 	{
-			// The process func call
-		TypeFuncPair( Ftype1< ProcInfo >::global(), 
-				RFCAST( TickTest::process ) ),
-		TypeFuncPair( Ftype1< ProcInfo >::global(), 
-				RFCAST( TickTest::reinit ) ),
+		new DestFinfo( "process", Ftype1< ProcInfo >::global(),
+				RFCAST( &TickTest::process ) ),
+		new DestFinfo( "reinit", Ftype1< ProcInfo >::global(),
+				RFCAST( &TickTest::reinit ) ),
 	};
 
 	static Finfo* tickTestFinfos[] =
 	{
-		new SharedFinfo( "process", processTypes, 2 ),
+		new SharedFinfo( "process", processShared, 2 ),
 	};
 
 	static Cinfo tickTestCinfo(
@@ -235,18 +234,17 @@ void reinitCall( const Conn* c, ProcInfo p )
 
 void testSchedProcess()
 {
-	static TypeFuncPair processTypes0[] =
+	static Finfo* processShared0[] =
 	{
-			// The process func call
-		TypeFuncPair( Ftype1< ProcInfo >::global(), 
-				RFCAST( processCall0 ) ),
-		TypeFuncPair( Ftype1< ProcInfo >::global(), 
-				RFCAST( reinitCall ) ),
+		new DestFinfo( "process", Ftype1< ProcInfo >::global(),
+				RFCAST( &processCall0 ) ),
+		new DestFinfo( "reinit", Ftype1< ProcInfo >::global(),
+				RFCAST( &reinitCall ) ),
 	};
 
 	static Finfo* sched0Finfos[] =
 	{
-		new SharedFinfo( "process", processTypes0, 2 ),
+		new SharedFinfo( "process", processShared0, 2 ),
 	};
 
 	static Cinfo sched0Cinfo(
@@ -259,19 +257,19 @@ void testSchedProcess()
 		ValueFtype1< double >::global()
 	);
 
+/////////////////////////////////////////////////////////////////
 
-	static TypeFuncPair processTypes1[] =
+	static Finfo* processShared1[] =
 	{
-			// The process func call
-		TypeFuncPair( Ftype1< ProcInfo >::global(), 
-				RFCAST( processCall1 ) ),
-		TypeFuncPair( Ftype1< ProcInfo >::global(), 
-				RFCAST( reinitCall ) ),
+		new DestFinfo( "process", Ftype1< ProcInfo >::global(),
+				RFCAST( &processCall1 ) ),
+		new DestFinfo( "reinit", Ftype1< ProcInfo >::global(),
+				RFCAST( &reinitCall ) ),
 	};
 
 	static Finfo* sched1Finfos[] =
 	{
-		new SharedFinfo( "process", processTypes1, 2 ),
+		new SharedFinfo( "process", processShared1, 2 ),
 	};
 
 	static Cinfo sched1Cinfo(
@@ -283,18 +281,19 @@ void testSchedProcess()
 		sizeof(sched1Finfos)/sizeof(Finfo *),
 		ValueFtype1< double >::global()
 	);
-	static TypeFuncPair processTypes2[] =
+
+/////////////////////////////////////////////////////////////////
+	static Finfo* processShared2[] =
 	{
-			// The process func call
-		TypeFuncPair( Ftype1< ProcInfo >::global(), 
-				RFCAST( processCall2 ) ),
-		TypeFuncPair( Ftype1< ProcInfo >::global(), 
-				RFCAST( reinitCall ) ),
+		new DestFinfo( "process", Ftype1< ProcInfo >::global(),
+				RFCAST( &processCall2 ) ),
+		new DestFinfo( "reinit", Ftype1< ProcInfo >::global(),
+				RFCAST( &reinitCall ) ),
 	};
 
 	static Finfo* sched2Finfos[] =
 	{
-		new SharedFinfo( "process", processTypes2, 2 ),
+		new SharedFinfo( "process", processShared2, 2 ),
 	};
 
 	static Cinfo sched2Cinfo(
@@ -307,6 +306,7 @@ void testSchedProcess()
 		ValueFtype1< double >::global()
 	);
 
+/////////////////////////////////////////////////////////////////
 	cout << "\nTesting sched process sequencing";
 	Element* n = Neutral::create( "Neutral", "n", Element::root(),
 		Id::scratchId() );
@@ -354,7 +354,7 @@ void testSchedProcess()
 		Id::scratchId() );
 	// Element* shell = Id( "/shell" )();
 	ASSERT( shell != 0 , "shell creation");
-	Conn c( shell, 0 );
+	SetConn c( shell, 0 );
 	vector< Id > path;
 	path.push_back( s0_0->id() );
 	path.push_back( s0_1->id() );

@@ -26,6 +26,9 @@ class SimpleConnTainer: public ConnTainer
 
 		bool add( Element* e1, Element* e2 );
 
+		/**
+		 * Returns the number of targets on this ConnTainer
+		 */
 		unsigned int size() const {
 			return 1;
 		}

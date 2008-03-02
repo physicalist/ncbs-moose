@@ -6067,5 +6067,10 @@ Working on Copy, but it needs to test the elaborate stuff between channels and
 Gates. So I had to compile in parts of the biophysics library, which in turn
 depend on the builtins library. Now at least it compiles, but the unit tests
 are still stuck.
+Checked in as revision 427 with unit test flags on, Smoldyn off, -g, GSL
+
+Continuing the attempt to get Copy working. Turns out that the Compartments
+etc from biophysics need the scheduling stuff to work. So those too had to
+be fixed up and compiled in. That done, the unit tests are still stuck.
 
 ==============================================================================

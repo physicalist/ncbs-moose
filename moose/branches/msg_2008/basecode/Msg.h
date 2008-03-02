@@ -156,6 +156,12 @@ class Msg
 		) const;
 
 		/**
+		 * Counts the number of targets, including going through the
+		 * 'next_' msg if any. May be much faster than listing.
+		 */
+		unsigned int numTargets( const Element* e ) const;
+
+		/**
 		 * Makes a duplicate of the current message specified by c,
 		 * to now go between e1 and e2.
 		 */
