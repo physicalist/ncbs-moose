@@ -77,6 +77,11 @@ class SimpleElement: public Element
 
 		void checkMsgAlloc( unsigned int num );
 
+		/**
+		 * Returns the # of msgs
+		 */
+		unsigned int numMsg() const;
+
 		/////////////////////////////////////////////////////////////
 		// Information functions
 		/////////////////////////////////////////////////////////////

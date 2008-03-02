@@ -191,6 +191,7 @@ Conn* Msg::findConn( unsigned int eIndex, unsigned int tgt ) const
 
 /**
 * True if this is the nominal destination of a message.
+* Undefined if the message is empty: Check for size first.
 * The definition of message source and dest is done at Finfo
 * setup time. For simple messages no problem. For Shared Finfos,
 * the one that has the first 'source' entry is the source.
@@ -200,6 +201,7 @@ Conn* Msg::findConn( unsigned int eIndex, unsigned int tgt ) const
 */
 bool Msg::isDest() const
 {
+	assert( c_.size() > 0 );
 	return !( fv_->isDest() );
 }
 
@@ -216,7 +218,7 @@ unsigned int Msg::targets( vector< pair< Element*, unsigned int > >& list,
 	vector< ConnTainer* >::const_iterator i;
 	list.resize( 0 );
 	for ( i = c_.begin(); i != c_.end(); i++ ) {
-		for ( Conn* j = ( *i )->conn( myEindex, fv_->isDest() ); j->good(); j++ ) {
+		for ( Conn* j = ( *i )->conn( myEindex, isDest() ); j->good(); j->increment() ) {
 			pair< Element*, unsigned int > temp( 
 				j->targetElement(), j->targetEindex() );
 			list.push_back( temp );
@@ -240,13 +242,23 @@ unsigned int Msg::numTargets( const Element* e ) const
 
 bool Msg::copy( const ConnTainer* c, Element* e1, Element* e2 ) const
 {
+	// I don't know the class of the ConnTainer, else would use 'add'
+	// There is a lot of overlap in function.
 	e1->checkMsgAlloc( c->msg1() );
 	e2->checkMsgAlloc( c->msg2() );
 
 	// Copying over the other parts of the Msg.
 	// Problem will come when we copy a Msg with multiple target types,
 	// hence the need to traverse 'next'.
-	e1->varMsg( c->msg1() )->fv_ = fv_;
-	e2->varMsg( c->msg2() )->fv_ = c->e2()->msg( c->msg2() )->fv_;
-	return c->copy( e1, e2 );
+	Msg* m1 = e1->varMsg( c->msg1() );
+	Msg* m2 = e2->varMsg( c->msg2() );
+	unsigned int funcId2 = fv_->id(); // from e2, stored on m1.
+	unsigned int funcId1 = c->e2()->msg( c->msg2() )->fv_->id();
+
+	ConnTainer* ct = c->copy( e1, e2 ); // Duplicates ConnTainer c.
+	if ( !ct )
+		return 0;
+	m1->assignMsgByFuncId( e1, funcId2, ct );
+	m2->assignMsgByFuncId( e2, funcId1, ct );
+	return 1;
 }
