@@ -23,11 +23,11 @@ const Cinfo* initInterpolCinfo()
 	 * Receives a double with the x value
 	 * Sends back a double with the looked-up y value.
 	 */
-	static TypeFuncPair lookupReturnTypes[] =
+	static Finfo* lookupReturnShared[] =
 	{
-		TypeFuncPair( Ftype1< double >::global(),
+		new DestFinfo( "lookup", Ftype1< double >::global(),
 						RFCAST( &Interpol::lookupReturn ) ),
-		TypeFuncPair( Ftype1< double >::global(), 0 ),
+		new SrcFinfo( "trig", Ftype1< double >::global() ),
 	};
 	static Finfo* interpolFinfos[] =
 	{
@@ -74,7 +74,7 @@ const Cinfo* initInterpolCinfo()
 	///////////////////////////////////////////////////////
 	// Shared message definitions
 	///////////////////////////////////////////////////////
-		new SharedFinfo( "lookupReturn", lookupReturnTypes, 2 ),
+		new SharedFinfo( "lookupReturn", lookupReturnShared, 2 ),
 		
 	///////////////////////////////////////////////////////
 	// MsgSrc definitions
@@ -120,7 +120,7 @@ const Cinfo* initInterpolCinfo()
 static const Cinfo* interpolCinfo = initInterpolCinfo();
 
 static const Slot lookupReturnSlot = 
-	initInterpolCinfo()->getSlot( "lookupReturn" );
+	initInterpolCinfo()->getSlot( "lookupReturn.trig" );
 static const Slot lookupSlot = initInterpolCinfo()->getSlot( "lookupSrc" );
 
 ////////////////////////////////////////////////////////////////////
@@ -133,7 +133,7 @@ void Interpol::setXmin( const Conn* c, double xmin )
 }
 double Interpol::getXmin( const Element* e )
 {
-	return static_cast< Interpol* >( e->data() )->xmin_;
+	return static_cast< Interpol* >( e->data( 0 ) )->xmin_;
 }
 
 void Interpol::setXmax( const Conn* c, double xmax ) 
@@ -142,7 +142,7 @@ void Interpol::setXmax( const Conn* c, double xmax )
 }
 double Interpol::getXmax( const Element* e )
 {
-	return static_cast< Interpol* >( e->data() )->xmax_;
+	return static_cast< Interpol* >( e->data( 0 ) )->xmax_;
 }
 
 void Interpol::setXdivs( const Conn* c, int xdivs ) 
@@ -151,7 +151,7 @@ void Interpol::setXdivs( const Conn* c, int xdivs )
 }
 int Interpol::getXdivs( const Element* e )
 {
-	return static_cast< Interpol* >( e->data() )->table_.size() - 1;
+	return static_cast< Interpol* >( e->data( 0 ) )->table_.size() - 1;
 }
 
 void Interpol::setDx( const Conn* c, double dx ) 
@@ -160,7 +160,7 @@ void Interpol::setDx( const Conn* c, double dx )
 }
 double Interpol::getDx( const Element* e )
 {
-	return static_cast< Interpol* >( e->data() )->localGetDx();
+	return static_cast< Interpol* >( e->data( 0 ) )->localGetDx();
 }
 
 void Interpol::setSy( const Conn* c, double value ) 
@@ -169,7 +169,7 @@ void Interpol::setSy( const Conn* c, double value )
 }
 double Interpol::getSy( const Element* e )
 {
-	return static_cast< Interpol* >( e->data() )->sy_;
+	return static_cast< Interpol* >( e->data( 0 ) )->sy_;
 }
 
 void Interpol::setMode( const Conn* c, int value ) 
@@ -178,7 +178,7 @@ void Interpol::setMode( const Conn* c, int value )
 }
 int Interpol::getMode( const Element* e )
 {
-	return static_cast< Interpol* >( e->data() )->mode_;
+	return static_cast< Interpol* >( e->data( 0 ) )->mode_;
 }
 
 void Interpol::setTable(
@@ -188,7 +188,7 @@ void Interpol::setTable(
 }
 double Interpol::getTable( const Element* e, const unsigned int& i )
 {
-	return static_cast< Interpol* >( e->data() )->getTableValue( i );
+	return static_cast< Interpol* >( e->data( 0 ) )->getTableValue( i );
 }
 
 void Interpol::setTableVector( const Conn* c, vector< double > value ) 
@@ -198,7 +198,7 @@ void Interpol::setTableVector( const Conn* c, vector< double > value )
 
 vector< double > Interpol::getTableVector( const Element* e )
 {
-	return static_cast< Interpol* >( e->data() )->table_;
+	return static_cast< Interpol* >( e->data( 0 ) )->table_;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -214,8 +214,7 @@ void Interpol::lookupReturn( const Conn* c, double val )
 {
 	double ret =
 			static_cast< Interpol* >( c->data() )->innerLookup( val );
-	sendTo1< double >( c->targetElement(), lookupReturnSlot,
-					c->targetIndex(), ret );
+	sendBack1< double >( c->targetElement(), lookupReturnSlot, c, ret );
 }
 
 /**
@@ -227,7 +226,7 @@ void Interpol::lookup( const Conn* c, double val )
 {
 	double ret =
 			static_cast< Interpol* >( c->data() )->innerLookup( val );
-	send1< double >( c->targetElement(), lookupSlot, ret );
+	send1< double >( c->targetElement(), 0, lookupSlot, ret );
 }
 
 void Interpol::tabFill( const Conn* c, int xdivs, int mode )

@@ -211,7 +211,7 @@ void Table::setInput( const Conn* c, double input )
 }
 double Table::getInput( const Element* e )
 {
-	return static_cast< Table* >( e->data() )->input_;
+	return static_cast< Table* >( e->data( 0 ) )->input_;
 }
 
 void Table::setOutput( const Conn* c, double output ) 
@@ -220,7 +220,7 @@ void Table::setOutput( const Conn* c, double output )
 }
 double Table::getOutput( const Element* e )
 {
-	return static_cast< Table* >( e->data() )->output_;
+	return static_cast< Table* >( e->data( 0 ) )->output_;
 }
 
 void Table::setStepMode( const Conn* c, int value ) 
@@ -229,7 +229,7 @@ void Table::setStepMode( const Conn* c, int value )
 }
 int Table::getStepMode( const Element* e )
 {
-	return static_cast< Table* >( e->data() )->stepMode_;
+	return static_cast< Table* >( e->data( 0 ) )->stepMode_;
 }
 
 void Table::setStepsize( const Conn* c, double val ) 
@@ -238,12 +238,12 @@ void Table::setStepsize( const Conn* c, double val )
 }
 double Table::getStepsize( const Element* e )
 {
-	return static_cast< Table* >( e->data() )->stepSize_;
+	return static_cast< Table* >( e->data( 0 ) )->stepSize_;
 }
 
 double Table::getLookup( const Element* e, const double& x )
 {
-	return static_cast< Table* >( e->data() )->innerLookup( x );
+	return static_cast< Table* >( e->data( 0 ) )->innerLookup( x );
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -290,11 +290,11 @@ void Table::innerProcess( Element* e, ProcInfo p )
 {
 	double temp;
 	unsigned long index;
-	send0( e, inputRequestSlot );
+	send0( e, 0, inputRequestSlot );
 	switch( stepMode_ ) {
 		case TAB_IO :
 			output_ = innerLookup( input_ ) * py_ + sy_ ;
-			send1< double >( e, outputSlot, output_ );
+			send1< double >( e, 0, outputSlot, output_ );
 			break;
 		case TAB_LOOP:
 			// Looks up values based on input and time. Loops around
@@ -311,7 +311,7 @@ void Table::innerProcess( Element* e, ProcInfo p )
 				input_ = temp;
 			}
 			output_ = innerLookup( temp );
-			send1< double >( e, outputSlot, output_ );
+			send1< double >( e, 0, outputSlot, output_ );
 			// here we have a slight divergence from the old GENESIS
 			// case, where if the table is not alloced it returns 
 			// the SimulationTime. Bad idea.
@@ -326,7 +326,7 @@ void Table::innerProcess( Element* e, ProcInfo p )
 				input_ += stepSize_;
 			}
 			output_ = innerLookup( temp );
-			send1< double >( e, outputSlot, output_ );
+			send1< double >( e, 0, outputSlot, output_ );
 			break;
 		case TAB_BUF:
 			/**
@@ -362,7 +362,7 @@ void Table::innerProcess( Element* e, ProcInfo p )
 			output_ = table_[ counter_ ];
 			table_[ counter_ ] = input_;
 			++counter_;
-			send1< double >( e, outputSlot, output_ );
+			send1< double >( e, 0, outputSlot, output_ );
 			}
 			break;
 		case TAB_SPIKE:
@@ -541,8 +541,8 @@ void testTable()
 		Id::scratchId() );
 	Element* t2 = Neutral::create( "Table", "t2", Element::root(),
 		Id::scratchId() );
-	Conn c( t, 0 );
-	Conn c2( t2, 0 );
+	SetConn c( t, 0 );
+	SetConn c2( t2, 0 );
 	ASSERT( t != 0, "created table" );
 
 	ProcInfoBase pb;
@@ -693,7 +693,7 @@ void testTable()
 			"making inputRequest msg"
 	);
 	ASSERT( set< double >( t, "output", 42.345 ) , "inputRequest" );
-	Conn c3( t3, 0 );
+	SetConn c3( t3, 0 );
 	Table::process( &c3, &pb );
 	get< double >( t3, "input", v );
 	ASSERT( v == 42.345, "inputRequest" );

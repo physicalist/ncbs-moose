@@ -121,7 +121,7 @@ void CaConc::setCa( const Conn* c, double Ca )
 }
 double CaConc::getCa( const Element* e )
 {
-	return static_cast< CaConc* >( e->data() )->Ca_;
+	return static_cast< CaConc* >( e->data( 0 ) )->Ca_;
 }
 
 void CaConc::setCaBasal( const Conn* c, double CaBasal )
@@ -130,7 +130,7 @@ void CaConc::setCaBasal( const Conn* c, double CaBasal )
 }
 double CaConc::getCaBasal( const Element* e )
 {
-	return static_cast< CaConc* >( e->data() )->CaBasal_;
+	return static_cast< CaConc* >( e->data( 0 ) )->CaBasal_;
 }
 
 void CaConc::setTau( const Conn* c, double tau )
@@ -139,7 +139,7 @@ void CaConc::setTau( const Conn* c, double tau )
 }
 double CaConc::getTau( const Element* e )
 {
-	return static_cast< CaConc* >( e->data() )->tau_;
+	return static_cast< CaConc* >( e->data( 0 ) )->tau_;
 }
 
 void CaConc::setB( const Conn* c, double B )
@@ -148,7 +148,7 @@ void CaConc::setB( const Conn* c, double B )
 }
 double CaConc::getB( const Element* e )
 {
-	return static_cast< CaConc* >( e->data() )->B_;
+	return static_cast< CaConc* >( e->data( 0 ) )->B_;
 }
 
 
@@ -166,7 +166,7 @@ void CaConc::innerReinitFunc( const Conn* c )
 	activation_ = 0.0;
 	c_ = 0.0;
 	Ca_ = CaBasal_;
-	send1< double >( c->targetElement(), concSlot, Ca_ );
+	send1< double >( c->targetElement(), 0, concSlot, Ca_ );
 }
 
 void CaConc::processFunc( const Conn* c, ProcInfo info )
@@ -179,7 +179,7 @@ void CaConc::innerProcessFunc( const Conn* conn, ProcInfo info )
 	double x = exp( -info->dt_ / tau_ );
 	c_ = c_ * x + ( B_ * activation_ * tau_ )  * ( 1.0 - x );
 	Ca_ = CaBasal_ + c_;
-	send1< double >( conn->targetElement(), concSlot, Ca_ );
+	send1< double >( conn->targetElement(), 0, concSlot, Ca_ );
 	activation_ = 0;
 }
 
@@ -225,7 +225,7 @@ void testCaConc()
 		Id::scratchId() );
 	ASSERT( Ca != 0, "creating CaConc" );
 	ProcInfoBase p;
-	Conn c( Ca, 0 );
+	SetConn c( Ca, 0 );
 	double tau = 0.10;
 	double basal = 0.0001;
 	CaConc::setCa( &c, basal );

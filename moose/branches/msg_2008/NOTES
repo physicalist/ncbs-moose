@@ -6061,5 +6061,11 @@ that uses the lookup index.
 
 Got LookupFinfo to work and clear unit tests. Had to add another FuncVec
 for handling the LookupFinfo recvFuncs.
+Checked in as revision 426 with unit test flags on, Smoldyn off, -g, GSL
+
+Working on Copy, but it needs to test the elaborate stuff between channels and
+Gates. So I had to compile in parts of the biophysics library, which in turn
+depend on the builtins library. Now at least it compiles, but the unit tests
+are still stuck.
 
 ==============================================================================

@@ -124,6 +124,17 @@ Msg* SimpleElement::varMsg( unsigned int msgNum )
 	return ( &( msg_[ msgNum ] ) );
 }
 
+const Msg* SimpleElement::msg( const string& fName )
+{
+	const Finfo* f = findFinfo( fName );
+	if ( f ) {
+		unsigned int msgNum = f->msg();
+		if ( msgNum < msg_.size() )
+			return ( &( msg_[ msgNum ] ) );
+	}
+	return 0;
+}
+
 void SimpleElement::checkMsgAlloc( unsigned int num )
 {
 	assert( num < 100 ); // Should actually compare with # of Finfos.

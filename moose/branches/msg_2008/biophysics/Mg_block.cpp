@@ -102,7 +102,7 @@ void Mg_block::setKMg_A( const Conn* c, double KMg_A )
 }
 double Mg_block::getKMg_A( const Element* e )
 {
-	return static_cast< Mg_block* >( e->data() )->KMg_A_;
+	return static_cast< Mg_block* >( e->data( 0 ) )->KMg_A_;
 }
 void Mg_block::setKMg_B( const Conn* c, double KMg_B )
 {
@@ -110,7 +110,7 @@ void Mg_block::setKMg_B( const Conn* c, double KMg_B )
 }
 double Mg_block::getKMg_B( const Element* e )
 {
-	return static_cast< Mg_block* >( e->data() )->KMg_B_;
+	return static_cast< Mg_block* >( e->data( 0 ) )->KMg_B_;
 }
 void Mg_block::setCMg( const Conn* c, double CMg )
 {
@@ -118,7 +118,7 @@ void Mg_block::setCMg( const Conn* c, double CMg )
 }
 double Mg_block::getCMg( const Element* e )
 {
-	return static_cast< Mg_block* >( e->data() )->CMg_;
+	return static_cast< Mg_block* >( e->data( 0 ) )->CMg_;
 }
 void Mg_block::setIk( const Conn* c, double Ik )
 {
@@ -126,7 +126,7 @@ void Mg_block::setIk( const Conn* c, double Ik )
 }
 double Mg_block::getIk( const Element* e )
 {
-	return static_cast< Mg_block* >( e->data() )->Ik_;
+	return static_cast< Mg_block* >( e->data( 0 ) )->Ik_;
 }
 void Mg_block::setGk( const Conn* c, double Gk )
 {
@@ -134,7 +134,7 @@ void Mg_block::setGk( const Conn* c, double Gk )
 }
 double Mg_block::getGk( const Element* e )
 {
-	return static_cast< Mg_block* >( e->data() )->Gk_;
+	return static_cast< Mg_block* >( e->data( 0 ) )->Gk_;
 }
 void Mg_block::setEk( const Conn* c, double Ek )
 {
@@ -142,11 +142,11 @@ void Mg_block::setEk( const Conn* c, double Ek )
 }
 double Mg_block::getEk( const Element* e )
 {
-	return static_cast< Mg_block* >( e->data() )->Ek_;
+	return static_cast< Mg_block* >( e->data( 0 ) )->Ek_;
 }
 double Mg_block::getZk( const Element* e )
 {
-	return static_cast< Mg_block* >( e->data() )->Zk_;
+	return static_cast< Mg_block* >( e->data( 0 ) )->Zk_;
 }
 void Mg_block::setZk( const Conn* c, double Zk )
 {
@@ -165,7 +165,7 @@ void Mg_block::innerProcessFunc( Element* e, ProcInfo info )
 	
 	double KMg = KMg_A_ * exp(Vm_/KMg_B_);
 	Gk_ = Gk_ * KMg / (KMg + CMg_);
-	send2< double, double >( e, channelSlot, Gk_, Ek_ );
+	send2< double, double >( e, 0, channelSlot, Gk_, Ek_ );
 	Ik_ = Gk_ * (Ek_ - Vm_);
 }
 

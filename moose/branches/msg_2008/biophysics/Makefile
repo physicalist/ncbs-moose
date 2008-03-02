@@ -42,7 +42,8 @@ OBJ = \
 	HHGate.o	\
 	CaConc.o	\
 	Nernst.o	\
-	SpikeGen.o	\
+
+#	SpikeGen.o	\
 	SynChan.o	\
 	HSolveStruct.o	\
 	HSolveBase.o	\
