@@ -48,6 +48,12 @@ class Element
 		 */
 		virtual const Msg* msg( unsigned int msgNum ) const = 0;
 		virtual Msg* varMsg( unsigned int msgNum ) = 0;
+		/**
+		 * Returns a pointer to the specified msg by looking up the named
+		 * Finfo. This may entail construction of a DynamicFinfo, so the
+		 * function is not const.
+		 */
+		virtual const Msg* msg( const string& fName ) = 0;
 
 		/**
 		 * Ensures that the requested msg is allocated. If it isn't,

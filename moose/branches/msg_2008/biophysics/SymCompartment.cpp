@@ -196,8 +196,8 @@ void SymCompartment::innerReinitFunc( Element* e, ProcInfo p )
 	coeff_ = 0.0;
 	coeff2_ = 0.0;
 
-	send0( e, sumRaxialSlotRequest );
-	send0( e, sumRaxial2SlotRequest );
+	send0( e, 0, sumRaxialSlotRequest );
+	send0( e, 0, sumRaxial2SlotRequest );
 
 	coeff_ *= Ra_;
 	coeff_ = ( 1 + coeff_ ) / 2.0;
@@ -210,14 +210,14 @@ void SymCompartment::sumRaxialRequest( const Conn* c )
 {
 	Element* e = c->targetElement();
 	double Ra = static_cast< SymCompartment* >( c->data() )->Ra_;
-	send1< double >( e, sumRaxialSlot, Ra );
+	send1< double >( e, c->targetEindex(), sumRaxialSlot, Ra );
 }
 
 void SymCompartment::sumRaxial2Request( const Conn* c )
 {
 	Element* e = c->targetElement();
 	double Ra = static_cast< SymCompartment* >( c->data() )->Ra_;
-	send1< double >( e, sumRaxial2Slot, Ra );
+	send1< double >( e, c->targetEindex(), sumRaxial2Slot, Ra );
 }
 
 void SymCompartment::sumRaxial( const Conn* c, double Ra )
@@ -234,9 +234,9 @@ void SymCompartment::sumRaxial2( const Conn* c, double Ra )
 void SymCompartment::innerInitFunc( Element* e, ProcInfo p )
 {
 	// Send out the raxial messages
-	send2< double >( e, raxialSlot, Ra_, Vm_ );
+	send2< double >( e, 0, raxialSlot, Ra_, Vm_ );
 	// Send out the raxial2 messages
-	send2< double >( e, raxial2Slot, Ra_, Vm_ );
+	send2< double >( e, 0, raxial2Slot, Ra_, Vm_ );
 }
 
 // This is called by the RaxialFunc, which is already defined in Compartment
@@ -280,7 +280,7 @@ void testSymCompartment()
 		Id::scratchId() );
 	ASSERT( c0 != 0, "creating symCompartment" );
 	ProcInfoBase p;
-	Conn c( c0, 0 );
+	SetConn c( c0, 0 );
 	p.dt_ = 0.002;
 	Compartment::setInject( &c, 1.0 );
 	Compartment::setRm( &c, 1.0 );

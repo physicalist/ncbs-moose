@@ -68,6 +68,13 @@ class SimpleElement: public Element
 		const Msg* msg( unsigned int msgNum ) const;
 		Msg* varMsg( unsigned int msgNum );
 
+		/**
+		 * Returns a pointer to the specified msg by looking up the named
+		 * Finfo. This may entail construction of a DynamicFinfo, so the
+		 * function is not const.
+		 */
+		const Msg* msg( const string& fName );
+
 		void checkMsgAlloc( unsigned int num );
 
 		/////////////////////////////////////////////////////////////

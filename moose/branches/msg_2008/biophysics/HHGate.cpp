@@ -91,8 +91,7 @@ void HHGate::gateFunc( const Conn* c, double v )
 	// static_cast< HHGate *>( c.data() )->innerGateFunc( c, v );
 	HHGate *h = static_cast< HHGate *>( c->data() );
 
-	sendTo2< double, double >( c->targetElement(), gateSlot,
-		c->targetIndex(),
+	sendBack2< double, double >( c->targetElement(), gateSlot, c,
 		h->A_.innerLookup( v ) , h->B_.innerLookup( v ) );
 }
 

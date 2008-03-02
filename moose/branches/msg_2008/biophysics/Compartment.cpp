@@ -302,7 +302,7 @@ void Compartment::setVm( const Conn* c, double Vm )
 
 double Compartment::getVm( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->Vm_;
+	return static_cast< Compartment* >( e->data( 0 ) )->Vm_;
 }
 
 void Compartment::setEm( const Conn* c, double Em )
@@ -312,7 +312,7 @@ void Compartment::setEm( const Conn* c, double Em )
 
 double Compartment::getEm( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->Em_;
+	return static_cast< Compartment* >( e->data( 0 ) )->Em_;
 }
 
 void Compartment::setCm( const Conn* c, double Cm )
@@ -323,7 +323,7 @@ void Compartment::setCm( const Conn* c, double Cm )
 
 double Compartment::getCm( const Element* e )
 {
-	return static_cast< const Compartment* >( e->data() )->Cm_;
+	return static_cast< const Compartment* >( e->data( 0 ) )->Cm_;
 }
 
 void Compartment::setRm( const Conn* c, double Rm )
@@ -336,7 +336,7 @@ void Compartment::setRm( const Conn* c, double Rm )
 
 double Compartment::getRm( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->Rm_;
+	return static_cast< Compartment* >( e->data( 0 ) )->Rm_;
 }
 
 void Compartment::setRa( const Conn* c, double Ra )
@@ -347,7 +347,7 @@ void Compartment::setRa( const Conn* c, double Ra )
 
 double Compartment::getRa( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->Ra_;
+	return static_cast< Compartment* >( e->data( 0 ) )->Ra_;
 }
 
 void Compartment::setIm( const Conn* c, double Im )
@@ -357,7 +357,7 @@ void Compartment::setIm( const Conn* c, double Im )
 
 double Compartment::getIm( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->Im_;
+	return static_cast< Compartment* >( e->data( 0 ) )->Im_;
 }
 
 void Compartment::setInject( const Conn* c, double Inject )
@@ -368,7 +368,7 @@ void Compartment::setInject( const Conn* c, double Inject )
 
 double Compartment::getInject( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->Inject_;
+	return static_cast< Compartment* >( e->data( 0 ) )->Inject_;
 }
 
 void Compartment::setInitVm( const Conn* c, double initVm )
@@ -379,7 +379,7 @@ void Compartment::setInitVm( const Conn* c, double initVm )
 
 double Compartment::getInitVm( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->initVm_;
+	return static_cast< Compartment* >( e->data( 0 ) )->initVm_;
 }
 
 void Compartment::setDiameter( const Conn* c, double value )
@@ -390,7 +390,7 @@ void Compartment::setDiameter( const Conn* c, double value )
 
 double Compartment::getDiameter( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->diameter_;
+	return static_cast< Compartment* >( e->data( 0 ) )->diameter_;
 }
 
 void Compartment::setLength( const Conn* c, double value )
@@ -401,7 +401,7 @@ void Compartment::setLength( const Conn* c, double value )
 
 double Compartment::getLength( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->length_;
+	return static_cast< Compartment* >( e->data( 0 ) )->length_;
 }
 
 void Compartment::setX( const Conn* c, double value )
@@ -412,7 +412,7 @@ void Compartment::setX( const Conn* c, double value )
 }
 double Compartment::getX( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->x_;
+	return static_cast< Compartment* >( e->data( 0 ) )->x_;
 }
 
 void Compartment::setY( const Conn* c, double value )
@@ -423,7 +423,7 @@ void Compartment::setY( const Conn* c, double value )
 }
 double Compartment::getY( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->y_;
+	return static_cast< Compartment* >( e->data( 0 ) )->y_;
 }
 
 void Compartment::setZ( const Conn* c, double value )
@@ -434,7 +434,7 @@ void Compartment::setZ( const Conn* c, double value )
 }
 double Compartment::getZ( const Element* e )
 {
-	return static_cast< Compartment* >( e->data() )->z_;
+	return static_cast< Compartment* >( e->data( 0 ) )->z_;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -455,9 +455,9 @@ void Compartment::innerProcessFunc( Element* e, ProcInfo p )
 	Im_ = 0.0;
 	sumInject_ = 0.0;
 	// Send out the channel messages
-	send1< double >( e, channelSlot, Vm_ );
+	send1< double >( e, 0, channelSlot, Vm_ );
 	// Send out the message to any SpikeGens.
-	send1< double >( e, VmSlot, Vm_ );
+	send1< double >( e, 0, VmSlot, Vm_ );
 	// Send out the axial messages
 	// send1< double >( e, axialSlot, Vm_ );
 	// Send out the raxial messages
@@ -478,9 +478,9 @@ void Compartment::innerReinitFunc( Element* e, ProcInfo p )
 	Im_ = 0.0;
 	sumInject_ = 0.0;
 	// Send the Vm over to the channels at reset.
-	send1< double >( e, channelSlot, Vm_ );
+	send1< double >( e, 0, channelSlot, Vm_ );
 	// Send the Vm over to the SpikeGen
-	send1< double >( e, VmSlot, Vm_ );
+	send1< double >( e, 0, VmSlot, Vm_ );
 }
 
 void Compartment::reinitFunc( const Conn* c, ProcInfo p )
@@ -498,9 +498,9 @@ void Compartment::initFunc( const Conn* c, ProcInfo p )
 void Compartment::innerInitFunc( Element* e, ProcInfo p )
 {
 	// Send out the axial messages
-	send1< double >( e, axialSlot, Vm_ );
+	send1< double >( e, 0, axialSlot, Vm_ );
 	// Send out the raxial messages
-	send2< double >( e, raxialSlot, Ra_, Vm_ );
+	send2< double >( e, 0, raxialSlot, Ra_, Vm_ );
 }
 
 void Compartment::initReinitFunc( const Conn* c, ProcInfo p )
@@ -586,7 +586,7 @@ void testCompartment()
 		Id::scratchId() );
 	ASSERT( c0 != 0, "creating compartment" );
 	ProcInfoBase p;
-	Conn c( c0, 0 );
+	SetConn c( c0, 0 );
 	p.dt_ = 0.002;
 	Compartment::setInject( &c, 1.0 );
 	Compartment::setRm( &c, 1.0 );
@@ -632,7 +632,7 @@ void testCompartment()
 		sprintf( name, "c%d", i );
 		compts[i] = Neutral::create( "Compartment", name, n, 
 			Id::scratchId() );
-		Conn temp( compts[i], 0 );
+		SetConn temp( compts[i], 0 );
 		Compartment::setInject( &temp, 0.0 );
 		Compartment::setRm( &temp, Rm );
 		Compartment::setRa( &temp, Ra );
