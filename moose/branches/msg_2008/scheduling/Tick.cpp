@@ -218,7 +218,7 @@ void Tick::setDt( const Conn* c, double newdt )
 	Tick* t = static_cast< Tick* >( c->data() );
 	t->nextTime_ += newdt - t->dt_;
 	t->dt_ = newdt;
-	send0( c->targetElement(), updateDtSlot );
+	send0( c->targetElement(), c->targetEindex(), updateDtSlot );
 }
 /**
  * The getDt just looks up the local dt, much less involved than
@@ -226,7 +226,7 @@ void Tick::setDt( const Conn* c, double newdt )
  */
 double Tick::getDt( const Element* e )
 {
-	return static_cast< Tick* >( e->data() )->dt_;
+	return static_cast< Tick* >( e->data( 0 ) )->dt_;
 }
 
 /**
@@ -238,7 +238,7 @@ void Tick::setStage( const Conn* c, int v )
 {
 	
 	static_cast< Tick* >( c->data() )->stage_ = v;
-	send0( c->targetElement(), updateDtSlot );
+	send0( c->targetElement(), c->targetEindex(), updateDtSlot );
 }
 
 /**
@@ -247,7 +247,7 @@ void Tick::setStage( const Conn* c, int v )
  */
 int Tick::getStage( const Element* e )
 {
-	return static_cast< Tick* >( e->data() )->stage_;
+	return static_cast< Tick* >( e->data( 0 ) )->stage_;
 }
 
 /**
@@ -257,7 +257,7 @@ int Tick::getStage( const Element* e )
  */
 int Tick::getOrdinal( const Element* e )
 {
-	return static_cast< Tick* >( e->data() )->ordinal_;
+	return static_cast< Tick* >( e->data( 0 ) )->ordinal_;
 }
 
 /**
@@ -266,7 +266,7 @@ int Tick::getOrdinal( const Element* e )
  */
 double Tick::getNextTime( const Element* e )
 {
-	return static_cast< Tick* >( e->data() )->nextTime_;
+	return static_cast< Tick* >( e->data( 0 ) )->nextTime_;
 }
 
 /**
@@ -281,7 +281,7 @@ void Tick::setPath( const Conn* c, string v )
 }
 string Tick::getPath( const Element* e )
 {
-	return static_cast< Tick* >( e->data() )->path_;
+	return static_cast< Tick* >( e->data( 0 ) )->path_;
 }
 
 ///////////////////////////////////////////////////
@@ -325,10 +325,10 @@ void Tick::innerIncrementTick(
 			// requires that the send operation get a return message
 			// which updates the nextTickTime_
 			send2< ProcInfo, double >(
-							e, nextSlot, info, nextTime_ );
+							e, 0, nextSlot, info, nextTime_ );
 		}
 		if ( nextTickTime_ < nextTime_ ) {
-			send1< double >( e, returnNextTimeSlot, nextTickTime_ );
+			send1< double >( e, 0, returnNextTimeSlot, nextTickTime_ );
 			return;
 		}
 	} else {
@@ -338,7 +338,7 @@ void Tick::innerIncrementTick(
 		this->innerProcessFunc( e, info );
 		nextTime_ += dt_;
 	}
-	send1< double >( e, returnNextTimeSlot, nextTime_ );
+	send1< double >( e, 0, returnNextTimeSlot, nextTime_ );
 }
 
 /**
@@ -364,18 +364,15 @@ void Tick::updateNextTickTime( Element* e )
 	// to the nextTime_ value of the next tick.
 	// SimpleElement* se = static_cast< SimpleElement* >( e );
 	
-	next_ = ( 
-		e->connSrcBegin( nextSlot.msg() ) < e->connSrcEnd( nextSlot.msg() )
-	);
-	if ( next_ ) {
+	if ( e->msg( nextSlot.msg() )->size() > 0 ) {
 		// This asks for the nextTime_ of the next tick
-		send0( e, requestNextTimeSlot );
+		send0( e, 0, requestNextTimeSlot );
 
 		// This sends local nextTime_ to previous tick.
-		send1< double >( e, returnNextTimeSlot, nextTime_ );
+		send1< double >( e, 0, returnNextTimeSlot, nextTime_ );
 
 		// This asks the next Tick to resched itself.
-		send0( e, reschedSlot );
+		send0( e, 0, reschedSlot );
 	} else {
 		nextTickTime_ = 0;
 	}
@@ -395,7 +392,8 @@ void Tick::reinit( const Conn* c, ProcInfo info )
 	// send1< ProcInfo >( c.targetElement(), reinitSlot, info );
 	t->innerReinitFunc( c->targetElement(), info );
 	if ( t->next_ )
-		send1< ProcInfo >( c->targetElement(), reinitNextSlot, info );
+		send1< ProcInfo >( c->targetElement(), 
+			c->targetEindex(), reinitNextSlot, info );
 }
 
 /**
@@ -405,7 +403,8 @@ void Tick::reinit( const Conn* c, ProcInfo info )
  */
 void Tick::handleNextTimeRequest( const Conn* c )
 {
-	send1< double >( c->targetElement(), returnNextTimeSlot,
+	send1< double >( c->targetElement(), 
+		c->targetEindex(), returnNextTimeSlot,
 					static_cast< Tick* >( c->data() )->nextTime_ );
 }
 
@@ -439,7 +438,7 @@ void Tick::innerStart( Element* e, ProcInfo info, double maxTime )
 
 			// Send back the nextTime (which is now the current time)
 			// to the ClockJob.
-			send1< double >( e, returnNextTimeSlot, nextTime_ );
+			send1< double >( e, 0, returnNextTimeSlot, nextTime_ );
 
 			// Send out the process message to all and sundry
 			// send1< ProcInfo >( e, processSlot, info );
@@ -453,7 +452,7 @@ void Tick::innerStart( Element* e, ProcInfo info, double maxTime )
 			// which updates the nextTickTime_
 			while ( nextTickTime_ < nextTime_ )
 				send2< ProcInfo, double >( 
-								e, nextSlot, info, nextTime_ );
+								e, 0, nextSlot, info, nextTime_ );
 		}
 	}
 }
@@ -471,7 +470,7 @@ void Tick::innerStart( Element* e, ProcInfo info, double maxTime )
  */
 void Tick::innerProcessFunc( Element* e, ProcInfo info )
 {
-	send1< ProcInfo >( e, processSlot, info );
+	send1< ProcInfo >( e, 0, processSlot, info );
 }
 
 /**
@@ -481,7 +480,7 @@ void Tick::innerProcessFunc( Element* e, ProcInfo info )
  */
 void Tick::innerReinitFunc( Element* e, ProcInfo info )
 {
-	send1< ProcInfo >( e, reinitSlot, info );
+	send1< ProcInfo >( e, 0, reinitSlot, info );
 }
 
 ///////////////////////////////////////////////////

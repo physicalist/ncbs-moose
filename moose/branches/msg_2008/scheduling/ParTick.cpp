@@ -216,25 +216,25 @@ bool ParTick::pendingData() const
 void ParTick::innerProcessFunc( Element* e, ProcInfo info )
 {
 	// Phase 0: post iRecv
-	send1< int >( e, iRecvSlot, ordinal() );
+	send1< int >( e, 0, iRecvSlot, ordinal() );
 	// Phase 1: call Process for objects connected off-node
-	send1< ProcInfo >( e, outgoingProcessSlot, info );
+	send1< ProcInfo >( e, 0, outgoingProcessSlot, info );
 	// Phase 2: send data off node
-	send1< int >( e, sendSlot, ordinal() );
+	send1< int >( e, 0, sendSlot, ordinal() );
 	// Phase 3: Call regular process for locally connected objects
-	send1< ProcInfo >( e, processSlot, info );
+	send1< ProcInfo >( e, 0, processSlot, info );
 	// Phase 4: Poll for arrival of all data
 	initPending( e );
 	while( pendingData() ) {
 		// cout << "." << flush;
-		send1< int >( e, pollSlot, ordinal() );
+		send1< int >( e, 0, pollSlot, ordinal() );
 	}
 }
 
 void ParTick::initPending( Element* e )
 {
-	static const Finfo* parFinfo = e->findFinfo( "parTick" );
-	pendingCount_ = parFinfo->numOutgoing( e );
+	const Msg* m = e->msg( pollSlot.msg() );
+	pendingCount_ = m->numTargets( e ); // Often this is faster than listing
 	// cout << "pendingCount = " << pendingCount_ << endl;
 	pendingNodes_.resize( pendingCount_ + 1 );
 	pendingNodes_.assign( pendingCount_ + 1, 1);
@@ -253,17 +253,17 @@ void ParTick::innerReinitFunc( Element* e, ProcInfo info )
 	//
 
 	// Phase 0: post iRecv
-	send1< int >( e, iRecvSlot, ordinal() );
+	send1< int >( e, 0, iRecvSlot, ordinal() );
 	// Phase 1: call Reinit for objects connected off-node
-	send1< ProcInfo >( e, outgoingReinitSlot, info );
+	send1< ProcInfo >( e, 0, outgoingReinitSlot, info );
 	// Phase 2: send data off node
-	send1< int >( e, sendSlot, ordinal() );
+	send1< int >( e, 0, sendSlot, ordinal() );
 	// Phase 3: Call regular reinit for locally connected objects
-	send1< ProcInfo >( e, reinitSlot, info );
+	send1< ProcInfo >( e, 0, reinitSlot, info );
 	// Phase 4: Poll for arrival of all data
 	initPending( e );
 	while( pendingData() )
-		send1< int >( e, pollSlot, ordinal() );
+		send1< int >( e, 0, pollSlot, ordinal() );
 }
 
 
