@@ -92,46 +92,34 @@ DynamicFinfo* DynamicFinfo::setupDynamicFinfo(
 bool DynamicFinfo::add( 
 		Element* e, Element* destElm, const Finfo* destFinfo) const
 {
-	unsigned int srcFuncId;
-	unsigned int destFuncId;
-	unsigned int destMsg;
-	unsigned int numDest;
+	unsigned int srcFuncId = 0;
+	unsigned int destFuncId = 0;
+	unsigned int destMsg = 0;
+	unsigned int numDest = 0;
 
 	// How do we know what the target expects: a simple message
 	// or a shared one? Here we use the respondToAdd to query it.
 	
 	e->checkMsgAlloc( msg_ );
-	/*
-	 * Remove the single message case. Only shared message allowed.
-	if ( destFinfo->respondToAdd( destElm, e, ftype(),
-							srcFuncId, destFuncId,
-							destMsg, numDest ) )
+	// Here we make a SharedFtype on the fly for passing in the
+	// respondToAdd.
+	Finfo* shared[] = { 
+		&trigFinfo, const_cast< Finfo* >( origFinfo_ )
+	};
+	SharedFtype sf ( shared, 2 );
+	srcFuncId = FuncVec::getFuncVec( origFinfo_->funcId() )->trigId();
+	assert( srcFuncId != 0 );
+	assert ( FuncVec::getFuncVec( srcFuncId )->size() == 1 );
+	if ( destFinfo->respondToAdd( destElm, e, &sf,
+						srcFuncId, destFuncId,
+						destMsg, numDest ) )
 	{
 		assert( numDest == 1 );
-		// First we handle the case where this just sends out its
-		// value to the target.
-		return Msg::add( e, destElm, msg_, destMsg, srcFuncId, destFuncId );
-	} else { // Try with a Shared message.
-	*/
-		// Here we make a SharedFtype on the fly for passing in the
-		// respondToAdd.
-		Finfo* shared[] = { 
-			&trigFinfo, const_cast< Finfo* >( origFinfo_ )
-		};
-		SharedFtype sf ( shared, 2 );
-		srcFuncId = FuncVec::getFuncVec( origFinfo_->funcId() )->trigId();
-		assert ( FuncVec::getFuncVec( srcFuncId )->size() == 0 );
-		if ( destFinfo->respondToAdd( destElm, e, &sf,
-							srcFuncId, destFuncId,
-							destMsg, numDest ) )
-		{
-			assert( numDest == 1 );
-			// Note that the Dynamic Finfo must be the dest, even
-			// if it was called as the originator.
-			return Msg::add( destElm, e, destMsg, msg_,
-				destFuncId, srcFuncId );
-		}
-	// }
+		// Note that the Dynamic Finfo must be the dest, even
+		// if it was called as the originator.
+		return Msg::add( destElm, e, destMsg, msg_,
+			destFuncId, srcFuncId );
+	}
 	return 0;
 }
 
@@ -159,7 +147,14 @@ bool DynamicFinfo::respondToAdd(
 	// as the original Finfo
 	const FuncVec* fv = FuncVec::getFuncVec( srcFuncId );
 	if ( srcType->isSameType( ftype() ) && fv->size() == 0 ) {
-		returnFuncId = origFinfo_->funcId();
+		unsigned int lookupId = origFinfo_->funcId();
+		if ( generalIndex_ != 0 ) { 
+		// Check if we handle a LookupFinfo or similar.
+			lookupId = 
+				FuncVec::getFuncVec( origFinfo_->funcId() )->lookupId();
+			assert( lookupId != 0 );
+		}
+		returnFuncId = lookupId;
 		destIndex = msg_;
 		numDest = 1;
 		return 1;

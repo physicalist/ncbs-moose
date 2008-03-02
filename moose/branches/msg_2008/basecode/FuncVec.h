@@ -34,6 +34,11 @@ class FuncVec
  		* Makes a trigger FuncVec from the current one. Used by ValueFinfos.
  		*/
 		void makeTrig();
+		/**
+ 		* Makes a LookupFinfo FuncVec from the current one. 
+		* Used by LookupFinfos.
+ 		*/
+		void makeLookup();
 
 		/**
 		 * Looks up the function specified by funcNum
@@ -74,6 +79,11 @@ class FuncVec
 		 * trigId returns the identifier of the trigFuncVec if it exists.
 		 */
 		unsigned int trigId() const;
+
+		/**
+		 * lookupId returns the id of the lookupFuncVec if it exists.
+		 */
+		unsigned int lookupId() const;
 
 		bool isDest() const {
 			return isDest_;
@@ -119,6 +129,7 @@ class FuncVec
 		unsigned int id_; // Identifier for it across nodes.
 		bool isDest_;	// Is the Finfo a destination?
 		FuncVec* trigFuncVec_; // Points to trigger FuncVec if it exists.
+		FuncVec* lookupFuncVec_; // Points to lookup FuncVec if it exists.
 };
 
 #endif // _FUNC_VEC_H

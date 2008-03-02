@@ -37,7 +37,7 @@ static vector< FuncVec* >& funcVecLookup()
 }
 
 FuncVec::FuncVec( const string& className, const string& finfoName )
-	: id_( 0 ), isDest_( 0 ), trigFuncVec_( 0 )
+	: id_( 0 ), isDest_( 0 ), trigFuncVec_( 0 ), lookupFuncVec_( 0 )
 {
 	name_ = className + "." + finfoName;
 	funcVecLookup().push_back( this );
@@ -65,9 +65,27 @@ void FuncVec::makeTrig( )
 	assert( funcType_[0]->nValues() == 1 );
 	trigFuncVec_ = new FuncVec( name_, "trig" );
 	trigFuncVec_->addFunc( funcType_[0]->trigFunc(), Ftype0::global() );
+	trigFuncVec_->isDest_ = 1;
+
 	// Just to be sure that we've set it up.
 	isDest_ = 1;
-	trigFuncVec_->isDest_ = 1;
+}
+
+/**
+ * Makes a LookupFinfo FuncVec from the current one. Used by LookupFinfos.
+ */
+void FuncVec::makeLookup()
+{
+	// Checks that this is set up from a LookupFinfo.
+	assert( func_.size() == 1 );
+	assert( funcType_.size() == 1 );
+	assert( funcType_[0]->nValues() == 1 );
+	lookupFuncVec_ = new FuncVec( name_, "lookup" );
+	lookupFuncVec_->addFunc( funcType_[0]->recvFunc(), funcType_[0] );
+	lookupFuncVec_->isDest_ = 1;
+
+	// Just to be sure that we've set it up.
+	isDest_ = 1;
 }
 
 /// func returns the indexed function.
@@ -106,6 +124,15 @@ unsigned int FuncVec::trigId() const
 {
 	if ( trigFuncVec_ )
 		return trigFuncVec_->id();
+
+	return 0;
+}
+
+// trigId returns the identifier of the trigFuncVec if it exists.
+unsigned int FuncVec::lookupId() const 
+{
+	if ( lookupFuncVec_ )
+		return lookupFuncVec_->id();
 
 	return 0;
 }

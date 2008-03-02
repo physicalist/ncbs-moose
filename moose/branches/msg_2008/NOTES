@@ -6049,4 +6049,17 @@ Fixed SharedFinfos. One key restriction now is that we cannot have a Shared
 Finfo sending to itself even on a different element. This is because we
 require each Finfo to have directionality: it is either a src or a dest.
 
+Checked in as revision 425 with unit test flags on, Smoldyn off, -g, GSL
+
+Now stuck in LookupFinfo.cpp:330
+
+==============================================================================
+2 March 2008
+Progress on LookupFinfo. Current issue is that DynamicFinfo needs to know
+when to use the original RecvFunc of the finfo, and when to generate one
+that uses the lookup index.
+
+Got LookupFinfo to work and clear unit tests. Had to add another FuncVec
+for handling the LookupFinfo recvFuncs.
+
 ==============================================================================
