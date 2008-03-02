@@ -6072,5 +6072,13 @@ Checked in as revision 427 with unit test flags on, Smoldyn off, -g, GSL
 Continuing the attempt to get Copy working. Turns out that the Compartments
 etc from biophysics need the scheduling stuff to work. So those too had to
 be fixed up and compiled in. That done, the unit tests are still stuck.
+Checked in as revision 428 with unit test flags on, Smoldyn off, -g, GSL
+
+Now it is stuck because the sched stuff has not yet been initialized in main.
+
+I need to redo these 'copy' unit tests without any of these dependencies.
+One should not need any of this in the basecode unit tests.
+
+Did major overhaul of unit tests for Copy, and it now clears them.
 
 ==============================================================================

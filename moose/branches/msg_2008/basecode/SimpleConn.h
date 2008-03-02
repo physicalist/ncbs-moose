@@ -50,14 +50,13 @@ class SimpleConnTainer: public ConnTainer
 		}
 
 		/**
-		 * Creates a duplicate ConnTainer for message(s) between 
-		 * new elements e1 and e2, and adds this new container to the
-		 * targets. It checks the original version for which msgs to put 
-		 * the new one on.
-		 * e1 must be the new source element.
-		 * Returns true on success.
-		 */
-		bool copy( Element* e1, Element* e2 ) const;
+ 		 * Creates a duplicate ConnTainer for message(s) between 
+ 		 * new elements e1 and e2,
+ 		 * It checks the original version for which msgs to put the new
+ 		 * one on. e1 must be the new source element.
+ 		 * Returns the new ConnTainer on success, otherwise 0.
+ 		*/
+		ConnTainer* copy( Element* e1, Element* e2 ) const;
 		
 	private:
 		unsigned int eI1_;

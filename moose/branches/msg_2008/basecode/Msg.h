@@ -128,6 +128,7 @@ class Msg
 
 		/**
 		 * True if this is the destination of a message.
+		 * Undefined if the message is empty: Check for size first.
 		 * The definition of message source and dest is done at Finfo
 		 * setup time. For simple messages no problem. For Shared Finfos,
 		 * the one that has the first 'source' entry is the source.
@@ -149,6 +150,7 @@ class Msg
 		/**
 		 * Lists out all the target Elements with their indices.
 		 * Shouldn't this be a vector of ids?
+		 * Clears out the list first.
 		 */
 		unsigned int targets(
 			vector< pair< Element*, unsigned int> >& list,

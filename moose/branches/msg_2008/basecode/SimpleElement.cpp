@@ -142,6 +142,11 @@ void SimpleElement::checkMsgAlloc( unsigned int num )
 		msg_.resize( num + 1 );
 }
 
+unsigned int SimpleElement::numMsg() const
+{
+	return msg_.size();
+}
+
 //////////////////////////////////////////////////////////////////
 // Information functions
 //////////////////////////////////////////////////////////////////

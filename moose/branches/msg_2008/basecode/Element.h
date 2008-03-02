@@ -61,6 +61,11 @@ class Element
 		 */
 		virtual void checkMsgAlloc( unsigned int num ) = 0;
 
+		/**
+		 * Returns the # of msgs
+		 */
+		virtual unsigned int numMsg() const = 0;
+
 		///////////////////////////////////////////////////////////////
 		// Information functions
 		///////////////////////////////////////////////////////////////
@@ -295,6 +300,11 @@ class Element
 		 * or child.
 		 */
 		virtual Element* innerCopy() const = 0;
+
+		/**
+		 * Placeholder function: Copies current element into an array
+		 * Element with n entries instead of 1.
+		 */
 		virtual Element* innerCopy(int n) const = 0;
 
 
