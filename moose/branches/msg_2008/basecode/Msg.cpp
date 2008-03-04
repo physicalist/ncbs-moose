@@ -144,8 +144,7 @@ bool Msg::drop( unsigned int doomed )
 }
 
 /**
- * dropAll cleans up the entire set of messages. Typically used when the
- * Element is being deleted.
+ * dropAll cleans up the entire set of messages.
  */
 void Msg::dropAll()
 {
@@ -166,6 +165,66 @@ void Msg::dropAll()
 		else
 			cout << "Error: Msg::dropAll(): remoteMsg failed to drop\n"; 
 	}
+	c_.resize( 0 );
+}
+
+
+/**
+ * dropAll cleans up all messages to targets outside tree being deleted.
+ * The objects within the tree have their 'isMarkedForDeletion' flag set.
+ */
+void Msg::dropRemote()
+{
+	vector< ConnTainer* >::iterator i;
+
+	for ( i = c_.begin(); i != c_.end(); i++ ) {
+		assert( *i != 0 );
+		Msg* remoteMsg = 0;
+		if ( fv_->isDest() ) { // The current msg is source.
+			if ( !( *i )->e2()->isMarkedForDeletion() )
+				remoteMsg = ( *i )->e2()->varMsg( ( *i )->msg2() );
+		} else {
+			if ( !( *i )->e1()->isMarkedForDeletion() )
+				remoteMsg = ( *i )->e1()->varMsg( ( *i )->msg1() );
+		}
+		assert( remoteMsg != this );
+		if ( remoteMsg != 0 ) {
+			bool ret = remoteMsg->drop( *i );
+			if ( ret )
+				delete( *i );
+			else
+				cout << "Error: Msg::dropRemote(): remoteMsg failed to drop\n";
+			*i = 0;
+		}
+	}
+	// STL magic here. Gag all you want.
+	// The idea is to first shuffle all the zero c_ entries to the end.
+	i = remove_if( c_.begin(), c_.end(), bind2nd( equal_to< ConnTainer* >(), 0 ) );
+	// Then we get rid of them.
+	c_.erase( i, c_.end() );
+}
+
+/**
+ * Drops all messages during deletion. Assumes that all targets
+ * are also scheduled for deletion.
+ */
+void Msg::dropForDeletion()
+{
+	vector< ConnTainer* >::iterator i;
+	Msg* remoteMsg;
+
+	for ( i = c_.begin(); i != c_.end(); i++ ) {
+		if ( fv_->isDest() ) { // The current msg is source.
+			/*
+			 * Can't refer to remote object: it may not exist any more.
+			remoteMsg = ( *i )->e2()->varMsg( ( *i )->msg2() );
+			assert( remoteMsg != 0 );
+			assert( remoteMsg != this );
+			*/
+			delete( *i );
+		}
+	}
+	c_.resize( 0 );
 }
 
 unsigned int Msg::size() const
@@ -183,7 +242,7 @@ Conn* Msg::findConn( unsigned int eIndex, unsigned int tgt ) const
 		if ( tgt >= ( *i )->size() ) {
 			tgt -= ( *i )->size();
 		} else {
-			return ( *i )->conn( eIndex, fv_->isDest(), tgt );
+			return ( *i )->conn( eIndex, !( fv_->isDest() ), tgt );
 		}
 	}
 	return 0;

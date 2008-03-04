@@ -84,10 +84,14 @@ SimpleElement::~SimpleElement()
 	 * operation to the Msg destructor. This is because the Msg vector
 	 * changes size all the time but the Msgs themselves should not
 	 * be removed.
+	 * Note that we don't use DropAll, because by the time the call has
+	 * come here we should have cleared out all the messages going outside
+	 * the tree being deleted. Here we just destroy the allocated
+	 * ConnTainers and their vectors in all messages.
 	 */
 	vector< Msg >::iterator m;
 	for ( m = msg_.begin(); m!= msg_.end(); m++ )
-		m->dropAll();
+		m->dropForDeletion();
 
 	// Check if Finfo is one of the transient set, if so, clean it up.
 	vector< Finfo* >::iterator i;
@@ -354,9 +358,11 @@ void SimpleElement::prepareForDeletion( bool stage )
 {
 	if ( stage == 0 ) {
 		finfo_.push_back( DeletionMarkerFinfo::global() );
-	} else {
-		// Earlier I had done a deletion of conns here, but this
-		// should happen automagically with the destructor of the msgs.
+	} else { // Delete all the remote conns that have not been marked.
+		vector< Msg >::iterator m;
+		for ( m = msg_.begin(); m!= msg_.end(); m++ ) {
+			m->dropRemote();
+		}
 	}
 }
 

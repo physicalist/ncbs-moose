@@ -420,18 +420,18 @@ void testNeutral()
 		assert( childSrcFinfo != 0 );
 
 
-		Element* n1 = neutralCinfo->create( Id::scratchId(), "n1" );
+		Element* n1 = neutralCinfo->create( Id::scratchId(), "N1" );
 		bool ret = childSrcFinfo->add( 
 			Element::root(), n1, n1->findFinfo( "child" ) );
 		ASSERT( ret, "adding n1");
 
 		string s;
 		get< string >( n1, n1->findFinfo( "name" ), s );
-		ASSERT( s == "n1", "Neutral name get" );
-		set< string >( n1, n1->findFinfo( "name" ), "N1" );
+		ASSERT( s == "N1", "Neutral name get" );
+		set< string >( n1, n1->findFinfo( "name" ), "n1" );
 		s = "";
 		get< string >( n1, n1->findFinfo( "name" ), s );
-		ASSERT( s == "N1", "Neutral name set" );
+		ASSERT( s == "n1", "Neutral name set" );
 
 		Element* n2 = neutralCinfo->create( Id::scratchId(), "n2" );
 		
@@ -453,34 +453,46 @@ void testNeutral()
 		ret = childSrcFinfo->add( n2, n22, n22->findFinfo( "child" ) );
 		ASSERT( ret, "adding child");
 
-		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 3, "count children and parent" );
+		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 2, "count children and parent" );
+		ASSERT( n1->msg( "child" )->size() == 1, "count children and parent" );
 
 		// n2 has n1 as parent, and n21 and n22 as children
-		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 3, "count children" );
+		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 2, "count children" );
+		ASSERT( n2->msg( "child" )->size() == 1, "count parent" );
 
 		// Send the command to mark selected children for deletion.
 		// In this case the selected child should be n2.
-		sendTo1< int >( n1, 0, Slot( 0, 0 ), 0, 0 );
+		sendTo1< int >( n1, 0, childSrcSlot, 0, 0 );
 
 		// At this point n1 still has both n2 and n3 as children
-		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 3, "Should still have 2 children and parent" );
+		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 2, "Should still have 2 children and parent" );
 		// and n2 still has n1 as parent, and n21 and n22 as children
-		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 3, "2 kids and a parent" );
+		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 2, "2 kids and a parent" );
 
 		// Send the command to clean up messages. This still does
-		// not delete anything.
-		sendTo1< int >( n1, 0, Slot( 0, 0 ), 0, 1 );
-		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 2, "As far as n1 is concerned, n2 is removed" );
+		// not delete anything, but now n2 and children are isolated.
+		// The CLEAR_MESSAGES (== 1) flag says to delete all messages 
+		// outside delete tree, which includes n1 here because n1 is 
+		// outside delete tree.
+		// But n3 should still be there as a child of n1.
+		sendTo1< int >( n1, 0, childSrcSlot, 0, 1 );
+		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 1,
+			"Now n1 should have only n3 as a child." );
+		ASSERT( ( *n1->msg( childSrcSlot.msg() )->begin() )->e2() == n3, 
+			"n3 is the only remaining child." );
 		// n2 still has n1 as parent, and n21 and n22 as children
-		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 3, "2 kids and a parent" );
+		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 2,
+			"2 kids and a parent" );
+		ASSERT( n2->msg( "child" )->size() == 0, "2 kids, no parent" );
 
 
 		int initialNumInstances = SimpleElement::numInstances;
 		// Finally, tell n2 to die. We can't use messages
 		// any more because the handle has gone off n1.
-		set< int >( n2, n2->findFinfo( "child" ), 2 );
+		// sendTo1< int >( n1, 0, childSrcSlot, 0, 2 );
+		set< int >( n2, "child", 2 );
 		// Now we've gotten rid of n2.
-		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 2, "Now only 1 child." );
+		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 1, "Now only 1 child." );
 
 		// Now check that n2, n21, and n22 are really gwan.
 

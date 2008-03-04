@@ -6080,5 +6080,23 @@ I need to redo these 'copy' unit tests without any of these dependencies.
 One should not need any of this in the basecode unit tests.
 
 Did major overhaul of unit tests for Copy, and it now clears them.
+Still need to incorporate more aspects of messaging and DynamicFinfos.
+Also issues of messages going to globals need to be tested.
+Checked in as revision 429 with unit test flags on, Smoldyn off, -g, GSL
+
+Some loose ends:
+	- Msg::target. The pair< Element*, unsigned int> is awkward.
+	- Need consistent use of index in sends. Where do I get the index from?
+	- Msg::next. Fill up the implementation
+	- Hide all uses of iterating through Msg::c_ except in sends.
+
+==============================================================================
+4 March 2008
+Cleaning up deletes. Need to use the STL erase-remove type operation to 
+do so without messing up msg->c_ vector. See Msg.cpp:201.
+
+Deletes now working. Still need to fully test that and the copies. Still
+niggling issues with the 'next' in msgs. But the tests now clear till Shell.
+
 
 ==============================================================================
