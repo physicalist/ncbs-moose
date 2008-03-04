@@ -104,10 +104,32 @@ class Msg
 		bool drop( unsigned int doomed );
 
 		/**
-		 * Drops all messages emanating from this Msg. Typically a prelude
-		 * to deleting self.
+		 * Drops all messages emanating from this Msg. Often used in
+		 * rescheduling.
 		 */
 		void dropAll();
+
+		/**
+		 * Drops all external messages emanating from this Msg, that is
+		 * messages to Elements not MarkedForDeletion. Used when a
+		 * tree of elements are to be deleted. After this operation the
+		 * messages within the tree remain, but can simply be deallocated
+		 * without careful removing of messages, as the whole tree is
+		 * being deleted.
+		 */
+		void dropRemote();
+
+		/**
+		 * Drops all messages during deletion. Assumes that all targets
+		 * are also scheduled for deletion.
+		 * So the function simply frees all outgoing ConnTainers, and 
+		 * then frees the ConnTainer vector. It does not have to 
+		 * clean up anything on the targets because they too are doomed.
+		 *
+		 * It only frees outgoing ConnTainers because they are shared
+		 * with the doomed target message, and we don't want double deletes.
+		 */
+		void dropForDeletion();
 
 		/**
 		 * Utility function for putting a new ConnTainer onto a msg as
