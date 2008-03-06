@@ -15,6 +15,7 @@
 #include "SharedFinfo.h"
 #include "DestFinfo.h"
 #include "SrcFinfo.h"
+#include "SimpleConn.h"
 
 
 /**
@@ -75,11 +76,23 @@ bool SharedFinfo::add(
 		assert ( names_.size() > 0 );
 
 		if ( isDest_ ) {
+			SimpleConnTainer* ct = new SimpleConnTainer( 
+				destElm, e, destMsg, msg_ );
+			return Msg::add( ct, destFuncId, srcFuncId );
+			/*
 			return Msg::add( destElm, e, destMsg, msg_,
 				destFuncId, srcFuncId );
+				*/
 		} else {
+			SimpleConnTainer* ct = new SimpleConnTainer( 
+				e, destElm, msg_, destMsg );
+
+			return Msg::add( ct, srcFuncId, destFuncId );
+		
+			/*
 			return Msg::add( e, destElm, msg_, destMsg,
 				srcFuncId, destFuncId );
+				*/
 		}
 		return 1;
 	}

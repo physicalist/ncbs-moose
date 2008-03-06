@@ -24,7 +24,7 @@ Msg::Msg()
 Msg::~Msg()
 { ; }
 
-void Msg::assignMsgByFuncId( 
+bool Msg::assignMsgByFuncId( 
 	Element* e, unsigned int funcId, ConnTainer* ct )
 {
 	if ( fv_->id() == 0 )
@@ -32,13 +32,27 @@ void Msg::assignMsgByFuncId(
 
 	if ( fv_->id() == funcId ) {
 		c_.push_back( ct );
-		return;
+		return 1;
 	}
 
-	if ( next_ )
-		// do stuff here.
-		;
-	cout << "next msg stuff not yet working in Msg::assignMsgByFuncId\n";
+	if ( next_ ) {
+		assert( next_ < e->destMsgBegin() );
+		Msg *m = e->varMsg( next_ );
+		if ( !m )
+			return 0;
+		return ( m->assignMsgByFuncId( e, funcId, ct ) );
+	}
+	
+	// No matching slot, so make a new one.
+	next_ = e->addNextMsg();
+	Msg *m = e->varMsg( next_ );
+	if ( !m )
+		return 0;
+
+	m->fv_ = FuncVec::getFuncVec( funcId );
+	m->c_.push_back( ct );
+	m->next_ = 0;
+	return 1;
 }
 
 /**
@@ -50,9 +64,40 @@ void Msg::assignMsgByFuncId(
 * be used when the source calls the dest.
 * Later I may relax the directional restrictions.
 */
+bool Msg::add( ConnTainer* ct,
+	unsigned int funcId1, unsigned int funcId2 )
+{
+	// Must always have a nonzero func on the destination
+	assert( funcId2 != 0 );
+
+	Msg* m1 = ct->e1()->varMsg( ct->msg1() );
+	if ( !m1 ) return 0;
+
+	Msg* m2;
+	if ( funcId1 == 0 ) { // a destOnly msg.
+		m2 = ct->e2()->getDestMsg( ct->msg2() ); 
+	} else { // Not a destOnly msg, as it sends data out too
+		m2 = ct->e2()->varMsg( ct->msg2() );
+	}
+	if ( !m2 ) return 0;
+
+	bool ret;
+	ret = m1->assignMsgByFuncId( ct->e1(), funcId2, ct );
+	assert( ret );
+	if ( funcId1 == 0 ) // A pure dest message.
+		m2->c_.push_back( ct );
+	else // Not a destOnly msg, as it sends data out too
+		ret = m2->assignMsgByFuncId( ct->e2(), funcId1, ct );
+		
+	assert( ret );
+	return 1;
+}
+
+/*
 ConnTainer* Msg::add( Element* e1, Element* e2, 
 	unsigned int m1Index, unsigned int m2Index,
-	unsigned int funcId1, unsigned int funcId2 )
+	unsigned int funcId1, unsigned int funcId2,
+	ConnBuilder makeConn )
 {
 	// Must always have a nonzero func on the destination
 	assert( funcId2 != 0 );
@@ -60,16 +105,30 @@ ConnTainer* Msg::add( Element* e1, Element* e2,
 	Msg* m1 = e1->varMsg( m1Index );
 	if ( !m1 ) return 0;
 
-	Msg* m2 = e2->varMsg( m2Index );
+	Msg* m2;
+	if ( funcId1 == 0 ) { // a destOnly msg.
+		m2 = e2->getDestMsg( m2Index ); 
+	} else { // Not a destOnly msg, as it sends data out too
+		m2 = e2->varMsg( m2Index );
+	}
 	if ( !m2 ) return 0;
 
 	// Here need to check that the funcId matches.
-	SimpleConnTainer* ct = new SimpleConnTainer( e1, e2, m1Index, m2Index );
+	ConnTainer* ct = makeConn( e1, e2, m1Index, m2Index );
+	// SimpleConnTainer* ct = new SimpleConnTainer( e1, e2, m1Index, m2Index );
 
-	m1->assignMsgByFuncId( e1, funcId2, ct );
-	m2->assignMsgByFuncId( e2, funcId1, ct );
+	bool ret;
+	ret = m1->assignMsgByFuncId( e1, funcId2, ct );
+	assert( ret );
+	if ( funcId1 == 0 ) // A pure dest message.
+		m2->c_.push_back( ct );
+	else // Not a destOnly msg, as it sends data out too
+		ret = m2->assignMsgByFuncId( e2, funcId1, ct );
+		
+	assert( ret );
 	return ct;
 }
+*/
 
 
 /*
@@ -100,6 +159,9 @@ ConnTainer* Msg::addAll2All( Element* e1, Element* e2,
  * Assumes that the element checks first to see if it is also doomed.
  * If the element is to survive, only then it goes through the bother
  * of erasing.
+ *
+ * Note that this does not do garbage collection if a 'next' Msg is 
+ * emptied. Something to think about, much later.
  */
 bool Msg::drop( const ConnTainer* doomed )
 {
@@ -109,6 +171,11 @@ bool Msg::drop( const ConnTainer* doomed )
 		///\todo Here we have to fix the 'next' message too.
 		c_.erase( pos );
 		return 1;
+	} else if ( next_ != 0 ) {
+		if ( fv_->isDest() ) // The current msg is source.
+			return doomed->e1()->varMsg( next_ )->drop( doomed );
+		else
+			return doomed->e2()->varMsg( next_ )->drop( doomed );
 	}
 	cout << "Msg::drop( const ConnTainer* doomed ): can't find doomed\n"; 
 	return 0;
@@ -138,13 +205,17 @@ bool Msg::drop( unsigned int doomed )
 			cout << "Error: Msg::drop( unsigned int doomed ): remoteMsg failed to drop\n"; 
 		}
 		return 0;
+	} else { // Presumably it is on a next_ msg.
+		if ( next_ )
+			cout << "Msg::drop( unsigned int doomed ): Warning: trying to go to 'next', not supported yet\n"; 
 	}
 	cout << "Msg::drop( unsigned int doomed ): doomed outside range\n"; 
 	return 0;
 }
 
 /**
- * dropAll cleans up the entire set of messages.
+ * dropAll cleans up the entire set of ConnTainers on this msg.
+ * Note that we don't go through to the 'next_' here.
  */
 void Msg::dropAll()
 {
@@ -211,7 +282,6 @@ void Msg::dropRemote()
 void Msg::dropForDeletion()
 {
 	vector< ConnTainer* >::iterator i;
-	Msg* remoteMsg;
 
 	for ( i = c_.begin(); i != c_.end(); i++ ) {
 		if ( fv_->isDest() ) { // The current msg is source.
@@ -301,23 +371,11 @@ unsigned int Msg::numTargets( const Element* e ) const
 
 bool Msg::copy( const ConnTainer* c, Element* e1, Element* e2 ) const
 {
-	// I don't know the class of the ConnTainer, else would use 'add'
-	// There is a lot of overlap in function.
-	e1->checkMsgAlloc( c->msg1() );
-	e2->checkMsgAlloc( c->msg2() );
-
-	// Copying over the other parts of the Msg.
-	// Problem will come when we copy a Msg with multiple target types,
-	// hence the need to traverse 'next'.
-	Msg* m1 = e1->varMsg( c->msg1() );
-	Msg* m2 = e2->varMsg( c->msg2() );
+	const Msg* m2 = c->e2()->msg( c->msg2() );
 	unsigned int funcId2 = fv_->id(); // from e2, stored on m1.
-	unsigned int funcId1 = c->e2()->msg( c->msg2() )->fv_->id();
-
-	ConnTainer* ct = c->copy( e1, e2 ); // Duplicates ConnTainer c.
-	if ( !ct )
+	unsigned int funcId1 = m2->fv_->id();
+	ConnTainer* ct = c->copy( e1, e2 );
+	if ( ct == 0 )
 		return 0;
-	m1->assignMsgByFuncId( e1, funcId2, ct );
-	m2->assignMsgByFuncId( e2, funcId1, ct );
-	return 1;
+	return add( ct, funcId1, funcId2 );
 }

@@ -46,8 +46,8 @@ bool SimpleElement::isDescendant( const Element* ancestor ) const
 
 /**
  * This function copies the element, its data and its dynamic Finfos.
- * What it does not do is to replace any pointers to other elements
- * in the Conn array. 
+ * It also copies the Msg vector over. This includes the original
+ * ConnTainer vector and its pointers, which now have to be fixed.
  * It does not do anything about the element hierarchy either because
  * that is also handled through messages, ie., the Conn array.
  * The returned Element is dangling in memory: No parent or child.
@@ -177,7 +177,7 @@ void SimpleElement::copyMessages( Element* dup,
 {
 	map< const Element*, Element* >::iterator k;
 	vector< Msg >::const_iterator m;
-	dup->checkMsgAlloc( msg_.size() - 1 );
+	assert( dup->numMsg() == numMsg() );
 	for ( m = msg_.begin(); m != msg_.end(); m++ ) {
 		if ( m->size() == 0 )
 			continue;

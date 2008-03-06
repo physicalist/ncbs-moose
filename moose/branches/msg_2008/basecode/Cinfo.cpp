@@ -46,12 +46,11 @@ Cinfo::Cinfo(const std::string& name,
 )
 		: name_(name), author_(author), 
 		description_(description), baseCinfo_(baseCinfo),
-		ftype_( ftype ), nMsg_( 0 ), predefinedMsgs_( 0 )
+		ftype_( ftype ), nMsg_( 0 ), numSrc_( 0 )
 {
 	unsigned int i;
 	if ( baseCinfo ) {
 		nMsg_ = baseCinfo->nMsg_;
-		predefinedMsgs_ = baseCinfo->predefinedMsgs_;
 		for ( i = 0; i < baseCinfo->finfos_.size(); i++ ) {
 			Finfo* f = findMatchingFinfo(
 				baseCinfo->finfos_[i]->name(), finfoArray, nFinfos );
@@ -142,12 +141,6 @@ Cinfo::Cinfo(const std::string& name,
 			// This sends in the new Cinfo name needed to set up the
 			// FuncVecs within the finfoArray.
 			finfoArray[i]->addFuncVec( name );
-			if ( finfoArray[i]->funcId() != 0 ) {
-				if ( baseCinfo_ )
-					predefinedMsgs_ = nMsg_ + baseCinfo_->predefinedMsgs_;
-				else
-					predefinedMsgs_ = nMsg_;
-			}
 
             finfos_.push_back( finfoArray[i] );
 #ifdef GENERATE_WRAPPERS                
@@ -188,6 +181,12 @@ Cinfo::Cinfo(const std::string& name,
             swig.close();        
         }
 #endif
+	
+	// Now we shift the DestFinfos to the back of the set.
+	// Have to maintain ordering here
+	// because the base classes will need consistency.
+	// At this time we also assign the msg numbering for all Finfos.
+	shuffleFinfos();
         
 	thisFinfo_ = new ThisFinfo( this );
 	noDelFinfo_ = new ThisFinfo( this, 1 );
@@ -245,6 +244,12 @@ const Finfo* Cinfo::findFinfo( Element* e, const string& name ) const
 const Finfo* Cinfo::findFinfo( 
 		const Element* e, const ConnTainer* c ) const
 {
+	// if ( c->msg2() < finfos_.size() && finfos_[ c->msg2() ].isDest() )
+	// 	return finfos_[ c->msg2() ];
+	// else if ( c->msg1() < finfos_.size() )
+	// 	return finfos_[ c->msg1() ];
+	// else
+	// 	return 0;
 	vector< Finfo* >::const_iterator i;
 	for ( i = finfos_.begin(); i != finfos_.end(); i++ ) {
 		const Finfo* ret = (*i)->match( e, c );
@@ -279,6 +284,43 @@ const Finfo* Cinfo::findFinfo( const string& name ) const
 		*/
 
 	return 0;
+}
+
+/**
+ * Puts SrcFinfos in front, DestFinfos next, and finally ValueFinfos
+ * while keeping relative order the same. SharedFinfos can be either
+ * Src or Dest depending on their quota of functions.
+ *
+ * Must be called after the initialization of FuncVecs.
+ *
+ * Side-effects:
+ * - Assign numSrc_.
+ * - Put msg_ numbers on each, where the msg_ is just the index.
+ *   Note that ValueFinfos do not get messages. That is left to the
+ *   DynamicFinfos.
+ */
+unsigned int Cinfo::shuffleFinfos()
+{
+	vector< Finfo* > temp;
+	vector< Finfo* >::iterator i;
+	for ( i = finfos_.begin(); i != finfos_.end(); i++ )
+		if ( !( *i )->isDestOnly() ) // Is Src.
+			temp.push_back( *i );
+	numSrc_ = temp.size();
+	for ( i = finfos_.begin(); i != finfos_.end(); i++ )
+		if ( ( *i )->isDestOnly() && ( *i )->msg() != MAXUINT )
+			temp.push_back( *i );
+	for ( i = finfos_.begin(); i != finfos_.end(); i++ )
+		if ( ( *i )->isDestOnly() && ( *i )->msg() == MAXUINT )
+			temp.push_back( *i );
+
+	assert( temp.size() == finfos_.size() );
+
+	unsigned int j = 0;
+	for ( i = finfos_.begin(); i != finfos_.end(); i++ )
+		( *i )->countMessages( j );
+	finfos_ = temp;
+	return numSrc_;
 }
 
 /*
@@ -340,8 +382,7 @@ Element* Cinfo::create( Id id, const std::string& name,
 			void* data, bool noDeleteFlag ) const
 {
 	SimpleElement* ret = 
-		new SimpleElement( id, name, data );
-	ret->checkMsgAlloc( predefinedMsgs_ );
+		new SimpleElement( id, name, data, numSrc_ );
 	if ( noDeleteFlag )
 		ret->addFinfo( noDelFinfo_ );
 	else

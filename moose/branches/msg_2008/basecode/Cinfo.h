@@ -80,6 +80,13 @@ class Cinfo
 			 */
 			const Finfo* findFinfo( const string& name) const;
 
+			/**
+			 * Reorders the Finfo vector provided by the user. The
+			 * new ordering has SrcFinfos and src SharedFinfos first,
+			 * then DestFinfos, then ValueFinfos.
+			 */
+			unsigned int shuffleFinfos();
+
 			static void initialize();
 
 			/**
@@ -112,6 +119,10 @@ class Cinfo
 				return thisFinfo_;
 			}
 
+			unsigned int numSrc() const {
+				return numSrc_;
+			}
+
 		private:
 			const std::string name_;
 			const std::string author_;
@@ -131,7 +142,7 @@ class Cinfo
 			Finfo* thisFinfo_;
 			Finfo* noDelFinfo_;
 			unsigned int nMsg_; // All messages
-			unsigned int predefinedMsgs_; // Highest index of SrcFinfos: need to preallocate at least this many.
+			unsigned int numSrc_; // Highest index of SrcFinfos: need to preallocate at least this many.
 			static std::map< std::string, Cinfo* >& lookup();
 };
 

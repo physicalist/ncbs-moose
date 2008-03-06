@@ -26,11 +26,13 @@ int SimpleElement::numInstances = 0;
 SimpleElement::SimpleElement(
 				Id id,
 				const std::string& name, 
-				void* data
+				void* data,
+				unsigned int numSrc
 	)
 	: Element( id ), name_( name ), 
 		data_( data ), 
-		msg_( INITIAL_MSG_SIZE )
+		msg_( numSrc ),
+		destMsgBegin_( numSrc )
 {
 #ifdef DO_UNIT_TESTS
 		numInstances++;
@@ -46,7 +48,7 @@ SimpleElement::SimpleElement( const SimpleElement* orig )
 		name_( orig->name_ ), 
 		finfo_( orig->finfo_ ),
 		data_( 0 ),
-		msg_( 0 )
+		msg_( orig->cinfo()->numSrc() )
 {
 ///\todo should really copy over the data as well.
 #ifdef DO_UNIT_TESTS
@@ -128,6 +130,31 @@ Msg* SimpleElement::varMsg( unsigned int msgNum )
 	return ( &( msg_[ msgNum ] ) );
 }
 
+const Msg* SimpleElement::destMsg( unsigned int msgNum ) const
+{
+	vector< Msg >::const_iterator i;
+	for ( i = msg_.begin() + destMsgBegin_; i != msg_.end(); i++ )
+		if ( i->matchNum( msgNum ) )
+			return &( *i );
+	return 0;
+}
+
+Msg* SimpleElement::getDestMsg( unsigned int msgNum ) 
+{
+	vector< Msg >::iterator i;
+	for ( i = msg_.begin() + destMsgBegin_; i != msg_.end(); i++ )
+		if ( i->matchNum( msgNum ) )
+			return &( *i );
+	// Failed to find it, so make a new one.
+	msg_.push_back( Msg( ) );
+	return &( msg_.back() );
+}
+
+unsigned int SimpleElement::destMsgBegin() const
+{
+	return destMsgBegin_;
+}
+
 const Msg* SimpleElement::msg( const string& fName )
 {
 	const Finfo* f = findFinfo( fName );
@@ -139,12 +166,22 @@ const Msg* SimpleElement::msg( const string& fName )
 	return 0;
 }
 
+unsigned int SimpleElement::addNextMsg()
+{
+	assert( destMsgBegin_ <= msg_.size() );
+	msg_.insert( msg_.begin() + destMsgBegin_, Msg() );
+	destMsgBegin_++;
+	return destMsgBegin_ - 1;
+}
+
+/*
 void SimpleElement::checkMsgAlloc( unsigned int num )
 {
-	assert( num < 100 ); // Should actually compare with # of Finfos.
+	assert( num < finfo_.size() );
 	if ( msg_.size() <= num )
 		msg_.resize( num + 1 );
 }
+*/
 
 unsigned int SimpleElement::numMsg() const
 {

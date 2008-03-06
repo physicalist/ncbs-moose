@@ -11,6 +11,7 @@
 #ifdef DO_UNIT_TESTS
 
 #include "moose.h"
+#include "SimpleConn.h"
 
 
 /**
@@ -20,8 +21,8 @@ void connTest()
 {
 	// SimpleElement( name, srcSize, destSize );
 	cout << "Testing connections basic stuff";
-	SimpleElement e1( Id::scratchId(), "e1" );
-	SimpleElement e2( Id::scratchId(), "e2" );
+	SimpleElement e1( Id::scratchId(), "e1", 0, 2 );
+	SimpleElement e2( Id::scratchId(), "e2", 0, 2 );
 	SetConn sc1( &e1, 1234 );
 	SetConn sc2( &e2, 3241 );
 	ASSERT( sc1.targetElement() == &e1, "targetElement access" );
@@ -30,7 +31,9 @@ void connTest()
 	/**
 	 * Checking ConnTainers after an addmsg
 	 */
-	bool ret = Msg::add( &e1, &e2, 1, 2, 0, 1 );
+	SimpleConnTainer ct( &e1, &e2, 1, 2 );
+	bool ret = Msg::add( &ct,  0, 1 );
+	// bool ret = Msg::add( &e1, &e2, 1, 2, 0, 1 );
 	ASSERT( ret, "connected srcElement" );
 	Msg* m1 = e1.varMsg( 1 );
 	Msg* m2 = e2.varMsg( 2 );
@@ -118,6 +121,7 @@ void msgSrcTestFuncDbl( const Conn* c, double v ) {
  */
 void msgSrcTest()
 {
+	/*
 	FuncList fl;
 	targetIndex.resize( 0 );
 	fl.push_back( &msgSrcTestFunc1 );
@@ -128,6 +132,7 @@ void msgSrcTest()
 
 	SimpleElement e1(  Id::scratchId(), "e1" );
 	SimpleElement e2(  Id::scratchId(), "e2" );
+	*/
 
 	cout << "\nCompleted msgSrcTest()\n";
 }
@@ -147,8 +152,8 @@ void msgFinfoTest()
 	
 	double e2data = 1.5;
 
-	SimpleElement e1(  Id::scratchId(), "e1" );
-	SimpleElement e2(  Id::scratchId(), "e2", &e2data );
+	SimpleElement e1(  Id::scratchId(), "e1", 0, 2 );
+	SimpleElement e2(  Id::scratchId(), "e2", &e2data, 2 );
 	Ftype0 zft;
 	ValueFtype1< double > dft;
 
@@ -1377,7 +1382,7 @@ int TestTransientFinfo::numInstances = 0;
 
 void transientFinfoDeletionTest()
 {
-	SimpleElement *e1 = new SimpleElement(  Id::scratchId(), "e1" );
+	SimpleElement *e1 = new SimpleElement(  Id::scratchId(), "e1", 0, 1 );
 	Finfo* temp = new DestFinfo( "temp", Ftype1< double >::global(), 
 					0, 0 );
 

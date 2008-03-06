@@ -111,6 +111,10 @@ class SharedFinfo: public Finfo
 				return fv_->id();
 			}
 
+			bool isDestOnly() const {
+				return isDest_;
+			}
+
 		private:
 			FuncList rfuncs_;
 			unsigned int msg_;

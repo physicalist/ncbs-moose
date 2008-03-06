@@ -89,8 +89,12 @@ class Msg
 		 * A message between ArrayElements may use SparseConnTainer or
 		 * One2OneConnTainer, or various others.
 		 */
+		/*
 		static ConnTainer* add( Element* e1, Element* e2, 
 			unsigned int m1, unsigned int m2,
+			unsigned int funcId1, unsigned int funcId2 );
+		*/
+		static bool add( ConnTainer* ct,
 			unsigned int funcId1, unsigned int funcId2 );
 
 		// This is invoked by the remote Msg.
@@ -137,7 +141,7 @@ class Msg
 		 * 'next' message looking for a funcId match,  and allocates a
 		 * new 'next' message for the FuncId if there are no matches.
 		 */
-		void assignMsgByFuncId( 
+		bool assignMsgByFuncId( 
 			Element* e, unsigned int funcId, ConnTainer* ct );
 
 		/**
@@ -191,6 +195,15 @@ class Msg
 		 */
 		bool copy( const ConnTainer* c, Element* e1, Element* e2 ) const;
 
+		/**
+		 * Matches against message number. Used in lookup of destMsgs.
+		 * As a hack here it compares with next_
+		 */
+		bool matchNum( unsigned int msgNum ) const {
+			return msgNum == next_;
+		}
+
+
 	private:
 		/**
 		 * This manages the ConnTainers.
@@ -208,5 +221,8 @@ class Msg
 		 */
 		unsigned int next_; 
 };
+
+typedef ConnTainer* ( *ConnBuilder )( 
+	Element* e1, Element* e2, unsigned int msg1, unsigned int msg2 );
 
 #endif // _MSG_H

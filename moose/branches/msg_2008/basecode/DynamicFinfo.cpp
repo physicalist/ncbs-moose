@@ -21,6 +21,7 @@
 #include "DerivedFtype.h"
 #include "SharedFtype.h"
 #include "LookupFinfo.h"
+#include "SimpleConn.h"
 // #include "LookupFtype.h"
 
 static DestFinfo trigFinfo( "trig", Ftype0::global(), &dummyFunc );
@@ -100,7 +101,6 @@ bool DynamicFinfo::add(
 	// How do we know what the target expects: a simple message
 	// or a shared one? Here we use the respondToAdd to query it.
 	
-	e->checkMsgAlloc( msg_ );
 	// Here we make a SharedFtype on the fly for passing in the
 	// respondToAdd.
 	Finfo* shared[] = { 
@@ -117,8 +117,13 @@ bool DynamicFinfo::add(
 		assert( numDest == 1 );
 		// Note that the Dynamic Finfo must be the dest, even
 		// if it was called as the originator.
+		SimpleConnTainer* ct = new SimpleConnTainer( 
+			destElm, e, destMsg, msg_ );
+		return Msg::add( ct, destFuncId, srcFuncId );
+			/*
 		return Msg::add( destElm, e, destMsg, msg_,
 			destFuncId, srcFuncId );
+			*/
 	}
 	return 0;
 }
@@ -142,7 +147,6 @@ bool DynamicFinfo::respondToAdd(
 {
 	assert ( src != 0 && e != 0 );
 
-	e->checkMsgAlloc( msg_ );
 	// Handle assignment message inputs when ftype is the same
 	// as the original Finfo
 	const FuncVec* fv = FuncVec::getFuncVec( srcFuncId );
