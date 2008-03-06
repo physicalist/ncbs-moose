@@ -40,7 +40,6 @@ bool DestFinfo::respondToAdd(
 		assert ( src != 0 && e != 0 );
 		returnFuncId = fv_->id();
 		destMsgId = msg_;
-		e->checkMsgAlloc( msg_ );
 		numDest = 1;
 		return 1;
 	}

@@ -87,6 +87,10 @@ class SrcFinfo: public Finfo
 			void addFuncVec( const string& cname )
 			{;}
 
+			bool isDestOnly() const {
+				return 0;
+			}
+
 		private:
 			unsigned int msg_;
 };

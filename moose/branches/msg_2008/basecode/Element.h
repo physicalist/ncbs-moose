@@ -43,23 +43,63 @@ class Element
 		/// Returns the class info of the element class.
 		virtual const Cinfo* cinfo( ) const = 0;
 
+		///////////////////////////////////////////////////////////////
+		// Msg functions
+		///////////////////////////////////////////////////////////////
+
 		/**
-		 * Returns the identified Msg
+		 * Returns the identified Msg.
+		 * Returns 0 if the msgNum is unreasonable.
 		 */
 		virtual const Msg* msg( unsigned int msgNum ) const = 0;
 		virtual Msg* varMsg( unsigned int msgNum ) = 0;
+
+		/**
+		 * Returns the identified destMsg. This entails scanning
+		 * through the dest vector looking for matches. 
+		 * Returns 0 if not found. Not used in
+		 * message passing, but only in traversal.
+		 */
+		virtual const Msg* destMsg( unsigned int msgNum ) const = 0;
+
+		/**
+		 * Scan through dest entries looking for dest msg. Return it if
+		 * found. If not found, create a new entry for it. It will be
+		 * placed at the end of the Msg vector.
+		 * The argument msgNum will be used to identify the entry for
+		 * lookup here or in the destMsg command above.
+		 */
+		virtual Msg* getDestMsg( unsigned int msgNum ) = 0;
+
+		/**
+		 * Returns the start index for dest msgs, or equivalently, the
+		 * end index for src msgs (at the end of the 'next' set).
+		 */
+		virtual unsigned int destMsgBegin() const = 0;
+
 		/**
 		 * Returns a pointer to the specified msg by looking up the named
-		 * Finfo. This may entail construction of a DynamicFinfo, so the
-		 * function is not const.
+		 * Finfo. This may entail construction of a DynamicFinfo or a 
+		 * dest Msg, so the function is not const.
 		 */
 		virtual const Msg* msg( const string& fName ) = 0;
 
 		/**
 		 * Ensures that the requested msg is allocated. If it isn't,
 		 * it allocates it.
-		 */
+		 * Deprecated.
 		virtual void checkMsgAlloc( unsigned int num ) = 0;
+		 */
+
+		/**
+		 * Create a new 'next' msg entry and return its index.
+		 * Called by Msg when adding a target that has a new, non-matching
+		 * funcId.
+		 * It will be inserted after the last of the existing 'next'
+		 * entries, before the DestMsgs.
+		 */
+		virtual unsigned int addNextMsg() = 0;
+
 
 		/**
 		 * Returns the # of msgs

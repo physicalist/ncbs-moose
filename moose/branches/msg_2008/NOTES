@@ -6086,9 +6086,14 @@ Checked in as revision 429 with unit test flags on, Smoldyn off, -g, GSL
 
 Some loose ends:
 	- Msg::target. The pair< Element*, unsigned int> is awkward.
+		Subha has suggested a solution for this
 	- Need consistent use of index in sends. Where do I get the index from?
-	- Msg::next. Fill up the implementation
+		Same solution as above.
 	- Hide all uses of iterating through Msg::c_ except in sends.
+	- Msg::next. Fill up the implementation
+		Needs clarity.
+	- Need to fix the proliferation of Msgs.
+		Needs implementation to be sorted.
 
 ==============================================================================
 4 March 2008
@@ -6098,5 +6103,38 @@ do so without messing up msg->c_ vector. See Msg.cpp:201.
 Deletes now working. Still need to fully test that and the copies. Still
 niggling issues with the 'next' in msgs. But the tests now clear till Shell.
 
+Checked in as revision 432 with unit test flags on, Smoldyn off, -g, GSL
+
+
+Msg::next implementation possibilities:
+- Separate Src and Dest, keep next on Src.
+	- Need unique, compiled in Src for quick sends.
+	- Need to prealloc Src so we know where to put next?
+	- Dest used for all DestFinfos and SharedFinfos without any src. 
+	- Need it only for traversal, so a little speed hit not bad
+	- Decide which to look up by comparing fv_ on msg ?
+- Separate Src, Dest, Next.
+	- Src and dest alloced as needed
+	- Src has predefined indices
+	- Dest does a scan-through to find match (minimal # are defined)
+	- Next just adds on to end as needed.
+	- Messy to manage.
+- Single Src, Dest, Next
+	- Src preallocated to required #
+	- numSrc_ stored in Cinfo.
+	- Separate index in SimpleElement to keep track of end of Dest.
+	- Next accessed end of Src, no particular juggling needed.
+	- Dest accessed at end of Next. Keep the index of end of Next handy
+		for starting with Dest and other things.
+	- Dest accessed by scan-through to desired #. So it does not need
+		any juggling when we insert additional 'next' entries.
+	+ Assign msg indices to all Finfos as at present, but do the 
+		Srcs first.
+	+ Use the same index for the Finfo and the Msg. This means
+		copying out the basecode Finfos for inheritance.
+	- Need separate access to all 'Dest' msgs. Much cleanup in code.
 
 ==============================================================================
+5 March 2008
+Did implementation of Msg::next and associated code. Now it compiles but
+we're back to trying to go through the first few unit tests.

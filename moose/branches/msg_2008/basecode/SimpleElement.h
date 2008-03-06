@@ -29,7 +29,8 @@ class SimpleElement: public Element
 		SimpleElement(
 				Id id,
 				const std::string& name, 
-				void* data = 0
+				void* data,
+				unsigned int numSrc
 		);
 
 		/**
@@ -68,6 +69,12 @@ class SimpleElement: public Element
 		const Msg* msg( unsigned int msgNum ) const;
 		Msg* varMsg( unsigned int msgNum );
 
+		const Msg* destMsg( unsigned int msgNum ) const;
+
+		Msg* getDestMsg( unsigned int msgNum );
+
+		unsigned int destMsgBegin() const;
+
 		/**
 		 * Returns a pointer to the specified msg by looking up the named
 		 * Finfo. This may entail construction of a DynamicFinfo, so the
@@ -75,7 +82,7 @@ class SimpleElement: public Element
 		 */
 		const Msg* msg( const string& fName );
 
-		void checkMsgAlloc( unsigned int num );
+		unsigned int addNextMsg();
 
 		/**
 		 * Returns the # of msgs
@@ -208,17 +215,44 @@ class SimpleElement: public Element
 		Element* innerCopy(int n) const;
 
 	private:
+		/**
+		 * Name of element.
+		 */
 		string name_;
 
+		/**
+		 * This stores the field info (Finfo) entries that describe
+		 * everything about what the Element does. The Finfo[0] is
+		 * special as it also points to the class info, which in turn 
+		 * points to the static finfos that define the built-in fields.
+		 * The local finfo_ fields are dynamic and are used to extend
+		 * the class in various ways.
+		 */
 		vector< Finfo* > finfo_;
 
-		void* data_;
 		/**
-		 * The Msg manages messages . The Msg are
-		 * pre-allocated and at least the initial set are hard-coded
-		 * to refer to specific message groups.
+		 * This stores the actual data contents of the element. Can be
+		 * any object.
+		 */
+		void* data_;
+
+		/**
+		 * The Msg manages messages. The Msg vector contains three
+		 * sections: the first is for the src, the second for 'next',
+		 * and the third for 'dest' entries.
+		 * The vector is allocated to the 'src' set when the Element is
+		 * initialized. The entries in the src set are hard-coded
+		 * by index to refer to specific message groups. 
 		 */
 		vector< Msg > msg_;
+
+		/**
+		 * Index of last entry in 'next_' set of msgs. At initialization,
+		 * it indexes the end of the entire msg_ vector, and expands out
+		 * as next entries are added, always at the end. After this point
+		 * the dests start.
+		 */
+		unsigned int destMsgBegin_;
 };
 
 #endif // _SIMPLE_ELEMENT_H

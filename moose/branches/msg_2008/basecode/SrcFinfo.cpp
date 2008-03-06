@@ -9,6 +9,7 @@
 **********************************************************************/
 
 #include "header.h"
+#include "SimpleConn.h"
 #include "SrcFinfo.h"
 
 bool SrcFinfo::add(
@@ -18,8 +19,6 @@ bool SrcFinfo::add(
 	assert( destFinfo != 0 );
 	assert( e != 0 );
 	assert( destElm != 0 );
-
-	e->checkMsgAlloc( msg_ );
 
 	unsigned int srcFuncId = 0;
 	unsigned int destFuncId;
@@ -35,8 +34,14 @@ bool SrcFinfo::add(
 		assert( FuncVec::getFuncVec( destFuncId )->size() == 1 );
 		assert( numDest == 1 );
 
+		SimpleConnTainer* ct = new SimpleConnTainer( 
+			e, destElm, msg_, destMsg );
+
+		return Msg::add( ct, srcFuncId, destFuncId );
+		/*
 		return Msg::add( e, destElm, msg_, destMsg,
 			srcFuncId, destFuncId );
+			*/
 	}
 	return 0;
 }

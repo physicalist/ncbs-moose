@@ -11,6 +11,13 @@
 #ifndef _CONN_TAINER_H
 #define _CONN_TAINER_H
 
+/*
+class ConnTainer;
+
+typedef ConnTainer* ( *ConnBuilder )( 
+	Element* e1, Element* e2, unsigned int msg1, unsigned int msg2 );
+	*/
+
 class ConnTainer
 {
 	public:
@@ -73,6 +80,12 @@ class ConnTainer
  		 * Returns the new ConnTainer on success, otherwise 0.
  		*/
 		virtual ConnTainer* copy( Element* e1, Element* e2 ) const = 0;
+
+		/**
+		 * Returns the function for building a ConnTainer of the 
+		 * originating type.
+		 */
+		// virtual ConnBuilder connBuilder() const = 0;
 		
 	private:
 		Element* e1_;

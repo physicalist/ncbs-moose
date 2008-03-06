@@ -200,6 +200,17 @@ class Finfo
 			}
 
 			/**
+			 * Returns true if the Finfo never acts as a Source. This
+			 * is more precise than the isDest() from the FuncVec, because
+			 * that does not know about what may happen on the 
+			 * SharedMessages which have both Src and Dest.
+			 * Usually true.
+			 */
+			virtual bool isDestOnly() const {
+				return 1;
+			}
+
+			/**
 			 * This function assignes the msg index to use for this
 			 * Finfo, if needed.
 			 */

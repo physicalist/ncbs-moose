@@ -192,6 +192,20 @@ class DynamicFinfo: public Finfo
 				return origFinfo_->funcId();
 			}
 
+			/**
+			 * This should be true if the Finfo never acts as a 
+			 * message Source, but it is tricky here in the case of
+			 * the DynamicFinfo. This is because the role of the 
+			 * DynamicFinfo may be a pure dest (when the field is
+			 * assigned by a message) or as a mixed one (when the
+			 * field is requested to send its value back).
+			 * Probably doesn't matter, so I'll choose the conservative
+			 * option.
+			 */
+			bool isDestOnly() const {
+				return 0;
+			}
+
 
 		private:
 			const Finfo* origFinfo_;
