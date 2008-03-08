@@ -10,11 +10,13 @@
 #ifndef _CONN_H
 #define _CONN_H
 class Element;
+class ConnTainer;
 
 /**
- * This definition is used to indicate that a conn is a dummy one.
+ * This definition is used to indicate that a conn or msg is a dummy one.
  */
-#define MAXUINT (unsigned int)(~0)
+#define MAXUINT (unsigned int)( ~0 )
+#define MAXINT (int)( ( ~0 ) << 1 )
 
 /**
  * This class handles connections. Connections are the underlying
@@ -54,11 +56,18 @@ class Element;
  * when we delete Conns but don't want to mess up iterators.
  * These functions are
  * void increment()
+ * void nextElement()
  * bool good()
  *
  * Then, the Conn must provide for return messages, where the e1 and e2
  * are flipped.
  * Conn flip()
+ *
+ * And the Conn returns the ConnTainer it currently represents
+ * const ConnTainer* connTainer() const;
+ *
+ * Here the Conn reports if it is going from Dest to Src.
+ * bool isDest()
  */
 
 
@@ -82,8 +91,10 @@ class Conn
 		virtual unsigned int targetIndex() const = 0;
 		/**
 		 * Returns an index to uniquely identify the Msg of the target
+		 * Positive indices are onto Msg targets, negative are onto
+		 * dest targets.
 		 */
-		virtual unsigned int targetMsg() const = 0;
+		virtual int targetMsg() const = 0;
 
 		/**
 		 * Returns the originating Element for this Conn
@@ -99,8 +110,10 @@ class Conn
 		virtual unsigned int sourceIndex() const = 0;
 		/**
 		 * Returns an index to uniquely identify the Msg of the source
+		 * Positive indices are onto Msg targets, negative are onto
+		 * dest targets.
 		 */
-		virtual unsigned int sourceMsg() const = 0;
+		virtual int sourceMsg() const = 0;
 
 
 		/**
@@ -116,6 +129,13 @@ class Conn
 		virtual void increment() = 0;
 
 		/**
+		 * nextElement() jumps from one
+		 * Element and hence ConnTainer to the next. Used for iterating
+		 * at the Element level.
+		 */
+		virtual void nextElement() = 0;
+
+		/**
 		 * True while the iteration should continue
 		 */
 		virtual bool good() const = 0;
@@ -125,6 +145,16 @@ class Conn
 		 * traverse back with the correct args.
 		 */
 		virtual const Conn* flip() const = 0;
+
+		/**
+ 		 * Returns the ConnTainer it currently represents
+		 */
+		virtual const ConnTainer* connTainer() const = 0;
+
+		/**
+		 * True if the Conn is going from Dest to Source
+		 */
+		virtual bool isDest() const = 0;
 
 	private:
 };

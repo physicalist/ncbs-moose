@@ -41,7 +41,11 @@ class SrcFinfo: public Finfo
 					unsigned int& destIndex, unsigned int& numDest
 			) const;
 			
-			unsigned int msg() const {
+			/**
+			 * Returns index of Msg array. Always positive, that is always
+			 * a src.
+			 */
+			int msg() const {
 				return msg_;
 			}
 
@@ -92,7 +96,7 @@ class SrcFinfo: public Finfo
 			}
 
 		private:
-			unsigned int msg_;
+			int msg_;
 };
 
 #endif // _SRC_FINFO_H

@@ -22,7 +22,7 @@ class ConnTainer
 {
 	public:
 		ConnTainer( Element* e1, Element* e2,
-			unsigned int msg1, unsigned int msg2 )
+			int msg1, int msg2 )
 			:
 			e1_( e1 ), e2_( e2 ),
 			msg1_( msg1 ), msg2_( msg2 )
@@ -59,11 +59,11 @@ class ConnTainer
 			return e2_;
 		}
 
-		virtual unsigned int msg1() const {
+		virtual int msg1() const {
 			return msg1_;
 		}
 
-		virtual unsigned int msg2() const {
+		virtual int msg2() const {
 			return msg2_;
 		}
 
@@ -90,8 +90,8 @@ class ConnTainer
 	private:
 		Element* e1_;
 		Element* e2_;
-		unsigned int msg1_;
-		unsigned int msg2_;
+		int msg1_;
+		int msg2_;
 };
 
 #endif // _CONN_TAINER_H

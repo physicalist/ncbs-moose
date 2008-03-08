@@ -26,6 +26,8 @@
  * MsgSrc, MsgDest and SimpleElement, if the Element is expanded
  * to give an interface to the Conn lookup functions.
  */
+#include "TraverseMsgConn.h"
+#include "TraverseDestConn.h"
 #include "SimpleElement.h"
 // #include "ArrayElement.h"
 // #include "ArrayWrapperElement.h"

@@ -27,17 +27,12 @@ bool SimpleElement::isDescendant( const Element* ancestor ) const
 {
 	if ( this == Element::root() )
 			return 0;
-	const Finfo* f = constFindFinfo( "child" );
-	assert( f != 0 );
-	vector< pair< Element*, unsigned int> > list;
-	msg( f->msg() )->targets( list );
-	assert( list.size() > 0 );
-	const Element* parent = list[0].first;
 
-	/*
-	assert( connDestBegin( 0 ) != connDestEnd( 0 ) );
-	const Element* parent = connDestBegin( 0 )->targetElement();
-	*/
+	Conn* c = targets( "child" );
+	assert( c->good() ); // It better have a parent!
+	const Element* parent = c->targetElement();
+	delete c;
+
 	if ( parent == ancestor )
 		return 1;
 	else
@@ -408,17 +403,25 @@ class CopyTestClass
 };
 
 // Gets a vector of elements of c0 and all descendants.
-void getCopyTree( Element* c0, 
-	vector< pair< Element*, unsigned int > >& ret )
+// Only used for tests, so I can be inefficient.
+void getCopyTree( Element* c0, vector< Element* >& ret )
 {
-	ret.push_back( pair< Element*, unsigned int >( c0, 0 ) );
+	ret.push_back( c0 );
+	Conn* c = c0->targets( "childSrc" );
+	while ( c->good() ) {
+		getCopyTree( c->targetElement(), ret );
+		c->increment();
+	}
+	delete c;
 
+	/*
 	const Msg* m = c0->msg( "childSrc" );
 	vector< pair< Element*, unsigned int > > temp;
 	vector< pair< Element*, unsigned int > >::iterator i;
 	m->targets( temp, 0 );
 	for ( i = temp.begin(); i != temp.end(); i++ )
 		getCopyTree( i->first, ret );
+	*/
 }
 
 // Compares values on two single elements
@@ -528,15 +531,15 @@ void copyTest()
 
 	ASSERT( c1->name() == "c1", "copying" );
 
-	vector< pair< Element*, unsigned int > > c0family;
-	vector< pair< Element*, unsigned int > > c1family;
+	vector< Element* > c0family;
+	vector< Element* > c1family;
 	getCopyTree( c0, c0family );
 	getCopyTree( c1, c1family );
 	
 	ASSERT( c0family.size() == c1family.size(), "copy tree" );
 	for ( unsigned int i = 0; i < c0family.size(); i++ ) {
-		Element* t0 = c0family[ i ].first;
-		Element* t1 = c1family[ i ].first;
+		Element* t0 = c0family[ i ];
+		Element* t1 = c1family[ i ];
 		ASSERT( t0->id() != t1->id(), "uniqueness of ids" );
 		if ( i > 0 )
 			ASSERT( t0->name() == t1->name(), "copy names" );

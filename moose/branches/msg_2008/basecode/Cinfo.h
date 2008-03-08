@@ -123,6 +123,10 @@ class Cinfo
 				return numSrc_;
 			}
 
+			unsigned int numFinfos() const {
+				return finfos_.size();
+			}
+
 		private:
 			const std::string name_;
 			const std::string author_;

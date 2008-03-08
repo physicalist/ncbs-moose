@@ -44,67 +44,57 @@ class Element
 		virtual const Cinfo* cinfo( ) const = 0;
 
 		///////////////////////////////////////////////////////////////
-		// Msg functions
+		// Msg traversal functions. Use as API
 		///////////////////////////////////////////////////////////////
 
 		/**
-		 * Returns the identified Msg.
-		 * Returns 0 if the msgNum is unreasonable.
+		 * msgNum specifies the message.
+		 * Returns a Conn* iterator for going through all the targets,
+		 * as well as providing lots of collateral information.
+		 * Targets can be advanced by increment(), which goes one Element
+		 * and its index at a time, or by nextElement(), which goes
+		 * one Element at a time even if the Element is an array.
+		 * The Conn* must be deleted after use.
 		 */
-		virtual const Msg* msg( unsigned int msgNum ) const = 0;
-		virtual Msg* varMsg( unsigned int msgNum ) = 0;
+		virtual Conn* targets( int msgNum ) const = 0;
 
 		/**
-		 * Returns the identified destMsg. This entails scanning
-		 * through the dest vector looking for matches. 
-		 * Returns 0 if not found. Not used in
-		 * message passing, but only in traversal.
+		 * finfoName specifies the finfo connecting to these targets.
+		 * Returns a Conn* iterator for going through all the targets.
+		 * Must be deleted after use.
 		 */
-		virtual const Msg* destMsg( unsigned int msgNum ) const = 0;
+		virtual Conn* targets( const string& finfoName ) const = 0;
+
+		///////////////////////////////////////////////////////////////
+		// Msg handling functions
+		///////////////////////////////////////////////////////////////
 
 		/**
-		 * Scan through dest entries looking for dest msg. Return it if
-		 * found. If not found, create a new entry for it. It will be
-		 * placed at the end of the Msg vector.
-		 * The argument msgNum will be used to identify the entry for
-		 * lookup here or in the destMsg command above.
+		 * Add a message from field f1 on current Element to field f2 on e2
+		 * Return true if success.
 		 */
-		virtual Msg* getDestMsg( unsigned int msgNum ) = 0;
+		bool add( const string& f1, Element* e2, const string& f2 );
 
 		/**
-		 * Returns the start index for dest msgs, or equivalently, the
-		 * end index for src msgs (at the end of the 'next' set).
+		 * Drop slot 'doomed' on Msg msg
 		 */
-		virtual unsigned int destMsgBegin() const = 0;
+		bool drop( int msg, unsigned int doomed );
 
 		/**
-		 * Returns a pointer to the specified msg by looking up the named
-		 * Finfo. This may entail construction of a DynamicFinfo or a 
-		 * dest Msg, so the function is not const.
+		 * Drop ConnTainer 'doomed' on Msg msg
 		 */
-		virtual const Msg* msg( const string& fName ) = 0;
+		// bool drop( int msg, const ConnTainer* doomed );
 
 		/**
-		 * Ensures that the requested msg is allocated. If it isn't,
-		 * it allocates it.
-		 * Deprecated.
-		virtual void checkMsgAlloc( unsigned int num ) = 0;
+		 * Drop all msgs going out of the identified msg.
 		 */
+		bool dropAll( int msg );
 
 		/**
-		 * Create a new 'next' msg entry and return its index.
-		 * Called by Msg when adding a target that has a new, non-matching
-		 * funcId.
-		 * It will be inserted after the last of the existing 'next'
-		 * entries, before the DestMsgs.
+		 * Drop all msgs going out of the identified Finfo.
 		 */
-		virtual unsigned int addNextMsg() = 0;
+		bool dropAll( const string& finfo );
 
-
-		/**
-		 * Returns the # of msgs
-		 */
-		virtual unsigned int numMsg() const = 0;
 
 		///////////////////////////////////////////////////////////////
 		// Information functions
@@ -225,6 +215,71 @@ class Element
 		virtual Id id() const {
 			return id_;
 		}
+
+		///////////////////////////////////////////////////////////////
+		// Msg functions. Not to be used by mortals.
+		///////////////////////////////////////////////////////////////
+
+		/**
+		 * Returns the identified Msg.
+		 * Returns 0 if the msgNum is unreasonable.
+		 * Only used for looking up Src msgs, of course.
+		 */
+		virtual const Msg* msg( unsigned int msgNum ) const = 0;
+		virtual Msg* varMsg( unsigned int msgNum ) = 0;
+
+		/**
+		 * Returns the identified destMsg, which is just a 
+		 * vector of ConnTainers. This entails scanning
+		 * through the dest map looking for matches. 
+		 * Returns 0 if not found. Not used in
+		 * message passing, but only in traversal.
+		 */
+		virtual const vector< ConnTainer* >* dest( int msgNum ) const = 0;
+
+		/**
+		 * Scan through dest entries looking for dest msg. Return it if
+		 * found. If not found, create a new entry for it and return that. 
+		 * This is currently managed by a map indexed by the msgNum.
+		 */
+		virtual vector< ConnTainer* >* getDest( int msgNum ) = 0;
+
+		/**
+		 * Returns a pointer to the specified msg by looking up the named
+		 * Finfo. This may entail construction of a DynamicFinfo or a 
+		 * dest Msg, so the function is not const.
+		 * deprecated
+		 */
+		// virtual const Msg* msg( const string& fName ) = 0;
+
+		/**
+		 * Ensures that the requested msg is allocated. If it isn't,
+		 * it allocates it.
+		 * Deprecated.
+		virtual void checkMsgAlloc( unsigned int num ) = 0;
+		 */
+
+		/**
+		 * Create a new 'next' msg entry and return its index.
+		 * Called by Msg when adding a target that has a new, non-matching
+		 * funcId.
+		 * It will be inserted after the last of the existing 'next'
+		 * entries, before the DestMsgs.
+		 */
+		virtual unsigned int addNextMsg() = 0;
+
+
+		/**
+		 * Returns the # of msgs
+		 */
+		virtual unsigned int numMsg() const = 0;
+
+		/**
+		 * Checks if the msgNum is OK. Looks at #finfos and #src.
+		 * Rejects negative below #src, rejects others out of range.
+		 * Does not consider indices into 'next' as valid.
+		 */
+		bool validMsg( int msg ) const;
 
 		///////////////////////////////////////////////////////////////
 		// Element Id management functions

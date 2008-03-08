@@ -58,36 +58,27 @@ class SimpleElement: public Element
 
 		const Cinfo* cinfo() const;
 
-
 		/////////////////////////////////////////////////////////////
-		// Msg handling functions
+		// Msg traversal functions, part of API
 		/////////////////////////////////////////////////////////////
 
 		/**
-		 * Returns a pointer to the specified msg.
+		 * msgNum specifies the message.
+		 * Returns a Conn* iterator for going through all the targets,
+		 * as well as providing lots of collateral information.
+		 * Targets can be advanced by increment(), which goes one Element
+		 * and its index at a time, or by nextElement(), which goes
+		 * one Element at a time even if the Element is an array.
+		 * The Conn* must be deleted after use.
 		 */
-		const Msg* msg( unsigned int msgNum ) const;
-		Msg* varMsg( unsigned int msgNum );
-
-		const Msg* destMsg( unsigned int msgNum ) const;
-
-		Msg* getDestMsg( unsigned int msgNum );
-
-		unsigned int destMsgBegin() const;
+		Conn* targets( int msgNum ) const;
 
 		/**
-		 * Returns a pointer to the specified msg by looking up the named
-		 * Finfo. This may entail construction of a DynamicFinfo, so the
-		 * function is not const.
+		 * finfoName specifies the finfo connecting to these targets.
+		 * Returns a Conn* iterator for going through all the targets.
+		 * Must be deleted after use.
 		 */
-		const Msg* msg( const string& fName );
-
-		unsigned int addNextMsg();
-
-		/**
-		 * Returns the # of msgs
-		 */
-		unsigned int numMsg() const;
+		Conn* targets( const string& finfoName ) const;
 
 		/////////////////////////////////////////////////////////////
 		// Information functions
@@ -178,6 +169,40 @@ class SimpleElement: public Element
 		void setThisFinfo( Finfo* f );
 		const Finfo* getThisFinfo( ) const;
 
+		/////////////////////////////////////////////////////////////
+		// Msg handling functions
+		/////////////////////////////////////////////////////////////
+
+		/**
+		 * Returns a pointer to the specified msg.
+		 */
+		const Msg* msg( unsigned int msgNum ) const;
+		Msg* varMsg( unsigned int msgNum );
+
+		const vector< ConnTainer* >* dest( int msgNum ) const;
+
+		/**
+		 * Scan through dest entries looking for dest msg. Return it if
+		 * found. If not found, create a new entry for it and return it. 
+		 * This is currently managed by a map indexed by the msgNum.
+		 */
+		vector< ConnTainer* >* getDest( int msgNum );
+
+		/**
+		 * Returns a pointer to the specified msg by looking up the named
+		 * Finfo. This may entail construction of a DynamicFinfo, so the
+		 * function is not const.
+		 * deprecated.
+		 */
+		// const Msg* msg( const string& fName );
+
+		unsigned int addNextMsg();
+
+		/**
+		 * Returns the # of msgs
+		 */
+		unsigned int numMsg() const;
+
 		///////////////////////////////////////////////////////////////
 		// Functions for the copy operation. All 5 are virtual
 		///////////////////////////////////////////////////////////////
@@ -247,12 +272,21 @@ class SimpleElement: public Element
 		vector< Msg > msg_;
 
 		/**
+		 * The destMsg manages pure destination messages. It puts them
+		 * into a map to avoid having to store all the possible
+		 * locations explicitly. It is not accessed as often, so it
+		 * does not need to be a vector.
+		 */
+		map< int, vector< ConnTainer* > > dest_;
+
+		/**
 		 * Index of last entry in 'next_' set of msgs. At initialization,
 		 * it indexes the end of the entire msg_ vector, and expands out
 		 * as next entries are added, always at the end. After this point
 		 * the dests start.
 		 */
-		unsigned int destMsgBegin_;
+		// Deprecated
+		// unsigned int destMsgBegin_;
 };
 
 #endif // _SIMPLE_ELEMENT_H

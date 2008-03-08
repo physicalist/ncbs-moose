@@ -6113,6 +6113,7 @@ Msg::next implementation possibilities:
 	- Dest used for all DestFinfos and SharedFinfos without any src. 
 	- Need it only for traversal, so a little speed hit not bad
 	- Decide which to look up by comparing fv_ on msg ?
+	- Use -ve #s for Dest, use a map to look up the vector< ConnTainer* >.
 - Separate Src, Dest, Next.
 	- Src and dest alloced as needed
 	- Src has predefined indices
@@ -6138,3 +6139,73 @@ Msg::next implementation possibilities:
 5 March 2008
 Did implementation of Msg::next and associated code. Now it compiles but
 we're back to trying to go through the first few unit tests.
+
+==============================================================================
+6 March 2008
+Checked in as revision 433 with unit test flags on, Smoldyn off, -g, GSL
+
+Looks like I need to convert destMsg into a separate class and separate
+vector. The current arrangement is too messy and prone to error. It may
+even save space to convert.
+
+Now things are moving toward the first option above. The really nasty part of
+this is that numbers are used for two things: (src) Msgs and Dests. Worse,
+sometimes Msgs are at the dest and sometimes not.
+
+Now if we separate the arrays, the thing to do is to put the dests into a 
+map, in which case the dest is not even a message, but a vector< ConnTainer* >&
+This is no worse than the above two issues, but by putting a distinct
+type on it certainly looks uglier. Forces the problems to attention.
+
+OK. This is all fine, provided that there is a simple, uniform API that
+hides it. If we use this we cannot use Msg as a handle for other operations
+any more.
+
+I think the only thing outside functions need is the target list. This
+brings us to the next issue: How to handle Element arrays? Should we treat
+Elements as ConnTainers, where each one may be an entire array? We would
+need an ElementIter as an orthlog of Conn, providing the Element API including
+its current index. We could provide sparse as well as full ArrayElement
+variants. Bad thing with all this is the extra indirection. But could
+we parallelize the Sends? OK, deal with this later. For now, provide target
+list. Element::targets( int msgNum ) and Element::targets( const string name )
+How about nodes/edges view. Msg was the original idea for an edge, but actually
+it should be a ConnTainer. Or a Conn, that handles an entire 
+vector< ConnTainer* > or multiple of them, as needed.
+
+void Conn::increment() // goes one element and index at a time.
+void Conn::nextElement() // goes one element at a time, skips indices.
+const ConnTainer* Conn::connTainer(); // Gives the current ConnTainer of Conn.
+
+Conn* Element::targets( int msgNum );
+Conn* Element::targets( const string& finfoname );
+
+// for later:
+Conn* Element::targets( int msgNum, id elm ); // A true edge, between 2 elms.
+Conn* Element::targets( id elm ); // A true edge, between 2 elms, any finfos.
+Conn* Element::targets( int msgNum, int eIndex );
+
+int Finfo::msg();
+Finfo* Element::findFinfo( int msgNum );
+
+
+==============================================================================
+7 March
+Implementation of revised messages and revised 'targets' nearly done.
+Going through compilation.
+
+Compiled. Back to grinding through unit tests.
+
+More API cleanups needed:
+bool Element::add( int msg1, Element* e2, int msg2 );
+bool Element::add( const string& f1, Element* e2, const string& f2 );
+
+bool Element::drop( int msg, unsigned int doomed );
+bool Element::drop( int msg, const ConnTainer* doomed );
+bool Element::dropAll( int msg );
+bool Element::dropAll( const string& finfo );
+
+==============================================================================
+8 March
+Most of these updated things implemented.
+==============================================================================

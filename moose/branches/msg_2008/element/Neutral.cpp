@@ -358,16 +358,13 @@ void Neutral::lookupChild( const Conn* c, const string s )
 vector< Id > Neutral::getChildList( const Element* e )
 {
 	assert( e != 0 );
-	const Msg* m = e->msg( childSrcSlot.msg() );
-	assert( m != 0 );
-	vector< pair< Element*, unsigned int > > list;
-	vector< pair< Element*, unsigned int > >::iterator i;
-
-	m->targets( list );
 	vector< Id > ret;
-	ret.reserve( list.size() );
-	for ( i = list.begin(); i != list.end(); i++ )
-		ret.push_back( i->first->id() );
+	Conn* c = e->targets( childSrcSlot.msg() );
+	while ( c->good() ) {
+		ret.push_back( c->targetElement()->id() );
+		c->increment();
+	}
+	delete c;
 	return ret;
 }
 
@@ -418,6 +415,7 @@ void testNeutral()
 		const Finfo* childSrcFinfo = 
 			Element::root()->findFinfo( "childSrc" );
 		assert( childSrcFinfo != 0 );
+		int childDestMsg = Element::root()->findFinfo( "child " )->msg();
 
 
 		Element* n1 = neutralCinfo->create( Id::scratchId(), "N1" );
@@ -454,11 +452,12 @@ void testNeutral()
 		ASSERT( ret, "adding child");
 
 		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 2, "count children and parent" );
-		ASSERT( n1->msg( "child" )->size() == 1, "count children and parent" );
+		ASSERT( n1->dest( childDestMsg )->size() == 1,
+			"count children and parent" );
 
 		// n2 has n1 as parent, and n21 and n22 as children
 		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 2, "count children" );
-		ASSERT( n2->msg( "child" )->size() == 1, "count parent" );
+		ASSERT( n2->dest( childDestMsg )->size() == 1, "count parent" );
 
 		// Send the command to mark selected children for deletion.
 		// In this case the selected child should be n2.
@@ -483,7 +482,7 @@ void testNeutral()
 		// n2 still has n1 as parent, and n21 and n22 as children
 		ASSERT( n2->msg( childSrcSlot.msg() )->size() == 2,
 			"2 kids and a parent" );
-		ASSERT( n2->msg( "child" )->size() == 0, "2 kids, no parent" );
+		ASSERT( n2->dest( childDestMsg )->size() == 0, "2 kids, no parent" );
 
 
 		int initialNumInstances = SimpleElement::numInstances;

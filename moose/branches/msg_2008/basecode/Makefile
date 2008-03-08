@@ -21,6 +21,8 @@ OBJ = \
 	RecvFunc.o \
 	Msg.o \
 	SimpleConn.o	\
+	TraverseMsgConn.o	\
+	TraverseDestConn.o	\
 	SimpleElement.o	\
 	Copy.o \
 	Send.o \
@@ -95,6 +97,8 @@ ArrayElement.o:	ArrayElement.h SimpleElement.h MsgSrc.h MsgDest.h DeletionMarker
 ArrayWrapperElement.o:	ArrayWrapperElement.h SimpleElement.h MsgSrc.h MsgDest.h DeletionMarkerFinfo.h
 Class.o: Class.h Cinfo.h Cinfo.cpp
 FuncVec.o: RecvFunc.h Ftype.h FuncVec.h
+TraverseMsgConn.o: TraverseMsgConn.h
+TraverseDestConn.o: TraverseDestConn.h
 
 .cpp.o:
 	$(CXX) $(CFLAGS) $< -c

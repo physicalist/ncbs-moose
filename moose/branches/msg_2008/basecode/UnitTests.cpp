@@ -31,20 +31,27 @@ void connTest()
 	/**
 	 * Checking ConnTainers after an addmsg
 	 */
-	SimpleConnTainer ct( &e1, &e2, 1, 2 );
-	bool ret = Msg::add( &ct,  0, 1 );
-	// bool ret = Msg::add( &e1, &e2, 1, 2, 0, 1 );
+	SimpleConnTainer *ct = new SimpleConnTainer( &e1, &e2, 1, -2 );
+
+	// add( ConnTainer, funcId0, funcId1 )
+	bool ret = Msg::add( ct,  0, 1 );
+
 	ASSERT( ret, "connected srcElement" );
 	Msg* m1 = e1.varMsg( 1 );
-	Msg* m2 = e2.varMsg( 2 );
 	const ConnTainer* ct1 = *( m1->begin() );
-	const ConnTainer* ct2 = *( m2->begin() );
+
+	const vector< ConnTainer* >* m2 = e2.dest( -2 );
+	ASSERT( m2 != 0, "connected destElement" );
+	ASSERT( m2->size() == 1, "connected destElement" );
+	const ConnTainer* ct2 = ( *m2 )[0];
+	// Msg* m2 = e2.varMsg( 2 );
+	// const ConnTainer* ct2 = *( m2->begin() );
 	ASSERT( ct1 == ct2, "checking ConnTainers" );
 
 	ASSERT( ct1->e1() == &e1, "connected srcElement" );
 	ASSERT( ct1->e2() == &e2, "connected targetElement" );
 	ASSERT( ct1->msg1() == 1, "SrcMsg right" );
-	ASSERT( ct1->msg2() == 2, "DestMsg OK" );
+	ASSERT( ct1->msg2() == -2, "DestMsg OK" );
 
 	ASSERT( ct1->size() == 1, "ConnTainer size" );
 
@@ -56,7 +63,7 @@ void connTest()
 	ASSERT( c2->targetElement() == &e1, "Conn: targetElement" );
 	ASSERT( c1->targetEindex() == 0, "Conn: targetElement" );
 	ASSERT( c2->targetEindex() == 0, "Conn: targetElement" );
-	ASSERT( c1->targetMsg() == 2, "Conn: targetElement" );
+	ASSERT( c1->targetMsg() == -2, "Conn: targetElement" );
 	ASSERT( c2->targetMsg() == 1, "Conn: targetElement" );
 
 	
@@ -64,7 +71,7 @@ void connTest()
 	 * Here we delete a conn and check that the ranges and indices
 	 * are properly fixed up.
 	 */
-	m1->drop( static_cast< unsigned int >( 0 ) );
+	m1->drop( &e1, static_cast< unsigned int >( 0 ) );
 	ASSERT( m1->size() == 0, "Drop succeeded" );
 	ASSERT( m2->size() == 0, "Drop succeeded" );
 	/*
@@ -187,11 +194,11 @@ void msgFinfoTest()
 	ASSERT (sf2.add( &e1, &e2, &df2 ) == 1,
 					"dbl to dbl message" );
 
+	ASSERT( e1.msg_.size() == 2, "Finfo Msg" );
 	ASSERT( e1.msg_[ 0 ].size() == 1, "Finfo Msg" );
 	ASSERT( e1.msg_[ 1 ].size() == 1, "Finfo Msg" );
-	ASSERT( e1.msg_[ 2 ].size() == 0, "Finfo Msg" );
-	ASSERT( e1.msg_[ 3 ].size() == 0, "Finfo Msg" );
 
+	ASSERT( e2.msg_.size() == 4, "Finfo Msg" );
 	ASSERT( e2.msg_[ 0 ].size() == 0, "Finfo Msg" );
 	ASSERT( e2.msg_[ 1 ].size() == 0, "Finfo Msg" );
 	ASSERT( e2.msg_[ 2 ].size() == 1, "Finfo Msg" );
@@ -303,20 +310,17 @@ void cinfoTest()
 	// unsigned int startIndex = testFinfos[0]->getSlot();
 
 	Slot sumSlotIndex = testclass.getSlot( "sum" );
+	int si = startIndex.msg();
 
 	ASSERT( startIndex == sumSlotIndex, 
 					"getFinfoIndex during cinfo initialization" );
-	ASSERT( dynamic_cast< DestFinfo* >( testFinfos[0] )->
-					msg_ == 0 + startIndex.msg(),
+	ASSERT( testFinfos[0]->msg() == 0 + si,
 					"msg counting during cinfo inititialization" );
-	ASSERT( dynamic_cast< DestFinfo* >( testFinfos[1] )->
-					msg_ == 1 + startIndex.msg(),
+	ASSERT( testFinfos[1]->msg() == 1 + si,
 					"msg counting during cinfo inititialization" );
-	ASSERT( dynamic_cast< DestFinfo* >( testFinfos[2] )->
-					msg_ == 2 + startIndex.msg(),
+	ASSERT( testFinfos[2]->msg() == 2 + si,
 					"msg counting during cinfo inititialization" );
-	ASSERT( dynamic_cast< DestFinfo* >( testFinfos[3] )->
-					msg_ == 3 + startIndex.msg(),
+	ASSERT( testFinfos[3]->msg() == 3 + si,
 					"msg counting during cinfo inititialization" );
 
 	// startIndex.msg() = testFinfos[4]->getSlot();
@@ -329,17 +333,13 @@ void cinfoTest()
 	ASSERT( startIndex == sumOutSlotIndex, 
 					"sumOutIndex during cinfo initialization" );
 
-	ASSERT( dynamic_cast< SrcFinfo* >( testFinfos[4] )->
-					msg_ == 0 + startIndex.msg(),
+	ASSERT( testFinfos[4]->msg() == 0 + si,
 					"msg counting during cinfo inititialization" );
-	ASSERT( dynamic_cast< SrcFinfo* >( testFinfos[5] )->
-					msg_ == 1 + startIndex.msg(),
+	ASSERT( testFinfos[5]->msg() == 1 + si,
 					"msg counting during cinfo inititialization" );
-	ASSERT( dynamic_cast< SrcFinfo* >( testFinfos[6] )->
-					msg_ == 2 + startIndex.msg(),
+	ASSERT( testFinfos[6]->msg() == 2 + si,
 					"msg counting during cinfo inititialization" );
-	ASSERT( dynamic_cast< SrcFinfo* >( testFinfos[7] )->
-					msg_ == 3 + startIndex.msg(),
+	ASSERT( testFinfos[7]->msg() == 3 + si,
 					"msg counting during cinfo inititialization" );
 
 	Element* clock = testclass.create(  Id::scratchId(), "clock" );
@@ -371,12 +371,22 @@ void cinfoTest()
 
 	SimpleElement* se1 = static_cast< SimpleElement* >( e1 );
 
+	ASSERT( testFinfos[4]->msg() == 1, "Msg # assignment by Cinfo::shuffleFinfos");
+	// 1 src + 5 dests from Neutral, 4 more srcs from testclass.
+	ASSERT( testFinfos[0]->msg() == 10, "Msg # assignment by Cinfo::shuffleFinfos");
+	ASSERT( e1->numMsg() == testclass.numSrc(), "" );
+	ASSERT( e2->numMsg() == testclass.numSrc(), "" );
+	ASSERT( e1->msg( testFinfos[4]->msg() )->size() == 0, "" );
+	ASSERT( e2->dest( testFinfos[0]->msg() )->size() == 0, "" );
 	testFinfos[4]->add( e1, e2, testFinfos[0] );
-	ASSERT( se1->msg_.size() == 7 + startIndex.msg(), "" );
+	ASSERT( e1->numMsg() == testclass.numSrc(), "" );
+	ASSERT( e2->numMsg() == testclass.numSrc() + 1, "" );
+	ASSERT( e1->msg( testFinfos[4]->msg() )->size() == 1, "" );
+	ASSERT( e2->dest( testFinfos[0]->msg() )->size() == 1, "" );
 	// Fill in stuff here for checking that the Conn points where it should
 
 	testFinfos[4]->add( e1, e3, testFinfos[0] );
-	ASSERT( se1->msg_.size() == 7 + startIndex.msg(), "" );
+	ASSERT( e1->numMsg() == testclass.numSrc(), "" );
 
 	testFinfos[4]->add( e2, e3, testFinfos[0] );
 	testFinfos[5]->add( e3, e1, testFinfos[1] );
