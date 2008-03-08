@@ -1227,7 +1227,7 @@ void Shell::move( const Conn* c, Id src, Id parent, string name )
 				e->setName( name );
 			/// \todo: Here we don't take into acount multiple parents.
 			// Here we drop all parents.
-			e->varMsg( e->findFinfo( "child" )->msg() )->dropAll();
+			e->dropAll( "child" );
 
 			bool ret = pa->findFinfo( "childSrc" )->add(
 				pa, e, e->findFinfo( "child" ) );
@@ -1377,7 +1377,7 @@ void Shell::useClock( const Conn* c,
 				assert( ret );
 			} else {
 				if ( ( *m->begin() )->e1() != tick ) {
-					m->dropAll();
+					m->dropAll( e );
 					tickProc->add( tick, e, func );
 				}
 				/*
@@ -1548,17 +1548,17 @@ void Shell::requestClocks( const Conn* c )
 {
 	// Here we fill up the clock timings.
 	Element* cj = findCj();
-	const Msg* m = cj->msg( cj->findFinfo( "childSrc" )->msg() );
-	vector< pair< Element*, unsigned int > > kids;
-	vector< pair< Element*, unsigned int > >::iterator i;
+
+	Conn* ct = cj->targets( "childSrc" );
 	vector< double > times;
 
-	m->targets( kids );
-	for ( i = kids.begin(); i != kids.end(); i++ ) {
+	while ( ct->good() ) {
 		double dt;
-		if ( get< double >( i->first, "dt", dt ) )
+		if ( get< double >( ct->targetElement(), "dt", dt ) )
 			times.push_back( dt );
+		ct->increment();
 	}
+	delete ct;
 	sendBack1< vector< double > >( c->targetElement(), clockSlot, c, times );
 
 	/*

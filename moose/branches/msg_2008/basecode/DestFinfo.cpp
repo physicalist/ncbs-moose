@@ -48,10 +48,11 @@ bool DestFinfo::respondToAdd(
 
 void DestFinfo::countMessages( unsigned int& num )
 {
-	msg_ = num++;
+	msg_ = -num;
+	num++;
 }
 
-unsigned int DestFinfo::msg() const
+int DestFinfo::msg() const
 {
 	return msg_;
 }

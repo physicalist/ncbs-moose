@@ -55,9 +55,10 @@ template < class T > void send1(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() );
-				j->good(); j->increment() )
+			Conn* j = ( *i )->conn( eIndex, m->isDest() );
+			for ( ; j->good(); j->increment() )
 				rf( j, val );
+			delete j;
 		}
 	// Yes, it is an assignment, not a comparison
 	} while ( ( m = m->next( e ) ) ); 
@@ -79,6 +80,7 @@ template< class T > void sendTo1(
 		);
 	const Conn* j = m->findConn( eIndex, tgt );
 	rf( j,  val );
+	delete j;
 }
 
 template< class T > void sendBack1( const Element* e, Slot src, 
@@ -112,9 +114,10 @@ template < class T1, class T2 > void send2(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() );
-				j->good(); j->increment() )
+			Conn* j = ( *i )->conn( eIndex, m->isDest() );
+			for ( ; j->good(); j->increment() )
 				rf( j, v1, v2 );
+			delete j;
 		}
 	// Yes, it is an assignment, not a comparison
 	} while ( ( m = m->next( e ) ) ); 
@@ -136,6 +139,7 @@ template< class T1, class T2 > void sendTo2(
 		);
 	const Conn* j = m->findConn( eIndex, tgt );
 	rf( j,  v1, v2 );
+	delete j;
 }
 
 template< class T1, class T2 > void sendBack2( const Element* e, Slot src, 
@@ -170,9 +174,10 @@ template < class T1, class T2, class T3 > void send3(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() );
-				j->good(); j->increment() )
+			Conn* j = ( *i )->conn( eIndex, m->isDest() );
+			for ( ; j->good(); j->increment() )
 				rf( j, v1, v2, v3 );
+			delete j;
 		}
 	// Yes, it is an assignment, not a comparison
 	} while ( ( m = m->next( e ) ) ); 
@@ -194,6 +199,7 @@ template< class T1, class T2, class T3 > void sendTo3(
 		);
 	const Conn* j = m->findConn( eIndex, tgt );
 	rf( j,  v1, v2, v3 );
+	delete j;
 }
 
 template< class T1, class T2, class T3 > 
@@ -229,9 +235,10 @@ template < class T1, class T2, class T3, class T4 > void send4(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() );
-				j->good(); j->increment() )
+			Conn* j = ( *i )->conn( eIndex, m->isDest() );
+			for ( ; j->good(); j->increment() )
 				rf( j, v1, v2, v3, v4 );
+			delete j;
 		}
 	// Yes, it is an assignment, not a comparison
 	} while ( ( m = m->next( e ) ) );
@@ -253,6 +260,7 @@ template< class T1, class T2, class T3, class T4 > void sendTo4(
 		);
 	const Conn* j = m->findConn( eIndex, tgt );
 	rf( j,  v1, v2, v3, v4 );
+	delete j;
 }
 
 template< class T1, class T2, class T3, class T4 > 

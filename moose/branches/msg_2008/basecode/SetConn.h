@@ -34,7 +34,7 @@ class SetConn: public Conn
 		unsigned int targetIndex() const {
 			return 0;
 		}
-		unsigned int targetMsg() const {
+		int targetMsg() const {
 			return 0;
 		}
 		Element* sourceElement() const {
@@ -46,7 +46,7 @@ class SetConn: public Conn
 		unsigned int sourceIndex() const {
 			return 0;
 		}
-		unsigned int sourceMsg() const {
+		int sourceMsg() const {
 			return 0;
 		}
 		void* data() const {
@@ -57,9 +57,10 @@ class SetConn: public Conn
 		 * increment() updates internal counter, used in iterating through
 		 * targets.
 		 */
-		void increment() {
-			;
-		}
+		void increment()
+		{ ; }
+		void nextElement()
+		{ ; }
 		bool good() const {
 			return 0;
 		}
@@ -70,6 +71,14 @@ class SetConn: public Conn
 		 */
 		const Conn* flip() const {
 			return new SetConn( *this );
+		}
+
+		const ConnTainer* connTainer() const {
+			return 0;
+		}
+
+		bool isDest() const {
+			return 0;
 		}
 
 	private:

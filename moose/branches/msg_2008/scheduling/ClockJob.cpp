@@ -404,17 +404,8 @@ void ClockJob::reschedFuncLocal( Element* e )
  */
 void ClockJob::clearMessages( Element* e )
 {
-	const Finfo* f = e->findFinfo( "prev" );
-	assert( f != 0 );
-	Msg* m = e->varMsg( f->msg() );
-	assert( m != 0 );
-	m->dropAll();
-
-	f = e->findFinfo( "start" );
-	assert( f != 0 );
-	m = e->varMsg( f->msg() );
-	assert( m != 0 );
-	m->dropAll();
+	e->dropAll( "prev" );
+	e->dropAll( "start" );
 }
 
 /**

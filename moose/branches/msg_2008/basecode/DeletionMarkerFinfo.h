@@ -38,8 +38,8 @@ class DeletionMarkerFinfo: public Finfo
 					return 0;
 			}
 
-			unsigned int msg() const {
-				return MAXUINT;
+			int msg() const {
+				return MAXINT;
 			}
 
 			/**

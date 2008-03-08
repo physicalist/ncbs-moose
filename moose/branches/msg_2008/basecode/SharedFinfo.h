@@ -49,7 +49,7 @@ class SharedFinfo: public Finfo
 					unsigned int& destIndex, unsigned int& numDest
 			) const;
 			
-			unsigned int msg() const {
+			int msg() const {
 				return msg_;
 			}
 
@@ -117,7 +117,7 @@ class SharedFinfo: public Finfo
 
 		private:
 			FuncList rfuncs_;
-			unsigned int msg_;
+			int msg_;
 			vector < string > names_;
 			FuncVec* fv_;
 			vector< const Ftype* > destTypes_;

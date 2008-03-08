@@ -308,18 +308,18 @@ unsigned int Cinfo::shuffleFinfos()
 			temp.push_back( *i );
 	numSrc_ = temp.size();
 	for ( i = finfos_.begin(); i != finfos_.end(); i++ )
-		if ( ( *i )->isDestOnly() && ( *i )->msg() != MAXUINT )
+		if ( ( *i )->isDestOnly() && ( *i )->msg() != MAXINT )
 			temp.push_back( *i );
 	for ( i = finfos_.begin(); i != finfos_.end(); i++ )
-		if ( ( *i )->isDestOnly() && ( *i )->msg() == MAXUINT )
+		if ( ( *i )->isDestOnly() && ( *i )->msg() == MAXINT )
 			temp.push_back( *i );
 
 	assert( temp.size() == finfos_.size() );
 
 	unsigned int j = 0;
+	finfos_ = temp;
 	for ( i = finfos_.begin(); i != finfos_.end(); i++ )
 		( *i )->countMessages( j );
-	finfos_ = temp;
 	return numSrc_;
 }
 

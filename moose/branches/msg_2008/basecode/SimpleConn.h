@@ -16,7 +16,7 @@ class SimpleConnTainer: public ConnTainer
 {
 	public:
 		SimpleConnTainer( Element* e1, Element* e2, 
-			unsigned int msg1, unsigned int msg2,
+			int msg1, int msg2,
 			unsigned int eI1 = 0, unsigned int eI2 = 0,
 			unsigned int i1 = 0, unsigned int i2 = 0 );
 
@@ -84,7 +84,7 @@ class SimpleConn: public Conn
 		unsigned int targetIndex() const {
 			return s_->i2();
 		}
-		unsigned int targetMsg() const {
+		int targetMsg() const {
 			return s_->msg2();
 		}
 		Element* sourceElement() const {
@@ -96,7 +96,7 @@ class SimpleConn: public Conn
 		unsigned int sourceIndex() const {
 			return s_->i1();
 		}
-		unsigned int sourceMsg() const {
+		int sourceMsg() const {
 			return s_->msg1();
 		}
 		void* data() const {
@@ -111,6 +111,9 @@ class SimpleConn: public Conn
 		void increment() {
 			s_ = 0;
 		}
+		void nextElement() {
+			s_ = 0;
+		}
 		bool good() const {
 			return ( s_ != 0 );
 		}
@@ -120,6 +123,14 @@ class SimpleConn: public Conn
 		 * traverse back with the correct args.
 		 */
 		const Conn* flip() const;
+
+		const ConnTainer* connTainer() const {
+			return s_;
+		}
+
+		bool isDest() const  {
+			return 0;
+		}
 
 	private:
 		const SimpleConnTainer* s_;
@@ -144,7 +155,7 @@ class ReverseSimpleConn: public Conn
 		unsigned int targetIndex() const {
 			return s_->i1();
 		}
-		unsigned int targetMsg() const {
+		int targetMsg() const {
 			return s_->msg1();
 		}
 		Element* sourceElement() const {
@@ -156,7 +167,7 @@ class ReverseSimpleConn: public Conn
 		unsigned int sourceIndex() const {
 			return s_->i2();
 		}
-		unsigned int sourceMsg() const {
+		int sourceMsg() const {
 			return s_->msg2();
 		}
 		void* data() const {
@@ -171,6 +182,10 @@ class ReverseSimpleConn: public Conn
 			s_ = 0;
 		}
 
+		void nextElement() {
+			s_ = 0;
+		}
+
 		bool good() const {
 			return ( s_ != 0 );
 		}
@@ -181,6 +196,14 @@ class ReverseSimpleConn: public Conn
 		 */
 		const Conn* flip() const {
 			return new SimpleConn( s_ );
+		}
+
+		const ConnTainer* connTainer() const {
+			return s_;
+		}
+
+		bool isDest() const  {
+			return 1;
 		}
 
 	private:

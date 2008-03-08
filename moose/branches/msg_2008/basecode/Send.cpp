@@ -22,9 +22,10 @@ void send0( const Element* e, unsigned int eIndex, Slot src )
 		vector< ConnTainer* >::const_iterator i;
 		// Going through the MsgSrc vector of ConnTainers
 		for ( i = m->begin( ); i != m->end( ); i++ ) {
-			for ( Conn* j = ( *i )->conn( eIndex, m->isDest() ); 
-				j->good(); j->increment() )
+			Conn* j = ( *i )->conn( eIndex, m->isDest() ); 
+			for ( ; j->good(); j->increment() )
 				rf( j );
+			delete j;
 		}
 	} while ( ( m = m->next( e ) ) ); // An assignment, not a comparison.
 }
@@ -37,6 +38,7 @@ void sendTo0( const Element* e, unsigned int eIndex, Slot src,
 	RecvFunc rf = m->func( src.func() );
 	Conn* j = m->findConn( eIndex, tgt );
 	rf( j );
+	delete j;
 }
 
 void sendBack0( const Element* e, Slot src, const Conn* c )

@@ -45,8 +45,8 @@ class ThisFinfo: public Finfo
 					unsigned int& destIndex, unsigned int& numDest
 			) const;
 			
-			unsigned int msg() const {
-				return MAXUINT;
+			int msg() const {
+				return MAXINT;
 			}
 
 			RecvFunc recvFunc() const {

@@ -89,8 +89,8 @@ class LookupFinfo: public Finfo
 			/**
 			 * Returns a flag for a bad msg.
 			 */
-			unsigned int msg() const {
-				return MAXUINT;
+			int msg() const {
+				return MAXINT;
 			}
 
 			/**

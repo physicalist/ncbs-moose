@@ -246,14 +246,13 @@ double HHChannel::getEk( const Element* e )
 void HHChannel::makeGate( Element *e, const Finfo* f, double power )
 {
 	Element* gate = 0;	
-	vector< pair< Element*, unsigned int > > list;
-	unsigned int numGates = 
-		e->msg( f->msg() )->targets( list );
+	Conn* gateConn = e->targets( f->msg() );
+	unsigned int numGates = e->msg( f->msg() )->numTargets( e );
 	assert( numGates <= 1 );
 	if ( power <= 0 ) {
 		// If gate exists, remove it.
 		if ( numGates == 1 ) {
-			gate = list[0].first;
+			gate = gateConn->targetElement();
 			unsigned int numChans =
 				gate->msg( gate->findFinfo( "gate")->msg() )->size();
 			assert( numChans > 0 );
@@ -261,7 +260,7 @@ void HHChannel::makeGate( Element *e, const Finfo* f, double power )
 				// Here we have multiple channels using this gate. So
 				// we don't mess with the original.
 				// Get rid of local connection to gate, but don't delete
-				e->varMsg( f->msg() )->dropAll();
+				e->dropAll( f->msg() );
 			} else { // Delete the single gate.
 				bool ret = set( gate, "destroy" );
 				assert( ret );
@@ -271,7 +270,7 @@ void HHChannel::makeGate( Element *e, const Finfo* f, double power )
 	}
 
 	if ( numGates == 1 ) {
-		gate = list[0].first;
+		gate = gateConn->targetElement();
 		unsigned int numChans =
 				gate->msg( gate->findFinfo( "gate")->msg() )->size();
 		assert( numChans > 0 );
@@ -294,6 +293,7 @@ void HHChannel::makeGate( Element *e, const Finfo* f, double power )
 		bool ret = f->add( e, gate, gate->findFinfo( "gate" ) );
 		assert( ret );
 	}
+	delete gateConn;
 }
 
 /**
@@ -682,6 +682,8 @@ void testHHChannel()
 		Id::scratchId() );
 	Element* chan = Neutral::create( "HHChannel", "Na", compt, 
 		Id::scratchId() );
+	
+	Slot childSlot = initHHChannelCinfo()->getSlot( "childSrc" );
 
 	ASSERT( compt->findFinfo( "channel" )->add( compt, chan,
 					chan->findFinfo( "channel" ) ),
@@ -689,18 +691,16 @@ void testHHChannel()
 
 	// Check gate construction and removal when powers are assigned
 	
-	ASSERT( chan->msg( "childSrc" )->size() == 0, "Creating xGate");
+	ASSERT( chan->msg( childSlot.msg() )->size() == 0, "Creating xGate");
 	set< double >( chan, "Xpower", 2.0 );
-	ASSERT( chan->msg( "xGate" )->size() == 1,
-					"Creating xGate");
-	ASSERT( chan->msg( "childSrc" )->size() == 1,
-					"Creating xGate");
+	ASSERT( chan->msg( xGateSlot.msg() )->size() == 1, "Creating xGate");
+	ASSERT( chan->msg( childSlot.msg() )->size() == 1, "Creating xGate");
 
 	set< double >( chan, "Xpower", 0.0 );
-	ASSERT( chan->msg( "childSrc" )->size() == 0, "Removing xGate");
-	ASSERT( chan->msg( "xGate" )->size() == 0, "Removing xGate");
+	ASSERT( chan->msg( childSlot.msg() )->size() == 0, "Removing xGate");
+	ASSERT( chan->msg( xGateSlot.msg() )->size() == 0, "Removing xGate");
 	set< double >( chan, "Xpower", 3.0 );
-	ASSERT( chan->msg( "xGate" )->size() == 1, "Creating xGate again");
+	ASSERT( chan->msg( xGateSlot.msg() )->size() == 1, "Creating xGate again");
 
 	Id xGateId;
 	bool ret = lookupGet< Id, string >(
@@ -711,7 +711,7 @@ void testHHChannel()
 	Element* xGate = xGateId();
 
 	set< double >( chan, "Ypower", 1.0 );
-	ASSERT( chan->msg( "yGate" )->size() == 1, "Creating yGate");
+	ASSERT( chan->msg( yGateSlot.msg() )->size() == 1, "Creating yGate");
 	
 	// Check steady-state calculation for channel cond on reinit
 	// Here we start with Gbar = 1, Vm set ahead of time to 0,

@@ -50,7 +50,7 @@ class DestFinfo: public Finfo
 					unsigned int& destMsgId, unsigned int& numDest
 			) const;
 			
-			unsigned int msg() const;
+			int msg() const;
 
 			/**
 			 * Call the RecvFunc with the arguments in the string.
@@ -107,7 +107,7 @@ class DestFinfo: public Finfo
 			/**
 			 * This identifies the msg associated with this DestFinfo.
 			 */
-			unsigned int msg_;
+			int msg_;
 
 			/**
 			 * The FuncVec data structure manages RecvFuncs

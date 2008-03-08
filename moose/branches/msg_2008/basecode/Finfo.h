@@ -68,8 +68,10 @@ class Finfo
 
 			/**
 			 * This returns the message identifier for this Finfo.
+			 * Zero and positive values are srcs, and are used by Slots.
+			 * Negative values are dest only.
 			 */
-			virtual unsigned int msg() const = 0;
+			virtual int msg() const = 0;
 
 			/**
 			 * In any Finfo that has a RecvFunc, this returns it.

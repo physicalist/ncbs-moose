@@ -36,7 +36,7 @@ bool Msg::assignMsgByFuncId(
 	}
 
 	if ( next_ ) {
-		assert( next_ < e->destMsgBegin() );
+		assert( next_ < e->numMsg() );
 		Msg *m = e->varMsg( next_ );
 		if ( !m )
 			return 0;
@@ -56,14 +56,17 @@ bool Msg::assignMsgByFuncId(
 }
 
 /**
-* Add a new message from e1 (source ) to e2 (dest).
-* The m1 and m2 indicate source and dest msg indices.
-* The funcId1 is the source funcId, which is going to be used
-* at the dest, but is optional so it may be zero.
-* The funcId2 is the dest funcId, which must be nonzero and will
-* be used when the source calls the dest.
-* Later I may relax the directional restrictions.
-*/
+ * Add a new message using the specified ConnTainer.
+ * The e1 (source ) and e2 (dest), are in the ConnTainer, as are
+ * m1 and m2 which indicate source and dest msg indices.
+ * The funcId1 is the source funcId, which is going to be used
+ * at the dest, but is optional so it may be zero.
+ * The funcId2 is the dest funcId, which must be nonzero and will
+ * be used when the source calls the dest.
+ * Later I may relax the directional restrictions.
+ *
+ * Returns true on success.
+ */
 bool Msg::add( ConnTainer* ct,
 	unsigned int funcId1, unsigned int funcId2 )
 {
@@ -73,6 +76,26 @@ bool Msg::add( ConnTainer* ct,
 	Msg* m1 = ct->e1()->varMsg( ct->msg1() );
 	if ( !m1 ) return 0;
 
+	if ( funcId1 == 0 ) { // a destOnly msg, terminating in destMsg_.
+		// Look for, and if necessary create the connTainer.
+		vector< ConnTainer* >* dct = ct->e2()->getDest( ct->msg2() ); 
+		assert( dct != 0 );
+		bool ret = m1->assignMsgByFuncId( ct->e1(), funcId2, ct );
+		assert( ret );
+		dct->push_back( ct );
+	} else { // A msg terminating in the msg_ vector
+		Msg* m2 = ct->e2()->varMsg( ct->msg2() );
+		if ( !m2 ) return 0;
+		bool ret;
+		ret = m1->assignMsgByFuncId( ct->e1(), funcId2, ct );
+		assert( ret );
+		ret = m2->assignMsgByFuncId( ct->e2(), funcId1, ct );
+		assert( ret );
+	}
+	return 1;
+
+
+	/*
 	Msg* m2;
 	if ( funcId1 == 0 ) { // a destOnly msg.
 		m2 = ct->e2()->getDestMsg( ct->msg2() ); 
@@ -81,8 +104,7 @@ bool Msg::add( ConnTainer* ct,
 	}
 	if ( !m2 ) return 0;
 
-	bool ret;
-	ret = m1->assignMsgByFuncId( ct->e1(), funcId2, ct );
+	bool ret = m1->assignMsgByFuncId( ct->e1(), funcId2, ct );
 	assert( ret );
 	if ( funcId1 == 0 ) // A pure dest message.
 		m2->c_.push_back( ct );
@@ -91,44 +113,8 @@ bool Msg::add( ConnTainer* ct,
 		
 	assert( ret );
 	return 1;
+	*/
 }
-
-/*
-ConnTainer* Msg::add( Element* e1, Element* e2, 
-	unsigned int m1Index, unsigned int m2Index,
-	unsigned int funcId1, unsigned int funcId2,
-	ConnBuilder makeConn )
-{
-	// Must always have a nonzero func on the destination
-	assert( funcId2 != 0 );
-
-	Msg* m1 = e1->varMsg( m1Index );
-	if ( !m1 ) return 0;
-
-	Msg* m2;
-	if ( funcId1 == 0 ) { // a destOnly msg.
-		m2 = e2->getDestMsg( m2Index ); 
-	} else { // Not a destOnly msg, as it sends data out too
-		m2 = e2->varMsg( m2Index );
-	}
-	if ( !m2 ) return 0;
-
-	// Here need to check that the funcId matches.
-	ConnTainer* ct = makeConn( e1, e2, m1Index, m2Index );
-	// SimpleConnTainer* ct = new SimpleConnTainer( e1, e2, m1Index, m2Index );
-
-	bool ret;
-	ret = m1->assignMsgByFuncId( e1, funcId2, ct );
-	assert( ret );
-	if ( funcId1 == 0 ) // A pure dest message.
-		m2->c_.push_back( ct );
-	else // Not a destOnly msg, as it sends data out too
-		ret = m2->assignMsgByFuncId( e2, funcId1, ct );
-		
-	assert( ret );
-	return ct;
-}
-*/
 
 
 /*
@@ -151,7 +137,7 @@ ConnTainer* Msg::addAll2All( Element* e1, Element* e2,
 
 
 /**
- * drop eliminates an identified ConnTainer.
+ * innerDrop eliminates an identified ConnTainer.
  * This is NOT the call to initiate removing a connection.
  * It is called on the other end of the message from the one directly
  * set up for deletion, and assumes that the rest of the message will
@@ -163,7 +149,7 @@ ConnTainer* Msg::addAll2All( Element* e1, Element* e2,
  * Note that this does not do garbage collection if a 'next' Msg is 
  * emptied. Something to think about, much later.
  */
-bool Msg::drop( const ConnTainer* doomed )
+bool Msg::innerDrop( const ConnTainer* doomed )
 {
 	vector< ConnTainer* >::iterator pos = 
 		find( c_.begin(), c_.end(), doomed );
@@ -173,94 +159,133 @@ bool Msg::drop( const ConnTainer* doomed )
 		return 1;
 	} else if ( next_ != 0 ) {
 		if ( fv_->isDest() ) // The current msg is source.
-			return doomed->e1()->varMsg( next_ )->drop( doomed );
+			return doomed->e1()->varMsg( next_ )->innerDrop( doomed );
 		else
-			return doomed->e2()->varMsg( next_ )->drop( doomed );
+			return doomed->e2()->varMsg( next_ )->innerDrop( doomed );
 	}
 	cout << "Msg::drop( const ConnTainer* doomed ): can't find doomed\n"; 
 	return 0;
 }
 
 /**
+ * Utility function for dropping target, whether it is 
+ * on a pure dest or another Msg.
+ * Does not clear the ConnTainer.
+ * NOT the primary call to drop a message.
+ */
+bool Msg::innerDrop( Element* remoteElm, int remoteMsgNum,
+	const ConnTainer* d )
+{
+	assert( remoteElm != 0 );
+
+	if ( remoteMsgNum < 0 ) { // A pure dest msg.
+		vector< ConnTainer* >* ct = remoteElm->getDest( remoteMsgNum );
+		vector< ConnTainer* >::iterator i;
+		assert ( ct->size() > 0 );
+		// Find the doomed ConnTainer and shift it to the end of the
+		// vector.
+		i = remove( ct->begin(), ct->end(), d );
+		if ( i == ct->end() ) // It had better exist.
+			return 0;
+		ct->erase( i ); // zap it on dest
+		return 1;
+	} else {
+		Msg* remoteMsg = remoteElm->varMsg( remoteMsgNum );
+		assert( remoteMsg != 0 );
+		return remoteMsg->innerDrop( d );
+	}
+}
+
+/**
  * This variant of drop initiates the removal of a specific ConnTainer,
  * identified by its index within the Msg. 
- * Note... doesn't yet handle next Msg.
+ * Clearly, this cannot be called from a pure dest.
  */
-bool Msg::drop( unsigned int doomed )
+bool Msg::drop( Element* e, unsigned int doomed )
 {
 	if ( doomed < c_.size() ) {
 		ConnTainer* d = c_[ doomed ];
-		Msg* remoteMsg;
-		if ( fv_->isDest() ) // The current msg is the source
-			remoteMsg = d->e2()->varMsg( d->msg2() );
-		else 
-			remoteMsg = d->e1()->varMsg( d->msg1() );
-
-		assert( remoteMsg != 0 );
-		if ( remoteMsg->drop( d ) ) {
+		int remoteMsgNum;
+		Element* remoteElm;
+		if ( fv_->isDest() ) {
+			remoteMsgNum = d->msg2();
+			remoteElm = d->e2();
+		} else {
+			remoteMsgNum = d->msg1();
+			remoteElm = d->e1();
+		}
+		if ( innerDrop( remoteElm, remoteMsgNum, d ) ) {
 			c_.erase( c_.begin() + doomed );
 			delete d;
 			return 1;
 		} else {
-			cout << "Error: Msg::drop( unsigned int doomed ): remoteMsg failed to drop\n"; 
+			return 0;
 		}
-		return 0;
 	} else { // Presumably it is on a next_ msg.
+		assert ( next_ < e->numMsg() );
 		if ( next_ )
-			cout << "Msg::drop( unsigned int doomed ): Warning: trying to go to 'next', not supported yet\n"; 
+			return e->varMsg( next_ )->drop( e, doomed - c_.size() );
 	}
+	// No, the conn doesn't exist at all.
 	cout << "Msg::drop( unsigned int doomed ): doomed outside range\n"; 
 	return 0;
 }
 
 /**
  * dropAll cleans up the entire set of ConnTainers on this msg.
- * Note that we don't go through to the 'next_' here.
  */
-void Msg::dropAll()
+void Msg::dropAll( Element* e )
 {
 	vector< ConnTainer* >::iterator i;
-	Msg* remoteMsg;
 
 	for ( i = c_.begin(); i != c_.end(); i++ ) {
-		if ( fv_->isDest() ) // The current msg is source.
-			remoteMsg = ( *i )->e2()->varMsg( ( *i )->msg2() );
-		else 
-			remoteMsg = ( *i )->e1()->varMsg( ( *i )->msg1() );
-		assert( remoteMsg != 0 );
-		assert( remoteMsg != this );
-
-		bool ret = remoteMsg->drop( *i );
+		int remoteMsgNum;
+		Element* remoteElm;
+		if ( fv_->isDest() ) {
+			remoteMsgNum = ( *i )->msg2();
+			remoteElm = ( *i )->e2();
+		} else {
+			remoteMsgNum = ( *i )->msg1();
+			remoteElm = ( *i )->e1();
+		}
+		bool ret = innerDrop( remoteElm, remoteMsgNum, *i );
 		if ( ret )
 			delete( *i );
 		else
 			cout << "Error: Msg::dropAll(): remoteMsg failed to drop\n"; 
 	}
+	assert ( next_ < e->numMsg() );
+	if ( next_ )
+		e->varMsg( next_ )->dropAll( e );
+	next_ = 0; // Note that we don't yet do garbage collection to
+				// reuse the 'next' msg location on the vector.
 	c_.resize( 0 );
 }
 
-
 /**
+ * Deletes all the messages going outside the current tree from the current
+ * Msg. Used when
  * dropAll cleans up all messages to targets outside tree being deleted.
  * The objects within the tree have their 'isMarkedForDeletion' flag set.
+ * We don't need to worry about 'next' here because it is called 
+ * sequentially for every single entry in the msg_ vector
  */
 void Msg::dropRemote()
 {
 	vector< ConnTainer* >::iterator i;
 
 	for ( i = c_.begin(); i != c_.end(); i++ ) {
-		assert( *i != 0 );
-		Msg* remoteMsg = 0;
-		if ( fv_->isDest() ) { // The current msg is source.
-			if ( !( *i )->e2()->isMarkedForDeletion() )
-				remoteMsg = ( *i )->e2()->varMsg( ( *i )->msg2() );
+		int remoteMsgNum;
+		Element* remoteElm;
+		if ( fv_->isDest() ) {
+			remoteMsgNum = ( *i )->msg2();
+			remoteElm = ( *i )->e2();
 		} else {
-			if ( !( *i )->e1()->isMarkedForDeletion() )
-				remoteMsg = ( *i )->e1()->varMsg( ( *i )->msg1() );
+			remoteMsgNum = ( *i )->msg1();
+			remoteElm = ( *i )->e1();
 		}
-		assert( remoteMsg != this );
-		if ( remoteMsg != 0 ) {
-			bool ret = remoteMsg->drop( *i );
+		if ( !remoteElm->isMarkedForDeletion() ) {
+			bool ret = innerDrop( remoteElm, remoteMsgNum, *i );
 			if ( ret )
 				delete( *i );
 			else
@@ -273,6 +298,35 @@ void Msg::dropRemote()
 	i = remove_if( c_.begin(), c_.end(), bind2nd( equal_to< ConnTainer* >(), 0 ) );
 	// Then we get rid of them.
 	c_.erase( i, c_.end() );
+}
+
+/**
+ * Deletes all the messages originating from outside the current tree.
+ * This is called from the viewpoint of the destination ConnTainer
+ * on an Element to be deleted.
+ * A static function, nothing much to do with the Msg class.
+ * Here only because it keeps all the related deletion
+ * operations in one place.
+ */
+void Msg::dropDestRemote( vector< ConnTainer* >& ctv  )
+{
+	vector< ConnTainer* >::iterator k;
+	for ( k = ctv.begin(); k != ctv.end(); k++ ) {
+		if ( !( *k )->e1()->isMarkedForDeletion() ) {
+			bool ret = Msg::innerDrop( ( *k )->e1(),
+				( *k )->msg1(), *k );
+			if ( ret )
+				delete ( *k );
+			else
+				cout << "Error: SimpleElement::prepareForDeletion(): remoteMsg failed to drop\n";
+			*k = 0;
+		}
+	}
+	// Note that this cleanup is not strictly necessary, as the
+	// eventual deletion will remove all these too. But it is
+	// cleaner to be done here than leave it to later.
+	k = remove_if ( ctv.begin(), ctv.end(), bind2nd( equal_to< ConnTainer* >(), 0 ) );
+	ctv.erase( k, ctv.end() );
 }
 
 /**
@@ -341,6 +395,7 @@ const Msg* Msg::next( const Element* e ) const
 	return e->msg( next_ );
 }
 
+/*
 unsigned int Msg::targets( vector< pair< Element*, unsigned int > >& list,
 	unsigned int myEindex ) const
 {
@@ -355,6 +410,7 @@ unsigned int Msg::targets( vector< pair< Element*, unsigned int > >& list,
 	}
 	return list.size();
 }
+*/
 
 unsigned int Msg::numTargets( const Element* e ) const
 {

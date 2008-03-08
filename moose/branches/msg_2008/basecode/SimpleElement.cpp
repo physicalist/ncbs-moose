@@ -31,8 +31,7 @@ SimpleElement::SimpleElement(
 	)
 	: Element( id ), name_( name ), 
 		data_( data ), 
-		msg_( numSrc ),
-		destMsgBegin_( numSrc )
+		msg_( numSrc )
 {
 #ifdef DO_UNIT_TESTS
 		numInstances++;
@@ -115,6 +114,38 @@ const Cinfo* SimpleElement::cinfo( ) const
 }
 
 //////////////////////////////////////////////////////////////////
+// Msg traversal functions
+//////////////////////////////////////////////////////////////////
+
+/**
+ * The Conn iterators have to be deleted by the recipient function.
+ */
+Conn* SimpleElement::targets( int msgNum ) const
+{
+	if ( msgNum >= 0 && 
+		static_cast< unsigned int >( msgNum ) < cinfo()->numSrc() )
+		return new TraverseMsgConn( &msg_[ msgNum ], this, 0 );
+	else if ( msgNum < 0 ) {
+		const vector< ConnTainer* >* d = dest( msgNum );
+		if ( d )
+			return new TraverseDestConn( d, 0 );
+	}
+	return 0;
+}
+
+/**
+ * The Conn iterators have to be deleted by the recipient function.
+ */
+Conn* SimpleElement::targets( const string& finfoName ) const
+{
+	const Finfo* f = cinfo()->findFinfo( finfoName );
+	if ( !f )
+		return 0;
+	return targets( f->msg() );
+}
+
+
+//////////////////////////////////////////////////////////////////
 // Msg functions
 //////////////////////////////////////////////////////////////////
 
@@ -130,48 +161,39 @@ Msg* SimpleElement::varMsg( unsigned int msgNum )
 	return ( &( msg_[ msgNum ] ) );
 }
 
-const Msg* SimpleElement::destMsg( unsigned int msgNum ) const
+const vector< ConnTainer* >* SimpleElement::dest( int msgNum ) const
 {
-	vector< Msg >::const_iterator i;
-	for ( i = msg_.begin() + destMsgBegin_; i != msg_.end(); i++ )
-		if ( i->matchNum( msgNum ) )
-			return &( *i );
+	if ( msgNum >= 0 )
+		return 0;
+	map< int, vector< ConnTainer* > >::const_iterator i = dest_.find( msgNum );
+	if ( i != dest_.end() ) {
+		return &( *i ).second;
+	}
 	return 0;
 }
 
-Msg* SimpleElement::getDestMsg( unsigned int msgNum ) 
+vector< ConnTainer* >* SimpleElement::getDest( int msgNum ) 
 {
-	vector< Msg >::iterator i;
-	for ( i = msg_.begin() + destMsgBegin_; i != msg_.end(); i++ )
-		if ( i->matchNum( msgNum ) )
-			return &( *i );
-	// Failed to find it, so make a new one.
-	msg_.push_back( Msg( ) );
-	return &( msg_.back() );
+	return &dest_[ msgNum ];
 }
 
-unsigned int SimpleElement::destMsgBegin() const
-{
-	return destMsgBegin_;
-}
-
+/*
 const Msg* SimpleElement::msg( const string& fName )
 {
 	const Finfo* f = findFinfo( fName );
 	if ( f ) {
-		unsigned int msgNum = f->msg();
+		int msgNum = f->msg();
 		if ( msgNum < msg_.size() )
 			return ( &( msg_[ msgNum ] ) );
 	}
 	return 0;
 }
+*/
 
 unsigned int SimpleElement::addNextMsg()
 {
-	assert( destMsgBegin_ <= msg_.size() );
-	msg_.insert( msg_.begin() + destMsgBegin_, Msg() );
-	destMsgBegin_++;
-	return destMsgBegin_ - 1;
+	msg_.push_back( Msg() );
+	return msg_.size() - 1;
 }
 
 /*
@@ -366,8 +388,8 @@ bool SimpleElement::dropFinfo( const Finfo* f )
 	vector< Finfo* >::iterator i;
 	for ( i = finfo_.begin() + 1; i != finfo_.end(); i++ ) {
 		if ( *i == f ) {
-			assert ( f->msg() < msg_.size() );
-			msg_[ f->msg() ].dropAll();
+			assert ( f->msg() < static_cast< int >( msg_.size() ) );
+			msg_[ f->msg() ].dropAll( this );
 			delete *i;
 			finfo_.erase( i );
 			return 1;
@@ -399,6 +421,12 @@ void SimpleElement::prepareForDeletion( bool stage )
 		vector< Msg >::iterator m;
 		for ( m = msg_.begin(); m!= msg_.end(); m++ ) {
 			m->dropRemote();
+		}
+
+		// Delete the dest connections too
+		map< int, vector< ConnTainer* > >::iterator j;
+		for ( j = dest_.begin(); j != dest_.end(); j++ ) {
+			Msg::dropDestRemote( j->second );
 		}
 	}
 }

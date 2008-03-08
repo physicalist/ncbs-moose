@@ -78,9 +78,14 @@ class DynamicFinfo: public Finfo
 			) const;
 
 
-			unsigned int msg() const {
+			/**
+			 * This msg is always placed on the msg_ src vector, amid
+			 * the nexts.
+			 */
+			int msg() const {
 				return msg_;
 			}
+
 			/**
 			 * This function erases contents of a DynamicFinfo, including
 			 * getting rid of messages, its name, and functions. This

@@ -73,45 +73,57 @@ class Msg
 		Conn* findConn( unsigned int eIndex, unsigned int tgt ) const;
 
 		/**
-		 * Add a new message from e1 (source ) to e2 (dest).
-		 * The m1 and m2 indicate source and dest msg indices.
+		 * Add a new message using the specified ConnTainer.
+		 * The e1 (source ) and e2 (dest), are in the ConnTainer, as are
+		 * m1 and m2 which indicate source and dest msg indices.
 		 * The funcId1 is the source funcId, which is going to be used
 		 * at the dest, but is optional so it may be zero.
 		 * The funcId2 is the dest funcId, which must be nonzero and will
 		 * be used when the source calls the dest.
 		 * Later I may relax the directional restrictions.
 		 *
-		 * Returns the newly created ConnTainer pointer. Note that the
-		 * ConnTainer type depends on the type of the elements and
-		 * possibly also on additional info, yet to be determined.
-		 * For example, a message between SimpleElements will use a
-		 * SimpleConnTainer.
-		 * A message between ArrayElements may use SparseConnTainer or
-		 * One2OneConnTainer, or various others.
+		 * Returns true on success.
 		 */
-		/*
-		static ConnTainer* add( Element* e1, Element* e2, 
-			unsigned int m1, unsigned int m2,
-			unsigned int funcId1, unsigned int funcId2 );
-		*/
 		static bool add( ConnTainer* ct,
 			unsigned int funcId1, unsigned int funcId2 );
 
-		// This is invoked by the remote Msg.
-		// It is also used in Copy.
-		bool drop( const ConnTainer* doomed );
-
 		/**
 		 * This variant of drop initiates the removal of a specific 
-		 * local ConnTainer, identified by index
+		 * local ConnTainer, identified by index as doomed.
 		 */
-		bool drop( unsigned int doomed );
+		bool drop( Element* e, unsigned int doomed );
 
 		/**
 		 * Drops all messages emanating from this Msg. Often used in
 		 * rescheduling.
 		 */
-		void dropAll();
+		void dropAll( Element* e );
+
+		/**
+		 * innerDrop eliminates an identified ConnTainer.
+		 * This is NOT the call to initiate removing a connection.
+		 * It is called on the other end of the message from the one
+		 * set up for deletion, and assumes that the rest of the message
+		 * will be taken care of by the initiating function.
+		 * Assumes that the element checks first to see if it is also
+		 * doomed. If so, it should not bother with this call.
+		 * If the element is to survive, only then it goes through the
+		 * bother of erasing.
+		 *
+		 * Note that this does not do garbage collection if a 'next' Msg is 
+		 * emptied. Something to think about, much later.
+		 */
+		bool innerDrop( const ConnTainer* doomed );
+
+		/**
+		 * Utility function for dropping target, whether it is 
+		 * on a pure dest or another Msg.
+		 * Does not clear the ConnTainer.
+		 * NOT the primary call to drop a message. You probably
+		 * want drop( unsigned int ) and dropAll().
+		 */
+		static bool innerDrop( Element* remoteElm, int remoteMsgNum,
+			const ConnTainer* d );
 
 		/**
 		 * Drops all external messages emanating from this Msg, that is
@@ -122,6 +134,18 @@ class Msg
 		 * being deleted.
 		 */
 		void dropRemote();
+
+		/**
+ 		* Deletes all messages originating from outside the current tree
+		* onto the dest_ of an Element to be deleted. Same as innerDump,
+		* the messages within the tree are unaffected.
+ 		* This is called from the viewpoint of the destination ConnTainer
+ 		* on the Element to be deleted.
+ 		* A static function, nothing much to do with the Msg class.
+ 		* Here only because it keeps all the related deletion
+ 		* operations in one place.
+ 		*/
+		static void dropDestRemote( vector< ConnTainer* >& ctv  );
 
 		/**
 		 * Drops all messages during deletion. Assumes that all targets
@@ -177,11 +201,12 @@ class Msg
 		 * Lists out all the target Elements with their indices.
 		 * Shouldn't this be a vector of ids?
 		 * Clears out the list first.
-		 */
+		 * Deprecated. Use Element::targets instead.
 		unsigned int targets(
 			vector< pair< Element*, unsigned int> >& list,
 			unsigned int myEindex = 0
 		) const;
+		 */
 
 		/**
 		 * Counts the number of targets, including going through the
