@@ -45,10 +45,14 @@ SimpleElement::SimpleElement(
 SimpleElement::SimpleElement( const SimpleElement* orig )
 		: Element( Id::scratchId() ),
 		name_( orig->name_ ), 
-		finfo_( orig->finfo_ ),
+		finfo_( orig->finfo_.size(), 0 ),
 		data_( 0 ),
 		msg_( orig->cinfo()->numSrc() )
 {
+	assert( finfo_.size() > 0 );
+	// Copy over the 'this' finfo
+	finfo_[0] = orig->finfo_[0];
+
 ///\todo should really copy over the data as well.
 #ifdef DO_UNIT_TESTS
 		numInstances++;
@@ -96,9 +100,15 @@ SimpleElement::~SimpleElement()
 
 	// Check if Finfo is one of the transient set, if so, clean it up.
 	vector< Finfo* >::iterator i;
-	for ( i = finfo_.begin(); i != finfo_.end(); i++ )
-		if ( (*i)->isTransient() )
+	cout << name() << " " << id() << " f = ";
+	for ( i = finfo_.begin(); i != finfo_.end(); i++ ) {
+		assert( *i != 0 );
+		cout << ( *i )->name()  << " ptr= " << *i << " " ;
+		if ( (*i)->isTransient() ) {
 			delete *i;
+		}
+	}
+	cout << endl;
 }
 
 const std::string& SimpleElement::className( ) const
@@ -195,15 +205,6 @@ unsigned int SimpleElement::addNextMsg()
 	msg_.push_back( Msg() );
 	return msg_.size() - 1;
 }
-
-/*
-void SimpleElement::checkMsgAlloc( unsigned int num )
-{
-	assert( num < finfo_.size() );
-	if ( msg_.size() <= num )
-		msg_.resize( num + 1 );
-}
-*/
 
 unsigned int SimpleElement::numMsg() const
 {

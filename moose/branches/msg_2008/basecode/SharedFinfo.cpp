@@ -63,9 +63,9 @@ bool SharedFinfo::add(
 ) const
 {
 	unsigned int srcFuncId = fv_->id();
-	unsigned int destFuncId;
-	unsigned int destMsg;
-	unsigned int numDest;
+	unsigned int destFuncId = 0;
+	unsigned int destMsg = 0;
+	unsigned int numDest = 0;
 
 	if ( destFinfo->respondToAdd( destElm, e, ftype(),
 							srcFuncId, destFuncId,
@@ -145,7 +145,12 @@ bool SharedFinfo::strSet( Element* e, const std::string &s ) const
 
 void SharedFinfo::countMessages( unsigned int& num )
 {
-	msg_ = num++;
+	if ( isDestOnly() ) {
+		msg_ = -num;
+	} else {
+		msg_ = num;
+	}
+	num++;
 }
 
 const Finfo* SharedFinfo::match( 
@@ -226,6 +231,11 @@ void SharedFinfo::addFuncVec( const string& cname )
 	}
 	if ( isDest_ )
 		fv_->setDest();
+}
+
+bool SharedFinfo::isDestOnly() const
+{
+	return ( isDest_ && names_.size() == 0 );
 }
 
 ////////////////////////////////////////////////////////////////////

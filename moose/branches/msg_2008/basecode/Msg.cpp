@@ -44,8 +44,13 @@ bool Msg::assignMsgByFuncId(
 	}
 	
 	// No matching slot, so make a new one.
-	next_ = e->addNextMsg();
-	Msg *m = e->varMsg( next_ );
+	// Note that the addNextMsg function may invalidate 'this'
+	// because it resizes the Element::msg_ vector. So don't access
+	// any Msg fields after this point.
+	unsigned int temp = next_ = e->numMsg();
+	unsigned int temp2 = e->addNextMsg();
+	assert( temp == temp2 );
+	Msg *m = e->varMsg( temp );
 	if ( !m )
 		return 0;
 
@@ -76,7 +81,9 @@ bool Msg::add( ConnTainer* ct,
 	Msg* m1 = ct->e1()->varMsg( ct->msg1() );
 	if ( !m1 ) return 0;
 
-	if ( funcId1 == 0 ) { // a destOnly msg, terminating in destMsg_.
+	// We need to check for msg2 because DynamicFinfos have a +ve
+	// msg, even if they are handling pure dests.
+	if ( funcId1 == 0 && ct->msg2() < 0 ) { // a destOnly msg, terminating in destMsg_.
 		// Look for, and if necessary create the connTainer.
 		vector< ConnTainer* >* dct = ct->e2()->getDest( ct->msg2() ); 
 		assert( dct != 0 );
@@ -93,27 +100,6 @@ bool Msg::add( ConnTainer* ct,
 		assert( ret );
 	}
 	return 1;
-
-
-	/*
-	Msg* m2;
-	if ( funcId1 == 0 ) { // a destOnly msg.
-		m2 = ct->e2()->getDestMsg( ct->msg2() ); 
-	} else { // Not a destOnly msg, as it sends data out too
-		m2 = ct->e2()->varMsg( ct->msg2() );
-	}
-	if ( !m2 ) return 0;
-
-	bool ret = m1->assignMsgByFuncId( ct->e1(), funcId2, ct );
-	assert( ret );
-	if ( funcId1 == 0 ) // A pure dest message.
-		m2->c_.push_back( ct );
-	else // Not a destOnly msg, as it sends data out too
-		ret = m2->assignMsgByFuncId( ct->e2(), funcId1, ct );
-		
-	assert( ret );
-	return 1;
-	*/
 }
 
 
@@ -392,25 +378,9 @@ const Msg* Msg::next( const Element* e ) const
 {
 	if ( next_ == 0 )
 		return 0;
+	assert( next_ < e->numMsg() );
 	return e->msg( next_ );
 }
-
-/*
-unsigned int Msg::targets( vector< pair< Element*, unsigned int > >& list,
-	unsigned int myEindex ) const
-{
-	vector< ConnTainer* >::const_iterator i;
-	list.resize( 0 );
-	for ( i = c_.begin(); i != c_.end(); i++ ) {
-		for ( Conn* j = ( *i )->conn( myEindex, isDest() ); j->good(); j->increment() ) {
-			pair< Element*, unsigned int > temp( 
-				j->targetElement(), j->targetEindex() );
-			list.push_back( temp );
-		}
-	}
-	return list.size();
-}
-*/
 
 unsigned int Msg::numTargets( const Element* e ) const
 {
@@ -427,9 +397,12 @@ unsigned int Msg::numTargets( const Element* e ) const
 
 bool Msg::copy( const ConnTainer* c, Element* e1, Element* e2 ) const
 {
-	const Msg* m2 = c->e2()->msg( c->msg2() );
+	unsigned int funcId1 = 0; // True if it was a pure Dest.
+	if ( c->msg2() >= 0 ) {
+		const Msg* m2 = c->e2()->msg( c->msg2() );
+		funcId1 = m2->fv_->id();
+	}
 	unsigned int funcId2 = fv_->id(); // from e2, stored on m1.
-	unsigned int funcId1 = m2->fv_->id();
 	ConnTainer* ct = c->copy( e1, e2 );
 	if ( ct == 0 )
 		return 0;

@@ -40,9 +40,7 @@ const Finfo* LookupFinfo::match( Element* e, const string& s ) const
 		string indexStr = 
 			s.substr( openpos + 1, closepos - openpos - 1 );
 
-		///\todo: need to define the strToIndex function
 		void* index = ftype()->strToIndexPtr( indexStr );
-		// string* index = new string( indexStr );
 		string n = name() + "[" + indexStr + "]";
 		DynamicFinfo* ret = 
 				DynamicFinfo::setupDynamicFinfo(
@@ -50,8 +48,6 @@ const Finfo* LookupFinfo::match( Element* e, const string& s ) const
 					get_,
 					index
 				);
-		// ret->setGeneralIndex( index );
-		// e->addFinfo( ret );
 		return ret;
 	}
 	return 0;
@@ -359,16 +355,22 @@ void lookupFinfoTest()
 	///////////////////////////////////////////////////////////////////
 	// Now setup is done, let's start sending info around.
 	///////////////////////////////////////////////////////////////////
-	set< double >( a1, "dval", 4321.0 );
-	set< double >( a2, "dval", 1234.0 );
-	set< double >( a1, "dmap[0]", 10.0 );
-	set< double >( a1, "dmap[1]", 20.0 );
-	set< double >( a1, "dmap[2]", 30.0 );
-	set< double >( a1, "dmap[3]", 40.0 );
-	set< double >( a2, "dmap[0]", 1.0 );
-	set< double >( a2, "dmap[1]", 2.0 );
-	set< double >( a2, "dmap[2]", 3.0 );
-	set< double >( a2, "dmap[3]", 4.0 );
+	bret = set< double >( a1, "dval", 4321.0 );
+	bret &= set< double >( a2, "dval", 1234.0 );
+	bret &= set< double >( a1, "dmap[0]", 10.0 );
+	bret &= set< double >( a1, "dmap[1]", 20.0 );
+	bret &= set< double >( a1, "dmap[2]", 30.0 );
+	bret &= set< double >( a1, "dmap[3]", 40.0 );
+	bret &= set< double >( a2, "dmap[0]", 1.0 );
+	bret &= set< double >( a2, "dmap[1]", 2.0 );
+	bret &= set< double >( a2, "dmap[2]", 3.0 );
+	bret &= set< double >( a2, "dmap[3]", 4.0 );
+	ASSERT( bret, "assignment");
+
+	bret = get< double >( a1, a1->findFinfo( "dmap[2]" ), dret );
+	ASSERT( bret, "test assignment");
+	ASSERT( dret == 30.0, "test assignment");
+
 	send0( a1, 0, procSlot ); // procout
 	// Here a2->dval should simply become the sum of its lookup entries.
 	// As this has just been initialized, the sum should be 10.0.
@@ -392,9 +394,12 @@ void lookupFinfoTest()
 	// 4. a2 trigger message will call request on a1->dmap[2]. This
 	//   is set up using reverse Shared messaging calls. The
 	//   value ( 30 ) comes back to a2 and is added to dval (10).
-	get< double >( a2, a2->findFinfo( "dval" ), dret );
+	bret = get< double >( a2, a2->findFinfo( "dval" ), dret );
+	ASSERT( bret, "test msg4");
 	ASSERT( dret == 10.0, "test msg4");
-	get< double >( a1, a1->findFinfo( "dmap[2]" ), dret );
+	dret = 0;
+	bret = get< double >( a1, a1->findFinfo( "dmap[2]" ), dret );
+	ASSERT( bret, "test msg4");
 	ASSERT( dret == 30.0, "test msg4");
 
 	send0( a2, 0, requestSlot ); // procout

@@ -58,7 +58,7 @@ class ValueFinfo: public Finfo
 			 * Returns a flag for a bad msg.
 			 */
 			int msg() const {
-				return MAXINT;
+				return INT_MAX;
 			}
 
 			/**

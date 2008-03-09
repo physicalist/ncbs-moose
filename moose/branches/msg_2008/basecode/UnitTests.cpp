@@ -195,14 +195,16 @@ void msgFinfoTest()
 					"dbl to dbl message" );
 
 	ASSERT( e1.msg_.size() == 2, "Finfo Msg" );
+	ASSERT( e1.dest_.size() == 0, "Finfo Msg" );
 	ASSERT( e1.msg_[ 0 ].size() == 1, "Finfo Msg" );
 	ASSERT( e1.msg_[ 1 ].size() == 1, "Finfo Msg" );
 
-	ASSERT( e2.msg_.size() == 4, "Finfo Msg" );
+	ASSERT( e2.msg_.size() == 2, "Finfo Msg" );
+	ASSERT( e2.dest_.size() == 2, "Finfo Msg" );
 	ASSERT( e2.msg_[ 0 ].size() == 0, "Finfo Msg" );
 	ASSERT( e2.msg_[ 1 ].size() == 0, "Finfo Msg" );
-	ASSERT( e2.msg_[ 2 ].size() == 1, "Finfo Msg" );
-	ASSERT( e2.msg_[ 3 ].size() == 1, "Finfo Msg" );
+	ASSERT( e2.dest( -2 )->size() == 1, "Finfo Msg" );
+	ASSERT( e2.dest( -3 )->size() == 1, "Finfo Msg" );
 
 
 	ASSERT( ( *e1.msg_[ 0 ].begin() )->size() == 1, "Finfo Msg" );
@@ -245,6 +247,9 @@ void print( const Conn* c )
 	*/
 }
 
+static Slot sumOutSlot;
+static Slot subOutSlot;
+
 void proc( const Conn* c )
 {
 	double ret = 
@@ -256,8 +261,8 @@ void proc( const Conn* c )
 	// unit tests.
 	// The first slot is supposed to represent sumout
 	// The second slot is supposed to represent subout.
-	send1< double >( c->targetElement(), 0, Slot( 10, 0 ), ret );
-	send1< double >( c->targetElement(), 0, Slot( 11, 0 ), ret );
+	send1< double >( c->targetElement(), 0, sumOutSlot, ret );
+	send1< double >( c->targetElement(), 0, subOutSlot, ret );
 }
 
 #include <map>
@@ -305,6 +310,9 @@ void cinfoTest()
 	FuncVec::sortFuncVec();
 	
 	Slot startIndex;
+	sumOutSlot = testclass.getSlot( "sumout" );
+	subOutSlot = testclass.getSlot( "subout" );
+
 	ASSERT( testFinfos[0]->getSlot( "sum", startIndex ), "test getSlot" );
 
 	// unsigned int startIndex = testFinfos[0]->getSlot();
@@ -316,11 +324,11 @@ void cinfoTest()
 					"getFinfoIndex during cinfo initialization" );
 	ASSERT( testFinfos[0]->msg() == 0 + si,
 					"msg counting during cinfo inititialization" );
-	ASSERT( testFinfos[1]->msg() == 1 + si,
+	ASSERT( testFinfos[1]->msg() == si - 1,
 					"msg counting during cinfo inititialization" );
-	ASSERT( testFinfos[2]->msg() == 2 + si,
+	ASSERT( testFinfos[2]->msg() == si - 2,
 					"msg counting during cinfo inititialization" );
-	ASSERT( testFinfos[3]->msg() == 3 + si,
+	ASSERT( testFinfos[3]->msg() == si - 3,
 					"msg counting during cinfo inititialization" );
 
 	// startIndex.msg() = testFinfos[4]->getSlot();
@@ -328,9 +336,9 @@ void cinfoTest()
 	ASSERT( testFinfos[4]->getSlot( "sumout", startIndex ),
 	     "test getSlot" );
 
-	Slot sumOutSlotIndex = testclass.getSlot( "sumout" );
+	si = sumOutSlot.msg();
 
-	ASSERT( startIndex == sumOutSlotIndex, 
+	ASSERT( startIndex == sumOutSlot, 
 					"sumOutIndex during cinfo initialization" );
 
 	ASSERT( testFinfos[4]->msg() == 0 + si,
@@ -372,16 +380,18 @@ void cinfoTest()
 	SimpleElement* se1 = static_cast< SimpleElement* >( e1 );
 
 	ASSERT( testFinfos[4]->msg() == 1, "Msg # assignment by Cinfo::shuffleFinfos");
-	// 1 src + 5 dests from Neutral, 4 more srcs from testclass.
-	ASSERT( testFinfos[0]->msg() == 10, "Msg # assignment by Cinfo::shuffleFinfos");
+	// 1 src + 5 dests from Neutral, 4 more srcs from testclass, so start
+	// at -10.
+	ASSERT( testFinfos[0]->msg() == -10, "Msg # assignment by Cinfo::shuffleFinfos");
 	ASSERT( e1->numMsg() == testclass.numSrc(), "" );
 	ASSERT( e2->numMsg() == testclass.numSrc(), "" );
 	ASSERT( e1->msg( testFinfos[4]->msg() )->size() == 0, "" );
-	ASSERT( e2->dest( testFinfos[0]->msg() )->size() == 0, "" );
+	ASSERT( e2->dest( testFinfos[0]->msg() ) == 0, "Look up dest: doesn't exist yet." );
 	testFinfos[4]->add( e1, e2, testFinfos[0] );
 	ASSERT( e1->numMsg() == testclass.numSrc(), "" );
-	ASSERT( e2->numMsg() == testclass.numSrc() + 1, "" );
+	ASSERT( e2->numMsg() == testclass.numSrc(), "" );
 	ASSERT( e1->msg( testFinfos[4]->msg() )->size() == 1, "" );
+	ASSERT( e2->dest( testFinfos[0]->msg() ) != 0, "Look up dest: now exists" );
 	ASSERT( e2->dest( testFinfos[0]->msg() )->size() == 1, "" );
 	// Fill in stuff here for checking that the Conn points where it should
 
@@ -398,16 +408,14 @@ void cinfoTest()
 	testFinfos[7]->add( clock, e2, testFinfos[3] );
 	testFinfos[7]->add( clock, e3, testFinfos[3] );
 
-	Slot subOutSlotIndex = testclass.getSlot( "subout" );
 	Slot printOutSlotIndex = testclass.getSlot( "printout" );
 	Slot procOutSlotIndex = testclass.getSlot( "procout" );
 
-	ASSERT( se1->msg_.size() == 7 + startIndex.msg(), "" );
+	ASSERT( se1->msg_.size() == testclass.numSrc(), "" );
 
 	Slot subSlotIndex = testclass.getSlot( "sub" );
 	Slot printSlotIndex = testclass.getSlot( "print" );
 	Slot procSlotIndex = testclass.getSlot( "proc" );
-	ASSERT( se1->msg_.size() == 11 + sumSlotIndex.msg(), "" );
 
 	// e2->conn[0] goes to e3 as it is a msgsrc
 
@@ -442,6 +450,84 @@ void cinfoTest()
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 4, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == -4, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == -7, "msg3" );
+
+	cout << "\nTesting 'next' messages";
+	// We had:
+	// e1 -sum-> e2
+	// e1 -sum-> e3
+	// e2 -sum-> e3
+	// e3 -sub-> e1
+	// clock -print-> e1
+	// clock -print-> e2
+	// clock -print-> e3
+	// clock -proc-> e1
+	// clock -proc-> e2
+	// clock -proc-> e3
+	//
+	// We now add
+	// e1 -sub-> e3
+	// This has to come up as a 'next' msg because e1 already has a 
+	// distinct target on e2.
+	ASSERT( e1->numMsg() == 5, "setting up next msg" );
+	ASSERT( e1->msg( sumOutSlot.msg() )->size() == 2, "setting up next msg" );
+	ASSERT( e1->msg( sumOutSlot.msg() )->next( e1 ) == 0, "setting up next msg" );
+	ASSERT( e1->msg( sumOutSlot.msg() )->funcId() == testFinfos[0]->funcId(), "setting up next msg" );
+	vector< ConnTainer* >::const_iterator cti = 
+		e1->msg( sumOutSlot.msg() )->begin();
+	ASSERT( ( *cti )->e1() == e1, "setting up next msg" );
+	ASSERT( ( *cti )->e2() == e2, "setting up next msg" );
+	cti++;
+	ASSERT( ( *cti )->e1() == e1, "setting up next msg" );
+	ASSERT( ( *cti )->e2() == e3, "setting up next msg" );
+
+	// testFinfos[4] is sumout, testFinfos[1] is sub (dest).
+	bool ret = testFinfos[4]->add( e1, e3, testFinfos[1] );
+	ASSERT( ret, "next msg" );
+	ASSERT( e1->numMsg() == 6, "next msg" );
+
+	ASSERT( e1->msg( sumOutSlot.msg() )->size() == 2, "after next msg" );
+	ASSERT( e1->msg( sumOutSlot.msg() )->next( e1 ) != 0, "after next msg" );
+	ASSERT( e1->msg( sumOutSlot.msg() )->next( e1 ) == e1->msg( 5 ), 
+		 "after next msg" );
+	ASSERT( e1->msg( 5 )->size() == 1, "after next msg" );
+	ASSERT( e1->msg( 5 )->next( e1 ) == 0, "after next msg" );
+	ASSERT( e1->msg( 5 )->funcId( ) == testFinfos[1]->funcId(), "after next msg" );
+	// Most things remain the same as this new target goes on 'next'
+	cti = e1->msg( sumOutSlot.msg() )->begin();
+	ASSERT( ( *cti )->e1() == e1, "after next msg" );
+	ASSERT( ( *cti )->e2() == e2, "after next msg" );
+	cti++;
+	ASSERT( ( *cti )->e1() == e1, "after next msg" );
+	ASSERT( ( *cti )->e2() == e3, "after next msg" );
+
+	// Here is the new set on the 'next'
+	cti = e1->msg( 5 )->begin();
+	ASSERT( ( *cti )->e1() == e1, "after next msg" );
+	ASSERT( ( *cti )->e2() == e3, "after next msg" );
+
+	//////////////////////////////////////////////
+	// Now do a tick. 
+	// e2 += e1 ==> 2
+	// e3 += e1 + e2 - e1 ===> 3
+	// e1 -= e3 ===> -2
+	// e1	e2	e3
+	//	1	1	1
+	//	-2	2	3
+
+	*DATA( e1 ) = 1;
+	*DATA( e2 ) = 1;
+	*DATA( e3 ) = 1;
+
+	send0( clock, 0, printOutSlotIndex ); // print
+	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 1, "msg1" );
+	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 1, "msg2" );
+	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 1, "msg3" );
+
+	send0( clock, 0, procOutSlotIndex ); // process
+	send0( clock, 0, printOutSlotIndex ); // print
+	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == -2, "msg1" );
+	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 2, "msg2" );
+	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 3, "msg3" );
 
 	cout << "\nCompleted cinfoTest() including some messaging\n";
 }
@@ -599,6 +685,11 @@ void finfoLookupTest()
 	cout << "\nCompleted finfoLookupTest() including some messaging\n";
 }
 
+// Ugly global for testing: The value is assigned later in ValueFinfoTest()
+Slot dsumOutSlot;
+Slot isetOutSlot;
+Slot procOutSlot;
+
 /**
  * This test class contains a double and an int that we
  * try to access in various ways.
@@ -643,11 +734,11 @@ class TestClass
 
 					// Sends a double out to the target
 					// dsumOutSlotIndex = 6
-					send1< double >( e, 0, Slot( 6, 0 ), tc->dval );
+					send1< double >( e, 0, dsumOutSlot, tc->dval );
 
 					// This sends the int value out to a target
 					// isetOutSlotIndex = 7
-					send1< int >( e, 0, Slot( 7, 0 ), tc->ival );
+					send1< int >( e, 0, isetOutSlot, tc->ival );
 
 					// This just sends a trigger to the remote object.
 					// Either it will trigger dproc itself, or it
@@ -657,7 +748,7 @@ class TestClass
 					// here because the actual index depends on
 					// base classes.
 					// procOutSlotIndex = 8
-					send0( e, 0, Slot( 8, 0 ) );
+					send0( e, 0, procOutSlot );
 			}
 
 		private:
@@ -701,9 +792,9 @@ void valueFinfoTest()
 
 	FuncVec::sortFuncVec();
 
-	Slot dsumOutSlotIndex = testclass.getSlot( "dsumout" );
-	Slot isetOutSlotIndex = testclass.getSlot( "isetout" );
-	Slot procOutSlotIndex = testclass.getSlot( "procout" );
+	dsumOutSlot = testclass.getSlot( "dsumout" );
+	isetOutSlot = testclass.getSlot( "isetout" );
+	procOutSlot = testclass.getSlot( "procout" );
 
 	Element* clock = testclass.create( Id::scratchId(), "clock" );
 	string sret = "";
@@ -818,7 +909,7 @@ void valueFinfoTest()
 	bret = e1->findFinfo( "dsumout" )->add( e1, e2, e2->findFinfo( "dsum" ) );
 	ASSERT( bret, "adding msg" );
 	
-	send0( clock, 0, procOutSlotIndex ); // procout
+	send0( clock, 0, procOutSlot ); // procout
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
 	ASSERT( dret == -1.0, "proc--> e1/dsumout --> e2/dsum" );
 	get< int >( e1, e1->findFinfo( "ival" ), iret );
@@ -842,7 +933,7 @@ void valueFinfoTest()
 
 	bret = e1->findFinfo( "isetout" )->add( e1, e3, e3->findFinfo( "ival" ) );
 	ASSERT( bret, "adding msg" );
-	send0( clock, 0, procOutSlotIndex ); // procout
+	send0( clock, 0, procOutSlot ); // procout
 
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
 	ASSERT( dret == 1.0, "proc--> e1/isetout --> e3/ival" );
