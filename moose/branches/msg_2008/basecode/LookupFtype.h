@@ -93,16 +93,16 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 			static void lookupTrigFunc( const Conn* c )
 			{
 				const DynamicFinfo* f = getDF( c );
-				T1 (*getLookup)( const Element*, const T2& index ) =
+				T1 (*getLookup)( Eref, const T2& index ) =
 					reinterpret_cast< 
-					T1 (*)( const Element*, const T2& ) >
+					T1 (*)( Eref, const T2& ) >
 					( f->innerGetFunc() );
 
-				Element* e = c->targetElement();
+				Eref e = c->target();
 				const T2* index = static_cast< const T2* >(
 								f->generalIndex() );
 				///\todo Fix hack involving Slot
-				send1< T1 >( e, c->targetIndex(), Slot( f->msg(), 0 ), 
+				send1< T1 >( e, Slot( f->msg(), 0 ), 
 					getLookup( e, *index ) );
 			}
 
@@ -132,13 +132,12 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 			 * be available through the Finfo, which must be a 
 			 * DynamicFinfo. Returns true on success.
 			 */
-			bool get( const Element* e, const Finfo* f, T1& v ) const {
+			bool get( Eref e, const Finfo* f, T1& v ) const {
 				const DynamicFinfo* df =
 						dynamic_cast< const DynamicFinfo* >( f );
 				assert( df != 0 );
-				T1 ( *g )( const Element*, const T2& ) =
-					reinterpret_cast<
-					T1 (*)( const Element*, const T2& ) >(
+				T1 ( *g )( Eref, const T2& ) =
+					reinterpret_cast< T1 (*)( Eref, const T2& ) >(
 							df->innerGetFunc()
 					);
 				const T2* index = static_cast< const T2* >(
@@ -153,7 +152,7 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 			 * be a DynamicFinfo. Returns true on success.
 			 * It specializes the generic version in the parent Ftype1
 			 */
-			bool set( Element* e, const Finfo* f, T1 v ) const {
+			bool set( Eref e, const Finfo* f, T1 v ) const {
 				const DynamicFinfo* df =
 						dynamic_cast< const DynamicFinfo* >( f );
 				assert( df != 0 );
@@ -163,7 +162,7 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 					void (*)( const Conn*, T1, const T2& ) >(
 						df->recvFunc()
 					);
-				SetConn c( e, 0 );
+				SetConn c( e );
 				const T2* index = static_cast< const T2* >(
 								df->generalIndex() );
 				set( &c, v, *index );
@@ -175,8 +174,7 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 			 * returning true if everything worked.
 			 * This may only be called from a DynamicFinfo
 			 */
-			bool strGet( const Element* e, const Finfo* f, string& s )
-					const
+			bool strGet( Eref e, const Finfo* f, string& s ) const
 			{
 				T1 val;
 				if ( get( e, f, val ) )
@@ -189,7 +187,7 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 			 * returning true if everything worked.
 			 * This may only be called from a DynamicFinfo
 			 */
-			bool strSet( Element* e, const Finfo* f, const string& s )
+			bool strSet( Eref e, const Finfo* f, const string& s )
 					const
 			{
 				T1 val;
@@ -224,15 +222,14 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 			 * or as a LookupFinfo.
 			 * \todo Unresolved issue: How to report bad index?
 			 */
-			bool lookupGet( const Element* e, const Finfo* f,
+			bool lookupGet( Eref e, const Finfo* f,
 							T1& v, const T2& index ) const {
 				const LookupFinfo* lf = 
 					dynamic_cast< const LookupFinfo* >( f );
 				if ( lf ) {
-					T1 ( *g )( const Element*, const T2& ) =
+					T1 ( *g )( Eref, const T2& ) =
 						reinterpret_cast<
-						T1 (*)( const Element*, const T2& ) >(
-								lf->innerGetFunc()
+						T1 (*)( Eref, const T2& ) >( lf->innerGetFunc()
 						);
 					v = g( e, index );
 					return 1;
@@ -240,9 +237,9 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 				const DynamicFinfo* df = 
 					dynamic_cast< const DynamicFinfo* >( f );
 				if ( df ) {
-					T1 ( *g )( const Element*, const T2& ) =
+					T1 ( *g )( Eref, const T2& ) =
 						reinterpret_cast<
-						T1 (*)( const Element*, const T2& ) >(
+						T1 (*)( Eref, const T2& ) >(
 								df->innerGetFunc()
 						);
 					v = g( e, index );
@@ -259,7 +256,7 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 			 * or as a LookupFinfo
 			 * \todo Unresolved issue: How to report bad index?
 			 */
-			bool lookupSet( Element* e, const Finfo* f,
+			bool lookupSet( Eref e, const Finfo* f,
 							T1 v, const T2& index ) const {
 				const LookupFinfo* lf = 
 					dynamic_cast< const LookupFinfo* >( f );
@@ -280,7 +277,7 @@ template < class T1, class T2 > class LookupFtype: public Ftype1< T1 >
 					}
 				}
 				if ( set != 0 ) {
-					SetConn c( e, 0 );
+					SetConn c( e );
 					set( &c , v, index );
 					return 1;
 				}

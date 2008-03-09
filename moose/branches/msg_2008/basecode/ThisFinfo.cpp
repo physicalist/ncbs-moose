@@ -36,7 +36,7 @@ bool ThisFinfo::respondToAdd(
  * Directly call the recvFunc on the element with the string argument
  * typecast appropriately.
  */
-bool ThisFinfo::strSet( Element* e, const std::string &s ) const
+bool ThisFinfo::strSet( Eref e, const std::string &s ) const
 {
 	/**
 	 * \todo Here we will ask the Ftype to do the string conversion

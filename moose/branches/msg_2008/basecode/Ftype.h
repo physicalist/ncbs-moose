@@ -82,7 +82,7 @@ class Ftype
 			 * StrGet extracts the value, converts it to a string,
 			 * and returns true if successful
 			 */
-			virtual bool strGet( const Element* e, const Finfo* f,
+			virtual bool strGet( Eref e, const Finfo* f,
 					string& s ) const {
 					s = "";
 					return 0;
@@ -92,7 +92,7 @@ class Ftype
 			 * StrSet takes a string, converts it to the value,
 			 * does the assignment and returns true if successful
 			 */
-			virtual bool strSet( Element* e, const Finfo* f,
+			virtual bool strSet( Eref e, const Finfo* f,
 					const string& s ) const {
 					return 0;
 			}

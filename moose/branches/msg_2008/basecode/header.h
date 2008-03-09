@@ -11,6 +11,14 @@
 #ifndef _HEADER_H
 #define _HEADER_H
 
+/**
+ * This header file includes the essential files in the correct order.
+ * moose.h has this header plus more of the basecode headers.
+ * You should NEVER have to do includes within any of your headers,
+ * and if you do you are likely to get the order wrong.
+ * Instead your .cpp should include header.h, or possibly moose.h,
+ * and then some file specific headers.
+ */
 
 /// Here we set up an enhanced variant of assert, used in unit tests.
 #ifndef NDEBUG
@@ -51,11 +59,11 @@ extern void* getAsyncParBuf( const Conn* c, unsigned int size );
 class IdManager;
 // extern IdManager* idManager();
 
+#include "Eref.h"
 #include "RecvFunc.h"
 #include "Conn.h"
 #include "ConnTainer.h"
 #include "Ftype.h"
-#include "FunctionData.h" // Likely to be phased out, replaced by FuncVec
 #include "FuncVec.h"
 #include "Slot.h"
 #include "Finfo.h"

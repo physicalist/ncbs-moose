@@ -6231,6 +6231,7 @@ More unit tests to add:
 
 Next (big) steps:
 	+ Complete unit tests listed above.
+	- Fix Element/Element Index confusion.
 	- Include rest of code 
 		- Unit tests
 		- Regression tests
@@ -6254,7 +6255,29 @@ Finfo and calling addFinfo. This bug took ages to fix.
 
 Checked in as revision 437 with unit test flags on, Smoldyn off, -g, GSL
 
-Bunch of crucial files were left out of the previous commit.
+Bunch of crucial files were left out of the previous commit. Added.
 
+Checked in as revision 438 with unit test flags on, Smoldyn off, -g, GSL
+
+Looking at the rest of the code. There isn't much: just kinetics and
+example, and to finish up biophysics.
+
+Possibilities to resolve Element/Element Index stuff:
+- A wrapper Element, as I used earlier for Arrays. 
+	- Additional indirection.
+	- Additional messy code.
+- An Eref class like pair< Element*, unsigned int >
+	Pass as reference in argument for all the functions,
+	including sends, that used to use Elements, and now also bodge in the
+	index somehow.
+	- Actually references may have other overhead. Best to keep it simple.
+	- Additional field data to pass around. Don't know if it matters.
+
+Other features:
+	- Define a special index (UINT_MAX?) to indicate entire array.
+
+
+Much work done on converting to Eref for send, set and get. Conn also 
+returns Eref rather than Element and Eindex.
 
 ==============================================================================

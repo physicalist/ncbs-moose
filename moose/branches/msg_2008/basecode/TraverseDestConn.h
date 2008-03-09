@@ -26,11 +26,8 @@ class TraverseDestConn: public Conn
 
 		~TraverseDestConn();
 
-		Element* targetElement() const {
-			return c_->targetElement();
-		}
-		unsigned int targetEindex() const {
-			return c_->targetEindex();
+		Eref target() const {
+			return c_->target();
 		}
 		unsigned int targetIndex() const {
 			return c_->targetIndex();
@@ -38,11 +35,8 @@ class TraverseDestConn: public Conn
 		int targetMsg() const {
 			return c_->targetMsg();
 		}
-		Element* sourceElement() const {
-			return c_->sourceElement();
-		}
-		unsigned int sourceEindex() const {
-			return c_->sourceEindex();
+		Eref source() const {
+			return c_->source();
 		}
 		unsigned int sourceIndex() const {
 			return c_->sourceIndex();

@@ -16,6 +16,7 @@ TARGET = basecode.o
 CFLAGS += -I..
 OBJ = \
 	Element.o	\
+	Eref.o	\
 	Id.o	\
 	IdManager.o	\
 	RecvFunc.o \
@@ -42,7 +43,6 @@ OBJ = \
 	SolveFinfo.o \
 	setget.o \
 	filecheck.o \
-	FunctionData.o \
 	ParallelDummy.o \
 	Class.o	\
 	FuncVec.o \
@@ -55,7 +55,7 @@ HEADERS = \
 	RecvFunc.h \
 	Conn.h \
 	Ftype.h \
-	FunctionData.h \
+	FuncVec.h \
 	Finfo.h \
 	Element.h \
 	Id.h \
@@ -91,7 +91,6 @@ SimpleElement.o:	SimpleElement.h MsgSrc.h MsgDest.h DeletionMarkerFinfo.h
 setget.o:		setget.h DerivedFtype.h
 strconv.o:		DerivedFtype.h
 filecheck.o: filecheck.h
-FunctionData.o:	FunctionData.h
 IdManager.o:	Id.h IdManager.h ArrayWrapperElement.h
 ArrayElement.o:	ArrayElement.h SimpleElement.h MsgSrc.h MsgDest.h DeletionMarkerFinfo.h
 ArrayWrapperElement.o:	ArrayWrapperElement.h SimpleElement.h MsgSrc.h MsgDest.h DeletionMarkerFinfo.h

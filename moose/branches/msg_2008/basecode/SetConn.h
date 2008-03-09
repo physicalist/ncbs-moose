@@ -19,17 +19,18 @@ class SetConn: public Conn
 {
 	public:
 		SetConn( Element* e, unsigned int eIndex )
-			: e_( e ), eIndex_( eIndex )
+			: e_( e, eIndex )
+		{;}
+
+		SetConn( Eref e )
+			: e_( e )
 		{;}
 
 		~SetConn()
 		{;}
 
-		Element* targetElement() const {
+		Eref target() const {
 			return e_;
-		}
-		unsigned int targetEindex() const {
-			return eIndex_;
 		}
 		unsigned int targetIndex() const {
 			return 0;
@@ -37,11 +38,8 @@ class SetConn: public Conn
 		int targetMsg() const {
 			return 0;
 		}
-		Element* sourceElement() const {
+		Eref source() const {
 			return e_;
-		}
-		unsigned int sourceEindex() const {
-			return 0;
 		}
 		unsigned int sourceIndex() const {
 			return 0;
@@ -50,7 +48,7 @@ class SetConn: public Conn
 			return 0;
 		}
 		void* data() const {
-			return e_->data( eIndex_ );
+			return e_.e->data( e_.i );
 		}
 
 		/**
@@ -82,8 +80,7 @@ class SetConn: public Conn
 		}
 
 	private:
-		Element* e_;
-		unsigned int eIndex_;
+		Eref e_;
 };
 
 #endif // _SET_CONN_H

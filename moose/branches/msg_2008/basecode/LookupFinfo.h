@@ -96,13 +96,13 @@ class LookupFinfo: public Finfo
 			/**
 			 * The Ftype knows how to do this conversion.
 			 */
-			bool strSet( Element* e, const std::string &s ) const
+			bool strSet( Eref e, const std::string &s ) const
 			{ 
 					return 0;
 			}
 			
 			// The Ftype handles this conversion.
-			bool strGet( const Element* e, std::string &s ) const
+			bool strGet( Eref e, std::string &s ) const
 			{
 					return 0;
 			}

@@ -47,7 +47,7 @@ template < class T1, class T2 > class Ftype2: public Ftype
 			 * to search for a Finfo based on the index.
 			 */
 			virtual bool set(
-				Element* e, const Finfo* f, T1 v1, T2 v2 ) const {
+				Eref e, const Finfo* f, T1 v1, T2 v2 ) const {
 
 				void (*set)( const Conn*, T1 v1, T2 v2 ) =
 					reinterpret_cast< 
@@ -55,7 +55,7 @@ template < class T1, class T2 > class Ftype2: public Ftype
 					>(
 									f->recvFunc()
 					);
-				SetConn c( e, 0 );
+				SetConn c( e );
 				set( &c, v1, v2 );
 				return 1;
 			}
@@ -67,7 +67,7 @@ template < class T1, class T2 > class Ftype2: public Ftype
 			 * It will run into trouble if the contents are strings
 			 * with spaces or commas.
 			 */
-			bool strSet( Element* e, const Finfo* f, const string& s )
+			bool strSet( Eref e, const Finfo* f, const string& s )
 					const
 			{
 				string::size_type pos = s.find_first_of( ", 	" );

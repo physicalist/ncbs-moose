@@ -14,6 +14,9 @@
  * needed for the external MOOSE API used to control MOOSE and 
  * access fields, but is used by developers implementing
  * their own MOOSE classes.
+ *
+ * Please do NOT put #includes in your own headers. The .cpps
+ * should include moose.h and other headers and that should do it.
  */
 
 #include "header.h"

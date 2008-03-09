@@ -111,10 +111,10 @@ class LookupTestClass
 				dmap["3"] = 0.4;
 			}
 
-			static double getDmap( const Element* e, const string& s ) {
+			static double getDmap( Eref e, const string& s ) {
 				map< string, double >::iterator i;
 				LookupTestClass* atc = 
-						static_cast< LookupTestClass* >( e->data( 0 ) );
+						static_cast< LookupTestClass* >( e.data() );
 				i = atc->dmap.find( s );
 				if ( i != atc->dmap.end() )
 					return i->second;
@@ -134,8 +134,8 @@ class LookupTestClass
 					cout << "Error: LookupTestClass::setDvec: index not found\n";
 			}
 
-			static double getDval( const Element* e ) {
-				return static_cast< LookupTestClass* >( e->data( 0 ) )->dval;
+			static double getDval( Eref e ) {
+				return static_cast< LookupTestClass* >( e.data() )->dval;
 			}
 			static void setDval( const Conn* c, double val ) {
 				static_cast< LookupTestClass* >( c->data( ) )->dval = val;
@@ -149,8 +149,7 @@ class LookupTestClass
 			// another proper message. Triggers a local operation,
 			// triggers sending of dval, and triggers a trigger out.
 			static void proc( const Conn* c ) {
-				Element* e = c->targetElement();
-				void* data = c->data( );
+				void* data = c->data();
 				LookupTestClass* tc =
 						static_cast< LookupTestClass* >( data );
 				tc->dval = 0.0;
@@ -159,10 +158,10 @@ class LookupTestClass
 					tc->dval += i->second;
 
 				// This sends the double value out to a target
-				send1< double >( e, 0, sumSlot, tc->dval );
+				send1< double >( c->target(), sumSlot, tc->dval );
 
 				// This just sends a trigger to the remote object.
-				send0( e, 0, procSlot );
+				send0( c->target(), procSlot );
 			}
 
 		private:

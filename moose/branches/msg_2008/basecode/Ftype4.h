@@ -49,7 +49,7 @@ template < class T1, class T2, class T3, class T4 >
 			 * to search for a Finfo based on the index.
 			 */
 			virtual bool set(
-			Element* e, const Finfo* f, T1 v1, T2 v2, T3 v3, T4 v4) const
+			Eref e, const Finfo* f, T1 v1, T2 v2, T3 v3, T4 v4) const
 			{
 
 				void (*set)( const Conn*, T1 v1, T2 v2, T3 v3, T4 v4 ) =
@@ -58,7 +58,7 @@ template < class T1, class T2, class T3, class T4 >
 					>(
 									f->recvFunc()
 					);
-				SetConn c( e, 0 );
+				SetConn c( e );
 				set( &c, v1, v2, v3, v4 );
 				return 1;
 			}

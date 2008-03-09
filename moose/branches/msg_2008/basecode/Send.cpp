@@ -13,37 +13,37 @@
 #include "SimpleElement.h"
 #include "Send.h"
 
-void send0( const Element* e, unsigned int eIndex, Slot src )
+void send0( Eref e, Slot src )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = e.e->msg( src.msg() );
 	if ( m->size() == 0 ) return;
 	do {
 		RecvFunc rf = m->func( src.func() );
 		vector< ConnTainer* >::const_iterator i;
 		// Going through the MsgSrc vector of ConnTainers
 		for ( i = m->begin( ); i != m->end( ); i++ ) {
-			Conn* j = ( *i )->conn( eIndex, m->isDest() ); 
+			Conn* j = ( *i )->conn( e.i, m->isDest() ); 
 			for ( ; j->good(); j->increment() )
 				rf( j );
 			delete j;
 		}
-	} while ( ( m = m->next( e ) ) ); // An assignment, not a comparison.
+	} while ( ( m = m->next( e.e ) ) ); // An assignment, not a comparison.
 }
 
-void sendTo0( const Element* e, unsigned int eIndex, Slot src,
+void sendTo0( Eref e, Slot src,
 	unsigned int tgt )
 {
 	// This will traverse through next() if needed, to get to the msg.
-	const Msg* m = e->msg( src.msg() ); 
+	const Msg* m = e.e->msg( src.msg() ); 
 	RecvFunc rf = m->func( src.func() );
-	Conn* j = m->findConn( eIndex, tgt );
+	Conn* j = m->findConn( e.i, tgt );
 	rf( j );
 	delete j;
 }
 
-void sendBack0( const Element* e, Slot src, const Conn* c )
+void sendBack0( const Conn* c, Slot src )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = c->target().e->msg( src.msg() );
 	RecvFunc rf = m->func( src.func() );
 	const Conn* flip = c->flip(); /// \todo Could be optimized.
 	rf( flip );

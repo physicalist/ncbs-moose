@@ -55,7 +55,7 @@ bool SrcFinfo::respondToAdd(
 	return 0; // for now we cannot handle this.
 }
 
-bool SrcFinfo::strSet( Element* e, const std::string &s ) const
+bool SrcFinfo::strSet( Eref e, const std::string &s ) const
 {
 		return 0;
 }

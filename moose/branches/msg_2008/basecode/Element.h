@@ -112,7 +112,7 @@ class Element
 		/**
 		 * Returns a pointer to the data stored on this Element.
 		 */
-		virtual void* data( unsigned int eIndex ) const = 0;
+		virtual void* data( unsigned int eIndex = 0 ) const = 0;
 
 		/**
 		 * Returns number of entries in the data. 1 for SimpleElement,
@@ -338,28 +338,6 @@ class Element
 		virtual Element* innerDeepCopy( 
 				map< const Element*, Element* >& tree, int n )
 				const = 0;
-#if 0
-		/**
-		 * This function replaces Element* pointers in the conn_ vector
-		 * with corresponding ones from the copied tree.
-		 * It fills the delConns vector with entries where the conns
-		 * have to be deleted. These include conns
-		 * to global objects; they will later be reconstructed using
-		 * the CopyMsg function.
-		 */
-		virtual void replaceCopyPointers(
-				map< const Element*, Element* >& tree,
-				vector< pair < Element*, unsigned int > >& delConns ) = 0;
-
-		/**
-		 * This function takes all the messages between this
-		 * element and the key (original) portion of the tree,
-		 * and makes duplicates of the messages to go between the 
-		 * current element and the data (copied) portion of the tree.
-		 * Excludes child messages.
-		 */
-		virtual void copyMsg( map< const Element*, Element* >& tree ) = 0;
-#endif
 
 		/**
  		* Copies messages from current element to duplicate provided dest is
@@ -379,10 +357,6 @@ class Element
 		 * for this element.
 		 */
 		virtual void dumpMsgInfo() const = 0;
-		/*
-		virtual bool innerCopyMsg(
-				const Conn* c, const Element* orig, Element* dup ) = 0;
-	*/
 	protected:
 		/**
 		 * This function copies the element, its data and its
@@ -404,8 +378,6 @@ class Element
 
 
 	private:
-		// static vector< Element* >& elementList();
-		// static vector< Element* > elementList;
 		Id id_;
 };
 
