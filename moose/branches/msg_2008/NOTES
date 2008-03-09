@@ -6252,4 +6252,9 @@ the same finfos_ vector
 OK, sorted it out. The SimpleElement::innerCopy was both assigning the
 Finfo and calling addFinfo. This bug took ages to fix.
 
+Checked in as revision 437 with unit test flags on, Smoldyn off, -g, GSL
+
+Bunch of crucial files were left out of the previous commit.
+
+
 ==============================================================================
