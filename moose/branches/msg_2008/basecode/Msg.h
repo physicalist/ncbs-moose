@@ -198,17 +198,6 @@ class Msg
 		}
 
 		/**
-		 * Lists out all the target Elements with their indices.
-		 * Shouldn't this be a vector of ids?
-		 * Clears out the list first.
-		 * Deprecated. Use Element::targets instead.
-		unsigned int targets(
-			vector< pair< Element*, unsigned int> >& list,
-			unsigned int myEindex = 0
-		) const;
-		 */
-
-		/**
 		 * Counts the number of targets, including going through the
 		 * 'next_' msg if any. May be much faster than listing.
 		 */

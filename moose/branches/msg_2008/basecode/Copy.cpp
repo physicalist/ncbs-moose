@@ -59,7 +59,15 @@ Element* SimpleElement::innerCopy() const
 	ret->data_ = finfo_[0]->ftype()->copy( data_, 1 );
 	// Copy the dynamic Finfos.
 	for ( unsigned int i = 1; i < finfo_.size(); i++ ) {
+		assert( ret->finfo_[i] == 0 );
 		ret->finfo_[i] = finfo_[i]->copy();
+		assert( ret->finfo_[i] != 0 );
+		assert( ret->finfo_[i] != finfo_[i] );
+		// Sometimes dynamicFinfos will have messages within the tree,
+		// or there will be a 'next' message. We'll fill in the 'next'
+		// messages later, as needed, but the dynamicFinfo msg slots
+		// need to be set up.
+		ret->addFinfo( ret->finfo_[i] );
 	}
 	return ret;
 }
@@ -172,7 +180,9 @@ void SimpleElement::copyMessages( Element* dup,
 {
 	map< const Element*, Element* >::iterator k;
 	vector< Msg >::const_iterator m;
-	assert( dup->numMsg() == numMsg() );
+	// This assertion fails because numMsg() may be incremented
+	// to accommodate 'next' msgs and dynamicFinfos.
+	// assert( dup->numMsg() == numMsg() );
 	for ( m = msg_.begin(); m != msg_.end(); m++ ) {
 		if ( m->size() == 0 )
 			continue;
@@ -433,23 +443,43 @@ bool compareCopyValues( const Element* c0, const Element* c1 )
 	return ( *v0 == *v1 );
 }
 
-// Compares msgs on two single elements
-// Doesn't try to isomorphically match targets, just counts them.
-bool compareCopyMsgs( const Element* c0, const Element* c1 )
+// Looks for a match to ic0 among the messages on ic1.
+// These are all from the source, so we can look up the msg.
+bool checkMsgMatch( Conn* ic0, Conn* ic1, const Element* outsider )
 {
-	unsigned int i;
-	unsigned int n = c0->numMsg();
-	if ( n != c1->numMsg() )
-		return 0;
-	for ( i = 0; i < n; i++ ) {
-		const Msg* m0 = c0->msg( i );
-		const Msg* m1 = c1->msg( i );
-		if ( m0->size() != m1->size() )
-			return 0;
-		if ( m0->funcId() != m1->funcId() )
-			return 0;
-		if ( m0->numTargets( c0 ) != m1->numTargets( c1 ) )
-			return 0;
+	if ( ic0->targetElement() == outsider ) // No need to try to match.
+		return 1;
+
+	while ( ic1->good() ) {
+		if ( ic0->targetElement()->name() == ic1->targetElement()->name() ||
+			( ic0->targetElement()->name() == "c0" &&
+			  ic1->targetElement()->name() == "c1" )
+		)
+			if ( ic0->sourceMsg() == ic1->sourceMsg() )
+				return 1;
+		ic1->increment();
+	}
+	return 0;
+}
+
+// Compares msgs on two single elements, excluding any going to the
+// outsider. c0 is original, c1 is dup.
+bool compareCopyMsgs( const Element* c0, const Element* c1,
+	const Element* outsider )
+{
+	unsigned int numSrc = c0->cinfo()->numSrc();
+	for ( unsigned int i = 0; i < numSrc; i++ ) {
+
+		Conn* ic0 = c0->targets( i );
+		while ( ic0->good() )
+		{
+			Conn* ic1 = c1->targets( i );
+			if ( checkMsgMatch( ic0, ic1, outsider ) == 0 )
+				return 0;
+			delete ic1;
+			ic0->increment();
+		}
+		delete ic0;
 	}
 	return 1;
 }
@@ -497,6 +527,12 @@ void copyTest()
 
 
 	Element* n = Neutral::create( "Neutral", "n", Element::root(), Id::scratchId() );
+	Element* outsider = Neutral::create( "CopyClass", "outsider", n, Id::scratchId() );
+	set< int >( outsider, "i", 0 );
+	set< double >( outsider, "x", 0.0 );
+	set< string >( outsider, "s", "0.0" );
+	ASSERT( outsider != 0, "creating CopyClass" );
+
 	Element* c0 = Neutral::create( "CopyClass", "c0", n, Id::scratchId() );
 	set< int >( c0, "i", 10 );
 	set< double >( c0, "x", 10.0 );
@@ -521,6 +557,16 @@ void copyTest()
 	set< string >( g1, "s", "110.0" );
 	ASSERT( g1 != 0, "creating CopyClass grandchild" );
 
+	// Some messages inside tree
+	c0->add( "xSrc", k0, "xDest" );
+	k0->add( "xSrc", k1, "xDest" );
+	g1->add( "xSrc", c0, "xDest" );
+	g1->add( "xSrc", k0, "x" );
+	k1->add( "iShared", c0, "i" );
+	// a couple of messages outside tree
+	k1->add( "iShared", outsider, "i" );
+	c0->add( "xSrc", outsider, "xDest" );
+
 	/////////////////////////////////////////////////////////////////////
 	// Do the copy
 	/////////////////////////////////////////////////////////////////////
@@ -531,6 +577,20 @@ void copyTest()
 
 	ASSERT( c1->name() == "c1", "copying" );
 
+	Id p0;
+	Id p1;
+	get< Id >( c0, "parent", p0 );
+	get< Id >( c1, "parent", p1 );
+	ASSERT( p0 == n->id(), "copy parent" );
+	ASSERT( p1 == n->id(), "copy parent" );
+
+	vector< Id > kids;
+	get< vector< Id > >( n, "childList", kids );
+	ASSERT( kids.size() == 3 , "copy kids" );
+	ASSERT( kids[0] == outsider->id() , "copy kids" );
+	ASSERT( kids[1] == c0->id() , "copy kids" );
+	ASSERT( kids[2] == c1->id() , "copy kids" );
+
 	vector< Element* > c0family;
 	vector< Element* > c1family;
 	getCopyTree( c0, c0family );
@@ -540,11 +600,12 @@ void copyTest()
 	for ( unsigned int i = 0; i < c0family.size(); i++ ) {
 		Element* t0 = c0family[ i ];
 		Element* t1 = c1family[ i ];
+		ASSERT( t0 != t1, "uniqueness of Elements" );
 		ASSERT( t0->id() != t1->id(), "uniqueness of ids" );
 		if ( i > 0 )
 			ASSERT( t0->name() == t1->name(), "copy names" );
 		ASSERT( compareCopyValues( t0, t1 ), "copy values" );
-		ASSERT( compareCopyMsgs( t0, t1 ), "copy Msgs" );
+		ASSERT( compareCopyMsgs( t0, t1, outsider ), "copy Msgs" );
 	}
 
 	// Check that copy is a unique object
@@ -575,8 +636,21 @@ void copyTest()
 	ASSERT( c10 != 0, "copying" );
 	ASSERT( c10->name() == "c0", "copying" );
 
+	Id p10;
+	get< Id >( c10, "parent", p10 );
+	ASSERT( p10 == c1->id(), "copy parent" );
+
 	// Check that the copy has a unique id (this was an actual bug!)
 	ASSERT( c10->id() != c0->id(), "unique copy id" );
+
+	kids.resize( 0 );
+	get< vector< Id > >( n, "childList", kids );
+	ASSERT( kids.size() == 3 , "copy kids" );
+	ASSERT( kids[0] == outsider->id() , "copy kids" );
+	ASSERT( kids[1] == c0->id() , "copy kids" );
+	ASSERT( kids[2] == c1->id() , "copy kids" );
+
+	set( c10, "destroy" );
 
 	set( n, "destroy" );
 }

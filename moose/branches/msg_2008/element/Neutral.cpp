@@ -119,7 +119,7 @@ const Cinfo* initNeutralCinfo()
 }
 
 static const Cinfo* neutralCinfo = initNeutralCinfo();
-static const Element* root = Element::root();
+// static const Element* root = Element::root();
 // const Slot Neutral::childIndex = initNeutralCinfo()->
 //	getSlotIndex( "child" );
 
@@ -299,14 +299,14 @@ void Neutral::destroy( const Conn* c )
 
 Id Neutral::getParent( const Element* e )
 {
-	
 	assert( e != 0 );
-	const Finfo* cf = e->constFindFinfo( "child" );
-	assert( cf != 0 );
-	const Msg* m = e->msg( cf->msg() );
-	assert( m != 0 );
-	assert( m->size() == 1 ); // May need to change later to handle multiple parents.
-	return( ( ( *m->begin() )->e1( ) )->id() );
+	if ( e == Element::root() )
+		return Id();
+
+	Conn* c = e->targets( "child" );
+	assert( c->good() );
+	return c->targetElement()->id();
+	delete c;
 }
 
 /**
@@ -415,8 +415,7 @@ void testNeutral()
 		const Finfo* childSrcFinfo = 
 			Element::root()->findFinfo( "childSrc" );
 		assert( childSrcFinfo != 0 );
-		int childDestMsg = Element::root()->findFinfo( "child " )->msg();
-
+		int childDestMsg = Element::root()->findFinfo( "child" )->msg();
 
 		Element* n1 = neutralCinfo->create( Id::scratchId(), "N1" );
 		bool ret = childSrcFinfo->add( 

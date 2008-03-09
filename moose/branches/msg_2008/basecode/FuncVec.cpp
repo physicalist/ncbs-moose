@@ -179,7 +179,7 @@ void FuncVec::sortFuncVec( )
 	if ( fv.size() > 2 && 
 		fv[0]->name() == "empty.empty" && fv[1]->name() == "dummy.dummy" ) {
 		sort( fv.begin() + 2, fv.end(), fvcmp );
-		cout << fv.size() << " FuncVecs rebuilt \n";
+		// cout << fv.size() << " FuncVecs rebuilt \n";
 	} else {
 		sort( fv.begin(), fv.end(), fvcmp );
 

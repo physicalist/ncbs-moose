@@ -46,7 +46,7 @@ class ThisFinfo: public Finfo
 			) const;
 			
 			int msg() const {
-				return MAXINT;
+				return INT_MAX;
 			}
 
 			RecvFunc recvFunc() const {

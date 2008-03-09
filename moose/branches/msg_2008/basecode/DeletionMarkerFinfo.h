@@ -39,7 +39,7 @@ class DeletionMarkerFinfo: public Finfo
 			}
 
 			int msg() const {
-				return MAXINT;
+				return INT_MAX;
 			}
 
 			/**

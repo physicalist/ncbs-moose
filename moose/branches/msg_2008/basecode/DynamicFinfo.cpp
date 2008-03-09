@@ -40,12 +40,6 @@ DynamicFinfo* DynamicFinfo::setupDynamicFinfo(
 {
 	assert( e != 0 );
 
-
-	// Note that we create this with a null index. This is because
-	// the DynamicFinfo is a temporary and we don't want to lose
-	// the index when we destroy it.
-	DynamicFinfo* ret = new DynamicFinfo( name, origFinfo, getFunc, 0);
-
 	// Here we check if there is a vacant Dynamic Finfo to use
 	vector< Finfo* > flist;
 	vector< Finfo* >::iterator i;
@@ -57,25 +51,24 @@ DynamicFinfo* DynamicFinfo::setupDynamicFinfo(
 			// just reuse it, but check that the index is the same too.
 			if ( df->origFinfo_ == origFinfo && 
 				df->generalIndex_ == index ) {
-				delete ret;
+				// Here we really need to compare the index values, not ptrs
 				return df;
 			}
+			// This is an old DynamicFinfo without a message.
 			if ( e->msg( df->msg() )->size() == 0 ) {
-				ret->msg_ = df->msg_;
 				if ( df->generalIndex_ != 0 ) {
 					df->ftype()->destroyIndex( df->generalIndex_ );
 				}
-
-				*df = *ret;
+				df->origFinfo_ = origFinfo;
+				df->getFunc_ = getFunc;
 				df->generalIndex_ = index;
-				delete ret;
 				return df;
 			}
 		}
 	}
 
 	// Nope, we have to use the new DynamicFinfo.
-	ret->generalIndex_ = index;
+	DynamicFinfo* ret = new DynamicFinfo( name, origFinfo, getFunc, index);
 	e->addFinfo( ret );
 	return ret;
 }
@@ -285,9 +278,9 @@ void* DynamicFinfo::traverseIndirection( void* data ) const
  */
 const DynamicFinfo* getDF( const Conn* c )
 {
-	// The MAXUINT index is used to show that this conn is a dummy
+	// The UINT_MAX index is used to show that this conn is a dummy
 	// one and must not be used for finding DynamicFinfos.
-	assert( c->targetIndex() != MAXUINT );
+	assert( c->targetIndex() != UINT_MAX );
 	Element* e = c->targetElement();
 	// const Msg* m = e->msg( c->targetMsg() );
 

@@ -19,7 +19,7 @@ bool set( Element* e, const Finfo* f )
 	if ( Ftype0::isA( f->ftype() ) ) {
 		RecvFunc rf = f->recvFunc();
 		if ( rf ) {
-			SetConn c( e, MAXUINT );
+			SetConn c( e, UINT_MAX );
 			rf( &c );
 			return 1;
 		}

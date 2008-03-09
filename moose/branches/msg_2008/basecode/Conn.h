@@ -13,12 +13,6 @@ class Element;
 class ConnTainer;
 
 /**
- * This definition is used to indicate that a conn or msg is a dummy one.
- */
-#define MAXUINT (unsigned int)( ~0 )
-#define MAXINT (int)( ( ~0 ) << 1 )
-
-/**
  * This class handles connections. Connections are the underlying
  * linkages upon which messages run: they are like wires, bidirectional.
  * Mutiple messages can run on any given wire.

@@ -29,6 +29,10 @@
 #include <string>
 #include <map>
 #include <iostream>
+
+// Used for INT_MAX and UINT_MAX, but may be done within the compiler
+// #include <limits.h> 
+//
 #include <cassert>
 
 using namespace std;

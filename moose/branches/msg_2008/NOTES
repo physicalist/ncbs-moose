@@ -6208,4 +6208,43 @@ bool Element::dropAll( const string& finfo );
 ==============================================================================
 8 March
 Most of these updated things implemented.
+Checked in as revision 435 with unit test flags on, Smoldyn off, -g, GSL
+
+Now stuck in a nasty memory bug which seems to be due to trying to access
+an already deleted Finfo in the UnitTests. With valgrind I fixed one
+of the problems, but the other is still confusing.
+==============================================================================
+9 March 2008
+Many ugly bugs fixed in the process of getting past these early
+Unit Tests. Valgrind helped a lot. The UnitTests.cpp is OK now.
+
+Some more cleanup. Much to my astonishment, it suddenly progressed through
+to the command line, clearing lots of parser tests. Hooray!
+Even valgrind is pretty happy about it. Lots of leaks at the end, but
+no bad stuff through the tests.
+
+More unit tests to add:
+* Direct test of handling 'next' msg
+- Copy tests should use messages between objects and verify them
+- Copy tests should check DynamicFinfo copies too
+- Copy tests need to handle copies to globals.
+
+Next (big) steps:
+	- Complete unit tests listed above.
+	- Include rest of code 
+		- Unit tests
+		- Regression tests
+		- Benchmarks
+	- Merge back with main distro
+	- Incorporate arrays.
+		- Lots of unit tests for arrays too.
+	- Incorporate proper volume handling for kinetics
+
+Copy tests reveal nasty bugs with freeing dynamic finfos. Perhaps I have
+been using the same one twice. In cleaning up setupDynamicFinfo it now
+breaks in LookupFinfo unit tests.
+
+Anyway, network is now up so I'll check stuff in.
+
+
 ==============================================================================

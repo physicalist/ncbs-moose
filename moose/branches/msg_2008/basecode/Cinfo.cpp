@@ -61,7 +61,7 @@ Cinfo::Cinfo(const std::string& name,
 				assert( ret );
 				finfos_.push_back( f );
 			} else
-				finfos_.push_back( baseCinfo->finfos_[i] );
+				finfos_.push_back( baseCinfo->finfos_[i]->copy() );
 		}
 	}
 
@@ -192,24 +192,24 @@ Cinfo::Cinfo(const std::string& name,
 	noDelFinfo_ = new ThisFinfo( this, 1 );
 	///\todo: here need to put in additional initialization stuff from base class
 	lookup()[name] = this;
-	// This funny call is used to ensure that the root element is
-	// created at static initialization time.
-	// Element::root();
 }
 
 Cinfo::~Cinfo()
 {
-	unsigned int i;
-	unsigned int start = 0;
-	if ( baseCinfo_ )
-		start = baseCinfo_->finfos_.size();
-	for ( i = start; i < finfos_.size(); i++ )
-		delete finfos_[i];
+	map< string, Cinfo* >::iterator pos = lookup().find( name_ );
+	assert( pos != lookup().end() );
+	lookup().erase( lookup().find( name_ ) );
+	pos = lookup().find( name_ );
+	assert( pos == lookup().end() );
+
 	/*
-	vector< Finfo* >::iterator i;
-	for ( i = finfos_.begin(); i != finfos_.end(); i++ )
-		delete *i;
-		*/
+	 * I won't delete the allocated Finfos. This is because
+	 * they get shuffled around so it is hard to figure out which
+	 * belongs to a base class and which is local.
+	 * The number of Finfos that accumulate is small, and does not
+	 * go up once setup is over, so it can 
+	 * wait till the end of the simulation.
+	 */
 	delete thisFinfo_;
 	delete noDelFinfo_;
 }
@@ -231,12 +231,6 @@ const Finfo* Cinfo::findFinfo( Element* e, const string& name ) const
 		if ( ret )
 			return ret;
 	}
-
-	/*
-	// Fallthrough. No matches were found, so ask the base class.
-	if (base_ != 0 && base_ != this)
-		return base_->findFinfo( e, name );
-		*/
 
 	return 0;
 }
@@ -308,10 +302,10 @@ unsigned int Cinfo::shuffleFinfos()
 			temp.push_back( *i );
 	numSrc_ = temp.size();
 	for ( i = finfos_.begin(); i != finfos_.end(); i++ )
-		if ( ( *i )->isDestOnly() && ( *i )->msg() != MAXINT )
+		if ( ( *i )->isDestOnly() && ( *i )->msg() != INT_MAX )
 			temp.push_back( *i );
 	for ( i = finfos_.begin(); i != finfos_.end(); i++ )
-		if ( ( *i )->isDestOnly() && ( *i )->msg() == MAXINT )
+		if ( ( *i )->isDestOnly() && ( *i )->msg() == INT_MAX )
 			temp.push_back( *i );
 
 	assert( temp.size() == finfos_.size() );
