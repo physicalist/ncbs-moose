@@ -219,6 +219,14 @@ class Finfo
 			 */
 			virtual void countMessages( unsigned int& num ) = 0;
 
+		protected:
+			/**
+			 * setName is used by the DynamicFinfo when it renames
+			 * and reuses an existing one.
+			 */
+			void setName( const string& name ) {
+				name_ = name;
+			}
 		private:
 			string name_;
 			const Ftype* ftype_;

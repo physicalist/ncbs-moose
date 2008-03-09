@@ -59,15 +59,16 @@ Element* SimpleElement::innerCopy() const
 	ret->data_ = finfo_[0]->ftype()->copy( data_, 1 );
 	// Copy the dynamic Finfos.
 	for ( unsigned int i = 1; i < finfo_.size(); i++ ) {
-		assert( ret->finfo_[i] == 0 );
-		ret->finfo_[i] = finfo_[i]->copy();
-		assert( ret->finfo_[i] != 0 );
-		assert( ret->finfo_[i] != finfo_[i] );
+		Finfo* temp = finfo_[i]->copy();
+		// assert( ret->finfo_[i] == 0 );
+		// ret->finfo_[i] = finfo_[i]->copy();
+		assert( temp != 0 );
+		assert( temp != finfo_[i] );
 		// Sometimes dynamicFinfos will have messages within the tree,
 		// or there will be a 'next' message. We'll fill in the 'next'
 		// messages later, as needed, but the dynamicFinfo msg slots
 		// need to be set up.
-		ret->addFinfo( ret->finfo_[i] );
+		ret->addFinfo( temp );
 	}
 	return ret;
 }
@@ -423,15 +424,6 @@ void getCopyTree( Element* c0, vector< Element* >& ret )
 		c->increment();
 	}
 	delete c;
-
-	/*
-	const Msg* m = c0->msg( "childSrc" );
-	vector< pair< Element*, unsigned int > > temp;
-	vector< pair< Element*, unsigned int > >::iterator i;
-	m->targets( temp, 0 );
-	for ( i = temp.begin(); i != temp.end(); i++ )
-		getCopyTree( i->first, ret );
-	*/
 }
 
 // Compares values on two single elements
@@ -650,7 +642,7 @@ void copyTest()
 	ASSERT( kids[1] == c0->id() , "copy kids" );
 	ASSERT( kids[2] == c1->id() , "copy kids" );
 
-	set( c10, "destroy" );
+	// set( c10, "destroy" );
 
 	set( n, "destroy" );
 }

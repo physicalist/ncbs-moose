@@ -50,6 +50,7 @@ DynamicFinfo* DynamicFinfo::setupDynamicFinfo(
 			// If this DynamicFinfo is already handling the origFinfo, 
 			// just reuse it, but check that the index is the same too.
 			if ( df->origFinfo_ == origFinfo && 
+				df->name() == name &&
 				df->generalIndex_ == index ) {
 				// Here we really need to compare the index values, not ptrs
 				return df;
@@ -59,6 +60,7 @@ DynamicFinfo* DynamicFinfo::setupDynamicFinfo(
 				if ( df->generalIndex_ != 0 ) {
 					df->ftype()->destroyIndex( df->generalIndex_ );
 				}
+				df->setName( name );
 				df->origFinfo_ = origFinfo;
 				df->getFunc_ = getFunc;
 				df->generalIndex_ = index;
