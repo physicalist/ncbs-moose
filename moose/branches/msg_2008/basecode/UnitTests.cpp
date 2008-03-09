@@ -222,7 +222,7 @@ void msgFinfoTest()
 
 	ASSERT( e2data == 1.5, "Testing before double message passing" );
 
-	send1< double >( &e1, 0, Slot( 1, 0 ), 1234.5678 );
+	send1< double >( &e1, Slot( 1, 0 ), 1234.5678 );
 
 	ASSERT( e2data == 1234.5678, "Testing after double message passing" );
 	cout << "\nCompleted msgFinfoTest()\n";
@@ -261,8 +261,8 @@ void proc( const Conn* c )
 	// unit tests.
 	// The first slot is supposed to represent sumout
 	// The second slot is supposed to represent subout.
-	send1< double >( c->targetElement(), 0, sumOutSlot, ret );
-	send1< double >( c->targetElement(), 0, subOutSlot, ret );
+	send1< double >( c->target(), sumOutSlot, ret );
+	send1< double >( c->target(), subOutSlot, ret );
 }
 
 #include <map>
@@ -428,25 +428,25 @@ void cinfoTest()
 	*DATA( e2 ) = 1;
 	*DATA( e3 ) = 1;
 
-	send0( clock, 0, printOutSlotIndex ); // print
+	send0( clock, printOutSlotIndex ); // print
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 1, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 1, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 1, "msg3" );
 
-	send0( clock, 0, procOutSlotIndex ); // process
-	send0( clock, 0, printOutSlotIndex ); // print
+	send0( clock, procOutSlotIndex ); // process
+	send0( clock, printOutSlotIndex ); // print
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == -3, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 2, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 4, "msg3" );
 
-	send0( clock, 0, procOutSlotIndex ); // process
-	send0( clock, 0, printOutSlotIndex ); // print
+	send0( clock, procOutSlotIndex ); // process
+	send0( clock, printOutSlotIndex ); // print
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == -3, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == -1, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 0, "msg3" );
 
-	send0( clock, 0, procOutSlotIndex ); // process
-	send0( clock, 0, printOutSlotIndex ); // print
+	send0( clock, procOutSlotIndex ); // process
+	send0( clock, printOutSlotIndex ); // print
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 4, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == -4, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == -7, "msg3" );
@@ -518,13 +518,13 @@ void cinfoTest()
 	*DATA( e2 ) = 1;
 	*DATA( e3 ) = 1;
 
-	send0( clock, 0, printOutSlotIndex ); // print
+	send0( clock, printOutSlotIndex ); // print
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 1, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 1, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 1, "msg3" );
 
-	send0( clock, 0, procOutSlotIndex ); // process
-	send0( clock, 0, printOutSlotIndex ); // print
+	send0( clock, procOutSlotIndex ); // process
+	send0( clock, printOutSlotIndex ); // print
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == -2, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 2, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 3, "msg3" );
@@ -659,25 +659,25 @@ void finfoLookupTest()
 	*DATA( e2 ) = 1;
 	*DATA( e3 ) = 1;
 
-	send0( clock, 0, printOutSlotIndex ); // print
+	send0( clock, printOutSlotIndex ); // print
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 1, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 1, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 1, "msg3" );
 
-	send0( clock, 0, procOutSlotIndex ); // process
-	send0( clock, 0, printOutSlotIndex ); // print
+	send0( clock, procOutSlotIndex ); // process
+	send0( clock, printOutSlotIndex ); // print
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == -3, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == 2, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 4, "msg3" );
 
-	send0( clock, 0, procOutSlotIndex ); // process
-	send0( clock, 0, printOutSlotIndex ); // print
+	send0( clock, procOutSlotIndex ); // process
+	send0( clock, printOutSlotIndex ); // print
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == -3, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == -1, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == 0, "msg3" );
 
-	send0( clock, 0, procOutSlotIndex ); // process
-	send0( clock, 0, printOutSlotIndex ); // print
+	send0( clock, procOutSlotIndex ); // process
+	send0( clock, printOutSlotIndex ); // print
 	ASSERT( *reinterpret_cast< double* >( e1->data( 0 ) ) == 4, "msg1" );
 	ASSERT( *reinterpret_cast< double* >( e2->data( 0 ) ) == -4, "msg2" );
 	ASSERT( *reinterpret_cast< double* >( e3->data( 0 ) ) == -7, "msg3" );
@@ -700,15 +700,15 @@ class TestClass
 			TestClass()
 					: dval( 1234.5 ), ival( 56789 )
 			{;}
-			static double getDval( const Element* e ) {
-				return static_cast< TestClass* >( e->data( 0 ) )->dval;
+			static double getDval( Eref e ) {
+				return static_cast< TestClass* >( e.data() )->dval;
 			}
 			static void setDval( const Conn* c, double val ) {
 				static_cast< TestClass* >( c->data() )->dval = val;
 			}
 
-			static int getIval( const Element* e ) {
-				return static_cast< TestClass* >( e->data( 0 ) )->ival;
+			static int getIval( Eref e ) {
+				return static_cast< TestClass* >( e.data() )->ival;
 			}
 			static void setIval( const Conn* c, int val ) {
 				static_cast< TestClass* >( c->data() )->ival = val;
@@ -727,18 +727,18 @@ class TestClass
 			// another proper message. Triggers a local operation,
 			// triggers sending of dval, and triggers a trigger out.
 			static void proc( const Conn* c ) {
-				Element* e = c->targetElement();
+				Eref e = c->target();
 				void* data = c->data();
 				TestClass* tc = static_cast< TestClass* >( data );
 					tc->dval *= tc->ival;
 
 					// Sends a double out to the target
 					// dsumOutSlotIndex = 6
-					send1< double >( e, 0, dsumOutSlot, tc->dval );
+					send1< double >( e, dsumOutSlot, tc->dval );
 
 					// This sends the int value out to a target
 					// isetOutSlotIndex = 7
-					send1< int >( e, 0, isetOutSlot, tc->ival );
+					send1< int >( e, isetOutSlot, tc->ival );
 
 					// This just sends a trigger to the remote object.
 					// Either it will trigger dproc itself, or it
@@ -748,7 +748,7 @@ class TestClass
 					// here because the actual index depends on
 					// base classes.
 					// procOutSlotIndex = 8
-					send0( e, 0, procOutSlot );
+					send0( e, procOutSlot );
 			}
 
 		private:
@@ -909,7 +909,7 @@ void valueFinfoTest()
 	bret = e1->findFinfo( "dsumout" )->add( e1, e2, e2->findFinfo( "dsum" ) );
 	ASSERT( bret, "adding msg" );
 	
-	send0( clock, 0, procOutSlot ); // procout
+	send0( clock, procOutSlot ); // procout
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
 	ASSERT( dret == -1.0, "proc--> e1/dsumout --> e2/dsum" );
 	get< int >( e1, e1->findFinfo( "ival" ), iret );
@@ -933,7 +933,7 @@ void valueFinfoTest()
 
 	bret = e1->findFinfo( "isetout" )->add( e1, e3, e3->findFinfo( "ival" ) );
 	ASSERT( bret, "adding msg" );
-	send0( clock, 0, procOutSlot ); // procout
+	send0( clock, procOutSlot ); // procout
 
 	get< double >( e1, e1->findFinfo( "dval" ), dret );
 	ASSERT( dret == 1.0, "proc--> e1/isetout --> e3/ival" );
@@ -1219,13 +1219,13 @@ class ArrayTestClass
 
 					// This sends the double value out to a target
 					// dsumout == 0, but base class shifts it.
-					send1< double >( e, 0, Slot( 1, 0 ), tc->dval );
+					send1< double >( e, Slot( 1, 0 ), tc->dval );
 
 					// This just sends a trigger to the remote object.
 					// procout == 1, but base class shifts it.
 					// Either it will trigger dproc itself, or it
 					// could trigger a getfunc.
-					send0( e, 0, Slot( 2, 0 ) );
+					send0( e, Slot( 2, 0 ) );
 			}
 
 		private:

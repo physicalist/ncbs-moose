@@ -9,7 +9,7 @@
 **********************************************************************/
 #ifndef _CONN_H
 #define _CONN_H
-class Element;
+
 class ConnTainer;
 
 /**
@@ -31,13 +31,11 @@ class ConnTainer;
  * to the originating object, which involves looking up the matching
  * Conn on the target Element.
  *
- * The nine functions the Conn must provide for RecvFunc use are: 
- * - targetElement()
- * - targetEindex()
+ * The seven functions the Conn must provide for RecvFunc use are: 
+ * - target()
  * - targetIndex()
  * - targetMsg()
- * - sourceElement()
- * - sourceEindex()
+ * - source()
  * - sourceIndex()
  * - sourceMsg()
  * - data()
@@ -72,13 +70,9 @@ class Conn
 		{;}
 
 		/**
-		 * Returns the target Element for this Conn
+		 * Returns the target Eref for this Conn
 		 */
-		virtual Element* targetElement() const = 0;
-		/**
-		 * Returns the index of the target Element for this Conn
-		 */
-		virtual unsigned int targetEindex() const = 0;
+		virtual Eref target() const = 0;
 		/**
 		 * Returns an index to uniquely identify the conn to the target
 		 */
@@ -91,13 +85,9 @@ class Conn
 		virtual int targetMsg() const = 0;
 
 		/**
-		 * Returns the originating Element for this Conn
+		 * Returns the originating Eref for this Conn
 		 */
-		virtual Element* sourceElement() const = 0;
-		/**
-		 * Returns the index of the source Element for this Conn
-		 */
-		virtual unsigned int sourceEindex() const = 0;
+		virtual Eref source() const = 0;
 		/**
 		 * Returns an index to uniquely identify the conn of the source
 		 */

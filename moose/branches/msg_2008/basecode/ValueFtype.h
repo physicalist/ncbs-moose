@@ -10,7 +10,6 @@
 #ifndef _VALUE_FTYPE_H
 #define _VALUE_FTYPE_H
 
-
 template < class T > class ValueFtype1: public Ftype1<T>
 {
 		public:
@@ -29,15 +28,15 @@ template < class T > class ValueFtype1: public Ftype1<T>
 			 */
 			static void valueTrigFunc( const Conn* c ) {
 				const DynamicFinfo* f = getDF( c );
-				T ( *getValue )( const Element* ) =
-					reinterpret_cast< T (*)( const Element* ) > (
-									f->innerGetFunc()
+				T ( *getValue )( Eref ) =
+					reinterpret_cast< T (*)( Eref ) > (
+							f->innerGetFunc()
 					);
-				Element* e = c->targetElement();
+				Eref e = c->target();
 				///\todo Hack here to be fixed by getting a proper slot
 				// send1<T>( e, Slot( f->srcIndex(), 0 ), getValue( e ) );
-				sendBack1< T >( e, 
-					Slot( c->targetMsg(), 0 ), c, getValue( e ) );
+				sendBack1< T >( c, 
+					Slot( c->targetMsg(), 0 ), getValue( e ) );
 			}
 
 			/**
@@ -66,7 +65,7 @@ template < class T > class ValueFtype1: public Ftype1<T>
 			 * to do messaging, or it might use the original Value
 			 * Finfo, as the second argument.
 			 */
-			bool get( const Element* e, const Finfo* f, T& v ) const {
+			bool get( Eref e, const Finfo* f, T& v ) const {
 				GetFunc gf = 0;
 				const DynamicFinfo* df =
 						dynamic_cast< const DynamicFinfo* >( f );
@@ -80,8 +79,7 @@ template < class T > class ValueFtype1: public Ftype1<T>
 					}
 				}
 				assert ( gf != 0 );
-				T (*g )( const Element* ) =
-					reinterpret_cast< T (*)( const Element* ) >( gf );
+				T (*g )( Eref ) = reinterpret_cast< T (*)( Eref ) >( gf );
 				v = g( e );
 				return 1;
 			}

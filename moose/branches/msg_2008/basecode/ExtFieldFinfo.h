@@ -60,17 +60,17 @@ class ExtFieldFinfo: public Finfo
 			/**
 			 * The Ftype knows how to do this conversion.
 			 */
-			bool strSet( Element* e, const std::string &s ) const {
+			bool strSet( Eref e, const std::string &s ) const {
 				return const_cast<ExtFieldFinfo *>(this)->strSet(e, s);
 			}
 			
-			bool strSet( Element* e, const std::string &s ) {
+			bool strSet( Eref e, const std::string &s ) {
 				val_ = s;	
 				return true;
 			}
 			
 			// The Ftype handles this conversion.
-			bool strGet( const Element* e, std::string &s ) const {
+			bool strGet( Eref e, std::string &s ) const {
 				s = val_;
 				return true;
 			}

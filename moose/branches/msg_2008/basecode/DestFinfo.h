@@ -9,10 +9,6 @@
 **********************************************************************/
 #ifndef _DEST_FINFO_H
 #define _DEST_FINFO_H
-#include <string>
-#include "Ftype.h"
-#include "Finfo.h"
-#include "Element.h"
 
 using namespace std;
 
@@ -55,11 +51,11 @@ class DestFinfo: public Finfo
 			/**
 			 * Call the RecvFunc with the arguments in the string.
 			 */
-			bool strSet( Element* e, const std::string &s )
+			bool strSet( Eref e, const std::string &s )
 					const;
 			
 			/// strGet doesn't work for DestFinfo
-			bool strGet( const Element* e, std::string &s ) const {
+			bool strGet( Eref e, std::string &s ) const {
 				return 0;
 			}
 

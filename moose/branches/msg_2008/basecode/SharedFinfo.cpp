@@ -134,7 +134,7 @@ bool SharedFinfo::respondToAdd(
  * Directly call the recvFunc on the element with the string argument
  * typecast appropriately.
  */
-bool SharedFinfo::strSet( Element* e, const std::string &s ) const
+bool SharedFinfo::strSet( Eref e, const std::string &s ) const
 {
 	/**
 	 * \todo Here we will ask the Ftype to do the string conversion
@@ -277,8 +277,8 @@ class SharedTest
 			st->dval_ = val;
 		}
 
-		static double getDval( const Element* e ) {
-				return static_cast< SharedTest* >( e->data( 0 ) )->dval_;
+		static double getDval( Eref e ) {
+				return static_cast< SharedTest* >( e.data() )->dval_;
 		}
 
 		static void trigRead( const Conn* c );

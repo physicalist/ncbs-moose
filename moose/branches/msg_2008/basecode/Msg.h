@@ -236,7 +236,4 @@ class Msg
 		unsigned int next_; 
 };
 
-typedef ConnTainer* ( *ConnBuilder )( 
-	Element* e1, Element* e2, unsigned int msg1, unsigned int msg2 );
-
 #endif // _MSG_H

@@ -21,20 +21,19 @@
 /**
  * This function sends zero-argument messages.
  */
-extern void send0( const Element* e, unsigned int eIndex, Slot src );
+extern void send0( Eref e, Slot src );
 
 /**
  * This function sends zero-argument messages to a specific target.
  * The index is the index in the local conn_ vector of the source Msg.
  */
-extern void sendTo0( const Element* e, unsigned int eIndex, Slot src, 
-				unsigned int index);
+extern void sendTo0( Eref e, Slot src, unsigned int index);
 
 /**
- * sendBack returns zero-argument messages to sender. Index info is
- * already there in the Conn.
+ * sendBack returns zero-argument messages to sender. 
+ * All return info is already there in the Conn.
  */
-void sendBack0( const Element* e, Slot src, const Conn* c );
+void sendBack0( const Conn* c, Slot src );
 
 //////////////////////////////////////////////////////////////////////////
 //                      One argument section
@@ -43,10 +42,9 @@ void sendBack0( const Element* e, Slot src, const Conn* c );
 /**
  * This templated function sends single-argument messages.
  */
-template < class T > void send1(
-		const Element* e, unsigned int eIndex, Slot src, T val )
+template < class T > void send1( Eref e, Slot src, T val )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = e.e->msg( src.msg() );
 	if ( m->size() == 0 ) return;
 	do {
 		void( *rf )( const Conn*, T ) = 
@@ -55,13 +53,13 @@ template < class T > void send1(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			Conn* j = ( *i )->conn( eIndex, m->isDest() );
+			Conn* j = ( *i )->conn( e.i, m->isDest() );
 			for ( ; j->good(); j->increment() )
 				rf( j, val );
 			delete j;
 		}
 	// Yes, it is an assignment, not a comparison
-	} while ( ( m = m->next( e ) ) ); 
+	} while ( ( m = m->next( e.e ) ) ); 
 }
 
 /**
@@ -69,24 +67,22 @@ template < class T > void send1(
  * target specified by the conn argument. Note that this refers
  * to the index in the local conn_ vector.
  */
-template< class T > void sendTo1(
-		const Element* e, unsigned int eIndex,
+template< class T > void sendTo1( Eref e,
 		Slot src, unsigned int tgt, T val )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = e.e->msg( src.msg() );
 	void( *rf )( const Conn*, T ) = 
 			reinterpret_cast< void ( * )( const Conn*, T ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( eIndex, tgt );
+	const Conn* j = m->findConn( e.i, tgt );
 	rf( j,  val );
 	delete j;
 }
 
-template< class T > void sendBack1( const Element* e, Slot src, 
-	const Conn* c, T val )
+template< class T > void sendBack1( const Conn* c, Slot src, T val )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = c->target().e->msg( src.msg() );
 	void( *rf )( const Conn*, T ) = 
 			reinterpret_cast< void ( * )( const Conn*, T ) >(
 			m->func( src.func() )
@@ -102,10 +98,10 @@ template< class T > void sendBack1( const Element* e, Slot src,
 /**
  * This templated function sends two-argument messages.
  */
-template < class T1, class T2 > void send2(
-		const Element* e, unsigned int eIndex, Slot src, T1 v1, T2 v2 )
+template < class T1, class T2 > void send2( 
+		Eref e, Slot src, T1 v1, T2 v2 )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = e.e->msg( src.msg() );
 	if ( m->size() == 0 ) return;
 	do {
 		void( *rf )( const Conn*, T1, T2 ) = 
@@ -114,13 +110,13 @@ template < class T1, class T2 > void send2(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			Conn* j = ( *i )->conn( eIndex, m->isDest() );
+			Conn* j = ( *i )->conn( e.i, m->isDest() );
 			for ( ; j->good(); j->increment() )
 				rf( j, v1, v2 );
 			delete j;
 		}
 	// Yes, it is an assignment, not a comparison
-	} while ( ( m = m->next( e ) ) ); 
+	} while ( ( m = m->next( e.e ) ) ); 
 }
 
 /**
@@ -128,24 +124,23 @@ template < class T1, class T2 > void send2(
  * target specified by the conn argument. Note that this refers
  * to the index in the local conn_ vector.
  */
-template< class T1, class T2 > void sendTo2(
-		const Element* e, unsigned int eIndex,
+template< class T1, class T2 > void sendTo2( Eref e,
 		Slot src, unsigned int tgt, T1 v1, T2 v2 )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = e.e->msg( src.msg() );
 	void( *rf )( const Conn*, T1, T2 ) = 
 			reinterpret_cast< void ( * )( const Conn*, T1, T2 ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( eIndex, tgt );
+	const Conn* j = m->findConn( e.i, tgt );
 	rf( j,  v1, v2 );
 	delete j;
 }
 
-template< class T1, class T2 > void sendBack2( const Element* e, Slot src, 
-	const Conn* c, T1 v1, T2 v2 )
+template< class T1, class T2 > void sendBack2( const Conn* c, Slot src, 
+	T1 v1, T2 v2 )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = c->target().e->msg( src.msg() );
 	void( *rf )( const Conn*, T1, T2 ) = 
 			reinterpret_cast< void ( * )( const Conn*, T1, T2 ) >(
 			m->func( src.func() )
@@ -163,9 +158,9 @@ template< class T1, class T2 > void sendBack2( const Element* e, Slot src,
  * This templated function sends three-argument messages.
  */
 template < class T1, class T2, class T3 > void send3(
-	const Element* e, unsigned int eIndex, Slot src, T1 v1, T2 v2, T3 v3 )
+	Eref e, Slot src, T1 v1, T2 v2, T3 v3 )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = e.e->msg( src.msg() );
 	if ( m->size() == 0 ) return;
 	do {
 		void( *rf )( const Conn*, T1, T2, T3 ) = 
@@ -174,13 +169,13 @@ template < class T1, class T2, class T3 > void send3(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			Conn* j = ( *i )->conn( eIndex, m->isDest() );
+			Conn* j = ( *i )->conn( e.i, m->isDest() );
 			for ( ; j->good(); j->increment() )
 				rf( j, v1, v2, v3 );
 			delete j;
 		}
 	// Yes, it is an assignment, not a comparison
-	} while ( ( m = m->next( e ) ) ); 
+	} while ( ( m = m->next( e.e ) ) ); 
 }
 
 /**
@@ -189,24 +184,22 @@ template < class T1, class T2, class T3 > void send3(
  * to the index in the local conn_ vector.
  */
 template< class T1, class T2, class T3 > void sendTo3(
-		const Element* e, unsigned int eIndex,
-		Slot src, unsigned int tgt, T1 v1, T2 v2, T3 v3 )
+		Eref e, Slot src, unsigned int tgt, T1 v1, T2 v2, T3 v3 )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = e.e->msg( src.msg() );
 	void( *rf )( const Conn*, T1, T2, T3 ) = 
 			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3 ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( eIndex, tgt );
+	const Conn* j = m->findConn( e.i, tgt );
 	rf( j,  v1, v2, v3 );
 	delete j;
 }
 
 template< class T1, class T2, class T3 > 
-	void sendBack3( const Element* e, Slot src, 
-	const Conn* c, T1 v1, T2 v2, T3 v3 )
+	void sendBack3( const Conn* c, Slot src, T1 v1, T2 v2, T3 v3 )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = c->target().e->msg( src.msg() );
 	void( *rf )( const Conn*, T1, T2, T3 ) = 
 			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3 ) >(
 			m->func( src.func() )
@@ -223,10 +216,9 @@ template< class T1, class T2, class T3 >
  * This templated function sends four-argument messages.
  */
 template < class T1, class T2, class T3, class T4 > void send4(
-	const Element* e, unsigned int eIndex, Slot src, 
-	T1 v1, T2 v2, T3 v3, T4 v4 )
+	Eref e, Slot src, T1 v1, T2 v2, T3 v3, T4 v4 )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = e.e->msg( src.msg() );
 	if ( m->size() == 0 ) return;
 	do {
 		void( *rf )( const Conn*, T1, T2, T3, T4 ) = 
@@ -235,13 +227,13 @@ template < class T1, class T2, class T3, class T4 > void send4(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			Conn* j = ( *i )->conn( eIndex, m->isDest() );
+			Conn* j = ( *i )->conn( e.i, m->isDest() );
 			for ( ; j->good(); j->increment() )
 				rf( j, v1, v2, v3, v4 );
 			delete j;
 		}
 	// Yes, it is an assignment, not a comparison
-	} while ( ( m = m->next( e ) ) );
+	} while ( ( m = m->next( e.e ) ) );
 }
 
 /**
@@ -250,24 +242,22 @@ template < class T1, class T2, class T3, class T4 > void send4(
  * to the index in the local conn_ vector.
  */
 template< class T1, class T2, class T3, class T4 > void sendTo4(
-		const Element* e, unsigned int eIndex,
-		Slot src, unsigned int tgt, T1 v1, T2 v2, T3 v3, T4 v4 )
+	Eref e, Slot src, unsigned int tgt, T1 v1, T2 v2, T3 v3, T4 v4 )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = e.e->msg( src.msg() );
 	void( *rf )( const Conn*, T1, T2, T3, T4 ) = 
 			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3, T4 ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( eIndex, tgt );
+	const Conn* j = m->findConn( e.i, tgt );
 	rf( j,  v1, v2, v3, v4 );
 	delete j;
 }
 
 template< class T1, class T2, class T3, class T4 > 
-	void sendBack4( const Element* e, Slot src, 
-	const Conn* c, T1 v1, T2 v2, T3 v3, T4 v4 )
+	void sendBack4( const Conn* c, Slot src, T1 v1, T2 v2, T3 v3, T4 v4 )
 {
-	const Msg* m = e->msg( src.msg() );
+	const Msg* m = c->target().e->msg( src.msg() );
 	void( *rf )( const Conn*, T1, T2, T3, T4 ) = 
 			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3, T4 ) >(
 			m->func( src.func() )

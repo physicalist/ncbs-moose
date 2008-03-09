@@ -114,9 +114,17 @@ class Id
 		 */
 		Element* operator()() const;
 
+		/**
+		 * Returns the Element index/
+		 */
 		unsigned int index() const {
 			return index_;
 		}
+
+		/**
+		 * Returns the Eref to the element plus index
+		 */
+		Eref eref() const;
 
 		/**
 		 * Returns node on which id is located.

@@ -207,13 +207,13 @@ Finfo* DynamicFinfo::copy() const
 /**
 * The Ftype of the OrigFinfo knows how to do this conversion.
 */
-bool DynamicFinfo::strSet( Element* e, const std::string &s ) const
+bool DynamicFinfo::strSet( Eref e, const std::string &s ) const
 {
 	return ftype()->strSet( e, this, s );
 }
 			
 // The Ftype handles this conversion.
-bool DynamicFinfo::strGet( const Element* e, std::string &s ) const {
+bool DynamicFinfo::strGet( Eref e, std::string &s ) const {
 	return ftype()->strGet( e, this, s );
 }
 
@@ -261,29 +261,13 @@ const Finfo* DynamicFinfo::match(
 	}
 	return 0;
 }	
-	
 
-/*
-void* DynamicFinfo::traverseIndirection( void* data ) const
-{
-	if ( indirect_.size() == 0 )
-			return 0;
-	vector< IndirectType >::const_iterator i;
-	for ( i = indirect_.begin(); i != indirect_.end(); i++ )
-			data =  i->first( data, i->second );
-	return data;
-}
-*/
-
-/**
- * Still to finish
- */
 const DynamicFinfo* getDF( const Conn* c )
 {
 	// The UINT_MAX index is used to show that this conn is a dummy
 	// one and must not be used for finding DynamicFinfos.
-	assert( c->targetIndex() != UINT_MAX );
-	Element* e = c->targetElement();
+	assert( c->target().i != UINT_MAX );
+	Element* e = c->target().e;
 	// const Msg* m = e->msg( c->targetMsg() );
 
 	const Finfo* f;
@@ -295,13 +279,6 @@ const DynamicFinfo* getDF( const Conn* c )
 	}
 
 	return 0;
-
-	/*
-	const Finfo* temp = e->findFinfo( c->targetIndex() );
-	const DynamicFinfo* f = dynamic_cast< const DynamicFinfo* >( temp );
-	assert( f != 0 );
-	return f;
-	*/
 }
 
 bool DynamicFinfo::getSlot( const string& name, Slot& ret ) const

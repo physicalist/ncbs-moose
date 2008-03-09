@@ -58,13 +58,6 @@ ConnTainer* SimpleConnTainer::copy( Element* e1, Element* e2 ) const
 	return new SimpleConnTainer( e1, e2, msg1(), msg2() );
 }
 
-/*
-ConnBuilder connBuilder() const
-{
-	return &SimpleConnTainer::SimpleConnTainer;
-}
-*/
-
 //////////////////////////////////////////////////////////////////////
 //  SimpleConn
 //////////////////////////////////////////////////////////////////////

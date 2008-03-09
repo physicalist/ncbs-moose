@@ -52,29 +52,6 @@ class Ftype0: public Ftype
 			// Here we define the functions for serializing data
 			// for parallel messaging.
 			///////////////////////////////////////////////////////
-			/*
-			static const void* incomingFunc(
-				const Element* e, const void* data, unsigned int index )
-			{
-				send0( e, index );
-				return data;
-			}
-			
-			void appendIncomingFunc( vector< IncomingFunc >& vec )
-					const {
-				vec.push_back( &incomingFunc );
-			}
-
-			static void outgoingFunc( const Conn* c ) {
-				// here the getParBuf just sticks in the id of the 
-				// message. No data is sent.
-				getParBuf( c, 0 ); 
-			}
-
-			void appendOutgoingFunc( vector< RecvFunc >& vec ) const {
-				vec.push_back( &outgoingFunc );
-			}
-			*/
 
 			/**
 			 * This function extracts the value for this field from
@@ -117,11 +94,6 @@ class Ftype0: public Ftype
 			IncomingFunc inFunc() const {
 				return this->incomingFunc;
 			}
-			/*
-			void inFunc( vector< IncomingFunc >& ret ) const {
-				ret.push_back( this->incomingFunc );
-			}
-			*/
 
 			/// Returns the statically defined outgoingSync function
 			void syncFunc( vector< RecvFunc >& ret ) const {
@@ -307,7 +279,7 @@ template < class T > class Ftype1: public Ftype
 					delete static_cast< T* >( data );
 			}
 
-			virtual bool get( const Element* e, const Finfo* f, T& v )
+			virtual bool get( Eref, const Finfo* f, T& v )
 			const 
 			{
 					return 0;
@@ -326,11 +298,11 @@ template < class T > class Ftype1: public Ftype
 			 * for any such attempts
 			 * to search for a Finfo based on the index.
 			 */
-			virtual bool set( Element* e, const Finfo* f, T v ) const {
+			virtual bool set( Eref e, const Finfo* f, T v ) const {
 				void (*set)( const Conn*, T v ) =
 					reinterpret_cast< void (*)( const Conn*, T ) >(
 									f->recvFunc() );
-				SetConn c( e, 0 );
+				SetConn c( e );
 				set( &c, v );
 				return 1;
 			}
@@ -354,7 +326,7 @@ template < class T > class Ftype1: public Ftype
 			 * string location specified.
 			 * Returns true on success.
 			 */
-			bool strGet( const Element* e, const Finfo* f, string& s )
+			bool strGet( Eref e, const Finfo* f, string& s )
 				const
 			{
 				T val;
@@ -368,7 +340,7 @@ template < class T > class Ftype1: public Ftype
 			 * converts it to a value, and assigns it to a field.
 			 * Returns true on success.
 			 */
-			bool strSet( Element* e, const Finfo* f, const string& s )
+			bool strSet( Eref e, const Finfo* f, const string& s )
 					const
 			{
 				T val;

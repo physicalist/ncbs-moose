@@ -75,11 +75,8 @@ class SimpleConn: public Conn
 		~SimpleConn()
 		{;}
 
-		Element* targetElement() const {
-			return s_->e2();
-		}
-		unsigned int targetEindex() const {
-			return s_->eI2();
+		Element* target() const {
+			return Eref( s_->e2(), s_->eI2() );
 		}
 		unsigned int targetIndex() const {
 			return s_->i2();
@@ -87,11 +84,8 @@ class SimpleConn: public Conn
 		int targetMsg() const {
 			return s_->msg2();
 		}
-		Element* sourceElement() const {
-			return s_->e1();
-		}
-		unsigned int sourceEindex() const {
-			return s_->eI1();
+		Eref source() const {
+			return Eref( s_->e1(), s_->eI2() );
 		}
 		unsigned int sourceIndex() const {
 			return s_->i1();
@@ -146,8 +140,8 @@ class ReverseSimpleConn: public Conn
 		~ReverseSimpleConn()
 		{;}
 
-		Element* targetElement() const {
-			return s_->e1();
+		Eref target() const {
+			return Eref( s_->e1() , s->eI1() );
 		}
 		unsigned int targetEindex() const {
 			return s_->eI1();
@@ -158,11 +152,8 @@ class ReverseSimpleConn: public Conn
 		int targetMsg() const {
 			return s_->msg1();
 		}
-		Element* sourceElement() const {
-			return s_->e2();
-		}
-		unsigned int sourceEindex() const {
-			return s_->eI2();
+		Eref source() const {
+			return Eref( s_->e2(), s_->eI2() );
 		}
 		unsigned int sourceIndex() const {
 			return s_->i2();

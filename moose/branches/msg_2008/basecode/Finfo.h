@@ -9,9 +9,6 @@
 **********************************************************************/
 #ifndef _FINFO_H
 #define _FINFO_H
-#include <vector>
-#include "Ftype.h"
-using namespace std;
 
 /**
  * Virtual base class for field info.
@@ -27,7 +24,7 @@ class Finfo
 			{;}
 
 			/**
-			 * This function creates a connection between to Finfos.
+			 * This function creates a connection between two Finfos.
 			 */
 			virtual bool add( 
 					Element* e, Element* destElm, const Finfo* destFinfo
@@ -53,18 +50,14 @@ class Finfo
 			 * Returns true if the
 			 * conversion and assignment succeeded.
 			 */
-			virtual bool strSet(
-							Element* e, const std::string &s
-				) const = 0;
+			virtual bool strSet( Eref e, const std::string &s) const = 0;
 
 			/**
 			 * This function utilizes the hard-coded string conversions
 			 * if present, for getting the field value. Returns true
 			 * if the conversion and assignment succeeded.
 			 */
-			virtual bool strGet( 
-							const Element* e, std::string &s
-				) const = 0;
+			virtual bool strGet( Eref e, std::string &s) const = 0;
 
 			/**
 			 * This returns the message identifier for this Finfo.

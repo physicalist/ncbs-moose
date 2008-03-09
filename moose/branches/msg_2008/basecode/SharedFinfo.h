@@ -56,11 +56,10 @@ class SharedFinfo: public Finfo
 			/**
 			 * Send a message with the arguments in the string.
 			 */
-			bool strSet( Element* e, const std::string &s )
-					const;
+			bool strSet( Eref e, const std::string &s ) const;
 			
 			/// strGet doesn't work for SharedFinfo
-			bool strGet( const Element* e, std::string &s ) const {
+			bool strGet( Eref e, std::string &s ) const {
 				return 0;
 			}
 
