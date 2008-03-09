@@ -6225,12 +6225,12 @@ no bad stuff through the tests.
 
 More unit tests to add:
 * Direct test of handling 'next' msg
-- Copy tests should use messages between objects and verify them
-- Copy tests should check DynamicFinfo copies too
+* Copy tests should use messages between objects and verify them
+* Copy tests should check DynamicFinfo copies too
 - Copy tests need to handle copies to globals.
 
 Next (big) steps:
-	- Complete unit tests listed above.
+	+ Complete unit tests listed above.
 	- Include rest of code 
 		- Unit tests
 		- Regression tests
@@ -6245,6 +6245,11 @@ been using the same one twice. In cleaning up setupDynamicFinfo it now
 breaks in LookupFinfo unit tests.
 
 Anyway, network is now up so I'll check stuff in.
+LookupFinfo stuff now works.
+Copy stuff problem is because I have used the same DynamicFinfo twice in 
+the same finfos_ vector
 
+OK, sorted it out. The SimpleElement::innerCopy was both assigning the
+Finfo and calling addFinfo. This bug took ages to fix.
 
 ==============================================================================

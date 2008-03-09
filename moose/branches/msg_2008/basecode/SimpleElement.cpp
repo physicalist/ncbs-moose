@@ -45,7 +45,7 @@ SimpleElement::SimpleElement(
 SimpleElement::SimpleElement( const SimpleElement* orig )
 		: Element( Id::scratchId() ),
 		name_( orig->name_ ), 
-		finfo_( orig->finfo_.size(), 0 ),
+		finfo_( 1 ),
 		data_( 0 ),
 		msg_( orig->cinfo()->numSrc() )
 {
@@ -100,15 +100,15 @@ SimpleElement::~SimpleElement()
 
 	// Check if Finfo is one of the transient set, if so, clean it up.
 	vector< Finfo* >::iterator i;
-	cout << name() << " " << id() << " f = ";
+	// cout << name() << " " << id() << " f = ";
 	for ( i = finfo_.begin(); i != finfo_.end(); i++ ) {
 		assert( *i != 0 );
-		cout << ( *i )->name()  << " ptr= " << *i << " " ;
+		// cout << ( *i )->name()  << " ptr= " << *i << " " ;
 		if ( (*i)->isTransient() ) {
 			delete *i;
 		}
 	}
-	cout << endl;
+	// cout << endl;
 }
 
 const std::string& SimpleElement::className( ) const
