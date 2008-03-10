@@ -10,7 +10,6 @@
 
 //#include "header.h"
 #include "moose.h"
-#include "MsgDest.h"
 #include "SharedFtype.h"
 #include "SharedFinfo.h"
 #include "DestFinfo.h"
@@ -405,30 +404,27 @@ void sharedFinfoTest()
 }
 
 void SharedTest::trigRead( const Conn* c ) {
-			Element* e = c->targetElement();
 			// 0 is the readVal trig MsgSrc., but we have to
 			// increment it to 1 because of base class.
 			// Slot tenXdvalSrcSlot = sfc.getSlot( "readVal.tenXdvalSrc" );
 			// send0( e, 0, Slot( 6, 0 ) );
-			send0( e, 0, tenXdvalSrcSlot );
+			send0( c->target(), tenXdvalSrcSlot );
 }
 
 void SharedTest::pingPong( const Conn* c ) {
-			Element* e = c->targetElement();
 			SharedTest* st = 
 				static_cast< SharedTest* >( c->data() );
 			// 7 is the pingPong dval MsgSrc. We have to increment it to
 			// Slot sendSlot = sfc.getSlot( "pingPong.send" );
 			// send1< double >( e, 0, Slot( 7, 0 ), st->dval_ );
-			send1< double >( e, 0, pingPongDataSlot, st->dval_ );
+			send1< double >( c->target(), pingPongDataSlot, st->dval_ );
 }
 
 void SharedTest::trigPing( const Conn* c ) {
-			Element* e = c->targetElement();
 			// 7 is the pingPong trig MsgSrc. We have to increment it
 			// Slot trigSrcSlot = sfc.getSlot( "pingPong.trigSrc" );
 			// send0( e, 0, Slot( 7, 1 ) );
-			send0( e, 0, pingPongTrigSlot );
+			send0( c->target(), pingPongTrigSlot );
 }
 
 #endif

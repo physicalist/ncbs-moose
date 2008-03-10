@@ -143,20 +143,20 @@ static const Slot childSrcSlot = initNeutralCinfo()->
  */
 void Neutral::childFunc( const Conn* c , int stage )
 {
-		Element* e = c->targetElement();
+		Element* e = c->target().e;
 		assert( stage == 0 || stage == 1 || stage == 2 );
 
 		switch ( stage ) {
 				case MARK_FOR_DELETION:
-					send1< int >( e, 0, childSrcSlot, MARK_FOR_DELETION );
+					send1< int >( e, childSrcSlot, MARK_FOR_DELETION );
 					e->prepareForDeletion( 0 );
 				break;
 				case CLEAR_MESSAGES:
-					send1< int >( e, 0, childSrcSlot, CLEAR_MESSAGES );
+					send1< int >( e, childSrcSlot, CLEAR_MESSAGES );
 					e->prepareForDeletion( 1 );
 				break;
 				case COMPLETE_DELETION:
-					send1< int >( e, 0, childSrcSlot, COMPLETE_DELETION );
+					send1< int >( e, childSrcSlot, COMPLETE_DELETION );
 					///\todo: Need to cleanly delete the data part too.
 					delete e;
 				break;
@@ -166,19 +166,19 @@ void Neutral::childFunc( const Conn* c , int stage )
 		}
 }
 
-const string Neutral::getName( const Element* e )
+const string Neutral::getName( Eref e )
 {
-		return e->name();
+		return e.e->name();
 }
 
 void Neutral::setName( const Conn* c, const string s )
 {
-	c->targetElement()->setName( s );
+	c->target().e->setName( s );
 }
 
-const string Neutral::getClass( const Element* e )
+const string Neutral::getClass( Eref e )
 {
-		return e->className();
+		return e.e->className();
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -191,7 +191,7 @@ const string Neutral::getClass( const Element* e )
 void Neutral::mcreate( const Conn* conn,
 				const string cinfo, const string name )
 {
-	create( cinfo, name, conn->targetElement(), Id::scratchId() );
+	create( cinfo, name, conn->target().e, Id::scratchId() );
 /*
 		Element* e = conn.targetElement();
 
@@ -213,7 +213,7 @@ void Neutral::mcreate( const Conn* conn,
 void Neutral::mcreateArray( const Conn* conn,
 				const string cinfo, const string name, int n )
 {
-		createArray( cinfo, name, conn->targetElement(), n );
+		createArray( cinfo, name, conn->target().e, n );
 }
 
 
@@ -297,23 +297,24 @@ void Neutral::destroy( const Conn* c )
 	childFunc( c, COMPLETE_DELETION );
 }
 
-Id Neutral::getParent( const Element* e )
+Id Neutral::getParent( Eref e )
 {
-	assert( e != 0 );
-	if ( e == Element::root() )
+	assert( e.e != 0 );
+	if ( e.e == Element::root() )
 		return Id();
 
-	Conn* c = e->targets( "child" );
+	Conn* c = e.e->targets( "child" );
 	assert( c->good() );
-	return c->targetElement()->id();
+	return c->target().e->id();
 	delete c;
 }
 
 /**
  * Looks up the child with the specified name, and returns its id.
  */
-Id Neutral::getChildByName( const Element* e, const string& s )
+Id Neutral::getChildByName( Eref er, const string& s )
 {
+	Element *e = er.e;
 	assert( e != 0 );
 	assert( s.length() > 0 );
 	const Msg* m = e->msg( childSrcSlot.msg() );
@@ -351,24 +352,24 @@ Id Neutral::getChildByName( const Element* e, const string& s )
  */
 void Neutral::lookupChild( const Conn* c, const string s )
 {
-	Id ret = getChildByName( c->targetElement(), s );
-	sendBack1< Id >( c->targetElement(), childSrcSlot, c, ret );
+	Id ret = getChildByName( c->target().e, s );
+	sendBack1< Id >( c, childSrcSlot, ret );
 }
 
-vector< Id > Neutral::getChildList( const Element* e )
+vector< Id > Neutral::getChildList( Eref e )
 {
-	assert( e != 0 );
+	assert( e.e != 0 );
 	vector< Id > ret;
-	Conn* c = e->targets( childSrcSlot.msg() );
+	Conn* c = e.e->targets( childSrcSlot.msg() );
 	while ( c->good() ) {
-		ret.push_back( c->targetElement()->id() );
+		ret.push_back( c->target().e->id() );
 		c->increment();
 	}
 	delete c;
 	return ret;
 }
 
-vector< string > Neutral::getFieldList( const Element* elm )
+vector< string > Neutral::getFieldList( Eref elm )
 {
 	// const SimpleElement* e = dynamic_cast< const SimpleElement *>(elm);
 	// assert( e != 0 );
@@ -376,7 +377,7 @@ vector< string > Neutral::getFieldList( const Element* elm )
 	vector< string > ret;
 	vector< const Finfo* > flist;
 	vector< const Finfo* >::const_iterator i;
-	elm->listFinfos( flist );
+	elm.e->listFinfos( flist );
 
 	for ( i = flist.begin(); i != flist.end(); i++ )
 		ret.push_back( (*i)->name() );
@@ -384,20 +385,20 @@ vector< string > Neutral::getFieldList( const Element* elm )
 	return ret;
 }
 
-double Neutral::getCpu( const Element* e )
+double Neutral::getCpu( Eref e )
 {
 	return 0.0;
 }
 
-unsigned int Neutral::getDataMem( const Element* e )
+unsigned int Neutral::getDataMem( Eref e )
 {
-	const Finfo *f = e->getThisFinfo();
+	const Finfo *f = e.e->getThisFinfo();
 	return f->ftype()->size();
 }
 
-unsigned int Neutral::getMsgMem( const Element* e )
+unsigned int Neutral::getMsgMem( Eref e )
 {
-	return e->getMsgMem();
+	return e.e->getMsgMem();
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -460,7 +461,7 @@ void testNeutral()
 
 		// Send the command to mark selected children for deletion.
 		// In this case the selected child should be n2.
-		sendTo1< int >( n1, 0, childSrcSlot, 0, 0 );
+		sendTo1< int >( n1, childSrcSlot, 0, 0 );
 
 		// At this point n1 still has both n2 and n3 as children
 		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 2, "Should still have 2 children and parent" );
@@ -473,7 +474,7 @@ void testNeutral()
 		// outside delete tree, which includes n1 here because n1 is 
 		// outside delete tree.
 		// But n3 should still be there as a child of n1.
-		sendTo1< int >( n1, 0, childSrcSlot, 0, 1 );
+		sendTo1< int >( n1, childSrcSlot, 0, 1 );
 		ASSERT( n1->msg( childSrcSlot.msg() )->size() == 1,
 			"Now n1 should have only n3 as a child." );
 		ASSERT( ( *n1->msg( childSrcSlot.msg() )->begin() )->e2() == n3, 

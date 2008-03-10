@@ -156,7 +156,7 @@ string SharedFtype::typeStr() const
 #include "DerivedFtype.h"
 void tempFunc( const Conn* c )
 {
-		string s = c->targetElement()->name();
+		string s = c->target().e->name();
 		s = s + ".foo";
 }
 

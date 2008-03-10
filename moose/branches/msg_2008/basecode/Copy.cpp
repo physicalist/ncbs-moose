@@ -30,7 +30,7 @@ bool SimpleElement::isDescendant( const Element* ancestor ) const
 
 	Conn* c = targets( "child" );
 	assert( c->good() ); // It better have a parent!
-	const Element* parent = c->targetElement();
+	const Element* parent = c->target().e;
 	delete c;
 
 	if ( parent == ancestor )
@@ -395,12 +395,12 @@ class CopyTestClass
 		// Sends the x value somewhere.
 		static void trigX( const Conn* c ) {
 			double x = static_cast< CopyTestClass *>( c->data() )->x_;
-			send1< double >( c->targetElement(), 0, xSlot, x );
+			send1< double >( c->target(), xSlot, x );
 		}
 
 		// Shared message to request the I value
 		static void trigI( const Conn* c ) {
-			send0( c->targetElement(), 0, iSlot );
+			send0( c->target(), iSlot );
 		}
 
 		bool operator==( const CopyTestClass& other )
@@ -420,7 +420,7 @@ void getCopyTree( Element* c0, vector< Element* >& ret )
 	ret.push_back( c0 );
 	Conn* c = c0->targets( "childSrc" );
 	while ( c->good() ) {
-		getCopyTree( c->targetElement(), ret );
+		getCopyTree( c->target().e, ret );
 		c->increment();
 	}
 	delete c;
@@ -439,13 +439,13 @@ bool compareCopyValues( const Element* c0, const Element* c1 )
 // These are all from the source, so we can look up the msg.
 bool checkMsgMatch( Conn* ic0, Conn* ic1, const Element* outsider )
 {
-	if ( ic0->targetElement() == outsider ) // No need to try to match.
+	if ( ic0->target().e == outsider ) // No need to try to match.
 		return 1;
 
 	while ( ic1->good() ) {
-		if ( ic0->targetElement()->name() == ic1->targetElement()->name() ||
-			( ic0->targetElement()->name() == "c0" &&
-			  ic1->targetElement()->name() == "c1" )
+		if ( ic0->target().e->name() == ic1->target().e->name() ||
+			( ic0->target().e->name() == "c0" &&
+			  ic1->target().e->name() == "c1" )
 		)
 			if ( ic0->sourceMsg() == ic1->sourceMsg() )
 				return 1;

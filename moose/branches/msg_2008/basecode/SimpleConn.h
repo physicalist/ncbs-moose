@@ -75,7 +75,7 @@ class SimpleConn: public Conn
 		~SimpleConn()
 		{;}
 
-		Element* target() const {
+		Eref target() const {
 			return Eref( s_->e2(), s_->eI2() );
 		}
 		unsigned int targetIndex() const {
@@ -141,7 +141,7 @@ class ReverseSimpleConn: public Conn
 		{;}
 
 		Eref target() const {
-			return Eref( s_->e1() , s->eI1() );
+			return Eref( s_->e1() , s_->eI1() );
 		}
 		unsigned int targetEindex() const {
 			return s_->eI1();
