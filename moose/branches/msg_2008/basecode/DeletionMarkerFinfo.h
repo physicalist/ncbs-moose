@@ -45,14 +45,14 @@ class DeletionMarkerFinfo: public Finfo
 			/**
 			 * Call the RecvFunc with the arguments in the string.
 			 */
-			bool strSet( Element* e, const std::string &s )
+			bool strSet( Eref e, const std::string &s )
 					const
 					{
 							return 0;
 					}
 			
 			/// strGet doesn't work for DeletionMarkerFinfo
-			bool strGet( const Element* e, std::string &s ) const {
+			bool strGet( Eref e, std::string &s ) const {
 				return 0;
 			}
 

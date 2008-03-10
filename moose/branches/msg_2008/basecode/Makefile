@@ -52,15 +52,18 @@ OBJ = \
 
 HEADERS = \
 	header.h \
+	Eref.h \
 	RecvFunc.h \
 	Conn.h \
+	ConnTainer.h \
 	Ftype.h \
 	FuncVec.h \
-	Finfo.h \
-	Element.h \
-	Id.h \
-	Class.h \
 	Slot.h \
+	Finfo.h \
+	Id.h \
+	Msg.h \
+	Element.h \
+	Class.h \
 
 #	AssignFinfo.h
 #	ArrayFinfo.o \
@@ -83,17 +86,17 @@ SharedFtype.o:	SharedFtype.h
 SharedFinfo.o:	SharedFinfo.h SharedFtype.h
 SolveFinfo.o:	ThisFinfo.h SolveFinfo.h
 Cinfo.o:		Cinfo.h
-UnitTests.o:	MsgSrc.h MsgDest.h SimpleElement.h DerivedFtype.h SrcFinfo.h DestFinfo.h Cinfo.h DynamicFinfo.h ValueFinfo.h Send.h ValueFtype.h
+UnitTests.o:	SimpleElement.h DerivedFtype.h SrcFinfo.h DestFinfo.h Cinfo.h DynamicFinfo.h ValueFinfo.h Send.h ValueFtype.h
 LookupFinfo.o:	LookupFinfo.h DynamicFinfo.h LookupFtype.h
 DeletionMarkerFinfo.o: DeletionMarkerFinfo.h
 GlobalMarkerFinfo.o: DeletionMarkerFinfo.h GlobalMarkerFinfo.h
-SimpleElement.o:	SimpleElement.h MsgSrc.h MsgDest.h DeletionMarkerFinfo.h
+SimpleElement.o:	SimpleElement.h DeletionMarkerFinfo.h
 setget.o:		setget.h DerivedFtype.h
 strconv.o:		DerivedFtype.h
 filecheck.o: filecheck.h
 IdManager.o:	Id.h IdManager.h ArrayWrapperElement.h
-ArrayElement.o:	ArrayElement.h SimpleElement.h MsgSrc.h MsgDest.h DeletionMarkerFinfo.h
-ArrayWrapperElement.o:	ArrayWrapperElement.h SimpleElement.h MsgSrc.h MsgDest.h DeletionMarkerFinfo.h
+ArrayElement.o:	ArrayElement.h SimpleElement.h DeletionMarkerFinfo.h
+ArrayWrapperElement.o:	ArrayWrapperElement.h SimpleElement.h DeletionMarkerFinfo.h
 Class.o: Class.h Cinfo.h Cinfo.cpp
 FuncVec.o: RecvFunc.h Ftype.h FuncVec.h
 TraverseMsgConn.o: TraverseMsgConn.h

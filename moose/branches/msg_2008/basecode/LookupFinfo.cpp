@@ -370,7 +370,7 @@ void lookupFinfoTest()
 	ASSERT( bret, "test assignment");
 	ASSERT( dret == 30.0, "test assignment");
 
-	send0( a1, 0, procSlot ); // procout
+	send0( a1, procSlot ); // procout
 	// Here a2->dval should simply become the sum of its lookup entries.
 	// As this has just been initialized, the sum should be 10.0.
 	// Bad Upi: should never test for equality of doubles.
@@ -385,7 +385,7 @@ void lookupFinfoTest()
 	//////////////////////////////////////////////////////////////////////
 	// a1 trigger message will call send on a2->dmap[1], which currently
 	// holds the value 2. The value is added to a1->dval, which is 4321
-	send0( a1, 0, requestSlot ); // procout
+	send0( a1, requestSlot ); // procout
 	dret = 0.0;
 	get< double >( a1, a1->findFinfo( "dval" ), dret );
 	ASSERT( dret == 4323.0, "test msg3");
@@ -401,7 +401,7 @@ void lookupFinfoTest()
 	ASSERT( bret, "test msg4");
 	ASSERT( dret == 30.0, "test msg4");
 
-	send0( a2, 0, requestSlot ); // procout
+	send0( a2, requestSlot ); // procout
 	dret = 0.0;
 	get< double >( a2, a2->findFinfo( "dval" ), dret );
 	ASSERT( dret == 40, "test msg4");

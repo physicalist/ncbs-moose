@@ -19,9 +19,7 @@ ValueFinfo::ValueFinfo(
 )
 	: Finfo( name, f ), get_( get ), set_( set )
 {
-	// Save the function data.
-	// Deprecated
-	getFunctionDataManager()->add( set, this );
+	;
 }
 
 /**

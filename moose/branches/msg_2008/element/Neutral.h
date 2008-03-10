@@ -26,23 +26,23 @@ class Neutral
 			{;}
 
 			static void childFunc( const Conn* c, int stage );
-			static const string getName( const Element* e );
-			static const string getClass( const Element* e );
+			static const string getName( Eref e );
+			static const string getClass( Eref e );
 
 			/**
 			 * getParent is a static utility function to return the
 			 * parent of an element. Should really be on SimpleElement
 			 * and should be a regular function.
 			 */
-			static Id getParent( const Element* e );
+			static Id getParent( Eref e );
 
 			/**
 			 * Returns a vector of child ids for this element
 			 */
-			static vector< Id > getChildList( const Element* e );
-			static double getCpu( const Element* e );
-			static unsigned int getDataMem( const Element* e );
-			static unsigned int getMsgMem( const Element* e );
+			static vector< Id > getChildList( Eref e );
+			static double getCpu( Eref e );
+			static unsigned int getDataMem( Eref e );
+			static unsigned int getMsgMem( Eref e );
 			// static unsigned int getNode( const Element* e );
 			// static void setNode( const Conn* c, unsigned int node );
 
@@ -77,10 +77,10 @@ class Neutral
  			* Looks up the child with the specified name, and returns its
 			* id. For now don't deal with indices.
  			*/
-			static Id getChildByName( const Element* e, const string& s );
+			static Id getChildByName( Eref e, const string& s );
 
 			// static const unsigned int childIndex;
-			static vector< string > getFieldList( const Element* elm );
+			static vector< string > getFieldList( Eref elm );
 };
 
 #endif // _NEUTRAL_H

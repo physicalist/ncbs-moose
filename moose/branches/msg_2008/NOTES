@@ -6279,5 +6279,10 @@ Other features:
 
 Much work done on converting to Eref for send, set and get. Conn also 
 returns Eref rather than Element and Eindex.
+Checked in as revision 439 with unit test flags on, Smoldyn off, -g, GSL
 
 ==============================================================================
+10 March 2008
+
+Continuing conversion to Eref. Completed basecode, shell, and element dirs.
+

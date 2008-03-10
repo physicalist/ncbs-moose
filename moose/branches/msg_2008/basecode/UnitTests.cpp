@@ -25,8 +25,8 @@ void connTest()
 	SimpleElement e2( Id::scratchId(), "e2", 0, 2 );
 	SetConn sc1( &e1, 1234 );
 	SetConn sc2( &e2, 3241 );
-	ASSERT( sc1.targetElement() == &e1, "targetElement access" );
-	ASSERT( sc1.targetEindex() == 1234, "targetIndex access" );
+	ASSERT( sc1.target().e == &e1, "targetElement access" );
+	ASSERT( sc1.target().i == 1234, "targetIndex access" );
 
 	/**
 	 * Checking ConnTainers after an addmsg
@@ -59,10 +59,10 @@ void connTest()
 	Conn* c1 = ct1->conn( 0, 0 );
 	Conn* c2 = ct2->conn( 0, 1 );
 
-	ASSERT( c1->targetElement() == &e2, "Conn: targetElement" );
-	ASSERT( c2->targetElement() == &e1, "Conn: targetElement" );
-	ASSERT( c1->targetEindex() == 0, "Conn: targetElement" );
-	ASSERT( c2->targetEindex() == 0, "Conn: targetElement" );
+	ASSERT( c1->target().e == &e2, "Conn: targetElement" );
+	ASSERT( c2->target().e == &e1, "Conn: targetElement" );
+	ASSERT( c1->target().i == 0, "Conn: targetElement" );
+	ASSERT( c2->target().i == 0, "Conn: targetElement" );
 	ASSERT( c1->targetMsg() == -2, "Conn: targetElement" );
 	ASSERT( c2->targetMsg() == 1, "Conn: targetElement" );
 
@@ -95,9 +95,9 @@ const char* targetName = "";
 
 void commonTestFunc( const Conn* c, unsigned int f )
 {
-	ASSERT( c->sourceElement()->name() == sourceName, "commonTestFunc: sourceElement" );
-	ASSERT( c->targetElement()->name() == targetName, "commonTestFunc: targetElement" );
-	ASSERT( c->targetIndex() == targetIndex[ funcCounter ], "commonTestFunc: targetIndex" );
+	ASSERT( c->source().e->name() == sourceName, "commonTestFunc: sourceElement" );
+	ASSERT( c->target().e->name() == targetName, "commonTestFunc: targetElement" );
+	ASSERT( c->target().i == targetIndex[ funcCounter ], "commonTestFunc: targetIndex" );
 	ASSERT( f == funcNum[ funcCounter++ ], "commonTestFunc: funcNum" );
 }
 
@@ -1210,7 +1210,7 @@ class ArrayTestClass
 			// another proper message. Triggers a local operation,
 			// triggers sending of dval, and triggers a trigger out.
 			static void proc( const Conn* c ) {
-				Element* e = c->targetElement();
+				// Element* e = c->target().e;
 				void* data = c->data();
 				ArrayTestClass* tc = static_cast< ArrayTestClass* >( data);
 					tc->dval = 0.0;
@@ -1219,13 +1219,13 @@ class ArrayTestClass
 
 					// This sends the double value out to a target
 					// dsumout == 0, but base class shifts it.
-					send1< double >( e, Slot( 1, 0 ), tc->dval );
+					send1< double >( c->target(), Slot( 1, 0 ), tc->dval );
 
 					// This just sends a trigger to the remote object.
 					// procout == 1, but base class shifts it.
 					// Either it will trigger dproc itself, or it
 					// could trigger a getfunc.
-					send0( e, Slot( 2, 0 ) );
+					send0( c->target(), Slot( 2, 0 ) );
 			}
 
 		private:

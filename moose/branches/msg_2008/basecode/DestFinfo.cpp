@@ -9,7 +9,6 @@
 **********************************************************************/
 
 #include "header.h"
-#include "MsgDest.h"
 #include "DestFinfo.h"
 
 DestFinfo::DestFinfo( const string& name, const Ftype *f, 
@@ -18,9 +17,7 @@ DestFinfo::DestFinfo( const string& name, const Ftype *f,
 	rfunc_( rfunc ), 
 	msg_( msg )
 {
-	// Save the function data.
-	// Deprecated
-	getFunctionDataManager()->add( rfunc, this );
+	;
 }
 
 /**
@@ -61,7 +58,7 @@ int DestFinfo::msg() const
  * Directly call the recvFunc on the element with the string argument
  * typecast appropriately.
  */
-bool DestFinfo::strSet( Element* e, const std::string &s ) const
+bool DestFinfo::strSet( Eref e, const std::string &s ) const
 {
 	/**
 	 * \todo Here we will ask the Ftype to do the string conversion

@@ -528,7 +528,7 @@ string Shell::tail( const string& path, const string& separator )
 
 void Shell::rawAddFunc( const Conn* c, string s )
 {
-	Element* post = c->sourceElement();
+	Element* post = c->source().e;
 	assert( post->className() == "PostMaster" );
 	unsigned int mynode;
 	unsigned int remotenode;
@@ -581,7 +581,7 @@ void Shell::rawCopyFunc( const Conn* c, string s )
 
 void Shell::rawTestFunc( const Conn* c, string s )
 {
-	Element* post = c->sourceElement();
+	Element* post = c->source().e;
 	ASSERT( post->className() == "PostMaster", "rawTestFunc" );
 	unsigned int mynode;
 	unsigned int remotenode;
@@ -601,7 +601,7 @@ void Shell::pollFunc( const Conn* c )
 {
 	while( 1 ) {
 		// cout << "." << flush;
-		send1< int >( c->targetElement(), 0, pollSlot, 1 );
+		send1< int >( c->target(), pollSlot, 1 );
 		// Surprisingly, the usleep seems to worsen the responsiveness.
 		// usleep( 10 );
 	}
@@ -634,7 +634,8 @@ void Shell::trigCwe( const Conn* c )
 						
 {
 	Shell* s = static_cast< Shell* >( c->data() );
-	sendTo1< Id >( c->targetElement(), 0, cweSlot, c->targetIndex(), s->cwe_);
+	sendBack1< Id >( c, cweSlot, s->cwe_ );
+	// sendTo1< Id >( c->target(), cweSlot, c->targetIndex(), s->cwe_);
 }
 
 void Shell::pushe( const Conn* c, Id id )
@@ -646,7 +647,8 @@ void Shell::pushe( const Conn* c, Id id )
 	} else {
 		cout << "Error: Attempt to pushe to nonexistent element.\n";
 	}
-	sendTo1< Id >( c->targetElement(), 0, cweSlot, c->targetIndex(), s->cwe_);
+	sendBack1< Id >( c, cweSlot, s->cwe_ );
+	// sendTo1< Id >( c->targetElement(), 0, cweSlot, c->targetIndex(), s->cwe_);
 }
 
 void Shell::pope( const Conn* c )
@@ -663,7 +665,8 @@ void Shell::pope( const Conn* c )
 	} else {
 		cout << "Error: empty element stack.\n";
 	}
-	sendTo1< Id >( c->targetElement(), 0, cweSlot, c->targetIndex(), s->cwe_ );
+	sendBack1< Id >( c, cweSlot, s->cwe_ );
+	// sendTo1< Id >( c->targetElement(), 0, cweSlot, c->targetIndex(), s->cwe_ );
 }
 
 
@@ -682,8 +685,9 @@ void Shell::trigLe( const Conn* c, Id parent )
 	if ( pa ) {
 		vector< Id > ret;
 		if ( get< vector< Id > >( pa, "childList", ret ) ) {
-			Element* e = c->targetElement();
-			sendTo1< vector< Id > >( e, 0, elistSlot, c->targetIndex(), ret );
+			sendBack1< vector< Id > >( c, elistSlot, ret );
+			// Element* e = c->targetElement();
+			// sendTo1< vector< Id > >( e, 0, elistSlot, c->targetIndex(), ret );
 		}
 	}
 }
@@ -692,7 +696,7 @@ void Shell::trigLe( const Conn* c, Id parent )
 void Shell::staticCreate( const Conn* c, string type,
 					string name, Id parent )
 {
-	Element* e = c->targetElement();
+	Element* e = c->target().e;
 	Shell* s = static_cast< Shell* >( c->data() );
 
 	// This is where the IdManager does clever load balancing etc
@@ -703,7 +707,8 @@ void Shell::staticCreate( const Conn* c, string type,
 	if ( child == 0 ) { // local node
 		bool ret = s->create( type, name, parent, id );
 		if ( ret ) { // Tell the parser it was created happily.
-			sendTo1< Id >( e, 0, createSlot, c->targetIndex(), id );
+			sendBack1< Id >( c, createSlot, id );
+		//	sendTo1< Id >( e, 0, createSlot, c->targetIndex(), id );
 		}
 	} else {
 		// Shell-to-shell messaging here with the request to
@@ -720,7 +725,7 @@ void Shell::staticCreate( const Conn* c, string type,
 			id.node() - 1;
 			*/
 		sendTo4< string , string, Id, Id>( 
-			e, 0, rCreateSlot, target,
+			e, rCreateSlot, target,
 			type, name, 
 			parent, oni->id );
 		// Here it needs to fork till the object creation is complete.
@@ -924,7 +929,7 @@ void Shell::getSynCount2(const Conn* c, Id dest){
 	char e[10];
 	sprintf (e, "%d", numSynapses);
 	string ret = e;
-	sendBack1< string >( c->targetElement(), getFieldSlot, c, ret );
+	sendBack1< string >( c, getFieldSlot, ret );
 	/*
 	sendTo1< string >( c->targetElement(),
 				getFieldSlot, c->targetIndex(), 0, ret );
@@ -981,9 +986,10 @@ void Shell::getField( const Conn* c, Id id, string field )
 	// the value when it is good and leave the rest to the parser.
 	if ( f )
 		if ( f->strGet( e, ret ) ){
+			sendBack1< string >( c, getFieldSlot, ret );
 			//GenesisParserWrapper::recvField (conn, ret);
-			sendTo1< string >( c->targetElement(), 0,
-				getFieldSlot, c->targetIndex(), ret );
+			// sendTo1< string >( c->targetElement(), 0,
+				// getFieldSlot, c->targetIndex(), ret );
 		}
 }
 
@@ -1047,7 +1053,7 @@ void testMess( Element* e, unsigned int numNodes )
 
 void printNodeInfo( const Conn* c )
 {
-	Element* post = c->sourceElement();
+	Element* post = c->source().e;
 	assert( post->className() == "PostMaster" );
 	unsigned int mynode;
 	unsigned int remotenode;
@@ -1071,8 +1077,7 @@ void Shell::slaveGetField( const Conn* c, Id id, string field )
 	const Finfo* f = e->findFinfo( field );
 	if ( f )
 		if ( f->strGet( e, ret ) )
-			sendBack1< string >( c->targetElement(),
-				recvGetSlot, c, ret );
+			sendBack1< string >( c, recvGetSlot, ret );
 }
 
 void Shell::recvGetFunc( const Conn* c, string value )
@@ -1084,7 +1089,7 @@ void Shell::recvGetFunc( const Conn* c, string value )
 	// Bigger problem that this is asynchronous now.
 	// Maybe it is OK if only one parser.
 	// sendTo1< string >( c.targetElement(), getFieldSlot, 0, value );
-	send1< string >( c->targetElement(), 0, getFieldSlot, value );
+	send1< string >( c->target(), getFieldSlot, value );
 }
 
 void Shell::slaveCreateFunc ( const Conn* c, 
@@ -1136,7 +1141,7 @@ void Shell::copy( const Conn* c,
 	// Shell* s = static_cast< Shell* >( c.targetElement()->data() );
 	Element* e = src()->copy( parent(), name );
 	if ( e ) { // Send back the id of the new element base
-		sendBack1< Id >( c->targetElement(), createSlot, c, e->id() );
+		sendBack1< Id >( c, createSlot, e->id() );
 	}
 }
 
@@ -1151,7 +1156,7 @@ void Shell::copyIntoArray( const Conn* c,
 		Element* e = src()->copy( parent(), sname );
 		//assign the other parameters to the arrayelement
 		if ( e )  // Send back the id of the new element base
-			sendBack1< Id >( c->targetElement(), createSlot, c, e->id() );
+			sendBack1< Id >( c, createSlot, e->id() );
 	}
 }
 
@@ -1488,7 +1493,7 @@ void Shell::getWildcardList( const Conn* c, string path, bool ordered )
 			*i = ( *j )->id();
 	
 	//GenesisParserWrapper::recvElist(conn, elist)
-	sendBack1< vector< Id > >( c->targetElement(), elistSlot, c, ret );
+	sendBack1< vector< Id > >( c, elistSlot, ret );
 }
 
 /**
@@ -1554,12 +1559,12 @@ void Shell::requestClocks( const Conn* c )
 
 	while ( ct->good() ) {
 		double dt;
-		if ( get< double >( ct->targetElement(), "dt", dt ) )
+		if ( get< double >( ct->target(), "dt", dt ) )
 			times.push_back( dt );
 		ct->increment();
 	}
 	delete ct;
-	sendBack1< vector< double > >( c->targetElement(), clockSlot, c, times );
+	sendBack1< vector< double > >( c, clockSlot, times );
 
 	/*
 	Element* cj = findCj();
@@ -1584,7 +1589,7 @@ void Shell::requestCurrTime( const Conn* c )
 	const Finfo* f = cj->findFinfo( "currentTime" );
 	assert( f != 0 );
 	f->strGet( cj, ret );
-	sendBack1< string >( c->targetElement(), getFieldSlot, c, ret );
+	sendBack1< string >( c, getFieldSlot, ret );
 }
 
 /**
@@ -1620,7 +1625,7 @@ void Shell::listMessages( const Conn* c,
 	}
 
 	sendBack2< vector< Id >, string >(
-		c->targetElement(), listMessageSlot, c, ret, remoteFields );
+		c, listMessageSlot, ret, remoteFields );
 }
 
 void Shell::readCell( const Conn* c, string filename, string cellpath,
@@ -1844,7 +1849,7 @@ void Shell::listFiles( const Conn* c ){
 	string ret = "";
 	for ( size_t i = 0; i < filenames.size(); i++ ) 
 		ret = ret + filenames[i] + "\n";
-	sendBack1< string >( c->targetElement(), getFieldSlot, c, ret );	
+	sendBack1< string >( c, getFieldSlot, ret );	
 }
 
 
@@ -1864,7 +1869,7 @@ void Shell::readFile( const Conn* c, string filename, bool linemode ){
 		string ret = str;
 		if (ret[ ret.size() -1 ] == '\n' && !linemode)
 			ret.erase( ret.end() - 1 );
-		sendBack1< string >( c->targetElement(), getFieldSlot, c, ret );
+		sendBack1< string >( c, getFieldSlot, ret );
 	}
 	else {
 		cout << "Error:: File "<< filename << " not opened!!" << endl;
