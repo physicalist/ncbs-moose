@@ -153,9 +153,9 @@ void Enzyme::setK1( const Conn* c, double value )
 	static_cast< Enzyme* >( c->data() )->k1_ = value;
 }
 
-double Enzyme::getK1( const Element* e )
+double Enzyme::getK1( Eref e )
 {
-	return static_cast< Enzyme* >( e->data() )->k1_;
+	return static_cast< Enzyme* >( e.data() )->k1_;
 }
 
 void Enzyme::setK2( const Conn* c, double value )
@@ -163,9 +163,9 @@ void Enzyme::setK2( const Conn* c, double value )
 	static_cast< Enzyme* >( c->data() )->k2_ = value;
 }
 
-double Enzyme::getK2( const Element* e )
+double Enzyme::getK2( Eref e )
 {
-	return static_cast< Enzyme* >( e->data() )->k2_;
+	return static_cast< Enzyme* >( e.data() )->k2_;
 }
 
 void Enzyme::setK3( const Conn* c, double value )
@@ -173,14 +173,14 @@ void Enzyme::setK3( const Conn* c, double value )
 	static_cast< Enzyme* >( c->data() )->k3_ = value;
 }
 
-double Enzyme::getK3( const Element* e )
+double Enzyme::getK3( Eref e )
 {
-	return static_cast< Enzyme* >( e->data() )->k3_;
+	return static_cast< Enzyme* >( e.data() )->k3_;
 }
 
-double Enzyme::getKm( const Element* e )
+double Enzyme::getKm( Eref e )
 {
-	return static_cast< Enzyme* >( e->data() )->Km_;
+	return static_cast< Enzyme* >( e.data() )->Km_;
 }
 void Enzyme::setKm( const Conn* c, double value )
 {
@@ -195,9 +195,9 @@ void Enzyme::innerSetKm( double value )
 }
 
 
-double Enzyme::getKcat( const Element* e )
+double Enzyme::getKcat( Eref e )
 {
-	return static_cast< Enzyme* >( e->data() )->k3_;
+	return static_cast< Enzyme* >( e.data() )->k3_;
 }
 void Enzyme::setKcat( const Conn* c, double value )
 {
@@ -217,9 +217,9 @@ void Enzyme::innerSetKcat( double value )
  * By default we have an explicit enzyme with enz-sub complex: this is
  * mode FALSE.
  */
-bool Enzyme::getMode( const Element* e )
+bool Enzyme::getMode( Eref e )
 {
-	return static_cast< Enzyme* >( e->data() )->innerGetMode();
+	return static_cast< Enzyme* >( e.data() )->innerGetMode();
 }
 bool Enzyme::innerGetMode() const
 {
@@ -228,15 +228,15 @@ bool Enzyme::innerGetMode() const
 void Enzyme::setMode( const Conn* c, bool value )
 {
 	static_cast< Enzyme* >( c->data() )->innerSetMode(
-		       c->targetElement(), value );
+		       c->target(), value );
 }
-void Enzyme::innerSetMode( Element* e, bool mode )
+void Enzyme::innerSetMode( Eref e, bool mode )
 {
 	Km_ = ( k2_ + k3_ ) / k1_;
 	if ( mode == innerGetMode() )
 		return;
 	if ( mode ) { 
-		Id id = Neutral::getChildByName( e, e->name() + "_cplx" );
+		Id id = Neutral::getChildByName( e.e, e.e->name() + "_cplx" );
 		if ( !id.bad() ) {
 			Element* cplx = id();
 			if ( cplx )
@@ -254,24 +254,24 @@ void Enzyme::innerSetMode( Element* e, bool mode )
 // Shared message function definitions
 ///////////////////////////////////////////////////
 
-void Enzyme::innerProcessFunc( Element* e )
+void Enzyme::innerProcessFunc( Eref e )
 {
 	(this->*procFunc_)( e );
 }
 
 void Enzyme::processFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c->targetElement();
-	static_cast< Enzyme* >( e->data() )->innerProcessFunc( e );
+	Eref e = c->target();
+	static_cast< Enzyme* >( c->data() )->innerProcessFunc( e );
 }
-void Enzyme::implicitProcFunc( Element* e )
+void Enzyme::implicitProcFunc( Eref e )
 {
 	B_ = s_ * e_ * k3_ * sk1_ / ( s_ + Km_ );
 	s_ = 1.0;
 	send2< double, double >( e, subSlot, 0.0, B_ );
 	send2< double, double >( e, prdSlot, B_, 0.0 );
 }
-void Enzyme::explicitProcFunc( Element* e )
+void Enzyme::explicitProcFunc( Eref e )
 {
 	eA_ = sA_ + pA_;
 	B_ = s_ * e_;
@@ -347,8 +347,9 @@ void Enzyme::scaleKcatFunc( const Conn* c, double k )
 // Other func definitions
 ///////////////////////////////////////////////////////
 
-void Enzyme::makeComplex( Element* e )
+void Enzyme::makeComplex( Eref er )
 {
+	Element* e = er.e;
 	static const Finfo* cplxSrcFinfo = enzymeCinfo->findFinfo( "cplx" );
 	string cplxName = e->name() + "_cplx";
 	Id id = Neutral::getChildByName( e, cplxName );
@@ -423,10 +424,10 @@ void testEnzyme()
 	bool ret;
 
 	ProcInfoBase p;
-	Conn csub( sub, 0 );
-	Conn cprd( prd, 0 );
-	Conn cenzMol( enzMol, 0 );
-	Conn cenz( enz, 0 );
+	SetConn csub( sub, 0 );
+	SetConn cprd( prd, 0 );
+	SetConn cenzMol( enzMol, 0 );
+	SetConn cenz( enz, 0 );
 	p.dt_ = 0.001;
 	set< double >( sub, "concInit", 1.0 );
 	set< int >( sub, "mode", 0 );
@@ -442,7 +443,7 @@ void testEnzyme()
 	Id cplxId = Neutral::getChildByName( enz, "enz_cplx" );
 	ASSERT( !cplxId.bad(), "making Enzyme cplx" );
 	Element* cplx = cplxId();
-	Conn ccplx( cplx, 0 );
+	SetConn ccplx( cplx, 0 );
 
 	ret = sub->findFinfo( "reac" )->add( sub, enz, enz->findFinfo( "sub" ));
 	ASSERT( ret, "adding substrate msg" );

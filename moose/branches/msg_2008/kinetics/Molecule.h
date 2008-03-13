@@ -20,23 +20,23 @@ class Molecule
 		///////////////////////////////////////////////////
 		
 		static void setNinit( const Conn* c, double value );
-		static double getNinit( const Element* e );
+		static double getNinit( Eref e );
 		static void setVolumeScale( const Conn* c, double value );
-		static double getVolumeScale( const Element* e );
+		static double getVolumeScale( Eref e );
 		static void setN( const Conn* c, double value );
-		static double getN( const Element* e );
+		static double getN( Eref e );
 		static void setMode( const Conn* c, int value );
-		static int getMode( const Element* e );
-		int localGetMode( const Element* e );
+		static int getMode( Eref e );
+		int localGetMode( Eref e );
 		double localGetConc() const;
-		static double getConc( const Element* e );
+		static double getConc( Eref e );
 		void localSetConc( double value );
 		static void setConc( const Conn* c, double value );
 		double localGetConcInit() const;
-		static double getConcInit( const Element* e );
+		static double getConcInit( Eref e );
 		void localSetConcInit( double value );
 		static void setConcInit( const Conn* c, double value );
-		static double getD( const Element* e );
+		static double getD( Eref e );
 		static void setD( const Conn* c, double value );
 		
 		///////////////////////////////////////////////////
@@ -48,12 +48,12 @@ class Molecule
 		// void sumProcessFuncLocal( );
 		// static void sumProcessFunc( const Conn* c, ProcInfo info );
 		static void reinitFunc( const Conn* c, ProcInfo info );
-		void reinitFuncLocal( Element* e );
+		void reinitFuncLocal( Eref e );
 		static void processFunc( const Conn* c, ProcInfo info );
-		void processFuncLocal( Element* e, ProcInfo info );
+		void processFuncLocal( Eref e, ProcInfo info );
 		static void extentFunc( const Conn* c, 
 			double size, unsigned int dim );
-		void extentFuncLocal( Element* e, double size, unsigned int dim);
+		void extentFuncLocal( Eref e, double size, unsigned int dim);
 
 	private:
 		/// Initial number of molecules: t=0 boundary condition.

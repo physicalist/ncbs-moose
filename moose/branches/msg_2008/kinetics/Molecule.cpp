@@ -183,9 +183,9 @@ void Molecule::setNinit( const Conn* c, double value )
 		static_cast< Molecule* >( c->data() )->nInit_ = value;
 }
 
-double Molecule::getNinit( const Element* e )
+double Molecule::getNinit( Eref e )
 {
-	return static_cast< Molecule* >( e->data() )->nInit_;
+	return static_cast< Molecule* >( e.data() )->nInit_;
 }
 
 void Molecule::setVolumeScale( const Conn* c, double value )
@@ -194,9 +194,9 @@ void Molecule::setVolumeScale( const Conn* c, double value )
 		static_cast< Molecule* >( c->data() )->volumeScale_ = value;
 }
 
-double Molecule::getVolumeScale( const Element* e )
+double Molecule::getVolumeScale( Eref e )
 {
-	return static_cast< Molecule* >( e->data() )->volumeScale_;
+	return static_cast< Molecule* >( e.data() )->volumeScale_;
 }
 
 void Molecule::setN( const Conn* c, double value )
@@ -205,9 +205,9 @@ void Molecule::setN( const Conn* c, double value )
 		static_cast< Molecule* >( c->data() )->n_ = value;
 }
 
-double Molecule::getN( const Element* e )
+double Molecule::getN( Eref e )
 {
-	return static_cast< Molecule* >( e->data() )->n_;
+	return static_cast< Molecule* >( e.data() )->n_;
 }
 
 void Molecule::setMode( const Conn* c, int value )
@@ -215,18 +215,20 @@ void Molecule::setMode( const Conn* c, int value )
 	static_cast< Molecule* >( c->data() )->mode_ = value;
 }
 
-int Molecule::getMode( const Element* e )
+int Molecule::getMode( Eref e )
 {
-	return static_cast< Molecule* >( e->data() )->localGetMode( e );
+	return static_cast< Molecule* >( e.data() )->localGetMode( e );
 }
 
-int Molecule::localGetMode( const Element* e )
+int Molecule::localGetMode( Eref e )
 {
 	static const Finfo* sumTotFinfo = 
 			Cinfo::find( "Molecule" )->findFinfo( "sumTotal" );
-	if ( mode_ == 0 && sumTotFinfo->numIncoming( e ) > 0 )
+
+	unsigned int n = e.e->numTargets( sumTotFinfo->msg() );
+	if ( mode_ == 0 && e.e->numTargets( n > 0 ) )
 		mode_ = 1;
-	else if ( mode_ == 1 && sumTotFinfo->numIncoming( e ) == 0 )
+	else if ( mode_ == 1 && n == 0 )
 		mode_ = 0;
 
 	return mode_;
@@ -239,9 +241,9 @@ double Molecule::localGetConc() const
 			else
 				return n_;
 }
-double Molecule::getConc( const Element* e )
+double Molecule::getConc( Eref e )
 {
-	return static_cast< Molecule* >( e->data() )->localGetConc();
+	return static_cast< Molecule* >( e.data() )->localGetConc();
 }
 
 void Molecule::localSetConc( double value ) {
@@ -263,9 +265,9 @@ double Molecule::localGetConcInit() const
 			else
 				return nInit_;
 }
-double Molecule::getConcInit( const Element* e )
+double Molecule::getConcInit( Eref e )
 {
-	return static_cast< Molecule* >( e->data() )->localGetConcInit();
+	return static_cast< Molecule* >( e.data() )->localGetConcInit();
 }
 
 void Molecule::localSetConcInit( double value ) {
@@ -285,9 +287,9 @@ void Molecule::setD( const Conn* c, double value )
 		static_cast< Molecule* >( c->data() )->D_ = value;
 }
 
-double Molecule::getD( const Element* e )
+double Molecule::getD( Eref e )
 {
-	return static_cast< Molecule* >( e->data() )->D_;
+	return static_cast< Molecule* >( e.data() )->D_;
 }
 
 ///////////////////////////////////////////////////
@@ -320,19 +322,19 @@ void Molecule::sumProcessFunc( const Conn* c, ProcInfo info )
 
 void Molecule::reinitFunc( const Conn* c, ProcInfo info )
 {
-	static_cast< Molecule* >( c->data() )->reinitFuncLocal( 
-					c->targetElement() );
+	static_cast< Molecule* >( c->data() )->reinitFuncLocal( c->target() );
 }
-void Molecule::reinitFuncLocal( Element* e )
+void Molecule::reinitFuncLocal( Eref e )
 {
 	static const Finfo* sumTotFinfo = 
 			Cinfo::find( "Molecule" )->findFinfo( "sumTotal" );
+	unsigned int numTargets = e.e->numTargets( sumTotFinfo->msg() );
 
 	A_ = B_ = total_ = 0.0;
 	n_ = nInit_;
-	if ( mode_ == 0 && sumTotFinfo->numIncoming( e ) > 0 )
+	if ( mode_ == 0 && numTargets > 0 )
 		mode_ = 1;
-	else if ( mode_ == 1 && sumTotFinfo->numIncoming( e ) == 0 )
+	else if ( mode_ == 1 && numTargets == 0 )
 		mode_ = 0;
 	send1< double >( e, reacSlot, n_ );
 	send1< double >( e, nSlot, n_ );
@@ -343,10 +345,10 @@ void Molecule::reinitFuncLocal( Element* e )
 
 void Molecule::processFunc( const Conn* c, ProcInfo info )
 {
-	Element* e = c->targetElement();
+	Eref e = c->target();
 	static_cast< Molecule* >( c->data() )->processFuncLocal( e, info );
 }
-void Molecule::processFuncLocal( Element* e, ProcInfo info )
+void Molecule::processFuncLocal( Eref e, ProcInfo info )
 {
 			if ( mode_ == 0 ) {
 				if ( n_ > EPSILON && B_ > EPSILON ) {
@@ -371,11 +373,10 @@ void Molecule::processFuncLocal( Element* e, ProcInfo info )
 
 void Molecule::extentFunc( const Conn* c, double size, unsigned int dim )
 {
-	Element* e = c->targetElement();
-	static_cast< Molecule* >( c->data() )->extentFuncLocal( e, size, dim );
+	static_cast< Molecule* >( c->data() )->extentFuncLocal( c->target(), size, dim );
 }
 
-void Molecule::extentFuncLocal( Element* e, double size, unsigned int dim)
+void Molecule::extentFuncLocal(  Eref e, double size, unsigned int dim)
 {
 	// Assume that the units of conc are uM.
 	if ( size > 0.0 ) {
@@ -413,9 +414,9 @@ void testMolecule()
 	bool ret;
 
 	ProcInfoBase p;
-	Conn cm0( m0, 0 );
-	Conn cm1( m1, 0 );
-	Conn cr0( r0, 0 );
+	SetConn cm0( m0, 0 );
+	SetConn cm1( m1, 0 );
+	SetConn cr0( r0, 0 );
 	p.dt_ = 0.001;
 	set< double >( m0, "concInit", 1.0 );
 	set< int >( m0, "mode", 0 );

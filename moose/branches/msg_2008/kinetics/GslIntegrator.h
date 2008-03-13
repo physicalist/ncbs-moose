@@ -18,15 +18,15 @@ class GslIntegrator
 ///////////////////////////////////////////////////
 // Field function definitions
 ///////////////////////////////////////////////////
-		static bool getIsInitialized( const Element* e );
-		static string getMethod( const Element* e );
+		static bool getIsInitialized( Eref e );
+		static string getMethod( Eref e );
 		static void setMethod( const Conn* c, string method );
 		void innerSetMethod( const string& method );
-		static double getRelativeAccuracy( const Element* e );
+		static double getRelativeAccuracy( Eref e );
 		static void setRelativeAccuracy( const Conn* c, double value );
-		static double getAbsoluteAccuracy( const Element* e );
+		static double getAbsoluteAccuracy( Eref e );
 		static void setAbsoluteAccuracy( const Conn* c, double value );
-		static double getInternalDt( const Element* e );
+		static double getInternalDt( Eref e );
 		static void setInternalDt( const Conn* c, double value );
 
 ///////////////////////////////////////////////////
@@ -36,7 +36,7 @@ class GslIntegrator
 		static void allocateFunc( const Conn* c, vector< double >* y );
 		void allocateFuncLocal( vector< double >*  y );
 		static void processFunc( const Conn* c, ProcInfo info );
-		void innerProcessFunc( Element* e, ProcInfo info );
+		void innerProcessFunc( Eref e, ProcInfo info );
 		static void reinitFunc( const Conn* c, ProcInfo info  );
 
 		static void assignStoichFunc( const Conn* c, void* stoich );

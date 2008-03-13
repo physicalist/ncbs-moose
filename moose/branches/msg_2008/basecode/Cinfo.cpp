@@ -263,6 +263,22 @@ const Finfo* Cinfo::findFinfo(
 	return 0;
 }
 
+/**
+* Returns the Finfo identified by the specified msg number.
+* Source Finfos should have a positive index
+* pure Dest finfos have a negative index.
+* Not all Finfos will have a msgNum, but any valid msgNum 
+* should have a Finfo.
+*/
+const Finfo* Cinfo::findFinfo( int msgNum ) const
+{
+	if ( msgNum >= 0 && msgNum < static_cast< int >( numSrc_ ) )
+		return finfos_[msgNum];
+	if ( msgNum < 0 && ( -msgNum < static_cast< int >( finfos_.size() ) ) )
+		return finfos_[ -msgNum ];
+	return 0;
+}
+
 const Finfo* Cinfo::findFinfo( const string& name ) const
 {
 	vector< Finfo* >::const_iterator i;
@@ -270,12 +286,6 @@ const Finfo* Cinfo::findFinfo( const string& name ) const
 		if ( (*i)->name() == name )
 				return (*i);
 	}
-
-	/*
-	// Fallthrough. No matches were found, so ask the base class.
-	if (base_ != 0 && base_ != this)
-		return base_->findFinfo( name );
-		*/
 
 	return 0;
 }

@@ -33,9 +33,9 @@ class SymCompartment: public Compartment
 	private:
 			// These functions override the virtual equivalents from the
 			// Compartment.
-			void innerReinitFunc( Element* e, ProcInfo p );
+			void innerReinitFunc( Eref e, ProcInfo p );
 			void innerRaxialFunc( double Ra, double Vm );
-			void innerInitFunc( Element* e, ProcInfo p );
+			void innerInitFunc( Eref e, ProcInfo p );
 
 			// These functions are new for the Symcompartment.
 			void innerRaxial2Func( double Ra, double Vm );

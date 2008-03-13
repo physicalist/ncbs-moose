@@ -94,6 +94,12 @@ class Msg
 		bool drop( Element* e, unsigned int doomed );
 
 		/**
+		 * This variant of drop initiates the removal of a specific 
+		 * local ConnTainer
+		 */
+		bool drop( Element* e, const ConnTainer* doomed );
+
+		/**
 		 * Drops all messages emanating from this Msg. Often used in
 		 * rescheduling.
 		 */

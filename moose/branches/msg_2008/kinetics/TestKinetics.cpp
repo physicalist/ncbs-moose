@@ -128,7 +128,7 @@ void testStoich()
 	///////////////////////////////////////////////////////////
 	unsigned int molNum;
 	int entry;
-	map< const Element*, unsigned int >::iterator k;
+	map< Eref, unsigned int >::iterator k;
 	for ( unsigned int i = 0; i < NUM_COMPT; i++ ) {
 		k = s->molMap_.find( m[i] );
 		ASSERT( k != s->molMap_.end(), "look up molecule" );
@@ -287,7 +287,7 @@ void testStoich()
 	lookupSet< double, unsigned int >( table, "table", 33.0, 0 );
 	lookupSet< double, unsigned int >( table, "table", 33.0, 1 );
 	set< int >( table, "stepmode", 0 );
-	Conn c( table, 0 );
+	SetConn c( table, 0 );
 	ProcInfoBase p;
 	p.dt_ = 0.001;
 	p.currTime_ = 0.0;
@@ -318,7 +318,7 @@ void testStoich()
 	set< double >( table, "xmin", 0.0 );
 	set< double >( table, "xmax", 10.0 );
 	set< double >( table, "output", 0.0 );
-	Conn c1( table, 0 );
+	SetConn c1( table, 0 );
 	p.dt_ = 0.001;
 	p.currTime_ = 0.0;
 
@@ -384,7 +384,7 @@ void testStoich()
 			m[8]->findFinfo( "n" ) );
 	ASSERT( ret, "Making test message" );
 
-	Conn c2( table2, 0 );
+	SetConn c2( table2, 0 );
 
 	k = s->molMap_.find( m[8] );
 	molNum = k->second;
@@ -491,7 +491,7 @@ void testKintegrator()
 		Id::scratchId() );
 	Element* integ = Neutral::create( "Kintegrator", "integ", Element::root(),
 		Id::scratchId() );
-	Conn ci( integ, 0 );
+	SetConn ci( integ, 0 );
 
 	ret = stoich->findFinfo( "hub" )->
 		add( stoich, hub, hub->findFinfo( "hub" ) );
@@ -515,7 +515,7 @@ void testKintegrator()
 	set< double >( table, "xmin", 0.0 );
 	set< double >( table, "xmax", 10.0 );
 	set< double >( table, "output", 0.0 );
-	Conn ct( table, 0 );
+	SetConn ct( table, 0 );
 	ProcInfoBase p;
 	p.dt_ = 0.05;
 	p.currTime_ = 0.0;
@@ -652,7 +652,7 @@ void testGslIntegrator()
 	set< double >( table, "xmin", 0.0 );
 	set< double >( table, "xmax", 10.0 );
 	set< double >( table, "output", 0.0 );
-	Conn ct( table, 0 );
+	SetConn ct( table, 0 );
 
 	cout << "\n";
 	struct timeval tv1;
@@ -691,7 +691,7 @@ void doGslRun( const string& method, Element* integ, Element* stoich,
 {
 	double EPSILON = accuracy * 50.0;
 	const double RUNTIME = 500.0;
-	Conn ci( integ, 0 );
+	SetConn ci( integ, 0 );
 	ProcInfoBase p;
 	p.dt_ = 100.0; // Oddly, it isn't accurate given 500 sec to work with.
 	p.currTime_ = 0.0;

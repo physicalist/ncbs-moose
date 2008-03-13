@@ -140,7 +140,6 @@ bool Msg::innerDrop( const ConnTainer* doomed )
 	vector< ConnTainer* >::iterator pos = 
 		find( c_.begin(), c_.end(), doomed );
 	if ( pos != c_.end() ) {
-		///\todo Here we have to fix the 'next' message too.
 		c_.erase( pos );
 		return 1;
 	} else if ( next_ != 0 ) {
@@ -214,6 +213,42 @@ bool Msg::drop( Element* e, unsigned int doomed )
 	}
 	// No, the conn doesn't exist at all.
 	cout << "Msg::drop( unsigned int doomed ): doomed outside range\n"; 
+	return 0;
+}
+
+/**
+ * This variant of drop initiates the removal of a specific ConnTainer,
+ * identified by itself.
+ * Clearly, this cannot be called from a pure dest.
+ */
+bool Msg::drop( Element* e, const ConnTainer* doomed )
+{
+	vector< ConnTainer * >::iterator pos;
+	pos = find( c_.begin(), c_.end(), doomed );
+	if ( pos != c_.end() ) {
+		int remoteMsgNum;
+		Element* remoteElm;
+		if ( fv_->isDest() ) {
+			remoteMsgNum = doomed->msg2();
+			remoteElm = doomed->e2();
+		} else {
+			remoteMsgNum = doomed->msg1();
+			remoteElm = doomed->e1();
+		}
+		if ( innerDrop( remoteElm, remoteMsgNum, doomed ) ) {
+			c_.erase( pos );
+			delete doomed;
+			return 1;
+		} else {
+			return 0;
+		}
+	} else { // Presumably it is on a next_ msg.
+		assert ( next_ < e->numMsg() );
+		if ( next_ )
+			return e->varMsg( next_ )->drop( e, doomed );
+	}
+	// No, the conn doesn't exist at all.
+	cout << "Msg::drop( ConnTainer* doomed ): doomed not on Msg.\n"; 
 	return 0;
 }
 

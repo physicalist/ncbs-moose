@@ -28,25 +28,25 @@ class Interpol
 		// Here are the interface functions for the MOOSE class
 		////////////////////////////////////////////////////////////
 		static void setXmin( const Conn* c, double value );
-		static double getXmin( const Element* e );
+		static double getXmin( Eref e );
 		static void setXmax( const Conn* c, double value );
-		static double getXmax( const Element* e );
+		static double getXmax( Eref e );
 		static void setXdivs( const Conn* c, int value );
-		static int getXdivs( const Element* e );
+		static int getXdivs( Eref e );
 		static void setDx( const Conn* c, double value );
-		static double getDx( const Element* e );
+		static double getDx( Eref e );
 		static void setSy( const Conn* c, double value );
-		static double getSy( const Element* e );
+		static double getSy( Eref e );
 		static void setMode( const Conn* c, int value );
-		static int getMode( const Element* e );
+		static int getMode( Eref e );
 
 		static void setTable(
 					const Conn* c, double val, const unsigned int& i );
 		static double getTable(
-					const Element* e,const unsigned int& i );
+					Eref e,const unsigned int& i );
 		static void setTableVector( const Conn* c, vector< double > value );
 
-		static vector< double > getTableVector( const Element* e );
+		static vector< double > getTableVector( Eref e );
 
 		////////////////////////////////////////////////////////////
 		// Here are the Interpol Destination functions

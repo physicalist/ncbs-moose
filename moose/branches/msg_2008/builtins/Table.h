@@ -21,16 +21,16 @@ class Table: public Interpol
 		// Here are the interface functions for the MOOSE class
 		////////////////////////////////////////////////////////////
 		static void setInput( const Conn* c, double value );
-		static double getInput( const Element* e );
+		static double getInput( Eref e );
 		static void setOutput( const Conn* c, double value );
-		static double getOutput( const Element* e );
+		static double getOutput( Eref e );
 		static void setMode( const Conn* c, int value );
-		static int getMode( const Element* e );
+		static int getMode( Eref e );
 		static void setStepsize( const Conn* c, double value );
-		static double getStepsize( const Element* e );
+		static double getStepsize( Eref e );
 		static void setStepMode( const Conn* c, int value );
-		static int getStepMode( const Element* e );
-		static double getLookup( const Element* e, const double& x );
+		static int getStepMode( Eref e );
+		static double getLookup( Eref e, const double& x );
 
 		////////////////////////////////////////////////////////////
 		// Here are the Table Destination functions
@@ -45,9 +45,9 @@ class Table: public Interpol
 		////////////////////////////////////////////////////////////
 		// Here are the internal functions
 		////////////////////////////////////////////////////////////
-		void innerProcess( Element* e, ProcInfo p );
+		void innerProcess( Eref e, ProcInfo p );
 		void innerReinit( const Conn* c, ProcInfo p );
-		unsigned long expandTable( Element* e, double size );
+		unsigned long expandTable( Eref e, double size );
 		void innerTabop( char op, double min, double max );
 		void doOp( char op, unsigned int istart, unsigned int istop );
 

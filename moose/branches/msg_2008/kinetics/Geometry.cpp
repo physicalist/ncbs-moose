@@ -104,12 +104,12 @@ void Geometry::setEpsilon( const Conn* c, double value )
 		static_cast< Geometry* >( c->data() )->epsilon_ = value;
 	
 	// Send the update over to the solver
-	send1< double >( c->targetElement(), epsilonSlot, value );
+	send1< double >( c->target(), epsilonSlot, value );
 }
 
-double Geometry::getEpsilon( const Element* e )
+double Geometry::getEpsilon( Eref e )
 {
-	return static_cast< Geometry* >( e->data() )->epsilon_;
+	return static_cast< Geometry* >( e.data() )->epsilon_;
 }
 
 void Geometry::setNeighDist( const Conn* c, double value )
@@ -118,11 +118,11 @@ void Geometry::setNeighDist( const Conn* c, double value )
 		static_cast< Geometry* >( c->data() )->neighDist_ = value;
 	
 	// Send the update over to the solver
-	send1< double >( c->targetElement(), neighDistSlot, value );
+	send1< double >( c->target(), neighDistSlot, value );
 }
 
-double Geometry::getNeighDist( const Element* e )
+double Geometry::getNeighDist( Eref e )
 {
-	return static_cast< Geometry* >( e->data() )->neighDist_;
+	return static_cast< Geometry* >( e.data() )->neighDist_;
 }
 

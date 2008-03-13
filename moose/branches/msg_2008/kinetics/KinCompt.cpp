@@ -155,9 +155,9 @@ void KinCompt::innerSetVolume( double value )
 		size_ = value;
 }
 
-double KinCompt::getVolume( const Element* e )
+double KinCompt::getVolume( Eref e )
 {
-	return static_cast< KinCompt* >( e->data() )->volume_;
+	return static_cast< KinCompt* >( e.data() )->volume_;
 }
 
 void KinCompt::setArea( const Conn* c, double value )
@@ -174,9 +174,9 @@ void KinCompt::innerSetArea( double value )
 		size_ = value;
 }
 
-double KinCompt::getArea( const Element* e )
+double KinCompt::getArea( Eref e )
 {
-	return static_cast< KinCompt* >( e->data() )->volume_;
+	return static_cast< KinCompt* >( e.data() )->volume_;
 }
 
 
@@ -194,9 +194,9 @@ void KinCompt::innerSetPerimeter( double value )
 		size_ = value;
 }
 
-double KinCompt::getPerimeter( const Element* e )
+double KinCompt::getPerimeter( Eref e )
 {
-	return static_cast< KinCompt* >( e->data() )->perimeter_;
+	return static_cast< KinCompt* >( e.data() )->perimeter_;
 }
 
 
@@ -218,9 +218,9 @@ void KinCompt::innerSetSize( double value )
 		perimeter_ = value;
 }
 
-double KinCompt::getSize( const Element* e )
+double KinCompt::getSize( Eref e )
 {
-	return static_cast< KinCompt* >( e->data() )->size_;
+	return static_cast< KinCompt* >( e.data() )->size_;
 }
 
 void KinCompt::setNumDimensions( const Conn* c, unsigned int value )
@@ -230,9 +230,9 @@ void KinCompt::setNumDimensions( const Conn* c, unsigned int value )
 	static_cast< KinCompt* >( c->data() )->numDimensions_ = value;
 }
 
-unsigned int KinCompt::getNumDimensions( const Element* e )
+unsigned int KinCompt::getNumDimensions( Eref e )
 {
-	return static_cast< KinCompt* >( e->data() )->numDimensions_;
+	return static_cast< KinCompt* >( e.data() )->numDimensions_;
 }
 
 
@@ -243,10 +243,10 @@ unsigned int KinCompt::getNumDimensions( const Element* e )
 void KinCompt::requestExtent( const Conn* c )
 {
 	static_cast< KinCompt* >( c->data() )->
-		innerRequestExtent( c->targetElement() );
+		innerRequestExtent( c->target() );
 }
 
-void KinCompt::innerRequestExtent( const Element* e ) const 
+void KinCompt::innerRequestExtent( Eref e ) const 
 {
 	send2< double, unsigned int >( e, extentSlot, size_, numDimensions_ );
 }

@@ -213,28 +213,28 @@ bool ParTick::pendingData() const
  * 		to the destination objects.
  * 		The poll process relies on return info from each PostMaster.
  */
-void ParTick::innerProcessFunc( Element* e, ProcInfo info )
+void ParTick::innerProcessFunc( Eref e, ProcInfo info )
 {
 	// Phase 0: post iRecv
-	send1< int >( e, 0, iRecvSlot, ordinal() );
+	send1< int >( e, iRecvSlot, ordinal() );
 	// Phase 1: call Process for objects connected off-node
-	send1< ProcInfo >( e, 0, outgoingProcessSlot, info );
+	send1< ProcInfo >( e, outgoingProcessSlot, info );
 	// Phase 2: send data off node
-	send1< int >( e, 0, sendSlot, ordinal() );
+	send1< int >( e, sendSlot, ordinal() );
 	// Phase 3: Call regular process for locally connected objects
-	send1< ProcInfo >( e, 0, processSlot, info );
+	send1< ProcInfo >( e, processSlot, info );
 	// Phase 4: Poll for arrival of all data
 	initPending( e );
 	while( pendingData() ) {
 		// cout << "." << flush;
-		send1< int >( e, 0, pollSlot, ordinal() );
+		send1< int >( e, pollSlot, ordinal() );
 	}
 }
 
-void ParTick::initPending( Element* e )
+void ParTick::initPending( Eref e )
 {
-	const Msg* m = e->msg( pollSlot.msg() );
-	pendingCount_ = m->numTargets( e ); // Often this is faster than listing
+	const Msg* m = e.e->msg( pollSlot.msg() );
+	pendingCount_ = m->numTargets( e.e );
 	// cout << "pendingCount = " << pendingCount_ << endl;
 	pendingNodes_.resize( pendingCount_ + 1 );
 	pendingNodes_.assign( pendingCount_ + 1, 1);
@@ -244,7 +244,7 @@ void ParTick::initPending( Element* e )
  * Similar virtual function to deal with managing reinit info going out
  * to other nodes.
  */ 
-void ParTick::innerReinitFunc( Element* e, ProcInfo info )
+void ParTick::innerReinitFunc( Eref e, ProcInfo info )
 {
 	// Here we need to scan all managed objects and decide if they
 	// need to be on the outgoing process list or if they are local.
@@ -253,17 +253,17 @@ void ParTick::innerReinitFunc( Element* e, ProcInfo info )
 	//
 
 	// Phase 0: post iRecv
-	send1< int >( e, 0, iRecvSlot, ordinal() );
+	send1< int >( e, iRecvSlot, ordinal() );
 	// Phase 1: call Reinit for objects connected off-node
-	send1< ProcInfo >( e, 0, outgoingReinitSlot, info );
+	send1< ProcInfo >( e, outgoingReinitSlot, info );
 	// Phase 2: send data off node
-	send1< int >( e, 0, sendSlot, ordinal() );
+	send1< int >( e, sendSlot, ordinal() );
 	// Phase 3: Call regular reinit for locally connected objects
-	send1< ProcInfo >( e, 0, reinitSlot, info );
+	send1< ProcInfo >( e, reinitSlot, info );
 	// Phase 4: Poll for arrival of all data
 	initPending( e );
 	while( pendingData() )
-		send1< int >( e, 0, pollSlot, ordinal() );
+		send1< int >( e, pollSlot, ordinal() );
 }
 
 

@@ -21,7 +21,7 @@ class MathFunc{
     void executeFunction();
     double getResult();
     static void processFunc( const Conn* c, ProcInfo info );
-    void process (Element *e, ProcInfo info);
+    void process ( Eref e, ProcInfo info);
     static void reinitFunc( const Conn* c, ProcInfo info );
     static void argFunc(const Conn* c, double d);
     static void arg1Func(const Conn* c, double d);
@@ -29,14 +29,14 @@ class MathFunc{
     static void arg3Func(const Conn* c, double d);
     static void arg4Func(const Conn* c, double d);
     static void setMathMl( const Conn* c, string value );
-    static string getMathML( const Element* e );
+    static string getMathML( Eref e );
     static void setFunction(const Conn* c, string fn);
-    static string getFunction(const Element *e);
-    static double getR(const Element*);
+    static string getFunction( Eref e );
+    static double getR( Eref e );
     static void setR(const Conn* c, double ss);
     void innerSetMMLString(string value);
     void innerSetFunctionString(string value);
-    void reinitFuncLocal(Element *e);
+    void reinitFuncLocal( Eref e );
     void infixToPrefix();
   private:
     /*functions*/

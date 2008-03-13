@@ -25,31 +25,31 @@ class Compartment
 
 			// Value Field access function definitions.
 			static void setVm( const Conn* c, double Vm );
-			static double getVm( const Element* );
+			static double getVm( Eref );
 			static void setEm( const Conn* c, double Em );
-			static double getEm( const Element* );
+			static double getEm( Eref );
 			static void setCm( const Conn* c, double Cm );
-			static double getCm( const Element* );
+			static double getCm( Eref );
 			static void setRm( const Conn* c, double Rm );
-			static double getRm( const Element* );
+			static double getRm( Eref );
 			static void setRa( const Conn* c, double Ra );
-			static double getRa( const Element* );
+			static double getRa( Eref );
 			static void setIm( const Conn* c, double Im );
-			static double getIm( const Element* );
+			static double getIm( Eref );
 			static void setInject( const Conn* c, double Inject );
-			static double getInject( const Element* );
+			static double getInject( Eref );
 			static void setInitVm( const Conn* c, double initVm );
-			static double getInitVm( const Element* );
+			static double getInitVm( Eref );
 			static void setDiameter( const Conn* c, double diameter );
-			static double getDiameter( const Element* );
+			static double getDiameter( Eref );
 			static void setLength( const Conn* c, double length );
-			static double getLength( const Element* );
+			static double getLength( Eref );
 			static void setX( const Conn* c, double value );
-			static double getX( const Element* );
+			static double getX( Eref );
 			static void setY( const Conn* c, double value );
-			static double getY( const Element* );
+			static double getY( Eref );
 			static void setZ( const Conn* c, double value );
-			static double getZ( const Element* );
+			static double getZ( Eref );
 
 			// Dest function definitions.
 			static void processFunc( const Conn* c, ProcInfo p );
@@ -75,14 +75,14 @@ class Compartment
 			/**
 			 * The innerReinitFunc reinitializes all fields.
 			 */
-			virtual void innerReinitFunc( Element* e, ProcInfo p );
+			virtual void innerReinitFunc( Eref e, ProcInfo p );
 
 	private:
 			/**
 			 * The innerProcessFunc does the object updating and sends out
 			 * messages to channels, nernsts, and so on.
 			 */
-			virtual void innerProcessFunc( Element* e, ProcInfo p );
+			virtual void innerProcessFunc( Eref e, ProcInfo p );
 
 			/**
 			 * The innerInitFunc sends the axial and raxial messages
@@ -90,13 +90,13 @@ class Compartment
 			 * with the process so that all compartments are equivalent and
 			 * there is no calling order dependence in the results.
 			 */
-			virtual void innerInitFunc( Element* e, ProcInfo p );
+			virtual void innerInitFunc( Eref e, ProcInfo p );
 
 			/**
 			 * Unused function to do another reinit step out of phase
 			 * with the main one.
 			 */
-			virtual void innerInitReinitFunc( Element* e, ProcInfo p );
+			virtual void innerInitReinitFunc( Eref e, ProcInfo p );
 
 			/**
 			 * innerRaxialFunc handles incoming raxial message data.

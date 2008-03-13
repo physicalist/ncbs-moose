@@ -154,6 +154,26 @@ Conn* SimpleElement::targets( const string& finfoName ) const
 	return targets( f->msg() );
 }
 
+unsigned int SimpleElement::numTargets( int msgNum ) const
+{
+	if ( msgNum >= 0 && 
+		static_cast< unsigned int >( msgNum ) < cinfo()->numSrc() )
+		return msg_[ msgNum ].numTargets( this );
+	else if ( msgNum < 0 ) {
+		const vector< ConnTainer* >* d = dest( msgNum );
+		if ( d )
+			return d->size();
+	}
+	return 0;
+}
+
+unsigned int SimpleElement::numTargets( const string& finfoName ) const
+{
+	const Finfo* f = cinfo()->findFinfo( finfoName );
+	if ( !f )
+		return 0;
+	return numTargets( f->msg() );
+}
 
 //////////////////////////////////////////////////////////////////
 // Msg functions
@@ -323,6 +343,12 @@ const Finfo* SimpleElement::findFinfo( const ConnTainer* c ) const
 					return ret;
 	}
 	return 0;
+}
+
+const Finfo* SimpleElement::findFinfo( int msgNum ) const
+{
+	const Cinfo* c = cinfo();
+	return c->findFinfo( msgNum );
 }
 
 const Finfo* SimpleElement::localFinfo( unsigned int index ) const

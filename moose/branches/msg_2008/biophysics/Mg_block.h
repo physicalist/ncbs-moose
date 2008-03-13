@@ -28,19 +28,19 @@ class Mg_block
 		/////////////////////////////////////////////////////////////
 
 		static void setKMg_A( const Conn* c, double Gbar );
-		static double getKMg_A( const Element* );
+		static double getKMg_A( Eref );
 		static void setKMg_B( const Conn* c, double Ek );
-		static double getKMg_B( const Element* );
+		static double getKMg_B( Eref );
 		static void setCMg( const Conn* c, double CMg );
-		static double getCMg( const Element* );
+		static double getCMg( Eref );
 		static void setIk( const Conn* c, double Ik );
-		static double getIk( const Element* );
+		static double getIk( Eref );
 		static void setGk( const Conn* c, double Gk );
-		static double getGk( const Element* );
+		static double getGk( Eref );
 		static void setEk( const Conn* c, double Ek );
-		static double getEk( const Element* );
+		static double getEk( Eref );
 		static void setZk( const Conn* c, double Zk );
-		static double getZk( const Element* );
+		static double getZk( Eref );
 		/////////////////////////////////////////////////////////////
 		// Dest function definitions
 		/////////////////////////////////////////////////////////////
@@ -58,7 +58,7 @@ class Mg_block
 		 * messages.
 		 */
 		static void processFunc( const Conn* c, ProcInfo p );
-		void innerProcessFunc( Element* e, ProcInfo p );
+		void innerProcessFunc( Eref e, ProcInfo p );
 
 		/**
 		 * Reinitializes the values for the channel. This involves
@@ -68,7 +68,7 @@ class Mg_block
 		 * updates to the parent compartment as for the processFunc.
 		 */
 		static void reinitFunc( const Conn* c, ProcInfo p );
-		void innerReinitFunc( Element* e, ProcInfo p );
+		void innerReinitFunc( Eref e, ProcInfo p );
 
 		/**
 		 * Assign the local Vm_ to the incoming Vm from the compartment

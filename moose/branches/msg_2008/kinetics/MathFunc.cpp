@@ -99,11 +99,10 @@ static const Slot outputSlot = initMathFuncCinfo()->getSlot( "output" );
 
 void MathFunc::processFunc( const Conn* c, ProcInfo info )
 {
-	Element* e = c->targetElement();
-	static_cast< MathFunc* >( e->data() )->process( e, info );
+	static_cast< MathFunc* >( c->data() )->process( c->target(), info );
 }
 
-void MathFunc::process (Element *e, ProcInfo info){
+void MathFunc::process ( Eref e, ProcInfo info){
   /*if the mml function function has not been initialized then don't care about anything*/
   if (status_ == BLANK || status_ == ERROR) 
     return;
@@ -139,10 +138,11 @@ void MathFunc::process (Element *e, ProcInfo info){
 void MathFunc::reinitFunc( const Conn* c, ProcInfo info )
 {
 	static_cast< MathFunc* >( c->data() )->reinitFuncLocal( 
-					c->targetElement() );
+					c->target() );
 }
 
-void MathFunc::reinitFuncLocal(Element *e){
+void MathFunc::reinitFuncLocal( Eref e ) 
+{
   cout << "reiniting..." << endl;
   v.clear();
   status_ = BLANK;
@@ -157,21 +157,24 @@ void MathFunc::setMathMl( const Conn* c, string value )
 	static_cast< MathFunc* >( c->data() )->innerSetMMLString( value );
 }
 
-string MathFunc::getMathML( const Element* e )
+string MathFunc::getMathML( Eref e )
 {
-	return static_cast< MathFunc* >( e->data() )->mmlstring_;
+	return static_cast< MathFunc* >( e.data() )->mmlstring_;
 }
 
-double MathFunc::getR(const Element* e){
-  return static_cast< MathFunc* >( e->data() )->result_;
+double MathFunc::getR( Eref e )
+{
+  return static_cast< MathFunc* >( e.data() )->result_;
 }
 
-void MathFunc::setR(const Conn* c, double ss){
+void MathFunc::setR(const Conn* c, double ss)
+{
   ;
 }
 
-string MathFunc::getFunction(const Element* e){
-  return static_cast< MathFunc* >( e->data() )->fn_; 
+string MathFunc::getFunction( Eref e )
+{
+  return static_cast< MathFunc* >( e.data() )->fn_; 
 }
 
 void MathFunc::setFunction(const Conn* c, string functionstring){
@@ -1121,7 +1124,7 @@ void testMathFunc(){
 		Id::scratchId() );
 	ASSERT( m != 0, "creating mathfunc" );
 	ProcInfoBase p;
-	Conn c( m, 0 );
+	SetConn c( m, 0 );
 	double d = 0;
 	set< string >( m, "function", "f(x, y, z) = x + y*z" );
 	set< double >( m, "arg1", 1);

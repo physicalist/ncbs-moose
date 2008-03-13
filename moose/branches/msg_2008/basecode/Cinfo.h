@@ -80,6 +80,15 @@ class Cinfo
 			const Finfo* findFinfo( const string& name) const;
 
 			/**
+			* Returns the Finfo identified by the specified msg number.
+			* Source Finfos should have a positive index
+			* pure Dest finfos have a negative index.
+			* Not all Finfos will have a msgNum, but any valid msgNum 
+			* should have a Finfo.
+			*/
+			const Finfo* findFinfo( int msgNum ) const;
+
+			/**
 			 * Reorders the Finfo vector provided by the user. The
 			 * new ordering has SrcFinfos and src SharedFinfos first,
 			 * then DestFinfos, then ValueFinfos.

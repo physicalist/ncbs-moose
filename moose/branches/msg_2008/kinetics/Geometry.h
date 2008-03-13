@@ -27,9 +27,9 @@ class Geometry
 		// Field assignment functions
 		///////////////////////////////////////////////////
 		static void setEpsilon( const Conn* c, double value );
-		static double getEpsilon( const Element* e );
+		static double getEpsilon( Eref e );
 		static void setNeighDist( const Conn* c, double value );
-		static double getNeighDist( const Element* e );
+		static double getNeighDist( Eref e );
 
 	private:
 

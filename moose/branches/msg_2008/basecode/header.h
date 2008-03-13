@@ -56,6 +56,7 @@ extern void* getParBuf( const Conn* c, unsigned int size );
 extern void* getAsyncParBuf( const Conn* c, unsigned int size );
 
 // Another ugly global, this one for accessing the ids.
+class Id;
 class IdManager;
 // extern IdManager* idManager();
 
