@@ -30,13 +30,13 @@ class ParTick: public Tick
 		// Virtual functions for handling scheduling of PostMaster,
 		// locally connected, and remote connected objects.
 		///////////////////////////////////////////////////////
-		void innerProcessFunc( Element* e, ProcInfo info );
-		void innerReinitFunc( Element* e, ProcInfo info );
+		void innerProcessFunc( Eref e, ProcInfo info );
+		void innerReinitFunc( Eref e, ProcInfo info );
 
 		///////////////////////////////////////////////////////
 		// Utility function to set up the pending list.
 		///////////////////////////////////////////////////////
-		void initPending( Element* e );
+		void initPending( Eref e );
 		void innerPollFunc( unsigned int node );
 		bool pendingData() const;
 

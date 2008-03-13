@@ -26,24 +26,24 @@ class Nernst
 	///////////////////////////////////////////////////
 	// Field function definitions
 	///////////////////////////////////////////////////
-	static double getE( const Element* e );
+	static double getE( Eref e );
 
 	void localSetTemperature( double value );
 	static void setTemperature( const Conn* c, double value );
-	static double getTemperature( const Element* e );
+	static double getTemperature( Eref e );
 
 	void localSetValence( int value );
 	static void setValence( const Conn* c, int value );
-	static int getValence( const Element* e );
+	static int getValence( Eref e );
 
 	static void setCin( const Conn* c, double value );
-	static double getCin( const Element* e );
+	static double getCin( Eref e );
 
 	static void setCout( const Conn* c, double value );
-	static double getCout( const Element* e );
+	static double getCout( Eref e );
 
 	static void setScale( const Conn* c, double value );
-	static double getScale( const Element* e );
+	static double getScale( Eref e );
 
 
 	///////////////////////////////////////////////////

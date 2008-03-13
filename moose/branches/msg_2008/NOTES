@@ -6285,4 +6285,17 @@ Checked in as revision 439 with unit test flags on, Smoldyn off, -g, GSL
 10 March 2008
 
 Continuing conversion to Eref. Completed basecode, shell, and element dirs.
+Checked in as revision 440 with unit test flags on, Smoldyn off, -g, GSL
 
+==============================================================================
+11 March.
+Continuing Eref conversion. Adding in kinetics stuff.
+Compiled Kinetic Hub. More on the way.
+
+==============================================================================
+13 March.
+Finally done Eref conversion, including kinetics stuff and the GSL solver. 
+The biophysics solver stuff has been left out for now.
+Clears unit tests right off.
+
+==============================================================================

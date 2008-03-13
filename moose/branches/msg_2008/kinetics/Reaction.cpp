@@ -103,9 +103,9 @@ void Reaction::setKf( const Conn* c, double value )
 	static_cast< Reaction* >( c->data() )->kf_ = value;
 }
 
-double Reaction::getKf( const Element* e )
+double Reaction::getKf( Eref e )
 {
-	return static_cast< Reaction* >( e->data() )->kf_;
+	return static_cast< Reaction* >( e.data() )->kf_;
 }
 
 void Reaction::setKb( const Conn* c, double value )
@@ -113,16 +113,16 @@ void Reaction::setKb( const Conn* c, double value )
 	static_cast< Reaction* >( c->data() )->kb_ = value;
 }
 
-double Reaction::getKb( const Element* e )
+double Reaction::getKb( Eref e )
 {
-	return static_cast< Reaction* >( e->data() )->kb_;
+	return static_cast< Reaction* >( e.data() )->kb_;
 }
 
 ///////////////////////////////////////////////////
 // Shared message function definitions
 ///////////////////////////////////////////////////
 
-void Reaction::innerProcessFunc( Element* e, ProcInfo info )
+void Reaction::innerProcessFunc( Eref e, ProcInfo info )
 {
 		send2< double, double >( e, substrateSlot, B_, A_ );
 		send2< double, double >( e, productSlot, A_, B_ );
@@ -132,8 +132,8 @@ void Reaction::innerProcessFunc( Element* e, ProcInfo info )
 
 void Reaction::processFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c->targetElement();
-	static_cast< Reaction* >( c->data() )->innerProcessFunc( e, p );
+	static_cast< Reaction* >( c->data() )->
+		innerProcessFunc( c->target(), p );
 }
 
 void Reaction::innerReinitFunc( )

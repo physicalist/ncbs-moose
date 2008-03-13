@@ -221,14 +221,14 @@ void ClockJob::setRunTime( const Conn* c, double v )
 {
 	static_cast< ClockJob* >( c->data() )->runTime_ = v;
 }
-double ClockJob::getRunTime( const Element* e )
+double ClockJob::getRunTime( Eref e )
 {
-	return static_cast< ClockJob* >( e->data( 0 ) )->runTime_;
+	return static_cast< ClockJob* >( e.data() )->runTime_;
 }
 
-double ClockJob::getCurrentTime( const Element* e )
+double ClockJob::getCurrentTime( Eref e )
 {
-	return static_cast< ClockJob* >( e->data( 0 ) )->info_.currTime_;
+	return static_cast< ClockJob* >( e.data() )->info_.currTime_;
 }
 
 /**
@@ -241,14 +241,14 @@ void ClockJob::setNsteps( const Conn* c, int v )
 {
 	static_cast< ClockJob* >( c->data() )->nSteps_ = v;
 }
-int ClockJob::getNsteps( const Element* e )
+int ClockJob::getNsteps( Eref e )
 {
-	return static_cast< ClockJob* >( e->data( 0 ) )->nSteps_;
+	return static_cast< ClockJob* >( e.data() )->nSteps_;
 }
 
-int ClockJob::getCurrentStep( const Element* e )
+int ClockJob::getCurrentStep( Eref e )
 {
-	return static_cast< ClockJob* >( e->data( 0 ) )->currentStep_;
+	return static_cast< ClockJob* >( e.data() )->currentStep_;
 }
 
 ///////////////////////////////////////////////////
@@ -263,14 +263,14 @@ void ClockJob::receiveNextTime( const Conn* c, double time )
 void ClockJob::startFunc( const Conn* c, double runtime)
 {
 	static_cast< ClockJob* >( c->data() )->startFuncLocal( 
-					c->targetElement(), runtime );
+					c->target(), runtime );
 }
 
-void ClockJob::startFuncLocal( Element* e, double runTime )
+void ClockJob::startFuncLocal( Eref e, double runTime )
 {
 	// cout << "starting run for " << runTime << " sec.\n";
 
-	send2< ProcInfo, double >( e, 0, startSlot, &info_, 
+	send2< ProcInfo, double >( e, startSlot, &info_, 
 					info_.currTime_ + runTime );
 	/*
 	info_.currTime_ = currentTime_;
@@ -284,7 +284,7 @@ void ClockJob::startFuncLocal( Element* e, double runTime )
 void ClockJob::stepFunc( const Conn* c, int nsteps )
 {
 	ClockJob* cj = static_cast< ClockJob* >( c->data() );
-	cj->startFuncLocal( c->targetElement(), nsteps * cj->dt_ );
+	cj->startFuncLocal( c->target(), nsteps * cj->dt_ );
 }
 
 /**
@@ -295,14 +295,14 @@ void ClockJob::stepFunc( const Conn* c, int nsteps )
 void ClockJob::reinitFunc( const Conn* c )
 {
 	static_cast< ClockJob* >( c->data() )->reinitFuncLocal(
-					c->targetElement() );
+					c->target() );
 }
-void ClockJob::reinitFuncLocal( Element* e )
+void ClockJob::reinitFuncLocal( Eref e )
 {
 	currentTime_ = 0.0;
 	nextTime_ = 0.0;
 	currentStep_ = 0;
-	send1< ProcInfo >( e, 0, reinitSlot, &info_ );
+	send1< ProcInfo >( e, reinitSlot, &info_ );
 }
 
 /**
@@ -316,7 +316,7 @@ void ClockJob::reinitFuncLocal( Element* e )
 void ClockJob::reschedFunc( const Conn* c )
 {
 	static_cast< ClockJob* >( c->data() )->reschedFuncLocal(
-					c->targetElement() );
+					c->target() );
 }
 
 class TickSeq {
@@ -348,8 +348,10 @@ class TickSeq {
 			int stage_;
 };
 
-void ClockJob::reschedFuncLocal( Element* e )
+void ClockJob::reschedFuncLocal( Eref er )
 {
+	Element* e = er.e;
+
 	vector< Id > childList = Neutral::getChildList( e );
 	if ( childList.size() == 0 )
 			return;
@@ -394,7 +396,7 @@ void ClockJob::reschedFuncLocal( Element* e )
 			buildMessages( last, j->element() );
 			last = j->element();
 	}
-	send0( e, 0, reschedSlot );
+	send0( er, reschedSlot );
 }
 
 /**
@@ -426,10 +428,10 @@ void ClockJob::buildMessages( Element* last, Element* e )
  */
 void ClockJob::dtFunc( const Conn* c, double dt )
 {
-	static_cast< ClockJob* >( c->data() )->dtFuncLocal(
-					c->targetElement(), dt );
+	static_cast< ClockJob* >( c->data() )->dtFuncLocal( c->target(), dt );
 }
-void ClockJob::dtFuncLocal( Element* e, double dt )
+
+void ClockJob::dtFuncLocal( Eref e, double dt )
 {
 		/*
 	if ( tick_ == 0 )

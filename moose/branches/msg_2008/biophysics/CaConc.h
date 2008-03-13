@@ -62,13 +62,13 @@ class CaConc
 		// Field handling functions
 		///////////////////////////////////////////////////////////////
 		static void setCa( const Conn* c, double val );
-		static double getCa( const Element* e );
+		static double getCa( Eref e );
 		static void setCaBasal( const Conn* c, double val );
-		static double getCaBasal( const Element* e );
+		static double getCaBasal( Eref e );
 		static void setTau( const Conn* c, double val );
-		static double getTau( const Element* e );
+		static double getTau( Eref e );
 		static void setB( const Conn* c, double val );
-		static double getB( const Element* e );
+		static double getB( Eref e );
 
 	private:
 		double Ca_;

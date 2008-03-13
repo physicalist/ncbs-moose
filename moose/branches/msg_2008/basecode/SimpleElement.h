@@ -80,6 +80,17 @@ class SimpleElement: public Element
 		 */
 		Conn* targets( const string& finfoName ) const;
 
+		/**
+		 * Finds the number of targets to this Msg, either src or dest.
+		 * Faster than iterating through the whole lot.
+		 */
+		unsigned int numTargets( int msgNum ) const;
+		/**
+		 * Finds the number of targets to this Finfo.
+		 * Faster than iterating through the whole lot.
+		 */
+		unsigned int numTargets( const string& finfoName ) const;
+
 		/////////////////////////////////////////////////////////////
 		// Information functions
 		/////////////////////////////////////////////////////////////
@@ -131,6 +142,12 @@ class SimpleElement: public Element
 		const Finfo* findFinfo( const string& name );
 
 		/**
+		 * Lookup Finfo from its msgNum. Not all Finfos will have a 
+		 * msgNum, but any valid msgNum should have a Finfo.
+		 */
+		const Finfo* findFinfo( int msgNum ) const;
+
+		/**
 		 * Special const lookup for Finfo from its name, where the returned
 		 * Finfo is limited to the ones already defined in the class
 		 * and cannot be an array or other dynamic finfo
@@ -177,6 +194,7 @@ class SimpleElement: public Element
 		 * Returns a pointer to the specified msg.
 		 */
 		const Msg* msg( unsigned int msgNum ) const;
+		
 		Msg* varMsg( unsigned int msgNum );
 
 		const vector< ConnTainer* >* dest( int msgNum ) const;

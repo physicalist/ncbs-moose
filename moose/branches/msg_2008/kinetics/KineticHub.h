@@ -20,16 +20,16 @@ class KineticHub
 		///////////////////////////////////////////////////
 		// Field function definitions
 		///////////////////////////////////////////////////
-		static unsigned int getNmol( const Element* e );
-		static unsigned int getNreac( const Element* e );
-		static unsigned int getNenz( const Element* e );
+		static unsigned int getNmol( Eref e );
+		static unsigned int getNreac( Eref e );
+		static unsigned int getNenz( Eref e );
 
 
 		///////////////////////////////////////////////////
 		// Dest function definitions
 		///////////////////////////////////////////////////
 		static void processFunc( const Conn* c, ProcInfo info );
-		void processFuncLocal( Element* hub, ProcInfo info );
+		void processFuncLocal( Eref er, ProcInfo info );
 		static void reinitFunc( const Conn* c, ProcInfo info );
 		static void rateTermFunc( const Conn* c,
 			vector< RateTerm* >* rates, 
@@ -38,7 +38,7 @@ class KineticHub
 		static void rateSizeFunc( const Conn* c,
 			unsigned int nReac, unsigned int nEnz, 
 			unsigned int nMmEnz);
-		void rateSizeFuncLocal( Element* hub,
+		void rateSizeFuncLocal( Eref hub,
 			unsigned int nReac, unsigned int nEnz, 
 			unsigned int nMmEnz );
 		static void molSizeFunc( const Conn* c,
@@ -52,7 +52,7 @@ class KineticHub
 				vector< double >* Sinit,
 				vector< Element* >* elist
 		);
-		void molConnectionFuncLocal( Element* e,
+		void molConnectionFuncLocal( Eref e,
 				vector< double >* S,
 				vector< double >* Sinit,
 				vector< Element* >* elist
@@ -60,19 +60,19 @@ class KineticHub
 		static void reacConnectionFunc( const Conn* c,
 				unsigned int index, Element* reac );
 		void reacConnectionFuncLocal( 
-				Element* hub, 
+				Eref e,
 				int rateTermIndex, 
 				Element* reac );
 		static void enzConnectionFunc( const Conn* c,
 				unsigned int index, Element* enz );
 		void enzConnectionFuncLocal(
-				Element* hub, 
+				Eref e,
 				int enzTermIndex, 
 				Element* enz );
 		static void mmEnzConnectionFunc( const Conn* c,
 				unsigned int index, Element* mmEnz );
 		void mmEnzConnectionFuncLocal(
-				Element* hub, 
+				Eref e,
 				int enzTermIndex, 
 				Element* enz );
 		static void childFunc( const Conn* c, int stage );
@@ -100,38 +100,38 @@ class KineticHub
 		// Functions to override zombie field access funcs.
 		///////////////////////////////////////////////////
 		static void setMolN( const Conn* c, double value );
-		static double getMolN( const Element* e );
+		static double getMolN( Eref e );
 		static void setMolNinit( const Conn* c, double value );
-		static double getMolNinit( const Element* e );
+		static double getMolNinit( Eref e );
 		static void setReacKf( const Conn* c, double value );
-		static double getReacKf( const Element* e );
+		static double getReacKf( Eref e );
 		static void setReacKb( const Conn* c, double value );
-		static double getReacKb( const Element* e );
+		static double getReacKb( Eref e );
 
 		static void setEnzK1( const Conn* c, double value );
-		static double getEnzK1( const Element* e );
+		static double getEnzK1( Eref e );
 		static void setEnzK2( const Conn* c, double value );
-		static double getEnzK2( const Element* e );
+		static double getEnzK2( Eref e );
 		static void setEnzK3( const Conn* c, double value );
-		static double getEnzK3( const Element* e );
+		static double getEnzK3( Eref e );
 		static void setEnzKm( const Conn* c, double value );
-		static double getEnzKm( const Element* e );
+		static double getEnzKm( Eref e );
 		static void setEnzKcat( const Conn* c, double value );
-		static double getEnzKcat( const Element* e );
+		static double getEnzKcat( Eref e );
 
 		static void setMmEnzK1( const Conn* c, double value );
-		static double getMmEnzK1( const Element* e );
+		static double getMmEnzK1( Eref e );
 		static void setMmEnzK2( const Conn* c, double value );
-		static double getMmEnzK2( const Element* e );
+		static double getMmEnzK2( Eref e );
 		static void setMmEnzK3( const Conn* c, double value );
 		static void setMmEnzKm( const Conn* c, double value );
-		static double getMmEnzKm( const Element* e );
+		static double getMmEnzKm( Eref e );
 		static void setMmEnzKcat( const Conn* c, double value );
-		static double getMmEnzKcat( const Element* e );
+		static double getMmEnzKcat( Eref e );
 
 
 		static void zombify( 
-			Element* hub, Element* e, const Finfo* hubFinfo,
+			Eref hub, Element* e, const Finfo* hubFinfo,
 	       		Finfo* solveFinfo );
 	private:
 		vector< double >* S_;

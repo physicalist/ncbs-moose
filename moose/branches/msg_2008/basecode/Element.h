@@ -65,6 +65,17 @@ class Element
 		 */
 		virtual Conn* targets( const string& finfoName ) const = 0;
 
+		/**
+		 * Finds the number of targets to this Msg, either src or dest.
+		 * Faster than iterating through the whole lot.
+		 */
+		virtual unsigned int numTargets( int msgNum ) const = 0;
+		/**
+		 * Finds the number of targets to this Finfo.
+		 * Faster than iterating through the whole lot.
+		 */
+		virtual unsigned int numTargets( const string& finfoName ) const = 0;
+
 		///////////////////////////////////////////////////////////////
 		// Msg handling functions
 		///////////////////////////////////////////////////////////////
@@ -76,9 +87,20 @@ class Element
 		bool add( const string& f1, Element* e2, const string& f2 );
 
 		/**
+		 * Add a message from Msg m1 on current Element to Msg m2 on e2
+		 * Return true if success.
+		 */
+		bool add( int m1, Element* e2, int m2 );
+
+		/**
 		 * Drop slot 'doomed' on Msg msg
 		 */
 		bool drop( int msg, unsigned int doomed );
+
+		/**
+		 * Drop ConnTainer 'doomed' on Msg msg
+		 */
+		bool drop( int msg, const ConnTainer* doomed );
 
 		/**
 		 * Drop ConnTainer 'doomed' on Msg msg
@@ -94,6 +116,13 @@ class Element
 		 * Drop all msgs going out of the identified Finfo.
 		 */
 		bool dropAll( const string& finfo );
+
+		/**
+		 * Drop all entries on a vector of connTainers. In due course
+		 * this will be updated to be more efficient than just a sequence
+		 * of individual calls to drop.
+		 */
+		bool dropVec( int msg, const vector< const ConnTainer* >& vec );
 
 
 		///////////////////////////////////////////////////////////////
@@ -127,6 +156,15 @@ class Element
 		 * it cannot be a const function of the Element.
 		 */
 		virtual const Finfo* findFinfo( const string& name ) = 0;
+
+		/**
+		 * Returns the Finfo identified by the specified msg number.
+		 * Source Finfos should have a positive index
+		 * pure Dest finfos have a negative index.
+		 * Not all Finfos will have a msgNum, but any valid msgNum 
+		 * should have a Finfo.
+		 */
+		virtual const Finfo* findFinfo( int msgNum ) const = 0;
 
 		/**
 		 * Returns finfo ptr associated with specified ConnTainer.

@@ -209,41 +209,41 @@ void Table::setInput( const Conn* c, double input )
 {
 	static_cast< Table* >( c->data() )->input_ = input;
 }
-double Table::getInput( const Element* e )
+double Table::getInput( Eref e )
 {
-	return static_cast< Table* >( e->data( 0 ) )->input_;
+	return static_cast< Table* >( e.data() )->input_;
 }
 
 void Table::setOutput( const Conn* c, double output ) 
 {
 	static_cast< Table* >( c->data() )->output_ = output;
 }
-double Table::getOutput( const Element* e )
+double Table::getOutput( Eref e )
 {
-	return static_cast< Table* >( e->data( 0 ) )->output_;
+	return static_cast< Table* >( e.data() )->output_;
 }
 
 void Table::setStepMode( const Conn* c, int value ) 
 {
 	static_cast< Table* >( c->data() )->stepMode_ = value;
 }
-int Table::getStepMode( const Element* e )
+int Table::getStepMode( Eref e )
 {
-	return static_cast< Table* >( e->data( 0 ) )->stepMode_;
+	return static_cast< Table* >( e.data() )->stepMode_;
 }
 
 void Table::setStepsize( const Conn* c, double val ) 
 {
 	static_cast< Table* >( c->data() )->stepSize_ = val;
 }
-double Table::getStepsize( const Element* e )
+double Table::getStepsize( Eref e )
 {
-	return static_cast< Table* >( e->data( 0 ) )->stepSize_;
+	return static_cast< Table* >( e.data() )->stepSize_;
 }
 
-double Table::getLookup( const Element* e, const double& x )
+double Table::getLookup( Eref e, const double& x )
 {
-	return static_cast< Table* >( e->data( 0 ) )->innerLookup( x );
+	return static_cast< Table* >( e.data() )->innerLookup( x );
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -269,7 +269,7 @@ void Table::input2( const Conn* c, double y, unsigned int x )
 void Table::process( const Conn* c, ProcInfo p )
 {
 	static_cast< Table* >( c->data() )->
-			innerProcess( c->targetElement(), p );
+			innerProcess( c->target(), p );
 }
 
 void Table::reinit( const Conn* c, ProcInfo p )
@@ -286,15 +286,15 @@ void Table::tabop( const Conn* c, char op, double min, double max )
 // Here we set up private Table class functions.
 ////////////////////////////////////////////////////////////////////
 
-void Table::innerProcess( Element* e, ProcInfo p )
+void Table::innerProcess( Eref e, ProcInfo p )
 {
 	double temp;
 	unsigned long index;
-	send0( e, 0, inputRequestSlot );
+	send0( e, inputRequestSlot );
 	switch( stepMode_ ) {
 		case TAB_IO :
 			output_ = innerLookup( input_ ) * py_ + sy_ ;
-			send1< double >( e, 0, outputSlot, output_ );
+			send1< double >( e, outputSlot, output_ );
 			break;
 		case TAB_LOOP:
 			// Looks up values based on input and time. Loops around
@@ -311,7 +311,7 @@ void Table::innerProcess( Element* e, ProcInfo p )
 				input_ = temp;
 			}
 			output_ = innerLookup( temp );
-			send1< double >( e, 0, outputSlot, output_ );
+			send1< double >( e, outputSlot, output_ );
 			// here we have a slight divergence from the old GENESIS
 			// case, where if the table is not alloced it returns 
 			// the SimulationTime. Bad idea.
@@ -326,7 +326,7 @@ void Table::innerProcess( Element* e, ProcInfo p )
 				input_ += stepSize_;
 			}
 			output_ = innerLookup( temp );
-			send1< double >( e, 0, outputSlot, output_ );
+			send1< double >( e, outputSlot, output_ );
 			break;
 		case TAB_BUF:
 			/**
@@ -362,7 +362,7 @@ void Table::innerProcess( Element* e, ProcInfo p )
 			output_ = table_[ counter_ ];
 			table_[ counter_ ] = input_;
 			++counter_;
-			send1< double >( e, 0, outputSlot, output_ );
+			send1< double >( e, outputSlot, output_ );
 			}
 			break;
 		case TAB_SPIKE:
@@ -398,12 +398,12 @@ void Table::innerProcess( Element* e, ProcInfo p )
 	py_ = 1.0;
 }
 
-unsigned long Table::expandTable( Element* e, double size )
+unsigned long Table::expandTable( Eref e, double size )
 {
 	// Do a rounding
 	unsigned long index = static_cast< unsigned long >( 0.5 + size );
 	if ( index > Interpol::MAX_DIVS ) {
-		cout << "Error: " << e->name() << ": Table overflow\n";
+		cout << "Error: " << e.e->name() << ": Table overflow\n";
 		return 0;
 	}
 	if ( index > table_.capacity() ) {

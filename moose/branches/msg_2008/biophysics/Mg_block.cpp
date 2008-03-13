@@ -100,53 +100,53 @@ void Mg_block::setKMg_A( const Conn* c, double KMg_A )
 {
 	static_cast< Mg_block* >( c->data() )->KMg_A_ = KMg_A;
 }
-double Mg_block::getKMg_A( const Element* e )
+double Mg_block::getKMg_A( Eref e )
 {
-	return static_cast< Mg_block* >( e->data( 0 ) )->KMg_A_;
+	return static_cast< Mg_block* >( e.data() )->KMg_A_;
 }
 void Mg_block::setKMg_B( const Conn* c, double KMg_B )
 {
 	static_cast< Mg_block* >( c->data() )->KMg_B_ = KMg_B;
 }
-double Mg_block::getKMg_B( const Element* e )
+double Mg_block::getKMg_B( Eref e )
 {
-	return static_cast< Mg_block* >( e->data( 0 ) )->KMg_B_;
+	return static_cast< Mg_block* >( e.data() )->KMg_B_;
 }
 void Mg_block::setCMg( const Conn* c, double CMg )
 {
 	static_cast< Mg_block* >( c->data() )->CMg_ = CMg;
 }
-double Mg_block::getCMg( const Element* e )
+double Mg_block::getCMg( Eref e )
 {
-	return static_cast< Mg_block* >( e->data( 0 ) )->CMg_;
+	return static_cast< Mg_block* >( e.data() )->CMg_;
 }
 void Mg_block::setIk( const Conn* c, double Ik )
 {
 	static_cast< Mg_block* >( c->data() )->Ik_ = Ik;
 }
-double Mg_block::getIk( const Element* e )
+double Mg_block::getIk( Eref e )
 {
-	return static_cast< Mg_block* >( e->data( 0 ) )->Ik_;
+	return static_cast< Mg_block* >( e.data() )->Ik_;
 }
 void Mg_block::setGk( const Conn* c, double Gk )
 {
 	static_cast< Mg_block* >( c->data() )->Gk_ = Gk;
 }
-double Mg_block::getGk( const Element* e )
+double Mg_block::getGk( Eref e )
 {
-	return static_cast< Mg_block* >( e->data( 0 ) )->Gk_;
+	return static_cast< Mg_block* >( e.data() )->Gk_;
 }
 void Mg_block::setEk( const Conn* c, double Ek )
 {
 	static_cast< Mg_block* >( c->data() )->Ek_ = Ek;
 }
-double Mg_block::getEk( const Element* e )
+double Mg_block::getEk( Eref e )
 {
-	return static_cast< Mg_block* >( e->data( 0 ) )->Ek_;
+	return static_cast< Mg_block* >( e.data() )->Ek_;
 }
-double Mg_block::getZk( const Element* e )
+double Mg_block::getZk( Eref e )
 {
-	return static_cast< Mg_block* >( e->data( 0 ) )->Zk_;
+	return static_cast< Mg_block* >( e.data() )->Zk_;
 }
 void Mg_block::setZk( const Conn* c, double Zk )
 {
@@ -156,26 +156,26 @@ void Mg_block::setZk( const Conn* c, double Zk )
 
 void Mg_block::processFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c->targetElement();
+	Eref e = c->target();
 	static_cast< Mg_block* >( c->data() )->innerProcessFunc( e, p );
 }
 
-void Mg_block::innerProcessFunc( Element* e, ProcInfo info )
+void Mg_block::innerProcessFunc( Eref e, ProcInfo info )
 {
 	
 	double KMg = KMg_A_ * exp(Vm_/KMg_B_);
 	Gk_ = Gk_ * KMg / (KMg + CMg_);
-	send2< double, double >( e, 0, channelSlot, Gk_, Ek_ );
+	send2< double, double >( e, channelSlot, Gk_, Ek_ );
 	Ik_ = Gk_ * (Ek_ - Vm_);
 }
 
 void Mg_block::reinitFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c->targetElement();
+	Eref e = c->target();
 	static_cast< Mg_block* >( c->data() )->innerReinitFunc( e, p );
 }
 
-void Mg_block::innerReinitFunc( Element* e, ProcInfo info )
+void Mg_block::innerReinitFunc( Eref e, ProcInfo info )
 {
 	Zk_ = 0;
 	CMg_ = 0;

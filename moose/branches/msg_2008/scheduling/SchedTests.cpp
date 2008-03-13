@@ -68,7 +68,7 @@ void TickTest::process( const Conn* c, ProcInfo p )
 	};
 	char line[200];
 	sprintf( line, "%-4s t = %g, dt = %g",
-		c->sourceElement()->name().c_str(), p->currTime_, p->dt_ );
+		c->source().e->name().c_str(), p->currTime_, p->dt_ );
 	if ( count_ < sizeof( schedResponse )/sizeof( string ) )
 		ASSERT( schedResponse[ count_++ ] == string( line ), line );
 	countReinit_ = 0;
@@ -84,7 +84,7 @@ void TickTest::reinit( const Conn* c, ProcInfo p )
 	};
 	char line[200];
 	sprintf( line, "%-4s t = %g, dt = %g, reinit",
-		c->sourceElement()->name().c_str(), p->currTime_, p->dt_ );
+		c->source().e->name().c_str(), p->currTime_, p->dt_ );
 	if ( countReinit_ < sizeof( schedResponse )/sizeof( string ) )
 		ASSERT( schedResponse[ countReinit_++ ] == string( line ),
 						line );
@@ -205,7 +205,7 @@ void processCall0( const Conn* c, ProcInfo p )
 {
 	char line[40];
 	sprintf( line, "Process0: %s at %g",
-			c->targetElement()->name().c_str(), p->currTime_ );
+			c->target().e->name().c_str(), p->currTime_ );
 	ASSERT( seqStr[ seqCount++ ] == line , "process0" );
 }
 
@@ -213,7 +213,7 @@ void processCall1( const Conn* c, ProcInfo p )
 {
 	char line[40];
 	sprintf( line, "Process1: %s at %g",
-			c->targetElement()->name().c_str(), p->currTime_ );
+			c->target().e->name().c_str(), p->currTime_ );
 	ASSERT( seqStr[ seqCount++ ] == line , "process1" );
 }
 
@@ -221,14 +221,14 @@ void processCall2( const Conn* c, ProcInfo p )
 {
 	char line[40];
 	sprintf( line, "Process2: %s at %g",
-			c->targetElement()->name().c_str(), p->currTime_ );
+			c->target().e->name().c_str(), p->currTime_ );
 	ASSERT( seqStr[ seqCount++ ] == line , "process2" );
 }
 
 void reinitCall( const Conn* c, ProcInfo p )
 {
 	char line[40];
-	sprintf( line, "Reinit: %s", c->targetElement()->name().c_str() );
+	sprintf( line, "Reinit: %s", c->target().e->name().c_str() );
 	ASSERT( seqStr[ seqCount++ ] == line , "reinit" );
 }
 

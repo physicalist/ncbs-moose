@@ -91,14 +91,14 @@ Kintegrator::Kintegrator()
 // Field function definitions
 ///////////////////////////////////////////////////
 
-bool Kintegrator::getIsInitialized( const Element* e )
+bool Kintegrator::getIsInitialized( Eref e )
 {
-	return static_cast< const Kintegrator* >( e->data() )->isInitialized_;
+	return static_cast< const Kintegrator* >( e.data() )->isInitialized_;
 }
 
-string Kintegrator::getMethod( const Element* e )
+string Kintegrator::getMethod( Eref e )
 {
-	return static_cast< const Kintegrator* >( e->data() )->method_;
+	return static_cast< const Kintegrator* >( e.data() )->method_;
 }
 void Kintegrator::setMethod( const Conn* c, string method )
 {
@@ -129,11 +129,11 @@ void Kintegrator::allocateFuncLocal( vector< double >*  y )
 
 void Kintegrator::processFunc( const Conn* c, ProcInfo info )
 {
-	Element* e = c->targetElement();
-	static_cast< Kintegrator* >( c->data() )->innerProcessFunc( e, info );
+	static_cast< Kintegrator* >( c->data() )->innerProcessFunc( 
+		c->target(), info );
 }
 
-void Kintegrator::innerProcessFunc( Element* e, ProcInfo info )
+void Kintegrator::innerProcessFunc( Eref e, ProcInfo info )
 {
 		vector< double >::iterator i;
 		vector< double >::const_iterator j = yprime_.begin();
@@ -152,5 +152,5 @@ void Kintegrator::innerProcessFunc( Element* e, ProcInfo info )
 
 void Kintegrator::reinitFunc( const Conn* c, ProcInfo info )
 {
-	send0( c->targetElement(), reinitSlot );
+	send0( c->target(), reinitSlot );
 }

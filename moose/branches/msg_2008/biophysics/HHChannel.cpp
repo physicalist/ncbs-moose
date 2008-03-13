@@ -209,18 +209,18 @@ void HHChannel::setGbar( const Conn* c, double Gbar )
 {
 	static_cast< HHChannel* >( c->data() )->Gbar_ = Gbar;
 }
-double HHChannel::getGbar( const Element* e )
+double HHChannel::getGbar( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->Gbar_;
+	return static_cast< HHChannel* >( e.data() )->Gbar_;
 }
 
 void HHChannel::setEk( const Conn* c, double Ek )
 {
 	static_cast< HHChannel* >( c->data() )->Ek_ = Ek;
 }
-double HHChannel::getEk( const Element* e )
+double HHChannel::getEk( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->Ek_;
+	return static_cast< HHChannel* >( e.data() )->Ek_;
 }
 
 /**
@@ -243,7 +243,7 @@ double HHChannel::getEk( const Element* e )
  * an existing one.
  */
 
-void HHChannel::makeGate( Element *e, const Finfo* f, double power )
+void HHChannel::makeGate( Element* e, const Finfo* f, double power )
 {
 	Element* gate = 0;	
 	Conn* gateConn = e->targets( f->msg() );
@@ -252,7 +252,7 @@ void HHChannel::makeGate( Element *e, const Finfo* f, double power )
 	if ( power <= 0 ) {
 		// If gate exists, remove it.
 		if ( numGates == 1 ) {
-			gate = gateConn->targetElement();
+			gate = gateConn->target().e;
 			unsigned int numChans =
 				gate->msg( gate->findFinfo( "gate")->msg() )->size();
 			assert( numChans > 0 );
@@ -270,7 +270,7 @@ void HHChannel::makeGate( Element *e, const Finfo* f, double power )
 	}
 
 	if ( numGates == 1 ) {
-		gate = gateConn->targetElement();
+		gate = gateConn->target().e;
 		unsigned int numChans =
 				gate->msg( gate->findFinfo( "gate")->msg() )->size();
 		assert( numChans > 0 );
@@ -304,7 +304,7 @@ void HHChannel::makeGate( Element *e, const Finfo* f, double power )
  */
 void HHChannel::setXpower( const Conn* c, double Xpower )
 {
-	Element* e = c->targetElement();
+	Element* e = c->target().e;
 	HHChannel* chan = static_cast< HHChannel* >( c->data() );
 
 	if ( Xpower == chan->Xpower_ ) return;
@@ -312,14 +312,14 @@ void HHChannel::setXpower( const Conn* c, double Xpower )
 	chan->Xpower_ = Xpower;
 	chan->takeXpower_ = selectPower( Xpower );
 }
-double HHChannel::getXpower( const Element* e )
+double HHChannel::getXpower( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->Xpower_;
+	return static_cast< HHChannel* >( e.data() )->Xpower_;
 }
 
 void HHChannel::setYpower( const Conn* c, double Ypower )
 {
-	Element* e = c->targetElement();
+	Element* e = c->target().e;
 	HHChannel* chan = static_cast< HHChannel* >( c->data() );
 
 	if ( Ypower == chan->Ypower_ ) return;
@@ -327,14 +327,14 @@ void HHChannel::setYpower( const Conn* c, double Ypower )
 	chan->Ypower_ = Ypower;
 	chan->takeYpower_ = selectPower( Ypower );
 }
-double HHChannel::getYpower( const Element* e )
+double HHChannel::getYpower( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->Ypower_;
+	return static_cast< HHChannel* >( e.data() )->Ypower_;
 }
 
 void HHChannel::setZpower( const Conn* c, double Zpower )
 {
-	Element* e = c->targetElement();
+	Element* e = c->target().e;
 	HHChannel* chan = static_cast< HHChannel* >( c->data() );
 
 	if ( Zpower == chan->Zpower_ ) return;
@@ -342,9 +342,9 @@ void HHChannel::setZpower( const Conn* c, double Zpower )
 	chan->Zpower_ = Zpower;
 	chan->takeZpower_ = selectPower( Zpower );
 }
-double HHChannel::getZpower( const Element* e )
+double HHChannel::getZpower( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->Zpower_;
+	return static_cast< HHChannel* >( e.data() )->Zpower_;
 }
 
 
@@ -352,54 +352,54 @@ void HHChannel::setInstant( const Conn* c, int instant )
 {
 	static_cast< HHChannel* >( c->data() )->instant_ = instant;
 }
-int HHChannel::getInstant( const Element* e )
+int HHChannel::getInstant( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->instant_;
+	return static_cast< HHChannel* >( e.data() )->instant_;
 }
 
 void HHChannel::setGk( const Conn* c, double Gk )
 {
 	static_cast< HHChannel* >( c->data() )->Gk_ = Gk;
 }
-double HHChannel::getGk( const Element* e )
+double HHChannel::getGk( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->Gk_;
+	return static_cast< HHChannel* >( e.data() )->Gk_;
 }
 
 void HHChannel::setIk( const Conn* c, double Ik )
 {
 	static_cast< HHChannel* >( c->data() )->Ik_ = Ik;
 }
-double HHChannel::getIk( const Element* e )
+double HHChannel::getIk( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->Ik_;
+	return static_cast< HHChannel* >( e.data() )->Ik_;
 }
 
 void HHChannel::setX( const Conn* c, double X )
 {
 	static_cast< HHChannel* >( c->data() )->X_ = X;
 }
-double HHChannel::getX( const Element* e )
+double HHChannel::getX( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->X_;
+	return static_cast< HHChannel* >( e.data() )->X_;
 }
 
 void HHChannel::setY( const Conn* c, double Y )
 {
 	static_cast< HHChannel* >( c->data() )->Y_ = Y;
 }
-double HHChannel::getY( const Element* e )
+double HHChannel::getY( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->Y_;
+	return static_cast< HHChannel* >( e.data() )->Y_;
 }
 
 void HHChannel::setZ( const Conn* c, double Z )
 {
 	static_cast< HHChannel* >( c->data() )->Z_ = Z;
 }
-double HHChannel::getZ( const Element* e )
+double HHChannel::getZ( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->Z_;
+	return static_cast< HHChannel* >( e.data() )->Z_;
 }
 
 void HHChannel::setUseConcentration( const Conn* c, int value )
@@ -407,9 +407,9 @@ void HHChannel::setUseConcentration( const Conn* c, int value )
 	static_cast< HHChannel* >( c->data() )->useConcentration_ = value;
 }
 
-int HHChannel::getUseConcentration( const Element* e )
+int HHChannel::getUseConcentration( Eref e )
 {
-	return static_cast< HHChannel* >( e->data( 0 ) )->useConcentration_;
+	return static_cast< HHChannel* >( e.data() )->useConcentration_;
 }
 
 ///////////////////////////////////////////////////
@@ -431,17 +431,16 @@ double HHChannel::integrate( double state, double dt )
 
 void HHChannel::processFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c->targetElement();
-	static_cast< HHChannel* >( c->data() )->innerProcessFunc( e, p );
+	static_cast< HHChannel* >( c->data() )->innerProcessFunc( c->target(), p );
 }
 
-void HHChannel::innerProcessFunc( Element* e, ProcInfo info )
+void HHChannel::innerProcessFunc( Eref e, ProcInfo info )
 {
 	g_ += Gbar_;
 	if ( Xpower_ > 0 ) {
 		// The looked up table values A_ and B_ come back from the gate
 		// right away after these 'send' calls.
-		send1< double >( e, 0, xGateSlot, Vm_ );
+		send1< double >( e, xGateSlot, Vm_ );
 		if ( instant_ & INSTANT_X )
 			X_ = A_/B_;
 		else 
@@ -450,7 +449,7 @@ void HHChannel::innerProcessFunc( Element* e, ProcInfo info )
 	}
 
 	if ( Ypower_ > 0 ) {
-		send1< double >( e, 0, yGateSlot, Vm_ );
+		send1< double >( e, yGateSlot, Vm_ );
 		if ( instant_ & INSTANT_Y )
 			Y_ = A_/B_;
 		else 
@@ -461,9 +460,9 @@ void HHChannel::innerProcessFunc( Element* e, ProcInfo info )
 
 	if ( Zpower_ > 0 ) {
 		if ( useConcentration_ )
-			send1< double >( e, 0, zGateSlot, conc_ );
+			send1< double >( e, zGateSlot, conc_ );
 		else
-			send1< double >( e, 0, zGateSlot, Vm_ );
+			send1< double >( e, zGateSlot, Vm_ );
 
 		if ( instant_ & INSTANT_Z )
 			Z_ = A_/B_;
@@ -474,33 +473,33 @@ void HHChannel::innerProcessFunc( Element* e, ProcInfo info )
 	}
 
 	Gk_ = g_;
-	send2< double, double >( e, 0, channelSlot, Gk_, Ek_ );
+	send2< double, double >( e, channelSlot, Gk_, Ek_ );
 	Ik_ = ( Ek_ - Vm_ ) * g_;
 
 	// This is used if the channel connects up to a conc pool and
 	// handles influx of ions giving rise to a concentration change.
-	send1< double >( e, 0, ikSlot, Ik_ );
+	send1< double >( e, ikSlot, Ik_ );
 	g_ = 0.0;
 }
 
 void HHChannel::reinitFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c->targetElement();
-	static_cast< HHChannel* >( c->data() )->innerReinitFunc( e, p );
+	static_cast< HHChannel* >( c->data() )->innerReinitFunc( c->target(), p );
 }
 
 /**
  * Here we get the steady-state values for the gate (the 'instant'
  * calculation) as A_/B_.
  */
-void HHChannel::innerReinitFunc( Element* e, ProcInfo info )
+void HHChannel::innerReinitFunc( Eref er, ProcInfo info )
 {
 	g_ = Gbar_;
+	Element* e = er.e;
 
 	if ( Xpower_ > 0 ) {
 		// The looked up table values A_ and B_ come back from the gate
 		// right away after these 'send' calls.
-		send1< double >( e, 0, xGateSlot, Vm_ );
+		send1< double >( er, xGateSlot, Vm_ );
 		if ( B_ < EPSILON ) {
 			cout << "Warning: B_ value for " << e->name() <<
 					" is ~0. Check X table\n";
@@ -511,7 +510,7 @@ void HHChannel::innerReinitFunc( Element* e, ProcInfo info )
 	}
 
 	if ( Ypower_ > 0 ) {
-		send1< double >( e, 0, yGateSlot, Vm_ );
+		send1< double >( er, yGateSlot, Vm_ );
 		if ( B_ < EPSILON ) {
 			cout << "Warning: B_ value for " << e->name() <<
 					" is ~0. Check Y table\n";
@@ -523,9 +522,9 @@ void HHChannel::innerReinitFunc( Element* e, ProcInfo info )
 
 	if ( Zpower_ > 0 ) {
 		if ( useConcentration_ )
-			send1< double >( e, 0, zGateSlot, conc_ );
+			send1< double >( er, zGateSlot, conc_ );
 		else
-			send1< double >( e, 0, zGateSlot, Vm_ );
+			send1< double >( er, zGateSlot, Vm_ );
 		if ( B_ < EPSILON ) {
 			cout << "Warning: B_ value for " << e->name() <<
 					" is ~0. Check Z table\n";
@@ -537,7 +536,7 @@ void HHChannel::innerReinitFunc( Element* e, ProcInfo info )
 
 	Gk_ = g_;
 
-	send2< double, double >( e, 0, channelSlot, Gk_, Ek_ );
+	send2< double, double >( er, channelSlot, Gk_, Ek_ );
 	// channelSrc_.send( Gk_, Ek_ );
 	Ik_ = ( Ek_ - Vm_ ) * g_;
 	g_ = 0.0;

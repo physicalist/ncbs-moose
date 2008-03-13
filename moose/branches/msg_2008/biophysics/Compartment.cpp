@@ -287,7 +287,7 @@ bool Compartment::rangeWarning( const Conn* c, const string& field, double value
 	if ( value < Compartment::EPSILON ) {
 		cout << "Warning: Ignored attempt to set " << field <<
 				" of compartment " <<
-				c->targetElement()->name() << 
+				c->target().e->name() << 
 				" to less than " << EPSILON << endl;
 		return 1;
 	}
@@ -300,9 +300,9 @@ void Compartment::setVm( const Conn* c, double Vm )
 	static_cast< Compartment* >( c->data() )->Vm_ = Vm;
 }
 
-double Compartment::getVm( const Element* e )
+double Compartment::getVm( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->Vm_;
+	return static_cast< Compartment* >( e.data() )->Vm_;
 }
 
 void Compartment::setEm( const Conn* c, double Em )
@@ -310,9 +310,9 @@ void Compartment::setEm( const Conn* c, double Em )
 	static_cast< Compartment* >( c->data() )->Em_ = Em;
 }
 
-double Compartment::getEm( const Element* e )
+double Compartment::getEm( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->Em_;
+	return static_cast< Compartment* >( e.data() )->Em_;
 }
 
 void Compartment::setCm( const Conn* c, double Cm )
@@ -321,9 +321,9 @@ void Compartment::setCm( const Conn* c, double Cm )
 	static_cast< Compartment* >( c->data() )->Cm_ = Cm;
 }
 
-double Compartment::getCm( const Element* e )
+double Compartment::getCm( Eref e )
 {
-	return static_cast< const Compartment* >( e->data( 0 ) )->Cm_;
+	return static_cast< const Compartment* >( e.data() )->Cm_;
 }
 
 void Compartment::setRm( const Conn* c, double Rm )
@@ -334,9 +334,9 @@ void Compartment::setRm( const Conn* c, double Rm )
 			1.0/Rm;
 }
 
-double Compartment::getRm( const Element* e )
+double Compartment::getRm( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->Rm_;
+	return static_cast< Compartment* >( e.data() )->Rm_;
 }
 
 void Compartment::setRa( const Conn* c, double Ra )
@@ -345,9 +345,9 @@ void Compartment::setRa( const Conn* c, double Ra )
 	static_cast< Compartment* >( c->data() )->Ra_ = Ra;
 }
 
-double Compartment::getRa( const Element* e )
+double Compartment::getRa( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->Ra_;
+	return static_cast< Compartment* >( e.data() )->Ra_;
 }
 
 void Compartment::setIm( const Conn* c, double Im )
@@ -355,9 +355,9 @@ void Compartment::setIm( const Conn* c, double Im )
 	static_cast< Compartment* >( c->data() )->Im_ = Im;
 }
 
-double Compartment::getIm( const Element* e )
+double Compartment::getIm( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->Im_;
+	return static_cast< Compartment* >( e.data() )->Im_;
 }
 
 void Compartment::setInject( const Conn* c, double Inject )
@@ -366,9 +366,9 @@ void Compartment::setInject( const Conn* c, double Inject )
 			Inject;
 }
 
-double Compartment::getInject( const Element* e )
+double Compartment::getInject( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->Inject_;
+	return static_cast< Compartment* >( e.data() )->Inject_;
 }
 
 void Compartment::setInitVm( const Conn* c, double initVm )
@@ -377,9 +377,9 @@ void Compartment::setInitVm( const Conn* c, double initVm )
 			initVm;
 }
 
-double Compartment::getInitVm( const Element* e )
+double Compartment::getInitVm( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->initVm_;
+	return static_cast< Compartment* >( e.data() )->initVm_;
 }
 
 void Compartment::setDiameter( const Conn* c, double value )
@@ -388,9 +388,9 @@ void Compartment::setDiameter( const Conn* c, double value )
 			diameter_ = value;
 }
 
-double Compartment::getDiameter( const Element* e )
+double Compartment::getDiameter( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->diameter_;
+	return static_cast< Compartment* >( e.data() )->diameter_;
 }
 
 void Compartment::setLength( const Conn* c, double value )
@@ -399,9 +399,9 @@ void Compartment::setLength( const Conn* c, double value )
 			value;
 }
 
-double Compartment::getLength( const Element* e )
+double Compartment::getLength( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->length_;
+	return static_cast< Compartment* >( e.data() )->length_;
 }
 
 void Compartment::setX( const Conn* c, double value )
@@ -410,9 +410,9 @@ void Compartment::setX( const Conn* c, double value )
 			value;
 		
 }
-double Compartment::getX( const Element* e )
+double Compartment::getX( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->x_;
+	return static_cast< Compartment* >( e.data() )->x_;
 }
 
 void Compartment::setY( const Conn* c, double value )
@@ -421,9 +421,9 @@ void Compartment::setY( const Conn* c, double value )
 			value;
 		
 }
-double Compartment::getY( const Element* e )
+double Compartment::getY( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->y_;
+	return static_cast< Compartment* >( e.data() )->y_;
 }
 
 void Compartment::setZ( const Conn* c, double value )
@@ -432,16 +432,16 @@ void Compartment::setZ( const Conn* c, double value )
 			value;
 		
 }
-double Compartment::getZ( const Element* e )
+double Compartment::getZ( Eref e )
 {
-	return static_cast< Compartment* >( e->data( 0 ) )->z_;
+	return static_cast< Compartment* >( e.data() )->z_;
 }
 
 //////////////////////////////////////////////////////////////////
 // Compartment::Dest function definitions.
 //////////////////////////////////////////////////////////////////
 
-void Compartment::innerProcessFunc( Element* e, ProcInfo p )
+void Compartment::innerProcessFunc( Eref e, ProcInfo p )
 {
 	A_ += Inject_ + sumInject_ + Em_ * invRm_; 
 	if ( B_ > EPSILON ) {
@@ -455,9 +455,9 @@ void Compartment::innerProcessFunc( Element* e, ProcInfo p )
 	Im_ = 0.0;
 	sumInject_ = 0.0;
 	// Send out the channel messages
-	send1< double >( e, 0, channelSlot, Vm_ );
+	send1< double >( e, channelSlot, Vm_ );
 	// Send out the message to any SpikeGens.
-	send1< double >( e, 0, VmSlot, Vm_ );
+	send1< double >( e, VmSlot, Vm_ );
 	// Send out the axial messages
 	// send1< double >( e, axialSlot, Vm_ );
 	// Send out the raxial messages
@@ -466,11 +466,11 @@ void Compartment::innerProcessFunc( Element* e, ProcInfo p )
 
 void Compartment::processFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c->targetElement();
-	static_cast< Compartment* >( c->data() )->innerProcessFunc( e, p );
+	static_cast< Compartment* >( c->data() )->
+		innerProcessFunc( c->target(), p );
 }
 
-void Compartment::innerReinitFunc( Element* e, ProcInfo p )
+void Compartment::innerReinitFunc(  Eref e, ProcInfo p )
 {
 	Vm_ = initVm_;
 	A_ = 0.0;
@@ -478,38 +478,38 @@ void Compartment::innerReinitFunc( Element* e, ProcInfo p )
 	Im_ = 0.0;
 	sumInject_ = 0.0;
 	// Send the Vm over to the channels at reset.
-	send1< double >( e, 0, channelSlot, Vm_ );
+	send1< double >( e, channelSlot, Vm_ );
 	// Send the Vm over to the SpikeGen
-	send1< double >( e, 0, VmSlot, Vm_ );
+	send1< double >( e, VmSlot, Vm_ );
 }
 
 void Compartment::reinitFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c->targetElement();
-	static_cast< Compartment* >( c->data() )->innerReinitFunc( e, p );
+	static_cast< Compartment* >( c->data() )->
+		innerReinitFunc( c->target(), p );
 }
 
 void Compartment::initFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c->targetElement();
-	static_cast< Compartment* >( c->data() )->innerInitFunc( e, p );
+	static_cast< Compartment* >( c->data() )->
+		innerInitFunc( c->target(), p );
 }
 
-void Compartment::innerInitFunc( Element* e, ProcInfo p )
+void Compartment::innerInitFunc( Eref e, ProcInfo p )
 {
 	// Send out the axial messages
-	send1< double >( e, 0, axialSlot, Vm_ );
+	send1< double >( e, axialSlot, Vm_ );
 	// Send out the raxial messages
-	send2< double >( e, 0, raxialSlot, Ra_, Vm_ );
+	send2< double >( e, raxialSlot, Ra_, Vm_ );
 }
 
 void Compartment::initReinitFunc( const Conn* c, ProcInfo p )
 {
-	Element* e = c->targetElement();
-	static_cast< Compartment* >( c->data() )->innerInitReinitFunc( e, p );
+	static_cast< Compartment* >( c->data() )->
+		innerInitReinitFunc( c->target(), p );
 }
 
-void Compartment::innerInitReinitFunc( Element* e, ProcInfo p )
+void Compartment::innerInitReinitFunc( Eref e, ProcInfo p )
 {
 	; // Nothing happens here
 }

@@ -91,7 +91,7 @@ void HHGate::gateFunc( const Conn* c, double v )
 	// static_cast< HHGate *>( c.data() )->innerGateFunc( c, v );
 	HHGate *h = static_cast< HHGate *>( c->data() );
 
-	sendBack2< double, double >( c->targetElement(), gateSlot, c,
+	sendBack2< double, double >( c, gateSlot,
 		h->A_.innerLookup( v ) , h->B_.innerLookup( v ) );
 }
 
@@ -105,7 +105,7 @@ void HHGate::gateFunc( const Conn* c, double v )
 void HHGate::postCreate( const Conn* c )
 {
 	HHGate* h = static_cast< HHGate *>( c->data() );
-	Element* e = c->targetElement();
+	Element* e = c->target().e;
 
 	// cout << "HHGate::postCreate called\n";
 	const Cinfo* ic = initInterpolCinfo();

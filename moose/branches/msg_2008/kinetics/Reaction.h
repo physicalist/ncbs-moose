@@ -25,14 +25,14 @@ class Reaction
 		// Field function definitions
 		///////////////////////////////////////////////////
 		static void setKf( const Conn* c, double value );
-		static double getKf( const Element* e );
+		static double getKf( Eref e );
 		static void setKb( const Conn* c, double value );
-		static double getKb( const Element* e );
+		static double getKb( Eref e );
 		
 		///////////////////////////////////////////////////
 		// Shared message function definitions
 		///////////////////////////////////////////////////
-		void innerProcessFunc( Element* e, ProcInfo info );
+		void innerProcessFunc( Eref e, ProcInfo info );
 		static void processFunc( const Conn* c, ProcInfo p );
 		void innerReinitFunc();
 		static void reinitFunc( const Conn* c, ProcInfo p );
