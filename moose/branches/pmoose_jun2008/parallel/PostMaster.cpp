@@ -436,6 +436,7 @@ void* PostMaster::innerGetAsyncParBuf( const Conn* c, unsigned int size )
 
 #ifdef DO_UNIT_TESTS
 #include "../element/Neutral.h"
+#include "../element/Wildcard.h"
 #include "Ftype2.h"
 #include "setget.h"
 #include "../builtins/Interpol.h"
@@ -585,12 +586,56 @@ void testParAsyncMessaging()
 	void* vabuf = static_cast< void* >( abuf + sizeof( AsyncStruct ) );
 	int i = *static_cast< int* >( vabuf );
 	ASSERT( i == tdata->i_, "sending int" );
+	i = 0;
+	unserialize< int >( i, vabuf ); // The postmaster uses unserialize
+	ASSERT( i == tdata->i_, "sending int" );
 
 	// Send a double to the postmaster
+	pm->sendBufPos_ = 0;
+	tdata->x_ = 3.1415926535;
+	ret = Eref( t ).add( "xSrc", p, "async" );
+	ASSERT( ret, "msg to post" );
+	TestParClass::sendX( &c );
+	double x = *static_cast< double* >( vabuf );
+	ASSERT( x == tdata->x_, "sending double" );
+	x = 0;
+	unserialize< double >( x, vabuf ); // The postmaster uses unserialize
+	ASSERT( x == tdata->x_, "sending double" );
+
 	// Send a string to the postmaster
-	// Send a vector of ints to the postmaster
+	pm->sendBufPos_ = 0;
+	tdata->s_ = "Gleams that untravelled world";
+	ret = Eref( t ).add( "sSrc", p, "async" );
+	ASSERT( ret, "msg to post" );
+	TestParClass::sendS( &c );
+	string s;
+	unserialize< string >( s, vabuf );
+	// string s = *static_cast< string* >( vabuf );
+	ASSERT( s == tdata->s_, "sending string" );
+
 	// Send a vector of Ids to the postmaster
+	pm->sendBufPos_ = 0;
+	unsigned int nfoo = simpleWildcardFind( "/##", tdata->idVec_ );
+	ret = Eref( t ).add( "idVecSrc", p, "async" );
+	ASSERT( ret, "msg to post" );
+	TestParClass::sendIdVec( &c );
+	vector< Id > foo;
+	foo = *static_cast< vector< Id >* >( vabuf );
+	ASSERT( nfoo == foo.size(), "sending vector< Id >" );
+	ASSERT( foo == tdata->idVec_, "sending vector< Id >" );
+
 	// Send a vector of strings to the postmaster
+	pm->sendBufPos_ = 0;
+	tdata->sVec_.push_back( "whose margin fades" );
+	tdata->sVec_.push_back( "forever and forever" );
+	tdata->sVec_.push_back( "when I move" );
+	vector< string > svec = tdata->sVec_;
+
+	ret = Eref( t ).add( "sVecSrc", p, "async" );
+	ASSERT( ret, "msg to post" );
+	TestParClass::sendSvec( &c );
+	vector< string > bar = *static_cast< vector< string >* >( vabuf );
+	ASSERT( svec == bar, "sending vector< string >" );
 
 	// Make a message to an int via a proxy
 	// Make a message to 100 ints via the proxy
