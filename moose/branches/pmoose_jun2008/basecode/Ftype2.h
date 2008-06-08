@@ -130,21 +130,6 @@ template < class T1, class T2 > class Ftype2: public Ftype
 			 * target Conn. It returns the data pointer set to the
 			 * next field.
 			 */
-			/*
-			static const void* incomingFunc(
-				const Conn* c, const void* data, RecvFunc rf )
-			{
-				T1 v1;
-				T2 v2;
-				data = unserialize< T1 >( v1, data );
-				data = unserialize< T2 >( v2, data );
-				( reinterpret_cast< 
-					void (*)( const Conn* c, T1, T2 ) 
-				> ( rf ) )( c, v1, v2 );
-				return data;
-			}
-			*/
-
 			static void proxyFunc(
 				const Conn* c, const void* data, Slot slot )
 			{
