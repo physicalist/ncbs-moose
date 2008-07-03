@@ -176,22 +176,23 @@ const char* ftype2str( const Ftype *f )
 bool PostMaster::setupProxyMsg( unsigned int srcNode, Id proxy, 
 	Id dest, int destMsg, Element* post )
 {
+	const Finfo* destFinfo = dest()->findFinfo( destMsg );
+	assert( destFinfo != 0 );
+	unsigned int pfid = destFinfo->ftype()->proxyFuncId();
+	assert( pfid > 0 );
+	
 	// Check for existence of proxy, create if needed.
 	Element* pe;
 	if ( proxy.isProxy() ) {
 		pe = proxy();
 	} else {
-		pe = new ProxyElement( proxy, srcNode );
+		pe = new ProxyElement( proxy, srcNode, pfid );
 	}
 	unsigned int srcIndex = pe->numTargets( 0, proxy.index() );
 	unsigned int destIndex = dest()->numTargets( destMsg, dest.index() );
 	unsigned int srcFuncId = 0; /// \todo: How do we deal with returning shared msgs?
 
-	const Finfo* destFinfo = dest()->findFinfo( destMsg );
-	assert( destFinfo != 0 );
-	int pfid = destFinfo->ftype()->proxyFuncId();
-	assert( pfid > 0 );
-	unsigned int destFuncId = static_cast< unsigned int >( pfid );
+	unsigned int destFuncId = destFinfo->funcId();
 
 	bool ret = Msg::add( 
 		proxy.eref(), dest.eref(), 
@@ -235,14 +236,36 @@ void PostMaster::postIrecv( const Conn* c, int ordinal )
 
 /**
  * Transmits data to proxy element, which then sends data out to targets.
+ * Returns size of data transmitted.
  */
-unsigned int proxy2tgt( const AsyncStruct& as, const char* data )
+unsigned int proxy2tgt( const AsyncStruct& as, char* data )
 {
-	// Make a Conn
-	// call appropriate proxyFunc from the AsyncStruct, which could
-	// be improved here.
-	// Figure out how much data was sent and return that.
-	return 0;
+	// Note that 'target' is actually the proxy here.
+	assert( as.target().good() );
+
+	Eref tgt = as.target().eref();
+	ProxyElement* pe = dynamic_cast< ProxyElement* >( tgt.e );
+	assert( pe != 0 );
+
+	pe->sendData( data );
+	/*
+	// Second arg here should be target message. For the proxy
+	// this is the one and only message, so it should be zero.
+	// In principle the AsyncStruct handles additional info for
+	// the target message, but I am dubious about it.
+	Slot s( 0, 0 ); // First msg, first func in it. Seems OK.
+	send1< char* >( tgt, s, data );
+	*/
+
+	// OK, how big is the data chunk? Now this would be useful
+	// to pass in the Async struct. The dest serializer knows, but
+	// we can't get at the info here. Given that we may transfer
+	// strings and vecs, we can't get at this info from the target
+	// message either.
+	// OK, put it in the Async struct. For now hacked into the
+	// sourceMsg() field.
+	
+	return as.sourceMsg();
 }
 
 /**
@@ -272,7 +295,7 @@ void PostMaster::innerPoll( const Conn* c )
 		if ( dataSize < sizeof( unsigned int ) ) return;
 
 		// Handle async data in the buffer
-		const char* data = &( recvBuf_[ 0 ] );
+		char* data = &( recvBuf_[ 0 ] );
 		unsigned int nMsgs = *static_cast< const unsigned int* >(
 						static_cast< const void* >( data ) );
 		data += sizeof( unsigned int );
@@ -282,14 +305,6 @@ void PostMaster::innerPoll( const Conn* c )
 			unsigned int size = proxy2tgt( as, data );
 			// assert( size == as.size() );
 			data += size;
-		}
-
-		// Here we skip the location for the msgId, so this is only for
-		// async msgs.
-		data = &( recvBuf_[0] );
-		const char* dataEnd = &( recvBuf_[ dataSize ] );
-		while ( data < dataEnd ) {
-			data++; // dummy
 		}
 
 		donePoll_ = 1;
@@ -386,8 +401,9 @@ void* getAsyncParBuf( const Conn* c, unsigned int size )
 }
 
 /**
- * This function puts in the id of the message into the data buffer
- * and passes the next free location over to the calling function.
+ * This function puts in information about message source and target
+ * function into the data buffer, followed by the arguments.
+ * It returns the next free location to the calling function.
  * It internally increments the current location of the buffer.
  * If we don't use MPI, then this whole file is unlikely to be compiled.
  * So we define the dummy version of the function in DerivedFtype.cpp.
@@ -399,7 +415,13 @@ void* PostMaster::innerGetAsyncParBuf( const Conn* c, unsigned int size )
 		// Do something clever here to send another installment
 		return 0;
 	}
-	AsyncStruct as( c->target().id(), c->targetMsg(), c->sourceMsg() );
+	// We pass the source id here because it is used to look up
+	// the proxy on the target node.
+	// I'm not sure the targetMsg is meaningful here. It may just
+	// get set to whatever the postmaster AsyncMsgDest uses.
+	// I'm pretty sure the sourceMsg is useless too.
+	// I'm going to put the message size in the third arg.
+	AsyncStruct as( c->source().id(), c->targetMsg(), size );
 	char* sendBufPtr = &( sendBuf_[ sendBufPos_ ] );
 	*static_cast< AsyncStruct* >( static_cast< void* >( sendBufPtr ) ) = as;
 	sendBufPtr += sizeof( AsyncStruct );
@@ -554,9 +576,10 @@ void testParAsyncObj2Post()
 	AsyncStruct as( abuf );
 	int asyncMsgNum = p->findFinfo( "async" )->msg();
 	int iSendMsgNum = t->findFinfo( "iSrc" )->msg();
-	ASSERT( as.target() == p->id(), "async info to post" );
+	ASSERT( as.target() == t->id(), "async info to post" );
 	ASSERT( as.targetMsg() == asyncMsgNum, "async info to post" );
-	ASSERT( as.sourceMsg() == iSendMsgNum, "async info to post" );
+	// ASSERT( as.sourceMsg() == iSendMsgNum, "async info to post" );
+	ASSERT( as.sourceMsg() == sizeof( int ), "async info to post" );
 
 	void* vabuf = static_cast< void* >( abuf + sizeof( AsyncStruct ) );
 	int i = *static_cast< int* >( vabuf );
@@ -661,7 +684,11 @@ void testParAsyncObj2Post2Obj()
 
 	SetConn c( t, 0 );
 
-	PostMaster* pm = static_cast< PostMaster* >( p0->data() );
+	PostMaster* pm0 = static_cast< PostMaster* >( p0->data() );
+	PostMaster* pm1 = static_cast< PostMaster* >( p1->data() );
+	pm0->sendBufPos_ = sizeof( unsigned int ); // to count # of msgs
+	void* vabuf = static_cast< void* >( &pm0->sendBuf_[0] );
+	*static_cast< unsigned int * >( vabuf ) = 1; // set it to 1 msg.
 
 	// Send an int to the postmaster
 	tdata->i_ = 44332200;
@@ -669,22 +696,55 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "msg to post" );
 	int tgtMsg = tdest->findFinfo( "i" )->msg();
 
+	Id proxyId = Id::scratchId();
 	ret = PostMaster::setupProxyMsg( 
-		0, Id::scratchId(), tdest->id(), tgtMsg, p1 );
+		0, proxyId, tdest->id(), tgtMsg, p1 );
 	ASSERT( ret, "msg from post to tgt" );
 
 	TestParClass::sendI( &c );
-	char* abuf = &( pm->sendBuf_[0] );
+	char* abuf = &( pm0->sendBuf_[0] ) + sizeof( unsigned int );
 	AsyncStruct as( abuf );
 	int asyncMsgNum = p0->findFinfo( "async" )->msg();
 	int iSendMsgNum = t->findFinfo( "iSrc" )->msg();
 
-	void* vabuf = static_cast< void* >( abuf + sizeof( AsyncStruct ) );
+	vabuf = static_cast< void* >( abuf + sizeof( AsyncStruct ) );
 	int i = *static_cast< int* >( vabuf );
 	ASSERT( i == tdata->i_, "sending int" );
 	i = 0;
 	Serializer< int >::unserialize( i, vabuf ); // The postmaster uses unserialize
 	ASSERT( i == tdata->i_, "sending int" );
+
+	///////////////////////////////////////////////////////////
+	// Here I copy over the contents of the send buf of pm0 to 
+	// the recv buf of pm1, to simulate the process of MPI-based
+	// internode data transmission.
+	///////////////////////////////////////////////////////////
+	pm1->recvBuf_ = pm0->sendBuf_;
+
+	// SetConn p1c( p1, 0 );
+	//PostMaster::innerPoll( p1c ); // This deals with the incoming data
+
+	// Some lines pinched from innerPoll
+	// Handle async data in the buffer
+	char* data = &( pm1->recvBuf_[ 0 ] );
+	unsigned int nMsgs = *static_cast< const unsigned int* >(
+					static_cast< const void* >( data ) );
+	ASSERT( nMsgs == 1, "on tgt postmaster");
+	data += sizeof( unsigned int );
+	for ( unsigned int i = 0; i < nMsgs; i++ ) {
+		AsyncStruct as( data );
+		// Here we fudge it because the AsyncStruct still has the
+		// orignal element id, but we need to put in the proxy id
+		// Since we are testing it all on the same node it has to
+		// be a different id.
+		as.tgt_ = proxyId;
+		data += sizeof( AsyncStruct );
+		unsigned int size = proxy2tgt( as, data );
+		// assert( size == as.size() );
+		data += size;
+	}
+	ASSERT( tDestData->i_ == tdata->i_, "Recieved data on tgt" );
+
 
 	/*
 	// Send a double to the postmaster

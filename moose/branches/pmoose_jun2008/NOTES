@@ -7001,4 +7001,11 @@ strings, vectors of Ids and vectors of strings.
 Next: send postmaster->object messages. Working on PostMaster::setupProxyMsg
 Well, it went so far as to set up the message. Still no data transfer.
 
+Checked in as revision 531 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Data transfer step revealed a mess. Need some rethinking about the
+proxyFunc formulation. Hacked it for now by storing the ProxyFunc in the
+proxyElement, but there must be a cleaner way to do things.
+Anyway, data has been transferred.
+
 ==============================================================================

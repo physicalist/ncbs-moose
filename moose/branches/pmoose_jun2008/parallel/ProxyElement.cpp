@@ -10,10 +10,12 @@
 #include "moose.h"
 #include "ProxyElement.h"
 
-ProxyElement::ProxyElement( Id id, unsigned int node)
+ProxyElement::ProxyElement( Id id, unsigned int node, 
+	unsigned int proxyFuncId )
 	: Element( id ), node_( node )
 {
-	;
+	proxyFunc_ = reinterpret_cast< ProxyFunc >( 
+		FuncVec::getFuncVec( proxyFuncId )->func( 0 ) );
 }
 
 /**
@@ -32,4 +34,10 @@ unsigned int ProxyElement::numTargets( int msgNum ) const
 		assert( 0 ); // Don't allow incoming, yet.
 	}
 	return 0;
+}
+
+void ProxyElement::sendData( const char* data )
+{
+	SetConn c( this, 0 );
+	proxyFunc_( &c, data, Slot( 0, 0 ) );
 }

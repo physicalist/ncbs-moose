@@ -11,6 +11,8 @@
 #ifndef _PROXY_ELEMENT_H
 #define _PROXY_ELEMENT_H
 
+typedef void( *ProxyFunc )( const Conn*, const void*, Slot );
+
 /**
  * The ProxyElement class is a minimalist stand-in for an off-node
  * Element. It manages only one Msg and knows its PostMaster, 
@@ -20,7 +22,8 @@
 class ProxyElement: public Element
 {
 	public:
-		ProxyElement( Id id, unsigned int node);
+		ProxyElement( Id id, unsigned int node, 
+			unsigned int proxyFuncId);
 
 		/// Nothing much to do here.
 		~ProxyElement() {
@@ -47,6 +50,11 @@ class ProxyElement: public Element
 		const Cinfo* cinfo() const {
 			return 0;
 		}
+
+		/////////////////////////////////////////////////////////////
+		// Hack here to deal with proxy msgs
+		/////////////////////////////////////////////////////////////
+		void sendData( const char* data );
 
 		/////////////////////////////////////////////////////////////
 		// Msg traversal functions, part of API
@@ -333,6 +341,7 @@ class ProxyElement: public Element
 	private:
 		Msg msg_;
 		unsigned int node_;
+		ProxyFunc proxyFunc_;
 };
 
 #endif // _PROXY_ELEMENT_H
