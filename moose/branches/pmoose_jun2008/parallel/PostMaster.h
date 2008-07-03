@@ -39,7 +39,7 @@ class PostMaster
 #ifdef DO_UNIT_TESTS
 	friend void testParAsyncObj2Post();
 	friend void testParAsyncObj2Post2Obj();
-#endif
+#endif // DO_UNIT_TESTS
 	public:
 		PostMaster();
 		//////////////////////////////////////////////////////////////
@@ -118,7 +118,14 @@ class PostMaster
 };
 
 class AsyncStruct {
+#ifdef DO_UNIT_TESTS
+	friend void testParAsyncObj2Post2Obj();
+#endif // DO_UNIT_TESTS
 	public: 
+		/**
+		 * The target here actually refers to the proxy id, which is
+		 * the source id on the originating node! Need to clean up.
+		 */
 		AsyncStruct( Id tgt, int tgtMsg, int srcMsg )
 			: tgt_( tgt ), tgtMsg_( tgtMsg ), srcMsg_( srcMsg )
 		{;}
@@ -155,6 +162,6 @@ class AsyncStruct {
 
 extern const Cinfo* initPostMasterCinfo();
 
-#endif
+#endif // USE_MPI
 
 #endif // _POST_MASTER_H
