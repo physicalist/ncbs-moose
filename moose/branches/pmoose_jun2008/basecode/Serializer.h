@@ -21,7 +21,11 @@
 template< class T > class Serializer
 {
 	public:
-		Serializer( void* data )
+		Serializer()
+			: data_( 0 )
+		{;}
+
+		Serializer( const void* data )
 			: data_( data )
 		{;}
 		/**
@@ -30,8 +34,9 @@ template< class T > class Serializer
  		* vectors and strings. This default works only for simple
  		* types.
  		*/
-		void unserialize( T& value ) const {
-			value = *static_cast< T* >( data_ );
+		static const void* unserialize( T& value, const void* data ) {
+			value = *static_cast< const T* >( data );
+			return static_cast< const char* >( data ) + sizeof( T );
 		}
 
 		/**
@@ -41,10 +46,11 @@ template< class T > class Serializer
  		* vectors and strings. This default works only for simple
  		* types.
  		*/
-		void serialize( const T& value )
+		static void* serialize( void* data, const T& value )
 		{
-			T* temp = static_cast< T* >( data_ );
+			T* temp = static_cast< T* >( data );
 			*temp = value;
+			return temp + 1;
 		}
 
 		/**
@@ -66,23 +72,28 @@ template< class T > class Serializer
 template<> class Serializer< string >
 {
 	public:
-		Serializer( void* data )
-			: data_( data )
+		/*
+		Serializer()
+			: data_( 0 )
 		{;}
+		*/
 		/**
  		* Converts serialized data into string
  		*/
-		void unserialize( string& value ) const {
-			value = static_cast< const char* >( data_ );
+		static const void* unserialize( string& value, const void* data ) {
+			const char* temp = static_cast< const char* >( data );
+			value = temp;
+			return static_cast< const void* >( temp + value.length() + 1 );
 		}
 
 		/**
  		* Converts defined types into serialized data.
  		*/
-		void serialize( const string& value )
+		static void* serialize( void* data, const string& value )
 		{
-			char* c = static_cast< char* >( data_ );
+			char* c = static_cast< char* >( data );
 			strcpy( c, value.c_str() );
+			return c + value.length() + 1;
 		}
 
 		/**
@@ -102,16 +113,19 @@ template<> class Serializer< string >
 template<> class Serializer< vector< string > >
 {
 	public:
+		/*
 		Serializer( void* data )
 			: data_( data )
 		{;}
+		*/
 		/**
  		* Converts serialized data into a vector of strings.
  		*/
-		void unserialize( vector< string >& value ) const {
-			unsigned int size = *static_cast< const unsigned int* >( data_);
+		static const void* unserialize( vector< string >& value, 
+			const void* data ) {
+			unsigned int size = *static_cast< const unsigned int* >( data);
 			assert( size < MAX_SERIALIZER_SIZE );
-			const char* temp = static_cast< const char* >( data_ ) + 
+			const char* temp = static_cast< const char* >( data ) + 
 				sizeof( unsigned int );
 			value.resize( size );
 			vector< string >::iterator i;
@@ -119,23 +133,26 @@ template<> class Serializer< vector< string > >
 				*i = temp;
 				temp += i->length() + 1;
 			}
+			return static_cast< const void* >( temp );
 		}
 
 		/**
  		* Converts vector of strings into serialized data.
  		* Stores the size as the first entry.
+		* Returns a pointer to the next location in 'data' memory.
  		*/
-		void serialize( const vector< string >& value )
+		static void* serialize( void* data, const vector< string >& value )
 		{
 			assert( value.size() < MAX_SERIALIZER_SIZE );
-			*static_cast< unsigned int* >( data_ ) = value.size();
+			*static_cast< unsigned int* >( data ) = value.size();
 		
-			char* temp = static_cast< char* >( data_ ) + sizeof( unsigned int );
+			char* temp = static_cast< char* >( data ) + sizeof( unsigned int );
 			vector< string >::const_iterator i;
 			for ( i = value.begin(); i != value.end(); i++ ) {
 				strcpy( temp, i->c_str() );
 				temp += i->length() + 1;
 			}
+			return static_cast< void* >( temp );
 		}
 
 		/**
@@ -159,39 +176,50 @@ template<> class Serializer< vector< string > >
  * Here is a partial specialization of Serializer to help it handle
  * vectors.
  */
-template< class T > class Serializer< T * >
+// template< class T > class Serializer< T * >
+template< class T > class Serializer< vector< T > >
 //template< class T > Serializer< vector< T > >
 {
 	public:
+		/*
 		Serializer( void* data )
 			: data_( data )
 		{;}
+		*/
 		/**
  		* Converts serialized data into defined types.
  		* Returns the data pointer incremented to the next field.
  		*/
-		void unserialize( vector< T >& value ) {
+		static const void* unserialize( vector< T >& value,
+			const void* data ) {
 			// Now why would you want to transfer such a big vector?
 			// Here the first entry is the vector size, stored as an
 			// unsigned int.
-			unsigned int size = *static_cast< const unsigned int* >( data_);
+			unsigned int size = *static_cast< const unsigned int* >( data);
 			assert( size < MAX_SERIALIZER_SIZE );
 			value.resize( size );
-			memcpy( &( value[0] ), data_ + sizeof( unsigned int ), 
+			const char* temp = static_cast< const char* >( data );
+			memcpy( &( value[0] ), temp + sizeof( unsigned int ), 
 				size * sizeof( T ) );
+			return static_cast< const void* >( 
+				temp + sizeof( unsigned int ) + size * sizeof( T ) );
 		}
 
 		/**
  		* Converts defined types into serialized data.
  		* Returns data pointer incremented to end of this field.
  		*/
-		void serialize( const vector< T >& value )
+		static void* serialize( void* data, const vector< T >& value )
 		{
 			size_t vs = value.size();
 			assert( vs < MAX_SERIALIZER_SIZE );
-			*static_cast< unsigned int* >( data_ ) = vs;
-			memcpy( data_ + sizeof( unsigned int ), &( value[0] ),
+			*static_cast< unsigned int* >( data ) = vs;
+			char* temp = static_cast< char* >( data );
+			memcpy( temp + sizeof( unsigned int ), &( value[0] ),
 				sizeof( T ) * vs );
+
+			return static_cast< void* >( 
+				temp + sizeof( unsigned int ) + vs * sizeof( T ) );
 		}
 
 		/**

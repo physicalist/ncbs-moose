@@ -164,74 +164,49 @@ const char* ftype2str( const Ftype *f )
 }
 */
 
-
-/////////////////////////////////////////////////////////////////////
-// Utility function for accessing postmaster data buffer.
-/////////////////////////////////////////////////////////////////////
 /**
- * This function just passes the next free location over to the calling 
- * function. It does not store the targetIndex.
- * It internally increments the current location of the buffer.
- * If we don't use MPI, then this whole file is unlikely to be compiled.
- * So we define the dummy version of the function in DerivedFtype.cpp.
+ * Manages the setup of a message emanating from this postmaster to 
+ * one or more targets. This is a PostMaster operation because we need to
+ * set up assorted proxies.
+ *
+ * This rather nasty function does a bit both of SrcFinfo::add and
+ * DestFinfo::respondToAdd, since it has to bypass much of the logic of
+ * both.
  */
-#if 0
-void* PostMaster::innerGetParBuf( 
-				unsigned int targetIndex, unsigned int size )
+bool PostMaster::setupProxyMsg( unsigned int srcNode, Id proxy, 
+	Id dest, int destMsg, Element* post )
 {
-	if ( size + outBufPos_ > outBufSize_ ) {
-		cout << "in getParBuf: Out of space in outBuf.\n";
-		// Do something clever here to send another installment
-		return 0;
+	// Check for existence of proxy, create if needed.
+	Element* pe;
+	if ( proxy.isProxy() ) {
+		pe = proxy();
+	} else {
+		pe = new ProxyElement( proxy, srcNode );
 	}
-	outBufPos_ += size;
-	return static_cast< void* >( outBuf_ + outBufPos_ - size );
-}
+	unsigned int srcIndex = pe->numTargets( 0, proxy.index() );
+	unsigned int destIndex = dest()->numTargets( destMsg, dest.index() );
+	unsigned int srcFuncId = 0; /// \todo: How do we deal with returning shared msgs?
 
-void PostMaster::parseMsgRequest( const char* req, Element* self )
-{
-	// sscanf( req, "%d %d %s", srcId, destId, typeSig );
-	// string sreq( req );
+	const Finfo* destFinfo = dest()->findFinfo( destMsg );
+	assert( destFinfo != 0 );
+	int pfid = destFinfo->ftype()->proxyFuncId();
+	assert( pfid > 0 );
+	unsigned int destFuncId = static_cast< unsigned int >( pfid );
 
-	Id srcId;
-	Id destId;
-	string typeSig;
-	string targetFname;
-	unsigned int msgIndex;
-
-	istringstream istr;
-	istr.str( req );
-	istr >> srcId >> destId >> typeSig >> targetFname 
-						>> msgIndex >> ws;
-	assert ( istr.eof() );
-	assert ( !srcId.bad() );
-	assert ( !destId.bad() );
-
-	Element* dest = destId();
-	assert( dest != 0 );
-	const Finfo* targetFinfo = dest->findFinfo( targetFname );
-	if ( targetFinfo == 0 ) {
-		// Send back failure report
-		return;
-	}
-
-	if ( targetFinfo->ftype()->typeStr() != typeSig ) {
-		// Send back failure report
-		return;
-	}
-
-	// Note that we could have used a different func here, but best
-	// if we can keep it simple.
+	bool ret = Msg::add( 
+		proxy.eref(), dest.eref(), 
+		0, destMsg,
+		srcIndex, destIndex,
+		srcFuncId, destFuncId,
+		ConnTainer::Default /// \todo: need to get better info on option.
+	);
 	
-	const Finfo* parFinfo = self->findFinfo( "data" );
-	assert( parFinfo != 0 );
-	if ( !parFinfo->add( self, dest, targetFinfo /*, msgIndex */) ) {
-		// Send back failure report
-		return;
-	}
-	// send back success report.
+	// Need to find the type of the dest and use the add from the proxy 
+	// to the dest. 
+	// Uses the Ftype::proxyFuncId()
+	// Proxy src type is always derived from destMsg.
+	return ret;
 }
-#endif
 
 /////////////////////////////////////////////////////////////////////
 // This function does the main work of sending incoming messages
@@ -543,9 +518,9 @@ const Cinfo* initTestParClass()
 	return & testParClassCinfo;
 }
 
-void testParAsyncMessaging()
+void testParAsyncObj2Post()
 {
-	cout << "\nTesting Parallel Async messaging\n";
+	cout << "\nTesting Par Async: Obj2Post";
 	const Cinfo* tpCinfo = initTestParClass();
 	iSlot = tpCinfo->getSlot( "iSrc" );
 	xSlot = tpCinfo->getSlot( "xSrc" );
@@ -587,7 +562,7 @@ void testParAsyncMessaging()
 	int i = *static_cast< int* >( vabuf );
 	ASSERT( i == tdata->i_, "sending int" );
 	i = 0;
-	unserialize< int >( i, vabuf ); // The postmaster uses unserialize
+	Serializer< int >::unserialize( i, vabuf ); // The postmaster uses unserialize
 	ASSERT( i == tdata->i_, "sending int" );
 
 	// Send a double to the postmaster
@@ -599,7 +574,7 @@ void testParAsyncMessaging()
 	double x = *static_cast< double* >( vabuf );
 	ASSERT( x == tdata->x_, "sending double" );
 	x = 0;
-	unserialize< double >( x, vabuf ); // The postmaster uses unserialize
+	Serializer< double >::unserialize( x, vabuf ); // The postmaster uses unserialize
 	ASSERT( x == tdata->x_, "sending double" );
 
 	// Send a string to the postmaster
@@ -609,7 +584,7 @@ void testParAsyncMessaging()
 	ASSERT( ret, "msg to post" );
 	TestParClass::sendS( &c );
 	string s;
-	unserialize< string >( s, vabuf );
+	Serializer< string >::unserialize( s, vabuf );
 	// string s = *static_cast< string* >( vabuf );
 	ASSERT( s == tdata->s_, "sending string" );
 
@@ -620,7 +595,8 @@ void testParAsyncMessaging()
 	ASSERT( ret, "msg to post" );
 	TestParClass::sendIdVec( &c );
 	vector< Id > foo;
-	foo = *static_cast< vector< Id >* >( vabuf );
+	// foo = *static_cast< vector< Id >* >( vabuf );
+	Serializer< vector< Id > >::unserialize( foo, vabuf );
 	ASSERT( nfoo == foo.size(), "sending vector< Id >" );
 	ASSERT( foo == tdata->idVec_, "sending vector< Id >" );
 
@@ -634,7 +610,9 @@ void testParAsyncMessaging()
 	ret = Eref( t ).add( "sVecSrc", p, "async" );
 	ASSERT( ret, "msg to post" );
 	TestParClass::sendSvec( &c );
-	vector< string > bar = *static_cast< vector< string >* >( vabuf );
+	vector< string > bar;
+	Serializer< vector< string > >::unserialize( bar, vabuf );
+	// vector< string > bar = *static_cast< vector< string >* >( vabuf );
 	ASSERT( svec == bar, "sending vector< string >" );
 
 	// Make a message to an int via a proxy
@@ -652,10 +630,134 @@ void testParAsyncMessaging()
 	set( n, "destroy" );
 }
 
+void testParAsyncObj2Post2Obj()
+{
+	cout << "\nTesting Parallel Async: Obj2Obj via post. ";
+	const Cinfo* tpCinfo = initTestParClass();
+	iSlot = tpCinfo->getSlot( "iSrc" );
+	xSlot = tpCinfo->getSlot( "xSrc" );
+	sSlot = tpCinfo->getSlot( "sSrc" );
+	idVecSlot = tpCinfo->getSlot( "idVecSrc" );
+	sVecSlot = tpCinfo->getSlot( "sVecSrc" );
+
+	Element* n = Neutral::create( "Neutral", "n", Id(), Id::scratchId() );
+
+	Element* p0 = Neutral::create(
+			"PostMaster", "node0", n->id(), Id::scratchId());
+	ASSERT( p0 != 0, "created Src Postmaster" );
+
+	Element* p1 = Neutral::create(
+			"PostMaster", "node1", n->id(), Id::scratchId());
+	ASSERT( p1 != 0, "created Dest Postmaster" );
+
+	Element* t = 
+		Neutral::create( "TestPar", "tp", n->id(), Id::scratchId() );
+	ASSERT( t != 0, "created TestPar" );
+	TestParClass* tdata = static_cast< TestParClass* >( t->data() );
+
+	Element* tdest = 
+		Neutral::create( "TestPar", "tdest", n->id(), Id::scratchId() );
+	TestParClass* tDestData = static_cast< TestParClass* >( tdest->data() );
+
+	SetConn c( t, 0 );
+
+	PostMaster* pm = static_cast< PostMaster* >( p0->data() );
+
+	// Send an int to the postmaster
+	tdata->i_ = 44332200;
+	bool ret = Eref( t ).add( "iSrc", p0, "async" );
+	ASSERT( ret, "msg to post" );
+	int tgtMsg = tdest->findFinfo( "i" )->msg();
+
+	ret = PostMaster::setupProxyMsg( 
+		0, Id::scratchId(), tdest->id(), tgtMsg, p1 );
+	ASSERT( ret, "msg from post to tgt" );
+
+	TestParClass::sendI( &c );
+	char* abuf = &( pm->sendBuf_[0] );
+	AsyncStruct as( abuf );
+	int asyncMsgNum = p0->findFinfo( "async" )->msg();
+	int iSendMsgNum = t->findFinfo( "iSrc" )->msg();
+
+	void* vabuf = static_cast< void* >( abuf + sizeof( AsyncStruct ) );
+	int i = *static_cast< int* >( vabuf );
+	ASSERT( i == tdata->i_, "sending int" );
+	i = 0;
+	Serializer< int >::unserialize( i, vabuf ); // The postmaster uses unserialize
+	ASSERT( i == tdata->i_, "sending int" );
+
+	/*
+	// Send a double to the postmaster
+	pm->sendBufPos_ = 0;
+	tdata->x_ = 3.1415926535;
+	ret = Eref( t ).add( "xSrc", p, "async" );
+	ASSERT( ret, "msg to post" );
+	TestParClass::sendX( &c );
+	double x = *static_cast< double* >( vabuf );
+	ASSERT( x == tdata->x_, "sending double" );
+	x = 0;
+	Serializer< double >::unserialize( x, vabuf ); // The postmaster uses unserialize
+	ASSERT( x == tdata->x_, "sending double" );
+
+	// Send a string to the postmaster
+	pm->sendBufPos_ = 0;
+	tdata->s_ = "Gleams that untravelled world";
+	ret = Eref( t ).add( "sSrc", p, "async" );
+	ASSERT( ret, "msg to post" );
+	TestParClass::sendS( &c );
+	string s;
+	Serializer< string >::unserialize( s, vabuf );
+	// string s = *static_cast< string* >( vabuf );
+	ASSERT( s == tdata->s_, "sending string" );
+
+	// Send a vector of Ids to the postmaster
+	pm->sendBufPos_ = 0;
+	unsigned int nfoo = simpleWildcardFind( "/##", tdata->idVec_ );
+	ret = Eref( t ).add( "idVecSrc", p, "async" );
+	ASSERT( ret, "msg to post" );
+	TestParClass::sendIdVec( &c );
+	vector< Id > foo;
+	// foo = *static_cast< vector< Id >* >( vabuf );
+	Serializer< vector< Id > >::unserialize( foo, vabuf );
+	ASSERT( nfoo == foo.size(), "sending vector< Id >" );
+	ASSERT( foo == tdata->idVec_, "sending vector< Id >" );
+
+	// Send a vector of strings to the postmaster
+	pm->sendBufPos_ = 0;
+	tdata->sVec_.push_back( "whose margin fades" );
+	tdata->sVec_.push_back( "forever and forever" );
+	tdata->sVec_.push_back( "when I move" );
+	vector< string > svec = tdata->sVec_;
+
+	ret = Eref( t ).add( "sVecSrc", p, "async" );
+	ASSERT( ret, "msg to post" );
+	TestParClass::sendSvec( &c );
+	vector< string > bar;
+	Serializer< vector< string > >::unserialize( bar, vabuf );
+	// vector< string > bar = *static_cast< vector< string >* >( vabuf );
+	ASSERT( svec == bar, "sending vector< string >" );
+
+	// Make a message to an int via a proxy
+	// Make a message to 100 ints via the proxy
+	// Send a value to an int through the proxy
+	//
+	// Repeat for a vector of strings or something equally awful.
+	//
+
+	// Using a buffer-to-buffer memcpy, do a single-node check on the
+	// complete transfer from int to int and all of the above.
+	//
+	// Also confirm that they work with multiple messages appearing
+	// in random order each time.
+	// */
+	set( n, "destroy" );
+}
+
 void testPostMaster()
 {
 	// First, ensure that all nodes are synced.
-	testParAsyncMessaging();
+	testParAsyncObj2Post();
+	testParAsyncObj2Post2Obj();
 	MPI::COMM_WORLD.Barrier();
 	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
 	unsigned int numNodes = MPI::COMM_WORLD.Get_size();

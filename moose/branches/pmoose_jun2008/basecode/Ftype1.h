@@ -219,8 +219,8 @@ template < class T > class Ftype1: public Ftype
 				const Conn* c, const void* data, Slot slot )
 			{
 				T v;
-				Serializer< T > s( data );
-				s.unserialize( v );
+				// Serializer< T > s( data );
+				Serializer< T >::unserialize( v, data );
 				send1< T >( c->target(), slot, v );
 			}
 
@@ -231,8 +231,8 @@ template < class T > class Ftype1: public Ftype
 			 */
 			static void syncFunc( const Conn* c, T value ) {
 				void* data = getParBuf( c, Serializer< T >::serialSize( value ) ); 
-				Serializer< T > s( data );
-				s.serialize( value );
+				// Serializer< T > s( data );
+				Serializer< T >::serialize( data, value );
 			}
 
 			/**
@@ -243,8 +243,8 @@ template < class T > class Ftype1: public Ftype
 			 */
 			static void asyncFunc( const Conn* c, T value ) {
 				void* data = getAsyncParBuf( c, Serializer< T >::serialSize( value ) );
-				Serializer< T > s( data );
-				s.serialize( value );
+				// Serializer< T > s( data );
+				Serializer< T >::serialize( data, value );
 			}
 };
 

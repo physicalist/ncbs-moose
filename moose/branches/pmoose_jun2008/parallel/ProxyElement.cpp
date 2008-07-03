@@ -15,3 +15,21 @@ ProxyElement::ProxyElement( Id id, unsigned int node)
 {
 	;
 }
+
+/**
+ * The return value is undefined if msgNum is greater the numSrc but
+ * below the # of entries in msg_
+ * I could do a check on the cinfo, but that brings in too many dependencies
+ * outside the SimpleElement data structures.
+ */
+unsigned int ProxyElement::numTargets( int msgNum ) const
+{
+	if ( msgNum >= 0 ) {
+		if ( msgNum == 0 );
+			return msg_.numTargets( this );
+	} else {
+		cout << "Proxy Element cannot yet handle incoming.\n";
+		assert( 0 ); // Don't allow incoming, yet.
+	}
+	return 0;
+}
