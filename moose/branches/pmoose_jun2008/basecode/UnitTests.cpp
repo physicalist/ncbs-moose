@@ -144,10 +144,6 @@ void msgSrcTest()
 	cout << "\nCompleted msgSrcTest()\n";
 }
 
-
-#include "DerivedFtype.h"
-#include "SrcFinfo.h"
-#include "DestFinfo.h"
 /*
  * Here we set up a message structure where the first src on e1 has
  * a single dest, and the second src is shared with 3 dests.

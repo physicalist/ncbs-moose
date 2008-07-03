@@ -37,7 +37,6 @@ OBJ = \
 	Cinfo.o \
 	DynamicFinfo.o \
 	strconv.o \
-	DerivedFtype.o \
 	SharedFtype.o \
 	SharedFinfo.o \
 	SolveFinfo.o \
@@ -57,6 +56,12 @@ HEADERS = \
 	../connections/Conn.h \
 	../connections/ConnTainer.h \
 	Ftype.h \
+	Ftype0.h \
+	Ftype1.h \
+	Ftype2.h \
+	Ftype3.h \
+	Ftype4.h \
+	Serializer.h \
 	FuncVec.h \
 	Slot.h \
 	Finfo.h \

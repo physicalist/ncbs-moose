@@ -13,6 +13,7 @@
 #include "Fid.h"
 
 #include "../shell/Shell.h"
+#include "../parallel/ProxyElement.h"
 
 const unsigned int Id::BadIndex = UINT_MAX;
 const unsigned int Id::AnyIndex = UINT_MAX - 1;
@@ -184,6 +185,23 @@ bool Id::outOfRange() const
 bool Id::isScratch() const
 {
 	return manager().isScratch( id_ );
+}
+
+bool Id::isProxy() const
+{
+	if ( good() ) {
+		Element* e = manager().getElement( *this );
+		if ( e ) {
+			if ( dynamic_cast< ProxyElement* >( e ) ) {
+				return 1;
+			} else {
+				cout << "Error: Id::isProxy(): Found a regular element when looking for a proxy\n";
+				assert( 0 ); // Should never look for a proxy and find
+				// a regular element.
+			}
+		}
+	}
+	return 0;
 }
 
 //////////////////////////////////////////////////////////////

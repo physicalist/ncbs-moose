@@ -80,9 +80,7 @@ class ProxyElement: public Element
 		 * Finds the number of targets to this Msg, either src or dest.
 		 * Faster than iterating through the whole lot.
 		 */
-		unsigned int numTargets( int msgNum ) const {
-			return 0;
-		}
+		unsigned int numTargets( int msgNum ) const;
 
 		/**
 		 * Finds the number of targets to this Msg, either src or dest,

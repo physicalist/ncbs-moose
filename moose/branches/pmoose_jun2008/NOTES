@@ -6979,5 +6979,26 @@ Checked in as revision 511 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
 Made a branch for the pmoose development, as things are getting messy with the
 serialization code. Has effects on lots of Ftype stuff too.
+Doesn't compile.
+
+Checked in as revision 513 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+==============================================================================
+13 June.
+Working on modification of serials conversion code and integrating it with
+
+==============================================================================
+3 July 2008.
+Resuming after a long hiatus and trip. Trying to compile.
+
+Got it to compile. This includes exotic stuff like partial specialization of
+templates needed for serialization of vectors.
+Now going through the PostMaster unit tests for serialization. Got
+the object->postmaster buffer tests to work, which means that both the
+serialize and the unserialize code is working. I have tested ints, doubles,
+strings, vectors of Ids and vectors of strings.
+
+Next: send postmaster->object messages. Working on PostMaster::setupProxyMsg
+Well, it went so far as to set up the message. Still no data transfer.
 
 ==============================================================================

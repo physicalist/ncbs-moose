@@ -185,6 +185,14 @@ class Id
 		 */
 		bool isScratch() const;
 
+		/**
+		 * True if it is a proxy element. This is a minimal holder
+		 * element on a remote node that does message redirection but
+		 * for everything else refers back to the authoritative
+		 * element on its node.
+		 */
+		bool isProxy() const;
+
 		//////////////////////////////////////////////////////////////
 		//	Comparisons between ids
 		//////////////////////////////////////////////////////////////
