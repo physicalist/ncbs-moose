@@ -7007,5 +7007,17 @@ Data transfer step revealed a mess. Need some rethinking about the
 proxyFunc formulation. Hacked it for now by storing the ProxyFunc in the
 proxyElement, but there must be a cleaner way to do things.
 Anyway, data has been transferred.
+Checked in as revision 532 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+Problems with current design:
+- How to deal with different funcs in a funcVec?
+	Pass func# in AsyncData: Would need to look up operation each
+	time. Bad for syn data.
+- Generally, how to handle SharedFinfos esp if bidirectional?
+- Messy interface for proxyFunc
+
+==============================================================================
+5 July 2008.
+Added a few more tests to the data transfer through two postmasters. Clears
+all including vector of strings.
 
 ==============================================================================

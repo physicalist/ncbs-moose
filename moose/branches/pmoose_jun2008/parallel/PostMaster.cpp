@@ -575,7 +575,7 @@ void testParAsyncObj2Post()
 	char* abuf = &( pm->sendBuf_[0] );
 	AsyncStruct as( abuf );
 	int asyncMsgNum = p->findFinfo( "async" )->msg();
-	int iSendMsgNum = t->findFinfo( "iSrc" )->msg();
+	// int iSendMsgNum = t->findFinfo( "iSrc" )->msg();
 	ASSERT( as.target() == t->id(), "async info to post" );
 	ASSERT( as.targetMsg() == asyncMsgNum, "async info to post" );
 	// ASSERT( as.sourceMsg() == iSendMsgNum, "async info to post" );
@@ -688,24 +688,84 @@ void testParAsyncObj2Post2Obj()
 	PostMaster* pm1 = static_cast< PostMaster* >( p1->data() );
 	pm0->sendBufPos_ = sizeof( unsigned int ); // to count # of msgs
 	void* vabuf = static_cast< void* >( &pm0->sendBuf_[0] );
-	*static_cast< unsigned int * >( vabuf ) = 1; // set it to 1 msg.
 
-	// Send an int to the postmaster
+	///////////////////////////////////////////////////////////////////
+	// Set up the data to send
+	///////////////////////////////////////////////////////////////////
+	*static_cast< unsigned int * >( vabuf ) = 5; // set it to 5 msgs.
 	tdata->i_ = 44332200;
+	tDestData->i_ = 0;
+	tdata->x_ = 0.1234;
+	tDestData->x_ = 0.0;
+	tdata->s_ = "You eat your victuals fast enough";
+	tDestData->s_ = "";
+	simpleWildcardFind( "/##", tdata->idVec_ );
+	tDestData->idVec_.resize( 0 );
+	tdata->sVec_.resize( 0 );
+	tdata->sVec_.push_back( "Terence" );
+	tdata->sVec_.push_back( "this is" );
+	tdata->sVec_.push_back( "stupid stuff" );
+	tDestData->sVec_.resize( 0 );
+
+	///////////////////////////////////////////////////////////////////
+	// Set up the messages
+	///////////////////////////////////////////////////////////////////
 	bool ret = Eref( t ).add( "iSrc", p0, "async" );
 	ASSERT( ret, "msg to post" );
 	int tgtMsg = tdest->findFinfo( "i" )->msg();
+	Id proxyId[ 5 ];
 
-	Id proxyId = Id::scratchId();
+	proxyId[ 0 ] = Id::scratchId();
 	ret = PostMaster::setupProxyMsg( 
-		0, proxyId, tdest->id(), tgtMsg, p1 );
-	ASSERT( ret, "msg from post to tgt" );
+		0, proxyId[ 0 ], tdest->id(), tgtMsg, p1 );
+	ASSERT( ret, "msg from post to tgt i" );
+	///////////////////////////////////////////
 
+	ret = Eref( t ).add( "xSrc", p0, "async" );
+	ASSERT( ret, "msg to post" );
+	tgtMsg = tdest->findFinfo( "x" )->msg();
+
+	proxyId[ 1 ] = Id::scratchId();
+	ret = PostMaster::setupProxyMsg( 
+		0, proxyId[ 1 ], tdest->id(), tgtMsg, p1 );
+	ASSERT( ret, "msg from post to tgt x" );
+	///////////////////////////////////////////
+
+	ret = Eref( t ).add( "sSrc", p0, "async" );
+	ASSERT( ret, "msg to post" );
+	tgtMsg = tdest->findFinfo( "s" )->msg();
+
+	proxyId[ 2 ] = Id::scratchId();
+	ret = PostMaster::setupProxyMsg( 
+		0, proxyId[ 2 ], tdest->id(), tgtMsg, p1 );
+	ASSERT( ret, "msg from post to tgt s" );
+	///////////////////////////////////////////
+
+	ret = Eref( t ).add( "idVecSrc", p0, "async" );
+	ASSERT( ret, "msg to post" );
+	tgtMsg = tdest->findFinfo( "idVec" )->msg();
+
+	proxyId[ 3 ] = Id::scratchId();
+	ret = PostMaster::setupProxyMsg( 
+		0, proxyId[ 3 ], tdest->id(), tgtMsg, p1 );
+	ASSERT( ret, "msg from post to tgt idVec" );
+	///////////////////////////////////////////
+
+	ret = Eref( t ).add( "sVecSrc", p0, "async" );
+	ASSERT( ret, "msg to post" );
+	tgtMsg = tdest->findFinfo( "sVec" )->msg();
+
+	proxyId[ 4 ] = Id::scratchId();
+	ret = PostMaster::setupProxyMsg( 
+		0, proxyId[ 4 ], tdest->id(), tgtMsg, p1 );
+	ASSERT( ret, "msg from post to tgt sVec" );
+
+	///////////////////////////////////////////////////////////////////
+	// Send the data to pm0
+	///////////////////////////////////////////////////////////////////
 	TestParClass::sendI( &c );
 	char* abuf = &( pm0->sendBuf_[0] ) + sizeof( unsigned int );
 	AsyncStruct as( abuf );
-	int asyncMsgNum = p0->findFinfo( "async" )->msg();
-	int iSendMsgNum = t->findFinfo( "iSrc" )->msg();
 
 	vabuf = static_cast< void* >( abuf + sizeof( AsyncStruct ) );
 	int i = *static_cast< int* >( vabuf );
@@ -713,6 +773,11 @@ void testParAsyncObj2Post2Obj()
 	i = 0;
 	Serializer< int >::unserialize( i, vabuf ); // The postmaster uses unserialize
 	ASSERT( i == tdata->i_, "sending int" );
+
+	TestParClass::sendX( &c );
+	TestParClass::sendS( &c );
+	TestParClass::sendIdVec( &c );
+	TestParClass::sendSvec( &c );
 
 	///////////////////////////////////////////////////////////
 	// Here I copy over the contents of the send buf of pm0 to 
@@ -729,21 +794,32 @@ void testParAsyncObj2Post2Obj()
 	char* data = &( pm1->recvBuf_[ 0 ] );
 	unsigned int nMsgs = *static_cast< const unsigned int* >(
 					static_cast< const void* >( data ) );
-	ASSERT( nMsgs == 1, "on tgt postmaster");
+	ASSERT( nMsgs == 5, "on tgt postmaster");
 	data += sizeof( unsigned int );
+
+	ASSERT( tDestData->i_ != tdata->i_, "Pre int data on tgt" );
+	ASSERT( tDestData->x_ != tdata->x_, "Pre double data on tgt" );
+	ASSERT( tDestData->s_ != tdata->s_, "Pre string data on tgt" );
+	ASSERT( tDestData->idVec_ != tdata->idVec_, "Pre idVec data on tgt" );
+	ASSERT( tDestData->sVec_ != tdata->sVec_, "Pre sVec data on tgt" );
+
 	for ( unsigned int i = 0; i < nMsgs; i++ ) {
 		AsyncStruct as( data );
 		// Here we fudge it because the AsyncStruct still has the
 		// orignal element id, but we need to put in the proxy id
 		// Since we are testing it all on the same node it has to
 		// be a different id.
-		as.tgt_ = proxyId;
+		as.tgt_ = proxyId[ i ];
 		data += sizeof( AsyncStruct );
 		unsigned int size = proxy2tgt( as, data );
 		// assert( size == as.size() );
 		data += size;
 	}
-	ASSERT( tDestData->i_ == tdata->i_, "Recieved data on tgt" );
+	ASSERT( tDestData->i_ == tdata->i_, "Recieved int data on tgt" );
+	ASSERT( tDestData->x_ == tdata->x_, "Recieved double data on tgt" );
+	ASSERT( tDestData->s_ == tdata->s_, "Recieved string data on tgt" );
+	ASSERT( tDestData->idVec_ == tdata->idVec_, "Recieved idVec data on tgt" );
+	ASSERT( tDestData->sVec_ == tdata->sVec_, "Recieved sVec data on tgt" );
 
 
 	/*
@@ -962,8 +1038,8 @@ void testPostMaster()
 		sprintf( tabname, "tab%d", i );
 		tables[ i ] = Neutral::create( "Table", tabname, n->id(), Id::scratchId() );
 		ASSERT( tables[i] != 0, "Checking data flow" );
-		const Finfo* outFinfo = tables[i]->findFinfo( "outputSrc" );
-		const Finfo* inFinfo = tables[i]->findFinfo( "input" );
+		// const Finfo* outFinfo = tables[i]->findFinfo( "outputSrc" );
+		// const Finfo* inFinfo = tables[i]->findFinfo( "input" );
 		set< int >( tables[i], "xdivs", 10 );
 		set< double >( tables[i], "xmin", 0.0 );
 		set< double >( tables[i], "xmax", 10.0 );
@@ -993,7 +1069,7 @@ void testPostMaster()
 			}
 		} else {
 			post = postId[i]();
-			const Finfo* dataFinfo = post->findFinfo( "data" );
+			// const Finfo* dataFinfo = post->findFinfo( "data" );
 			set< int >( tables[i], "stepmode", 3 ); // TAB_BUF
 			set< double >( tables[i], "output", 0.0 ); // TAB_BUF
 			for ( unsigned int k = 0; k <= 10; k++ )
