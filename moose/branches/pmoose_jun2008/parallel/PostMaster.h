@@ -126,38 +126,38 @@ class AsyncStruct {
 		 * The target here actually refers to the proxy id, which is
 		 * the source id on the originating node! Need to clean up.
 		 */
-		AsyncStruct( Id tgt, int tgtMsg, int srcMsg )
-			: tgt_( tgt ), tgtMsg_( tgtMsg ), srcMsg_( srcMsg )
+		AsyncStruct( Id proxy, unsigned int funcNum, unsigned int size )
+			: proxy_( proxy ), funcNum_( funcNum ), size_( size )
 		{;}
 
 		AsyncStruct( const char* data )
 		{ 
 			// tgt_ = *( static_cast< const Id* >( data ) );
-			tgt_ = *( const Id* ) ( data );
+			proxy_ = *( const Id* ) ( data );
 			data += sizeof( Id );
-			tgtMsg_ = *( const int* )( data );
+			funcNum_ = *( const unsigned int* )( data );
 			// tgtMsg_ = *( static_cast< const int* >( data ) );
-			data += sizeof( int );
-			srcMsg_ = *( const int* ) ( data );
+			data += sizeof( unsigned int );
+			size_ = *( const unsigned int* ) ( data );
 			// srcMsg_ = *( static_cast< const int* >( data ) );
 		}
 
-		Id target() const {
-			return tgt_;
+		Id proxy() const {
+			return proxy_;
 		}
 
-		int targetMsg() const {
-			return tgtMsg_;
+		int funcNum() const {
+			return funcNum_;
 		}
 
-		int sourceMsg() const {
-			return srcMsg_;
+		unsigned int size() const {
+			return size_;
 		}
 
 	private:
-		Id tgt_;
-		int tgtMsg_;
-		int srcMsg_;
+		Id proxy_;
+		unsigned int funcNum_;
+		unsigned int size_;
 };
 
 extern const Cinfo* initPostMasterCinfo();
