@@ -38,9 +38,9 @@ class ConnTainer
 		 * The isReverse flag is passed in from the Msg and specifies
 		 * if we are going forward or back along the direction of the Msg.
 		 * The connIndex specifies a conn within this ConnTainer.
-		 */
 		virtual Conn* conn( unsigned int eIndex, bool isReverse, 
 			unsigned int connIndex ) const = 0;
+		 */
 
 		// virtual bool add( Element* e1, Element* e2 ) = 0;
 

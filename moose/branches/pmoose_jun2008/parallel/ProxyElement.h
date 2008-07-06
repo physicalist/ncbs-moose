@@ -339,9 +339,9 @@ class ProxyElement: public Element
 		}
 
 	private:
-		Msg msg_;
-		unsigned int node_;
-		ProxyFunc proxyFunc_;
+		Msg msg_;			/// Handles messages to actual targets.
+		unsigned int node_;	/// Node of original Element.
+		ProxyFunc proxyFunc_; /// Function that converts and sends out data.
 };
 
 #endif // _PROXY_ELEMENT_H
