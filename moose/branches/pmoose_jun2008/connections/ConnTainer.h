@@ -30,7 +30,8 @@ class ConnTainer
 		 * The isReverse flag is passed in from the Msg and specifies
 		 * if we are going forward or back along the direction of the Msg.
 		 */
-		virtual Conn* conn( unsigned int eIndex, bool isReverse ) const = 0;
+		virtual Conn* conn( unsigned int eIndex, 
+			unsigned int funcIndex, bool isReverse ) const = 0;
 
 		/**
 		 * Generates an iterator for this ConnTainer. The eIndex

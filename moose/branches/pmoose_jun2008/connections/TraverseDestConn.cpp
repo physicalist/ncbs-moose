@@ -16,14 +16,14 @@
 //  TraverseDestConn
 //////////////////////////////////////////////////////////////////////
 
-TraverseDestConn::TraverseDestConn( const vector< ConnTainer* >* ct,
-	unsigned int eIndex )
-	: ct_( ct ), c_( 0 ), cti_( 0 ), eIndex_( eIndex )
+TraverseDestConn::TraverseDestConn(
+	const vector< ConnTainer* >* ct, unsigned int eIndex )
+	: Conn( 0 ), ct_( ct ), c_( 0 ), cti_( 0 ), eIndex_( eIndex )
 {
 	assert( ct_ != 0 );
 	// Advance till we get to a 'good' conn, or to the end.
 	for ( cti_ = ct_->begin(); cti_ != ct_->end(); cti_++ ) {
-		c_ = ( *cti_ )->conn( eIndex, 1 ); 
+		c_ = ( *cti_ )->conn( eIndex, 0, 1 ); 
 		for ( ; c_->good(); c_->increment() )
 			return;
 	}
@@ -59,7 +59,7 @@ void TraverseDestConn::increment()
 	c_ = 0;
 	cti_++;
 	for ( ; cti_ != ct_->end(); cti_++ ) {
-		c_ = ( *cti_ )->conn( eIndex_, 1 ); 
+		c_ = ( *cti_ )->conn( eIndex_, 0, 1 ); 
 		for ( ; c_->good(); c_->increment() )
 				return;
 	}
@@ -88,7 +88,7 @@ void TraverseDestConn::nextElement()
 	c_ = 0;
 	cti_++;
 	for ( ; cti_ != ct_->end(); cti_++ ) {
-		c_ = ( *cti_ )->conn( eIndex_, 1 ); 
+		c_ = ( *cti_ )->conn( eIndex_, 0, 1 ); 
 		for ( ; c_->good(); c_->increment() )
 				return;
 	}

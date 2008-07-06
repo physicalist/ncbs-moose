@@ -25,9 +25,12 @@ class One2AllConnTainer: public ConnTainer
 			int msg1, int msg2,
 			unsigned int i1 = 0, unsigned int i2 = 0 );
 
-		Conn* conn( unsigned int eIndex, bool isReverse ) const;
+		Conn* conn( unsigned int eIndex, unsigned int funcIndex, 
+			bool isReverse ) const;
+		/*
 		Conn* conn( unsigned int eIndex, bool isReverse,
 			unsigned int connIndex ) const;
+			*/
 
 		bool add( Element* e1, Element* e2 );
 
@@ -105,8 +108,9 @@ class One2AllConnTainer: public ConnTainer
 class One2AllConn: public Conn
 {
 	public:
-		One2AllConn( const One2AllConnTainer* s, unsigned int index )
-			: s_( s ), index_( index ), size_( s->size() )
+		One2AllConn( unsigned int funcIndex, 
+			const One2AllConnTainer* s, unsigned int index )
+			: Conn( funcIndex ), s_( s ), index_( index ), size_( s->size() )
 		{;}
 
 		~One2AllConn()
@@ -171,8 +175,9 @@ class One2AllConn: public Conn
 class ReverseOne2AllConn: public Conn
 {
 	public:
-		ReverseOne2AllConn( const One2AllConnTainer* s, unsigned int index )
-			: s_( s ), index_( index ) 
+		ReverseOne2AllConn( unsigned int funcIndex, 
+			const One2AllConnTainer* s, unsigned int index )
+			: Conn( funcIndex ), s_( s ), index_( index ) 
 		{;}
 
 		~ReverseOne2AllConn()
@@ -224,7 +229,7 @@ class ReverseOne2AllConn: public Conn
 		 * traverse back with the correct args.
 		 */
 		const Conn* flip() const {
-			return new One2AllConn( s_, index_ );
+			return new One2AllConn( funcIndex(), s_, index_ );
 		}
 
 		const ConnTainer* connTainer() const {

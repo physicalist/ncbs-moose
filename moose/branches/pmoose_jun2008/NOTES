@@ -7074,4 +7074,9 @@ was never used as designed. So I eliminated that. Probably have to
 reexamine at some point when I do refactoring of the Conn stuff. Clears
 unit tests.
 
+Checked in as revision 533 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Implemented some ugly code changes in Conn, to handle the funcIndex. Lots
+of stuff to fix. Now compiles and clears unit tests.
+
 ==============================================================================
