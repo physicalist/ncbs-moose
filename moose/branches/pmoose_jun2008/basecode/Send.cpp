@@ -22,7 +22,7 @@ void send0( Eref e, Slot src )
 		vector< ConnTainer* >::const_iterator i;
 		// Going through the MsgSrc vector of ConnTainers
 		for ( i = m->begin( ); i != m->end( ); i++ ) {
-			Conn* j = ( *i )->conn( e.i, m->isDest() ); 
+			Conn* j = ( *i )->conn( e.i, src.func(), m->isDest() ); 
 			for ( ; j->good(); j->increment() )
 				rf( j );
 			delete j;

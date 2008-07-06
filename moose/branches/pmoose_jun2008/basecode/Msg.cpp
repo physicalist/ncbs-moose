@@ -466,7 +466,7 @@ Conn* Msg::findConn( unsigned int eIndex, unsigned int tgt ) const
 		if ( tgt >= ( *i )->size() ) {
 			tgt -= ( *i )->size();
 		} else {
-			return ( *i )->conn( eIndex, !( fv_->isDest() ) );
+			return ( *i )->conn( eIndex, 0, !( fv_->isDest() ) );
 			/// We don't actually use the tgt index anywhere.
 			// return ( *i )->conn( eIndex, !( fv_->isDest() ), tgt );
 		}

@@ -32,18 +32,20 @@ SimpleConnTainer::SimpleConnTainer( Eref e1, Eref e2,
 		i1_( i1 ), i2_( i2 )
 {;}
 
-Conn* SimpleConnTainer::conn( unsigned int eIndex, bool isReverse ) const
+Conn* SimpleConnTainer::conn( unsigned int eIndex, 
+	unsigned int funcIndex, bool isReverse ) const
 {
 	//	numIter_++; // For reference counting. Do we need it?
 	if ( ( !isReverse && eIndex != eI1_) || (isReverse && eIndex != eI2_) )
 // 	if ( eIndex != eI1_ )
 		return new SetConn( Element::root(), 0 );
 	if ( isReverse )
-		return new ReverseSimpleConn( this );
+		return new ReverseSimpleConn( funcIndex, this );
 	else
-		return new SimpleConn( this );
+		return new SimpleConn( funcIndex, this );
 }
 
+/*
 Conn* SimpleConnTainer::conn( unsigned int eIndex, bool isReverse,
 	unsigned int connIndex ) const
 {
@@ -52,10 +54,11 @@ Conn* SimpleConnTainer::conn( unsigned int eIndex, bool isReverse,
 		return 0;
 
 	if ( isReverse )
-		return new ReverseSimpleConn( this );
+		return new ReverseSimpleConn( funcIndex, this );
 	else
-		return new SimpleConn( this );
+		return new SimpleConn( funcIndex, this );
 }
+*/
 
 /**
  * Creates a duplicate ConnTainer for message(s) between 
@@ -81,5 +84,5 @@ ConnTainer* SimpleConnTainer::copy( Element* e1, Element* e2, bool isArray ) con
 
 const Conn* SimpleConn::flip() const
 {
-	return new ReverseSimpleConn( s_ );
+	return new ReverseSimpleConn( funcIndex(), s_ );
 }

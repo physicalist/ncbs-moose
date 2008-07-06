@@ -19,11 +19,11 @@ class SetConn: public Conn
 {
 	public:
 		SetConn( Element* e, unsigned int eIndex )
-			: e_( e, eIndex )
+			: Conn( 0 ), e_( e, eIndex )
 		{;}
 
 		SetConn( Eref e )
-			: e_( e )
+			: Conn( 0 ), e_( e )
 		{;}
 
 		~SetConn()

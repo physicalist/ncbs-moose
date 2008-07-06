@@ -24,15 +24,17 @@ One2OneMapConnTainer::One2OneMapConnTainer( Eref e1, Eref e2,
 	}
 }
 
-Conn* One2OneMapConnTainer::conn( unsigned int eIndex, bool isReverse ) const
+Conn* One2OneMapConnTainer::conn( unsigned int eIndex, 
+	unsigned int funcIndex, bool isReverse ) const
 {
 	//	numIter_++; // For reference counting. Do we need it?
 	if ( isReverse )
-		return new ReverseOne2OneMapConn( this, eIndex );
+		return new ReverseOne2OneMapConn( funcIndex, this, eIndex );
 	else
-		return new One2OneMapConn( this, eIndex );
+		return new One2OneMapConn( funcIndex, this, eIndex );
 }
 
+/*
 Conn* One2OneMapConnTainer::conn( unsigned int eIndex, bool isReverse,
 	unsigned int connIndex ) const
 {
@@ -45,6 +47,7 @@ Conn* One2OneMapConnTainer::conn( unsigned int eIndex, bool isReverse,
 	else
 		return new One2OneMapConn( this, eIndex );
 }
+*/
 
 /**
  * Creates a duplicate ConnTainer for message(s) between 
@@ -68,5 +71,5 @@ ConnTainer* One2OneMapConnTainer::copy( Element* e1, Element* e2, bool isArray )
 
 const Conn* One2OneMapConn::flip() const
 {
-	return new ReverseOne2OneMapConn( s_, index_ );
+	return new ReverseOne2OneMapConn( funcIndex(), s_, index_ );
 }

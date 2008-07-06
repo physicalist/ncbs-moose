@@ -24,15 +24,17 @@ Many2ManyConnTainer::Many2ManyConnTainer( Eref e1, Eref e2,
 	entries_.set( e1.i, e2.i, i2 );
 }
 
-Conn* Many2ManyConnTainer::conn( unsigned int eIndex, bool isReverse ) const
+Conn* Many2ManyConnTainer::conn( unsigned int eIndex, 
+	unsigned int funcIndex, bool isReverse ) const
 {
 	//	numIter_++; // For reference counting. Do we need it?
 	if ( isReverse )
-		return new ReverseMany2ManyConn( this, eIndex );
+		return new ReverseMany2ManyConn( funcIndex, this, eIndex );
 	else
-		return new Many2ManyConn( this, eIndex );
+		return new Many2ManyConn( funcIndex, this, eIndex );
 }
 
+/*
 Conn* Many2ManyConnTainer::conn( unsigned int eIndex, bool isReverse,
 	unsigned int connIndex ) const
 {
@@ -45,6 +47,7 @@ Conn* Many2ManyConnTainer::conn( unsigned int eIndex, bool isReverse,
 	else
 		return new Many2ManyConn( this, 0 );
 }
+*/
 
 /**
  * Creates a duplicate ConnTainer for message(s) between 
@@ -116,5 +119,5 @@ unsigned int Many2ManyConnTainer::numDest( unsigned int srcEindex ) const
 
 const Conn* Many2ManyConn::flip() const
 {
-	return new ReverseMany2ManyConn( s_, *tgtEindexIter_ );
+	return new ReverseMany2ManyConn( funcIndex(), s_, *tgtEindexIter_ );
 }

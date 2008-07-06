@@ -24,9 +24,12 @@ class SimpleConnTainer: public ConnTainer
 			int msg1, int msg2,
 			unsigned int i1 = 0, unsigned int i2 = 0 );
 
-		Conn* conn( unsigned int eIndex, bool isReverse ) const;
+		Conn* conn( unsigned int eIndex, unsigned int funcIndex,
+			bool isReverse ) const;
+		/*
 		Conn* conn( unsigned int eIndex, bool isReverse,
 			unsigned int connIndex ) const;
+			*/
 
 		bool add( Element* e1, Element* e2 );
 
@@ -99,8 +102,8 @@ class SimpleConnTainer: public ConnTainer
 class SimpleConn: public Conn
 {
 	public:
-		SimpleConn( const SimpleConnTainer* s )
-			: s_( s )
+		SimpleConn( unsigned int funcIndex, const SimpleConnTainer* s )
+			: Conn( funcIndex), s_( s )
 		{;}
 
 		~SimpleConn()
@@ -164,8 +167,9 @@ class SimpleConn: public Conn
 class ReverseSimpleConn: public Conn
 {
 	public:
-		ReverseSimpleConn( const SimpleConnTainer* s )
-			: s_( s ) 
+		ReverseSimpleConn( 
+			unsigned int funcIndex, const SimpleConnTainer* s )
+			: Conn( funcIndex ), s_( s ) 
 		{;}
 
 		~ReverseSimpleConn()
@@ -217,7 +221,7 @@ class ReverseSimpleConn: public Conn
 		 * traverse back with the correct args.
 		 */
 		const Conn* flip() const {
-			return new SimpleConn( s_ );
+			return new SimpleConn( funcIndex(), s_ );
 		}
 
 		const ConnTainer* connTainer() const {

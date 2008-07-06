@@ -19,9 +19,12 @@ class Many2ManyConnTainer: public ConnTainer
 			int msg1, int msg2,
 			unsigned int i1 = 0, unsigned int i2 = 0 );
 
-		Conn* conn( unsigned int eIndex, bool isReverse ) const;
+		Conn* conn( unsigned int eIndex, unsigned int funcIndex,
+			bool isReverse ) const;
+		/*
 		Conn* conn( unsigned int eIndex, bool isReverse,
 			unsigned int connIndex ) const;
+			*/
 
 		bool add( Element* e1, Element* e2 );
 
@@ -113,8 +116,9 @@ class Many2ManyConnTainer: public ConnTainer
 class Many2ManyConn: public Conn
 {
 	public:
-		Many2ManyConn( const Many2ManyConnTainer* s, unsigned int eIndex )
-			: s_( s ), srcEindex_( eIndex ), i_( 0 )
+		Many2ManyConn( unsigned int funcIndex,
+			const Many2ManyConnTainer* s, unsigned int eIndex )
+			: Conn( funcIndex ), s_( s ), srcEindex_( eIndex ), i_( 0 )
 		{ 
 			targetElm_ = s_->Many2ManyConnTainer::e2();
 			size_ = s->getRow( eIndex, &tgtIndexIter_, &tgtEindexIter_ );
@@ -199,8 +203,9 @@ class Many2ManyConn: public Conn
 class ReverseMany2ManyConn: public Conn
 {
 	public:
-		ReverseMany2ManyConn( const Many2ManyConnTainer* s, unsigned int eIndex )
-			: s_( s ), srcEindex_( eIndex ), i_( 0 )
+		ReverseMany2ManyConn( unsigned int funcIndex,
+			const Many2ManyConnTainer* s, unsigned int eIndex )
+			: Conn( funcIndex ), s_( s ), srcEindex_( eIndex ), i_( 0 )
 		{ 
 			targetElm_ = s_->Many2ManyConnTainer::e2();
 			size_ = s->getColumn( eIndex, tgtIndex_, tgtEindex_ );
@@ -251,7 +256,7 @@ class ReverseMany2ManyConn: public Conn
 		 * traverse back with the correct args.
 		 */
 		const Conn* flip() const {
-			return new Many2ManyConn( s_, tgtEindex_[ i_ ]  );
+			return new Many2ManyConn( funcIndex(), s_, tgtEindex_[ i_ ]  );
 		}
 
 		const ConnTainer* connTainer() const {

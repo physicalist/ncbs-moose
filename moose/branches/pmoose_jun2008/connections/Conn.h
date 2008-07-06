@@ -66,6 +66,10 @@ class ConnTainer;
 class Conn
 {
 	public:
+		Conn( unsigned int funcIndex )
+			: funcIndex_( funcIndex )
+		{;}
+
 		virtual ~Conn()
 		{;}
 
@@ -140,7 +144,12 @@ class Conn
 		 */
 		virtual bool isDest() const = 0;
 
+		unsigned int funcIndex() const {
+			return funcIndex_;
+		}
+
 	private:
+		unsigned int funcIndex_;
 };
 
 #endif // _CONN_H
