@@ -7012,12 +7012,66 @@ Problems with current design:
 - How to deal with different funcs in a funcVec?
 	Pass func# in AsyncData: Would need to look up operation each
 	time. Bad for syn data.
+- How to deal with multiple target types even for simple proxies? Consider
+	synapses: may have multiple receptor types.
 - Generally, how to handle SharedFinfos esp if bidirectional?
 - Messy interface for proxyFunc
+- How to do proxies into arrays?
+	Make a variant that has array of Msgs, but has no data. Advantage is
+	common proxyFunc.
 
 ==============================================================================
 5 July 2008.
 Added a few more tests to the data transfer through two postmasters. Clears
 all including vector of strings.
+
+Checked in as revision 533 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+==============================================================================
+6 July 2008.
+Shall we stage the messaging into more categories:
+- Async, single function, high volume (like synapses)
+	- Array subtype
+- Async, general, low volume (inter-shell messages)
+- Most of the Sync calls are shared messages (reac, robot)
+
+
+First step: Get the postmasters to talk to each other. This needs general
+Async messages, preferably done through an all2all message.
+
+Issue for shared messages: The Send command loses info about which function
+was called. The Slot argument to Send contains this info, but once we use it
+to extract the AsyncFunc we don't retain it. And the Async func is designed
+to be general for any given set of args, so it has no uniqueness either.
+Options:
+	- Template in the func# into the AsyncFunc. 
+		- Non-trivial since we use the Ftype to build AsyncFuncs. 
+			- If we don't use Ftype, we need another clever way
+			to access them.
+		- But once we're in AsyncFunc we can easily pass the
+			func# to getAsyncParBuf
+		Problem is, the msg numbers get set at static init. Not easy
+		to map onto templates.
+	- Modify Send, RecvFunc to take extra arg to identify func. Silly.
+	- Modify Conn to know what function to pass.
+		I don't want to add more stuff to Conn at this point. It is
+		due for overhaul into a fixed type rather than a virtual,
+		and will need simplifying rather than expanding.
+	- Use functors to replace RecvFuncs.
+		- This could be done, but would need care to ensure thread
+		safety. We need to pass the functor ptrs around and if we do
+		so with static functors, then threads are an issue. If we
+		generate a new functor for each msg with a factory, we 
+		have thread safety but memory is used in very different
+		ways from current messaging. It would need a close look and
+		I am not going to refactor this now.
+
+
+None of the options is nice. I am trying the easiest, which is to modify Conn.
+To do this I looked around for Conn constructors from the ConnTainers.
+One of them had an extra index, for a ConnIndex, but on examination it
+was never used as designed. So I eliminated that. Probably have to 
+reexamine at some point when I do refactoring of the Conn stuff. Clears
+unit tests.
 
 ==============================================================================
