@@ -241,10 +241,10 @@ void PostMaster::postIrecv( const Conn* c, int ordinal )
 unsigned int proxy2tgt( const AsyncStruct& as, char* data )
 {
 	// Note that 'target' is actually the proxy here.
-	assert( as.target().good() );
+	assert( as.proxy().good() );
 
-	Eref tgt = as.target().eref();
-	ProxyElement* pe = dynamic_cast< ProxyElement* >( tgt.e );
+	Eref proxy = as.proxy().eref();
+	ProxyElement* pe = dynamic_cast< ProxyElement* >( proxy.e );
 	assert( pe != 0 );
 
 	pe->sendData( data );
@@ -265,7 +265,7 @@ unsigned int proxy2tgt( const AsyncStruct& as, char* data )
 	// OK, put it in the Async struct. For now hacked into the
 	// sourceMsg() field.
 	
-	return as.sourceMsg();
+	return as.size();
 }
 
 /**
@@ -421,7 +421,7 @@ void* PostMaster::innerGetAsyncParBuf( const Conn* c, unsigned int size )
 	// get set to whatever the postmaster AsyncMsgDest uses.
 	// I'm pretty sure the sourceMsg is useless too.
 	// I'm going to put the message size in the third arg.
-	AsyncStruct as( c->source().id(), c->targetMsg(), size );
+	AsyncStruct as( c->source().id(), c->funcIndex(), size );
 	char* sendBufPtr = &( sendBuf_[ sendBufPos_ ] );
 	*static_cast< AsyncStruct* >( static_cast< void* >( sendBufPtr ) ) = as;
 	sendBufPtr += sizeof( AsyncStruct );
@@ -574,12 +574,12 @@ void testParAsyncObj2Post()
 	TestParClass::sendI( &c );
 	char* abuf = &( pm->sendBuf_[0] );
 	AsyncStruct as( abuf );
-	int asyncMsgNum = p->findFinfo( "async" )->msg();
+	// int asyncMsgNum = p->findFinfo( "async" )->msg();
 	// int iSendMsgNum = t->findFinfo( "iSrc" )->msg();
-	ASSERT( as.target() == t->id(), "async info to post" );
-	ASSERT( as.targetMsg() == asyncMsgNum, "async info to post" );
+	ASSERT( as.proxy() == t->id(), "async info to post" );
+	ASSERT( as.funcNum() == 0, "async info to post" );
 	// ASSERT( as.sourceMsg() == iSendMsgNum, "async info to post" );
-	ASSERT( as.sourceMsg() == sizeof( int ), "async info to post" );
+	ASSERT( as.size() == sizeof( int ), "async info to post" );
 
 	void* vabuf = static_cast< void* >( abuf + sizeof( AsyncStruct ) );
 	int i = *static_cast< int* >( vabuf );
@@ -809,7 +809,7 @@ void testParAsyncObj2Post2Obj()
 		// orignal element id, but we need to put in the proxy id
 		// Since we are testing it all on the same node it has to
 		// be a different id.
-		as.tgt_ = proxyId[ i ];
+		as.proxy_ = proxyId[ i ];
 		data += sizeof( AsyncStruct );
 		unsigned int size = proxy2tgt( as, data );
 		// assert( size == as.size() );

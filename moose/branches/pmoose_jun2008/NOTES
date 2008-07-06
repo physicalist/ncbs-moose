@@ -7074,9 +7074,17 @@ was never used as designed. So I eliminated that. Probably have to
 reexamine at some point when I do refactoring of the Conn stuff. Clears
 unit tests.
 
-Checked in as revision 533 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+Checked in as revision 534 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
 Implemented some ugly code changes in Conn, to handle the funcIndex. Lots
 of stuff to fix. Now compiles and clears unit tests.
+
+Checked in as revision 535 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Fixed up AsyncStruct fields. Compiled, clears unit tests. At this point I
+should be able to send different async calls over the same shared message,
+since the AsyncStruct tells us which function to use. However, still cannot
+handle return messages or bidirectional shared messages, which should also 
+go through the proxy.
 
 ==============================================================================
