@@ -247,7 +247,7 @@ unsigned int proxy2tgt( const AsyncStruct& as, char* data )
 	ProxyElement* pe = dynamic_cast< ProxyElement* >( proxy.e );
 	assert( pe != 0 );
 
-	pe->sendData( data );
+	pe->sendData( as.funcIndex(), data );
 	/*
 	// Second arg here should be target message. For the proxy
 	// this is the one and only message, so it should be zero.
@@ -447,6 +447,8 @@ static Slot xSlot;
 static Slot sSlot;
 static Slot idVecSlot;
 static Slot sVecSlot;
+static Slot iSharedSlot;
+static Slot xSharedSlot;
 
 class TestParClass {
 	public:
@@ -469,6 +471,15 @@ class TestParClass {
 		static void sendSvec( const Conn* c ) {
 			TestParClass* tp = static_cast< TestParClass* >( c->data() );
 			send1< vector< string > >( c->target(), sVecSlot, tp->sVec_ ) ;
+		}
+
+		static void sendIshared( const Conn* c ) {
+			TestParClass* tp = static_cast< TestParClass* >( c->data() );
+			send1< int >( c->target(), iSharedSlot, tp->i_ ) ;
+		}
+		static void sendXshared( const Conn* c ) {
+			TestParClass* tp = static_cast< TestParClass* >( c->data() );
+			send1< double >( c->target(), xSharedSlot, tp->x_ ) ;
 		}
 
 		static void setI( const Conn* c, int value )
@@ -508,12 +519,30 @@ class TestParClass {
  */
 const Cinfo* initTestParClass()
 {
+	static Finfo* iFinfo = new DestFinfo( "i", Ftype1< int >::global(),
+			RFCAST( &TestParClass::setI ) );
+	static Finfo* xFinfo = new DestFinfo( "x", Ftype1< double >::global(),
+			RFCAST( &TestParClass::setX ) );
+	static Finfo* ixShared[] = 
+	{
+		iFinfo,
+		xFinfo,
+	};
+
+	static Finfo* iSrcFinfo = 
+		new SrcFinfo( "iSrc", Ftype1< int >::global() );
+	static Finfo* xSrcFinfo = 
+		new SrcFinfo( "xSrc", Ftype1< double >::global() );
+	static Finfo* ixSrcShared[] = 
+	{
+		iSrcFinfo,
+		xSrcFinfo,
+	};
+
 	static Finfo* testParClassFinfos[] =
 	{
-		new DestFinfo( "i", Ftype1< int >::global(),
-			RFCAST( &TestParClass::setI ) ),
-		new DestFinfo( "x", Ftype1< double >::global(),
-			RFCAST( &TestParClass::setX ) ),
+		iFinfo,
+		xFinfo,
 		new DestFinfo( "s", Ftype1< string >::global(),
 			RFCAST( &TestParClass::setS ) ),
 		new DestFinfo( "idVec", Ftype1< vector< Id > >::global(),
@@ -521,11 +550,16 @@ const Cinfo* initTestParClass()
 		new DestFinfo( "sVec", Ftype1< vector< string > >::global(),
 			RFCAST( &TestParClass::setSvec ) ),
 
-		new SrcFinfo( "iSrc", Ftype1< int >::global() ),
-		new SrcFinfo( "xSrc", Ftype1< double >::global() ),
+		iSrcFinfo,
+		xSrcFinfo,
 		new SrcFinfo( "sSrc", Ftype1< string >::global() ),
 		new SrcFinfo( "idVecSrc", Ftype1< vector< Id > >::global() ),
 		new SrcFinfo( "sVecSrc", Ftype1< vector< string > >::global() ),
+
+		new SharedFinfo( "ix", ixShared,
+			sizeof( ixShared ) / sizeof( Finfo* ) ),
+		new SharedFinfo( "ixSrc", ixSrcShared,
+			sizeof( ixSrcShared ) / sizeof( Finfo* ) ),
 	};
 
 	static Cinfo testParClassCinfo(
@@ -577,7 +611,7 @@ void testParAsyncObj2Post()
 	// int asyncMsgNum = p->findFinfo( "async" )->msg();
 	// int iSendMsgNum = t->findFinfo( "iSrc" )->msg();
 	ASSERT( as.proxy() == t->id(), "async info to post" );
-	ASSERT( as.funcNum() == 0, "async info to post" );
+	ASSERT( as.funcIndex() == 0, "async info to post" );
 	// ASSERT( as.sourceMsg() == iSendMsgNum, "async info to post" );
 	ASSERT( as.size() == sizeof( int ), "async info to post" );
 
@@ -662,6 +696,8 @@ void testParAsyncObj2Post2Obj()
 	sSlot = tpCinfo->getSlot( "sSrc" );
 	idVecSlot = tpCinfo->getSlot( "idVecSrc" );
 	sVecSlot = tpCinfo->getSlot( "sVecSrc" );
+	iSharedSlot = tpCinfo->getSlot( "ixSrc.iSrc" );
+	xSharedSlot = tpCinfo->getSlot( "ixSrc.xSrc" );
 
 	Element* n = Neutral::create( "Neutral", "n", Id(), Id::scratchId() );
 
@@ -713,7 +749,7 @@ void testParAsyncObj2Post2Obj()
 	bool ret = Eref( t ).add( "iSrc", p0, "async" );
 	ASSERT( ret, "msg to post" );
 	int tgtMsg = tdest->findFinfo( "i" )->msg();
-	Id proxyId[ 5 ];
+	Id proxyId[ 6 ];
 
 	proxyId[ 0 ] = Id::scratchId();
 	ret = PostMaster::setupProxyMsg( 
@@ -759,6 +795,16 @@ void testParAsyncObj2Post2Obj()
 	ret = PostMaster::setupProxyMsg( 
 		0, proxyId[ 4 ], tdest->id(), tgtMsg, p1 );
 	ASSERT( ret, "msg from post to tgt sVec" );
+	///////////////////////////////////////////
+
+	ret = Eref( t ).add( "ixSrc", p0, "async" );
+	ASSERT( ret, "Shared msg to post" );
+	tgtMsg = tdest->findFinfo( "ix" )->msg();
+
+	proxyId[ 5 ] = Id::scratchId();
+	ret = PostMaster::setupProxyMsg( 
+		0, proxyId[ 5 ], tdest->id(), tgtMsg, p1 );
+	ASSERT( ret, "msg from post to tgt ix" );
 
 	///////////////////////////////////////////////////////////////////
 	// Send the data to pm0
@@ -810,6 +856,91 @@ void testParAsyncObj2Post2Obj()
 		// Since we are testing it all on the same node it has to
 		// be a different id.
 		as.proxy_ = proxyId[ i ];
+		data += sizeof( AsyncStruct );
+		unsigned int size = proxy2tgt( as, data );
+		// assert( size == as.size() );
+		data += size;
+	}
+	ASSERT( tDestData->i_ == tdata->i_, "Recieved int data on tgt" );
+	ASSERT( tDestData->x_ == tdata->x_, "Recieved double data on tgt" );
+	ASSERT( tDestData->s_ == tdata->s_, "Recieved string data on tgt" );
+	ASSERT( tDestData->idVec_ == tdata->idVec_, "Recieved idVec data on tgt" );
+	ASSERT( tDestData->sVec_ == tdata->sVec_, "Recieved sVec data on tgt" );
+
+	///////////////////////////////////////////////////////////////////
+	// Send another installment, this time doing the i and x via a
+	// shared message, and shuffling the order around.
+	///////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////////////////////////////
+	// First, set up the data to send
+	///////////////////////////////////////////////////////////////////
+	pm0->sendBufPos_ = sizeof( unsigned int ); // to count # of msgs
+	*static_cast< unsigned int * >( vabuf ) = 5; // set it to 5 msgs.
+	tdata->i_ = 98765;
+	tDestData->i_ = 0;
+	tdata->x_ = 0.9876;
+	tDestData->x_ = 0.0;
+	tdata->s_ = "There's nothing wrong with you, tis clear";
+	tDestData->s_ = "";
+	tdata->idVec_.resize( 5 );
+	tdata->idVec_.push_back( proxyId[3] );
+	tDestData->idVec_.resize( 0 );
+	tdata->sVec_.resize( 0 );
+	tdata->sVec_.push_back( "To see the" );
+	tdata->sVec_.push_back( "rate you" );
+	tdata->sVec_.push_back( "drink your beer" );
+	tDestData->sVec_.resize( 0 );
+	///////////////////////////////////////////////////////////////////
+	// Send it.
+	///////////////////////////////////////////////////////////////////
+	TestParClass::sendIdVec( &c );
+	TestParClass::sendIshared( &c );
+	TestParClass::sendSvec( &c );
+	TestParClass::sendXshared( &c );
+	TestParClass::sendS( &c );
+
+	///////////////////////////////////////////////////////////////////
+	// Use a new vec of proxies, because we're sending in a different order
+	///////////////////////////////////////////////////////////////////
+	vector< Id > nproxyId;
+	nproxyId.push_back( proxyId[3] );
+	nproxyId.push_back( proxyId[5] );
+	nproxyId.push_back( proxyId[4] );
+	nproxyId.push_back( proxyId[5] );
+	nproxyId.push_back( proxyId[2] );
+
+	///////////////////////////////////////////////////////////
+	// Here I copy over the contents of the send buf of pm0 to 
+	// the recv buf of pm1, to simulate the process of MPI-based
+	// internode data transmission.
+	///////////////////////////////////////////////////////////
+	pm1->recvBuf_ = pm0->sendBuf_;
+
+	// SetConn p1c( p1, 0 );
+	//PostMaster::innerPoll( p1c ); // This deals with the incoming data
+
+	// Some lines pinched from innerPoll
+	// Handle async data in the buffer
+	data = &( pm1->recvBuf_[ 0 ] );
+	nMsgs = *static_cast< const unsigned int* >(
+					static_cast< const void* >( data ) );
+	ASSERT( nMsgs == 5, "on tgt postmaster");
+	data += sizeof( unsigned int );
+
+	ASSERT( tDestData->i_ != tdata->i_, "Pre int data on tgt" );
+	ASSERT( tDestData->x_ != tdata->x_, "Pre double data on tgt" );
+	ASSERT( tDestData->s_ != tdata->s_, "Pre string data on tgt" );
+	ASSERT( tDestData->idVec_ != tdata->idVec_, "Pre idVec data on tgt" );
+	ASSERT( tDestData->sVec_ != tdata->sVec_, "Pre sVec data on tgt" );
+
+	for ( unsigned int i = 0; i < nMsgs; i++ ) {
+		AsyncStruct as( data );
+		// Here we fudge it because the AsyncStruct still has the
+		// orignal element id, but we need to put in the proxy id
+		// Since we are testing it all on the same node it has to
+		// be a different id.
+		as.proxy_ = nproxyId[ i ];
 		data += sizeof( AsyncStruct );
 		unsigned int size = proxy2tgt( as, data );
 		// assert( size == as.size() );

@@ -12,11 +12,9 @@
 
 ProxyElement::ProxyElement( Id id, unsigned int node, 
 	unsigned int proxyFuncId )
-	: Element( id ), node_( node )
-{
-	proxyFunc_ = reinterpret_cast< ProxyFunc >( 
-		FuncVec::getFuncVec( proxyFuncId )->func( 0 ) );
-}
+	: 	Element( id ), node_( node ),
+		proxyVec_( FuncVec::getFuncVec( proxyFuncId ) )
+{;}
 
 /**
  * The return value is undefined if msgNum is greater the numSrc but
@@ -36,8 +34,10 @@ unsigned int ProxyElement::numTargets( int msgNum ) const
 	return 0;
 }
 
-void ProxyElement::sendData( const char* data )
+void ProxyElement::sendData( unsigned int funcIndex, const char* data )
 {
 	SetConn c( this, 0 );
-	proxyFunc_( &c, data, Slot( 0, 0 ) );
+	ProxyFunc pf = reinterpret_cast< ProxyFunc >( 
+		proxyVec_->func( funcIndex ) ); 
+	pf( &c, data, Slot( 0, funcIndex ) );
 }

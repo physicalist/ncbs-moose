@@ -512,6 +512,7 @@ Slot Cinfo::getSlot( const string& name ) const
 //		if ( (*i)->name() == name )
 //			return (*i)->getSlotIndex();
 	}
+	cout << "Warning: Failed to find slot: " << name << endl;
 	return ret;
 }
 

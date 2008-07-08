@@ -7087,4 +7087,15 @@ since the AsyncStruct tells us which function to use. However, still cannot
 handle return messages or bidirectional shared messages, which should also 
 go through the proxy.
 
+Checked in as revision 536 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+==============================================================================
+7 July 2008.
+Implemented code changes to pass multiple function calls through the same
+message.
+==============================================================================
+8 July 2008.
+Implemented unidirectional shared message passing through postmasters, 
+including unit tests.
+
 ==============================================================================
