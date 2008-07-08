@@ -54,7 +54,7 @@ class ProxyElement: public Element
 		/////////////////////////////////////////////////////////////
 		// Hack here to deal with proxy msgs
 		/////////////////////////////////////////////////////////////
-		void sendData( const char* data );
+		void sendData( unsigned int funcIndex, const char* data );
 
 		/////////////////////////////////////////////////////////////
 		// Msg traversal functions, part of API
@@ -341,7 +341,15 @@ class ProxyElement: public Element
 	private:
 		Msg msg_;			/// Handles messages to actual targets.
 		unsigned int node_;	/// Node of original Element.
-		ProxyFunc proxyFunc_; /// Function that converts and sends out data.
+
+		/**
+		 * Vector of ProxyFuncs, aligned with the recvFuncs of the
+		 * target object. Each ProxyFunc converts the serialized
+		 * stream from the postMaster to arguments and issues it to the
+		 * appropriate Send command for the message. Needs the funcIndex
+		 * to identify the correct funcs.
+		 */
+		const FuncVec* proxyVec_; /// Vector of proxy Funcs
 };
 
 #endif // _PROXY_ELEMENT_H

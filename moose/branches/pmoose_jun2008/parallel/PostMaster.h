@@ -126,8 +126,8 @@ class AsyncStruct {
 		 * The target here actually refers to the proxy id, which is
 		 * the source id on the originating node! Need to clean up.
 		 */
-		AsyncStruct( Id proxy, unsigned int funcNum, unsigned int size )
-			: proxy_( proxy ), funcNum_( funcNum ), size_( size )
+		AsyncStruct( Id proxy, unsigned int funcIndex, unsigned int size )
+			: proxy_( proxy ), funcIndex_( funcIndex ), size_( size )
 		{;}
 
 		AsyncStruct( const char* data )
@@ -135,7 +135,7 @@ class AsyncStruct {
 			// tgt_ = *( static_cast< const Id* >( data ) );
 			proxy_ = *( const Id* ) ( data );
 			data += sizeof( Id );
-			funcNum_ = *( const unsigned int* )( data );
+			funcIndex_ = *( const unsigned int* )( data );
 			// tgtMsg_ = *( static_cast< const int* >( data ) );
 			data += sizeof( unsigned int );
 			size_ = *( const unsigned int* ) ( data );
@@ -146,8 +146,8 @@ class AsyncStruct {
 			return proxy_;
 		}
 
-		int funcNum() const {
-			return funcNum_;
+		int funcIndex() const {
+			return funcIndex_;
 		}
 
 		unsigned int size() const {
@@ -156,7 +156,7 @@ class AsyncStruct {
 
 	private:
 		Id proxy_;
-		unsigned int funcNum_;
+		unsigned int funcIndex_;
 		unsigned int size_;
 };
 
