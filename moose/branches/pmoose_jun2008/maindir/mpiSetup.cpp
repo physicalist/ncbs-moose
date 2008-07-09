@@ -71,10 +71,12 @@ void initMPI( int argc, char** argv )
 	Element* shell = shellId();
 	const Finfo* serialFinfo = shell->findFinfo( "serial" );
 	assert( serialFinfo != 0 );
+	/*
 	const Finfo* masterFinfo = shell->findFinfo( "master" );
 	assert( masterFinfo != 0 );
 	const Finfo* slaveFinfo = shell->findFinfo( "slave" );
 	assert( slaveFinfo != 0 );
+	*/
 	const Finfo* pollFinfo = shell->findFinfo( "pollSrc" );
 	assert( pollFinfo != 0 );
 	const Finfo* tickFinfo = t0->findFinfo( "parTick" );

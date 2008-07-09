@@ -173,8 +173,7 @@ const char* ftype2str( const Ftype *f )
  * DestFinfo::respondToAdd, since it has to bypass much of the logic of
  * both.
  */
-bool PostMaster::setupProxyMsg( unsigned int srcNode, Id proxy, 
-	Id dest, int destMsg, Element* post )
+bool setupProxyMsg( unsigned int srcNode, Id proxy, Id dest, int destMsg )
 {
 	const Finfo* destFinfo = dest()->findFinfo( destMsg );
 	assert( destFinfo != 0 );
@@ -752,8 +751,7 @@ void testParAsyncObj2Post2Obj()
 	Id proxyId[ 6 ];
 
 	proxyId[ 0 ] = Id::scratchId();
-	ret = PostMaster::setupProxyMsg( 
-		0, proxyId[ 0 ], tdest->id(), tgtMsg, p1 );
+	ret = setupProxyMsg( 0, proxyId[ 0 ], tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt i" );
 	///////////////////////////////////////////
 
@@ -762,8 +760,7 @@ void testParAsyncObj2Post2Obj()
 	tgtMsg = tdest->findFinfo( "x" )->msg();
 
 	proxyId[ 1 ] = Id::scratchId();
-	ret = PostMaster::setupProxyMsg( 
-		0, proxyId[ 1 ], tdest->id(), tgtMsg, p1 );
+	ret = setupProxyMsg( 0, proxyId[ 1 ], tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt x" );
 	///////////////////////////////////////////
 
@@ -772,8 +769,7 @@ void testParAsyncObj2Post2Obj()
 	tgtMsg = tdest->findFinfo( "s" )->msg();
 
 	proxyId[ 2 ] = Id::scratchId();
-	ret = PostMaster::setupProxyMsg( 
-		0, proxyId[ 2 ], tdest->id(), tgtMsg, p1 );
+	ret = setupProxyMsg( 0, proxyId[ 2 ], tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt s" );
 	///////////////////////////////////////////
 
@@ -782,8 +778,7 @@ void testParAsyncObj2Post2Obj()
 	tgtMsg = tdest->findFinfo( "idVec" )->msg();
 
 	proxyId[ 3 ] = Id::scratchId();
-	ret = PostMaster::setupProxyMsg( 
-		0, proxyId[ 3 ], tdest->id(), tgtMsg, p1 );
+	ret = setupProxyMsg( 0, proxyId[ 3 ], tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt idVec" );
 	///////////////////////////////////////////
 
@@ -792,8 +787,7 @@ void testParAsyncObj2Post2Obj()
 	tgtMsg = tdest->findFinfo( "sVec" )->msg();
 
 	proxyId[ 4 ] = Id::scratchId();
-	ret = PostMaster::setupProxyMsg( 
-		0, proxyId[ 4 ], tdest->id(), tgtMsg, p1 );
+	ret = setupProxyMsg( 0, proxyId[ 4 ], tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt sVec" );
 	///////////////////////////////////////////
 
@@ -802,8 +796,7 @@ void testParAsyncObj2Post2Obj()
 	tgtMsg = tdest->findFinfo( "ix" )->msg();
 
 	proxyId[ 5 ] = Id::scratchId();
-	ret = PostMaster::setupProxyMsg( 
-		0, proxyId[ 5 ], tdest->id(), tgtMsg, p1 );
+	ret = setupProxyMsg( 0, proxyId[ 5 ], tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt ix" );
 
 	///////////////////////////////////////////////////////////////////

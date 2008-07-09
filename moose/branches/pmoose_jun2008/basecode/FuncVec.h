@@ -85,6 +85,11 @@ class FuncVec
 		 */
 		unsigned int lookupId() const;
 
+		/**
+		 * True if this funcVec handles any destination functions,
+		 * or if the SharedFinfo that manages this funcVec
+		 * has been set up as a destination.
+		 */
 		bool isDest() const {
 			return isDest_;
 		}

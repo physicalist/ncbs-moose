@@ -273,28 +273,107 @@ const Cinfo* initShellCinfo()
 		),
 	};
 
-	static Finfo* masterShared[] = 
+	/**
+	 * This handles parallelization: communication between shells on
+	 * different nodes, which is the major mechanism for setting up
+	 * multinode simulations
+	 */
+	static Finfo* parallelShared[] = 
 	{
-		new SrcFinfo( "get",
+		/////////////////////////////////////////////////////
+		// get stuff
+		/////////////////////////////////////////////////////
+		new SrcFinfo( "getSrc",
 			// objId, field
 			Ftype2< Id, string >::global() ),
+		new DestFinfo( "get",
+			// objId, field
+			Ftype2< Id, string >::global(),
+			RFCAST( &Shell::parGetField )
+			),
+		new SrcFinfo( "respondToGet",
+			Ftype1< string >::global()
+		),
 		new DestFinfo( "recvGet",
 			Ftype1< string >::global(),
-			RFCAST( &Shell::recvGetFunc )
+			RFCAST( &Shell::recvGetRequest )
 		),
-		new SrcFinfo( "set",
+		/////////////////////////////////////////////////////
+		// set stuff
+		/////////////////////////////////////////////////////
+		new SrcFinfo( "setSrc",
 			// objId, field, value
 			Ftype3< Id, string, string >::global() ),
-		new SrcFinfo( "add",
-				// srcObjId, srcField, destObjId, destField
-			Ftype4< Id, string, Id, string >::global()
+		new DestFinfo( "set",
+			// objId, field, value
+			Ftype3< Id, string, string >::global(),
+			RFCAST( &Shell::setField )
 		),
-		new SrcFinfo( "create", 
+
+		/////////////////////////////////////////////////////
+		// Creationism. Note that the createSrc should only come
+		// from the master node as it is the only one that knows
+		// the next child index.
+		/////////////////////////////////////////////////////
+		new SrcFinfo( "createSrc", 
 			// type, name, parentId, newObjId.
 			Ftype4< string, string, Id, Id >::global()
 		),
+		// Creating an object
+		new DestFinfo( "create",
+				Ftype4< string, string, Id, Id >::global(),
+				RFCAST( &Shell::parCreateFunc ) ),
+
+		/////////////////////////////////////////////////////
+		// Msg stuff
+		/////////////////////////////////////////////////////
+		new SrcFinfo( "addLocalSrc",
+				// srcObjId, srcField, destObjId, destField
+			Ftype4< Id, string, Id, string >::global()
+		),
+		new SrcFinfo( "addParallelSrcSrc",
+				// srcObjId, srcField, destObjId, destField
+			Ftype4< Id, string, Id, string >::global()
+		),
+		new SrcFinfo( "addParallelDestSrc",
+				// srcObjId, srcField, destObjId, destField
+			Ftype4< Id, string, Id, string >::global()
+		),
+
+		new DestFinfo( "addLocal",
+			Ftype4< Id, string, Id, string >::global(),
+			RFCAST( &Shell::addLocal )
+		),
+		new DestFinfo( "addParallelSrc",
+			Ftype4< Id, string, Id, string >::global(),
+			RFCAST( &Shell::addParallelSrc )
+		),
+		new DestFinfo( "addParallelDest",
+			Ftype4< Id, string, Id, string >::global(),
+			RFCAST( &Shell::addParallelDest )
+		),
+
+		/////////////////////////////////////////////////////
+		// Msg completion reporting stuff
+		/////////////////////////////////////////////////////
+		new SrcFinfo( "parMsgErrorSrc",
+			Ftype3< string, Id, Id >::global()
+		),
+		new SrcFinfo( "parMsgOkSrc",
+			Ftype2< Id, Id >::global()
+		),
+
+		new DestFinfo( "parMsgError",
+			Ftype3< string, Id, Id >::global(),
+			RFCAST( &Shell::parMsgErrorFunc )
+		),
+		new DestFinfo( "parMsgOk",
+			Ftype2< Id, Id >::global(),
+			RFCAST( &Shell::parMsgOkFunc )
+		),
 	};
 
+	/*
 	static Finfo* slaveShared[] = 
 	{
 		new DestFinfo( "get",
@@ -321,6 +400,7 @@ const Cinfo* initShellCinfo()
 			RFCAST( &Shell::slaveCreateFunc )
 		),
 	};
+	*/
 
 	static Finfo* shellFinfos[] =
 	{
@@ -346,10 +426,8 @@ const Cinfo* initShellCinfo()
 				sizeof( parserShared ) / sizeof( Finfo* ) ), 
 		new SharedFinfo( "serial", serialShared,
 				sizeof( serialShared ) / sizeof( Finfo* ) ), 
-		new SharedFinfo( "master", masterShared,
-				sizeof( masterShared ) / sizeof( Finfo* ) ), 
-		new SharedFinfo( "slave", slaveShared,
-				sizeof( slaveShared ) / sizeof( Finfo* ) ), 
+		new SharedFinfo( "parallel", parallelShared,
+				sizeof( parallelShared ) / sizeof( Finfo* ) ), 
 	};
 
 	static Cinfo shellCinfo(
@@ -1306,7 +1384,7 @@ void printNodeInfo( const Conn* c )
 	cout << "on " << mynode << " from " << remotenode << ":";
 }
 
-void Shell::slaveGetField( const Conn* c, Id id, string field )
+void Shell::parGetField( const Conn* c, Id id, string field )
 {
 	printNodeInfo( c );
 	// cout << "in slaveGetFunc on " << id << " with field :" << field << "\n";
@@ -1323,7 +1401,7 @@ void Shell::slaveGetField( const Conn* c, Id id, string field )
 			sendBack1< string >( c, recvGetSlot, ret );
 }
 
-void Shell::recvGetFunc( const Conn* c, string value )
+void Shell::recvGetRequest( const Conn* c, string value )
 {
 	printNodeInfo( c );
 	cout << "in recvGetFunc with field value :'" << value << "'\n";
@@ -1335,7 +1413,7 @@ void Shell::recvGetFunc( const Conn* c, string value )
 	send1< string >( c->target(), getFieldSlot, value );
 }
 
-void Shell::slaveCreateFunc ( const Conn* c, 
+void Shell::parCreateFunc ( const Conn* c, 
 				string objtype, string objname, 
 				Id parent, Id newobj )
 {
@@ -1363,6 +1441,7 @@ void Shell::slaveCreateFunc ( const Conn* c,
 	*/
 }
 
+/*
 void Shell::addFunc ( const Conn* c, 
 		Id src, string srcField,
 		Id dest, string destField )
@@ -1371,6 +1450,7 @@ void Shell::addFunc ( const Conn* c,
 	cout << "in slaveAddFunc :" << src << " " << srcField << 
 		" " << dest << " " << destField << "\n";
 }
+*/
 
 // Static function
 /**
@@ -1871,17 +1951,66 @@ void Shell::addMessage( const Conn* c,
 {
 	vector< Id >::iterator i;
 	vector< Id >::iterator j;
-	bool ok = 0;
-	for ( i = src.begin(); i != src.end(); ++i )
-		for ( j = dest.begin(); j != dest.end(); ++j )
-			if ( i->eref().add( srcField, j->eref(), destField, 
-				ConnTainer::Default ) )
-					ok = 1; 
-				else
-					cout << "Error: Shell::addMessage failed\n";
+	bool ok = 1;
+	for ( i = src.begin(); i != src.end(); ++i ) {
+		for ( j = dest.begin(); j != dest.end(); ++j ) {
+			if ( !Shell::addSingleMessage( c, *i, srcField, *j, destField ) ) {
+				cout << "Error: Shell::addMessage failed from " <<
+					i->path() << " to " << j->path () << endl;
+				ok = 0;
+			}
+		}
+	}
 	if ( ok )
 		cout << "msg add OK\n";
 }
+
+bool Shell::addLocal( Id src, string srcField, Id dest, string destField )
+{
+	return src.eref().add( srcField, dest.eref(), destField,
+		ConnTainer::Default );
+}
+
+void Shell::parMsgErrorFunc( 
+	const Conn* c, string errMsg, Id src, Id dest )
+{
+	cout << "Error: " << errMsg << " from " << src.path() << " to " <<
+		dest.path() << endl;
+}
+
+void Shell::parMsgOkFunc( const Conn* c, Id src, Id dest )
+{
+	cout << "OK: msg set up from " << src.path() << " to " <<
+		dest.path() << endl;
+}
+
+#ifndef USE_MPI
+bool Shell::addSingleMessage( const Conn* c, 
+	Id src, string srcField, 
+	Id dest, string destField )
+{
+	return addLocal( src, srcField, dest, destField );
+}
+
+void Shell::addParallelSrc( const Conn* c, 
+	unsigned int srcNode, Id src, string srcField, 
+	Id dest, string destField )
+{
+	;
+}
+
+void Shell::addParallelDest( const Conn* c,
+	Id src, string srcTypeStr, Id dest, string destField )
+{
+	;
+}
+
+Eref Shell::getPost( unsigned int node ) const
+{
+	return 0;
+}
+
+#endif // USE_MPI
 
 void Shell::addEdge( const Conn* c, Fid src, Fid dest, int connType )
 {
