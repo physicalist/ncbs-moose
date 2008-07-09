@@ -7120,3 +7120,8 @@ Setting up now to compile a big mess of stuff.
 Shell commands set up. Compiles, clears old unit tests but doesn't have new
 ondes to test new shell commands. That's next.
 
+Checked in as revision 538 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Now I'm able to connect to shells together with master/slave msgs.
+
+==============================================================================

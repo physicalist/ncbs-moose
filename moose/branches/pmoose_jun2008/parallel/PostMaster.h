@@ -39,6 +39,7 @@ class PostMaster
 #ifdef DO_UNIT_TESTS
 	friend void testParAsyncObj2Post();
 	friend void testParAsyncObj2Post2Obj();
+	friend void testShellSetupAsyncParMsg();
 #endif // DO_UNIT_TESTS
 	public:
 		PostMaster();
