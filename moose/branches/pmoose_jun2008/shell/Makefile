@@ -15,22 +15,12 @@
 
 TARGET = shell.o
 
-ifneq (,$(findstring -DCRL_MPI,$(CFLAGS)))
 OBJ = \
 	Shell.o	\
 	ParShell.o	\
 	ReadCell.o \
 	SimDump.o \
 	LoadTab.o 
-else
-OBJ = \
-	Shell.o	\
-	ReadCell.o \
-	SimDump.o \
-	LoadTab.o 
-endif
-
-
 
 HEADERS = \
 	../basecode/header.h \
@@ -43,10 +33,10 @@ $(OBJ)	: $(HEADERS)
 
 Shell.o: Shell.h ../utility/randnum/Probability.h ../utility/randnum/Uniform.h ../utility/randnum/Exponential.h ../utility/randnum/Normal.h
 
-ifneq (,$(findstring -DCRL_MPI,$(CFLAGS)))
-ParShell.o: Shell.h ParShell.h
-endif
+# ifneq (,$(findstring -DCRL_MPI,$(CFLAGS)))
+#endif
 
+ParShell.o: Shell.h ParShell.h
 ReadCell.o: ReadCell.h Shell.h
 
 

@@ -108,6 +108,15 @@ class Shell
 		static void addMessage( const Conn* c,
 			vector< Id >src, string srcField, vector< Id >dest, 
 			string destField );
+		static bool addSingleMessage( const Conn* c,
+			Id src, string srcField, Id dest, string destField );
+		/** 
+		 * This one does the actual work for adding messages on the
+		 * local node
+		 */
+		static bool addLocal(
+			Id src, string srcField,
+			Id dest, string destField );
 
 		/**
 		 * This is a more general form of the addMessage command,
@@ -146,19 +155,6 @@ class Shell
 		static void copyIntoArray( const Conn* c, Id src, Id parent, string name, vector <double> parameter );
 		static void copyIntoArray1( const Conn* c, Id src, Id parent, string name, vector <double> parameter );
 		static void move( const Conn* c, Id src, Id parent, string name );
-
-////////////////////////////////////////////////////////////////////
-// Local functions for implementing Master/Slave set
-////////////////////////////////////////////////////////////////////
-		static void slaveGetField( 
-			const Conn* c, Id id, string field );
-		static void recvGetFunc( const Conn* c, string value );
-		static void slaveCreateFunc( const Conn* c,
-			string objtype, string objname, 
-			Id parentId, Id newObjId );
-		static void addFunc( const Conn* c,
-			Id src, string srcField,
-			Id dest, string destField );
 		
 		//////////////////////////////////////////////////////////
 		// Some stuff for managing scheduling and simulation runs
@@ -229,7 +225,31 @@ class Shell
 		void remoteCommand( string arglist );
 		void command( int argc, const char** argv );
 		*/
+
+		////////////////////////////////////////////////////////////////////
+		// functions for implementing inter-node shell-shell messaging
+		////////////////////////////////////////////////////////////////////
+		static void addParallelSrc( const Conn* c, unsigned int srcNode,
+			Id src, string srcField, Id dest, string destField );
+		static void addParallelDest( const Conn* c,
+			Id src, string srcTypeStr, Id dest, string destField );
+
+		static void parGetField( const Conn* c, Id id, string field );
+		static void recvGetRequest( const Conn* c, string value );
+		// setField is a regular command, no special stuff for it.
+
+		static void parCreateFunc( const Conn* c,
+			string objtype, string objname, 
+			Id parentId, Id newObjId );
 		
+		static void parMsgErrorFunc( const Conn* c, 
+			string errMsg, Id src, Id dest );
+		static void parMsgOkFunc( const Conn* c, Id src, Id dest );
+
+		/**
+		 * Returns the Eref for the specified postmaster.
+		 */
+		Eref getPost( unsigned int node ) const;
 	
 	private:
 		/// Current working element
@@ -250,6 +270,25 @@ class Shell
 		SimDump* simDump_;
 		Id lastTab_; // Used for the loadtab -continue option, which 
 			// contines loading numbers into the previously selected table.
+		unsigned int node_;
+
+		/**
+		 * This keeps track of message requests sent off-node. 
+		 * When the target node finishes its work it tells this one that
+		 * things worked out. At reset time we examine this map to make
+		 * sure everything has been cleared up.
+		 * We can't do an immediate return because
+		 * it is slow, and quite likely to give rise to race conditions.
+		 */
+		map< Id, Id > parMessagePending_;
+
+		/**
+		 * The postmaster element is used to set up all parallel models.
+		 * In single-node simulations this is zero.
+		 */
+		Element* post_;
 };
+
+extern const Cinfo* initShellCinfo();
 
 #endif // _SHELL_H

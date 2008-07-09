@@ -82,9 +82,6 @@ class PostMaster
 					*/
 
 	// Message handling
-		static bool setupProxyMsg( 
-			unsigned int srcNode, Id proxy, Id dest, int destMsg, 
-			Element* post );
 		static void postIrecv( const Conn* c, int ordinal );
 		void innerPostIrecv();
 		static void poll( const Conn* c, int ordinal );
@@ -161,6 +158,8 @@ class AsyncStruct {
 };
 
 extern const Cinfo* initPostMasterCinfo();
+extern bool setupProxyMsg( 
+			unsigned int srcNode, Id proxy, Id dest, int destMsg );
 
 #endif // USE_MPI
 

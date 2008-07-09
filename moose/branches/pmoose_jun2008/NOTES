@@ -7097,5 +7097,26 @@ message.
 8 July 2008.
 Implemented unidirectional shared message passing through postmasters, 
 including unit tests.
+Checked in as revision 537 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+For bidirectional shared messaging, we need proxies at both ends.
+	- The construction of proxies is easy: check things in 
+		AsyncDestFinfo::respondToAdd or in the Shell command.
+		Will have to be the Shell command, because it is messy to
+		backtrack once we're in respondToAdd of the postmaster.
+	- Proxies now have to handle AsyncDestFinfo equivalents too,
+		though they are routed through the msg_ data structure
+		of the proxy.
+	- Key thing is that the proxy->data() must return the data of the
+		associated postmaster. Then the same asyncFunc will work.
+
+For now, working on Shell commands to set up the internode connections,
+as the above juggling depends on these commands.
+
+Setting up now to compile a big mess of stuff.
 
 ==============================================================================
+9 July 2008
+Shell commands set up. Compiles, clears old unit tests but doesn't have new
+ondes to test new shell commands. That's next.
+
