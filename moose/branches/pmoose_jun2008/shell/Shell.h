@@ -17,7 +17,10 @@ class Shell
 {
 #ifdef DO_UNIT_TESTS
 	friend void testShell();
-#endif
+#ifdef USE_MPI
+	friend void testShellSetupAsyncParMsg();
+#endif // USE_MPI
+#endif // DO_UNIT_TESTS
 	public:
 		Shell();
 	

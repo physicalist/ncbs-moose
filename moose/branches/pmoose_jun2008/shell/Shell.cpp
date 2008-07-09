@@ -278,7 +278,7 @@ const Cinfo* initShellCinfo()
 	 * different nodes, which is the major mechanism for setting up
 	 * multinode simulations
 	 */
-	static Finfo* parallelShared[] = 
+	static Finfo* masterShared[] = 
 	{
 		/////////////////////////////////////////////////////
 		// get stuff
@@ -373,6 +373,24 @@ const Cinfo* initShellCinfo()
 		),
 	};
 
+	/**
+	 * This handles parallelization: communication between shells on
+	 * different nodes, which is the major mechanism for setting up
+	 * multinode simulations
+	 */
+	static Finfo* slaveShared[] = 
+	{
+		masterShared[1], masterShared[0],  // note order flip.
+		masterShared[2], masterShared[3],
+		masterShared[4], masterShared[5], 
+		masterShared[6], masterShared[7],
+		masterShared[8], masterShared[9], 
+		masterShared[10], masterShared[11],
+		masterShared[12], masterShared[13],
+		masterShared[14], masterShared[15],
+		masterShared[16], masterShared[17],
+	};
+
 	/*
 	static Finfo* slaveShared[] = 
 	{
@@ -426,8 +444,10 @@ const Cinfo* initShellCinfo()
 				sizeof( parserShared ) / sizeof( Finfo* ) ), 
 		new SharedFinfo( "serial", serialShared,
 				sizeof( serialShared ) / sizeof( Finfo* ) ), 
-		new SharedFinfo( "parallel", parallelShared,
-				sizeof( parallelShared ) / sizeof( Finfo* ) ), 
+		new SharedFinfo( "master", masterShared,
+				sizeof( masterShared ) / sizeof( Finfo* ) ), 
+		new SharedFinfo( "slave", slaveShared,
+				sizeof( slaveShared ) / sizeof( Finfo* ) ), 
 	};
 
 	static Cinfo shellCinfo(
@@ -458,6 +478,7 @@ static const Slot clockSlot =
 	initShellCinfo()->getSlot( "parser.returnClocksSrc" );
 static const Slot listMessageSlot =
 	initShellCinfo()->getSlot( "parser.listMessagesSrc" );
+
 static const Slot rCreateSlot =
 	initShellCinfo()->getSlot( "master.create" );
 static const Slot rGetSlot = initShellCinfo()->getSlot( "master.get" );

@@ -939,11 +939,11 @@ void testParAsyncObj2Post2Obj()
 		// assert( size == as.size() );
 		data += size;
 	}
-	ASSERT( tDestData->i_ == tdata->i_, "Recieved int data on tgt" );
-	ASSERT( tDestData->x_ == tdata->x_, "Recieved double data on tgt" );
-	ASSERT( tDestData->s_ == tdata->s_, "Recieved string data on tgt" );
-	ASSERT( tDestData->idVec_ == tdata->idVec_, "Recieved idVec data on tgt" );
-	ASSERT( tDestData->sVec_ == tdata->sVec_, "Recieved sVec data on tgt" );
+	ASSERT( tDestData->i_ == tdata->i_, "Received int data on tgt" );
+	ASSERT( tDestData->x_ == tdata->x_, "Received double data on tgt" );
+	ASSERT( tDestData->s_ == tdata->s_, "Received string data on tgt" );
+	ASSERT( tDestData->idVec_ == tdata->idVec_, "Received idVec data on tgt" );
+	ASSERT( tDestData->sVec_ == tdata->sVec_, "Received sVec data on tgt" );
 
 
 	/*
@@ -1013,11 +1013,90 @@ void testParAsyncObj2Post2Obj()
 	set( n, "destroy" );
 }
 
+/**
+ * This tests shell interfacing to set up messages. It could just as
+ * well be in the Shell tests, but I think it fits in better here
+ * as it is all parallel stuff.
+ */
+void testShellSetupAsyncParMsg()
+{
+	cout << "\nTesting Shell setup of Parallel Async";
+	const Cinfo* tpCinfo = initTestParClass();
+	iSlot = tpCinfo->getSlot( "iSrc" );
+	xSlot = tpCinfo->getSlot( "xSrc" );
+	sSlot = tpCinfo->getSlot( "sSrc" );
+	idVecSlot = tpCinfo->getSlot( "idVecSrc" );
+	sVecSlot = tpCinfo->getSlot( "sVecSrc" );
+	iSharedSlot = tpCinfo->getSlot( "ixSrc.iSrc" );
+	xSharedSlot = tpCinfo->getSlot( "ixSrc.xSrc" );
+
+	Element* n = Neutral::create( "Neutral", "n", Id(), Id::scratchId() );
+
+	Element* p0 = Neutral::create(
+			"PostMaster", "node0", n->id(), Id::scratchId());
+	ASSERT( p0 != 0, "created Src Postmaster" );
+
+	Element* p1 = Neutral::create(
+			"PostMaster", "node1", n->id(), Id::scratchId());
+	ASSERT( p1 != 0, "created Dest Postmaster" );
+
+	Element* t = 
+		Neutral::create( "TestPar", "tp", n->id(), Id::scratchId() );
+	ASSERT( t != 0, "created TestPar" );
+	TestParClass* tdata = static_cast< TestParClass* >( t->data() );
+
+	Element* tdest = 
+		Neutral::create( "TestPar", "tdest", n->id(), Id::scratchId() );
+	TestParClass* tDestData = static_cast< TestParClass* >( tdest->data() );
+
+	SetConn c( t, 0 );
+
+	PostMaster* pm0 = static_cast< PostMaster* >( p0->data() );
+	PostMaster* pm1 = static_cast< PostMaster* >( p1->data() );
+	pm0->sendBufPos_ = sizeof( unsigned int ); // to count # of msgs
+	void* vabuf = static_cast< void* >( &pm0->sendBuf_[0] );
+
+	///////////////////////////////////////////////////////////////////
+	// Set up the data to send
+	///////////////////////////////////////////////////////////////////
+	*static_cast< unsigned int * >( vabuf ) = 5; // set it to 5 msgs.
+	tdata->i_ = 44332200;
+	tDestData->i_ = 0;
+	tdata->x_ = 0.1234;
+	tDestData->x_ = 0.0;
+	tdata->s_ = "And malt does more than Milton can";
+	tDestData->s_ = "";
+	simpleWildcardFind( "/##", tdata->idVec_ );
+	tDestData->idVec_.resize( 0 );
+	tdata->sVec_.resize( 0 );
+	tdata->sVec_.push_back( "To justify" );
+	tdata->sVec_.push_back( "God's ways" );
+	tdata->sVec_.push_back( "to man" );
+	tDestData->sVec_.resize( 0 );
+
+	///////////////////////////////////////////////////////////////////
+	// Set up the the shells
+	///////////////////////////////////////////////////////////////////
+	
+	Element* esh0 = Neutral::create( "Shell", "sh0", n->id(), Id::scratchId() );
+	Element* esh1 = Neutral::create( "Shell", "sh1", n->id(), Id::scratchId() );
+	Shell *sh0 = static_cast< Shell* >( esh0->data( 0 ) );
+	Shell *sh1 = static_cast< Shell* >( esh1->data( 0 ) );
+	sh0->post_ = p0;
+	sh1->post_ = p1;
+
+	bool ret = Eref( esh0 ).add( "master", esh1, "slave" );
+	ASSERT( ret, "Setting up msg between shells" );
+	set( n, "destroy" );
+}
+
+
 void testPostMaster()
 {
 	// First, ensure that all nodes are synced.
 	testParAsyncObj2Post();
 	testParAsyncObj2Post2Obj();
+	testShellSetupAsyncParMsg();
 	MPI::COMM_WORLD.Barrier();
 	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
 	unsigned int numNodes = MPI::COMM_WORLD.Get_size();
