@@ -7124,4 +7124,31 @@ Checked in as revision 538 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
 Now I'm able to connect to shells together with master/slave msgs.
 
+Checked in as revision 540 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+==============================================================================
+10 July 2008
+There is a bit of an issue with the master/slave messaging. The ideal way
+to set this up would be to use an all-to-all message mediated through the
+postmaster. However, we now have two kinds of messages, master and slave. So
+a uniform message fabric won't work.
+
+Fixed this. Proceeded with the shell-to-shell connections. Used this to
+build a message using the parallel infrastructure, but on the same node
+for testing purposes. After some fiddling around to get round the issue of
+proxyElements on the same node, I got the messages set up and confirmed
+that data was transferred.
+
+Now we're getting close to actually testing this on MPI. Remaining: 
+	- I need to get bidirectional shared messaging to work
+	- I need to do some sensible initialization for the shell-shell
+		messages across nodes. 
+	- Likewise postmasters.
+	- Revisit the parallel scheduling
+	- Complete implementation of basic internode object handling commands
+	- Set up unit tests for all of the above. For simplicity I will
+		have all unit tests run from the master node.
+	- Scale up using array postmasters
+	- Regression tests using spiking neurons.
+
 ==============================================================================

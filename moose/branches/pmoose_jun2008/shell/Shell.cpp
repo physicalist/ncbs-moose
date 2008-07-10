@@ -278,7 +278,7 @@ const Cinfo* initShellCinfo()
 	 * different nodes, which is the major mechanism for setting up
 	 * multinode simulations
 	 */
-	static Finfo* masterShared[] = 
+	static Finfo* parallelShared[] = 
 	{
 		/////////////////////////////////////////////////////
 		// get stuff
@@ -377,7 +377,6 @@ const Cinfo* initShellCinfo()
 	 * This handles parallelization: communication between shells on
 	 * different nodes, which is the major mechanism for setting up
 	 * multinode simulations
-	 */
 	static Finfo* slaveShared[] = 
 	{
 		masterShared[1], masterShared[0],  // note order flip.
@@ -390,35 +389,7 @@ const Cinfo* initShellCinfo()
 		masterShared[14], masterShared[15],
 		masterShared[16], masterShared[17],
 	};
-
-	/*
-	static Finfo* slaveShared[] = 
-	{
-		new DestFinfo( "get",
-			// objId, field
-			Ftype2< Id, string >::global(),
-			RFCAST( &Shell::slaveGetField )
-			),
-		new SrcFinfo( "recvGet",
-			Ftype1< string >::global()
-		),
-		new DestFinfo( "set",
-			// objId, field, value
-			Ftype3< Id, string, string >::global(),
-			RFCAST( &Shell::setField )
-		),
-		new DestFinfo( "add",
-				// srcObjId, srcField, destObjId, destField
-			Ftype4< Id, string, Id, string >::global(),
-			RFCAST( &Shell::addFunc )
-		),
-		new DestFinfo( "create", 
-			// type, name, parentId, newObjId.
-			Ftype4< string, string, Id, Id >::global(),
-			RFCAST( &Shell::slaveCreateFunc )
-		),
-	};
-	*/
+	 */
 
 	static Finfo* shellFinfos[] =
 	{
@@ -444,10 +415,12 @@ const Cinfo* initShellCinfo()
 				sizeof( parserShared ) / sizeof( Finfo* ) ), 
 		new SharedFinfo( "serial", serialShared,
 				sizeof( serialShared ) / sizeof( Finfo* ) ), 
-		new SharedFinfo( "master", masterShared,
-				sizeof( masterShared ) / sizeof( Finfo* ) ), 
+		new SharedFinfo( "parallel", parallelShared,
+				sizeof( parallelShared ) / sizeof( Finfo* ) ), 
+		/*
 		new SharedFinfo( "slave", slaveShared,
 				sizeof( slaveShared ) / sizeof( Finfo* ) ), 
+				*/
 	};
 
 	static Cinfo shellCinfo(
@@ -480,12 +453,12 @@ static const Slot listMessageSlot =
 	initShellCinfo()->getSlot( "parser.listMessagesSrc" );
 
 static const Slot rCreateSlot =
-	initShellCinfo()->getSlot( "master.create" );
-static const Slot rGetSlot = initShellCinfo()->getSlot( "master.get" );
-static const Slot rSetSlot = initShellCinfo()->getSlot( "master.set" );
-static const Slot rAddSlot = initShellCinfo()->getSlot( "master.add" );
+	initShellCinfo()->getSlot( "parallel.create" );
+static const Slot rGetSlot = initShellCinfo()->getSlot( "parallel.getSrc" );
+static const Slot rSetSlot = initShellCinfo()->getSlot( "parallel.setSrc" );
+static const Slot rAddSlot = initShellCinfo()->getSlot( "parallel.addLocalSrc" );
 static const Slot recvGetSlot =
-	initShellCinfo()->getSlot( "slave.recvGet" );
+	initShellCinfo()->getSlot( "parallel.respondToGet" );
 
 static const Slot pollSlot =
 	initShellCinfo()->getSlot( "pollSrc" );
@@ -498,7 +471,7 @@ void printNodeInfo( const Conn* c );
 //////////////////////////////////////////////////////////////////////
 
 Shell::Shell()
-	: cwe_( Id() ), recentElement_( Id() )
+	: cwe_( Id() ), recentElement_( Id() ), node_( 0 )
 {
 	simDump_ = new SimDump;
 }
@@ -603,6 +576,8 @@ Id Shell::path2eid( const string& path, const string& separator )
 
 string Shell::eid2path( Id eid ) 
 {
+	if ( eid.eref()->className() == "proxy" )
+		return "proxy";
 	if ( eid.zero() )
 		return string( "/" );
 	static const string slash = "/";

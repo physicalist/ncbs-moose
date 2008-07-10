@@ -182,11 +182,25 @@ bool setupProxyMsg( unsigned int srcNode, Id proxy, Id dest, int destMsg )
 	
 	// Check for existence of proxy, create if needed.
 	Element* pe;
+#ifdef DO_UNIT_TESTS
+// Some nasty stuff here because we want to test parallel message 
+// setup without going off-node.
+	if ( srcNode == 0 && dest.node() == 0 ) {
+		pe = new ProxyElement( proxy, srcNode, pfid );
+	} else {
+		if ( proxy.isProxy() ) {
+			pe = proxy();
+		} else {
+			pe = new ProxyElement( proxy, srcNode, pfid );
+		}
+	}
+#else
 	if ( proxy.isProxy() ) {
 		pe = proxy();
 	} else {
 		pe = new ProxyElement( proxy, srcNode, pfid );
 	}
+#endif
 	unsigned int srcIndex = pe->numTargets( 0, proxy.index() );
 	unsigned int destIndex = dest()->numTargets( destMsg, dest.index() );
 	unsigned int srcFuncId = 0; /// \todo: How do we deal with returning shared msgs?
@@ -945,71 +959,6 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( tDestData->idVec_ == tdata->idVec_, "Received idVec data on tgt" );
 	ASSERT( tDestData->sVec_ == tdata->sVec_, "Received sVec data on tgt" );
 
-
-	/*
-	// Send a double to the postmaster
-	pm->sendBufPos_ = 0;
-	tdata->x_ = 3.1415926535;
-	ret = Eref( t ).add( "xSrc", p, "async" );
-	ASSERT( ret, "msg to post" );
-	TestParClass::sendX( &c );
-	double x = *static_cast< double* >( vabuf );
-	ASSERT( x == tdata->x_, "sending double" );
-	x = 0;
-	Serializer< double >::unserialize( x, vabuf ); // The postmaster uses unserialize
-	ASSERT( x == tdata->x_, "sending double" );
-
-	// Send a string to the postmaster
-	pm->sendBufPos_ = 0;
-	tdata->s_ = "Gleams that untravelled world";
-	ret = Eref( t ).add( "sSrc", p, "async" );
-	ASSERT( ret, "msg to post" );
-	TestParClass::sendS( &c );
-	string s;
-	Serializer< string >::unserialize( s, vabuf );
-	// string s = *static_cast< string* >( vabuf );
-	ASSERT( s == tdata->s_, "sending string" );
-
-	// Send a vector of Ids to the postmaster
-	pm->sendBufPos_ = 0;
-	unsigned int nfoo = simpleWildcardFind( "/##", tdata->idVec_ );
-	ret = Eref( t ).add( "idVecSrc", p, "async" );
-	ASSERT( ret, "msg to post" );
-	TestParClass::sendIdVec( &c );
-	vector< Id > foo;
-	// foo = *static_cast< vector< Id >* >( vabuf );
-	Serializer< vector< Id > >::unserialize( foo, vabuf );
-	ASSERT( nfoo == foo.size(), "sending vector< Id >" );
-	ASSERT( foo == tdata->idVec_, "sending vector< Id >" );
-
-	// Send a vector of strings to the postmaster
-	pm->sendBufPos_ = 0;
-	tdata->sVec_.push_back( "whose margin fades" );
-	tdata->sVec_.push_back( "forever and forever" );
-	tdata->sVec_.push_back( "when I move" );
-	vector< string > svec = tdata->sVec_;
-
-	ret = Eref( t ).add( "sVecSrc", p, "async" );
-	ASSERT( ret, "msg to post" );
-	TestParClass::sendSvec( &c );
-	vector< string > bar;
-	Serializer< vector< string > >::unserialize( bar, vabuf );
-	// vector< string > bar = *static_cast< vector< string >* >( vabuf );
-	ASSERT( svec == bar, "sending vector< string >" );
-
-	// Make a message to an int via a proxy
-	// Make a message to 100 ints via the proxy
-	// Send a value to an int through the proxy
-	//
-	// Repeat for a vector of strings or something equally awful.
-	//
-
-	// Using a buffer-to-buffer memcpy, do a single-node check on the
-	// complete transfer from int to int and all of the above.
-	//
-	// Also confirm that they work with multiple messages appearing
-	// in random order each time.
-	// */
 	set( n, "destroy" );
 }
 
@@ -1049,8 +998,6 @@ void testShellSetupAsyncParMsg()
 		Neutral::create( "TestPar", "tdest", n->id(), Id::scratchId() );
 	TestParClass* tDestData = static_cast< TestParClass* >( tdest->data() );
 
-	SetConn c( t, 0 );
-
 	PostMaster* pm0 = static_cast< PostMaster* >( p0->data() );
 	PostMaster* pm1 = static_cast< PostMaster* >( p1->data() );
 	pm0->sendBufPos_ = sizeof( unsigned int ); // to count # of msgs
@@ -1059,7 +1006,7 @@ void testShellSetupAsyncParMsg()
 	///////////////////////////////////////////////////////////////////
 	// Set up the data to send
 	///////////////////////////////////////////////////////////////////
-	*static_cast< unsigned int * >( vabuf ) = 5; // set it to 5 msgs.
+	*static_cast< unsigned int * >( vabuf ) = 1; // set it to 1 msgs.
 	tdata->i_ = 44332200;
 	tDestData->i_ = 0;
 	tdata->x_ = 0.1234;
@@ -1085,8 +1032,36 @@ void testShellSetupAsyncParMsg()
 	sh0->post_ = p0;
 	sh1->post_ = p1;
 
-	bool ret = Eref( esh0 ).add( "master", esh1, "slave" );
+	bool ret = Eref( esh0 ).add( "parallel", esh1, "parallel" );
 	ASSERT( ret, "Setting up msg between shells" );
+	SetConn c( esh0 , 0 );
+	Shell::addParallelSrc( &c, t->id(), "sVecSrc", tdest->id(), "sVec" );
+
+	/////////////////////////////////////////////////////////////////
+	// Activate the message.
+	/////////////////////////////////////////////////////////////////
+	SetConn ct( t , 0 );
+	TestParClass::sendSvec( &ct );
+	pm1->recvBuf_ = pm0->sendBuf_;
+	char* data = &( pm1->recvBuf_[ 0 ] );
+	unsigned int nMsgs = *static_cast< const unsigned int* >(
+					static_cast< const void* >( data ) );
+	ASSERT( nMsgs == 1, "on tgt postmaster");
+	ASSERT( tDestData->sVec_ != tdata->sVec_, "Pre sVec data on tgt" );
+
+	// Stuff here to transfer the data.
+		data += sizeof( unsigned int );
+		AsyncStruct as( data );
+		// Here we fudge it because the AsyncStruct still has the
+		// orignal element id, but we need to put in the proxy id
+		// Since we are testing it all on the same node it has to
+		// be a different id.
+		as.proxy_ = Id::lastId();
+		data += sizeof( AsyncStruct );
+		unsigned int size = proxy2tgt( as, data );
+	
+	ASSERT( tDestData->sVec_ == tdata->sVec_, "Recieved sVec data on tgt" );
+
 	set( n, "destroy" );
 }
 
