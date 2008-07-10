@@ -118,6 +118,7 @@ class PostMaster
 class AsyncStruct {
 #ifdef DO_UNIT_TESTS
 	friend void testParAsyncObj2Post2Obj();
+	friend void testShellSetupAsyncParMsg();
 #endif // DO_UNIT_TESTS
 	public: 
 		/**

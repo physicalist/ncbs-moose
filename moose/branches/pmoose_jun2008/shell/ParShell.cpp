@@ -62,7 +62,7 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
 		if ( dest.node() == sh->node_ ) {
 			return addLocal( src, srcField, dest, destField );
 		} else {
-			addParallelSrc( c, srcNode, src, srcField, dest, destField );
+			addParallelSrc( c, src, srcField, dest, destField );
 			return 1;
 		}
 	} else { // Off-node source. Deal with it remotely.
@@ -86,15 +86,21 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
  * to a dest on a remote node.
  */
 void Shell::addParallelSrc( const Conn* c,
-	unsigned int srcNode, 
 	Id src, string srcField, Id dest, string destField )
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
-	assert( srcNode == sh->node_ );
+	unsigned int srcNode = sh->node_;
 	unsigned int destNode = dest.node();
-	assert( destNode != srcNode );
-
 	Eref se = src.eref();
+
+#ifdef DO_UNIT_TESTS
+	// One of the unit tests needs a unique id for the proxy.
+	src = Id::scratchId();
+#else // DO_UNIT_TESTS
+	// One of the unit tests puts them on the same node.
+	assert( destNode != srcNode );
+#endif
+
 	const Finfo* sf = se->findFinfo( srcField );
 	if ( sf->funcId() != 0 ) { 
 		// If the src handles any funcs at all this will be nonzero.
