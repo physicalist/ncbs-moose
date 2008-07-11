@@ -32,7 +32,13 @@ void initMPI( int argc, char** argv )
 	bool ret;
 
 	Element* postmasters =
-			Neutral::create( "Neutral", "postmasters", Id(), Id::scratchId());
+			Neutral::createArray( "PostMaster", "post", 
+			Id::shellId(), Id::postId( 0 ), totalnodes );
+	for ( unsigned int i = 0; i < totalnodes; i++ ) {
+		Eref pe = Eref( postmasters, i );
+		set< unsigned int >( pe, "remoteNode", i );
+	}
+	/*
 	vector< Element* > post;
 	post.reserve( totalnodes );
 	for ( unsigned int i = 0; i < totalnodes; i++ ) {
@@ -48,7 +54,8 @@ void initMPI( int argc, char** argv )
 			post[i] = p;
 		}
 	}
-	Id::setNodes( mynode, totalnodes, post );
+	*/
+	Id::setNodes( mynode, totalnodes );
 
 	// This one handles parser and postmaster scheduling.
 	Id sched( "/sched" );
@@ -93,6 +100,7 @@ void initMPI( int argc, char** argv )
 	*/
 	Eref shellE = shellId.eref();
 	vector< Element* >::iterator j;
+	/*
 	for ( j = post.begin(); j != post.end(); j++ ) {
 		if ( *j == 0 )
 			continue;
@@ -105,16 +113,6 @@ void initMPI( int argc, char** argv )
 		assert( ret );
 		ret = Eref( pt0 ).add( "parTick", *j, "parTick" );
 		assert( ret );
-	
-		/*
-		bool ret = serialFinfo->add( shell, *j, (*j)->findFinfo( "data" ) );
-		bool ret = (*j)->findFinfo( "data" )->add( *j, shell, serialFinfo );
-
-		ret = tickFinfo->add( t0, *j, (*j)->findFinfo( "parTick" ) );
-		assert( ret );
-		ret = tickFinfo->add( pt0, *j, (*j)->findFinfo( "parTick" ) );
-		assert( ret );
-		*/
 
 		if ( mynode == 0 ) {
 			ret = shellE.add( "master", *j, "data" );
@@ -126,6 +124,7 @@ void initMPI( int argc, char** argv )
 			assert( ret );
 		}
 	}
+	*/
 	ret = shellE.add( "pollSrc", pj, "step" );
 	// ret = pollFinfo->add( shell, pj, pj->findFinfo( "step" ) );
 	assert( ret );

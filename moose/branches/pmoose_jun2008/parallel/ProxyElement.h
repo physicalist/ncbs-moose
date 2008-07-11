@@ -153,11 +153,11 @@ class ProxyElement: public Element
 
 
 		/**
-		 * Returns data contents of ProxyElement
+		 * Returns data contents of ProxyElement. 
+		 * This simply refers to the postmaster data for the original
+		 * node for the proxy.
 		 */
-		void* data( unsigned int eIndex ) const {
-			return 0;
-		}
+		void* data( unsigned int eIndex ) const;
 
 		/**
 		 * Returns size of data array. For ProxyElement it is always 1.

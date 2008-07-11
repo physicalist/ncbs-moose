@@ -87,6 +87,13 @@ class Id
 		static Id shellId();
 
 		/**
+		 * This returns Id( 2, node ), which is the postmaster of the
+		 * specified node. 
+		 * On a serial version this returns a neutral.
+		 */
+		static Id postId( unsigned int node );
+
+		/**
 		 * This creates a new Id with the same element id but a new index
 		 */
 		Id assignIndex( unsigned int index ) const;
@@ -209,8 +216,7 @@ class Id
 				( id_ == other.id_ && index_ < other.index_ );
 		}
 
-		static void setNodes( unsigned int myNode, unsigned int numNodes,
-			vector< Element* >& post );
+		static void setNodes( unsigned int myNode, unsigned int numNodes );
 
 		friend ostream& operator <<( ostream& s, const Id& i );
 		friend istream& operator >>( istream& s, Id& i );
@@ -231,7 +237,7 @@ class Id
 		 * The str2Id can be used for most test scenarios,
 		 * and the rest of the time you should not be using this.
 		 */
-		Id( unsigned int id );
+		Id( unsigned int i, unsigned int index = 0 );
 		unsigned int id_; // Unique identifier for Element*
 		unsigned int index_; // Index of array entry within element.
 		static IdManager& manager();

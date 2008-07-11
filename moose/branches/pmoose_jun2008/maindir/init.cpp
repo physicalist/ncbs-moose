@@ -31,11 +31,7 @@ int mooseInit()
 	 */
 	FuncVec::sortFuncVec();
     
-#ifdef CRL_MPI
-    const Cinfo* c = Cinfo::find( "ParShell" );
-#else
     const Cinfo* c = Cinfo::find( "Shell" );
-#endif
 
     assert ( c != 0 );
     const Finfo* childSrc = Element::root()->findFinfo( "childSrc" );

@@ -1085,8 +1085,7 @@ void testPostMaster()
 	// check that we have postmasters for each of the other nodes
 	// Print out a dot for each node.
 	///////////////////////////////////////////////////////////////
-	Id postMastersId =
-			Neutral::getChildByName( Element::root(), "postmasters" );
+	Id postMastersId = Id::postId( 0 );
 	ASSERT( !postMastersId.bad(), "postmasters element creation" );
 	Element* pms = postMastersId();
 	for ( i = 0; i < numNodes; i++ ) {

@@ -42,6 +42,32 @@ class OffNodeInfo
 };
 
 /**
+ * Wrapper class for element and node, used in ElementList.
+ */
+class Enode
+{
+	public:
+		Enode()
+			: e_( 0 ), node_( 0 )
+		{;}
+
+		Enode( Element* e, unsigned int node )
+			: e_( e ), node_( node )
+		{;}
+
+		Element* e() const {
+			return e_;
+		}
+
+		unsigned int node() const {
+			return node_;
+		}
+	private:
+		Element* e_;
+		unsigned int node_;
+};
+
+/**
  * This class coordinates closely with the PostMaster to set up 
  * policies for distributing ids across nodes. On the master node this
  * actually assigns ids to requested objects. On the slave nodes, if
@@ -52,10 +78,7 @@ class IdManager
 	public:
 		IdManager();
 
-		void setNodes( unsigned int myNode, unsigned int numNodes,
-			vector< Element* >& post );
-
-                void setPostMasters( std::vector< Element* >& post );
+		void setNodes( unsigned int myNode, unsigned int numNodes );
 
 		//////////////////////////////////////////////////////////////////
 		// Id creation
@@ -167,9 +190,18 @@ class IdManager
 		 * Keep track of assigned load on each node
 		 * This is the job only of the master node.
 		 */
-                std::vector< NodeLoad > nodeLoad;
-                std::vector< Element* > elementList_;
-                std::vector< Element* > post_;
+		std::vector< NodeLoad > nodeLoad;
+
+		/**
+		 * Look up element pointers and element node# based on Id.
+		 * This could in principle
+		 * be folded into a union, because any
+		 * off-node element doesn't have a local pointer. For now do
+		 * it the simple unoptimized way.
+		 */
+		std::vector< Enode > elementList_;
+
+		//std::vector< Element* > post_;
 
 		/**
 		 * This keeps track of the # of scratch ids. Only on slave nodes.
