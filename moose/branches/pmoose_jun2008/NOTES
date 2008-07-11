@@ -7152,3 +7152,15 @@ Now we're getting close to actually testing this on MPI. Remaining:
 	- Regression tests using spiking neurons.
 
 ==============================================================================
+11 July 2008
+Another mess up with the subversion server at SourceForge. Fixed. 
+
+Checked in as revision 542 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Overhaul to node identification for Ids. For now I've created a separate
+class for the IdManager::elementList_ vector, which stores both the
+element pointer and its node. This cleans up a lot of node lookup. Could
+in principle convert the class to a union. Also postmasters are now all
+set up as an arrayElement.
+
+==============================================================================

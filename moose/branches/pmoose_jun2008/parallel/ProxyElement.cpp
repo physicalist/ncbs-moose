@@ -41,3 +41,10 @@ void ProxyElement::sendData( unsigned int funcIndex, const char* data )
 		proxyVec_->func( funcIndex ) ); 
 	pf( &c, data, Slot( 0, funcIndex ) );
 }
+
+void* ProxyElement::data( unsigned int eIndex ) const
+{
+	Eref pe = Id::postId( node_ ).eref();
+	assert( pe.e != 0);
+	return pe->data( );
+}

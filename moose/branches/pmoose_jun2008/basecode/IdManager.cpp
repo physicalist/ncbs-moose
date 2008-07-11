@@ -16,7 +16,7 @@
 const Cinfo* initPostMasterCinfo();
 #endif
 
-static Element* UNKNOWN_NODE = reinterpret_cast< Element* >( 1L );
+const unsigned int UNKNOWN_NODE = ~0;
 // const unsigned int MIN_NODE = 1;
 // const unsigned int MAX_NODE = 65536; // Dream on.
 const unsigned int IdManager::numScratch = 1000;
@@ -26,28 +26,22 @@ const unsigned int BAD_NODE = ~0;
 IdManager::IdManager()
 	: myNode_( 0 ), numNodes_( 1 ), 
 	loadThresh_( 2000.0 ),
-	scratchIndex_( 2 ), mainIndex_( 2 )
-	// Start at 2 because root is 0 and shell is 1.
+	scratchIndex_( 3 ), mainIndex_( 3 )
+	// Start at 2 because root is 0 and shell is 1 and postmaster is 2.
 {
 	elementList_.resize( blockSize );
-	post_.resize( 1 );
 }
 
-void IdManager::setNodes( unsigned int myNode, unsigned int numNodes,
-	vector< Element* >& post )
+void IdManager::setNodes( unsigned int myNode, unsigned int numNodes )
 {
 	myNode_ = myNode;
 	numNodes_ = numNodes;
-	elementList_[0] = Element::root();
+	elementList_[0] = Enode( Element::root(), myNode_ );
 	if ( numNodes > 1 ) {
 		if ( myNode == 0 )
 			nodeLoad.resize( numNodes );
 		elementList_.resize( numScratch + blockSize );
 		mainIndex_ = numScratch;
-		post_ = post;
-	} else {
-		post_.resize( 1 );
-		post_[0] = 0;
 	}
 }
 
@@ -83,24 +77,21 @@ unsigned int IdManager::childId( unsigned int parent )
 #ifdef USE_MPI
 	assert( myNode_ == 0 );
 	if ( parent < mainIndex_ ) {
-		Element* pa = elementList_[ parent ];
-		if ( pa->cinfo() == initPostMasterCinfo() ) {
-			lastId_ = mainIndex_;
-			elementList_[ lastId_ ] = pa;
-			// This assignment tells the system to put the object on
-			// the specified node.
-			mainIndex_++;
-		} else { // parent is on master node.
-			// Do some fancy load balancing calculation here
+		Enode& pa = elementList_[ parent ];
+		if ( mainIndex_ >= elementList_.size() )
+			elementList_.resize( elementList_.size() * 2 );
+		lastId_ = mainIndex_;
+		mainIndex_++;
+		if ( pa.node() != myNode_ ) {
+			// Put object on parent node.
+			elementList_[ lastId_ ] = Enode( 0, pa.node() );
+		} else { // Parent is also on master
+			// Crude load balancing calculation here, better will come.
 			unsigned int targetNode = 
 				static_cast< unsigned int >( mainIndex_ / loadThresh_ ) %
 				numNodes_;
-			lastId_ = mainIndex_;
-			elementList_[ lastId_ ] = post_[ targetNode ];
-			mainIndex_++;
+			elementList_[ lastId_ ] = Enode( 0, targetNode );
 		}
-		if ( mainIndex_ >= elementList_.size() )
-			elementList_.resize( mainIndex_ * 2, 0 );
 		return lastId_;
 	}
 	assert( 0 );
@@ -128,52 +119,47 @@ unsigned int IdManager::makeIdOnNode( unsigned int childNode )
 	assert( myNode_ == 0 );
 	assert( childNode < numNodes_ );
 	if ( childNode > 0 ) { // Off-node element
-		elementList_[ lastId_ ] = post_[ childNode ];
+		elementList_[ lastId_ ] = Enode( 0, childNode );
 	}
 #endif
 	if ( mainIndex_ >= elementList_.size() )
-		elementList_.resize( mainIndex_ * 2, 0 );
+		elementList_.resize( mainIndex_ * 2 );
 	return lastId_;
 }
 
 Element* IdManager::getElement( const Id& id ) const
 {
-	static ThisFinfo dummyFinfo( initNeutralCinfo(), 1 );
 	if ( id.id_ < mainIndex_ ) {
-		Element* ret = elementList_[ id.id_ ];
-		if ( ret == 0 )
-			return 0;
+		const Enode& ret = elementList_[ id.id_ ];
 #ifdef USE_MPI
-			if ( ret == UNKNOWN_NODE )
-				// don't know how to handle this yet. It should trigger
-				// a request to the master node to update the elist.
-				// We then get into managing how many entries are unknown...
-				assert( 0 );
-			if ( ret->cinfo() != initPostMasterCinfo() ) {
-				return ret;
-			} else if ( ret->id().id_ == id.id_ ) {
-				// This is the postmaster itself
-				return ret;
-			} else {
-				return 0;
-			}
-#else
-		return ret;
+		if ( ret.node() == UNKNOWN_NODE ) {
+			// don't know how to handle this yet. It should trigger
+			// a request to the master node to update the elist.
+			// We then get into managing how many entries are unknown...
+			assert( 0 );
+			return 0;
+		} else if ( ret.node() != myNode_ ) {
+			return 0;
+		} else {
+			return ret.e();
+		}
 #endif
+		return ret.e();
 	}
 	return 0;
 }
 
+/// \todo: This needs additional work for node safety.
 bool IdManager::setElement( unsigned int index, Element* e )
 {
 	if ( index < mainIndex_ ) {
-		Element* old = elementList_[ index ];
-		if ( old == 0 || old == UNKNOWN_NODE ) {
-			elementList_[ index ] = e;
+		Enode& old = elementList_[ index ];
+		if ( old.node() == UNKNOWN_NODE || old.e() == 0 ) {
+			elementList_[ index ] = Enode( e, myNode_ );
 			return 1;
 		} else if ( e == 0 ) {
 			// Here we are presumably clearing out an element. Permit it.
-			elementList_[ index ] = 0;
+			elementList_[ index ] = Enode( 0, myNode_ );
 			/// \todo: We could add this element to a list for reuse here.
 			return 1;
 		} else if ( index == 0 ) {
@@ -188,9 +174,8 @@ bool IdManager::setElement( unsigned int index, Element* e )
 			// Here we have been told by the master node to make a child 
 			// at a specific index before the elementList has been
 			// expanded to that index. Just expand it to fit.
-			elementList_.resize( ( 1 + index / blockSize ) * blockSize, 
-				UNKNOWN_NODE );
-			elementList_[ index ] = e;
+			elementList_.resize( ( 1 + index / blockSize ) * blockSize );
+			elementList_[ index ] = Enode( e, myNode_ );
 			mainIndex_ = index + 1;
 			return 1;
 		} else {
@@ -203,16 +188,10 @@ bool IdManager::setElement( unsigned int index, Element* e )
 unsigned int IdManager::findNode( unsigned int index ) const 
 {
 #ifdef USE_MPI
-	Element* e = elementList_[ index ];
-	if ( e == 0 || e == UNKNOWN_NODE )
+	const Enode& e = elementList_[ index ];
+	if ( e.e() == 0 || e.node() == UNKNOWN_NODE )
 		return BAD_NODE;
-	if ( e->cinfo() != initPostMasterCinfo() ) {
-		return myNode_;
-	} else {
-		unsigned int node;
-		get< unsigned int >( e, "remoteNode", node );
-		return node;
-	}
+	return e.node();
 #else
 	return 0;
 #endif

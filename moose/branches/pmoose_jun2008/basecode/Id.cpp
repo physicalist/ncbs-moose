@@ -29,8 +29,8 @@ Id::Id()
 	: id_( 0 ), index_( 0 )
 {;}
 
-Id::Id( unsigned int i )
-	: id_( i ), index_( 0 )
+Id::Id( unsigned int i, unsigned int index )
+	: id_( i ), index_( index )
 {;}
 
 ///\todo Lots of stuff to do here, mostly to refer to Shell's operations.
@@ -61,6 +61,12 @@ Id Id::makeIdOnNode( unsigned int node )
 Id Id::shellId()
 {
 	return Id( 1 );
+}
+
+// static func
+Id Id::postId( unsigned int node )
+{
+	return Id( 2, node );
 }
 
 /**
@@ -233,8 +239,7 @@ bool Id::setElement( Element* e )
 }
 
 
-void Id::setNodes(  unsigned int myNode, unsigned int numNodes,
-			vector< Element* >& post )
+void Id::setNodes(  unsigned int myNode, unsigned int numNodes )
 {
-	manager().setNodes( myNode, numNodes, post );
+	manager().setNodes( myNode, numNodes );
 }
