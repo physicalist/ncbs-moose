@@ -7163,4 +7163,17 @@ element pointer and its node. This cleans up a lot of node lookup. Could
 in principle convert the class to a union. Also postmasters are now all
 set up as an arrayElement.
 
+Checked in as revision 547 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
 ==============================================================================
+12 July 2008
+Setting up bidirectional messages. First pass at function setupSharedProxyMsg.
+May be able to replace original one with this.
+
+==============================================================================
+13 July 2008
+Implemented the setupSharedProxyMsg, and indeed it is general enough to
+deal with the regular cases. Along the way ran into an issue of how to
+obtain AsyncFuncId, and it turns out this should be done through the Finfo
+rather than the Ftype, because only the Finfo knows if it is actually dest or
+src. So of course many files updated. Clears old set of unit tests.
