@@ -7200,4 +7200,9 @@ This will mean an awful lot of changes. Since I have already modified quite
 a bit of stuff, I will first check things in even though the unit
 tests die at the parallel bidirectional message tests.
 
+Checked in as revision 549 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Implemented the many tedious changes. Clears all the old unit tests,
+stuck at the same place. Still pegging away at it.
+
 ==============================================================================

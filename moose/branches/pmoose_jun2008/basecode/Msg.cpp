@@ -459,14 +459,14 @@ unsigned int Msg::size() const
 /**
  * Some issues with this implementation for arrays
  */
-Conn* Msg::findConn( unsigned int eIndex, unsigned int tgt ) const
+Conn* Msg::findConn( Eref e, unsigned int tgt ) const
 {
 	vector< ConnTainer* >::const_iterator i;
 	for ( i = c_.begin(); i != c_.end(); i++ ) {
 		if ( tgt >= ( *i )->size() ) {
 			tgt -= ( *i )->size();
 		} else {
-			return ( *i )->conn( eIndex, 0, !( fv_->isDest() ) );
+			return ( *i )->conn( e, 0 );
 			/// We don't actually use the tgt index anywhere.
 			// return ( *i )->conn( eIndex, !( fv_->isDest() ), tgt );
 		}

@@ -36,6 +36,7 @@ class Id
     
 #ifdef DO_UNIT_TESTS
 	friend void testShell();
+	friend void testBidirectionalParMsg();
 #endif
 	
 	public:

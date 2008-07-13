@@ -21,30 +21,14 @@ One2AllConnTainer::One2AllConnTainer( Eref e1, Eref e2,
 		i1_( i1 ), i2_( i2 )
 {;}
 
-Conn* One2AllConnTainer::conn( unsigned int eIndex, 
-	unsigned int funcIndex, bool isReverse ) const
+Conn* One2AllConnTainer::conn( Eref e, unsigned int funcIndex ) const
 {
 	//	numIter_++; // For reference counting. Do we need it?
-	if ( isReverse )
-		return new ReverseOne2AllConn( funcIndex, this, 0 );
-	else
+	if ( e.e == e1() )
 		return new One2AllConn( funcIndex, this, 0 );
-}
-
-/*
-Conn* One2AllConnTainer::conn( unsigned int eIndex, bool isReverse,
-	unsigned int connIndex ) const
-{
-	//	numIter_++; // For reference counting. Do we need it?
-	if ( connIndex != 0 )
-		return 0;
-
-	if ( isReverse )
-		return new ReverseOne2AllConn( this, 0 );
 	else
-		return new One2AllConn( this, 0 );
+		return new ReverseOne2AllConn( funcIndex, this, 0 );
 }
-*/
 
 /**
  * Creates a duplicate ConnTainer for message(s) between 

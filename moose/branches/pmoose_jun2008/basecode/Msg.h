@@ -70,7 +70,7 @@ class Msg
 		/**
 		 * Iterator to the conn selected by the 'tgt' index.
 		 */
-		Conn* findConn( unsigned int eIndex, unsigned int tgt ) const;
+		Conn* findConn( Eref e, unsigned int tgt ) const;
 
 		/**
 		 * Follows through the link list of msgs to find one that matches
@@ -265,7 +265,8 @@ class Msg
 		const FuncVec *fv_; 
 
 		/**
-		 * Could use index or ptr here. need to sort it out.
+		 * Index to next Msg in Msg vector, somewhat like a linked list.
+		 * Prefer index to ptr because Msg vector might be resized.
 		 */
 		unsigned int next_; 
 };
