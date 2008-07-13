@@ -49,7 +49,7 @@ template < class T > void send1( Eref e, Slot src, T val )
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			Conn* j = ( *i )->conn( e.i, src.func(), m->isDest() );
+			Conn* j = ( *i )->conn( e, src.func() );
 			for ( ; j->good(); j->increment() )
 				rf( j, val );
 			delete j;
@@ -71,7 +71,7 @@ template< class T > void sendTo1( Eref e,
 			reinterpret_cast< void ( * )( const Conn*, T ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( e.i, tgt );
+	const Conn* j = m->findConn( e, tgt );
 	rf( j,  val );
 	delete j;
 }
@@ -106,7 +106,7 @@ template < class T1, class T2 > void send2(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			Conn* j = ( *i )->conn( e.i, src.func(), m->isDest() );
+			Conn* j = ( *i )->conn( e, src.func() );
 			for ( ; j->good(); j->increment() )
 				rf( j, v1, v2 );
 			delete j;
@@ -128,7 +128,7 @@ template< class T1, class T2 > void sendTo2( Eref e,
 			reinterpret_cast< void ( * )( const Conn*, T1, T2 ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( e.i, tgt );
+	const Conn* j = m->findConn( e, tgt );
 	rf( j,  v1, v2 );
 	delete j;
 }
@@ -165,7 +165,7 @@ template < class T1, class T2, class T3 > void send3(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			Conn* j = ( *i )->conn( e.i, src.func(), m->isDest() );
+			Conn* j = ( *i )->conn( e, src.func() );
 			for ( ; j->good(); j->increment() )
 				rf( j, v1, v2, v3 );
 			delete j;
@@ -187,7 +187,7 @@ template< class T1, class T2, class T3 > void sendTo3(
 			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3 ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( e.i, tgt );
+	const Conn* j = m->findConn( e, tgt );
 	rf( j,  v1, v2, v3 );
 	delete j;
 }
@@ -223,7 +223,7 @@ template < class T1, class T2, class T3, class T4 > void send4(
 			);
 		vector< ConnTainer* >::const_iterator i;
 		for ( i = m->begin(); i != m->end(); i++ ) {
-			Conn* j = ( *i )->conn( e.i, src.func(), m->isDest() );
+			Conn* j = ( *i )->conn( e, src.func() );
 			for ( ; j->good(); j->increment() )
 				rf( j, v1, v2, v3, v4 );
 			delete j;
@@ -245,7 +245,7 @@ template< class T1, class T2, class T3, class T4 > void sendTo4(
 			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3, T4 ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( e.i, tgt );
+	const Conn* j = m->findConn( e, tgt );
 	rf( j,  v1, v2, v3, v4 );
 	delete j;
 }

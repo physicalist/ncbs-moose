@@ -56,8 +56,9 @@ void connTest()
 	ASSERT( ct1->size() == 1, "ConnTainer size" );
 
 	// ct1->conn( eIndex, funcIndex, isDest );
-	Conn* c1 = ct1->conn( 0, 0, 0 );
-	Conn* c2 = ct2->conn( 0, 0, 1 );
+	// ct1->conn( Eref, funcIndex );
+	Conn* c1 = ct1->conn( &e1, 0 );
+	Conn* c2 = ct2->conn( &e2, 0 );
 
 	ASSERT( c1->target().e == &e2, "Conn: targetElement" );
 	ASSERT( c2->target().e == &e1, "Conn: targetElement" );

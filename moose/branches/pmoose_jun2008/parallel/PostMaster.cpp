@@ -1208,7 +1208,9 @@ void testBidirectionalParMsg()
 		// orignal element id, but we need to put in the proxy id
 		// Since we are testing it all on the same node it has to
 		// be a different id.
-		as.proxy_ = Id::lastId();
+		Id temp = Id::lastId();
+		temp.id_--;
+		as.proxy_ = temp;
 		data += sizeof( AsyncStruct );
 		unsigned int size = proxy2tgt( as, data );
 	

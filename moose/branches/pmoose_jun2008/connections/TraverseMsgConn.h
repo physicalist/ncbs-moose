@@ -21,8 +21,7 @@
 class TraverseMsgConn: public Conn
 {
 	public:
-		TraverseMsgConn( 
-			const Msg* m, const Element* e, unsigned int eIndex );
+		TraverseMsgConn( const Msg* m, Eref e );
 
 		~TraverseMsgConn();
 
@@ -72,8 +71,7 @@ class TraverseMsgConn: public Conn
 	private:
 		const Msg* msg_;
 		const Msg* mi_;
-		const Element* e_;
-		const unsigned int eIndex_;
+		Eref e_;
 		Conn* c_;
 		vector< ConnTainer* >::const_iterator cti_;
 };

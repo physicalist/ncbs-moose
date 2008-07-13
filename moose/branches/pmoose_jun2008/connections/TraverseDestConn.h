@@ -22,7 +22,7 @@ class TraverseDestConn: public Conn
 {
 	public:
 		TraverseDestConn( 
-			const vector< ConnTainer* >* ct, unsigned int eIndex );
+			const vector< ConnTainer* >* ct, Eref e );
 
 		~TraverseDestConn();
 
@@ -73,7 +73,7 @@ class TraverseDestConn: public Conn
 		const vector< ConnTainer* >* ct_;
 		Conn* c_;
 		vector< ConnTainer* >::const_iterator cti_;
-		unsigned int eIndex_;
+		Eref e_;
 };
 
 #endif // _TRAVERSE_DEST_CONN_H

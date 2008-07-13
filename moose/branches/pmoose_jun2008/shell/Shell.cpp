@@ -453,7 +453,7 @@ static const Slot listMessageSlot =
 	initShellCinfo()->getSlot( "parser.listMessagesSrc" );
 
 static const Slot rCreateSlot =
-	initShellCinfo()->getSlot( "parallel.create" );
+	initShellCinfo()->getSlot( "parallel.createSrc" );
 static const Slot rGetSlot = initShellCinfo()->getSlot( "parallel.getSrc" );
 static const Slot rSetSlot = initShellCinfo()->getSlot( "parallel.setSrc" );
 static const Slot rAddSlot = initShellCinfo()->getSlot( "parallel.addLocalSrc" );
@@ -1088,7 +1088,7 @@ void Shell::planardelay(const Conn& c, string source, string destination, vector
 			unsigned int numSynapses;
 			//Element *dest = (*j)->e2();
 			Eref eref;
-			Conn* k = ( *j )->conn( 0, 0, m->isDest());
+			Conn* k = ( *j )->conn( srcList[i].eref(), 0 );
 			size_t eIndex = 0;
 // 			for ( Conn* k = ( *j )->conn( 0, m->isDest() ); k->good(); k++ ){
 			while (k->good()){
@@ -1131,7 +1131,8 @@ void Shell::planardelay(const Conn& c, string source, string destination, vector
 					lookupSet< double, unsigned int >( eref, "delay", number, l );
 				}
 				eIndex++;
-				k = ( *j )->conn( eIndex, 0, m->isDest());
+				Eref e( srcList[i].eref().e, eIndex );
+				k = ( *j )->conn( e, 0 );
 			}
 		}
 	}
@@ -1194,7 +1195,7 @@ void Shell::planarweight(const Conn& c, string source, string  destination, vect
 			unsigned int numSynapses;
 			//Element *dest = (*j)->e2();
 			Eref eref;
-			Conn* k = ( *j )->conn( 0, 0, m->isDest());
+			Conn* k = ( *j )->conn( srcList[i].eref(), 0);
 			size_t eIndex = 0;
 // 			for ( Conn* k = ( *j )->conn( /*eIndex*/0, m->isDest() ); k->good(); k++ ){
 			while (k->good()){
@@ -1226,7 +1227,8 @@ void Shell::planarweight(const Conn& c, string source, string  destination, vect
 					}
 					lookupSet< double, unsigned int >( eref, "weight", number, l );
 				}
-				k = ( *j )->conn( ++eIndex, 0, m->isDest());
+				Eref e( srcList[i].eref().e, ++eIndex );
+				k = ( *j )->conn( e, 0 );
 			}
 		}
 	}

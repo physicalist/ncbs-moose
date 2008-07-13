@@ -180,7 +180,7 @@ static const Slot reinitNextSlot =
 static const Slot returnNextTimeSlot = 
 	initTickCinfo()->getSlot( "prev.nextTimeSrc" );
 	
-static const Slot updateDtSlot = initTickCinfo()->getSlot( "updateDt" );
+static const Slot updateDtSlot = initTickCinfo()->getSlot( "updateDtSrc" );
 static const Slot processSlot = 
 	initTickCinfo()->getSlot( "process.process" );
 static const Slot reinitSlot = initTickCinfo()->getSlot( "process.reinit" );

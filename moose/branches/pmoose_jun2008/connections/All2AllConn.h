@@ -157,13 +157,12 @@ class All2AllConnTainer: public ConnTainer
 			ConnTainer( e1, e2, msg1, msg2 )
 		{;}
 
-		Conn* conn( unsigned int eIndex, unsigned int funcIndex,
-			bool isReverse ) const {
+		Conn* conn( Eref e, unsigned int funcIndex ) const {
 			numIter_++; // For reference counting. Do we need it?
-			if ( isReverse )
-				return new ReverseAll2AllConn( funcIndex, this, eIndex );
+			if ( e.e == e1() )
+				return new All2AllConn( funcIndex, this, e.i );
 			else
-				return new All2AllConn( funcIndex, this, eIndex );
+				return new ReverseAll2AllConn( funcIndex, this, e.i );
 		}
 
 		bool add( Element* e1, Element* e2 ) {

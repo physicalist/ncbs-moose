@@ -33,12 +33,7 @@ class One2OneMapConnTainer: public ConnTainer
 			int msg1, int msg2,
 			unsigned int i1 = 0 );
 
-		Conn* conn( unsigned int eIndex, 
-			unsigned int funcIndex, bool isReverse ) const;
-		/*
-		Conn* conn( unsigned int eIndex, bool isReverse,
-			unsigned int connIndex ) const;
-			*/
+		Conn* conn( Eref e, unsigned int funcIndex ) const;
 
 		bool add( Element* e1, Element* e2 );
 

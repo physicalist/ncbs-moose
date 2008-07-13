@@ -144,6 +144,11 @@ class Conn
 		 */
 		virtual bool isDest() const = 0;
 
+		/**
+		 * Ugly extra hack for sending func id into asyncFuncs
+		 * so that the postmaster can use it to work out what to
+		 * call at the remote node.
+		 */
 		unsigned int funcIndex() const {
 			return funcIndex_;
 		}

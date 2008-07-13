@@ -32,33 +32,18 @@ SimpleConnTainer::SimpleConnTainer( Eref e1, Eref e2,
 		i1_( i1 ), i2_( i2 )
 {;}
 
-Conn* SimpleConnTainer::conn( unsigned int eIndex, 
-	unsigned int funcIndex, bool isReverse ) const
+Conn* SimpleConnTainer::conn( Eref e, unsigned int funcIndex ) const
 {
-	//	numIter_++; // For reference counting. Do we need it?
-	if ( ( !isReverse && eIndex != eI1_) || (isReverse && eIndex != eI2_) )
-// 	if ( eIndex != eI1_ )
-		return new SetConn( Element::root(), 0 );
-	if ( isReverse )
-		return new ReverseSimpleConn( funcIndex, this );
-	else
+	if ( e.e == e1() && e.i == eI1_ )
 		return new SimpleConn( funcIndex, this );
-}
-
-/*
-Conn* SimpleConnTainer::conn( unsigned int eIndex, bool isReverse,
-	unsigned int connIndex ) const
-{
-	//	numIter_++; // For reference counting. Do we need it?
-	if ( connIndex != 0 )
-		return 0;
-
-	if ( isReverse )
+	else if ( e.e == e2() && e.i == eI2_ )
 		return new ReverseSimpleConn( funcIndex, this );
-	else
-		return new SimpleConn( funcIndex, this );
+
+	// Failure option.
+	// SetConn always has good() == 0. This makes it a safe thing
+	// to return for any iterators.
+	return new SetConn( Element::root(), 0 );
 }
-*/
 
 /**
  * Creates a duplicate ConnTainer for message(s) between 
