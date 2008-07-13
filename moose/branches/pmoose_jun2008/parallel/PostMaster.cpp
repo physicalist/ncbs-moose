@@ -8,6 +8,7 @@
 **********************************************************************/
 
 #ifdef USE_MPI
+#include <math.h>
 #include "moose.h"
 #include <mpi.h>
 #include "PostMaster.h"
@@ -191,22 +192,20 @@ bool setupProxyMsg( unsigned int srcNode,
 #ifdef DO_UNIT_TESTS
 // Some nasty stuff here because we want to test parallel message 
 // setup without going off-node.
+// To do this we make proxies for elements that are actualy perfectly
+// legal elements residing locally.
 	if ( srcNode == 0 && dest.node() == 0 ) {
-		pe = new ProxyElement( proxy, srcNode, pfid );
-	} else {
-		if ( proxy.isProxy() ) {
-			pe = proxy();
-		} else {
-			pe = new ProxyElement( proxy, srcNode, pfid );
+		if ( proxy.good() && 
+			dynamic_cast< ProxyElement* >( proxy.eref().e ) == 0 ) {
+			proxy = Id::scratchId();
 		}
 	}
-#else
+#endif
 	if ( proxy.isProxy() ) {
 		pe = proxy();
 	} else {
 		pe = new ProxyElement( proxy, srcNode, pfid );
 	}
-#endif
 	unsigned int srcIndex = pe->numTargets( 0, proxy.index() );
 	unsigned int destIndex = dest()->numTargets( destMsg, dest.index() );
 	unsigned int destFuncId = destFinfo->funcId();
@@ -484,6 +483,8 @@ static Slot idVecSlot;
 static Slot sVecSlot;
 static Slot iSharedSlot;
 static Slot xSharedSlot;
+static Slot logSrcSlot;
+static Slot logReturnSlot;
 
 class TestParClass {
 	public:
@@ -515,6 +516,19 @@ class TestParClass {
 		static void sendXshared( const Conn* c ) {
 			TestParClass* tp = static_cast< TestParClass* >( c->data() );
 			send1< double >( c->target(), xSharedSlot, tp->x_ ) ;
+		}
+
+		static void sendLog( const Conn* c ) {
+			TestParClass* tp = static_cast< TestParClass* >( c->data() );
+			send1< int >( c->target(), logSrcSlot, tp->i_ ) ;
+		}
+
+		static void logFunc( const Conn* c, int value )
+		{
+			TestParClass* tp = static_cast< TestParClass* >( c->data() );
+			tp->i_ = 2 * value;
+			tp->x_ = log( static_cast< double >( value ) );
+			sendBack1< double >( c, logReturnSlot, exp( tp->x_ * 2.0 ) );
 		}
 
 		static void setI( const Conn* c, int value )
@@ -574,6 +588,25 @@ const Cinfo* initTestParClass()
 		xSrcFinfo,
 	};
 
+	/**
+	 * This test operation takes the natural log of the incoming integer
+	 * and puts it in x. Then it sends out antilog of 2x to the 
+	 * the originating element, to put into the x field there.
+	 */
+	static Finfo* logFinfo = new DestFinfo( "log", Ftype1< int >::global(),
+			RFCAST( &TestParClass::logFunc ) );
+	static Finfo* logSrc[] = 
+	{
+		iSrcFinfo,
+		xFinfo,
+	};
+
+	static Finfo* logDest[] = 
+	{
+		logFinfo,
+		xSrcFinfo,
+	};
+
 	static Finfo* testParClassFinfos[] =
 	{
 		iFinfo,
@@ -595,6 +628,10 @@ const Cinfo* initTestParClass()
 			sizeof( ixShared ) / sizeof( Finfo* ) ),
 		new SharedFinfo( "ixSrc", ixSrcShared,
 			sizeof( ixSrcShared ) / sizeof( Finfo* ) ),
+		new SharedFinfo( "logSrc", logSrc,
+			sizeof( logSrc ) / sizeof( Finfo* ) ),
+		new SharedFinfo( "logDest", logDest,
+			sizeof( logDest ) / sizeof( Finfo* ) ),
 	};
 
 	static Cinfo testParClassCinfo(
@@ -786,8 +823,12 @@ void testParAsyncObj2Post2Obj()
 	int tgtMsg = tdest->findFinfo( "i" )->msg();
 	Id proxyId[ 6 ];
 
-	proxyId[ 0 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 0 ], 0, tdest->id(), tgtMsg );
+	// proxyId[ 0 ] = Id::scratchId();
+	// ret = setupProxyMsg( 0, proxyId[ 0 ], 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	// The setupProxyMsg creates a new proxy specially for these tests.
+	proxyId[0] = Id::lastId(); 
+
 	ASSERT( ret, "msg from post to tgt i" );
 	///////////////////////////////////////////
 
@@ -795,8 +836,8 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "msg to post" );
 	tgtMsg = tdest->findFinfo( "x" )->msg();
 
-	proxyId[ 1 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 1 ], 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	proxyId[ 1 ] = Id::lastId();
 	ASSERT( ret, "msg from post to tgt x" );
 	///////////////////////////////////////////
 
@@ -804,8 +845,8 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "msg to post" );
 	tgtMsg = tdest->findFinfo( "s" )->msg();
 
-	proxyId[ 2 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 2 ], 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	proxyId[ 2 ] = Id::lastId();
 	ASSERT( ret, "msg from post to tgt s" );
 	///////////////////////////////////////////
 
@@ -813,8 +854,8 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "msg to post" );
 	tgtMsg = tdest->findFinfo( "idVec" )->msg();
 
-	proxyId[ 3 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 3 ], 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	proxyId[ 3 ] = Id::lastId();
 	ASSERT( ret, "msg from post to tgt idVec" );
 	///////////////////////////////////////////
 
@@ -822,8 +863,8 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "msg to post" );
 	tgtMsg = tdest->findFinfo( "sVec" )->msg();
 
-	proxyId[ 4 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 4 ], 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	proxyId[ 4 ] = Id::lastId();
 	ASSERT( ret, "msg from post to tgt sVec" );
 	///////////////////////////////////////////
 
@@ -831,8 +872,8 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "Shared msg to post" );
 	tgtMsg = tdest->findFinfo( "ix" )->msg();
 
-	proxyId[ 5 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 5 ], 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	proxyId[ 5 ] = Id::lastId();
 	ASSERT( ret, "msg from post to tgt ix" );
 
 	///////////////////////////////////////////////////////////////////
@@ -1088,6 +1129,101 @@ void testShellSetupAsyncParMsg()
 	set( n, "destroy" );
 }
 
+/**
+ * This tests bidirectional async shared message passing, and is set up
+ * using shell-level commands.
+ */
+void testBidirectionalParMsg()
+{
+	cout << "\nTesting bidrectional Parallel Async msgs";
+	const Cinfo* tpCinfo = initTestParClass();
+	logSrcSlot = tpCinfo->getSlot( "logSrc.iSrc" );
+	logReturnSlot = tpCinfo->getSlot( "logDest.xSrc" );
+
+	Element* n = Neutral::create( "Neutral", "n", Id(), Id::scratchId() );
+
+	Element* p0 = Neutral::create(
+			"PostMaster", "node0", n->id(), Id::scratchId());
+	ASSERT( p0 != 0, "created Src Postmaster" );
+
+	Element* p1 = Neutral::create(
+			"PostMaster", "node1", n->id(), Id::scratchId());
+	ASSERT( p1 != 0, "created Dest Postmaster" );
+
+	Element* t = 
+		Neutral::create( "TestPar", "tp", n->id(), Id::scratchId() );
+	ASSERT( t != 0, "created TestPar" );
+	TestParClass* tdata = static_cast< TestParClass* >( t->data() );
+
+	Element* tdest = 
+		Neutral::create( "TestPar", "tdest", n->id(), Id::scratchId() );
+	TestParClass* tDestData = static_cast< TestParClass* >( tdest->data() );
+
+	PostMaster* pm0 = static_cast< PostMaster* >( p0->data() );
+	PostMaster* pm1 = static_cast< PostMaster* >( p1->data() );
+	pm0->sendBufPos_ = sizeof( unsigned int ); // to count # of msgs
+	void* vabuf = static_cast< void* >( &pm0->sendBuf_[0] );
+
+	///////////////////////////////////////////////////////////////////
+	// Set up the data to send
+	///////////////////////////////////////////////////////////////////
+	*static_cast< unsigned int * >( vabuf ) = 1; // set it to 1 msgs.
+	tdata->i_ = 16;
+	tDestData->i_ = 0;
+	tdata->x_ = 0.0;
+	tDestData->x_ = 0.0;
+
+	///////////////////////////////////////////////////////////////////
+	// Set up the the shells
+	///////////////////////////////////////////////////////////////////
+	
+	Element* esh0 = Neutral::create( "Shell", "sh0", n->id(), Id::scratchId() );
+	Element* esh1 = Neutral::create( "Shell", "sh1", n->id(), Id::scratchId() );
+	Shell *sh0 = static_cast< Shell* >( esh0->data( 0 ) );
+	Shell *sh1 = static_cast< Shell* >( esh1->data( 0 ) );
+	sh0->post_ = p0;
+	sh1->post_ = p1;
+
+	bool ret = Eref( esh0 ).add( "parallel", esh1, "parallel" );
+	ASSERT( ret, "Setting up msg between shells" );
+	SetConn c( esh0 , 0 );
+	Shell::addParallelSrc( &c, t->id(), "logSrc", tdest->id(), "logDest" );
+
+	/////////////////////////////////////////////////////////////////
+	// Activate the message. This part is similar to what we did
+	// earlier, we are just sending data forward.
+	/////////////////////////////////////////////////////////////////
+	SetConn ct( t , 0 );
+	TestParClass::sendLog( &ct );
+	pm1->recvBuf_ = pm0->sendBuf_;
+	char* data = &( pm1->recvBuf_[ 0 ] );
+	unsigned int nMsgs = *static_cast< const unsigned int* >(
+					static_cast< const void* >( data ) );
+	ASSERT( nMsgs == 1, "on tgt postmaster");
+
+	// Stuff here to transfer the data.
+		data += sizeof( unsigned int );
+		AsyncStruct as( data );
+		// Here we fudge it because the AsyncStruct still has the
+		// orignal element id, but we need to put in the proxy id
+		// Since we are testing it all on the same node it has to
+		// be a different id.
+		as.proxy_ = Id::lastId();
+		data += sizeof( AsyncStruct );
+		unsigned int size = proxy2tgt( as, data );
+	
+	ASSERT( tDestData->i_ == 2 * tdata->i_, "Recieved log data on tgt" );
+	ASSERT( tDestData->x_ == log( static_cast < double >( tdata->i_ ) ),
+		"Recieved log data on tgt" );
+	size = 0;
+
+	/////////////////////////////////////////////////////////////////
+	// Return data along the message. This is the new part.
+	/////////////////////////////////////////////////////////////////
+
+	set( n, "destroy" );
+}
+
 
 void testPostMaster()
 {
@@ -1095,6 +1231,7 @@ void testPostMaster()
 	testParAsyncObj2Post();
 	testParAsyncObj2Post2Obj();
 	testShellSetupAsyncParMsg();
+	testBidirectionalParMsg();
 	MPI::COMM_WORLD.Barrier();
 	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
 	unsigned int numNodes = MPI::COMM_WORLD.Get_size();
