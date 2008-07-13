@@ -94,10 +94,7 @@ void Shell::addParallelSrc( const Conn* c,
 	unsigned int destNode = dest.node();
 	Eref se = src.eref();
 
-#ifdef DO_UNIT_TESTS
-	// One of the unit tests needs a unique id for the proxy.
-	src = Id::scratchId();
-#else // DO_UNIT_TESTS
+#ifndef DO_UNIT_TESTS
 	// One of the unit tests puts them on the same node.
 	assert( destNode != srcNode );
 #endif
@@ -112,7 +109,6 @@ void Shell::addParallelSrc( const Conn* c,
 		ret = setupProxyMsg( destNode, 
 			dest, sf->asyncFuncId(), 
 			src, srcMsg );
-		assert( ret );
 	} else {
 		ret = se.add( srcField, sh->getPost( destNode ), "async" );
 		// bool ret = add2Post( destNode, se, srcField );

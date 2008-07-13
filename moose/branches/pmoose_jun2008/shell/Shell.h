@@ -19,6 +19,7 @@ class Shell
 	friend void testShell();
 #ifdef USE_MPI
 	friend void testShellSetupAsyncParMsg();
+	friend void testBidirectionalParMsg();
 #endif // USE_MPI
 #endif // DO_UNIT_TESTS
 	public:

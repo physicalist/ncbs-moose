@@ -7140,16 +7140,18 @@ proxyElements on the same node, I got the messages set up and confirmed
 that data was transferred.
 
 Now we're getting close to actually testing this on MPI. Remaining: 
-	- I need to get bidirectional shared messaging to work
+	+ I need to get bidirectional shared messaging to work
 	- I need to do some sensible initialization for the shell-shell
 		messages across nodes. 
-	- Likewise postmasters.
+	+ Initialize postmasters on each node.
 	- Revisit the parallel scheduling
 	- Complete implementation of basic internode object handling commands
 	- Set up unit tests for all of the above. For simplicity I will
 		have all unit tests run from the master node.
-	- Scale up using array postmasters
+	+ Scale up using array postmasters
 	- Regression tests using spiking neurons.
+	- Get sync messages going
+	- Regression tests using diffusion
 
 ==============================================================================
 11 July 2008
@@ -7177,3 +7179,25 @@ deal with the regular cases. Along the way ran into an issue of how to
 obtain AsyncFuncId, and it turns out this should be done through the Finfo
 rather than the Ftype, because only the Finfo knows if it is actually dest or
 src. So of course many files updated. Clears old set of unit tests.
+
+Checked in as revision 548 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Much struggling later, turns out that we have run into a problem with
+specifying direction of message. For convenience, I used the same 
+setupProxyMsg function for bidirectional messages, at both ends of the
+message. In both cases, the src was the proxy and the dest was the local
+object. When the local object tried to send data, the send function generated
+a backwards conn. This is also going to be a problem with any attempt
+at symmetric messages, such as the shell-shell messages.
+
+One possible solution is to set the direction of the message by passing in
+the eref of the calling object when the conn is created from the ConnTainer.
+We can use the element ptr on the eref to decide if to go forwards or
+backwards wrt the elements in the ConnTainer. This is completely independent
+of how the ConnTainer was set up. Currently we pass in Msg::isDest(),
+which means we need to keep track of ordering everywhere.
+This will mean an awful lot of changes. Since I have already modified quite
+a bit of stuff, I will first check things in even though the unit
+tests die at the parallel bidirectional message tests.
+
+==============================================================================

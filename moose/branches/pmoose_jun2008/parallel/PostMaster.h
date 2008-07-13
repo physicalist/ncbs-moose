@@ -40,6 +40,7 @@ class PostMaster
 	friend void testParAsyncObj2Post();
 	friend void testParAsyncObj2Post2Obj();
 	friend void testShellSetupAsyncParMsg();
+	friend void testBidirectionalParMsg();
 #endif // DO_UNIT_TESTS
 	public:
 		PostMaster();
@@ -119,6 +120,7 @@ class AsyncStruct {
 #ifdef DO_UNIT_TESTS
 	friend void testParAsyncObj2Post2Obj();
 	friend void testShellSetupAsyncParMsg();
+	friend void testBidirectionalParMsg();
 #endif // DO_UNIT_TESTS
 	public: 
 		/**
