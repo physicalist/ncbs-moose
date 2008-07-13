@@ -154,30 +154,36 @@ void PostMaster::async( const Conn* c, char* data, unsigned int size )
 // Here we handle passing messages to off-nodes
 /////////////////////////////////////////////////////////////////////
 
-/*
-// Just to help me remember how to use the typeid from RTTI.
-// This will work only between identical compilers, I think.
-// Something more exciting happens with shared finfos.
-const char* ftype2str( const Ftype *f )
-{
-	return typeid( *f ).name();
-}
-*/
 
 /**
- * Manages the setup of a message emanating from this postmaster to 
- * one or more targets. This is a PostMaster operation because we need to
- * set up assorted proxies.
+ * Manages the setup of a bidirectional shared message emanating from 
+ * this postmaster to one or more targets. 
+ *
+ * It is called by the two shells at both ends of the connection, with
+ * the arguments juggled around appropriately.
+ *
+ * srcNode is the remote node.
+ * proxy is the Id of the object on the remote node
+ * asyncFuncId identifies the function(s) to send data back to the remote
+ * 	node. It is zero if there are no functions, ie, if the local dest is
+ * 	unidirectional and does not need to send data back. 
+ * 	It otherwise is the asyncFuncId that points to the
+ * 	dest::asyncFunc which handles the send function of the dest 
+ * 	and stuffs arguments into the sendBuffer of the postmaster.
+ * dest is the Id of the object on the local node
+ * destMsg looks up the Finfo for the message on the local object.
  *
  * This rather nasty function does a bit both of SrcFinfo::add and
  * DestFinfo::respondToAdd, since it has to bypass much of the logic of
  * both.
  */
-bool setupProxyMsg( unsigned int srcNode, Id proxy, Id dest, int destMsg )
+bool setupProxyMsg( unsigned int srcNode, 
+	Id proxy, unsigned int asyncFuncId, 
+	Id dest, int destMsg )
 {
 	const Finfo* destFinfo = dest()->findFinfo( destMsg );
 	assert( destFinfo != 0 );
-	unsigned int pfid = destFinfo->ftype()->proxyFuncId();
+	unsigned int pfid = destFinfo->proxyFuncId();
 	assert( pfid > 0 );
 	
 	// Check for existence of proxy, create if needed.
@@ -203,15 +209,31 @@ bool setupProxyMsg( unsigned int srcNode, Id proxy, Id dest, int destMsg )
 #endif
 	unsigned int srcIndex = pe->numTargets( 0, proxy.index() );
 	unsigned int destIndex = dest()->numTargets( destMsg, dest.index() );
-	unsigned int srcFuncId = 0; /// \todo: How do we deal with returning shared msgs?
-
 	unsigned int destFuncId = destFinfo->funcId();
 
 	bool ret = Msg::add( 
 		proxy.eref(), dest.eref(), 
-		0, destMsg,
+		0,	// This is the msg# for the srcFinfo. But the src here is a
+			// proxy, which manages a single msg, so the msg# is always 0.
+		destMsg,
 		srcIndex, destIndex,
-		srcFuncId, destFuncId,
+		asyncFuncId,// This func handles data to go back to the remote
+					// node. This funcId is used to set up the
+					// Msg of the local element. 
+					// It is zero if no data has to go back. In other
+					// words, the local (dest) element is a pure dest.
+					// If it is nonzero, the function is the
+					// asyncFunc, and is used by the local 'dest' element
+					// to put args into the sendBuf of the postmaster.
+
+		destFuncId,	// This is the regular RecvFunc of the dest element,
+					// called by the Msg of the proxy. Note that this
+					// call in turn happens when data arrives at the
+					// recvBuf of the PostMaster, and the PostMaster
+					// calls the proxyFunc for this proxy. The proxyFunc
+					// converts the buffered data into appropriate types,
+					// and then calls 'send' on the msg managed by the
+					// proxy.
 		ConnTainer::Default /// \todo: need to get better info on option.
 	);
 	
@@ -765,7 +787,7 @@ void testParAsyncObj2Post2Obj()
 	Id proxyId[ 6 ];
 
 	proxyId[ 0 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 0 ], tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, proxyId[ 0 ], 0, tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt i" );
 	///////////////////////////////////////////
 
@@ -774,7 +796,7 @@ void testParAsyncObj2Post2Obj()
 	tgtMsg = tdest->findFinfo( "x" )->msg();
 
 	proxyId[ 1 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 1 ], tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, proxyId[ 1 ], 0, tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt x" );
 	///////////////////////////////////////////
 
@@ -783,7 +805,7 @@ void testParAsyncObj2Post2Obj()
 	tgtMsg = tdest->findFinfo( "s" )->msg();
 
 	proxyId[ 2 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 2 ], tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, proxyId[ 2 ], 0, tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt s" );
 	///////////////////////////////////////////
 
@@ -792,7 +814,7 @@ void testParAsyncObj2Post2Obj()
 	tgtMsg = tdest->findFinfo( "idVec" )->msg();
 
 	proxyId[ 3 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 3 ], tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, proxyId[ 3 ], 0, tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt idVec" );
 	///////////////////////////////////////////
 
@@ -801,7 +823,7 @@ void testParAsyncObj2Post2Obj()
 	tgtMsg = tdest->findFinfo( "sVec" )->msg();
 
 	proxyId[ 4 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 4 ], tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, proxyId[ 4 ], 0, tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt sVec" );
 	///////////////////////////////////////////
 
@@ -810,7 +832,7 @@ void testParAsyncObj2Post2Obj()
 	tgtMsg = tdest->findFinfo( "ix" )->msg();
 
 	proxyId[ 5 ] = Id::scratchId();
-	ret = setupProxyMsg( 0, proxyId[ 5 ], tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, proxyId[ 5 ], 0, tdest->id(), tgtMsg );
 	ASSERT( ret, "msg from post to tgt ix" );
 
 	///////////////////////////////////////////////////////////////////
@@ -1061,6 +1083,7 @@ void testShellSetupAsyncParMsg()
 		unsigned int size = proxy2tgt( as, data );
 	
 	ASSERT( tDestData->sVec_ == tdata->sVec_, "Recieved sVec data on tgt" );
+	size = 0;
 
 	set( n, "destroy" );
 }

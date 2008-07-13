@@ -51,7 +51,8 @@ static const Slot parMsgOkSlot =
  * both.
  */
 extern bool setupProxyMsg( 
-	unsigned int srcNode, Id proxy, Id dest, int destMsg );
+	unsigned int srcNode, Id proxy, unsigned int srcFuncId, 
+	Id dest, int destMsg );
 
 bool Shell::addSingleMessage( const Conn* c, Id src, string srcField, 
 	Id dest, string destField )
@@ -102,57 +103,99 @@ void Shell::addParallelSrc( const Conn* c,
 #endif
 
 	const Finfo* sf = se->findFinfo( srcField );
+	bool ret = 0;
 	if ( sf->funcId() != 0 ) { 
 		// If the src handles any funcs at all this will be nonzero.
 		// In this case it must be a SharedFinfo
 		// with some info coming back. So we set up a local proxy too.
+		int srcMsg = sf->msg();
+		ret = setupProxyMsg( destNode, 
+			dest, sf->asyncFuncId(), 
+			src, srcMsg );
+		assert( ret );
 	} else {
-		bool ret = se.add( srcField, sh->getPost( destNode ), "async" );
+		ret = se.add( srcField, sh->getPost( destNode ), "async" );
 		// bool ret = add2Post( destNode, se, srcField );
 		// Need srcId to set up remote proxy
 		// Need src Finfo type to do type checking across nodes.
 		// Need destId to connect to target
 		// Need destField to look up data types. Better check types first.
-		if ( ret ) {
-			sendTo4< Id, string, Id, string >( 
-				c->target(), addParallelDestSlot, srcNode, 
-				src, sf->ftype()->typeStr(), dest, destField );
-				
-			// Set up an entry to check for completion. 
-			sh->parMessagePending_[dest] = src; 
-		} else {
-			cout << "Error: Shell::addParallelSrc failed to set up msg from\n" <<
-				src.path() << " to " << dest.path() << endl;
-		}
+	}
+	string srcFinfoStr = se->className() + "." + sf->name();
+	if ( ret ) {
+		sendTo4< Id, string, Id, string >( 
+			c->target(), addParallelDestSlot, srcNode, 
+			src, srcFinfoStr, dest, destField );
+			
+		// Set up an entry to check for completion. 
+		sh->parMessagePending_[dest] = src; 
+	} else {
+		cout << "Error: Shell::addParallelSrc failed to set up msg from\n" <<
+			src.path() << " to " << dest.path() << endl;
 	}
 }
 
+const Finfo* findFinfoOnCinfo( const string& name )
+{
+	string::size_type pos = name.find( "." );
+	if ( pos == string::npos )
+		return 0;
+	const Cinfo* c = Cinfo::find( name.substr( 0, pos ) );
+	if ( c == 0 )
+		return 0;
+	return c->findFinfo( name.substr( pos + 1 ) );
+}
+
 void Shell::addParallelDest( const Conn* c,
-	Id src, string srcTypeStr, Id dest, string destField )
+	Id src, string srcField, Id dest, string destField )
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
 
-	if ( !( dest.good() && dest.node() == sh->node_ ) ) {
-		sendBack3< string, Id, Id > ( c, parMsgErrorSlot, 
-			"Destination object not found on remote node " ,
-			src, dest );
-			return;
-	}
+	const Finfo* srcFinfo = findFinfoOnCinfo( srcField );
+
+	string errMsg = "";
+
+	if ( !srcFinfo )
+		errMsg = "Src Field: '" + srcField + "' not found on remote node";
+
+	if ( !( dest.good() && dest.node() == sh->node_ ) )
+		errMsg = "Destination object not found on remote node ";
+
 	const Finfo* tgtFinfo = dest.eref()->findFinfo( destField );
-	if ( tgtFinfo == 0 ) {
+	if ( tgtFinfo == 0 )
+		errMsg = "Dest field: '" + destField + "' not found on remote node";
+
+	unsigned int asyncFuncId = tgtFinfo->asyncFuncId();
+	//unsigned int asyncFuncId = 0;
+
+	// Actually I should tap into respondToAdd here because it does
+	// all the tests systematically and also handles messages to fields.
+	// Only problem is that it needs the proxy element to already be
+	// made.
+	if ( !tgtFinfo->ftype()->isSameType( srcFinfo->ftype() ) )
+		errMsg = "Type mismatch between srcField '" + srcField + 
+		"' and destField '" + destField + "'";
+
+	/*
+	// Check for match of srcFinfo and tgtFinfo
+	bool ret = tgtFinfo->respondToAdd( dest.eref(), src.eref(),
+		srcFinfo->ftype(), srcFinfo->ftype()->asyncFuncId(), 
+		destFid, destMsg, destIndex );
+		*/
+	
+	if ( errMsg != "" ) {
 		sendBack3< string, Id, Id > ( c, parMsgErrorSlot, 
-			"Destination field: '" + destField + 
-			"' not found on remote node ",
-			src, dest );
+			errMsg, src, dest );
 			return;
 	}
+
 	unsigned int srcNode = src.node();
 	int tgtMsg = tgtFinfo->msg();
-	bool ret = setupProxyMsg( srcNode, src, dest, tgtMsg );
-	assert( ret );
+	bool ret = setupProxyMsg( srcNode, src, asyncFuncId, dest, tgtMsg );
 	if ( ret ) {
 		sendBack2< Id, Id > ( c, parMsgOkSlot, src, dest );
 	}
+	assert( ret );
 }
 
 Eref Shell::getPost( unsigned int node ) const
