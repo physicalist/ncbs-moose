@@ -7205,4 +7205,9 @@ Checked in as revision 549 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 Implemented the many tedious changes. Clears all the old unit tests,
 stuck at the same place. Still pegging away at it.
 
+Checked in as revision 550 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
 ==============================================================================
+14 July 2008
+Managed to get data reach its target through a bidirectional message. Still
+to test data going back.
