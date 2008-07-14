@@ -7211,3 +7211,7 @@ Checked in as revision 550 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 14 July 2008
 Managed to get data reach its target through a bidirectional message. Still
 to test data going back.
+
+Checked in as revision 551 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Pretty clear sailing for the test data return. All unit tests now cleared.

@@ -1191,18 +1191,30 @@ void testBidirectionalParMsg()
 	ASSERT( ret, "Setting up msg between shells" );
 	SetConn c( esh0 , 0 );
 	Shell::addParallelSrc( &c, t->id(), "logSrc", tdest->id(), "logDest" );
+	Id proxy0 = Id::lastId(); 
+	proxy0.id_--; // It was created first.
+	Id proxy1 = Id::lastId(); 
 
 	/////////////////////////////////////////////////////////////////
 	// Activate the message. This part is similar to what we did
-	// earlier, we are just sending data forward.
+	// earlier, we are just sending data forward. Main changes here
+	// are that we send it via an intermediate proxy.
 	/////////////////////////////////////////////////////////////////
 	SetConn ct( t , 0 );
+	// This does the following operations:
+	//		tp->i_ = 2 * value;
+	//		tp->x_ = log( static_cast< double >( value ) );
+	//		sendBack1< double >( c, logReturnSlot, exp( tp->x_ * 2.0 ) );
 	TestParClass::sendLog( &ct );
 	// pm1->recvBuf_ = pm0->sendBuf_;
 	// When data is sent into a proxyElement, it now dumps it into
 	// the appropriate system postmaster.
 	pm1->recvBuf_ = post0->sendBuf_;
 	char* data = &( pm1->recvBuf_[ 0 ] );
+	// Here we need to reset the buffer because more stuff
+	// is due to come the other way as soon as we evaluate the msg.
+	post0->sendBufPos_ = sizeof( unsigned int );
+	
 	unsigned int nMsgs = *static_cast< const unsigned int* >(
 					static_cast< const void* >( data ) );
 	ASSERT( nMsgs == 1, "on tgt postmaster");
@@ -1215,7 +1227,7 @@ void testBidirectionalParMsg()
 		// Since we are testing it all on the same node it has to
 		// be a different id. This Id is simply the most recently created
 		// object.
-		as.proxy_ = Id::lastId();
+		as.proxy_ = proxy1;
 		data += sizeof( AsyncStruct );
 		unsigned int size = proxy2tgt( as, data );
 	
@@ -1227,6 +1239,29 @@ void testBidirectionalParMsg()
 	/////////////////////////////////////////////////////////////////
 	// Return data along the message. This is the new part.
 	/////////////////////////////////////////////////////////////////
+	pm0->recvBuf_ = post0->sendBuf_;
+	data = &( pm0->recvBuf_[ 0 ] );
+	
+	nMsgs = *static_cast< const unsigned int* >(
+					static_cast< const void* >( data ) );
+	ASSERT( nMsgs == 1, "on original postmaster");
+
+	// Stuff here to transfer the data.
+		data += sizeof( unsigned int );
+		AsyncStruct as2( data );
+		// Here we fudge it because the AsyncStruct still has the
+		// orignal element id, but we need to put in the proxy id
+		// Since we are testing it all on the same node it has to
+		// be a different id. This Id is simply the most recently created
+		// object.
+		as2.proxy_ = proxy0;
+		data += sizeof( AsyncStruct );
+		size = proxy2tgt( as2, data );
+	
+	// Need to allow for roundoff error here.
+	ASSERT( static_cast< int >( tdata->x_ + 1e-8 ) == tdata->i_ * tdata->i_,
+		"Recieved return data on src" );
+	size = 0;
 
 	set( n, "destroy" );
 }

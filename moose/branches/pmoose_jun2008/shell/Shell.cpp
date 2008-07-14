@@ -1978,8 +1978,8 @@ void Shell::parMsgErrorFunc(
 
 void Shell::parMsgOkFunc( const Conn* c, Id src, Id dest )
 {
-	cout << "OK: msg set up from " << src.path() << " to " <<
-		dest.path() << endl;
+	// cout << "OK: msg set up from " << src.path() << " to " << dest.path() << endl;
+	cout << "internode msg setup OK\n";
 }
 
 #ifndef USE_MPI
