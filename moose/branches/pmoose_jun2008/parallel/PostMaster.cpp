@@ -1161,8 +1161,11 @@ void testBidirectionalParMsg()
 
 	PostMaster* pm0 = static_cast< PostMaster* >( p0->data() );
 	PostMaster* pm1 = static_cast< PostMaster* >( p1->data() );
+	PostMaster* post0 = 
+		static_cast< PostMaster* >( Id::postId( 0 ).eref().data() );
+	post0->sendBufPos_ = sizeof( unsigned int );
 	pm0->sendBufPos_ = sizeof( unsigned int ); // to count # of msgs
-	void* vabuf = static_cast< void* >( &pm0->sendBuf_[0] );
+	void* vabuf = static_cast< void* >( &post0->sendBuf_[0] );
 
 	///////////////////////////////////////////////////////////////////
 	// Set up the data to send
@@ -1195,7 +1198,10 @@ void testBidirectionalParMsg()
 	/////////////////////////////////////////////////////////////////
 	SetConn ct( t , 0 );
 	TestParClass::sendLog( &ct );
-	pm1->recvBuf_ = pm0->sendBuf_;
+	// pm1->recvBuf_ = pm0->sendBuf_;
+	// When data is sent into a proxyElement, it now dumps it into
+	// the appropriate system postmaster.
+	pm1->recvBuf_ = post0->sendBuf_;
 	char* data = &( pm1->recvBuf_[ 0 ] );
 	unsigned int nMsgs = *static_cast< const unsigned int* >(
 					static_cast< const void* >( data ) );
@@ -1207,10 +1213,9 @@ void testBidirectionalParMsg()
 		// Here we fudge it because the AsyncStruct still has the
 		// orignal element id, but we need to put in the proxy id
 		// Since we are testing it all on the same node it has to
-		// be a different id.
-		Id temp = Id::lastId();
-		temp.id_--;
-		as.proxy_ = temp;
+		// be a different id. This Id is simply the most recently created
+		// object.
+		as.proxy_ = Id::lastId();
 		data += sizeof( AsyncStruct );
 		unsigned int size = proxy2tgt( as, data );
 	
