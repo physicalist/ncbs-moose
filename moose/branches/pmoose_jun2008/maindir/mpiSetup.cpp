@@ -15,6 +15,7 @@
 
 #include "../basecode/moose.h"
 #include "../element/Neutral.h"
+#include "../shell/Shell.h"
 
 extern bool setupProxyMsg(
 	unsigned int srcNode, Id proxy, unsigned int srcFuncId,
@@ -34,26 +35,21 @@ unsigned int initMPI( int argc, char** argv )
 {
 #ifdef USE_MPI
 	MPI::Init( argc, argv );
-	unsigned int totalnodes = MPI::COMM_WORLD.Get_size();
+	unsigned int totalNodes = MPI::COMM_WORLD.Get_size();
 	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
 
-	Id::setNodes( myNode, totalnodes );
+	// If not done here, the Shell uses defaults suitable for one node.
+	Shell::setNodes( myNode, totalNodes );
 
-	Element* postmasters =
-			Neutral::createArray( "PostMaster", "post", 
-			Id::shellId(), Id::postId( 0 ), totalnodes );
-	for ( unsigned int i = 0; i < totalnodes; i++ ) {
-		Eref pe = Eref( postmasters, i );
-		set< unsigned int >( pe, "remoteNode", i );
-	}
+	cerr << myNode << ".2a\n";
 
-	// Breakpoint for parallel debugging
 	bool glug = (argc == 2 && strncmp( argv[1], "-m", 2 ) == 0 );
 	while ( glug );
 
 	return myNode;
 #else // USE_MPI
-	return 0
+	totalNodes = 1;
+	return 0;
 #endif // USE_MPI
 }
 
@@ -64,8 +60,20 @@ unsigned int initMPI( int argc, char** argv )
 void initParSched()
 {
 #ifdef USE_MPI
-	unsigned int totalnodes = MPI::COMM_WORLD.Get_size();
-	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
+	unsigned int totalnodes = Shell::numNodes();
+	unsigned int myNode = Shell::myNode();
+
+	// Breakpoint for parallel debugging
+
+	Element* postmasters =
+			Neutral::createArray( "PostMaster", "post", 
+			Id::shellId(), Id::postId( 0 ), totalnodes );
+	cerr << myNode << ".2b\n";
+	for ( unsigned int i = 0; i < totalnodes; i++ ) {
+		Eref pe = Eref( postmasters, i );
+		set< unsigned int >( pe, "remoteNode", i );
+	}
+	cerr << myNode << ".2c\n";
 	// This one handles parser and postmaster scheduling.
 	Id sched( "/sched" );
 	Id cj( "/sched/cj" );
@@ -123,11 +131,11 @@ void initParSched()
 	ret = shellE.add( "pollSrc", pj, "step" );
 	// ret = pollFinfo->add( shell, pj, pj->findFinfo( "step" ) );
 	assert( ret );
-	Eref postmasters = Id::postId( Id::AnyIndex ).eref();
-	ret = Eref( t0 ).add( "parTick", postmasters , "parTick",
+	Eref pe = Id::postId( Id::AnyIndex ).eref();
+	ret = Eref( t0 ).add( "parTick", pe , "parTick",
 		ConnTainer::One2All );
 	assert( ret );
-	ret = Eref( pt0 ).add( "parTick", postmasters, "parTick",
+	ret = Eref( pt0 ).add( "parTick", pe, "parTick",
 		ConnTainer::One2All );
 	assert( ret );
 
@@ -137,6 +145,9 @@ void initParSched()
 	set( pj, "resched" );
 	set( cj.eref(), "reinit" );
 	set( pj, "reinit" );
+
+	cerr << myNode << ".2d\n";
+
 	MPI::COMM_WORLD.Barrier();
 	if ( myNode == 0 )
 		cout << "\nInitialized " << totalnodes << " nodes\n";

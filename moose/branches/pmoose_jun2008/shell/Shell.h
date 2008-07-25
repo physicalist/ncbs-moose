@@ -53,6 +53,19 @@ class Shell
 // Infinite loop called on slave nodes to monitor commands from master.
 //////////////////////////////////////////////////////////////////////
 		static void pollFunc( const Conn* c );
+
+//////////////////////////////////////////////////////////
+// Node lookup functions
+//////////////////////////////////////////////////////////
+		/// returns node # of shell.
+		static unsigned int myNode(); 
+
+		/// Returns # of nodes in simulation
+		static unsigned int numNodes(); 
+
+		/// Used only in setup phase. Assigns node info.
+		static void setNodes( unsigned int myNode, unsigned int numNodes );
+
 ////////////////////////////////////////////////////////////////////
 // Local functions for implementing basic GENESIS/MOOSE command set.
 ////////////////////////////////////////////////////////////////////
@@ -274,7 +287,12 @@ class Shell
 		SimDump* simDump_;
 		Id lastTab_; // Used for the loadtab -continue option, which 
 			// contines loading numbers into the previously selected table.
-		unsigned int node_;
+
+		/// Node on which this shell operates
+		static unsigned int myNode_;
+
+		/// Number of nodes used by simulation.
+		static unsigned int numNodes_;
 
 		/**
 		 * This keeps track of message requests sent off-node. 

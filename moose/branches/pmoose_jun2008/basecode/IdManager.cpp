@@ -11,6 +11,7 @@
 #include "moose.h"
 #include "IdManager.h"
 #include "ThisFinfo.h"
+#include "shell/Shell.h"
 // #include "ArrayWrapperElement.h"
 #ifdef USE_MPI
 const Cinfo* initPostMasterCinfo();
@@ -24,19 +25,19 @@ const unsigned int IdManager::blockSize = 1000;
 const unsigned int BAD_NODE = ~0;
 
 IdManager::IdManager()
-	: myNode_( 0 ), numNodes_( 1 ), 
-	loadThresh_( 2000.0 ),
+	: loadThresh_( 2000.0 ),
 	scratchIndex_( 3 ), mainIndex_( 3 )
 	// Start at 2 because root is 0 and shell is 1 and postmaster is 2.
 {
-	elementList_.resize( blockSize );
+	elementList_.resize( blockSize + numScratch );
 }
 
+/*
 void IdManager::setNodes( unsigned int myNode, unsigned int numNodes )
 {
 	myNode_ = myNode;
 	numNodes_ = numNodes;
-	elementList_[0] = Enode( Element::root(), myNode_ );
+	elementList_[0] = Enode( Element::root(), Shell::myNode() );
 	if ( numNodes > 1 ) {
 		if ( myNode == 0 )
 			nodeLoad.resize( numNodes );
@@ -44,6 +45,7 @@ void IdManager::setNodes( unsigned int myNode, unsigned int numNodes )
 		mainIndex_ = numScratch;
 	}
 }
+*/
 
 /**
  * Returns the next available id and allocates space for it.
@@ -52,7 +54,7 @@ void IdManager::setNodes( unsigned int myNode, unsigned int numNodes )
  */
 unsigned int IdManager::scratchId()
 {
-	if ( numNodes_ <= 1 ) {
+	if ( Shell::numNodes() <= 1 ) {
 		lastId_ = mainIndex_;
 		mainIndex_++;
 		if ( mainIndex_ >= elementList_.size() )
@@ -75,21 +77,21 @@ unsigned int IdManager::scratchId()
 unsigned int IdManager::childId( unsigned int parent )
 {
 #ifdef USE_MPI
-	assert( myNode_ == 0 );
+	assert( Shell::myNode() == 0 );
 	if ( parent < mainIndex_ ) {
 		Enode& pa = elementList_[ parent ];
 		if ( mainIndex_ >= elementList_.size() )
 			elementList_.resize( elementList_.size() * 2 );
 		lastId_ = mainIndex_;
 		mainIndex_++;
-		if ( pa.node() != myNode_ ) {
+		if ( pa.node() != Shell::myNode() ) {
 			// Put object on parent node.
 			elementList_[ lastId_ ] = Enode( 0, pa.node() );
 		} else { // Parent is also on master
 			// Crude load balancing calculation here, better will come.
 			unsigned int targetNode = 
 				static_cast< unsigned int >( mainIndex_ / loadThresh_ ) %
-				numNodes_;
+				Shell::numNodes();
 			elementList_[ lastId_ ] = Enode( 0, targetNode );
 		}
 		return lastId_;
@@ -116,8 +118,8 @@ unsigned int IdManager::makeIdOnNode( unsigned int childNode )
 	lastId_ = mainIndex_;
 	mainIndex_++;
 #ifdef USE_MPI
-	assert( myNode_ == 0 );
-	assert( childNode < numNodes_ );
+	assert( Shell::myNode() == 0 );
+	assert( childNode < Shell::numNodes() );
 	if ( childNode > 0 ) { // Off-node element
 		elementList_[ lastId_ ] = Enode( 0, childNode );
 	}
@@ -138,7 +140,7 @@ Element* IdManager::getElement( const Id& id ) const
 			// We then get into managing how many entries are unknown...
 			assert( 0 );
 			return 0;
-		} else if ( ret.node() != myNode_ ) {
+		} else if ( ret.node() != Shell::myNode() ) {
 			return 0;
 		} else {
 			return ret.e();
@@ -152,14 +154,17 @@ Element* IdManager::getElement( const Id& id ) const
 /// \todo: This needs additional work for node safety.
 bool IdManager::setElement( unsigned int index, Element* e )
 {
+	if ( index >= elementList_.size() )
+		elementList_.resize( ( 1 + index / blockSize ) * blockSize );
+
 	if ( index < mainIndex_ ) {
 		Enode& old = elementList_[ index ];
 		if ( old.node() == UNKNOWN_NODE || old.e() == 0 ) {
-			elementList_[ index ] = Enode( e, myNode_ );
+			elementList_[ index ] = Enode( e, Shell::myNode() );
 			return 1;
 		} else if ( e == 0 ) {
 			// Here we are presumably clearing out an element. Permit it.
-			elementList_[ index ] = Enode( 0, myNode_ );
+			elementList_[ index ] = Enode( 0, Shell::myNode() );
 			/// \todo: We could add this element to a list for reuse here.
 			return 1;
 		} else if ( index == 0 ) {
@@ -170,18 +175,12 @@ bool IdManager::setElement( unsigned int index, Element* e )
 			return 1;
 		}
 	} else {
-		if ( myNode_ > 0 ) {
-			// Here we have been told by the master node to make a child 
-			// at a specific index before the elementList has been
-			// expanded to that index. Just expand it to fit.
-			elementList_.resize( ( 1 + index / blockSize ) * blockSize );
-			elementList_[ index ] = Enode( e, myNode_ );
-			mainIndex_ = index + 1;
-			return 1;
-		} else {
-			assert( 0 );
-			return 0;
-		}
+		// Here we have been told by the master node to make a child 
+		// at a specific index before the elementList has been
+		// expanded to that index. Just expand it to fit.
+		elementList_[ index ] = Enode( e, Shell::myNode() );
+		mainIndex_ = index + 1;
+		return 1;
 	}
 }
 
@@ -214,7 +213,7 @@ bool IdManager::outOfRange( unsigned int index ) const
 bool IdManager::isScratch( unsigned int index ) const
 {
 #ifdef USE_MPI
-	return ( myNode_ > 0 && index > 0 && index < scratchIndex_ );
+	return ( Shell::myNode() > 0 && index > 0 && index < scratchIndex_ );
 #else
 	return 0;
 #endif

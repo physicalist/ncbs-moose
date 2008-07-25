@@ -24,6 +24,7 @@
 #include <element/Neutral.h>
 #include <basecode/IdManager.h>
 #include <utility/utility.h>
+#include "shell/Shell.h"
 
 #ifdef USE_READLINE
 #include <readline/readline.h>
@@ -32,9 +33,11 @@
 
 extern void initMoose();
 extern void initSched();
-extern unsigned int initMPI( int argc, char** argv); // Defined in mpiSetup.cpp
+
+// Defined in mpiSetup.cpp
+extern unsigned int initMPI( int argc, char** argv );
 extern void initParSched();
-extern void terminateMPI( unsigned int mynode );
+extern void terminateMPI( unsigned int myNode );
 extern void pollPostmaster(); 
 extern void setupDefaultSchedule(Element* t0, Element* t1, Element* cj);
 
@@ -75,13 +78,18 @@ int main(int argc, char** argv)
 	///////////////////////////////////////////////////////////////////
 	//	Initialization functions. Must be in this order.
 	///////////////////////////////////////////////////////////////////
+	cerr << "pre.0\n";
+	unsigned int myNode = initMPI( argc, argv );
+	cerr << myNode << ".1\n";
 	initMoose();
-	unsigned int mynode = initMPI( argc, argv );
+	cerr << myNode << ".2\n";
 	initSched();
+	cerr << myNode << ".3\n";
 	initParSched();
+	cerr << myNode << ".4\n";
         
 #ifdef DO_UNIT_TESTS
-	if ( mynode == 0 )
+	if ( myNode == 0 )
 	{
 		testBasecode();
 		testNeutral();
@@ -101,7 +109,7 @@ int main(int argc, char** argv)
 
 
 #ifdef USE_GENESIS_PARSER
-	if ( mynode == 0 ) {
+	if ( myNode == 0 ) {
 		string line = "";
                 vector<string> scriptArgs = ArgParser::getScriptArgs();
                 
@@ -173,7 +181,7 @@ int main(int argc, char** argv)
 		}
 	}
 #endif
-	terminateMPI( mynode );
+	terminateMPI( myNode );
 
 	cout << "done" << endl;
 }

@@ -59,8 +59,8 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
 	unsigned int srcNode = src.node();
-	if ( srcNode == sh->node_ ) {
-		if ( dest.node() == sh->node_ ) {
+	if ( srcNode == sh->myNode_ ) {
+		if ( dest.node() == sh->myNode_ ) {
 			return addLocal( src, srcField, dest, destField );
 		} else {
 			addParallelSrc( c, src, srcField, dest, destField );
@@ -90,7 +90,7 @@ void Shell::addParallelSrc( const Conn* c,
 	Id src, string srcField, Id dest, string destField )
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
-	unsigned int srcNode = sh->node_;
+	unsigned int srcNode = sh->myNode_;
 	unsigned int destNode = dest.node();
 	Eref se = src.eref();
 
@@ -154,7 +154,7 @@ void Shell::addParallelDest( const Conn* c,
 	if ( !srcFinfo )
 		errMsg = "Src Field: '" + srcField + "' not found on remote node";
 
-	if ( !( dest.good() && dest.node() == sh->node_ ) )
+	if ( !( dest.good() && dest.node() == sh->myNode_ ) )
 		errMsg = "Destination object not found on remote node ";
 
 	const Finfo* tgtFinfo = dest.eref()->findFinfo( destField );

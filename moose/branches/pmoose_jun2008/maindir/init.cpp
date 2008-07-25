@@ -40,17 +40,29 @@ void initMoose()
 	 * after static initialization but before any messaging
 	 */
 	FuncVec::sortFuncVec();
+
+	// This first call also initializes it. Not essential to do explicitly.
+	Element* root = Element::root();
     
     const Cinfo* c = Cinfo::find( "Shell" );
 
     assert ( c != 0 );
-    const Finfo* childSrc = Element::root()->findFinfo( "childSrc" );
+    const Finfo* childSrc = root->findFinfo( "childSrc" );
     assert ( childSrc != 0 );
-    	/// \todo Check if this can be replaced with the Neutral::create
-    Element* shell = c->create( Id( 1 ), "shell" );
-    assert( shell != 0 );
+
+	Element* shell = Neutral::create( "Shell", "shell", Id(), Id::shellId() );
+	/* Deprecated
+	Element* shell = c->create( Id( 1 ), "shell" );
 	bool ret = Eref::root().add( "childSrc", shell, "child" );
-    assert( ret );
+	assert( ret);
+	*/
+
+    assert( shell != 0 );
+	assert( shell->id() == Id::shellId() );
+
+	Id shellTest( "/shell" );
+	assert( shellTest.good() );
+	assert( shellTest == shell->id() );
 }
 
 /**
@@ -63,15 +75,22 @@ void initSched()
      * exist simultaneously on each node.
      */
     Element* sched =
-        Neutral::create( "Neutral", "sched", Element::root()->id(), Id::scratchId() );
+        Neutral::create( "Neutral", "sched", Id(), Id::scratchId() );
     // This one handles the simulation clocks
+	assert( sched != 0 );
+	/*
+	Id schedTest( "/sched" );
+	assert( schedTest.good() );
+	assert( schedTest == sched->id() );
+	*/
+
     Element* cj =
         Neutral::create( "ClockJob", "cj", sched->id(), Id::scratchId() );
     
-    Neutral::create( "Neutral", "library", Element::root()->id(), Id::scratchId() );
-    Neutral::create( "Neutral", "proto", Element::root()->id(), Id::scratchId() );
+    Neutral::create( "Neutral", "library", Id(), Id::scratchId() );
+    Neutral::create( "Neutral", "proto", Id(), Id::scratchId() );
     Element* solvers = 
-            Neutral::create( "Neutral", "solvers", Element::root()->id(), Id::scratchId() );
+            Neutral::create( "Neutral", "solvers", Id(), Id::scratchId() );
     // These two should really be solver managers because there are
     // a lot of decisions to be made about how the simulation is best
     // solved. For now let the Shell deal with it.

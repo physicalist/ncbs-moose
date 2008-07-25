@@ -238,8 +238,10 @@ bool Id::setElement( Element* e )
 	return manager().setElement( id_, e );
 }
 
-
+/**
+ * Deprecated
 void Id::setNodes(  unsigned int myNode, unsigned int numNodes )
 {
 	manager().setNodes( myNode, numNodes );
 }
+*/
