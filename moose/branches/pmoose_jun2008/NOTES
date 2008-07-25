@@ -7367,3 +7367,10 @@ single-node unit tests. Crashes when we try to run on > 1 node. Issue
 looks like with IdManager::scratchId().
 
 ==============================================================================
+25 July 2008
+
+Checked in as revision 553 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+General cleanup of Id management stuff, but it still crashes on > 1 node.
+
+==============================================================================

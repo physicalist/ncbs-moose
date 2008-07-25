@@ -1,3 +1,11 @@
+/**********************************************************************
+** This program is part of 'MOOSE', the
+** Messaging Object Oriented Simulation Environment.
+**           Copyright (C) 2003-2007 NCBS
+** It is made available under the terms of the
+** GNU Lesser General Public License version 2.1
+** See the file COPYING.LIB for the full notice.
+**********************************************************************/
 /*******************************************************************
  * File:            init.cpp
  * Description:      
@@ -11,14 +19,16 @@
 
 using namespace std;
 
-// Most of this code is a compilation from ClockJob.cpp and main.cpp
-// written by Upi and Niraj.
-int mooseInit()
+/**
+ * initMoose sets up function ids through sortFuncVec, and initializes
+ * root and shell. It must be called before any other object operation.
+ */
+void initMoose()
 {
     static bool initialized = false;
     if(initialized)
     {
-        return 0;
+        return;
     }
     else
     {
@@ -41,9 +51,15 @@ int mooseInit()
     assert( shell != 0 );
 	bool ret = Eref::root().add( "childSrc", shell, "child" );
     assert( ret );
+}
 
+/**
+ * initSched initializes the scheduling
+ */
+void initSched()
+{
     /**
-     * Here we set up a bunch of predefined objects, that
+     * Here we set up a bunch of predefined objects for scheduling, that
      * exist simultaneously on each node.
      */
     Element* sched =
@@ -68,7 +84,6 @@ int mooseInit()
     // not allowing user to change the clock settings
     Neutral::create( "Tick", "t0", cj->id(), Id::scratchId() );
     Neutral::create( "Tick", "t1", cj->id(), Id::scratchId() );
-    return 0;    
 }
 
 void setupDefaultSchedule( 

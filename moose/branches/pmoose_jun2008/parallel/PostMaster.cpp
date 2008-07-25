@@ -1253,9 +1253,9 @@ void testBidirectionalParMsg()
 	ASSERT( ret, "Setting up msg between shells" );
 	SetConn c( esh0 , 0 );
 	Shell::addParallelSrc( &c, t->id(), "logSrc", tdest->id(), "logDest" );
-	Id proxy0 = Id::lastId(); 
-	proxy0.id_--; // It was created first.
 	Id proxy1 = Id::lastId(); 
+	// Proxy0 was created one before proxy1.
+	Id proxy0( proxy1.id() - 1, proxy1.index() );
 
 	/////////////////////////////////////////////////////////////////
 	// Activate the message. This part is similar to what we did

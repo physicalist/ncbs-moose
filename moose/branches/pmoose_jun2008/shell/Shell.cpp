@@ -2491,29 +2491,29 @@ void testShell()
 
 	ret = sh.create( "Neutral", "a", Id(), a );
 	ASSERT( ret, "creating a" );
-	ASSERT( a.id_ == n.id_ + 1 , "creating a" );
+	ASSERT( a.id() == n.id() + 1 , "creating a" );
 	ASSERT( ( sh.parent( a ) == 0 ), "finding parent" );
 
 	Id b = Id::scratchId();
 	ret = sh.create( "Neutral", "b", Id(), b );
 	ASSERT( ret, "creating b" );
-	ASSERT( b.id_ == n.id_ + 2 , "creating b" );
+	ASSERT( b.id() == n.id() + 2 , "creating b" );
 
 	Id c = Id::scratchId();
 	ret = sh.create( "Neutral", "c", Id(), c );
 	ASSERT( ret, "creating c" );
-	ASSERT( c.id_ == n.id_ + 3 , "creating c" );
+	ASSERT( c.id() == n.id() + 3 , "creating c" );
 
 	Id a1 = Id::scratchId();
 	ret = sh.create( "Neutral", "a1", a, a1 );
 	ASSERT( ret, "creating a1" );
-	ASSERT( a1.id_ == n.id_ + 4 , "creating a1" );
+	ASSERT( a1.id() == n.id() + 4 , "creating a1" );
 	ASSERT( ( sh.parent( a1 ) == a ), "finding parent" );
 
 	Id a2 = Id::scratchId();
 	ret = sh.create( "Neutral", "a2", a, a2 );
 	ASSERT( ret, "creating a2" );
-	ASSERT( a2.id_ == n.id_ + 5 , "creating a2" );
+	ASSERT( a2.id() == n.id() + 5 , "creating a2" );
 
 	/////////////////////////////////////////
 	// Test path lookup operations

@@ -30,8 +30,10 @@
 #include <readline/history.h>
 #endif //USE_READLINE
 
-extern int mooseInit();
-extern bool initMPI( int argc, char** argv); // Defined in mpiSetup.cpp
+extern void initMoose();
+extern void initSched();
+extern unsigned int initMPI( int argc, char** argv); // Defined in mpiSetup.cpp
+extern void initParSched();
 extern void terminateMPI( unsigned int mynode );
 extern void pollPostmaster(); 
 extern void setupDefaultSchedule(Element* t0, Element* t1, Element* cj);
@@ -49,9 +51,7 @@ extern void setupDefaultSchedule(Element* t0, Element* t1, Element* cj);
 	extern void testBiophysics();
 	extern void testKinetics();
 //	extern void testAverage();
-#ifdef USE_MPI
 	extern void testPostMaster();
-#endif
 #endif
 
 #ifdef USE_GENESIS_PARSER
@@ -72,11 +72,13 @@ int main(int argc, char** argv)
 	Property::setProperty(Property::SIMPATH, simpathHandler.getAllPaths()); // put the updated path list in Property
 	cout << "SIMPATH = " << Property::getProperty(Property::SIMPATH) << endl;
         
-	mooseInit();
 	///////////////////////////////////////////////////////////////////
-	//	Here we connect up the postmasters to the shell and the ParTick.
+	//	Initialization functions. Must be in this order.
 	///////////////////////////////////////////////////////////////////
+	initMoose();
 	unsigned int mynode = initMPI( argc, argv );
+	initSched();
+	initParSched();
         
 #ifdef DO_UNIT_TESTS
 	if ( mynode == 0 )
@@ -93,6 +95,7 @@ int main(int argc, char** argv)
 		testBiophysics();
 		testKinetics();
 //		testAverage();
+		testPostMaster(); // This is a dummy if no postMaster exists.
 	}
 #endif
 

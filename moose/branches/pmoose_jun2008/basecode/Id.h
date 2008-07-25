@@ -24,21 +24,8 @@ class IdManager;
  */
 class Id
 {
-	// This access is needed so that main can assign the nodes to
-	// the manager.
-	friend int main( int argc, char** argv );
-        friend int mooseInit();
-        
+	friend class PyMooseContext; ///\todo: deprecate this friend.
     
-    
-	friend class IdManager;
-        friend class PyMooseContext;
-    
-#ifdef DO_UNIT_TESTS
-	friend void testShell();
-	friend void testBidirectionalParMsg();
-#endif
-	
 	public:
 
 		//////////////////////////////////////////////////////////////
@@ -126,7 +113,13 @@ class Id
 		Element* operator()() const;
 
 		/**
-		 * Returns the Element index/
+		 * Returns the Element id
+		 */
+		unsigned int id() const {
+			return id_;
+		}
+		/**
+		 * Returns the Element index
 		 */
 		unsigned int index() const {
 			return index_;
@@ -228,17 +221,19 @@ class Id
 		bool setElement( Element* e );
 		static const unsigned int AnyIndex;
 		static const unsigned int BadIndex;
-	private:
-		// static void setManager( Manager* m );
 
 		/**
-		 * Assignment of id to specific index. Only done internally.
+		 * Assignment of id to specific index. This was originally
+		 * a private function, but then there turned out to be so
+		 * many 'friends' it was defeating the purpose.
 		 * This is a handy function, but it is very likely to be
 		 * misused through creation of unchecked and invalid Ids.
 		 * The str2Id can be used for most test scenarios,
 		 * and the rest of the time you should not be using this.
 		 */
 		Id( unsigned int i, unsigned int index = 0 );
+	private:
+		// static void setManager( Manager* m );
 		unsigned int id_; // Unique identifier for Element*
 		unsigned int index_; // Index of array entry within element.
 		static IdManager& manager();
