@@ -7372,5 +7372,9 @@ looks like with IdManager::scratchId().
 Checked in as revision 553 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
 General cleanup of Id management stuff, but it still crashes on > 1 node.
+Checked in as revision 554 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Steady progress on cleanup, now we advance further into the execution on 2
+nodes before there is a crash. Seems to be dying during the node polling.
 
 ==============================================================================

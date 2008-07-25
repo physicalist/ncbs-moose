@@ -87,6 +87,8 @@ class IdManager
 		 * Allocates a new scratch id on the current node and returns it.
 		 */
 		unsigned int scratchId();
+		unsigned int myNode();
+		unsigned int numNodes();
 
 
 		/**
@@ -176,9 +178,10 @@ class IdManager
 
 		/**
 		 * These keep track of size of cluster
-		 */
+		 * Deprecated. Now in shell.
 		unsigned int myNode_;
 		unsigned int numNodes_;
+		 */
 
 		/**
 		 * This specifies the load at which the system looks for another

@@ -210,8 +210,6 @@ class Id
 				( id_ == other.id_ && index_ < other.index_ );
 		}
 
-		static void setNodes( unsigned int myNode, unsigned int numNodes );
-
 		friend ostream& operator <<( ostream& s, const Id& i );
 		friend istream& operator >>( istream& s, Id& i );
 

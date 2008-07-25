@@ -23,6 +23,13 @@
 #include "math.h"
 #include "sstream"
 //////////////////////////////////////////////////////////////////////
+// Shell static initializers
+//////////////////////////////////////////////////////////////////////
+
+unsigned int Shell::myNode_ = 0;
+unsigned int Shell::numNodes_ = 0;
+
+//////////////////////////////////////////////////////////////////////
 // Shell MOOSE object creation stuff
 //////////////////////////////////////////////////////////////////////
 
@@ -471,7 +478,7 @@ void printNodeInfo( const Conn* c );
 //////////////////////////////////////////////////////////////////////
 
 Shell::Shell()
-	: cwe_( Id() ), recentElement_( Id() ), node_( 0 )
+	: cwe_( Id() ), recentElement_( Id() )
 {
 	simDump_ = new SimDump;
 }
@@ -707,6 +714,22 @@ void Shell::pollFunc( const Conn* c )
 		// Surprisingly, the usleep seems to worsen the responsiveness.
 		// usleep( 10 );
 	}
+}
+
+unsigned int Shell::myNode()
+{
+	return myNode_;
+}
+
+unsigned int Shell::numNodes()
+{
+	return numNodes_;
+}
+
+void Shell::setNodes( unsigned int myNode, unsigned int numNodes )
+{
+	myNode_ = myNode;
+	numNodes_ = numNodes;
 }
 
 //////////////////////////////////////////////////////////////////////
