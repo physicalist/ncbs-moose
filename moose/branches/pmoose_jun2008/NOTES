@@ -7215,3 +7215,155 @@ to test data going back.
 Checked in as revision 551 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
 Pretty clear sailing for the test data return. All unit tests now cleared.
+
+Checked in as revision 552 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+- Messaging between postmasters: None
+- Messaging between shells: Set up a one-to-all bidirectional message from the 
+shell to the array of postmasters on each node. Will need to do this
+explicitly using low-level calls at init time, independently on each node.
+- Scheduling: 
+	- set up a pollJob pj that manages a ParTick that sends a 
+	one-to-all local parTick message to the PostMasters.
+	(Additionally it looks like the regular clockJob does the same. Why?)
+	- Shell sends a step msg to the pj.
+	Actually the polling happens in using the pollPostmaster() 
+	function in the infinite loop at the end of main. This is 
+	currently flawed as it runs only on the master node.
+
+==============================================================================
+19 July 2008
+In the process of setting up initialized messages between shells on each
+node. Should simply send a one2All message. But we need an arrayProxyElement
+to match.
+
+Shell->proxy->postmaster[]->postmaster[originating_node]->proxy->shell
+
+Otherwise it will be an array of proxies, one for each shell on a remote node
+
+Well, for now we'll manage with an array of proxies. Other innovations can
+wait.
+
+Here we have another issue. The Id of the other shells is obviously the same
+as that of the local one. Shall we have a virtual array of shells indexed by
+node?
+
+A possible solution: Have the shells act as their own proxy, that is,
+send a message to themselves that duplicates what the proxy would otherwise do.
+Issues: 
+	- proxy2tgt function checks that tgt is a proxy.
+	- proxy2tgt function then calls ProxyElement::sendData, which
+		uses msg 0.
+If it weren't for these, this should work. But these are pretty fundamental.
+
+Possible hack: the IdManager does a special check when returning ShellId and
+	returns a proxy if it is off-node. Too ugly.
+
+Another possible hack: When sending off-node commands to other shells,
+the Shell does not use itself as the src element. Instead it uses a special id
+for the shell proxies. However, the Send command needs to look up msg on the
+src eref, which will fail unless I invent a new Element class.
+
+A generalized solution (?): Invent an array proxy that can have both real
+objects and proxies, so as to set up an array across nodes. This may be
+useful for big simulations too. But a big job.
+
+Last resort solution: Use special message types between shell and postmaster.
+Bypass the whole proxy system. 
+
+==============================================================================
+23 July 2008
+Some notes from meeting with Jeanette Hellgren-Kotaleski and Johannes Hjorth
+about the MUSIC project:
+- the NEST simulator people may have some thoughts on ID management across
+	nodes and about the issue of the master node managing everything.
+- They also have an event-driven model
+- They also have a 2-stage simulation setup process: stage 1 for definition
+	of connectivity, and stage 2 for runtime.
+- They also have the option of queueing many cycles of spike events within the
+	propagation delay, so as to lump data transmission.
+- Not clear if they stipulate node synchronization, which MOOSE assumes.
+
+General plan:
+	- Get a MOOSE regression test network model working in multiple phases
+		* single node
+		- across nodes with MOOSE internode messaging
+		- Across nodes using MUSIC interface
+	- Get a mixed MOOSE/NEST simulation going using MUSIC interface
+
+
+Regarding inter-Shell communication. Options:
+	- provide the PostMaster with a MsgDest that takes char*, and size. 
+		It puts this into the SendBuffer in the usual way, but with
+		a special Proxy stamp so that the data gets handled differently.
+		(Note that the Sync messages will also need a separate section
+		in the SendBuf)
+	- Proxy-free version: Here we need to pass additional info to specify
+		index of target, or to assume a single target.
+	- Dummy proxy version: Here we need a way to remap src Id to dummy 
+		proxy. Relatively clean but again we need an extra bit of
+		info for this section to activate remapping mode.
+
+==============================================================================
+24 July.
+The dummy proxy version seems most do-able. To flesh it out:
+- PostMaster::innerPoll must handle 3 groupings of data:
+	- Sync data
+	- dummy proxies for async data (typically postmaster messages)
+	- Async data
+- The dummy proxies use the proxyId to look up a map for the actual proxy.
+- Pass in an extra arg into ParShell::addParallelSrc to define which
+	variant of msg is used.
+	- Or, if the dest id exists (like a shell) then automatically set up
+	a dummy proxy and insert the msg on the proxy map, and then tell
+	originating node that it has to be sent on a separate band. Ugh.
+	- Sync messages are set up if the target Finfo says so.
+	- Or, at setup time, check if the src Id and dest id are both the Shell,
+	and hard code the lookup so we don't have separate async types.
+		- How many likely cases of this kind?
+			- any time there is a cross-node array.
+			- Wait till we implement it, then we can get rid of
+			the Shell hard coding.
+
+Can we lessen background polling, and also make the system less fragile?
+- Fragile but minimal approach:
+	- Single (non-polling, non-blocking) pass for async msgs
+	- Polling only for sync msgs, if any.
+	- Barrier after these passes. 
+		- Barrier optionally on slower tick so as to permit some slop 
+		if we never have sync msgs.
+		- Need to separate barrier from Poll pass?
+		- Need to also have option for whether a given ParTick does 
+			MPI traffic checking at all
+	This will fail if any node fails.		
+
+- More robust approach:
+	- Single (non-polling, non-blocking) pass for async msgs
+	- Slaves: 
+		- Polling for sync msgs (on other slaves) + master node check.
+		- Immediate send back when node check arrives
+		- Any nodes listed in node check have their polling disabled.
+	- Master:
+		- Polling with timeout for node check from each slave
+			- Start timeout clock when all nodes but 1 have 
+				responded. MPI_Wtime, in units of MPI_Wtick
+		- Upon poll completion, check for timeout nodes. 
+			- Add to list
+			- Error report
+			- Cannot use MPI_Gather because we may lose nodes.
+		- Immediately send out node check msg (which has list of nodes
+			to drop) for next clock tick.
+			- Could use MPI_Bcast or MPI_Scatter
+
+In either case, we need more control of the polling by the ParTick
+- Separate Barrier function on the parShared msg.
+	- Flag in the ParTick to indicate if Barrier is to be called.
+- Node check function, in due course.
+- ParSched or equivalent to set these things up in a variety of modes:
+
+
+Implemented and compiled the minimal approach using a barrier. Clears 
+single-node unit tests. Crashes when we try to run on > 1 node. Issue
+looks like with IdManager::scratchId().
+
+==============================================================================

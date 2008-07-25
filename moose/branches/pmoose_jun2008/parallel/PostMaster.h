@@ -62,6 +62,12 @@ class PostMaster
 		 */
 		static void setRemoteNode( const Conn* c, unsigned int node );
 
+		/**
+		 * Hack for handling shell-shell messages across nodes.
+		 */
+		static Id getShellProxy( Eref e );
+		static void setShellProxy( const Conn* c, Id value );
+
 		//////////////////////////////////////////////////////////////
 		// Function to stuff data into async buffer. Used mostly
 		// for testing.
@@ -91,6 +97,11 @@ class PostMaster
 		static void postSend( const Conn* c, int ordinal );
 		void innerPostSend( );
 
+		/**
+		 * Executes an MPI::Barrier command if this is postmaster 0
+		 */
+		static void barrier( const Conn* c );
+
 		/*
 		void addIncomingFunc( unsigned int connId, unsigned int index );
 		// This static function handles response to an addmsg request,
@@ -110,6 +121,8 @@ class PostMaster
 		vector< ParSyncMsgInfo > syncInfo_;
 
 		bool donePoll_;
+
+		Id shellProxy_; // Hack for msgs between shells on different nodes.
 		
 		MPI::Request request_;
 		MPI::Status status_;
@@ -153,6 +166,10 @@ class AsyncStruct {
 
 		unsigned int size() const {
 			return size_;
+		}
+
+		void hackProxy( Id shellProxy_ ) {
+			proxy_ = shellProxy_;
 		}
 
 	private:

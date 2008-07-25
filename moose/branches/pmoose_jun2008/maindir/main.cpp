@@ -31,7 +31,7 @@
 #endif //USE_READLINE
 
 extern int mooseInit();
-extern void initMPI( int argc, char** argv); // Defined in mpiSetup.cpp
+extern bool initMPI( int argc, char** argv); // Defined in mpiSetup.cpp
 extern void terminateMPI( unsigned int mynode );
 extern void pollPostmaster(); 
 extern void setupDefaultSchedule(Element* t0, Element* t1, Element* cj);
@@ -63,21 +63,23 @@ extern void setupDefaultSchedule(Element* t0, Element* t1, Element* cj);
 
 int main(int argc, char** argv)
 {
-	unsigned int mynode = 0;
-        // TODO : check the repurcussions of MPI command line
-        ArgParser::parseArguments(argc, argv);
+	// TODO : check the repurcussions of MPI command line
+	ArgParser::parseArguments(argc, argv);
+
+	Property::initialize(ArgParser::getConfigFile(),Property::PROP_FORMAT);
+	PathUtility simpathHandler(ArgParser::getSimPath());
+	simpathHandler.addPath(Property::getProperty(Property::SIMPATH)); // merge the SIMPATH from command line and property file
+	Property::setProperty(Property::SIMPATH, simpathHandler.getAllPaths()); // put the updated path list in Property
+	cout << "SIMPATH = " << Property::getProperty(Property::SIMPATH) << endl;
         
-        Property::initialize(ArgParser::getConfigFile(),Property::PROP_FORMAT);
-        PathUtility simpathHandler(ArgParser::getSimPath());
-        simpathHandler.addPath(Property::getProperty(Property::SIMPATH)); // merge the SIMPATH from command line and property file
-        Property::setProperty(Property::SIMPATH, simpathHandler.getAllPaths()); // put the updated path list in Property
-        cout << "SIMPATH = " << Property::getProperty(Property::SIMPATH) << endl;
-        
-        mooseInit();
+	mooseInit();
+	///////////////////////////////////////////////////////////////////
+	//	Here we connect up the postmasters to the shell and the ParTick.
+	///////////////////////////////////////////////////////////////////
+	unsigned int mynode = initMPI( argc, argv );
         
 #ifdef DO_UNIT_TESTS
-	// if ( mynode == 0 )
-	if ( 1 )
+	if ( mynode == 0 )
 	{
 		testBasecode();
 		testNeutral();
@@ -94,25 +96,6 @@ int main(int argc, char** argv)
 	}
 #endif
 
-#ifdef CRL_MPI
-	int iMyRank;
-	int iProvidedThreadSupport;
-	int iRequiredThreadSupport = MPI_THREAD_SINGLE;
-
-	MPI_Init_thread(&argc, &argv, iRequiredThreadSupport, &iProvidedThreadSupport);
-	if(iProvidedThreadSupport != iRequiredThreadSupport)
-	{
-		cout<<endl<<"Error: Expected thread support not provided"<<endl<<flush;
-		MPI_Finalize();
-		exit(1);
-	}
-	MPI_Comm_rank(MPI_COMM_WORLD, &iMyRank);
-#endif
-
-	///////////////////////////////////////////////////////////////////
-	//	Here we connect up the postmasters to the shell and the ParTick.
-	///////////////////////////////////////////////////////////////////
-	initMPI( argc, argv );
 
 #ifdef USE_GENESIS_PARSER
 	if ( mynode == 0 ) {
@@ -137,6 +120,7 @@ int main(int argc, char** argv)
                 Id t0("/sched/cj/t0");
                 Id t1("/sched/cj/t1");
                 
+		// Doesn't do much. Just sets dt and stage, and cals reset.
 		setupDefaultSchedule( t0(), t1(), cj() );
 
 		const Finfo* parseFinfo = sli->findFinfo( "parse" );
@@ -179,6 +163,10 @@ int main(int argc, char** argv)
 			pollPostmaster();
 			
 			// gui stuff here maybe.
+		}
+	} else { // All but master node.
+		while( 1 ) {
+			pollPostmaster();
 		}
 	}
 #endif
