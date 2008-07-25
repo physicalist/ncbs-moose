@@ -17,18 +17,26 @@
 #include "../element/Neutral.h"
 
 extern void testPostMaster();
+extern bool setupProxyMsg(
+	unsigned int srcNode, Id proxy, unsigned int srcFuncId,
+	Id dest, int destMsg );
+
 
 using namespace std;
 
 static Element* pj = 0;
 static const Finfo* stepFinfo;
 
-void initMPI( int argc, char** argv )
+/**
+ * Initializes MPI as well as scheduling and cross-node shell messaging.
+ * Returns node number.
+ */
+unsigned int initMPI( int argc, char** argv )
 {
 #ifdef USE_MPI
 	MPI::Init( argc, argv );
 	unsigned int totalnodes = MPI::COMM_WORLD.Get_size();
-	unsigned int mynode = MPI::COMM_WORLD.Get_rank();
+	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
 	bool ret;
 
 	Element* postmasters =
@@ -38,24 +46,11 @@ void initMPI( int argc, char** argv )
 		Eref pe = Eref( postmasters, i );
 		set< unsigned int >( pe, "remoteNode", i );
 	}
-	/*
-	vector< Element* > post;
-	post.reserve( totalnodes );
-	for ( unsigned int i = 0; i < totalnodes; i++ ) {
-		char name[10];
-		if ( i == mynode ) {
-			post[i] = 0;
-		} else {
-			sprintf( name, "node%d", i );
-			Element* p = Neutral::create(
-					"PostMaster", name, postmasters->id(), Id::scratchId());
-			assert( p != 0 );
-			set< unsigned int >( p, "remoteNode", i );
-			post[i] = p;
-		}
-	}
-	*/
-	Id::setNodes( mynode, totalnodes );
+	Id::setNodes( myNode, totalnodes );
+
+	// Breakpoint for parallel debugging
+	bool glug = (argc == 2 && strncmp( argv[1], "-m", 2 ) == 0 );
+	while ( glug );
 
 	// This one handles parser and postmaster scheduling.
 	Id sched( "/sched" );
@@ -68,6 +63,8 @@ void initMPI( int argc, char** argv )
 		Neutral::create( "ClockJob", "pj", sched, Id::scratchId() );
 	Element* t0 =
 			Neutral::create( "ParTick", "t0", cj, Id::scratchId() );
+	set< int >( t0, "barrier", 1 ); // when running, ensure sync after t0
+
 	Element* pt0 =
 			Neutral::create( "ParTick", "t0", pj->id(), Id::scratchId() );
 
@@ -76,14 +73,8 @@ void initMPI( int argc, char** argv )
 	///////////////////////////////////////////////////////////////////
 	Id shellId( "/shell" );
 	Element* shell = shellId();
-	const Finfo* serialFinfo = shell->findFinfo( "serial" );
-	assert( serialFinfo != 0 );
-	/*
-	const Finfo* masterFinfo = shell->findFinfo( "master" );
-	assert( masterFinfo != 0 );
-	const Finfo* slaveFinfo = shell->findFinfo( "slave" );
-	assert( slaveFinfo != 0 );
-	*/
+	const Finfo* parallelFinfo = shell->findFinfo( "parallel" );
+	assert( parallelFinfo != 0 );
 	const Finfo* pollFinfo = shell->findFinfo( "pollSrc" );
 	assert( pollFinfo != 0 );
 	const Finfo* tickFinfo = t0->findFinfo( "parTick" );
@@ -92,44 +83,38 @@ void initMPI( int argc, char** argv )
 	stepFinfo = pj->findFinfo( "step" );
 	assert( stepFinfo != 0 );
 
-	// Breakpoint for parallel debugging
-	/*
-	bool glug = (argc == 2 && 
-		strcmp( argv[1], "-debug" ) == 0 );
-	while ( glug );
-	*/
+
 	Eref shellE = shellId.eref();
-	vector< Element* >::iterator j;
-	/*
-	for ( j = post.begin(); j != post.end(); j++ ) {
-		if ( *j == 0 )
-			continue;
-		ret = shellE.add( "serial", *j, "data");
-		assert( ret );
-		ret = 0;
 
-		assert( ret );
-		ret = Eref( t0 ).add( "parTick", *j, "parTick" );
-		assert( ret );
-		ret = Eref( pt0 ).add( "parTick", *j, "parTick" );
-		assert( ret );
+	SetConn c( shellE );
+	// Here we need to set up the local connections that will become
+	// connections between shell on this node to all other onodes
+	// Shell::addParallelSrc( &c, 
 
-		if ( mynode == 0 ) {
-			ret = shellE.add( "master", *j, "data" );
-			// ret = masterFinfo->add( shell, *j, (*j)->findFinfo( "data" ) );
-			assert( ret );
-		} else {
-			ret = shellE.add( "slave", *j, "data" );
-			// ret = slaveFinfo->add( shell, *j, (*j)->findFinfo( "data" ) );
-			assert( ret );
-		}
+	for ( unsigned int i = 0; i < totalnodes; i++ ) {
+		if ( i != myNode);
+		bool ret = setupProxyMsg( i, 
+			shellId, parallelFinfo->asyncFuncId(), 
+			shellId, parallelFinfo->msg()
+		);
+		assert( ret != 0 );
 	}
-	*/
+
+	ret = shellE.add( "pollSrc", pj, "step" );
+	assert( ret );
+
+	vector< Element* >::iterator j;
 	ret = shellE.add( "pollSrc", pj, "step" );
 	// ret = pollFinfo->add( shell, pj, pj->findFinfo( "step" ) );
 	assert( ret );
+	ret = Eref( t0 ).add( "parTick", postmasters , "parTick",
+		ConnTainer::One2All );
+	assert( ret );
+	ret = Eref( pt0 ).add( "parTick", postmasters, "parTick",
+		ConnTainer::One2All );
+	assert( ret );
 
-	// cout << "On " << mynode << ", shell: " << shell->name() << endl;
+	// cout << "On " << myNode << ", shell: " << shell->name() << endl;
 	// shell->dumpMsgInfo();
 	set( cj.eref(), "resched" );
 	set( pj, "resched" );
@@ -137,19 +122,22 @@ void initMPI( int argc, char** argv )
 	set( pj, "reinit" );
 #ifdef DO_UNIT_TESTS
 	MPI::COMM_WORLD.Barrier();
-	if ( mynode == 0 )
+	if ( myNode == 0 )
 		cout << "\nInitialized " << totalnodes << " nodes\n";
 	MPI::COMM_WORLD.Barrier();
 	testPostMaster();
 #endif // DO_UNIT_TESTS
+	return myNode;
+#else // USE_MPI
+	return 0
 #endif // USE_MPI
 }
 
-void terminateMPI( unsigned int mynode )
+void terminateMPI( unsigned int myNode )
 {
 #ifdef USE_MPI
 	Eref shell = Id::shellId().eref();
-	if ( mynode != 0 ) {
+	if ( myNode != 0 ) {
 		bool ret = set( shell, "poll" );
 		assert( ret );
 	}

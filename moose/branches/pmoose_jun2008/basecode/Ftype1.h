@@ -131,6 +131,9 @@ template < class T > class Ftype1: public Ftype
 			 * We do a few assert tests in downstream functions
 			 * for any such attempts
 			 * to search for a Finfo based on the index.
+			 *
+			 * Jul 2008: I think actually this is OK with specific conn
+			 * indices, but does not handle AnyIndex
 			 */
 			virtual bool set( Eref e, const Finfo* f, T v ) const {
 				void (*set)( const Conn*, T v ) =

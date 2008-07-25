@@ -13,13 +13,19 @@ class ParTick: public Tick
 {
 	public:
 		ParTick()
-			: Tick(), pendingCount_( 0 )
+			: Tick(), pendingCount_( 0 ), barrier_( 0 )
 		{
 			;
 		}
 
 		virtual ~ParTick( )
 		{ ; }
+
+		///////////////////////////////////////////////////////
+		// Functions for Fields
+		///////////////////////////////////////////////////////
+		static void setBarrier( const Conn* c, int v );
+		static int getBarrier( Eref e );
 
 		///////////////////////////////////////////////////////
 		// Functions for DestMessages
@@ -41,8 +47,9 @@ class ParTick: public Tick
 		bool pendingData() const;
 
 	private:
-		vector< bool > pendingNodes_;
-		unsigned int pendingCount_;
+		vector< bool > pendingNodes_; // Entries are true if node is pending
+		unsigned int pendingCount_; // How many nodes remain to finish poll
+		bool barrier_; // True if this Tick should end with a barrier.
 };
 
 #endif // _ParTick_h

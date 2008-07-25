@@ -43,7 +43,12 @@ const Cinfo* initPostMasterCinfo()
 		// The fourth entry is for harvesting the poll request.
 		// The argument is the node number handled by the postmaster.
 		// It comes back when the polling on that postmaster is done.
-		new SrcFinfo( "harvestPoll", Ftype1< unsigned int >::global() )
+		new SrcFinfo( "harvestPoll", Ftype1< unsigned int >::global() ),
+
+		// The last entry tells targets to execute a Barrier command,
+		// in order to synchronize all nodes.
+		new DestFinfo( "barrier", Ftype0::global(), 
+			RFCAST( &PostMaster::barrier ) ),
 	};
 
 	static Finfo* serialShared[] =
@@ -66,6 +71,12 @@ const Cinfo* initPostMasterCinfo()
 					ValueFtype1< unsigned int >::global(),
 					GFCAST( &PostMaster::getRemoteNode ),
 					RFCAST( &PostMaster::setRemoteNode )
+		),
+		
+		new ValueFinfo( "shellProxy", 
+					ValueFtype1< Id >::global(),
+					GFCAST( &PostMaster::getShellProxy ),
+					RFCAST( &PostMaster::setShellProxy )
 		),
 
 		// derived from DestFinfo, main difference is it accepts all
@@ -115,7 +126,9 @@ PostMaster::PostMaster()
 	sendBuf_( 1000, 0 ), 
 	sendBufPos_( 0 ), 
 	recvBuf_( 1000, 0 ), 
-	donePoll_( 0 ), comm_( &MPI::COMM_WORLD )
+	donePoll_( 0 ), 
+	shellProxy_(), // Initializes to a null Id.
+	comm_( &MPI::COMM_WORLD )
 {
 	localNode_ = MPI::COMM_WORLD.Get_rank(); 
 	request_ = 0;
@@ -138,6 +151,16 @@ unsigned int PostMaster::getRemoteNode( Eref e )
 void PostMaster::setRemoteNode( const Conn* c, unsigned int node )
 {
 		static_cast< PostMaster* >( c->data() )->remoteNode_ = node;
+}
+
+Id PostMaster::getShellProxy( Eref e )
+{
+		return static_cast< PostMaster* >( e.data() )->shellProxy_;
+}
+
+void PostMaster::setShellProxy( const Conn* c, Id value )
+{
+		static_cast< PostMaster* >( c->data() )->shellProxy_ = value;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -201,6 +224,20 @@ bool setupProxyMsg( unsigned int srcNode,
 		}
 	}
 #endif
+	// Shell proxy hack section. This will all go away when we have
+	// proper cross-node array elements.
+	if ( proxy == Id::shellId() ) {
+		get< Id >( Id::postId( 0 ).eref(), "shellProxy", proxy );
+		if ( proxy == Id() ) { // Not yet defined
+			proxy = Id::scratchId();
+			pe = new ProxyElement( proxy, srcNode, pfid );
+			unsigned int numNodes = MPI::COMM_WORLD.Get_size();
+			for ( unsigned int i = 0; i < numNodes; i++ )
+				set< Id >( Id::postId( i ).eref(), "shellProxy", proxy );
+		}
+	}
+
+	// Regular setup for proxies.
 	if ( proxy.isProxy() ) {
 		pe = proxy();
 	} else {
@@ -255,11 +292,15 @@ void PostMaster::innerPostIrecv()
 {
 	// cout << "!" << flush;
 	// cout << "inner PostIrecv on node " << localNode_ << " from " << remoteNode_ << endl << flush;
-	request_ = comm_->Irecv(
-		&( recvBuf_[0] ), recvBuf_.size(), MPI_CHAR, 
-			remoteNode_, DATA_TAG );
-	// cout << inBufSize_ << " innerPostIrecv: request_ empty?" << ( request_ == static_cast< MPI::Request >( 0 ) ) << "\n";
-	donePoll_ = 0;
+	if ( localNode_ != remoteNode_ ) {
+		request_ = comm_->Irecv(
+			&( recvBuf_[0] ), recvBuf_.size(), MPI_CHAR, 
+				remoteNode_, DATA_TAG );
+		// cout << inBufSize_ << " innerPostIrecv: request_ empty?" << ( request_ == static_cast< MPI::Request >( 0 ) ) << "\n";
+		donePoll_ = 0;
+	} else {
+		donePoll_ = 1;
+	}
 }
 
 void PostMaster::postIrecv( const Conn* c, int ordinal )
@@ -311,13 +352,11 @@ unsigned int proxy2tgt( const AsyncStruct& as, char* data )
 void PostMaster::innerPoll( const Conn* c )
 {
 	Eref e = c->target();
-	unsigned int pollMsgIndex = c->targetIndex();
-	// Look up the irecv'ed data here
 	// cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( donePoll_ )
 			return;
 	if ( !request_ ) {
-		sendTo1< unsigned int >( e, pollSlot, pollMsgIndex, remoteNode_ );
+		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
 		donePoll_ = 1;
 		return;
 	}
@@ -328,6 +367,10 @@ void PostMaster::innerPoll( const Conn* c )
 		request_ = 0;
 		if ( dataSize < sizeof( unsigned int ) ) return;
 
+		if ( syncInfo_.size() > 0 ) {
+			// Here we deal with SyncFinfos
+		}
+
 		// Handle async data in the buffer
 		char* data = &( recvBuf_[ 0 ] );
 		unsigned int nMsgs = *static_cast< const unsigned int* >(
@@ -335,6 +378,11 @@ void PostMaster::innerPoll( const Conn* c )
 		data += sizeof( unsigned int );
 		for ( unsigned int i = 0; i < nMsgs; i++ ) {
 			AsyncStruct as( data );
+
+			///\todo: temporary hack to deal with shell-shell messaging
+			if ( as.proxy() == Id::shellId() )
+				as.hackProxy( shellProxy_ );
+
 			data += sizeof( AsyncStruct );
 			unsigned int size = proxy2tgt( as, data );
 			// assert( size == as.size() );
@@ -343,6 +391,18 @@ void PostMaster::innerPoll( const Conn* c )
 
 		donePoll_ = 1;
 	}
+	if ( syncInfo_.size() == 0 ) { // Do only one pass if it is async.
+		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
+		donePoll_ = 1;
+	}
+}
+
+void PostMaster::barrier( const Conn* c )
+{
+	// Just for paranoia: Only allow this function to be called for
+	// postmaster 0.
+	if ( static_cast< PostMaster* >( c->data() )->remoteNode_ == 0 )
+		MPI::COMM_WORLD.Barrier();
 }
 
 void PostMaster::poll( const Conn* c, int ordinal )
@@ -360,10 +420,12 @@ void PostMaster::innerPostSend( )
 	// send out the filled buffer here to the other nodes..
 	// cout << "*" << flush;
 	// cout << "sending " << outBufPos_ << " bytes: " << outBuf_ << endl << flush;
-	comm_->Send( &( sendBuf_[0] ), sendBufPos_, 
-		MPI_CHAR, remoteNode_, DATA_TAG
-	);
-	sendBufPos_ = 0;
+	if ( localNode_ != remoteNode_ ) {
+		comm_->Send( &( sendBuf_[0] ), sendBufPos_, 
+			MPI_CHAR, remoteNode_, DATA_TAG
+		);
+		sendBufPos_ = 0;
+	}
 }
 
 void PostMaster::postSend( const Conn* c, int ordinal )

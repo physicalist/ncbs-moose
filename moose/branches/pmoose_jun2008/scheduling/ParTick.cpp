@@ -96,7 +96,14 @@ const Cinfo* initParTickCinfo()
 		// The argument is the node number handled by the postmaster.
 		// It comes back when the polling on that postmaster is done.
 		new DestFinfo( "harvestPoll", Ftype1< unsigned int >::global(),
-						RFCAST( &ParTick::pollFunc ) )
+						RFCAST( &ParTick::pollFunc ) ),
+
+		// The last entry is to tell targets to execute a Barrier
+		// command, used to synchronize all nodes.
+		// Warning: this message should only be called on a single
+		// target postmaster using sendTo. Otherwise each target postmaster
+		// will try to set a barrier.
+		new SrcFinfo( "barrier", Ftype0::global() ),
 	};
 
 
@@ -105,12 +112,10 @@ const Cinfo* initParTickCinfo()
 	///////////////////////////////////////////////////////
 	// Field definitions
 	///////////////////////////////////////////////////////
-			/*
-		new ValueFinfo( "dt", ValueFtype1< double >::global(),
-			GFCAST( &Tick::getDt ),
-			RFCAST( &Tick::setDt )
+		new ValueFinfo( "barrier", ValueFtype1< int >::global(),
+			GFCAST( &ParTick::getBarrier ),
+			RFCAST( &ParTick::setBarrier )
 		),
-		*/
 	///////////////////////////////////////////////////////
 	// Shared message definitions
 	///////////////////////////////////////////////////////
@@ -170,10 +175,31 @@ static const Slot sendSlot =
 	initParTickCinfo()->getSlot( "parTick.postSend" );
 static const Slot pollSlot = 
 	initParTickCinfo()->getSlot( "parTick.poll" );
+static const Slot barrierSlot = 
+	initParTickCinfo()->getSlot( "parTick.barrier" );
 
 ///////////////////////////////////////////////////
 // Field function definitions
 ///////////////////////////////////////////////////
+/**
+ * This is called to set the barrier flag. When it is true, then the
+ * ParTick terminates only when an MPI_barrier is crossed. This
+ * requires all nodes to cross the Barrier.
+ */
+void ParTick::setBarrier( const Conn* c, int v )
+{
+	
+	static_cast< ParTick* >( c->data() )->barrier_ = ( v != 0 );
+}
+
+/**
+ * The getStage just looks up the local stage, much less involved than
+ * the setStage function.
+ */
+int ParTick::getBarrier( Eref e )
+{
+	return static_cast< ParTick* >( e.data() )->barrier_;
+}
 
 
 ///////////////////////////////////////////////////
@@ -229,15 +255,17 @@ void ParTick::innerProcessFunc( Eref e, ProcInfo info )
 		// cout << "." << flush;
 		send1< int >( e, pollSlot, ordinal() );
 	}
+	// Phase 5: execute barrier to sync all nodes.
+	if ( barrier_ )
+		sendTo0( e, barrierSlot, 0 );
 }
 
 void ParTick::initPending( Eref e )
 {
 	const Msg* m = e.e->msg( pollSlot.msg() );
-	pendingCount_ = m->numTargets( e.e );
+	pendingCount_ = m->numTargets( e.e ) - 1;
 	// cout << "pendingCount = " << pendingCount_ << endl;
-	pendingNodes_.resize( pendingCount_ + 1 );
-	pendingNodes_.assign( pendingCount_ + 1, 1);
+	pendingNodes_.resize( pendingCount_ + 1, 1 );
 }
 
 /**
