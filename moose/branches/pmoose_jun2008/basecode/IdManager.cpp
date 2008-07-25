@@ -129,8 +129,8 @@ unsigned int IdManager::makeIdOnNode( unsigned int childNode )
 
 Element* IdManager::getElement( const Id& id ) const
 {
-	if ( id.id_ < mainIndex_ ) {
-		const Enode& ret = elementList_[ id.id_ ];
+	if ( id.id() < mainIndex_ ) {
+		const Enode& ret = elementList_[ id.id() ];
 #ifdef USE_MPI
 		if ( ret.node() == UNKNOWN_NODE ) {
 			// don't know how to handle this yet. It should trigger

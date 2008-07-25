@@ -16,7 +16,6 @@
 #include "../basecode/moose.h"
 #include "../element/Neutral.h"
 
-extern void testPostMaster();
 extern bool setupProxyMsg(
 	unsigned int srcNode, Id proxy, unsigned int srcFuncId,
 	Id dest, int destMsg );
@@ -37,7 +36,8 @@ unsigned int initMPI( int argc, char** argv )
 	MPI::Init( argc, argv );
 	unsigned int totalnodes = MPI::COMM_WORLD.Get_size();
 	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
-	bool ret;
+
+	Id::setNodes( myNode, totalnodes );
 
 	Element* postmasters =
 			Neutral::createArray( "PostMaster", "post", 
@@ -46,12 +46,26 @@ unsigned int initMPI( int argc, char** argv )
 		Eref pe = Eref( postmasters, i );
 		set< unsigned int >( pe, "remoteNode", i );
 	}
-	Id::setNodes( myNode, totalnodes );
 
 	// Breakpoint for parallel debugging
 	bool glug = (argc == 2 && strncmp( argv[1], "-m", 2 ) == 0 );
 	while ( glug );
 
+	return myNode;
+#else // USE_MPI
+	return 0
+#endif // USE_MPI
+}
+
+
+/**
+ * Initializes parallel scheduling.
+ */
+void initParSched()
+{
+#ifdef USE_MPI
+	unsigned int totalnodes = MPI::COMM_WORLD.Get_size();
+	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
 	// This one handles parser and postmaster scheduling.
 	Id sched( "/sched" );
 	Id cj( "/sched/cj" );
@@ -91,13 +105,15 @@ unsigned int initMPI( int argc, char** argv )
 	// connections between shell on this node to all other onodes
 	// Shell::addParallelSrc( &c, 
 
+	bool ret;
 	for ( unsigned int i = 0; i < totalnodes; i++ ) {
-		if ( i != myNode);
-		bool ret = setupProxyMsg( i, 
-			shellId, parallelFinfo->asyncFuncId(), 
-			shellId, parallelFinfo->msg()
-		);
-		assert( ret != 0 );
+		if ( i != myNode) {
+			ret = setupProxyMsg( i, 
+				shellId, parallelFinfo->asyncFuncId(), 
+				shellId, parallelFinfo->msg()
+			);
+			assert( ret != 0 );
+		}
 	}
 
 	ret = shellE.add( "pollSrc", pj, "step" );
@@ -107,6 +123,7 @@ unsigned int initMPI( int argc, char** argv )
 	ret = shellE.add( "pollSrc", pj, "step" );
 	// ret = pollFinfo->add( shell, pj, pj->findFinfo( "step" ) );
 	assert( ret );
+	Eref postmasters = Id::postId( Id::AnyIndex ).eref();
 	ret = Eref( t0 ).add( "parTick", postmasters , "parTick",
 		ConnTainer::One2All );
 	assert( ret );
@@ -120,16 +137,10 @@ unsigned int initMPI( int argc, char** argv )
 	set( pj, "resched" );
 	set( cj.eref(), "reinit" );
 	set( pj, "reinit" );
-#ifdef DO_UNIT_TESTS
 	MPI::COMM_WORLD.Barrier();
 	if ( myNode == 0 )
 		cout << "\nInitialized " << totalnodes << " nodes\n";
 	MPI::COMM_WORLD.Barrier();
-	testPostMaster();
-#endif // DO_UNIT_TESTS
-	return myNode;
-#else // USE_MPI
-	return 0
 #endif // USE_MPI
 }
 
@@ -152,3 +163,10 @@ void pollPostmaster()
 		assert( ret );
 	}
 }
+
+#ifndef USE_MPI
+void testPostMaster()
+{
+	// Dummy. The actual routine is in parallel/PostMaster.cpp.
+}
+#endif
