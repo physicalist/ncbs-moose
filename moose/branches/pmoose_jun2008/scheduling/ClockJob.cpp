@@ -92,6 +92,7 @@
 #include "moose.h"
 #include "../element/Neutral.h"
 #include "ClockJob.h"
+#include "../shell/Shell.h"
 
 const Cinfo* initClockJobCinfo()
 {
@@ -268,7 +269,7 @@ void ClockJob::startFunc( const Conn* c, double runtime)
 
 void ClockJob::startFuncLocal( Eref e, double runTime )
 {
-	// cout << "starting run for " << runTime << " sec.\n";
+	// cout << "starting run on " << Shell::myNode() << " for " << runTime << " sec.\n";
 
 	send2< ProcInfo, double >( e, startSlot, &info_, 
 					info_.currTime_ + runTime );
@@ -348,6 +349,10 @@ class TickSeq {
 			int stage_;
 };
 
+/**
+ * Builds up and sorts a list of clock Ticks. Ignores ones which have
+ * no targets.
+ */
 void ClockJob::reschedFuncLocal( Eref er )
 {
 	vector< Id > childList = Neutral::getChildList( er.e );
@@ -374,7 +379,7 @@ void ClockJob::reschedFuncLocal( Eref er )
 		const Finfo* procFinfo = (*i)()->findFinfo( "process" );
 		assert ( procFinfo != 0 );
 		unsigned int numTargets = ( *i )()->numTargets( procFinfo->msg() );
-		// unsigned int numTargets = ( *i )()->msg( procFinfo->msg() )->size();
+		numTargets += ( *i )()->numTargets( "parTick" );
 		if ( numTargets > 0 )
 			tickList.push_back( TickSeq( *i ) );
 	}

@@ -46,5 +46,5 @@ void* ProxyElement::data( unsigned int eIndex ) const
 {
 	Eref pe = Id::postId( node_ ).eref();
 	assert( pe.e != 0);
-	return pe->data( );
+	return pe.data( );
 }

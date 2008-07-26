@@ -324,6 +324,10 @@ void testSchedProcess()
 
 	FuncVec::sortFuncVec();
 /////////////////////////////////////////////////////////////////
+	if ( Shell::numNodes() > 1 ) {
+		cout << "\nSched process sequencing test not done because of multi-node complications";
+		return;
+	}
 	cout << "\nTesting sched process sequencing";
 	Element* n = Neutral::create( "Neutral", "n", Element::root()->id(),
 		Id::scratchId() );
@@ -367,7 +371,7 @@ void testSchedProcess()
 	s2 = Neutral::create( "Sched2", "s2", n->id(),
 		Id::scratchId() );
 
-	Element* shell = Neutral::create( "Shell", "tshell", Element::root()->id(),
+	Element* shell = Neutral::create( "Shell", "tshell", Id(),
 		Id::scratchId() );
 	// Element* shell = Id( "/shell" )();
 	ASSERT( shell != 0 , "shell creation");

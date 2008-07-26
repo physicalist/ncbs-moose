@@ -7376,5 +7376,23 @@ Checked in as revision 554 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
 Steady progress on cleanup, now we advance further into the execution on 2
 nodes before there is a crash. Seems to be dying during the node polling.
+Checked in as revision 555 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Minor changes in init.
+Looks like it now runs through and blocks at the poll.
+==============================================================================
+26 July 2008
+Slowly inching through fixes. Very tedious because it is multinode. 
+Current issue is that the Parallel Clock Job pj does not schedule its ParTicks
+for execution, because they do not have any process messages emanating
+from them. Never mind that they do have parTick messages going out to the
+postMasters. See mpiSetup.cpp and ClockJob.cpp
+
+Need to fix Conn::flip to take funcId if I want to be serious about it. Later.
+
+Recompiled whole mess, put in funcId in sendTo. That did the last bit,
+as far as I can see. Seems to have cleared the tests for 1 and 2 nodes, 
+possibly 4 as well. Loads of cout diagnostics obscure everything. But
+defintely time to check it in.
 
 ==============================================================================

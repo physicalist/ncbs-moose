@@ -38,7 +38,7 @@ extern void initSched();
 extern unsigned int initMPI( int argc, char** argv );
 extern void initParSched();
 extern void terminateMPI( unsigned int myNode );
-extern void pollPostmaster(); 
+extern void pollPostmaster();  // Defined in mpiSetup.cpp
 extern void setupDefaultSchedule(Element* t0, Element* t1, Element* cj);
 
 #ifdef DO_UNIT_TESTS
@@ -54,6 +54,7 @@ extern void setupDefaultSchedule(Element* t0, Element* t1, Element* cj);
 	extern void testBiophysics();
 	extern void testKinetics();
 //	extern void testAverage();
+	extern void testParMsgOnSingleNode();
 	extern void testPostMaster();
 #endif
 
@@ -103,8 +104,10 @@ int main(int argc, char** argv)
 		testBiophysics();
 		testKinetics();
 //		testAverage();
-		testPostMaster(); // This is a dummy if no postMaster exists.
+		testParMsgOnSingleNode();
 	}
+	// This is a special unit test: it MUST run on all nodes.
+	testPostMaster(); // This is a dummy if no postMaster exists.
 #endif
 
 

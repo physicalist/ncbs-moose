@@ -1396,13 +1396,14 @@ void testMess( Element* e, unsigned int numNodes )
 void printNodeInfo( const Conn* c )
 {
 	Element* post = c->source().e;
-	assert( post->className() == "PostMaster" );
-	unsigned int mynode;
-	unsigned int remotenode;
-	get< unsigned int >( post, "localNode", mynode );
-	get< unsigned int >( post, "remoteNode", remotenode );
+	assert( post->className() == "proxy" );
+	unsigned int mynode = Shell::myNode();
+	// unsigned int remotenode;
+	// get< unsigned int >( post, "localNode", mynode );
+	// get< unsigned int >( post, "remoteNode", remotenode );
 
-	cout << "on " << mynode << " from " << remotenode << ":";
+	// cout << "on " << mynode << " from " << remotenode << ":";
+	cout << "on " << mynode << ":";
 }
 
 void Shell::parGetField( const Conn* c, Id id, string field )

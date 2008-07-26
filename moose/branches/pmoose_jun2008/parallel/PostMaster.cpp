@@ -124,7 +124,8 @@ static const Slot testSlot =
 PostMaster::PostMaster()
 	: remoteNode_( 0 ), 
 	sendBuf_( 1000, 0 ), 
-	sendBufPos_( 0 ), 
+	sendBufPos_( sizeof( unsigned int ) ), 
+	numSendBufMsgs_( 0 ), 
 	recvBuf_( 1000, 0 ), 
 	donePoll_( 0 ), 
 	shellProxy_(), // Initializes to a null Id.
@@ -228,6 +229,11 @@ bool setupProxyMsg( unsigned int srcNode,
 	// proper cross-node array elements.
 	if ( proxy == Id::shellId() ) {
 		get< Id >( Id::postId( 0 ).eref(), "shellProxy", proxy );
+		proxy = Id::scratchId();
+		pe = new ProxyElement( proxy, srcNode, pfid );
+		set< Id >( Id::postId( srcNode ).eref(), "shellProxy", proxy );
+		assert( proxy.eref().data() == Id::postId( srcNode ).eref().data() );
+		/*
 		if ( proxy == Id() ) { // Not yet defined
 			proxy = Id::scratchId();
 			pe = new ProxyElement( proxy, srcNode, pfid );
@@ -235,6 +241,7 @@ bool setupProxyMsg( unsigned int srcNode,
 			for ( unsigned int i = 0; i < numNodes; i++ )
 				set< Id >( Id::postId( i ).eref(), "shellProxy", proxy );
 		}
+		*/
 	}
 
 	// Regular setup for proxies.
@@ -291,7 +298,7 @@ bool setupProxyMsg( unsigned int srcNode,
 void PostMaster::innerPostIrecv()
 {
 	// cout << "!" << flush;
-	// cout << "inner PostIrecv on node " << localNode_ << " from " << remoteNode_ << endl << flush;
+	cout << "inner PostIrecv on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( localNode_ != remoteNode_ ) {
 		request_ = comm_->Irecv(
 			&( recvBuf_[0] ), recvBuf_.size(), MPI_CHAR, 
@@ -352,7 +359,7 @@ unsigned int proxy2tgt( const AsyncStruct& as, char* data )
 void PostMaster::innerPoll( const Conn* c )
 {
 	Eref e = c->target();
-	// cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << endl << flush;
+	cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( donePoll_ )
 			return;
 	if ( !request_ ) {
@@ -363,7 +370,7 @@ void PostMaster::innerPoll( const Conn* c )
 	if ( request_.Test( status_ ) ) {
 		// Data has arrived. How big was it?
 		unsigned int dataSize = status_.Get_count( MPI_CHAR );
-		// cout << dataSize << " bytes of data arrived on " << localNode_ << " from " << remoteNode_ << endl << flush;
+		cout << dataSize << " bytes of data arrived on " << localNode_ << " from " << remoteNode_;
 		request_ = 0;
 		if ( dataSize < sizeof( unsigned int ) ) return;
 
@@ -376,6 +383,11 @@ void PostMaster::innerPoll( const Conn* c )
 		unsigned int nMsgs = *static_cast< const unsigned int* >(
 						static_cast< const void* >( data ) );
 		data += sizeof( unsigned int );
+
+		AsyncStruct foo( data );
+		cout << ", nMsgs = " << nMsgs << ", proxyId = " << foo.proxy() <<
+			", dataSize = " << foo.size() << ", func = " << foo.funcIndex() << endl;
+
 		for ( unsigned int i = 0; i < nMsgs; i++ ) {
 			AsyncStruct as( data );
 
@@ -397,17 +409,23 @@ void PostMaster::innerPoll( const Conn* c )
 	}
 }
 
-void PostMaster::barrier( const Conn* c )
+void PostMaster::innerBarrier( )
 {
 	// Just for paranoia: Only allow this function to be called for
 	// postmaster 0.
-	if ( static_cast< PostMaster* >( c->data() )->remoteNode_ == 0 )
+	cout << "Barrier on node " << localNode_ << " from " << remoteNode_ << endl << flush;
+	if ( remoteNode_ == 0 )
 		MPI::COMM_WORLD.Barrier();
 }
 
 void PostMaster::poll( const Conn* c, int ordinal )
 {
 	static_cast< PostMaster* >( c->data() )->innerPoll( c );
+}
+
+void PostMaster::barrier( const Conn* c )
+{
+	static_cast< PostMaster* >( c->data() )->innerBarrier( );
 }
 
 /**
@@ -418,14 +436,26 @@ void PostMaster::poll( const Conn* c, int ordinal )
 void PostMaster::innerPostSend( )
 {
 	// send out the filled buffer here to the other nodes..
-	// cout << "*" << flush;
-	// cout << "sending " << outBufPos_ << " bytes: " << outBuf_ << endl << flush;
+	char* data = &( sendBuf_[ 0 ] );
+	*static_cast< unsigned int* >( static_cast< void* >( data ) ) = 
+		numSendBufMsgs_;
+	cout << "sending " << sendBufPos_ << " bytes: " << &sendBuf_[0] <<
+		" from node " << localNode_ << " to " << remoteNode_;
 	if ( localNode_ != remoteNode_ ) {
 		comm_->Send( &( sendBuf_[0] ), sendBufPos_, 
 			MPI_CHAR, remoteNode_, DATA_TAG
 		);
-		sendBufPos_ = 0;
+
+		unsigned int nMsgs = *static_cast< const unsigned int* >(
+						static_cast< const void* >( data ) );
+		data += sizeof( unsigned int );
+		AsyncStruct foo( data );
+		cout << ", nMsgs = " << nMsgs << ", proxyId = " << foo.proxy() <<
+			", dataSize = " << foo.size() << ", func = " << foo.funcIndex() << endl;
+
 	}
+	sendBufPos_ = sizeof( unsigned int );
+	numSendBufMsgs_ = 0;
 }
 
 void PostMaster::postSend( const Conn* c, int ordinal )
@@ -522,6 +552,7 @@ void* PostMaster::innerGetAsyncParBuf( const Conn* c, unsigned int size )
 	*static_cast< AsyncStruct* >( static_cast< void* >( sendBufPtr ) ) = as;
 	sendBufPtr += sizeof( AsyncStruct );
 	sendBufPos_ += sizeof( AsyncStruct ) + size;
+	++numSendBufMsgs_;
 	return static_cast< void* >( sendBufPtr );
 }
 
@@ -537,6 +568,7 @@ void* PostMaster::innerGetAsyncParBuf( const Conn* c, unsigned int size )
 #include "../shell/Shell.h"
 
 extern void testMess( Element* e, unsigned int numNodes );
+extern void pollPostmaster(); // Defined in maindir/mpiSetup.cpp
 
 static Slot iSlot;
 static Slot xSlot;
@@ -740,7 +772,7 @@ void testParAsyncObj2Post()
 	bool ret = Eref( t ).add( "iSrc", p, "async" );
 	ASSERT( ret, "msg to post" );
 	TestParClass::sendI( &c );
-	char* abuf = &( pm->sendBuf_[0] );
+	char* abuf = &( pm->sendBuf_[ sizeof( unsigned int ) ] );
 	AsyncStruct as( abuf );
 	// int asyncMsgNum = p->findFinfo( "async" )->msg();
 	// int iSendMsgNum = t->findFinfo( "iSrc" )->msg();
@@ -757,7 +789,7 @@ void testParAsyncObj2Post()
 	ASSERT( i == tdata->i_, "sending int" );
 
 	// Send a double to the postmaster
-	pm->sendBufPos_ = 0;
+	pm->sendBufPos_ = sizeof( unsigned int );
 	tdata->x_ = 3.1415926535;
 	ret = Eref( t ).add( "xSrc", p, "async" );
 	ASSERT( ret, "msg to post" );
@@ -769,7 +801,7 @@ void testParAsyncObj2Post()
 	ASSERT( x == tdata->x_, "sending double" );
 
 	// Send a string to the postmaster
-	pm->sendBufPos_ = 0;
+	pm->sendBufPos_ = sizeof( unsigned int );
 	tdata->s_ = "Gleams that untravelled world";
 	ret = Eref( t ).add( "sSrc", p, "async" );
 	ASSERT( ret, "msg to post" );
@@ -780,7 +812,7 @@ void testParAsyncObj2Post()
 	ASSERT( s == tdata->s_, "sending string" );
 
 	// Send a vector of Ids to the postmaster
-	pm->sendBufPos_ = 0;
+	pm->sendBufPos_ = sizeof( unsigned int );
 	unsigned int nfoo = simpleWildcardFind( "/##", tdata->idVec_ );
 	ret = Eref( t ).add( "idVecSrc", p, "async" );
 	ASSERT( ret, "msg to post" );
@@ -792,7 +824,7 @@ void testParAsyncObj2Post()
 	ASSERT( foo == tdata->idVec_, "sending vector< Id >" );
 
 	// Send a vector of strings to the postmaster
-	pm->sendBufPos_ = 0;
+	pm->sendBufPos_ = sizeof( unsigned int );
 	tdata->sVec_.push_back( "whose margin fades" );
 	tdata->sVec_.push_back( "forever and forever" );
 	tdata->sVec_.push_back( "when I move" );
@@ -1328,19 +1360,34 @@ void testBidirectionalParMsg()
 	set( n, "destroy" );
 }
 
-
-void testPostMaster()
+/**
+ * This tests the basic parallel messaging using dummy calls on a single
+ * node.
+ */
+void testParMsgOnSingleNode()
 {
-	// First, ensure that all nodes are synced.
 	testParAsyncObj2Post();
 	testParAsyncObj2Post2Obj();
 	testShellSetupAsyncParMsg();
 	testBidirectionalParMsg();
+}
+
+/**
+ * This is an unusual unit test: it MUST run on all nodes, otherwise
+ * the system will freeze.
+ * First, it tests that the automatically set up messages between shells
+ * are OK.
+ * Then it sets up messages between tables, going across nodes,
+ * and confirms data transfer.
+ */
+void testPostMaster()
+{
+	cout << "\nTesting PostMaster across nodes";
+	Element* n = Neutral::create( "Neutral", "n", Id(), Id::scratchId() );
+	// First, ensure that all nodes are synced.
 	MPI::COMM_WORLD.Barrier();
 	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
 	unsigned int numNodes = MPI::COMM_WORLD.Get_size();
-	Id* postId = new Id[numNodes];
-	Eref post;
 	unsigned int i;
 	if ( myNode == 0 )
 		cout << "\nTesting PostMaster: " << numNodes << " nodes";
@@ -1349,35 +1396,73 @@ void testPostMaster()
 	// check that we have postmasters for each of the other nodes
 	// Print out a dot for each node.
 	///////////////////////////////////////////////////////////////
-	Id postMastersId = Id::postId( 0 );
-	ASSERT( !postMastersId.bad(), "postmasters element creation" );
-	Element* pms = postMastersId();
 	for ( i = 0; i < numNodes; i++ ) {
-		char name[10];
-		sprintf( name, "node%d", i );
-		Id id = Neutral::getChildByName( pms, name );
-		if ( myNode == i ) { // Should not exist locally.
-			ASSERT( id.bad(), "Checking local postmasters" )
-		} else {
-			ASSERT( !id.bad(), "Checking local postmasters" )
-			Element* p = id();
-			// cout << "name of what should be a postmaster: " << p->name() << endl << flush;
-			ASSERT( p->className() == "PostMaster", "Check PostMaster");
-			unsigned int remoteNode;
-			get< unsigned int >( p, "remoteNode", remoteNode );
-			ASSERT( remoteNode == i, "CheckPostMaster" );
+		Id id = Id::postId( i );
+		ASSERT( !id.bad(), "postmasters element creation" );
+		Eref p = id.eref();
+		ASSERT( p.e != 0, "Check PostMaster" );
+		ASSERT( p->className() == "PostMaster", "Check PostMaster");
+		unsigned int remoteNode;
+		get< unsigned int >( p, "remoteNode", remoteNode );
+		ASSERT( remoteNode == i, "CheckPostMaster" );
+	}
+
+	unsigned int numTargets = 
+		Id::shellId().eref().e->numTargets( "parallel" );
+	ASSERT( ( numTargets == numNodes - 1 ),
+		"Checking shell-shell messages" );
+	Conn * c = Id::shellId().eref().e->targets( "parallel", 0 );
+	i = 0;
+	while ( c->good() ) {
+		if ( i == myNode )
+			i++;
+		Id tgt = c->target().id();
+		ASSERT( tgt.isProxy(), "Checking shell-shell msgs" );
+		cout << "myNode = " << myNode << ", tgt node = " << tgt.node() << ", i = " << i << endl;
+		ASSERT( tgt.eref().data() == Id::postId( i ).eref().data(), 
+			"Checking proxy match to postmaster." );
+		i++;
+		c->increment();
+	}
+	delete c;
+
+	MPI::COMM_WORLD.Barrier();
+	cout << "b" << myNode;
+	MPI::COMM_WORLD.Barrier();
+	if ( myNode == 0 ) {
+		Slot remoteCreateSlot = 
+			initShellCinfo()->getSlot( "parallel.createSrc" );
+		for ( i = 1; i < numNodes; i++ ) {
+			char name[20];
+			sprintf( name, "tn%d", i );
+			string sname = name;
+			unsigned int tgt = ( i < myNode ) ? i : i - 1;
+			Id newId = Id::makeIdOnNode( i );
+			cout << "Create op: sendTo4( shellId, slot, " << tgt << ", "
+				<< "Neutral, " << sname << ", root, " << newId << endl;
+			sendTo4< string, string, Id, Id >(
+				Id::shellId().eref(), remoteCreateSlot, tgt,
+				"Neutral", sname, 
+				Id(), newId
+			);
 		}
-		postId[i] = id;
 	}
 	MPI::COMM_WORLD.Barrier();
-	
+	pollPostmaster(); // There is a barrier in the polling operation itself
+	pollPostmaster();
+	MPI::COMM_WORLD.Barrier();
+	char name[20];
+	sprintf( name, "/tn%d", myNode );
+	string sname = name;
+	Id tnId( sname );
+	if ( myNode != 0 )
+		ASSERT( tnId.good(), "postmaster created obj on remote node" );
+	MPI::COMM_WORLD.Barrier();
+#ifdef TABLE_DATA
 	///////////////////////////////////////////////////////////////
-	// This next test works on a single node too, for debugging.
-	// In the single node case it fudges things to look like 2 nodes.
-	// It tries to create a message from a table to a postmaster.
+	// Test message transfer between tables.
 	///////////////////////////////////////////////////////////////
 	// On all nodes, create a table and fill it up.
-	
 	Element* table = Neutral::create( "Table", "tab", Id(), 
 		Id::scratchId() );
 	// cout << myNode << ": tabId = " << table->id() << endl;
@@ -1396,12 +1481,14 @@ void testPostMaster()
 	}
 
 	MPI::COMM_WORLD.Barrier();
+	cout << "b" << myNode;
+	MPI::COMM_WORLD.Barrier();
 
 	if ( myNode == 0 ) {
 		// Here we are being sneaky because we have the same id on all 
 		// nodes.
 		for ( i = 1; i < numNodes; i++ ) {
-			post = postId[i].eref();
+			Eref post = Id::postId( i ).eref();
 			set< Id >( post, "targetId", table->id() );
 			set< string >( post, "targetField", "msgInput" );
 			bool ret = Eref( table ).add( "outputSrc", post, "data" );
@@ -1430,7 +1517,7 @@ void testPostMaster()
 	for ( i = 0; i < numNodes; i++ ) {
 		if ( i == myNode )
 			continue;
-		post = postId[i]();
+		// post = postId[i]();
 		// PostMaster* pdata = static_cast< PostMaster* >( post->data() );
 		sprintf( sendstr, "My name is Michael Caine %d,%d", myNode, i );
 
@@ -1467,7 +1554,7 @@ void testPostMaster()
 	// with the lower table index, regardless of whether the
 	// message is to or from the table.
 	////////////////////////////////////////////////////////////////
-	Element* n = Neutral::create( "Neutral", "n", Id(), Id::scratchId() );
+	
 	vector< Element* > tables( numNodes, 0 );
 	Id tickId;
 	lookupGet< Id, string >( cj, "lookupChild", tickId, "t0" );
@@ -1541,6 +1628,7 @@ void testPostMaster()
 			}
 		}
 	}
+#endif // TABLE_DATA
 	set( n, "destroy" );
 	MPI::COMM_WORLD.Barrier();
 

@@ -68,6 +68,7 @@ void initParSched()
 	Element* postmasters =
 			Neutral::createArray( "PostMaster", "post", 
 			Id::shellId(), Id::postId( 0 ), totalnodes );
+	assert( postmasters->numEntries() == totalnodes );
 	cerr << myNode << ".2b\n";
 	for ( unsigned int i = 0; i < totalnodes; i++ ) {
 		Eref pe = Eref( postmasters, i );
@@ -89,12 +90,13 @@ void initParSched()
 
 	Element* pt0 =
 			Neutral::create( "ParTick", "t0", pj->id(), Id::scratchId() );
+	set< int >( pt0, "barrier", 1 ); // when running, ensure sync after t0
 
 	///////////////////////////////////////////////////////////////////
 	//	Here we connect up the postmasters to the shell and the ParTick.
 	///////////////////////////////////////////////////////////////////
-	Id shellId( "/shell" );
-	Element* shell = shellId();
+	Eref shellE = Id::shellId().eref();
+	Element* shell = shellE.e;
 	const Finfo* parallelFinfo = shell->findFinfo( "parallel" );
 	assert( parallelFinfo != 0 );
 	const Finfo* pollFinfo = shell->findFinfo( "pollSrc" );
@@ -105,9 +107,6 @@ void initParSched()
 	stepFinfo = pj->findFinfo( "step" );
 	assert( stepFinfo != 0 );
 
-
-	Eref shellE = shellId.eref();
-
 	SetConn c( shellE );
 	// Here we need to set up the local connections that will become
 	// connections between shell on this node to all other onodes
@@ -117,10 +116,13 @@ void initParSched()
 	for ( unsigned int i = 0; i < totalnodes; i++ ) {
 		if ( i != myNode) {
 			ret = setupProxyMsg( i, 
-				shellId, parallelFinfo->asyncFuncId(), 
-				shellId, parallelFinfo->msg()
+				Id::shellId(), parallelFinfo->asyncFuncId(), 
+				Id::shellId(), parallelFinfo->msg()
 			);
 			assert( ret != 0 );
+			assert( Id::lastId().isProxy() );
+			assert( Id::lastId().eref().data() == 
+				Id::postId( i ).eref().data() ) ;
 		}
 	}
 
@@ -170,12 +172,18 @@ void terminateMPI( unsigned int myNode )
 void pollPostmaster()
 {
 	if ( pj != 0 ) {
+		if ( Shell::numNodes() > 1 )
+			cout << "Polling postmaster on node " << Shell::myNode() << endl;
 		bool ret = set< int >( pj, stepFinfo, 1 );
 		assert( ret );
 	}
 }
 
 #ifndef USE_MPI
+void testParMsgOnSingleNode()
+{
+	// Dummy. The actual routine is in parallel/PostMaster.cpp.
+}
 void testPostMaster()
 {
 	// Dummy. The actual routine is in parallel/PostMaster.cpp.

@@ -71,7 +71,7 @@ template< class T > void sendTo1( Eref e,
 			reinterpret_cast< void ( * )( const Conn*, T ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( e, tgt );
+	const Conn* j = m->findConn( e, tgt, src.func() );
 	rf( j,  val );
 	delete j;
 }
@@ -128,7 +128,7 @@ template< class T1, class T2 > void sendTo2( Eref e,
 			reinterpret_cast< void ( * )( const Conn*, T1, T2 ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( e, tgt );
+	const Conn* j = m->findConn( e, tgt, src.func() );
 	rf( j,  v1, v2 );
 	delete j;
 }
@@ -187,7 +187,7 @@ template< class T1, class T2, class T3 > void sendTo3(
 			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3 ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( e, tgt );
+	const Conn* j = m->findConn( e, tgt, src.func() );
 	rf( j,  v1, v2, v3 );
 	delete j;
 }
@@ -245,7 +245,7 @@ template< class T1, class T2, class T3, class T4 > void sendTo4(
 			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3, T4 ) >(
 			m->func( src.func() )
 		);
-	const Conn* j = m->findConn( e, tgt );
+	const Conn* j = m->findConn( e, tgt, src.func() );
 	rf( j,  v1, v2, v3, v4 );
 	delete j;
 }
