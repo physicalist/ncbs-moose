@@ -101,6 +101,7 @@ class PostMaster
 		 * Executes an MPI::Barrier command if this is postmaster 0
 		 */
 		static void barrier( const Conn* c );
+		void innerBarrier( );
 
 		/*
 		void addIncomingFunc( unsigned int connId, unsigned int index );
@@ -115,6 +116,7 @@ class PostMaster
 		unsigned int remoteNode_;
 		vector< char > sendBuf_;
 		unsigned int sendBufPos_;
+		unsigned int numSendBufMsgs_;
 
 		vector< char > recvBuf_;
 
@@ -168,8 +170,8 @@ class AsyncStruct {
 			return size_;
 		}
 
-		void hackProxy( Id shellProxy_ ) {
-			proxy_ = shellProxy_;
+		void hackProxy( Id shellProxy ) {
+			proxy_ = shellProxy;
 		}
 
 	private:

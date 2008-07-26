@@ -8,6 +8,7 @@
 **********************************************************************/
 #include "moose.h"
 #include "Tick.h"
+#include "../shell/Shell.h"
 
 /**
  * The Tick handles the nuts and bolts of scheduling. It sends the
@@ -425,6 +426,8 @@ void Tick::innerStart( Eref e, ProcInfo info, double maxTime )
 	static double JUST_OVER_ONE = 1.000000000001;
 	double endTime;
 	maxTime = maxTime * NEARLY_ONE;
+
+	cout << "Inner Start on node " << Shell::myNode() << endl;
 
 	while ( info->currTime_ < maxTime ) {
 		endTime = maxTime + dt_;

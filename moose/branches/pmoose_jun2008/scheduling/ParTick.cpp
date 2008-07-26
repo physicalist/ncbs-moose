@@ -265,7 +265,8 @@ void ParTick::initPending( Eref e )
 	const Msg* m = e.e->msg( pollSlot.msg() );
 	pendingCount_ = m->numTargets( e.e ) - 1;
 	// cout << "pendingCount = " << pendingCount_ << endl;
-	pendingNodes_.resize( pendingCount_ + 1, 1 );
+	pendingNodes_.resize( pendingCount_ + 1 );
+	pendingNodes_.assign( pendingCount_ + 1, 1 );
 }
 
 /**

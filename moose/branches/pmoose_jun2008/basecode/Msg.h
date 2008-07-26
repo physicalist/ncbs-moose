@@ -70,7 +70,7 @@ class Msg
 		/**
 		 * Iterator to the conn selected by the 'tgt' index.
 		 */
-		Conn* findConn( Eref e, unsigned int tgt ) const;
+		Conn* findConn( Eref e, unsigned int tgt, unsigned int funcId ) const;
 
 		/**
 		 * Follows through the link list of msgs to find one that matches
