@@ -1336,62 +1336,8 @@ void Shell::getField( const Conn* c, Id id, string field )
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Functions for implementing Master/Slave set
+// Functions for implementing cross-node operations.
 ////////////////////////////////////////////////////////////////////////
-
-// To be called from the node on which the Master shell resides.
-void testMess( Element* e, unsigned int numNodes )
-{
-/*
-	// Here we create a set of neutrals on all the slave nodes.
-	unsigned int startConn = e->connSrcBegin( rCreateSlot.msg() ) - 
-		e->lookupConn( 0 );
-	vector< Id > offNodeObjs( numNodes );
-	for ( unsigned int i = 1; i < numNodes; i++ ) {
-		offNodeObjs[ i ] = Id::makeIdOnNode( i );
-		sendTo4< string , string, Id, Id>( 
-			e, rCreateSlot, startConn + i - 1, 
-			"Neutral", "OffNodeCreateTest", 
-			Id::str2Id( "0" ), offNodeObjs[ i ] );
-	}
-
-	// This should return 'shell'
-	send2< Id, string >( e, rGetSlot, Id::str2Id( "1" ), "name" );
-
-	// send1< string >( e, recvGetSlot, "fieldvalue" );
-
-	// Poll the postmasters.
-	send1< int >( e, pollSlot, 1 );
-
-	// Here we assign new names to each of these neutrals
-	startConn = e->connSrcBegin( rSetSlot.msg() ) - e->lookupConn( 0 );
-	for ( unsigned int i = 1; i < numNodes; i++ ) {
-		char name[20];
-		sprintf( name, "OffNodeCreateTest_%d", i );
-		sendTo3< Id, string, string >( e, rSetSlot,
-			startConn + i - 1,
-			offNodeObjs[ i ], "name", name );
-	}
-	send1< int >( e, pollSlot, 1 );
-
-	// Here we check the names of the neutrals.
-	startConn = e->connSrcBegin( rGetSlot.msg() ) - e->lookupConn( 0 );
-	for ( unsigned int i = 1; i < numNodes; i++ ) {
-		char name[20];
-		sprintf( name, "OffNodeCreateTest_%d", i );
-		sendTo2< Id, string >( e, rGetSlot,
-			startConn + i - 1,
-			offNodeObjs[ i ], "name" );
-	}
-	send1< int >( e, pollSlot, 1 );
-
-	send4< Id, string, Id, string >( e, rAddSlot, 
-		Id::str2Id( "5432" ), "srcfield", Id::str2Id( "9876" ),
-		"destfield" );
-
-	send1< int >( e, pollSlot, 1 );
-*/
-}
 
 void printNodeInfo( const Conn* c )
 {
@@ -1408,7 +1354,7 @@ void printNodeInfo( const Conn* c )
 
 void Shell::parGetField( const Conn* c, Id id, string field )
 {
-	printNodeInfo( c );
+	// printNodeInfo( c );
 	// cout << "in slaveGetFunc on " << id << " with field :" << field << "\n";
 	if ( id.bad() )
 		return;
@@ -1426,7 +1372,7 @@ void Shell::parGetField( const Conn* c, Id id, string field )
 void Shell::recvGetRequest( const Conn* c, string value )
 {
 	printNodeInfo( c );
-	cout << "in recvGetFunc with field value :'" << value << "'\n";
+	cout << "in recvGetFunc with field value :'" << value << endl << flush;
 	// send off to parser maybe.
 	// Problem if multiple parsers.
 	// Bigger problem that this is asynchronous now.
@@ -1439,7 +1385,7 @@ void Shell::parCreateFunc ( const Conn* c,
 				string objtype, string objname, 
 				Id parent, Id newobj )
 {
-	printNodeInfo( c );
+	// printNodeInfo( c );
 	// cout << "in slaveCreateFunc :" << objtype << " " << objname << " " << parent << " " << newobj << "\n";
 
 	Shell* s = static_cast< Shell* >( c->data() );
