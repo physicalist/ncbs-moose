@@ -7416,3 +7416,11 @@ Next stuff:
 
 Test to 'get' values across nodes works. Quite painlessly. It is going to be
 much trickier, though, to get it to work through the parser.
+
+Checked in as revision 558 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Test to 'set' values across nodes works, also painless. Easy to make it a
+unit test. But I now have issues when I run the MPI on 3, 5, 6 or 7 nodes.
+The 7 node variant crashes. The others miss out one or more of the 'get'
+operations.
+2, 4, 8, 16 are OK. Wonder if it is an MPI issue or MOOSE?

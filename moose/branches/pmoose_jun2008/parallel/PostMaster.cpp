@@ -566,7 +566,6 @@ void* PostMaster::innerGetAsyncParBuf( const Conn* c, unsigned int size )
 #include "../builtins/Table.h"
 #include "../shell/Shell.h"
 
-extern void testMess( Element* e, unsigned int numNodes );
 extern void pollPostmaster(); // Defined in maindir/mpiSetup.cpp
 
 static Slot iSlot;
@@ -1388,7 +1387,7 @@ void testPostMaster()
 	unsigned int numNodes = MPI::COMM_WORLD.Get_size();
 	unsigned int i;
 	if ( myNode == 0 )
-		cout << "\nTesting PostMaster: " << numNodes << " nodes";
+		cout << "\nTesting PostMaster: " << numNodes << " nodes" << flush;
 	MPI::COMM_WORLD.Barrier();
 	///////////////////////////////////////////////////////////////
 	// check that we have postmasters for each of the other nodes
@@ -1456,6 +1455,7 @@ void testPostMaster()
 	// value to come back. Note that the return must be asynchronous:
 	// the parser cannot block since we need to execute MPI polling
 	// operations on either side.
+	// Not sure how to make this an invisible unit test.
 	/////////////////////////////////////////////////////////////////
 	char name[20];
 	sprintf( name, "/tn%d", myNode );
@@ -1482,7 +1482,36 @@ void testPostMaster()
 	MPI::COMM_WORLD.Barrier();
 	pollPostmaster(); // There is a barrier in the polling operation itself
 	pollPostmaster();
+	//////////////////////////////////////////////////////////////////
+	// Now test 'set' across nodes. This fits nicely as a unit test.
+	//////////////////////////////////////////////////////////////////
 	MPI::COMM_WORLD.Barrier();
+	if ( myNode == 0 ) {
+		cout << "\ntesting parallel set" << flush;
+		Slot parSetSlot = 
+			initShellCinfo()->getSlot( "parallel.setSrc" );
+		for ( i = 1; i < numNodes; i++ ) {
+			sprintf( name, "bar%d", i * 10 );
+			sname = name;
+			unsigned int tgt = ( i < myNode ) ? i : i - 1;
+			// objId, field, value
+			sendTo3< Id, string, string >(
+				Id::shellId().eref(), parSetSlot, tgt,
+				testIds[i - 1], "name", sname
+			);
+		}
+	}
+	MPI::COMM_WORLD.Barrier();
+	pollPostmaster(); // There is a barrier in the polling operation itself
+	if ( myNode != 0 ) {
+		sprintf( name, "/bar%d", myNode * 10 );
+		sname = name;
+		Id checkId( sname );
+		// cout << "On " << myNode << ", checking id for " << sname << ": " << checkId << endl;
+		ASSERT( checkId.good(), "parallel set" );
+		cout << flush;
+	}
+
 #ifdef TABLE_DATA
 	///////////////////////////////////////////////////////////////
 	// Test message transfer between tables.
@@ -1656,12 +1685,6 @@ void testPostMaster()
 #endif // TABLE_DATA
 	set( n, "destroy" );
 	MPI::COMM_WORLD.Barrier();
-
-	Id shellId( "/shell", "/" );
-	Element* shell = shellId();
-	if ( myNode == 0 ) {
-		testMess( shell, numNodes );
-	}
 }
 #endif
 
