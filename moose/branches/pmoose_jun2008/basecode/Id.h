@@ -154,7 +154,7 @@ class Id
 		/**
 		 * Returns a string holding the ascii value of the id_ .
 		 */
-                static std::string id2str( Id id );
+		static std::string id2str( Id id );
 
 		//////////////////////////////////////////////////////////////
 		//	Here we have a set of status check functions for ids.
@@ -235,6 +235,26 @@ class Id
 		unsigned int id_; // Unique identifier for Element*
 		unsigned int index_; // Index of array entry within element.
 		static IdManager& manager();
+};
+
+/**
+ * Extension of Id class, used in passing ids around between nodes, so
+ * that their node info is retained. See Shell::addParallelSrc
+ */
+class Nid: public Id
+{
+	public:
+		Nid();
+
+		Nid( Id id );
+
+		Nid( Id id, unsigned int node );
+
+		unsigned int node() const {
+			return node_;
+		}
+	private:
+		unsigned int node_;
 };
 
 #endif // _ID_H

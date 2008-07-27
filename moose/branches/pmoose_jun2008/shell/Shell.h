@@ -247,9 +247,9 @@ class Shell
 		// functions for implementing inter-node shell-shell messaging
 		////////////////////////////////////////////////////////////////////
 		static void addParallelSrc( const Conn* c,
-			Id src, string srcField, Id dest, string destField );
+			Nid src, string srcField, Nid dest, string destField );
 		static void addParallelDest( const Conn* c,
-			Id src, string srcTypeStr, Id dest, string destField );
+			Nid src, string srcTypeStr, Nid dest, string destField );
 
 		static void parGetField( const Conn* c, Id id, string field );
 		static void recvGetRequest( const Conn* c, string value );

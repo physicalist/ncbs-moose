@@ -54,11 +54,19 @@ extern bool setupProxyMsg(
 	unsigned int srcNode, Id proxy, unsigned int srcFuncId, 
 	Id dest, int destMsg );
 
+/**
+ * This is called on the master node. For now we can get by with the
+ * implicit node info
+ */
 bool Shell::addSingleMessage( const Conn* c, Id src, string srcField, 
 	Id dest, string destField )
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
 	unsigned int srcNode = src.node();
+	cout << "in Shell::addSingleMessage, src=" << src << "." << srcNode <<
+		", srcField = " << srcField <<
+		", dest = " << dest << "." << dest.node() << 
+		", destField = " << destField << endl << flush;
 	if ( srcNode == sh->myNode_ ) {
 		if ( dest.node() == sh->myNode_ ) {
 			return addLocal( src, srcField, dest, destField );
@@ -67,14 +75,16 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
 			return 1;
 		}
 	} else { // Off-node source. Deal with it remotely.
+		unsigned int tgtMsg = 
+			( srcNode <= sh->myNode_ ) ? srcNode: srcNode - 1;
 		if ( dest.node() != srcNode ) {
-			sendTo4< Id, string, Id, string >( 
-				c->target(), addParallelSrcSlot, srcNode,
+			sendTo4< Nid, string, Nid, string >( 
+				c->target(), addParallelSrcSlot, tgtMsg,
 				src, srcField, dest, destField );
 		} else {
 			sendTo4< Id, string, Id, string >( 
 				c->target(),
-				addLocalSlot, srcNode,
+				addLocalSlot, tgtMsg,
 				src, srcField, dest, destField );
 		}
 		return 1;
@@ -84,19 +94,34 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
 
 /**
  * This is called from the same node that the src is on, to send a message
- * to a dest on a remote node.
+ * to a dest on a remote node. 
+ * Note that an Id does not carry node info within itself. So we use an
+ * Nid for the dest, as we need to retain node info.
  */
 void Shell::addParallelSrc( const Conn* c,
-	Id src, string srcField, Id dest, string destField )
+	Nid src, string srcField, Nid dest, string destField )
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
-	unsigned int srcNode = sh->myNode_;
+	//unsigned int srcNode = sh->myNode_;
 	unsigned int destNode = dest.node();
 	Eref se = src.eref();
 
-#ifndef DO_UNIT_TESTS
+	cout << "in Shell::addParallelSrc on node=" << sh->myNode_ << 
+		", src=" << src << "." << src.node() <<
+		", srcField = " << srcField <<
+		", dest = " << dest << "." << dest.node() << 
+		", destField = " << destField << endl << flush;
+
+#ifdef DO_UNIT_TESTS
+	Eref de = sh->getPost( destNode );
+	if ( de.e == 0 )
+		de = Id::postId( destNode ).eref();
+#else
 	// One of the unit tests puts them on the same node.
 	assert( destNode != srcNode );
+	assert( Id::postId( destNode ).good() );
+	assert( Id::postId( destNode ).eref().e != 0 );
+	Eref de = Id::postId( destNode ).eref();
 #endif
 
 	const Finfo* sf = se->findFinfo( srcField );
@@ -110,7 +135,7 @@ void Shell::addParallelSrc( const Conn* c,
 			dest, sf->asyncFuncId(), 
 			src, srcMsg );
 	} else {
-		ret = se.add( srcField, sh->getPost( destNode ), "async" );
+		ret = se.add( srcField, de, "async" );
 		// bool ret = add2Post( destNode, se, srcField );
 		// Need srcId to set up remote proxy
 		// Need src Finfo type to do type checking across nodes.
@@ -119,8 +144,10 @@ void Shell::addParallelSrc( const Conn* c,
 	}
 	string srcFinfoStr = se->className() + "." + sf->name();
 	if ( ret ) {
-		sendTo4< Id, string, Id, string >( 
-			c->target(), addParallelDestSlot, srcNode, 
+		unsigned int tgtMsg = 
+			( destNode <= sh->myNode_ ) ? destNode : destNode - 1;
+		sendTo4< Nid, string, Nid, string >( 
+			c->target(), addParallelDestSlot, tgtMsg, 
 			src, srcFinfoStr, dest, destField );
 			
 		// Set up an entry to check for completion. 
@@ -143,34 +170,37 @@ const Finfo* findFinfoOnCinfo( const string& name )
 }
 
 void Shell::addParallelDest( const Conn* c,
-	Id src, string srcField, Id dest, string destField )
+	Nid src, string srcField, Nid dest, string destField )
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
+	cout << "In Shell::addParallelDest on " << sh->myNode_ << endl << flush;
 
 	const Finfo* srcFinfo = findFinfoOnCinfo( srcField );
+	const Finfo* tgtFinfo;
+	unsigned int asyncFuncId = 0;
 
 	string errMsg = "";
 
 	if ( !srcFinfo )
 		errMsg = "Src Field: '" + srcField + "' not found on remote node";
 
-	if ( !( dest.good() && dest.node() == sh->myNode_ ) )
+	if ( !( dest.good() && dest.node() == sh->myNode_ ) ) {
 		errMsg = "Destination object not found on remote node ";
-
-	const Finfo* tgtFinfo = dest.eref()->findFinfo( destField );
-	if ( tgtFinfo == 0 )
-		errMsg = "Dest field: '" + destField + "' not found on remote node";
-
-	unsigned int asyncFuncId = tgtFinfo->asyncFuncId();
-	//unsigned int asyncFuncId = 0;
-
-	// Actually I should tap into respondToAdd here because it does
-	// all the tests systematically and also handles messages to fields.
-	// Only problem is that it needs the proxy element to already be
-	// made.
-	if ( !tgtFinfo->ftype()->isSameType( srcFinfo->ftype() ) )
-		errMsg = "Type mismatch between srcField '" + srcField + 
-		"' and destField '" + destField + "'";
+	} else {
+		tgtFinfo = dest.eref()->findFinfo( destField );
+		if ( tgtFinfo == 0 ) {
+			errMsg = "Dest field: '" + destField + "' not found on remote node";
+		} else {
+			asyncFuncId = tgtFinfo->asyncFuncId();
+			// Actually I should tap into respondToAdd here because it does
+			// all the tests systematically and also handles messages to
+			// fields. Only problem is that it needs the proxy element
+			// to already be made.
+			if ( !tgtFinfo->ftype()->isSameType( srcFinfo->ftype() ) )
+				errMsg = "Type mismatch between srcField '" + srcField + 
+				"' and destField '" + destField + "'";
+		}
+	}
 
 	/*
 	// Check for match of srcFinfo and tgtFinfo
@@ -180,6 +210,7 @@ void Shell::addParallelDest( const Conn* c,
 		*/
 	
 	if ( errMsg != "" ) {
+		cout << "addParallelDest" << errMsg << endl << flush;
 		sendBack3< string, Id, Id > ( c, parMsgErrorSlot, 
 			errMsg, src, dest );
 			return;
