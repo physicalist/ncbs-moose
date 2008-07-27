@@ -1381,7 +1381,6 @@ void testParMsgOnSingleNode()
  */
 void testPostMaster()
 {
-	cout << "\nTesting PostMaster across nodes";
 	Element* n = Neutral::create( "Neutral", "n", Id(), Id::scratchId() );
 	// First, ensure that all nodes are synced.
 	MPI::COMM_WORLD.Barrier();
@@ -1426,8 +1425,9 @@ void testPostMaster()
 	delete c;
 
 	MPI::COMM_WORLD.Barrier();
-	cout << "b" << myNode;
+	cout << "b" << myNode << flush;
 	MPI::COMM_WORLD.Barrier();
+	vector< Id >testIds;
 	if ( myNode == 0 ) {
 		Slot remoteCreateSlot = 
 			initShellCinfo()->getSlot( "parallel.createSrc" );
@@ -1437,6 +1437,7 @@ void testPostMaster()
 			string sname = name;
 			unsigned int tgt = ( i < myNode ) ? i : i - 1;
 			Id newId = Id::makeIdOnNode( i );
+			testIds.push_back( newId );
 			// cout << "Create op: sendTo4( shellId, slot, " << tgt << ", " << "Neutral, " << sname << ", root, " << newId << endl;
 			sendTo4< string, string, Id, Id >(
 				Id::shellId().eref(), remoteCreateSlot, tgt,
@@ -1449,12 +1450,38 @@ void testPostMaster()
 	pollPostmaster(); // There is a barrier in the polling operation itself
 	pollPostmaster();
 	MPI::COMM_WORLD.Barrier();
+	/////////////////////////////////////////////////////////////////
+	// Now test 'get' across nodes.
+	// Normally this is invoked by the parser, which expects a
+	// value to come back. Note that the return must be asynchronous:
+	// the parser cannot block since we need to execute MPI polling
+	// operations on either side.
+	/////////////////////////////////////////////////////////////////
 	char name[20];
 	sprintf( name, "/tn%d", myNode );
 	string sname = name;
 	Id tnId( sname );
-	if ( myNode != 0 )
+	if ( myNode != 0 ) {
 		ASSERT( tnId.good(), "postmaster created obj on remote node" );
+		sprintf( name, "foo%d", myNode * 2 );
+		sname = name;
+		set< string >( tnId.eref(), "name", sname );
+	}
+	MPI::COMM_WORLD.Barrier();
+	if ( myNode == 0 ) {
+		Slot parGetSlot = 
+			initShellCinfo()->getSlot( "parallel.getSrc" );
+		for ( i = 1; i < numNodes; i++ ) {
+			unsigned int tgt = ( i < myNode ) ? i : i - 1;
+			sendTo2< Id, string >(
+				Id::shellId().eref(), parGetSlot, tgt,
+				testIds[i - 1], "name"
+			);
+		}
+	}
+	MPI::COMM_WORLD.Barrier();
+	pollPostmaster(); // There is a barrier in the polling operation itself
+	pollPostmaster();
 	MPI::COMM_WORLD.Barrier();
 #ifdef TABLE_DATA
 	///////////////////////////////////////////////////////////////
