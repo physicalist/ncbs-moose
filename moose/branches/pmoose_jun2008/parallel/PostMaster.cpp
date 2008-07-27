@@ -298,7 +298,7 @@ bool setupProxyMsg( unsigned int srcNode,
 void PostMaster::innerPostIrecv()
 {
 	// cout << "!" << flush;
-	cout << "inner PostIrecv on node " << localNode_ << " from " << remoteNode_ << endl << flush;
+//	cout << "inner PostIrecv on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( localNode_ != remoteNode_ ) {
 		request_ = comm_->Irecv(
 			&( recvBuf_[0] ), recvBuf_.size(), MPI_CHAR, 
@@ -359,7 +359,7 @@ unsigned int proxy2tgt( const AsyncStruct& as, char* data )
 void PostMaster::innerPoll( const Conn* c )
 {
 	Eref e = c->target();
-	cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << endl << flush;
+	// cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( donePoll_ )
 			return;
 	if ( !request_ ) {
@@ -370,7 +370,7 @@ void PostMaster::innerPoll( const Conn* c )
 	if ( request_.Test( status_ ) ) {
 		// Data has arrived. How big was it?
 		unsigned int dataSize = status_.Get_count( MPI_CHAR );
-		cout << dataSize << " bytes of data arrived on " << localNode_ << " from " << remoteNode_;
+		// cout << dataSize << " bytes of data arrived on " << localNode_ << " from " << remoteNode_;
 		request_ = 0;
 		if ( dataSize < sizeof( unsigned int ) ) return;
 
@@ -385,8 +385,7 @@ void PostMaster::innerPoll( const Conn* c )
 		data += sizeof( unsigned int );
 
 		AsyncStruct foo( data );
-		cout << ", nMsgs = " << nMsgs << ", proxyId = " << foo.proxy() <<
-			", dataSize = " << foo.size() << ", func = " << foo.funcIndex() << endl;
+		// cout << ", nMsgs = " << nMsgs << ", proxyId = " << foo.proxy() << ", dataSize = " << foo.size() << ", func = " << foo.funcIndex() << endl;
 
 		for ( unsigned int i = 0; i < nMsgs; i++ ) {
 			AsyncStruct as( data );
@@ -413,7 +412,7 @@ void PostMaster::innerBarrier( )
 {
 	// Just for paranoia: Only allow this function to be called for
 	// postmaster 0.
-	cout << "Barrier on node " << localNode_ << " from " << remoteNode_ << endl << flush;
+	// cout << "Barrier on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( remoteNode_ == 0 )
 		MPI::COMM_WORLD.Barrier();
 }
@@ -439,19 +438,19 @@ void PostMaster::innerPostSend( )
 	char* data = &( sendBuf_[ 0 ] );
 	*static_cast< unsigned int* >( static_cast< void* >( data ) ) = 
 		numSendBufMsgs_;
-	cout << "sending " << sendBufPos_ << " bytes: " << &sendBuf_[0] <<
-		" from node " << localNode_ << " to " << remoteNode_;
+	// cout << "sending " << sendBufPos_ << " bytes: " << &sendBuf_[0] << " from node " << localNode_ << " to " << remoteNode_;
 	if ( localNode_ != remoteNode_ ) {
 		comm_->Send( &( sendBuf_[0] ), sendBufPos_, 
 			MPI_CHAR, remoteNode_, DATA_TAG
 		);
 
+		/*
 		unsigned int nMsgs = *static_cast< const unsigned int* >(
 						static_cast< const void* >( data ) );
 		data += sizeof( unsigned int );
 		AsyncStruct foo( data );
-		cout << ", nMsgs = " << nMsgs << ", proxyId = " << foo.proxy() <<
-			", dataSize = " << foo.size() << ", func = " << foo.funcIndex() << endl;
+		cout << ", nMsgs = " << nMsgs << ", proxyId = " << foo.proxy() << ", dataSize = " << foo.size() << ", func = " << foo.funcIndex() << endl;
+		*/
 
 	}
 	sendBufPos_ = sizeof( unsigned int );
@@ -1418,7 +1417,7 @@ void testPostMaster()
 			i++;
 		Id tgt = c->target().id();
 		ASSERT( tgt.isProxy(), "Checking shell-shell msgs" );
-		cout << "myNode = " << myNode << ", tgt node = " << tgt.node() << ", i = " << i << endl;
+		// cout << "myNode = " << myNode << ", tgt node = " << tgt.node() << ", i = " << i << endl;
 		ASSERT( tgt.eref().data() == Id::postId( i ).eref().data(), 
 			"Checking proxy match to postmaster." );
 		i++;
@@ -1438,8 +1437,7 @@ void testPostMaster()
 			string sname = name;
 			unsigned int tgt = ( i < myNode ) ? i : i - 1;
 			Id newId = Id::makeIdOnNode( i );
-			cout << "Create op: sendTo4( shellId, slot, " << tgt << ", "
-				<< "Neutral, " << sname << ", root, " << newId << endl;
+			// cout << "Create op: sendTo4( shellId, slot, " << tgt << ", " << "Neutral, " << sname << ", root, " << newId << endl;
 			sendTo4< string, string, Id, Id >(
 				Id::shellId().eref(), remoteCreateSlot, tgt,
 				"Neutral", sname, 

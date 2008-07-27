@@ -67,7 +67,7 @@ ConnTainer* SimpleConnTainer::copy( Element* e1, Element* e2, bool isArray ) con
 //  SimpleConn
 //////////////////////////////////////////////////////////////////////
 
-const Conn* SimpleConn::flip() const
+const Conn* SimpleConn::flip( unsigned int funcIndex ) const
 {
-	return new ReverseSimpleConn( funcIndex(), s_ );
+	return new ReverseSimpleConn( funcIndex, s_ );
 }

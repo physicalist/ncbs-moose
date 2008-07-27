@@ -1440,7 +1440,7 @@ void Shell::parCreateFunc ( const Conn* c,
 				Id parent, Id newobj )
 {
 	printNodeInfo( c );
-	cout << "in slaveCreateFunc :" << objtype << " " << objname << " " << parent << " " << newobj << "\n";
+	// cout << "in slaveCreateFunc :" << objtype << " " << objname << " " << parent << " " << newobj << "\n";
 
 	Shell* s = static_cast< Shell* >( c->data() );
 

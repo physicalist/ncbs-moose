@@ -111,7 +111,7 @@ bool TraverseDestConn::good() const
 }
 
 // Doesn't really do anything.
-const Conn* TraverseDestConn::flip() const
+const Conn* TraverseDestConn::flip( unsigned int funcIndex ) const
 {
 	return new TraverseDestConn( ct_, e_ );
 }

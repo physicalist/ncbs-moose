@@ -67,7 +67,7 @@ class SetConn: public Conn
 		 * Returns a Conn with e1 and e2 flipped so that return messages
 		 * traverse back with the correct args.
 		 */
-		const Conn* flip() const {
+		const Conn* flip( unsigned int funcIndex ) const {
 			return new SetConn( *this );
 		}
 

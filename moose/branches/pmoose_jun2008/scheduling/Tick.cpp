@@ -427,7 +427,7 @@ void Tick::innerStart( Eref e, ProcInfo info, double maxTime )
 	double endTime;
 	maxTime = maxTime * NEARLY_ONE;
 
-	cout << "Inner Start on node " << Shell::myNode() << endl;
+	// cout << "Inner Start on node " << Shell::myNode() << endl;
 
 	while ( info->currTime_ < maxTime ) {
 		endTime = maxTime + dt_;

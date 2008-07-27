@@ -7395,4 +7395,16 @@ as far as I can see. Seems to have cleared the tests for 1 and 2 nodes,
 possibly 4 as well. Loads of cout diagnostics obscure everything. But
 defintely time to check it in.
 
+Checked in as revision 556 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Finxing up Conn::flip. I need to use it to handle messages which send back a
+value, which I will now use in the next round of unit tests.
+- set and get values across nodes
+- quit cleanly
+- Don't busy loop
+- Show values on remote objects.
+- list elements, in a node-independent way (starting from /, for example)
+- set up messages across nodes
+- Transfer data across nodes.
+
 ==============================================================================
