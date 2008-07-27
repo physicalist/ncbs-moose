@@ -175,7 +175,7 @@ class One2OneMapConn: public Conn
 		 * Returns a Conn with e1 and e2 flipped so that return messages
 		 * traverse back with the correct args.
 		 */
-		const Conn* flip() const;
+		const Conn* flip( unsigned int funcIndex ) const;
 
 		const ConnTainer* connTainer() const {
 			return s_;
@@ -246,8 +246,8 @@ class ReverseOne2OneMapConn: public Conn
 		 * Returns a Conn with e1 and e2 flipped so that return messages
 		 * traverse back with the correct args.
 		 */
-		const Conn* flip() const {
-			return new One2OneMapConn( funcIndex(), s_, index_ );
+		const Conn* flip( unsigned int funcIndex ) const {
+			return new One2OneMapConn( funcIndex, s_, index_ );
 		}
 
 		const ConnTainer* connTainer() const {

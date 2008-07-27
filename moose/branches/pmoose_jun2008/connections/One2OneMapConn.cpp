@@ -53,7 +53,7 @@ ConnTainer* One2OneMapConnTainer::copy( Element* e1, Element* e2, bool isArray )
 //  One2OneMapConn
 //////////////////////////////////////////////////////////////////////
 
-const Conn* One2OneMapConn::flip() const
+const Conn* One2OneMapConn::flip( unsigned int funcIndex ) const
 {
-	return new ReverseOne2OneMapConn( funcIndex(), s_, index_ );
+	return new ReverseOne2OneMapConn( funcIndex, s_, index_ );
 }

@@ -44,7 +44,7 @@ void sendBack0( const Conn* c, Slot src )
 {
 	const Msg* m = c->target().e->msg( src.msg() );
 	RecvFunc rf = m->func( src.func() );
-	const Conn* flip = c->flip(); /// \todo Could be optimized.
+	const Conn* flip = c->flip( src.func() ); /// \todo Could be optimized.
 	rf( flip );
 	delete flip;
 }

@@ -50,7 +50,7 @@ ConnTainer* One2AllConnTainer::copy( Element* e1, Element* e2, bool isArray ) co
 //  One2AllConn
 //////////////////////////////////////////////////////////////////////
 
-const Conn* One2AllConn::flip() const
+const Conn* One2AllConn::flip( unsigned int funcIndex ) const
 {
-	return new ReverseOne2AllConn( funcIndex(), s_, index_ );
+	return new ReverseOne2AllConn( funcIndex, s_, index_ );
 }

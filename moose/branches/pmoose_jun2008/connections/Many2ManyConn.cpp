@@ -101,7 +101,7 @@ unsigned int Many2ManyConnTainer::numDest( unsigned int srcEindex ) const
 //  Many2ManyConn
 //////////////////////////////////////////////////////////////////////
 
-const Conn* Many2ManyConn::flip() const
+const Conn* Many2ManyConn::flip( unsigned int funcIndex ) const
 {
-	return new ReverseMany2ManyConn( funcIndex(), s_, *tgtEindexIter_ );
+	return new ReverseMany2ManyConn( funcIndex, s_, *tgtEindexIter_ );
 }

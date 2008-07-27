@@ -138,7 +138,7 @@ bool TraverseMsgConn::good() const
 	return c_->good();
 }
 
-const Conn* TraverseMsgConn::flip() const
+const Conn* TraverseMsgConn::flip( unsigned int funcIndex ) const
 {
 	return new TraverseMsgConn( msg_, e_ );
 }

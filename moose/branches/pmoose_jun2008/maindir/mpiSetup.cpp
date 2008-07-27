@@ -172,8 +172,10 @@ void terminateMPI( unsigned int myNode )
 void pollPostmaster()
 {
 	if ( pj != 0 ) {
+		/*
 		if ( Shell::numNodes() > 1 )
 			cout << "Polling postmaster on node " << Shell::myNode() << endl;
+			*/
 		bool ret = set< int >( pj, stepFinfo, 1 );
 		assert( ret );
 	}

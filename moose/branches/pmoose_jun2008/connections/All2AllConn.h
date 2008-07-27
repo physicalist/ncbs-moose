@@ -69,8 +69,8 @@ class All2AllConn: public Conn
 		 * Returns a Conn with e1 and e2 flipped so that return messages
 		 * traverse back with the correct args.
 		 */
-		const Conn* flip() const {
-			return new ReverseAll2AllConn( funcIndex(), a_, tgtPos_ );
+		const Conn* flip( unsigned int funcIndex ) const {
+			return new ReverseAll2AllConn( funcIndex, a_, tgtPos_ );
 		}
 
 	private:
@@ -136,8 +136,8 @@ class ReverseAll2AllConn: public Conn
 		 * Returns a Conn with e1 and e2 flipped so that return messages
 		 * traverse back with the correct args.
 		 */
-		const Conn* flip() const {
-			return new All2AllConn( a_, tgtPos_ );
+		const Conn* flip( unsigned int funcIndex ) const {
+			return new All2AllConn( funcIndex, a_, tgtPos_ );
 		}
 
 	private:

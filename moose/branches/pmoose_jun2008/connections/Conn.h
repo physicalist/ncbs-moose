@@ -131,8 +131,10 @@ class Conn
 		/**
 		 * Returns a Conn with e1 and e2 flipped so that return messages
 		 * traverse back with the correct args.
+		 * The argument funcIndex is needed to pass info about calling func,
+		 * between nodes.
 		 */
-		virtual const Conn* flip() const = 0;
+		virtual const Conn* flip( unsigned int funcIndex ) const = 0;
 
 		/**
  		 * Returns the ConnTainer it currently represents

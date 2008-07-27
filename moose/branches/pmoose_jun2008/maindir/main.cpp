@@ -79,15 +79,10 @@ int main(int argc, char** argv)
 	///////////////////////////////////////////////////////////////////
 	//	Initialization functions. Must be in this order.
 	///////////////////////////////////////////////////////////////////
-	cerr << "pre.0\n";
 	unsigned int myNode = initMPI( argc, argv );
-	cerr << myNode << ".1\n";
 	initMoose();
-	cerr << myNode << ".2\n";
 	initSched();
-	cerr << myNode << ".3\n";
 	initParSched();
-	cerr << myNode << ".4\n";
         
 #ifdef DO_UNIT_TESTS
 	if ( myNode == 0 )
