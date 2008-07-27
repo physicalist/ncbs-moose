@@ -245,3 +245,18 @@ void Id::setNodes(  unsigned int myNode, unsigned int numNodes )
 	manager().setNodes( myNode, numNodes );
 }
 */
+
+//////////////////////////////////////////////////////////////
+//	Nid stuff
+//////////////////////////////////////////////////////////////
+Nid::Nid()
+	: Id(), node_( 0 )
+{;}
+
+Nid::Nid( Id id )
+	: Id( id ), node_( id.node() )
+{;}
+
+Nid::Nid( Id id, unsigned int node ) 
+	: Id( id ), node_( node )
+{;}

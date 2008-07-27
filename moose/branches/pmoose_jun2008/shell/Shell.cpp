@@ -340,11 +340,11 @@ const Cinfo* initShellCinfo()
 		),
 		new SrcFinfo( "addParallelSrcSrc",
 				// srcObjId, srcField, destObjId, destField
-			Ftype4< Id, string, Id, string >::global()
+			Ftype4< Nid, string, Nid, string >::global()
 		),
 		new SrcFinfo( "addParallelDestSrc",
 				// srcObjId, srcField, destObjId, destField
-			Ftype4< Id, string, Id, string >::global()
+			Ftype4< Nid, string, Nid, string >::global()
 		),
 
 		new DestFinfo( "addLocal",
@@ -352,11 +352,11 @@ const Cinfo* initShellCinfo()
 			RFCAST( &Shell::addLocal )
 		),
 		new DestFinfo( "addParallelSrc",
-			Ftype4< Id, string, Id, string >::global(),
+			Ftype4< Nid, string, Nid, string >::global(),
 			RFCAST( &Shell::addParallelSrc )
 		),
 		new DestFinfo( "addParallelDest",
-			Ftype4< Id, string, Id, string >::global(),
+			Ftype4< Nid, string, Nid, string >::global(),
 			RFCAST( &Shell::addParallelDest )
 		),
 
@@ -408,6 +408,9 @@ const Cinfo* initShellCinfo()
 			Ftype1< string >::global(),
 			RFCAST( &Shell::rawAddFunc )
 		),
+		new DestFinfo( "add", // Simple addmsg.
+			Ftype4< Id, string, Id, string >::global(),
+			RFCAST( &Shell::addSingleMessage ) ),
 		new DestFinfo( "poll", // Infinite loop, meant for slave nodes
 			Ftype0::global(),
 			RFCAST( &Shell::pollFunc )
@@ -1961,14 +1964,14 @@ bool Shell::addSingleMessage( const Conn* c,
 }
 
 void Shell::addParallelSrc( const Conn* c, 
-	unsigned int srcNode, Id src, string srcField, 
-	Id dest, string destField )
+	unsigned int srcNode, Nid src, string srcField, 
+	Nid dest, string destField )
 {
 	;
 }
 
 void Shell::addParallelDest( const Conn* c,
-	Id src, string srcTypeStr, Id dest, string destField )
+	Nid src, string srcTypeStr, Nid dest, string destField )
 {
 	;
 }

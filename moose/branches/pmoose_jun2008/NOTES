@@ -7424,3 +7424,17 @@ unit test. But I now have issues when I run the MPI on 3, 5, 6 or 7 nodes.
 The 7 node variant crashes. The others miss out one or more of the 'get'
 operations.
 2, 4, 8, 16 are OK. Wonder if it is an MPI issue or MOOSE?
+
+Checked in as revision 559 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+To test messaging, working on a Fibonacci series arrangement where each
+table takes the sum of the two previous ones. No lookup or anything.
+
+Extremely unpleasant. Messages were not being formed.
+Finally worked through it using debugging on 4 'nodes'. In this case the
+messages were formed. So there is some issue with data transfer synchronization
+with the tests.
+
+
+
+==============================================================================

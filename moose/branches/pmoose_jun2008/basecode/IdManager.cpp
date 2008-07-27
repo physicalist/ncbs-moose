@@ -120,9 +120,7 @@ unsigned int IdManager::makeIdOnNode( unsigned int childNode )
 #ifdef USE_MPI
 	assert( Shell::myNode() == 0 );
 	assert( childNode < Shell::numNodes() );
-	if ( childNode > 0 ) { // Off-node element
-		elementList_[ lastId_ ] = Enode( 0, childNode );
-	}
+	elementList_[ lastId_ ] = Enode( 0, childNode );
 #endif
 	if ( mainIndex_ >= elementList_.size() )
 		elementList_.resize( mainIndex_ * 2 );
@@ -188,7 +186,7 @@ unsigned int IdManager::findNode( unsigned int index ) const
 {
 #ifdef USE_MPI
 	const Enode& e = elementList_[ index ];
-	if ( e.e() == 0 || e.node() == UNKNOWN_NODE )
+	if ( e.node() == UNKNOWN_NODE )
 		return BAD_NODE;
 	return e.node();
 #else

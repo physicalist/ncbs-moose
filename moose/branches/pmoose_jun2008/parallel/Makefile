@@ -14,6 +14,7 @@ OBJ = \
 	PostMaster.o	\
 	ProxyElement.o	\
 	AsyncDestFinfo.o	\
+	TestPostMaster.o	\
 
 HEADERS = \
 	../basecode/header.h \
@@ -24,6 +25,7 @@ default: $(TARGET)
 
 $(OBJ)	: $(HEADERS)
 PostMaster.o:	PostMaster.h
+TestPostMaster.o:	PostMaster.h
 
 ifneq (,$(findstring DUSE_MPI,$(CFLAGS)))
     CXX = mpicxx
