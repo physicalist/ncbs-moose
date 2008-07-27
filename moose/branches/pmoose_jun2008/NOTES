@@ -7399,6 +7399,10 @@ Checked in as revision 556 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
 Finxing up Conn::flip. I need to use it to handle messages which send back a
 value, which I will now use in the next round of unit tests.
+
+Checked in as revision 556 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Next stuff:
 - set and get values across nodes
 - quit cleanly
 - Don't busy loop
@@ -7408,3 +7412,7 @@ value, which I will now use in the next round of unit tests.
 - Transfer data across nodes.
 
 ==============================================================================
+27 July 2008
+
+Test to 'get' values across nodes works. Quite painlessly. It is going to be
+much trickier, though, to get it to work through the parser.

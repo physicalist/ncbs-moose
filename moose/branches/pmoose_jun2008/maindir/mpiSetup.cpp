@@ -41,7 +41,7 @@ unsigned int initMPI( int argc, char** argv )
 	// If not done here, the Shell uses defaults suitable for one node.
 	Shell::setNodes( myNode, totalNodes );
 
-	cerr << myNode << ".2a\n";
+	// cerr << myNode << ".2a\n";
 
 	bool glug = (argc == 2 && strncmp( argv[1], "-m", 2 ) == 0 );
 	while ( glug );
@@ -69,12 +69,12 @@ void initParSched()
 			Neutral::createArray( "PostMaster", "post", 
 			Id::shellId(), Id::postId( 0 ), totalnodes );
 	assert( postmasters->numEntries() == totalnodes );
-	cerr << myNode << ".2b\n";
+	// cerr << myNode << ".2b\n";
 	for ( unsigned int i = 0; i < totalnodes; i++ ) {
 		Eref pe = Eref( postmasters, i );
 		set< unsigned int >( pe, "remoteNode", i );
 	}
-	cerr << myNode << ".2c\n";
+	// cerr << myNode << ".2c\n";
 	// This one handles parser and postmaster scheduling.
 	Id sched( "/sched" );
 	Id cj( "/sched/cj" );
@@ -148,7 +148,7 @@ void initParSched()
 	set( cj.eref(), "reinit" );
 	set( pj, "reinit" );
 
-	cerr << myNode << ".2d\n";
+	// cerr << myNode << ".2d\n";
 
 	MPI::COMM_WORLD.Barrier();
 	if ( myNode == 0 )
