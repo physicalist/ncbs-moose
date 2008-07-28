@@ -129,10 +129,10 @@ PostMaster::PostMaster()
 	recvBuf_( 1000, 0 ), 
 	donePoll_( 0 ), 
 	shellProxy_(), // Initializes to a null Id.
+	requestFlag_( 0 ),
 	comm_( &MPI::COMM_WORLD )
 {
 	localNode_ = MPI::COMM_WORLD.Get_rank(); 
-	request_ = 0;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -302,11 +302,16 @@ void PostMaster::innerPostIrecv()
 	// cout << "!" << flush;
 //	cout << "inner PostIrecv on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( localNode_ != remoteNode_ ) {
-		request_ = comm_->Irecv(
-			&( recvBuf_[0] ), recvBuf_.size(), MPI_CHAR, 
-				remoteNode_, DATA_TAG );
-		// cout << inBufSize_ << " innerPostIrecv: request_ empty?" << ( request_ == static_cast< MPI::Request >( 0 ) ) << "\n";
-		donePoll_ = 0;
+		if ( requestFlag_ ) { // Not used last time, recycle.
+			donePoll_ = 0;
+		} else {
+			request_ = comm_->Irecv(
+				&( recvBuf_[0] ), recvBuf_.size(), MPI_CHAR, 
+					remoteNode_, DATA_TAG );
+			requestFlag_ = 1;
+			// cout << inBufSize_ << " innerPostIrecv: request_ empty?" << ( request_ == static_cast< MPI::Request >( 0 ) ) << "\n";
+			donePoll_ = 0;
+		}
 	} else {
 		donePoll_ = 1;
 	}
@@ -364,16 +369,19 @@ void PostMaster::innerPoll( const Conn* c )
 	// cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( donePoll_ )
 			return;
-	if ( !request_ ) {
+	if ( !requestFlag_ ) {
 		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
 		donePoll_ = 1;
 		return;
 	}
 	if ( request_.Test( status_ ) ) {
+		// I believe that when this is true, the request is deallocated.
+		// MPI documentation is obscure on this point.
+		
 		// Data has arrived. How big was it?
 		unsigned int dataSize = status_.Get_count( MPI_CHAR );
 		// cout << dataSize << " bytes of data arrived on " << localNode_ << " from " << remoteNode_;
-		request_ = 0;
+		requestFlag_ = 0;
 		if ( dataSize < sizeof( unsigned int ) ) return;
 
 		if ( syncInfo_.size() > 0 ) {
@@ -441,7 +449,7 @@ void PostMaster::innerPostSend( )
 	*static_cast< unsigned int* >( static_cast< void* >( data ) ) = 
 		numSendBufMsgs_;
 	// cout << "sending " << sendBufPos_ << " bytes: " << &sendBuf_[0] << " from node " << localNode_ << " to " << remoteNode_;
-	if ( localNode_ != remoteNode_ ) {
+	if ( localNode_ != remoteNode_ && numSendBufMsgs_ > 0 ) {
 		comm_->Send( data, sendBufPos_, MPI_CHAR, remoteNode_, DATA_TAG );
 
 		/*
