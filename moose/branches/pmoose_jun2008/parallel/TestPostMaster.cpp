@@ -1142,16 +1142,35 @@ void testParMsg()
 	if ( numOutputSrc >= 2 ) numOutputSrc = 2;
 	unsigned int numSum = ( myNode < 2 ) ? myNode : 2;
 
-	cout << "On node= " << myNode << ", numOutputSrc: " << checkId.eref()->numTargets( "outputSrc" ) <<
-		", " << numOutputSrc << endl << flush;
+	// cout << "On node= " << myNode << ", numOutputSrc: " << checkId.eref()->numTargets( "outputSrc" ) << ", " << numOutputSrc << endl << flush;
 
 	ASSERT( checkId.eref()->numTargets( "outputSrc" ) == numOutputSrc, 
 		"par msg" );
 
-	cout << "numSum: " << checkId.eref()->numTargets( "sum" ) <<
-		", " << numSum << endl << flush;
+	// cout << "numSum: " << checkId.eref()->numTargets( "sum" ) << ", " << numSum << endl << flush;
 	ASSERT( checkId.eref()->numTargets( "sum" ) == numSum, "par msg" );
 	MPI::COMM_WORLD.Barrier();
+
+	// Now try to send data through this beast.
+	Id cjId( "/sched/cj" );
+	assert( cjId.good() );
+	set( cjId.eref(), "resched" );
+	ASSERT( checkId.eref()->numTargets( "process" ) == 1, "sched par msg");
+	// set< int >( cjId.eref(), "step", static_cast< int >( numNodes ) );
+	set< int >( cjId.eref(), "step", numNodes * 2 + 3 );
+	double f1 = 0.0;
+	double f2 = 1.0;
+	double f = 1.0;
+	// Compute Fibonacci number for the current node
+	for ( unsigned int i = 0; i < myNode; i++ ) {
+		f = f1 + f2;
+		f1 = f2;
+		f2 = f;
+	}
+	double x;
+	get< double >( checkId.eref(), "output", x );
+	cout << "on " << myNode << ", f = " << f << ", x = " << x << endl << flush;
+	ASSERT( x == f, "par msg fibonacci" );
 
 	set( checkId.eref(), "destroy" );
 }

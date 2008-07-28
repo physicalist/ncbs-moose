@@ -7476,3 +7476,13 @@ This should not have affected operation, but it did. The system is not totally
 stable yet. Works for 2, 4, 8 and sometimes 16 nodes, but reliably fails for
 7 nodes. Time now to test completion of data transfer in Fibonacci test.
 
+Checked in as revision 562 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Finally, the test itself. It sort of works, but is temperamental. Most relevant,
+it demands a certain buffer of extra clock ticks in order to complete the
+data transfer. It should need exactly numNodes ticks, but actually comes to
+more than 2x that. I have had it work for up to 12 nodes.
+
+Anyway, this qualified success is still a big step forward: parallel set up
+and execution of messages.
+
