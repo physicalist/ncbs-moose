@@ -63,10 +63,7 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
 	unsigned int srcNode = src.node();
-	cout << "in Shell::addSingleMessage, src=" << src << "." << srcNode <<
-		", srcField = " << srcField <<
-		", dest = " << dest << "." << dest.node() << 
-		", destField = " << destField << endl << flush;
+	// cout << "in Shell::addSingleMessage, src=" << src << "." << srcNode << ", srcField = " << srcField << ", dest = " << dest << "." << dest.node() << ", destField = " << destField << endl << flush;
 	if ( srcNode == sh->myNode_ ) {
 		if ( dest.node() == sh->myNode_ ) {
 			return addLocal( src, srcField, dest, destField );
@@ -106,11 +103,7 @@ void Shell::addParallelSrc( const Conn* c,
 	unsigned int destNode = dest.node();
 	Eref se = src.eref();
 
-	cout << "in Shell::addParallelSrc on node=" << sh->myNode_ << 
-		", src=" << src << "." << src.node() <<
-		", srcField = " << srcField <<
-		", dest = " << dest << "." << dest.node() << 
-		", destField = " << destField << endl << flush;
+	// cout << "in Shell::addParallelSrc on node=" << sh->myNode_ << ", src=" << src << "." << src.node() << ", srcField = " << srcField << ", dest = " << dest << "." << dest.node() << ", destField = " << destField << endl << flush;
 
 #ifdef DO_UNIT_TESTS
 	Eref de = sh->getPost( destNode );
@@ -173,11 +166,7 @@ void Shell::addParallelDest( const Conn* c,
 	Nid src, string srcField, Nid dest, string destField )
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
-	cout << "in Shell::addParallelDest on node=" << sh->myNode_ << 
-		", src=" << src << "." << src.node() <<
-		", srcField = " << srcField <<
-		", dest = " << dest << "." << dest.node() << 
-		", destField = " << destField << endl << flush;
+	// cout << "in Shell::addParallelDest on node=" << sh->myNode_ << ", src=" << src << "." << src.node() << ", srcField = " << srcField << ", dest = " << dest << "." << dest.node() << ", destField = " << destField << endl << flush;
 
 	const Finfo* srcFinfo = findFinfoOnCinfo( srcField );
 	const Finfo* tgtFinfo;
