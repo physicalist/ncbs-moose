@@ -280,8 +280,7 @@ bool setupProxyMsg( unsigned int srcNode,
 		ConnTainer::Default /// \todo: need to get better info on option.
 	);
 
-	cout << "In setupProxyMsg, ret= " << ret << ", proxy=" << proxy <<
-		", dest = " << dest << ", destFuncId = " << destFuncId << endl;
+	// cout << "In setupProxyMsg, ret= " << ret << ", proxy=" << proxy << ", dest = " << dest << ", destFuncId = " << destFuncId << endl;
 	
 	// Need to find the type of the dest and use the add from the proxy 
 	// to the dest. 
@@ -443,9 +442,7 @@ void PostMaster::innerPostSend( )
 		numSendBufMsgs_;
 	// cout << "sending " << sendBufPos_ << " bytes: " << &sendBuf_[0] << " from node " << localNode_ << " to " << remoteNode_;
 	if ( localNode_ != remoteNode_ ) {
-		comm_->Send( &( sendBuf_[0] ), sendBufPos_, 
-			MPI_CHAR, remoteNode_, DATA_TAG
-		);
+		comm_->Send( data, sendBufPos_, MPI_CHAR, remoteNode_, DATA_TAG );
 
 		/*
 		unsigned int nMsgs = *static_cast< const unsigned int* >(

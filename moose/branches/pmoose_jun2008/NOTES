@@ -7431,10 +7431,29 @@ To test messaging, working on a Fibonacci series arrangement where each
 table takes the sum of the two previous ones. No lookup or anything.
 
 Extremely unpleasant. Messages were not being formed.
+There was an issue with the passing of Ids. Ids don't actually carry node
+info, they look it up instead. But when setting up msgs we need to pass
+this node info as well. So I had to implement a Nid class which has
+the Node info plus the usual Id.
 Finally worked through it using debugging on 4 'nodes'. In this case the
 messages were formed. So there is some issue with data transfer synchronization
 with the tests.
 
+Checked in as revision 560 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
+Added a section to transfer a whole lot of data in one go. This worked without
+any problems.
+
+Looked more closely at data transfer issues. I get partial message formation.
+2 and 3 node cases are OK, 4 and higher croak. Seems like all the requests
+for messages are sent out (addSingleMessage is OK), but the addParallelSrc 
+misses some cases, and the addParallelDest misses even more. I wonder if it
+is an MPI issue.
+
+Spent enough time on this, will now check on a serious machine to see if it
+might be an MPI issue. The MPI version on my laptop is really old but I
+won't mess with it till I've upgraded the whole OS.
+
+Then the next step is to actually run the Fibonacci calculation.
 
 ==============================================================================
