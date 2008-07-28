@@ -989,6 +989,62 @@ void testParSet( vector< Id >& testIds )
 }
 
 /**
+ * This routine tests sending many packets over in one go. Tests
+ * how many polls are needed for everything to execute, and whether
+ * the execution order is clean.
+ */
+void testParCommandSequence()
+{
+	const unsigned int numSeq = 10;
+	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
+	unsigned int numNodes = MPI::COMM_WORLD.Get_size();
+	Eref shellE = Id::shellId().eref();
+	char name[20];
+	string sname;
+	if ( myNode == 0 ) {
+		cout << "\ntesting parallel command sequence" << flush;
+	}
+	if ( myNode == 0 ) {
+		Slot remoteCreateSlot = 
+			initShellCinfo()->getSlot( "parallel.createSrc" );
+		Slot parSetSlot = 
+			initShellCinfo()->getSlot( "parallel.setSrc" );
+		for ( unsigned int j = 0; j < numSeq; j++ ) {
+			for ( unsigned int i = 1; i < numNodes; i++ ) {
+				char name[20];
+				sprintf( name, "zug%d.%d", i, j );
+				string sname = name;
+				unsigned int tgt = ( i < myNode ) ? i : i - 1;
+				Id newId = Id::makeIdOnNode( i );
+				// cout << "Create op: sendTo4( shellId, slot, " << tgt << ", " << "Neutral, " << sname << ", root, " << newId << endl;
+				sendTo4< string, string, Id, Id >(
+					Id::shellId().eref(), remoteCreateSlot, tgt,
+					"Table", sname, 
+					Id(), newId
+				);
+				sname = sname + ".extra";
+				sendTo3< Id, string, string >(
+					Id::shellId().eref(), parSetSlot, tgt,
+					newId, "name", sname
+				);
+			}
+		}
+	}
+	MPI::COMM_WORLD.Barrier();
+	pollPostmaster(); // There is a barrier in the polling operation itself
+	if ( myNode != 0 ) {
+		for ( unsigned int j = 0; j < numSeq; j++ ) {
+			sprintf( name, "/zug%d.%d.extra", myNode, j );
+			sname = name;
+			Id checkId( sname );
+			// cout << "On " << myNode << ", checking id for " << sname << ": " << checkId << endl;
+			ASSERT( checkId.good(), "parallel command sequencing" );
+		}
+		cout << myNode << flush;
+	}
+}
+
+/**
 //////////////////////////////////////////////////////////////////
 // Now test message creation across nodes. 
 // 	Use parallel commands to create tables on each node
@@ -1053,6 +1109,7 @@ void testParMsg()
 	MPI::COMM_WORLD.Barrier();
 	pollPostmaster();
 	pollPostmaster();
+	MPI::COMM_WORLD.Barrier();
 	sprintf( name, "/tab%d", myNode );
 	sname = name;
 	Id checkId( sname );
@@ -1075,6 +1132,9 @@ void testParMsg()
 	MPI::COMM_WORLD.Barrier();
 	pollPostmaster();
 	pollPostmaster();
+	pollPostmaster();
+	pollPostmaster();
+	cout << flush;
 	MPI::COMM_WORLD.Barrier();
 
 	// Check that the messages were made. Node 0 and 1 are special
@@ -1111,6 +1171,7 @@ void testPostMaster()
 	Id tnId = testParCreate( testIds );
 	testParGet( tnId, testIds  ); // This uses the objects created in testParCreate()
 	testParSet( testIds ); // This uses the objects created in testParCreate()
+	testParCommandSequence(); // Tests multiple commands in one poll
 	testParMsg();
 
 #ifdef TABLE_DATA

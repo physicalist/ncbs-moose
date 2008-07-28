@@ -173,7 +173,11 @@ void Shell::addParallelDest( const Conn* c,
 	Nid src, string srcField, Nid dest, string destField )
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
-	cout << "In Shell::addParallelDest on " << sh->myNode_ << endl << flush;
+	cout << "in Shell::addParallelDest on node=" << sh->myNode_ << 
+		", src=" << src << "." << src.node() <<
+		", srcField = " << srcField <<
+		", dest = " << dest << "." << dest.node() << 
+		", destField = " << destField << endl << flush;
 
 	const Finfo* srcFinfo = findFinfoOnCinfo( srcField );
 	const Finfo* tgtFinfo;
@@ -211,16 +215,18 @@ void Shell::addParallelDest( const Conn* c,
 	
 	if ( errMsg != "" ) {
 		cout << "addParallelDest" << errMsg << endl << flush;
+		/*
 		sendBack3< string, Id, Id > ( c, parMsgErrorSlot, 
 			errMsg, src, dest );
 			return;
+			*/
 	}
 
 	unsigned int srcNode = src.node();
 	int tgtMsg = tgtFinfo->msg();
 	bool ret = setupProxyMsg( srcNode, src, asyncFuncId, dest, tgtMsg );
 	if ( ret ) {
-		sendBack2< Id, Id > ( c, parMsgOkSlot, src, dest );
+		// sendBack2< Id, Id > ( c, parMsgOkSlot, src, dest );
 	}
 	assert( ret );
 }
