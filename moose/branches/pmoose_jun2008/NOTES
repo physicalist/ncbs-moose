@@ -7454,6 +7454,25 @@ Spent enough time on this, will now check on a serious machine to see if it
 might be an MPI issue. The MPI version on my laptop is really old but I
 won't mess with it till I've upgraded the whole OS.
 
+Checked in as revision 561 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
 Then the next step is to actually run the Fibonacci calculation.
 
 ==============================================================================
+28 July 2008
+One possible reason for the issues with the Fibonacci test is that I
+keep generating MPI::requests from successive irecvs, but I don't kill the old
+ones. Looked at the documentation on this: it is murky at best. I tried simply
+setting request_ to zero, but this may not work as expected, and it doesn't
+help the problem.
+some options:
+- Use a second boolean flag to keep track of request status
+- Figure out how request works
+- Enforce reciept of info from every node to every other node, every timestep
+	(clearly stupid)
+
+OK, used first option. Fixed sends to occur only if there was nonzero data.
+This should not have affected operation, but it did. The system is not totally
+stable yet. Works for 2, 4, 8 and sometimes 16 nodes, but reliably fails for
+7 nodes. Time now to test completion of data transfer in Fibonacci test.
+

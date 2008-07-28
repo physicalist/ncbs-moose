@@ -125,8 +125,10 @@ class PostMaster
 		bool donePoll_;
 
 		Id shellProxy_; // Hack for msgs between shells on different nodes.
-		
+
+		bool requestFlag_; // True if request is pending.
 		MPI::Request request_;
+
 		MPI::Status status_;
 		MPI::Comm* comm_;
 };
