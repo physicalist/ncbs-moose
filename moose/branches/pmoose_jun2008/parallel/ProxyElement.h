@@ -109,7 +109,8 @@ class ProxyElement: public Element
 		}
 		
 		/**
-		  * Returns the element is of type Array
+		  * Returns the type of the element. Should ideally be an enum,
+		  * or just do a dynamic_cast.
 		  */
 		virtual string elementType() const
 		{

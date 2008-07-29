@@ -422,9 +422,10 @@ void PostMaster::innerBarrier( )
 {
 	// Just for paranoia: Only allow this function to be called for
 	// postmaster 0.
-	// cout << "Barrier on node " << localNode_ << " from " << remoteNode_ << endl << flush;
-	if ( remoteNode_ == 0 )
+	if ( remoteNode_ == 0 ) {
 		MPI::COMM_WORLD.Barrier();
+		// cout << "Barrier on node " << localNode_ << " from " << remoteNode_ << endl << flush;
+	}
 }
 
 void PostMaster::poll( const Conn* c, int ordinal )

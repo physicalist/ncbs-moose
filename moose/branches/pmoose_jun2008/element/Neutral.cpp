@@ -412,15 +412,27 @@ Id Neutral::getChildByName( Eref er, const string& s )
 	}
 
 	for ( i = m->begin(); i != m->end(); i++ ){
-		if ( ( *i )->e2()->name() == name ){
-			if ( ( *i )->e2()->elementType() == "Simple" )
-				return ( *i )->e2()->id();
-			else 
-				return ( *i )->e2()->id().assignIndex( index );
+		// Going through ConnTainers here, not Conns.
+		Element* e2 = ( *i )->e2();
+		if ( e2->name() == name ){
+			if ( e2->elementType() == "Simple" )
+				return e2->id();
+			else if ( e2->elementType() == "Array" )
+				return e2->id().assignIndex( index );
+			// Here we put in an option for proxies that handle
+			// off-node children. This assumes that e2->name() returns the
+			// child name and not some dummy string from the proxy.
+			// We will also need options for array proxies. Those get 
+			// messy because they may be scattered over many nodes.
+			else if ( e2->elementType() == "Proxy" )
+				return e2->id();
+			else
+				return Id::badId();
 		}
 		//takes care of simple elements which are of the form cc[2]
-		if ( ( ( *i )->e2()->name() == name + '[' + str(index) + ']' ) && ( *i )->e2()->elementType() == "Simple")
-			return ( *i )->e2()->id().assignIndex( index );
+		if ( ( e2->name() == name + '[' + str(index) + ']' ) &&
+				e2->elementType() == "Simple")
+			return e2->id().assignIndex( index );
 	}
 	return Id::badId();
 }

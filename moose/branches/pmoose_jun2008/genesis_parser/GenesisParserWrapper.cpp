@@ -57,8 +57,9 @@ const Cinfo* initGenesisParserCinfo()
 		// Object heirarchy manipulation functions.
 		///////////////////////////////////////////////////////////////
 		// Creating an object: Send out the request.
+		// args: type, name, node, parent
 		new SrcFinfo( "create",
-				Ftype3< string, string, Id >::global() ),
+				Ftype4< string, string, int, Id >::global() ),
 		// Creating an object: Recv the returned object id.
 		new SrcFinfo( "createArray",
 				Ftype4< string, string, Id, vector <double> >::global() ),
@@ -1586,14 +1587,24 @@ void do_create( int argc, const char** const argv, Id s )
 		cout << "Error: invalid object name : " << name << endl;
 		return;
 	}
+
+	int childNode = -1; // Tell the system to figure out child node.
+	if ( name.rfind( "@" ) != string::npos ) {
+		string nodeNum = Shell::tail( name, "@" );
+		if( nodeNum.length() > 0 )
+			childNode = atoi( nodeNum.c_str() );
+		else
+			childNode = 0;
+	}
+
 	string parent = Shell::head( argv[2], "/" );
 	if ( argv[2][0] == '/' && parent == "" )
 		parent = "/";
-	// Id pa = GenesisParserWrapper::path2eid( parent, s );
-	Id pa( parent );
 
-	send3< string, string, Id >( s(),
-		createSlot, className, name, pa );
+	Id pa( parent ); // This includes figuring out the node number.
+
+	send4< string, string, int, Id >( s(), createSlot, 
+		className, name, childNode, pa );
 
 		// The return function recvCreate gets the id of the
 		// returned elm, but
@@ -2368,8 +2379,8 @@ Id findChanGateId( int argc, const char** const argv, Id s )
 			gateId = id;
 		else if ( el->className() == "HHChannel" ) {
 			if (type != "") {
-				send3< string, string, Id >( s(), 
-					createSlot, "HHGate", type, id );
+				send4< string, string, int, Id >( s(), 
+					createSlot, "HHGate", type, id.node(), id );
 				gateId = Id(gate);
 			}
 			else
@@ -2890,8 +2901,8 @@ void do_createmap(int argc, const char** const argv, Id s){
 			cout << "'" << headpath  << "'" << " is not defined."  << dest << "." << endl;
 			return;
 		}
-		send3< string, string, Id >( s(),
-			createSlot, "Neutral", Shell::tail(dest, "/"), head );
+		send4< string, string, int, Id >( s(),
+			createSlot, "Neutral", Shell::tail(dest, "/"), head.node(), head );
 	}
 	if (object){
 		string className = source;
@@ -4030,7 +4041,7 @@ void GenesisParserWrapper::unitTest()
 	gpAssert( "le", lestr + "foo " );
 	gpAssert( "delete /foo", "" );
 	gpAssert( "le", lestr );
-	gpAssert( "le /foo", "cannot find object '/foo' " );
+	//gpAssert( "le /foo", "cannot find object '/foo' " );
 	gpAssert( "echo foo", "foo " );
 
 	// Testing backslash carryover of lines
@@ -4098,7 +4109,7 @@ void GenesisParserWrapper::unitTest()
 	gpAssert( "pwe", "/proto " );
 	gpAssert( "pope", "/ " );
 	gpAssert( "pwe", "/ " );
-	gpAssert( "pushe /foobarzod", "Error - cannot change to '/foobarzod' " );
+//	gpAssert( "pushe /foobarzod", "Error - cannot change to '/foobarzod' " );
 	gpAssert( "pwe", "/ " );
 
 	// Checking copy syntax
