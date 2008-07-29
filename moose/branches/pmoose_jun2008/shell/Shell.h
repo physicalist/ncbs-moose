@@ -13,6 +13,11 @@
 // forward declaration
 class SimDump;
 
+typedef struct {
+	unsigned int numPending;
+	void* data;
+} offNodeData;
+
 class Shell
 {
 #ifdef DO_UNIT_TESTS
@@ -32,14 +37,69 @@ class Shell
 // multinode and the Shell has to handle queries across nodes.
 ////////////////////////////////////////////////////////////////////
 		// string expandPath( const std::string& path ) const;
+		/** 
+		 * Returns a string with the fully expanded unix-like path of
+		 * the specified Id.
+		 */
 		static string eid2path( Id eid );
+
+		/**
+		 * Returns an Id defined by the specified path.
+		 */
 		static Id path2eid( const string& path, const string& separator );
+
+		/**
+		 * Inner function for extracting Id.
+		 */
 		Id innerPath2eid( const string& path, const string& separator ) const;
-		static Id parent( Id eid );
+		/**
+		 * Deeper inner function that does the actual Id extraction work.
+		 */
 		static Id traversePath( Id start, vector< string >& );
+
+
+		/**
+		* Returns Id for off-node object specified by path.
+ 		* Sets off request for children on all remote nodes, starting at 
+ 		* either root or shellId. Polls till all nodes return. Note that
+		* this must be thread-safe, because during the polling there
+		* may be nested calls.
+ 		*/
+		static Id parallelTraversePath( Id start, vector< string >& names );
+
+		/**
+		 * Handles request for path traversal on remote node.
+		 */
+		static void handleParTraversePathRequest( const Conn* c,
+			Id start, vector< string > names, unsigned int requestId );
+
+		/**
+		 * Handles return value from path traversal on remote node.
+		 */
+		static void handleParTraversePathReturn( const Conn* c,
+			Nid found, unsigned int requestId );
+
+		/**
+		 * Returns parent Id.
+		 */
+		static Id parent( Id eid );
+
+		/**
+		 * Returns string upto but not including last separator
+		 * Returns empty string if no separator.
+		 */
 		static string head( const string& path, const string& separator );
+
+		/**
+		 * Returns string after last separator.
+		 * Returns original string if no separator
+		 */
 		static string tail( const string& path, const string& separator );
 
+		/**
+		 * Converts path from relative, recent or other forms to 
+		 * a canonical absolute path that the wildcards can handle
+		 */
 		void digestPath( string& path );
 
 //////////////////////////////////////////////////////////////////////
@@ -86,11 +146,13 @@ class Shell
 
 		/**
 		 * This function creates an object, generating its
-		 * own Id. It may decide it should create the object on a
-		 * remote node.
+		 * own Id. Node argument tells it which node to put it on,
+		 * but if this is -ve then the placement is left to the 
+		 * system balancing algorithm.
 		 */
 		static void staticCreate( const Conn*, string type,
-						string name, Id parent );
+						string name, int node, Id parent );
+
 		static void staticCreateArray1( const Conn*, string type,
 						string name, Id parent, vector <double> parameter );
 		static void staticCreateArray( const Conn*, string type,
@@ -257,7 +319,7 @@ class Shell
 
 		static void parCreateFunc( const Conn* c,
 			string objtype, string objname, 
-			Id parentId, Id newObjId );
+			Nid parentId, Nid newObjId );
 		
 		static void parMsgErrorFunc( const Conn* c, 
 			string errMsg, Id src, Id dest );
@@ -266,7 +328,66 @@ class Shell
 		/**
 		 * Returns the Eref for the specified postmaster.
 		 */
-		Eref getPost( unsigned int node ) const;
+		// Eref getPost( unsigned int node ) const;
+
+		/////////////////////////////////////////////////////////////////
+		//	Set of commands for managing off-node requests. These
+		//	act in conjunction with a couple of templated functions
+		//	defined below.
+		/////////////////////////////////////////////////////////////////
+
+		/**
+ 		* The next two functions should always be called in pairs and should
+ 		* be called within the same function, so that local variables do not
+ 		* get lost. One normally uses the templated wrapper functions 
+		* defined at the bottom.
+ 		*
+ 		* openOffNodeValueRequest:
+ 		* Inner function to handle requests for off-node operations
+		* returning values.
+ 		* Returns a thread-safe unique id for the request, so that 
+ 		* we can examine the return values for ones we are interested in. 
+ 		* This rid is an index to a vector of ints that counts pending 
+ 		* returns on this id.
+ 		* Returns the next free Rid and initializes returnedData_ entry.
+ 		*
+ 		* The init argument is typically a local variable whose value will
+ 		* be read out in the succeeding extractOffNodeValue call. If these
+ 		* are not in the same function, then the user has to use allocated
+ 		* memory.
+ 		*/
+		unsigned int openOffNodeValueRequestInner( 
+			void* init, unsigned int numPending );
+
+		/**
+		 * closeOffNodeValueRequest
+ 		 * Polls postmaster, converts and returns data stored at rid
+		 * Used as the inner body of the templated function by the
+		 * same name, defined below.
+ 		 */
+		void* closeOffNodeValueRequestInner( unsigned int rid );
+
+		/**
+		 * Returns the value pointer for the specified rid.
+		 */
+		void* getOffNodeValuePtrInner( unsigned int rid );
+		/**
+ 		* Decrements the off node pending count.
+ 		*/
+		void decrementOffNodePending( unsigned int rid );
+		/**
+ 		* Returns number of pending responses to off node request.
+ 		*/
+		unsigned int numPendingOffNode( unsigned int rid );
+
+		/**
+		 * Used only in unit tests, when we spoof an off-node postmaster
+		 * using this hack.
+		 */
+#ifdef DO_UNIT_TESTS
+		Eref getPostForUnitTests( unsigned int node ) const;
+		Element* post_;
+#endif
 	
 	private:
 		/// Current working element
@@ -304,13 +425,59 @@ class Shell
 		 */
 		map< Id, Id > parMessagePending_;
 
-		/**
-		 * The postmaster element is used to set up all parallel models.
-		 * In single-node simulations this is zero.
-		 */
-		Element* post_;
+		
+		/////////////////////////////////////////////////////////////
+		// This set of definitions is to manage return values from other
+		// nodes in a thread-safe manner. Each value request generates
+		// and rid, which is used to keep track of where the return value
+		// should go.
+		/////////////////////////////////////////////////////////////
+		/// Manages the returned data. Indexed by rid.
+		vector< offNodeData > offNodeData_;
+		/// Manages the available Rids.
+		vector< unsigned int > freeRidStack_;
 };
 
 extern const Cinfo* initShellCinfo();
+
+
+
+/** 
+ * Here again are the two matching functions for opening and closing
+ * the request for an off-node value.
+ *
+ * requestOffNodeId
+ * returns a thread-safe unique id for the request, so that 
+ * we can examine the return values for ones we are interested in. 
+ * This rid is an index to a vector of ints that counts pending 
+ * returns on this id.
+ * Returns the next free Rid and initializes returnedData_ entry.
+ */
+template< class T > unsigned int openOffNodeValueRequest( 
+	Shell* sh, T* init, unsigned int numPending )
+{
+	return sh->openOffNodeValueRequestInner( 
+		static_cast< void* >( init ), numPending );
+}
+/**
+ * Polls postmaster, converts and returns data stored at rid
+ */
+template< class T > T* closeOffNodeValueRequest( 
+	Shell* sh, unsigned int rid )
+{
+	void* temp = sh->closeOffNodeValueRequestInner( rid );
+	return static_cast< T* >( temp );
+}
+
+
+/**
+ * Gets the value pointer for the specifid rid. Typed wrapper for
+ * shell function.
+ */
+template< class T > T* getOffNodeValuePtr( Shell* sh, unsigned int rid )
+{
+	// should have been initialized to a memory location to hold the value
+	return static_cast< T* >( sh->getOffNodeValuePtrInner( rid ) );
+}
 
 #endif // _SHELL_H

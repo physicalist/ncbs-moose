@@ -17,8 +17,9 @@
 #include "Shell.h"
 #include "ReadCell.h"
 #include "SimDump.h"
-// #include "ParShell.h"
-//
+
+extern void pollPostmaster(); // Defined in maindir/mpiSetup.cpp
+
 static const Slot getSlot = 
 	initShellCinfo()->getSlot( "parallel.getSrc" );
 static const Slot respondToGetSlot = 
@@ -39,6 +40,11 @@ static const Slot parMsgErrorSlot =
 	initShellCinfo()->getSlot( "parallel.parMsgErrorSrc" );
 static const Slot parMsgOkSlot = 
 	initShellCinfo()->getSlot( "parallel.parMsgOkSrc" );
+
+static const Slot parTraversePathSlot = 
+	initShellCinfo()->getSlot( "parallel.parTraversePathSrc" );
+static const Slot returnParTraverseSlot = 
+	initShellCinfo()->getSlot( "parallel.parTraversePathReturnSrc" );
 
 
 /**
@@ -106,7 +112,7 @@ void Shell::addParallelSrc( const Conn* c,
 	// cout << "in Shell::addParallelSrc on node=" << sh->myNode_ << ", src=" << src << "." << src.node() << ", srcField = " << srcField << ", dest = " << dest << "." << dest.node() << ", destField = " << destField << endl << flush;
 
 #ifdef DO_UNIT_TESTS
-	Eref de = sh->getPost( destNode );
+	Eref de = sh->getPostForUnitTests( destNode );
 	if ( de.e == 0 )
 		de = Id::postId( destNode ).eref();
 #else
@@ -220,11 +226,134 @@ void Shell::addParallelDest( const Conn* c,
 	assert( ret );
 }
 
-Eref Shell::getPost( unsigned int node ) const
+#ifdef DO_UNIT_TESTS
+Eref Shell::getPostForUnitTests( unsigned int node ) const
 {
 	return Eref( post_, node );
 }
+#endif
 
+
+/**
+ * Sets off request for children on all remote nodes, starting at 
+ * either root or shellId. Polls till all nodes return. Note that this
+ * must be thread-safe, because during the polling there may be nested
+ * calls.
+ */
+Id Shell::parallelTraversePath( Id start, vector< string >& names )
+{
+	assert( Id::shellId().good() );
+	Shell* sh = static_cast< Shell* >( Id::shellId().eref().data() );
+
+	// returns a thread-safe unique id
+	// for the request, so that we can examine the return values for ones
+	// we are interested in. This rid is an index to a vector of ints
+	// that counts pending returns on this id. When we call for the
+	// rid it sets up the pending returns to numNodes - 1.
+	Nid ret( Id::badId() ); // Must pass in an initialized memory location
+	unsigned int requestId = 
+		openOffNodeValueRequest< Nid > ( sh, &ret, sh->numNodes() - 1 ); 
+
+	// Send request to all nodes.
+	send3< Id, vector< string >, unsigned int >( 
+		Id::shellId().eref(), parTraversePathSlot,
+		start, names, requestId );
+	
+	// Get the value back.
+	Nid* temp = closeOffNodeValueRequest< Nid >( sh, requestId );
+	assert ( &ret == temp );
+	return ret;
+}
+
+void Shell::handleParTraversePathRequest( const Conn* c, 
+	Id start, vector< string > names, unsigned int requestId )
+{
+	assert( start == Id() || start == Id::shellId() );
+	Id ret = traversePath( start, names );
+	sendBack2< Nid, unsigned int >( c, returnParTraverseSlot,
+		ret, requestId );
+}
+
+/**
+ * Undefined effects if more than one node has a matching target.
+ */
+void Shell::handleParTraversePathReturn( const Conn* c,
+	Nid found, unsigned int requestId )
+{
+	Shell* sh = static_cast< Shell* >( c->data() );
+	if ( !found.bad() ) { 
+		// Got it!! But we need to hold on till everyone is back.
+		*( getOffNodeValuePtr< Nid >( sh, requestId ) ) = found;
+	}
+	sh->decrementOffNodePending( requestId );
+}
+
+/**
+ * The next two functions should always be called in pairs and should
+ * be called within the same function, so that local variables do not
+ * get lost.
+ *
+ * openOffNodeValueRequest:
+ * Inner function to handle requests for off-node operations returning
+ * values.
+ * Returns a thread-safe unique id for the request, so that 
+ * we can examine the return values for ones we are interested in. 
+ * This rid is an index to a vector of ints that counts pending 
+ * returns on this id.
+ * Returns the next free Rid and initializes offNodeData_ entry.
+ *
+ * The init argument is typically a local variable whose value will
+ * be read out in the succeeding extractOffNodeValue call. If these
+ * are not in the same function, then the user has to use allocated
+ * memory.
+ */
+unsigned int Shell::openOffNodeValueRequestInner( 
+	void* init, unsigned int numPending )
+{
+	unsigned int ret = freeRidStack_.back();
+	freeRidStack_.pop_back();
+	if ( freeRidStack_.size() == 0 )
+		cout << "Error: Shell::requestRid(): Empty Rid stack\n";
+	offNodeData_[ ret ].numPending = numPending;
+	offNodeData_[ ret ].data = init;
+	return ret;
+}
+
+/**
+ * closeOffNodeValueRequest:
+ * Polls postmaster, converts and returns data stored at rid
+ */
+void* Shell::closeOffNodeValueRequestInner( unsigned int rid )
+{
+	assert( rid < offNodeData_.size() );
+	void* ret = offNodeData_[ rid ].data;
+	assert( ret != 0 );
+	while ( offNodeData_[rid].numPending > 0 )
+		pollPostmaster();
+	freeRidStack_.push_back( rid );
+	offNodeData_[ rid ].data = 0;
+	return ret;
+}
+
+void* Shell::getOffNodeValuePtrInner( unsigned int rid )
+{
+	assert( offNodeData_.size() > rid );
+	assert( offNodeData_[ rid ].data != 0 ); 
+	return offNodeData_[ rid ].data;
+}
+
+void Shell::decrementOffNodePending( unsigned int rid )
+{
+	assert( rid < offNodeData_.size() );
+	assert( offNodeData_[ rid ].numPending > 0 );
+	offNodeData_[rid].numPending--;
+}
+
+unsigned int Shell::numPendingOffNode( unsigned int rid )
+{
+	assert( rid < offNodeData_.size() );
+	return offNodeData_[rid].numPending;
+}
 
 /*
 void ParShell::planarconnect(const Conn* c, string source, string dest, string spikegenRank, string synchanRank)

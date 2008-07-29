@@ -67,8 +67,9 @@ const Cinfo* initShellCinfo()
 		new SrcFinfo( "leSrc", Ftype1< vector< Id > >::global() ),
 		
 		// Creating an object
+		// type, name, node, parent.
 		new DestFinfo( "create",
-				Ftype3< string, string, Id >::global(),
+				Ftype4< string, string, int, Id >::global(),
 				RFCAST( &Shell::staticCreate ) ),
 		// Creating an array of objects
 		new DestFinfo( "createArray",
@@ -324,11 +325,11 @@ const Cinfo* initShellCinfo()
 		/////////////////////////////////////////////////////
 		new SrcFinfo( "createSrc", 
 			// type, name, parentId, newObjId.
-			Ftype4< string, string, Id, Id >::global()
+			Ftype4< string, string, Nid, Nid >::global()
 		),
 		// Creating an object
 		new DestFinfo( "create",
-				Ftype4< string, string, Id, Id >::global(),
+				Ftype4< string, string, Nid, Nid >::global(),
 				RFCAST( &Shell::parCreateFunc ) ),
 
 		/////////////////////////////////////////////////////
@@ -377,6 +378,27 @@ const Cinfo* initShellCinfo()
 		new DestFinfo( "parMsgOk",
 			Ftype2< Id, Id >::global(),
 			RFCAST( &Shell::parMsgOkFunc )
+		),
+
+		///////////////////////////////////////////////////////////
+		// This little section deals with requests to traverse the
+		// path string looking for an Id on a remote node.
+		///////////////////////////////////////////////////////////
+		// Args are: Start, names, requestId
+		new SrcFinfo( "parTraversePathSrc",
+			Ftype3< Id, vector< string >, unsigned int >::global()
+		),
+		// args are: foundId, requestId
+		new SrcFinfo( "parTraversePathReturnSrc",
+			Ftype2< Nid, unsigned int >::global()
+		),
+		new DestFinfo( "parTraversePath",
+			Ftype3< Id, vector< string >, unsigned int >::global(),
+			RFCAST( &Shell::handleParTraversePathRequest )
+		),
+		new DestFinfo( "parTraversePathReturn",
+			Ftype2< Nid, unsigned int >::global(),
+			RFCAST( &Shell::handleParTraversePathReturn )
 		),
 	};
 
@@ -511,6 +533,10 @@ Id Shell::parent( Id eid )
  * It is a static func as a utility for parsers.
  * It takes a pre-separated vector of names.
  * It ignores names that are just . or /
+ *
+ * For off-node children, if we a) insist that there always be a proxy
+ * and b) change proxies to also store names, we can do this easily.
+ *
  */
 Id Shell::traversePath( Id start, vector< string >& names )
 {
@@ -527,7 +553,14 @@ Id Shell::traversePath( Id start, vector< string >& names )
 			lookupGet< Id, string >( start.eref(), "lookupChild", ret, *i );
 			//if ( ret.zero() || ret.bad() ) cout << "Shell:traversePath: The id is bad" << endl;
 			if ( ret.zero() || ret.bad() ){
+				if ( numNodes_ > 1 &&
+					( start == Id() || start == Id::shellId() ) ) {
+					// Possibly element is rooted off-node
+					vector< string > temp( i, names.end() );
+					return parallelTraversePath( start, temp );
+				} else {
 					return Id::badId();
+				}
 			}
 			start = ret;
 		}
@@ -537,6 +570,17 @@ Id Shell::traversePath( Id start, vector< string >& names )
 
 // Requires a path argument without a starting space
 // Perhaps this should be in the interpreter?
+// Need to deal with case where element is on another node.
+// Normal situation is all on current node.
+// Simple situation is if a child is offnode, but parents are here.
+// 	Then we just traverse through the path till we go offnode, and keep
+// 	follwing it there..
+// Harder situation is when offnode child path begins at a global like
+// /root or /shell. Then all nodes have to be asked about the path.
+//
+// In the latter 2 cases we send the query to the one node, or to all
+// nodes, via the shell as usual. Then we set up a busy poll loop till 
+// the answer comes back.
 Id Shell::innerPath2eid( 
 		const string& path, const string& separator ) const
 {
@@ -819,45 +863,51 @@ void Shell::trigLe( const Conn* c, Id parent )
 	}
 }
 
-// Static function
+/**
+ * Creates an object on the specified node, on the specified parent object.
+ * If node < 0 then the new object is created as per system algorithm,
+ * which normally just places the child on the same node as the parent.
+ */
 void Shell::staticCreate( const Conn* c, string type,
-					string name, Id parent )
+					string name, int node, Id parent )
 {
-	Element* e = c->target().e;
 	Shell* s = static_cast< Shell* >( c->data() );
 
-	// This is where the IdManager does clever load balancing etc
-	// to assign child node.
-	Id id = Id::childId( parent );
-	// Id id = Id::scratchId();
-	Element* child = id();
-	if ( child == 0 ) { // local node
+	assert( s->myNode_ == 0 );
+	Id id;
+	Nid paNid( parent );
+
+
+	unsigned int unode = static_cast< unsigned int >( node );
+	if ( node < 0 ) { // Leave it to the system.
+		// This is where the IdManager does clever load balancing etc
+		// to assign child node.
+		id = Id::childId( parent );
+	} else if ( unode > s->numNodes_ ) {
+		cout << "Error: Shell::staticCreate: unallocated target node " <<
+			unode << endl;
+		return;
+	} else {
+		id = Id::makeIdOnNode( unode );
+	}
+	if ( parent == Id() || parent == Id::shellId() )
+		paNid.setNode( id.node() );
+	if ( id.node() == 0 && paNid.node() == 0 ) { // local node
 		bool ret = s->create( type, name, parent, id );
 		if ( ret ) { // Tell the parser it was created happily.
 			sendBack1< Id >( c, createSlot, id );
-		//	sendTo1< Id >( e, 0, createSlot, c->targetIndex(), id );
 		}
 	} else {
 		// Shell-to-shell messaging here with the request to
-		// create a child.
-		// This must only happen on node 0.
-		assert( e->id().node() == 0 );
+		// create a child. This goes to the node of the parent object.
 		assert( id.node() > 0 );
-		OffNodeInfo* oni = static_cast< OffNodeInfo* >( child->data( 0 ) );
-		// Element* post = oni->post;
-		unsigned int target = 0;
-		/*
-		unsigned int target = 
-		e->connSrcBegin( rCreateSlot.msg() ) - e->lookupConn( 0 ) +
-			id.node() - 1;
-			*/
-		sendTo4< string , string, Id, Id>( 
-			e, rCreateSlot, target,
+		assert( unode > 0 );
+		unsigned int target = paNid.node() - 1;
+
+		sendTo4< string, string, Nid, Nid >( 
+			c->target(), rCreateSlot, target,
 			type, name, 
-			parent, oni->id );
-		// Here it needs to fork till the object creation is complete.
-		delete oni;
-		delete child;
+			paNid, id );
 	}
 }
 
@@ -1384,44 +1434,40 @@ void Shell::recvGetRequest( const Conn* c, string value )
 	send1< string >( c->target(), getFieldSlot, value );
 }
 
+/**
+ * Creates a new object. Must be called on the same node as the
+ * parent object.
+ */
 void Shell::parCreateFunc ( const Conn* c, 
 				string objtype, string objname, 
-				Id parent, Id newobj )
+				Nid parent, Nid newobj )
 {
 	// printNodeInfo( c );
-	// cout << "in slaveCreateFunc :" << objtype << " " << objname << " " << parent << " " << newobj << "\n";
+	cout << "in slaveCreateFunc :" << objtype << " " << objname << " " << parent << "." << parent.node() << " " << newobj << "." << newobj.node() << "\n";
 
 	Shell* s = static_cast< Shell* >( c->data() );
+	if ( parent == Id() || parent == Id::shellId() ) {
+		parent.setNode( s->myNode_ );
+	}
 
-	bool ret = s->create( objtype, objname, parent, newobj );
+	assert ( s->myNode_ == parent.node() );
+	// both parent and child are here. Straightforward.
+	bool ret = 1;
+	if ( parent.node() == newobj.node() ) {
+		ret = s->create( objtype, objname, parent, newobj );
+	} else {
+		cout << "Shell::parCreateFunc: Currently cannot put child on different node than parent\n";
+		// send message to create child on remote node. This includes
+		// 	messaging from proxy to child.
+		// set up local messaging to connect to child.
+	}
+
 	if ( ret ) { // Tell the master node it was created happily.
 		// sendTo2< Id, bool >( e, createCheckSlot, c.targetIndex(), newobj, 1 );
 	} else { // Tell master node that the create failed.
 		// sendTo2< Id, bool >( e, createCheckSlot, c.targetIndex(), newobj, 0 );
 	}
-	// bool ret = s->create( objtype, objname, parent, newobj );
-	// assert( ret );
-	// Need to send return back to master node, and again we have
-	// asynchrony. Actually return not needed because master assigns
-	// id. All we need is to verify that it was created OK.
-	/*
-	if ( ret ) {
-		sendTo1< Id >( c.targetElement(),
-					createSlot, c.targetIndex(), ret );
-	}
-	*/
 }
-
-/*
-void Shell::addFunc ( const Conn* c, 
-		Id src, string srcField,
-		Id dest, string destField )
-{
-	printNodeInfo( c );
-	cout << "in slaveAddFunc :" << src << " " << srcField << 
-		" " << dest << " " << destField << "\n";
-}
-*/
 
 // Static function
 /**
@@ -1979,6 +2025,11 @@ void Shell::addParallelDest( const Conn* c,
 Eref Shell::getPost( unsigned int node ) const
 {
 	return 0;
+}
+
+Id Shell::parallelTraversePath( Id start, vector< string >& names )
+{
+	return Id::bad(); // Fails on single node version.
 }
 
 #endif // USE_MPI

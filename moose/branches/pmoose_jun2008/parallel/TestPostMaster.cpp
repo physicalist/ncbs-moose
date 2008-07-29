@@ -876,6 +876,12 @@ void testNodeSetup()
 	delete c;
 }
 
+/**
+ * Creates objects on remote nodes
+ * \todo: Needs to be extended by creating objects on remote nodes with
+ * parents on different remote nodes.
+ * Also need to convert Ids to Nids for the send command.
+ */
 Id testParCreate( vector< Id >& testIds )
 {
 	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
@@ -894,7 +900,7 @@ Id testParCreate( vector< Id >& testIds )
 			Id newId = Id::makeIdOnNode( i );
 			testIds.push_back( newId );
 			// cout << "Create op: sendTo4( shellId, slot, " << tgt << ", " << "Neutral, " << sname << ", root, " << newId << endl;
-			sendTo4< string, string, Id, Id >(
+			sendTo4< string, string, Nid, Nid >(
 				Id::shellId().eref(), remoteCreateSlot, tgt,
 				"Neutral", sname, 
 				Id(), newId
@@ -908,11 +914,12 @@ Id testParCreate( vector< Id >& testIds )
 	char name[20];
 	sprintf( name, "/tn%d", myNode );
 	string sname = name;
-	Id tnId( sname );
 	if ( myNode != 0 ) {
+		Id tnId( sname );
 		ASSERT( tnId.good(), "postmaster created obj on remote node" );
+		return tnId;
 	}
-	return tnId;
+	return Id();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -978,6 +985,9 @@ void testParSet( vector< Id >& testIds )
 	}
 	MPI::COMM_WORLD.Barrier();
 	pollPostmaster(); // There is a barrier in the polling operation itself
+	pollPostmaster(); // There is a barrier in the polling operation itself
+	pollPostmaster(); // There is a barrier in the polling operation itself
+	pollPostmaster(); // There is a barrier in the polling operation itself
 	if ( myNode != 0 ) {
 		sprintf( name, "/bar%d", myNode * 10 );
 		sname = name;
@@ -1017,7 +1027,7 @@ void testParCommandSequence()
 				unsigned int tgt = ( i < myNode ) ? i : i - 1;
 				Id newId = Id::makeIdOnNode( i );
 				// cout << "Create op: sendTo4( shellId, slot, " << tgt << ", " << "Neutral, " << sname << ", root, " << newId << endl;
-				sendTo4< string, string, Id, Id >(
+				sendTo4< string, string, Nid, Nid >(
 					Id::shellId().eref(), remoteCreateSlot, tgt,
 					"Table", sname, 
 					Id(), newId
@@ -1031,6 +1041,9 @@ void testParCommandSequence()
 		}
 	}
 	MPI::COMM_WORLD.Barrier();
+	pollPostmaster(); // There is a barrier in the polling operation itself
+	pollPostmaster(); // There is a barrier in the polling operation itself
+	pollPostmaster(); // There is a barrier in the polling operation itself
 	pollPostmaster(); // There is a barrier in the polling operation itself
 	if ( myNode != 0 ) {
 		for ( unsigned int j = 0; j < numSeq; j++ ) {
@@ -1085,7 +1098,7 @@ void testParMsg()
 			unsigned int tgt = ( i < myNode ) ? i : i - 1;
 			Id newId = Id::makeIdOnNode( i );
 			tabIds.push_back( newId );
-			sendTo4< string, string, Id, Id >(
+			sendTo4< string, string, Nid, Nid >(
 				Id::shellId().eref(), remoteCreateSlot, tgt,
 				"Table", sname, 
 				Id(), newId
@@ -1158,6 +1171,8 @@ void testParMsg()
 	ASSERT( checkId.eref()->numTargets( "process" ) == 1, "sched par msg");
 	// set< int >( cjId.eref(), "step", static_cast< int >( numNodes ) );
 	set< int >( cjId.eref(), "step", numNodes * 2 + 3 );
+	MPI::COMM_WORLD.Barrier();
+	set< int >( cjId.eref(), "step", numNodes * 2 + 3 );
 	double f1 = 0.0;
 	double f2 = 1.0;
 	double f = 1.0;
@@ -1169,7 +1184,7 @@ void testParMsg()
 	}
 	double x;
 	get< double >( checkId.eref(), "output", x );
-	cout << "on " << myNode << ", f = " << f << ", x = " << x << endl << flush;
+	// cout << "on " << myNode << ", f = " << f << ", x = " << x << endl << flush;
 	ASSERT( x == f, "par msg fibonacci" );
 
 	set( checkId.eref(), "destroy" );

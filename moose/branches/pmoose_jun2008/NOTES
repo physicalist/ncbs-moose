@@ -7403,13 +7403,13 @@ value, which I will now use in the next round of unit tests.
 Checked in as revision 556 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
 Next stuff:
-- set and get values across nodes
+* set and get values across nodes
 - quit cleanly
 - Don't busy loop
 - Show values on remote objects.
 - list elements, in a node-independent way (starting from /, for example)
-- set up messages across nodes
-- Transfer data across nodes.
+* set up messages across nodes
+* Transfer data across nodes.
 
 ==============================================================================
 27 July 2008
@@ -7468,7 +7468,7 @@ help the problem.
 some options:
 - Use a second boolean flag to keep track of request status
 - Figure out how request works
-- Enforce reciept of info from every node to every other node, every timestep
+- Enforce receipt of info from every node to every other node, every timestep
 	(clearly stupid)
 
 OK, used first option. Fixed sends to occur only if there was nonzero data.
@@ -7486,3 +7486,68 @@ more than 2x that. I have had it work for up to 12 nodes.
 Anyway, this qualified success is still a big step forward: parallel set up
 and execution of messages.
 
+Checked in as revision 563 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+The issue with number of ticks may explain why things go bad with more nodes.
+Since we do a single scan for arriving data, we may simply miss data transfers
+that have yet to arrive. The barrier doesn't help with this as it is an 
+independent signal. Let's see if this interpretation pans out by increasing
+the number of polling cycles for the sequence test, which fails for many nodes.
+
+This works. Went up to 32 nodes (poor little laptop!) and also did 7 and 19
+as examples of peculiar node numbers.
+
+Next steps:
+- Make it usable for running multinode simulations
+	- Shell/parser commands for node-specific object creation
+	- Sync messages
+	- Modify shell commands to operate node-independently
+		Currently only message setup works this way. Need:
+		- get
+		- set
+		- showfield
+		- le
+		- pwe
+		- create (so it creates on node of parent)
+		- createmap (ditto)
+	- Fix up what happens when we operate on existing proxies.
+- Upgrade array operations to work across nodes
+	- Createmap etc
+	- Multinode array proxies
+	- Multinode messaging
+- Design decisions on 
+	- limiting Async node drift
+		- Use the barrier for now.
+		- Later a scatter/gather kind of check using the asyncs?
+		Still does not guarantee arbitrary pair message completion.
+	- Managing synchronization on sync models.
+		Already did this. Force polling till all irecvs are in.
+
+For now, the goal is to be able to use scripts to set up nice big multinode
+spiking models. So start with the first set of goals.
+
+==============================================================================
+29 July 2009
+Working on 'create'. In the GENESIS SLI script, the node number is 
+optionally specified on the create command using the @ symbol
+create /foo/bar/zod@15
+
+Two issues here:
+- Id( string path ) constructor needs to be able to go off node to find object.
+- Need to be able to connect parent to child across nodes.
+
+I can get partial functioning once I get the first to work.
+
+Sort of set up the front end of the parallelTraversePath in ParShell.cpp.
+It has a requestId and associated storage to handle multiple returns in
+a thread-safe way. Still need to implement the back end of the call.
+
+Implemented, compiles, breaks.
+
+Fixed some breaks, patched over others: Basically the new code doesn't work
+and any calls to it die. So I had to comment out a few parser unit tests
+that fail to find objects, and therefore try to go off-node. 
+But since the changes are extensive I'll check it
+in before putting in specific unit tests, and reinstating the commented
+out bits.
+==============================================================================

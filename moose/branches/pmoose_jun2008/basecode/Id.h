@@ -253,6 +253,11 @@ class Nid: public Id
 		unsigned int node() const {
 			return node_;
 		}
+
+		void setNode( unsigned int node ) {
+			node_ = node;
+		}
+		
 	private:
 		unsigned int node_;
 };
