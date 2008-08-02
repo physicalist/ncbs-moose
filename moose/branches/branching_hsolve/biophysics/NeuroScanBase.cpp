@@ -13,76 +13,20 @@
 #include "RateLookup.h"
 #include "HSolveStruct.h"
 #include "NeuroScanBase.h"
-#include <stack>
 #include <set>
 
 void NeuroScanBase::initialize( Id seed, double dt )
 {
 	dt_ = dt;
 	
-	readCompartments( seed );
+	createMatrix( seed );
 	readChannels( );
 	readGates( );
 	readCalcium( );
 	readSynapses( );
-	createMatrix( );
+	
 	createLookupTables( );
 	concludeInit( );
-}
-
-void NeuroScanBase::readCompartments( Id seed ) {
-	Id parent;
-	vector< Id > child = neighbours( seed );
-	if ( child.size() != 1 )
-		while ( !child.empty() ) {
-			parent = seed;
-			seed   = child[ 0 ];
-			child  = children( seed, parent );
-		}
-	
-	unsigned int label = 0;
-	stack< CNode > nodeStack;
-	CNode currentNode;
-	currentNode.self_   = seed;
-	currentNode.child_  = neighbours( currentNode.self_ );
-	currentNode.state_  = 0;
-	currentNode.label_  = label;
-	nodeStack.push( currentNode );
-	compartmentId_.push_back( currentNode.self_ );
-	
-	while ( !nodeStack.empty() )
-		if ( currentNode.state_ < currentNode.child_.size() ) {
-			++label;
-			
-			if ( currentNode.state_ >= 1 ) {
-				checkpoint_.push_back( currentNode.label_ );
-				checkpoint_.push_back( label );
-			}
-			
-			currentNode.parent_ = currentNode.self_;
-			currentNode.self_   = currentNode.child_[
-				currentNode.state_ ];
-			currentNode.child_  = children( currentNode.self_,
-				currentNode.parent_ );
-			currentNode.state_  = 0;
-			currentNode.label_  = label;
-			nodeStack.push( currentNode );
-			compartmentId_.push_back( currentNode.self_ );
-		} else {
-			nodeStack.pop();
-			if( !nodeStack.empty() ) {
-				++( nodeStack.top().state_ );
-				currentNode = nodeStack.top();
-			}
-		}
-	
-	N_ = compartmentId_.size( );
-//~ 
-if ( checkpoint_.size() )
-	reverse( compartmentId_.begin(), compartmentId_.end() );
-	reverse( checkpoint_.begin(), checkpoint_.end() );
-	for ( unsigned long icp = 0; icp < checkpoint_.size(); ++icp )
-		checkpoint_[ icp ] = ( N_ - 1 ) - checkpoint_[ icp ];
 }
 
 void NeuroScanBase::readChannels( ) {
@@ -241,6 +185,7 @@ void NeuroScanBase::readSynapses( ) {
 	}
 }
 
+/*
 void NeuroScanBase::createMatrix( ) {
 	M_.resize( 5 * N_, 0.0 );
 	VMid_.resize( N_ );
@@ -302,6 +247,7 @@ void NeuroScanBase::createMatrix( ) {
 		//~ M_[ 3 + ia ] *= CmByDt_[ ic ];
 	}
 }
+*/
 
 void NeuroScanBase::createLookupTables( ) {
 	std::set< Id > caSet;

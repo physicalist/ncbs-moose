@@ -57,8 +57,11 @@ private:
 	void innerHubCreateFunc( Eref e );
 	void innerReadModelFunc( Eref e, Id seed, double dt );
 	
-	vector< Id > children( Id self, Id parent );
-	vector< Id > neighbours( Id compartment );
+	//~ vector< Id > children( Id self, Id parent );
+	//~ vector< Id > neighbours( Id compartment );
+	int findAdjacent( Id compartment, vector< Id >& );
+	int findAdjacent( Id compartment, Id exclude, vector< Id >& );
+	int findChildren( Id compartment, vector< Id >& );
 	vector< Id > channels( Id compartment );
 	int gates( Id channel, vector< Id >& );
 	Id presyn( Id compartment );
