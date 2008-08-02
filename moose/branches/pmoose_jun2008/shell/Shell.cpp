@@ -27,7 +27,8 @@
 //////////////////////////////////////////////////////////////////////
 
 unsigned int Shell::myNode_ = 0;
-unsigned int Shell::numNodes_ = 0;
+unsigned int Shell::numNodes_ = 1;
+const unsigned int Shell::maxNumOffNodeRequests = 100;
 
 //////////////////////////////////////////////////////////////////////
 // Shell MOOSE object creation stuff
@@ -292,19 +293,20 @@ const Cinfo* initShellCinfo()
 		// get stuff
 		/////////////////////////////////////////////////////
 		new SrcFinfo( "getSrc",
-			// objId, field
-			Ftype2< Id, string >::global() ),
+			// objId, field, requestId
+			Ftype3< Id, string, unsigned int >::global() ),
 		new DestFinfo( "get",
-			// objId, field
-			Ftype2< Id, string >::global(),
+			// objId, field, requestId
+			Ftype3< Id, string, unsigned int >::global(),
 			RFCAST( &Shell::parGetField )
 			),
-		new SrcFinfo( "respondToGet",
-			Ftype1< string >::global()
+		new SrcFinfo( "returnGetSrc",
+			// return string, requestId
+			Ftype2< string, unsigned int >::global()
 		),
-		new DestFinfo( "recvGet",
-			Ftype1< string >::global(),
-			RFCAST( &Shell::recvGetRequest )
+		new DestFinfo( "returnGet",
+			Ftype2< string, unsigned int >::global(),
+			RFCAST( &Shell::handleReturnGet )
 		),
 		/////////////////////////////////////////////////////
 		// set stuff
@@ -319,7 +321,8 @@ const Cinfo* initShellCinfo()
 		),
 
 		/////////////////////////////////////////////////////
-		// Creationism. Note that the createSrc should only come
+		// Creationism, and its converse. Note that the createSrc
+		// should only come
 		// from the master node as it is the only one that knows
 		// the next child index.
 		/////////////////////////////////////////////////////
@@ -331,6 +334,14 @@ const Cinfo* initShellCinfo()
 		new DestFinfo( "create",
 				Ftype4< string, string, Nid, Nid >::global(),
 				RFCAST( &Shell::parCreateFunc ) ),
+		new SrcFinfo( "deleteSrc", 
+			// type, name, parentId, newObjId.
+			Ftype1< Id >::global()
+		),
+		// Creating an object
+		new DestFinfo( "delete",
+				Ftype1< Id >::global(),
+				RFCAST( &Shell::staticDestroy ) ),
 
 		/////////////////////////////////////////////////////
 		// Msg stuff
@@ -399,6 +410,31 @@ const Cinfo* initShellCinfo()
 		new DestFinfo( "parTraversePathReturn",
 			Ftype2< Nid, unsigned int >::global(),
 			RFCAST( &Shell::handleParTraversePathReturn )
+		),
+
+		///////////////////////////////////////////////////////////
+		// This section deals with requests for le.
+		///////////////////////////////////////////////////////////
+		
+		// args are: parent, requestId
+		new SrcFinfo( "requestLeSrc",
+			Ftype2< Nid, unsigned int >::global()
+		),
+		new DestFinfo( "requestLe",
+			Ftype2< Nid, unsigned int >::global(),
+			RFCAST( &Shell::handleRequestLe )
+		),
+		///////////////////////////////////////////////////////////
+		// This section deals with requests for le.
+		///////////////////////////////////////////////////////////
+
+		// args are: elist, requestId
+		new SrcFinfo( "returnLeSrc",
+			Ftype2< vector< Nid >, unsigned int >::global()
+		),
+		new DestFinfo( "returnLe",
+			Ftype2< vector< Nid >, unsigned int >::global(),
+			RFCAST( &Shell::handleReturnLe )
 		),
 	};
 
@@ -489,12 +525,17 @@ static const Slot rCreateSlot =
 static const Slot rGetSlot = initShellCinfo()->getSlot( "parallel.getSrc" );
 static const Slot rSetSlot = initShellCinfo()->getSlot( "parallel.setSrc" );
 static const Slot rAddSlot = initShellCinfo()->getSlot( "parallel.addLocalSrc" );
-static const Slot recvGetSlot =
-	initShellCinfo()->getSlot( "parallel.respondToGet" );
-
 static const Slot pollSlot =
 	initShellCinfo()->getSlot( "pollSrc" );
 
+static const Slot requestLeSlot =
+	initShellCinfo()->getSlot( "parallel.requestLeSrc" );
+
+static const Slot parGetFieldSlot =
+	initShellCinfo()->getSlot( "parallel.getSrc" );
+
+static const Slot parDeleteSlot =
+	initShellCinfo()->getSlot( "parallel.deleteSrc" );
 
 void printNodeInfo( const Conn* c );
 
@@ -506,6 +547,11 @@ Shell::Shell()
 	: cwe_( Id() ), recentElement_( Id() )
 {
 	simDump_ = new SimDump;
+	// At this point the initMPI should have initialized numNodes
+	offNodeData_.resize( maxNumOffNodeRequests );
+	freeRidStack_.resize( maxNumOffNodeRequests );
+	for ( unsigned int i = 0; i < maxNumOffNodeRequests; i++ )
+		freeRidStack_[i] = maxNumOffNodeRequests - i - 1;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -540,6 +586,24 @@ Id Shell::parent( Id eid )
  */
 Id Shell::traversePath( Id start, vector< string >& names )
 {
+	Id ret = localTraversePath( start, names );
+	if ( ret.bad() ) {
+		if ( numNodes_ > 1 &&
+			( start == Id() || start == Id::shellId() ) ) {
+			// Possibly element is rooted off-node
+			return parallelTraversePath( start, names );
+		}
+	}
+	return ret;
+}
+
+/**
+ * This function is strictly local: it does not invoke any outgoing
+ * calls and returns Id::bad if it cannot find the object.
+ * Called by target nodes to avoid infinite recursion.
+ */
+Id Shell::localTraversePath( Id start, vector< string >& names )
+{
 	assert( !start.bad() );
 	vector< string >::iterator i;
 	for ( i = names.begin(); i != names.end(); i++ ) {
@@ -553,20 +617,14 @@ Id Shell::traversePath( Id start, vector< string >& names )
 			lookupGet< Id, string >( start.eref(), "lookupChild", ret, *i );
 			//if ( ret.zero() || ret.bad() ) cout << "Shell:traversePath: The id is bad" << endl;
 			if ( ret.zero() || ret.bad() ){
-				if ( numNodes_ > 1 &&
-					( start == Id() || start == Id::shellId() ) ) {
-					// Possibly element is rooted off-node
-					vector< string > temp( i, names.end() );
-					return parallelTraversePath( start, temp );
-				} else {
-					return Id::badId();
-				}
+				return Id::badId();
 			}
 			start = ret;
 		}
 	}
 	return start;
 }
+
 
 // Requires a path argument without a starting space
 // Perhaps this should be in the interpreter?
@@ -850,17 +908,50 @@ void Shell::pope( const Conn* c )
 
 
 void Shell::trigLe( const Conn* c, Id parent )
-						
 {
-	// Here we do something intelligent for off-node le.
-	if ( !parent.bad() ) {
-		vector< Id > ret;
-		if ( get< vector< Id > >( parent.eref(), "childList", ret ) ) {
-			sendBack1< vector< Id > >( c, elistSlot, ret );
-			// Element* e = c->targetElement();
-			// sendTo1< vector< Id > >( e, 0, elistSlot, c->targetIndex(), ret );
-		}
+	// In principle we should use a messaging approach to doing the 'get'
+	// command, and it would work independent of node. Anyway, for now
+	// we'll manage it explicitly.
+	Shell* sh = static_cast< Shell* >( c->data() );
+	assert( sh );
+	if ( parent.bad() ) {
+		cout << "Error: Shell::trigLe: unknown parent Id\n";
+		return;
 	}
+
+	vector< Id > ret;
+	vector< Nid > nret;
+	// This will get messier for arrayElements across nodes.
+	// Need to do a smarter test for global objects, something like:
+	// if ( parent.node() == Id::GlobalNode )
+	if ( parent == Id() || parent == Id::shellId() ) {
+		bool flag = get< vector< Id > >( 
+			parent.eref(), "childList", ret );
+		assert( flag );
+		unsigned int requestId = 
+			openOffNodeValueRequest< vector< Nid > >( sh, &nret, 
+			sh->numNodes() - 1 ); // ask all nodes for values.
+		send2< Nid, unsigned int >( c->target(), requestLeSlot, 
+			parent, requestId );
+		vector< Nid >* temp = 
+			closeOffNodeValueRequest< vector< Nid > > ( sh, requestId );
+		assert( temp == &nret );
+	} else if ( parent.node() == 0 ) {
+		bool flag = get< vector< Id > >( parent.eref(), "childList", ret );
+		assert( flag );
+	} else { // Off-node to single node.
+		unsigned int node = parent.node();
+		unsigned int tgt = ( node < sh->myNode() ) ? node : node - 1;
+		unsigned int requestId = 
+			openOffNodeValueRequest< vector< Nid > >( sh, &nret, 1 );
+		sendTo2< Nid, unsigned int >( c->target(), requestLeSlot, tgt,
+			parent, requestId );
+		vector< Nid >* temp = 
+			closeOffNodeValueRequest< vector< Nid > > ( sh, requestId );
+		assert( temp == &nret );
+	}
+	ret.insert( ret.end(), nret.begin(), nret.end() );
+	sendBack1< vector< Id > >( c, elistSlot, ret );
 }
 
 /**
@@ -883,7 +974,7 @@ void Shell::staticCreate( const Conn* c, string type,
 		// This is where the IdManager does clever load balancing etc
 		// to assign child node.
 		id = Id::childId( parent );
-	} else if ( unode > s->numNodes_ ) {
+	} else if ( unode >= s->numNodes_ ) {
 		cout << "Error: Shell::staticCreate: unallocated target node " <<
 			unode << endl;
 		return;
@@ -1338,8 +1429,27 @@ void Shell::getSynCount2(const Conn* c, Id dest){
 // Static function
 void Shell::staticDestroy( const Conn* c, Id victim )
 {
+	// Should be more general:
+	// if ( victim.node() == Id::globalNode ) { error() };
+	
+	if ( victim == Id() ) {
+		cout << "Error: Shell::staticDestroy: cannot delete /root\n";
+		return;
+	}
+	if ( victim == Id::shellId() ) {
+		cout << "Error: Shell::staticDestroy: cannot delete /shell\n";
+		return;
+	}
+
 	Shell* s = static_cast< Shell* >( c->data() );
-	s->destroy( victim );
+	if ( victim.node() == s->myNode() ) {
+		s->destroy( victim );
+	} else { // Ask another node to do the dirty work.
+		unsigned int tgt = victim.node();
+		if ( tgt > s->myNode() )
+			tgt--;
+		sendTo1< Id >( Id::shellId().eref(), parDeleteSlot, tgt, victim );
+	}
 }
 
 /**
@@ -1371,101 +1481,34 @@ void Shell::getField( const Conn* c, Id id, string field )
 {
 	if ( id.bad() )
 		return;
-	string ret;
-	Eref eref(id(), id.index());
-	
-	// Appropriate off-node stuff here.
+	Shell* sh = static_cast< Shell* >( c->data() );
 
-	const Finfo* f = eref.e->findFinfo( field );
-	// Error messages are the job of the parser. So we just return
-	// the value when it is good and leave the rest to the parser.
-	if ( f )
-		if ( f->strGet( eref, ret ) ){
-			sendBack1< string >( c, getFieldSlot, ret );
-			//GenesisParserWrapper::recvField (conn, ret);
-			// sendTo1< string >( c->targetElement(), 0,
-				// getFieldSlot, c->targetIndex(), ret );
+	string ret;
+	Eref eref = id.eref();
+
+	unsigned int node = id.node();
+	assert( node < numNodes() || node == Id::GlobalNode );
+	if ( node == myNode() || node == Id::GlobalNode ) {
+		const Finfo* f = eref.e->findFinfo( field );
+		if ( f ) {
+			if ( f->strGet( eref, ret ) ){
+				sendBack1< string >( c, getFieldSlot, ret );
+			}
+		} else {
+			cout << "Shell::getField: Failed to find field " << field << 
+				" on object " << id.path() << endl;
 		}
-}
-
-////////////////////////////////////////////////////////////////////////
-// Functions for implementing cross-node operations.
-////////////////////////////////////////////////////////////////////////
-
-void printNodeInfo( const Conn* c )
-{
-	Element* post = c->source().e;
-	assert( post->className() == "proxy" );
-	unsigned int mynode = Shell::myNode();
-	// unsigned int remotenode;
-	// get< unsigned int >( post, "localNode", mynode );
-	// get< unsigned int >( post, "remoteNode", remotenode );
-
-	// cout << "on " << mynode << " from " << remotenode << ":";
-	cout << "on " << mynode << ":";
-}
-
-void Shell::parGetField( const Conn* c, Id id, string field )
-{
-	// printNodeInfo( c );
-	// cout << "in slaveGetFunc on " << id << " with field :" << field << "\n";
-	if ( id.bad() )
-		return;
-	string ret;
-	Element* e = id();
-	if ( e == 0 )
-		return;
-
-	const Finfo* f = e->findFinfo( field );
-	if ( f )
-		if ( f->strGet( e, ret ) )
-			sendBack1< string >( c, recvGetSlot, ret );
-}
-
-void Shell::recvGetRequest( const Conn* c, string value )
-{
-	printNodeInfo( c );
-	cout << "in recvGetFunc with field value :'" << value << endl << flush;
-	// send off to parser maybe.
-	// Problem if multiple parsers.
-	// Bigger problem that this is asynchronous now.
-	// Maybe it is OK if only one parser.
-	// sendTo1< string >( c.targetElement(), getFieldSlot, 0, value );
-	send1< string >( c->target(), getFieldSlot, value );
-}
-
-/**
- * Creates a new object. Must be called on the same node as the
- * parent object.
- */
-void Shell::parCreateFunc ( const Conn* c, 
-				string objtype, string objname, 
-				Nid parent, Nid newobj )
-{
-	// printNodeInfo( c );
-	cout << "in slaveCreateFunc :" << objtype << " " << objname << " " << parent << "." << parent.node() << " " << newobj << "." << newobj.node() << "\n";
-
-	Shell* s = static_cast< Shell* >( c->data() );
-	if ( parent == Id() || parent == Id::shellId() ) {
-		parent.setNode( s->myNode_ );
-	}
-
-	assert ( s->myNode_ == parent.node() );
-	// both parent and child are here. Straightforward.
-	bool ret = 1;
-	if ( parent.node() == newobj.node() ) {
-		ret = s->create( objtype, objname, parent, newobj );
 	} else {
-		cout << "Shell::parCreateFunc: Currently cannot put child on different node than parent\n";
-		// send message to create child on remote node. This includes
-		// 	messaging from proxy to child.
-		// set up local messaging to connect to child.
-	}
-
-	if ( ret ) { // Tell the master node it was created happily.
-		// sendTo2< Id, bool >( e, createCheckSlot, c.targetIndex(), newobj, 1 );
-	} else { // Tell master node that the create failed.
-		// sendTo2< Id, bool >( e, createCheckSlot, c.targetIndex(), newobj, 0 );
+		unsigned int requestId = 
+			openOffNodeValueRequest< string >( sh, &ret, 1 );
+		unsigned int tgt = ( node < myNode() ) ? node : node - 1;
+		sendTo3< Id, string, unsigned int >(
+			c->target(), parGetFieldSlot, tgt,
+			id, field, requestId
+		);
+		string* temp = closeOffNodeValueRequest< string >( sh, requestId );
+		assert( &ret == temp );
+		sendBack1< string >( c, getFieldSlot, ret );
 	}
 }
 
@@ -2462,211 +2505,3 @@ void Shell::le ( Id eid )
 	}
 }
 #endif
-
-#ifdef DO_UNIT_TESTS
-
-#include <math.h>
-#include "../element/Neutral.h"
-
-void testShell()
-{
-	cout << "\nTesting Shell";
-
-	Element* root = Element::root();
-	ASSERT( root->id().zero() , "creating /root" );
-
-	vector< string > vs;
-	separateString( "a/b/c/d/e/f/ghij/k", vs, "/" );
-
-	/////////////////////////////////////////
-	// Test path parsing
-	/////////////////////////////////////////
-
-	ASSERT( vs.size() == 8, "separate string" );
-	ASSERT( vs[0] == "a", "separate string" );
-	ASSERT( vs[1] == "b", "separate string" );
-	ASSERT( vs[2] == "c", "separate string" );
-	ASSERT( vs[3] == "d", "separate string" );
-	ASSERT( vs[4] == "e", "separate string" );
-	ASSERT( vs[5] == "f", "separate string" );
-	ASSERT( vs[6] == "ghij", "separate string" );
-	ASSERT( vs[7] == "k", "separate string" );
-
-	separateString( "a->b->ghij->k", vs, "->" );
-	ASSERT( vs.size() == 4, "separate string" );
-	ASSERT( vs[0] == "a", "separate string" );
-	ASSERT( vs[1] == "b", "separate string" );
-	ASSERT( vs[2] == "ghij", "separate string" );
-	ASSERT( vs[3] == "k", "separate string" );
-	
-	Shell sh;
-
-	/////////////////////////////////////////
-	// Test element creation in trees
-	// This used to be a set of unit tests for Shell, but now
-	// the operations have been shifted over to Neutral.
-	// I still set up the creation operations because they are
-	// used later for path lookup
-	/////////////////////////////////////////
-
-	Id n = Id::lastId();
-	Id a = Id::scratchId();
-	bool ret = 0;
-
-	ret = sh.create( "Neutral", "a", Id(), a );
-	ASSERT( ret, "creating a" );
-	ASSERT( a.id() == n.id() + 1 , "creating a" );
-	ASSERT( ( sh.parent( a ) == 0 ), "finding parent" );
-
-	Id b = Id::scratchId();
-	ret = sh.create( "Neutral", "b", Id(), b );
-	ASSERT( ret, "creating b" );
-	ASSERT( b.id() == n.id() + 2 , "creating b" );
-
-	Id c = Id::scratchId();
-	ret = sh.create( "Neutral", "c", Id(), c );
-	ASSERT( ret, "creating c" );
-	ASSERT( c.id() == n.id() + 3 , "creating c" );
-
-	Id a1 = Id::scratchId();
-	ret = sh.create( "Neutral", "a1", a, a1 );
-	ASSERT( ret, "creating a1" );
-	ASSERT( a1.id() == n.id() + 4 , "creating a1" );
-	ASSERT( ( sh.parent( a1 ) == a ), "finding parent" );
-
-	Id a2 = Id::scratchId();
-	ret = sh.create( "Neutral", "a2", a, a2 );
-	ASSERT( ret, "creating a2" );
-	ASSERT( a2.id() == n.id() + 5 , "creating a2" );
-
-	/////////////////////////////////////////
-	// Test path lookup operations
-	/////////////////////////////////////////
-
-	string path = sh.eid2path( a1 );
-	ASSERT( path == "/a/a1", "a1 eid2path" );
-	path = sh.eid2path( a2 );
-	ASSERT( path == "/a/a2", "a2 eid2path" );
-
-	Id eid = sh.innerPath2eid( "/a/a1", "/" );
-	ASSERT( eid == a1, "a1 path2eid" );
-	eid = sh.innerPath2eid( "/a/a2", "/" );
-	ASSERT( eid == a2, "a2 path2eid" );
-
-	/////////////////////////////////////////
-	// Test digestPath
-	/////////////////////////////////////////
-	/*
-	Id foo = Id::scratchId(); // first make another test element.
-	ret = sh.create( "Neutral", "foo", a2, foo );
-	ASSERT( ret, "creating /a/a2/foo" );
-	Id f = Id::scratchId(); // first make another test element.
-	ret = sh.create( "Neutral", "f", a2, f );
-	ASSERT( ret, "creating /a/a2/f" );
-	*/
-
-	sh.cwe_ = a2;
-	sh.recentElement_ = a1;
-	path = "";
-	sh.digestPath( path );
-	ASSERT( path == "", "path == blank" );
-
-	path = ".";
-	sh.digestPath( path );
-	ASSERT( path == "/a/a2", "path == /a/a2" );
-
-	path = "^";
-	sh.digestPath( path );
-	ASSERT( path == "/a/a1", "path == /a/a1" );
-
-	path = "f";
-	sh.digestPath( path );
-	ASSERT( path == "/a/a2/f", "path == /a/a2/f" );
-
-	path = "./";
-	sh.digestPath( path );
-	ASSERT( path == "/a/a2", "path == /a/a2" );
-
-	path = "..";
-	sh.digestPath( path );
-	ASSERT( path == "/a", "path == /a" );
-
-	path = "ax";
-	sh.digestPath( path );
-	ASSERT( path == "/a/a2/ax", "path == /a/a2/ax" );
-
-	path = "/a";
-	sh.digestPath( path );
-	ASSERT( path == "/a", "path == /a" );
-
-	sh.cwe_ = Id();
-	path = "..";
-	sh.digestPath( path );
-	ASSERT( path == "/", "path == /" );
-
-	path = "^/b/c/d";
-	sh.digestPath( path );
-	ASSERT( path == "/a/a1/b/c/d", "path == /a/a1/b/c/d" );
-
-	sh.cwe_ = a2;
-	path = "./b/c/d";
-	sh.digestPath( path );
-	ASSERT( path == "/a/a2/b/c/d", "path == /a/a2/b/c/d" );
-
-	path = "bba/bba";
-	sh.digestPath( path );
-	ASSERT( path == "/a/a2/bba/bba", "path == /a/a2/bba/bba" );
-
-	path = "../below";
-	sh.digestPath( path );
-	ASSERT( path == "/a/below", "path == /a/below" );
-
-	sh.cwe_ = Id();
-	path = "../rumbelow";
-	sh.digestPath( path );
-	ASSERT( path == "/rumbelow", "path == /rumbelow" );
-	
-	sh.cwe_ = a2;
-	path = "x/y/z";
-	sh.digestPath( path );
-	ASSERT( path == "/a/a2/x/y/z", "path == /a/a2/x/y/z" );
-
-	path = "/absolute/x/y/z";
-	sh.digestPath( path );
-	ASSERT( path == "/absolute/x/y/z", "path == /absolute/x/y/z" );
-	
-	/////////////////////////////////////////
-	// Test destroy operation
-	/////////////////////////////////////////
-	sh.destroy( a );
-	sh.destroy( b );
-	sh.destroy( c );
-	ASSERT( a() == 0, "destroy a" );
-	ASSERT( a1() == 0, "destroy a1" );
-	ASSERT( a2() == 0, "destroy a2" );
-
-	/////////////////////////////////////////
-	// Test the loadTab operation
-	/////////////////////////////////////////
-	Element* tab = Neutral::create( "Table", "t1", Element::root()->id(),
-		Id::scratchId() );
-	static const double EPSILON = 1.0e-9;
-	static double values[] = 
-		{ 1, 1.0628, 1.1253, 1.1874, 1.2487, 1.309,
-			1.3681, 1.4258, 1.4817, 1.5358, 1.5878 };
-	sh.innerLoadTab( "/t1 table 1 10 0 10		1 1.0628 1.1253 1.1874 1.2487 1.309 1.3681 1.4258 1.4817 1.5358 1.5878" );
-	int ival;
-	ret = get< int >( tab, "xdivs", ival );
-	ASSERT( ret, "LoadTab" );
-	ASSERT( ival == 10 , "LoadTab" );
-	for ( unsigned int i = 0; i < 11; i++ ) {
-		double y = 0.0;
-		ret = lookupGet< double, unsigned int >( tab, "table", y, i );
-		ASSERT( ret, "LoadTab" );
-		ASSERT( fabs( y - values[i] ) < EPSILON , "LoadTab" );
-	}
-	set( tab, "destroy" );
-
-}
-
-#endif // DO_UNIT_TESTS

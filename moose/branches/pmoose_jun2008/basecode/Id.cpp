@@ -17,9 +17,13 @@
 
 const unsigned int Id::BadIndex = UINT_MAX;
 const unsigned int Id::AnyIndex = UINT_MAX - 1;
+const unsigned int Id::GlobalNode = UINT_MAX - 1;
+
 // using UINT_MAX-2 locally for no index in wildcard. 
 const unsigned int BAD_ID = ~0;
 const unsigned int MAX_ID = 1000000;
+
+
 
 //////////////////////////////////////////////////////////////
 //	Id creation
@@ -150,6 +154,16 @@ Eref Id::eref() const
 unsigned int Id::node() const 
 {
 	return manager().findNode( id_ );
+}
+
+bool Id::isGlobal() const 
+{
+	return manager().isGlobal( id_ );
+}
+
+void Id::setGlobal()
+{
+	manager().setGlobal( id_ );
 }
 
 Id Id::lastId()

@@ -22,8 +22,8 @@ extern void pollPostmaster(); // Defined in maindir/mpiSetup.cpp
 
 static const Slot getSlot = 
 	initShellCinfo()->getSlot( "parallel.getSrc" );
-static const Slot respondToGetSlot = 
-	initShellCinfo()->getSlot( "parallel.respondToGet" );
+static const Slot returnGetSlot = 
+	initShellCinfo()->getSlot( "parallel.returnGetSrc" );
 static const Slot setSlot = 
 	initShellCinfo()->getSlot( "parallel.setSrc" );
 static const Slot pCreateSlot =
@@ -46,6 +46,12 @@ static const Slot parTraversePathSlot =
 static const Slot returnParTraverseSlot = 
 	initShellCinfo()->getSlot( "parallel.parTraversePathReturnSrc" );
 
+static const Slot requestLeSlot = 
+	initShellCinfo()->getSlot( "parallel.requestLeSrc" );
+static const Slot returnLeSlot = 
+	initShellCinfo()->getSlot( "parallel.returnLeSrc" );
+
+
 
 /**
  * Manages the setup of a message emanating from this postmaster to 
@@ -59,6 +65,100 @@ static const Slot returnParTraverseSlot =
 extern bool setupProxyMsg( 
 	unsigned int srcNode, Id proxy, unsigned int srcFuncId, 
 	Id dest, int destMsg );
+
+
+void printNodeInfo( const Conn* c )
+{
+	Element* post = c->source().e;
+	assert( post->className() == "proxy" );
+	unsigned int mynode = Shell::myNode();
+	// unsigned int remotenode;
+	// get< unsigned int >( post, "localNode", mynode );
+	// get< unsigned int >( post, "remoteNode", remotenode );
+
+	// cout << "on " << mynode << " from " << remotenode << ":";
+	cout << "on " << mynode << ":";
+}
+
+void Shell::parGetField( const Conn* c, Id id, string field, 
+	unsigned int requestId )
+{
+	// printNodeInfo( c );
+	// cout << "in slaveGetFunc on " << id << " with field :" << field << "\n";
+	if ( id.bad() )
+		return;
+	string ret = "";
+	Element* e = id();
+	if ( e == 0 )
+		return;
+
+	const Finfo* f = e->findFinfo( field );
+	if ( f ) {
+		if ( f->strGet( e, ret ) ) {
+			sendBack2< string, unsigned int >( c, returnGetSlot, ret,
+				requestId );
+			return;
+		}
+	}
+	cout << "Shell::parGetField: Failed to find field " << field << 
+		" on object " << id.path() << endl;
+	// Have to respond anyway.
+	sendBack2< string, unsigned int >( c, returnGetSlot, ret,
+		requestId );
+}
+
+// was recvGetFunc.
+// Takes the value and stuffs it into the appropriate place on the 
+// offNode data manager. Tells the system that the job is done.
+void Shell::handleReturnGet( const Conn* c,
+	string value, unsigned int requestId )
+{
+	// printNodeInfo( c );
+	// cout << "in recvGetFunc with field value :'" << value << endl << flush;
+	// send off to parser maybe.
+	// Problem if multiple parsers.
+	// Bigger problem that this is asynchronous now.
+	// Maybe it is OK if only one parser.
+	// sendTo1< string >( c.targetElement(), getFieldSlot, 0, value );
+	Shell* sh = static_cast< Shell* >( c->data() );
+	*( getOffNodeValuePtr< string >( sh, requestId ) ) = value;
+	sh->zeroOffNodePending( requestId );
+}
+
+/**
+ * Creates a new object. Must be called on the same node as the
+ * parent object.
+ */
+void Shell::parCreateFunc ( const Conn* c, 
+				string objtype, string objname, 
+				Nid parent, Nid newobj )
+{
+	// printNodeInfo( c );
+	// cout << "in slaveCreateFunc :" << objtype << " " << objname << " " << parent << "." << parent.node() << " " << newobj << "." << newobj.node() << "\n";
+
+	Shell* s = static_cast< Shell* >( c->data() );
+	if ( parent == Id() || parent == Id::shellId() ) {
+		parent.setNode( s->myNode_ );
+	}
+
+	assert ( s->myNode_ == parent.node() );
+	// both parent and child are here. Straightforward.
+	bool ret = 1;
+	if ( parent.node() == newobj.node() ) {
+		ret = s->create( objtype, objname, parent, newobj );
+	} else {
+		cout << "Shell::parCreateFunc: Currently cannot put child on different node than parent\n";
+		// send message to create child on remote node. This includes
+		// 	messaging from proxy to child.
+		// set up local messaging to connect to child.
+	}
+
+	if ( ret ) { // Tell the master node it was created happily.
+		// sendTo2< Id, bool >( e, createCheckSlot, c.targetIndex(), newobj, 1 );
+	} else { // Tell master node that the create failed.
+		// sendTo2< Id, bool >( e, createCheckSlot, c.targetIndex(), newobj, 0 );
+	}
+}
 
 /**
  * This is called on the master node. For now we can get by with the
@@ -269,7 +369,7 @@ void Shell::handleParTraversePathRequest( const Conn* c,
 	Id start, vector< string > names, unsigned int requestId )
 {
 	assert( start == Id() || start == Id::shellId() );
-	Id ret = traversePath( start, names );
+	Id ret = localTraversePath( start, names );
 	sendBack2< Nid, unsigned int >( c, returnParTraverseSlot,
 		ret, requestId );
 }
@@ -284,6 +384,41 @@ void Shell::handleParTraversePathReturn( const Conn* c,
 	if ( !found.bad() ) { 
 		// Got it!! But we need to hold on till everyone is back.
 		*( getOffNodeValuePtr< Nid >( sh, requestId ) ) = found;
+	}
+	sh->decrementOffNodePending( requestId );
+}
+
+///////////////////////////////////////////////////////////////////////
+// Here we handle 'le' requests.
+///////////////////////////////////////////////////////////////////////
+
+void Shell::handleRequestLe( const Conn* c, 
+	Nid parent, unsigned int requestId )
+{
+	vector< Id > ret;
+	bool flag = get< vector< Id > >( parent.eref(), "childList", ret );
+	assert( flag );
+	vector< Id >::iterator i;
+	vector< Nid > temp;
+	for ( i = ret.begin(); i != ret.end(); i++ )
+		if ( i->node() != Id::GlobalNode )
+			temp.push_back( *i );
+
+	sendBack2< vector< Nid >, unsigned int >( c, returnLeSlot,
+		temp, requestId );
+}
+
+/**
+ * Undefined effects if more than one node has a matching target.
+ */
+void Shell::handleReturnLe( const Conn* c,
+	vector< Nid > found, unsigned int requestId )
+{
+	Shell* sh = static_cast< Shell* >( c->data() );
+	if ( found.size() > 0 ) {
+		vector< Nid >* temp = 
+			getOffNodeValuePtr< vector< Nid > >( sh, requestId );
+		temp->insert( temp->end(), found.begin(), found.end() );
 	}
 	sh->decrementOffNodePending( requestId );
 }
@@ -313,7 +448,7 @@ unsigned int Shell::openOffNodeValueRequestInner(
 	unsigned int ret = freeRidStack_.back();
 	freeRidStack_.pop_back();
 	if ( freeRidStack_.size() == 0 )
-		cout << "Error: Shell::requestRid(): Empty Rid stack\n";
+		cout << "Error: Shell::openOffNodeValueRequestInner(): Empty Rid stack\n";
 	offNodeData_[ ret ].numPending = numPending;
 	offNodeData_[ ret ].data = init;
 	return ret;
@@ -347,6 +482,12 @@ void Shell::decrementOffNodePending( unsigned int rid )
 	assert( rid < offNodeData_.size() );
 	assert( offNodeData_[ rid ].numPending > 0 );
 	offNodeData_[rid].numPending--;
+}
+
+void Shell::zeroOffNodePending( unsigned int rid )
+{
+	assert( rid < offNodeData_.size() );
+	offNodeData_[rid].numPending = 0;
 }
 
 unsigned int Shell::numPendingOffNode( unsigned int rid )

@@ -7499,7 +7499,7 @@ as examples of peculiar node numbers.
 
 Next steps:
 - Make it usable for running multinode simulations
-	- Shell/parser commands for node-specific object creation
+	* Shell/parser commands for node-specific object creation
 	- Sync messages
 	- Modify shell commands to operate node-independently
 		Currently only message setup works this way. Need:
@@ -7508,7 +7508,7 @@ Next steps:
 		- showfield
 		- le
 		- pwe
-		- create (so it creates on node of parent)
+		* create (so it creates on node of parent)
 		- createmap (ditto)
 	- Fix up what happens when we operate on existing proxies.
 - Upgrade array operations to work across nodes
@@ -7550,4 +7550,59 @@ that fail to find objects, and therefore try to go off-node.
 But since the changes are extensive I'll check it
 in before putting in specific unit tests, and reinstating the commented
 out bits.
+Checked in as revision 564 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Implemented a first test function for this: testParTraversePath. Fails.
+
+==============================================================================
+30 July 2008
+Working on it, ran into infinite loop. Tracked down to my calling traversePath
+within the handleParTraversePathRequest. I need to have a scrictly local 
+traversePath.
+That fixed it and surprisingly cleared unit tests with up to 16 nodes
+right away. So we have a functioning path2eid that works across nodes.
+At this point I can do the create on the command line but cannot see the
+results of it.
+
+Now working on le. This is messy:
+- Global elements like /root: le indicates all children
+- the 'childList of elements will be problematic if they have children
+	on multiple nodes. 
+	(I had the idea of proxies for all children at one point).
+- The vector< Nid > has to go back to the parser, which then invokes a whole
+	series of conversions to strings using eid2path. Any of these may 
+	involve off-node requests. Spectacularly ugly!
+One option is to return a vector< string > here. This doesn't really cure
+	any of these issues, it just decouples the eid2path conversion from
+	the process. Not worth it then.
+
+==============================================================================
+31 July 2008
+I think I have the trigLe code working to get ids of all object children,
+on any node. However, I am running into a recurring pattern now where 
+simple element operations have to be replaced with much more complicated
+wrappers involving the nodes. In particular, I will need a generic
+off-node 'getField' equivalent and that would address many of these issues.
+
+==============================================================================
+1 Aug 2008
+Implementing parallel Get as a step in doing parallel le. The 
+TestPostMaster.cpp:testParGet needs updating with the new args.
+
+==============================================================================
+2 Aug 2008
+Parallel Get now works. Too well. Now the 'le' picks up all the objects on 
+child nodes, so the unit tests of the parser fail because of test objects
+littered around on the other nodes.
+
+Much cleaning up later. Along the way implemented parDeleteTest for doing
+unit tests on remote deletes.
+Also need to make 'le' not report global objects except on node 0.
+
+OK, a lot of things now work. I can create objects on different nodes using
+the shell and do an 'le' on them, though getfield croaks. Should add a 'node'
+field to Neutral, and fix the getfield. Along the way I've implemented delete
+on remote nodes, with unit tests for that too. 
+Should implement a proper 'quit' call that cleans up MPI.
+
 ==============================================================================

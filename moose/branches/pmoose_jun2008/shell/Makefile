@@ -20,7 +20,8 @@ OBJ = \
 	ParShell.o	\
 	ReadCell.o \
 	SimDump.o \
-	LoadTab.o 
+	LoadTab.o \
+	TestShell.o	\
 
 HEADERS = \
 	../basecode/header.h \
@@ -31,7 +32,7 @@ default: $(TARGET)
 
 $(OBJ)	: $(HEADERS)
 
-Shell.o: Shell.h ../utility/randnum/Probability.h ../utility/randnum/Uniform.h ../utility/randnum/Exponential.h ../utility/randnum/Normal.h
+Shell.o TestShell.o: Shell.h ../utility/randnum/Probability.h ../utility/randnum/Uniform.h ../utility/randnum/Exponential.h ../utility/randnum/Normal.h
 
 # ifneq (,$(findstring -DCRL_MPI,$(CFLAGS)))
 #endif

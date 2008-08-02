@@ -45,6 +45,9 @@ class Neutral
 			 * Gets list of children, but puts into a supplied vector.
 			 * This is more efficient than getChildList.
 			 * Mostly used in wildcarding.
+			 * Note that the Ids of the children do not have node info
+			 * internally. So we will have to convert if we want to
+			 * send this off-node
 			 */
 			static void getChildren( const Eref e, vector< Id >& kids);
 

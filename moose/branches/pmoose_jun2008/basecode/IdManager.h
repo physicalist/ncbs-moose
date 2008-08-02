@@ -62,6 +62,10 @@ class Enode
 		unsigned int node() const {
 			return node_;
 		}
+
+		void setGlobal() {
+			node_ = Id::GlobalNode;
+		}
 	private:
 		Element* e_;
 		unsigned int node_;
@@ -145,6 +149,16 @@ class IdManager
 		 * Checks which node specified element is on.
 		 */
 		unsigned int findNode( unsigned int index ) const;
+
+		/**
+		 * True if object is a global one
+		 */
+		bool isGlobal( unsigned int index ) const;
+
+		/**
+		 * Turns object into a global.
+		 */
+		void setGlobal( unsigned int index );
 		
 		/**
 		 * Returns the most recently created id on current node
