@@ -55,6 +55,7 @@ OBJ = \
 	HSolveStruct.o	\
  	HSolveBase.o	\
  	HSolve.o \
+ 	HinesMatrix.o \
  	NeuroScanBase.o \
  	NeuroScan.o \
  	NeuroHub.o \
@@ -94,6 +95,7 @@ RateLookup.o:	RateLookup.h
 HSolveStruct.o:	HSolveStruct.h
 HSolveBase.o:	HSolveBase.h HSolveStruct.h
 HSolve.o:	HSolve.h HSolveBase.h HSolveStruct.h
+HinesMatrix.o:	NeuroScanBase.h HSolveStruct.h
 NeuroScanBase.o:	NeuroScanBase.h HSolveStruct.h
 NeuroScan.o:	NeuroScan.h NeuroScanBase.h HSolveStruct.h
 NeuroHub.o:	NeuroHub.h HSolveStruct.h

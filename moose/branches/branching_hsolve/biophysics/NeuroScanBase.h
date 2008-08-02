@@ -20,9 +20,15 @@ public:
 	NeuroScanBase( HSolveStruct& structure )
 	:
 		N_( structure.N_ ),
-		checkpoint_( structure.checkpoint_ ),
+		//~ checkpoint_( structure.checkpoint_ ),
+		branch_( structure.branch_ ),
 		channelCount_( structure.channelCount_ ),
-		M_( structure.M_ ),
+		//~ M_( structure.M_ ),
+		MbranchCopy_( structure.MbranchCopy_ ),
+		Mbranch_( structure.Mbranch_ ),
+		Mlinear_( structure.Mlinear_ ),
+		operand_( structure.operand_ ),
+		backOperand_( structure.backOperand_ ),
 		V_( structure.V_ ),
 		VMid_( structure.VMid_ ),
 		CmByDt_( structure.CmByDt_ ),
@@ -65,8 +71,11 @@ public:
 protected:
 	void initialize( Id seed, double dt );
 	
-	virtual vector< Id > children( Id self, Id parent ) = 0;
-	virtual vector< Id > neighbours( Id compartment ) = 0;
+	//~ virtual vector< Id > children( Id self, Id parent ) = 0;
+	//~ virtual vector< Id > neighbours( Id compartment ) = 0;
+	virtual int findAdjacent( Id compartment, vector< Id >& ) = 0;
+	virtual int findAdjacent( Id compartment, Id exclude, vector< Id >& ) = 0;
+	virtual int findChildren( Id compartment, vector< Id >& ) = 0;
 	virtual vector< Id > channels( Id compartment ) = 0;
 	virtual int gates( Id channel, vector< Id >& ) = 0;
 	virtual Id presyn( Id compartment ) = 0;
@@ -82,35 +91,54 @@ protected:
 		vector< double >& B ) = 0;
 	virtual void synchanFields( Id synchan, SynChanStruct& scs ) = 0;
 	
+	map< Id, unsigned int > hinesIndex_;
+	vector< double > Ga_;
+	vector< vector< unsigned int > > junctionGroup_;
+	vector< double* > operandBase_;
+	map< unsigned int, unsigned int > groupNumber_;
+	
 	vector< Id > compartmentId_;
 	vector< Id > channelId_;
 	vector< Id > gateId_;
 	vector< bool > gCaDepend_;
 	
 private:
-	void readCompartments( Id seed );
+	void createMatrix( Id seed );
+	void walkTree( Id seed );
+	void doHinesNumbering( );
+	void readCompartmentFields( );
+	void makeJunctions( );
+	void makeMatrix( );
+	void makeOperands( );
+	
+	//~ void readCompartments( Id seed );
 	void readChannels( );
 	void readGates( );
 	void readCalcium( );
 	void readSynapses( );
-	void createMatrix( );
 	void createLookupTables( );
 	void concludeInit( );
-	
-	struct CNode
-	{
-		Id parent_;
-		Id self_;
-		vector< Id > child_;
-		unsigned int state_;
-		unsigned int label_;
-	};
+	//~ 
+	//~ struct CNode
+	//~ {
+		//~ Id parent_;
+		//~ Id self_;
+		//~ vector< Id > child_;
+		//~ unsigned int state_;
+		//~ unsigned int label_;
+	//~ };
 	
 protected:
-	unsigned long&             N_;
-	vector< unsigned long >&   checkpoint_;
+	unsigned int&              N_;
+	//~ vector< unsigned long >&   checkpoint_;
+	vector< BranchStruct >&    branch_;
 	vector< unsigned char >&   channelCount_;
-	vector< double >&          M_;
+	//~ vector< double >&          M_;
+	vector< double >&          MbranchCopy_;
+	vector< double >&          Mbranch_;
+	vector< double >&          Mlinear_;
+	vector< double* >          operand_;
+	vector< double* >          backOperand_;
 	vector< double >&          V_;
 	vector< double >&          VMid_;
 	vector< double >&          CmByDt_;

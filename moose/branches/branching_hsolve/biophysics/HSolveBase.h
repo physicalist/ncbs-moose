@@ -20,9 +20,15 @@ public:
 	HSolveBase()
 	:
 		N_( structure_.N_ ),
-		checkpoint_( structure_.checkpoint_ ),
+		//~ checkpoint_( structure_.checkpoint_ ),
+		branch_( structure_.branch_ ),
 		channelCount_( structure_.channelCount_ ),
-		M_( structure_.M_ ),
+		//~ M_( structure_.M_ ),
+		MbranchCopy_( structure_.MbranchCopy_ ),
+		Mbranch_( structure_.Mbranch_ ),
+		Mlinear_( structure_.Mlinear_ ),
+		operand_( structure_.operand_ ),
+		backOperand_( structure_.backOperand_ ),
 		V_( structure_.V_ ),
 		VMid_( structure_.VMid_ ),
 		CmByDt_( structure_.CmByDt_ ),
@@ -63,10 +69,16 @@ private:
 	void advanceSynChans( ProcInfo info );
 	void sendSpikes( ProcInfo info );
 	
-	unsigned long&            N_;
-	vector< unsigned long >&  checkpoint_;
+	unsigned int&             N_;
+	//~ vector< unsigned long >&  checkpoint_;
+	vector< BranchStruct >&    branch_;
 	vector< unsigned char >&  channelCount_;
-	vector< double >&         M_;
+	//~ vector< double >&         M_;
+	vector< double >&         MbranchCopy_;
+	vector< double >&         Mbranch_;
+	vector< double >&         Mlinear_;
+	vector< double* >         operand_;
+	vector< double* >         backOperand_;
 	vector< double >&         V_;
 	vector< double >&         VMid_;
 	vector< double >&         CmByDt_;

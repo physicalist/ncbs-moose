@@ -51,11 +51,13 @@ void HSolveBase::calculateChannelCurrents( ) {
 }
 
 void HSolveBase::updateMatrix( ) {
+	Mbranch_.assign( MbranchCopy_.begin(), MbranchCopy_.end() );
+	
 	double GkSum, GkEkSum;
 	
 	unsigned char ichan;
 	vector< unsigned char >::iterator icco = channelCount_.begin();
-	vector< double >::iterator ia      = M_.begin();
+	vector< double >::iterator iml     = Mlinear_.begin();
 	vector< double >::iterator iv      = V_.begin();
 	vector< double >::iterator icmbydt = CmByDt_.begin();
 	vector< double >::iterator iembyrm = EmByRm_.begin();
@@ -70,72 +72,142 @@ void HSolveBase::updateMatrix( ) {
 			GkEkSum += *( igkek++ );
 		}
 		
-		*ia         = *( 3 + ia ) + GkSum;
-		*( 4 + ia ) = *iembyrm + *icmbydt * *iv + GkEkSum + *iinject;
+		*iml         = *( 2 + iml ) + GkSum;
+		*( 3 + iml ) = *iembyrm + *icmbydt * *iv + GkEkSum + *iinject;
 		//~ *ia         = *( 3 + ia ) + *icmbydt * GkSum;
 		//~ *( 4 + ia ) = *iv + *icmbydt * (*iembyrm + GkEkSum + *iinject);
-		++icco, ia += 5, ++icmbydt, ++iv, ++iembyrm, ++iinject;
+		++icco, iml += 4, ++icmbydt, ++iv, ++iembyrm, ++iinject;
 	}
 	
 	unsigned int ic;
 	vector< SynChanStruct >::iterator isyn;
 	for ( isyn = synchan_.begin(); isyn != synchan_.end(); ++isyn ) {
 		ic = isyn->compt_;
-		M_[ 5 * ic ] += isyn->Gk_;
-		M_[ 5 * ic + 4 ] += isyn->Gk_ * isyn->Ek_;
+		Mlinear_[ 4 * ic ] += isyn->Gk_;
+		Mlinear_[ 4 * ic + 3 ] += isyn->Gk_ * isyn->Ek_;
 	}
 }
 
 void HSolveBase::forwardEliminate( ) {
-	vector< double >::iterator ia = M_.begin();
-	vector< unsigned long >::iterator icp;
-	unsigned long ic = 0;
-	for ( icp = checkpoint_.begin(); icp != checkpoint_.end();
-	      ++icp, ++ic, ia += 5 ) {
-		for ( ; ic < *icp; ++ic, ia += 5 ) {
-			*( 5 + ia ) -= *( 2 + ia ) / *ia;
-			*( 9 + ia ) -= *( 1 + ia ) * *( 4 + ia ) / *ia;
+	unsigned int ic = 0;
+	vector< double >::iterator iml = Mlinear_.begin();
+	vector< double* >::iterator iop = operand_.begin();
+	vector< BranchStruct >::iterator branch;
+	
+	double *l;
+	double *b;
+	double pivot;
+	unsigned int index;
+	unsigned int rank;
+	for ( branch = branch_.begin(); branch != branch_.end(); ++branch ) {
+		index = branch->index;
+		rank = branch->rank;
+		
+		while ( ic < index ) {
+			*( iml + 4 ) -= *( iml + 1 ) / *iml * *( iml + 1 );
+			*( iml + 7 ) -= *( iml + 1 ) / *iml * *( iml + 3 );
+			
+			++ic, iml += 4;
 		}
-		M_[ 5 * *++icp ]    -= *( 2 + ia ) / *ia;
-		M_[ 4 + 5 * *icp ]  -= *( 1 + ia ) * *( 4 + ia ) / *ia;
+		
+		pivot = *iml;
+		if ( rank == 1 ) {
+			*( iml + 4 ) -= *( *iop + 1 ) / pivot * **iop;
+			*( iml + 7 ) -= *( *iop + 1 ) / pivot * *( iml + 3 );
+			
+			iop += 1;
+		} else if ( rank == 2 ) {
+			l = *iop;
+			b = *( iop + 1 );
+			
+			*l         -= *( b + 1 ) / pivot * *b;
+			*( l + 3 ) -= *( b + 1 ) / pivot * *( iml + 3 );
+			*( l + 4 ) -= *( b + 3 ) / pivot * *( b + 2 );
+			*( l + 7 ) -= *( b + 3 ) / pivot * *( iml + 3 );
+			*( b + 4 ) -= *( b + 1 ) / pivot * *( b + 2 );
+			*( b + 5 ) -= *( b + 3 ) / pivot * *b;
+			
+			iop += 3;
+		} else {
+			vector< double* >::iterator
+				end = iop + 3 * rank * ( rank + 1 );
+			for ( ; iop < end; iop += 3 )
+				**iop -= **( iop + 2 ) / pivot * **( iop + 1 );
+		}
+		
+		++ic, iml += 4;
 	}
 	
-	for ( ; ic < N_ - 1; ++ic, ia += 5 ) {
-		*( 5 + ia ) -= *( 2 + ia ) / *ia;
-		*( 9 + ia ) -= *( 1 + ia ) * *( 4 + ia ) / *ia;
+	while ( ic < N_ ) {
+		*( iml + 4 ) -= *( iml + 1 ) / *iml * *( iml + 1 );
+		*( iml + 7 ) -= *( iml + 1 ) / *iml * *( iml + 3 );
+		
+		++ic, iml += 4;
 	}
 }
 
 void HSolveBase::backwardSubstitute( ) {
-	long ic = ( long )( N_ ) - 1;
+	int ic = N_ - 1;
 	vector< double >::reverse_iterator ivmid = VMid_.rbegin();
 	vector< double >::reverse_iterator iv = V_.rbegin();
-	vector< double >::reverse_iterator ia = M_.rbegin();
-	vector< unsigned long >::reverse_iterator icp;
+	vector< double >::reverse_iterator iml = Mlinear_.rbegin();
+	vector< double* >::reverse_iterator iop = operand_.rbegin();
+	vector< double* >::reverse_iterator ibop = backOperand_.rbegin();
+	vector< BranchStruct >::reverse_iterator branch;
 	
-	*ivmid = *ia / *( 4 + ia );
-	*iv    = 2 * *ivmid - *iv;
-	--ic, ++ivmid, ++iv, ia += 5;
+	*ivmid = *iml / *( iml + 3 );
+	*iv = 2 * *ivmid - *iv;
+	--ic, ++ivmid, ++iv, iml += 4;
 	
-	for ( icp = checkpoint_.rbegin();
-	      icp != checkpoint_.rend();
-	      icp += 2, --ic, ++ivmid, ++iv, ia += 5 ) {
-		for ( ; ic > ( long )( *(1 + icp) );
-		      --ic, ++ivmid, ++iv, ia += 5 ) {
-			*ivmid = ( *ia - *( 3 + ia ) * *( ivmid - 1 ) )
-				 / *( 4 + ia );
-			*iv    = 2 * *ivmid - *iv;
+	double *b;
+	double *v;
+	int index;
+	int rank;
+	for ( branch = branch_.rbegin(); branch != branch_.rend(); ++branch ) {
+		index = branch->index;
+		rank = branch->rank;
+		
+		while ( ic > index ) {
+			*ivmid = ( *iml - *( iml + 2 ) * *( ivmid - 1 ) ) / *( iml + 3 );
+			*iv = 2 * *ivmid - *iv;
+			
+			--ic, ++ivmid, ++iv, iml += 4;
 		}
 		
-		*ivmid = ( *ia - *( 3 + ia ) * VMid_[ *icp ] )
-			 / *( 4 + ia );
-		*iv    = 2 * *ivmid - *iv;
+		if ( rank == 1 ) {
+			*ivmid = ( *iml - **iop * *( ivmid - 1 ) ) / *( iml + 3 );
+			
+			iop += 1;
+		} else if ( rank == 2 ) {
+			v = *iop;
+			b = *( iop + 1 );
+			
+			*ivmid = ( *iml
+			           - *b * *v
+			           - *( b + 2 ) * *( v + 1 )
+			         ) / *( iml + 3 );
+			
+			iop += 3;
+		} else {
+			*ivmid = *iml;
+			for ( int i = 0; i < rank; ++i ) {
+				*ivmid -= **ibop * **( ibop + 1 );
+				ibop += 2;
+			}
+			*ivmid /= *( iml + 3 );
+			
+			iop += 3 * rank * ( rank + 1 );
+		}
+		
+		*iv = 2 * *ivmid - *iv;
+		--ic, ++ivmid, ++iv, iml += 4;
 	}
 	
-	for ( ; ic >= 0; --ic, ++ivmid, ++iv, ia += 5 ) {
-		*ivmid = ( *ia - *( 3 + ia ) * *( ivmid - 1 ) )
-			 / *( 4 + ia );
-		*iv    = 2 * *ivmid - *iv;
+	while ( ic >= 0 ) {
+		*ivmid = ( *iml - *( iml + 2 ) * *( ivmid - 1 ) ) / *( iml + 3 );
+		*iv = 2 * *ivmid - *iv;
+		
+		--ic, ++ivmid, ++iv, iml += 4;
 	}
 }
 

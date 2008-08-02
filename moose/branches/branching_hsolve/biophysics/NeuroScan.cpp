@@ -264,23 +264,49 @@ void NeuroScan::gateFunc( const Conn* c, double A, double B )
 // Portal functions (to scan model)
 ///////////////////////////////////////////////////
 
-vector< Id > NeuroScan::children( Id self, Id parent )
+int NeuroScan::findAdjacent( Id compartment, Id exclude, vector< Id >& ret )
 {
-	vector< Id > child = neighbours( self );
-	child.erase(
-		remove( child.begin(), child.end(), parent ),
-		child.end()
+	int size = ret.size();
+	findAdjacent( compartment, ret );
+	ret.erase(
+		remove( ret.begin(), ret.end(), exclude ),
+		ret.end()
 	);
-	return child;
+	return ret.size() - size;
 }
 
-vector< Id > NeuroScan::neighbours( Id compartment )
+int NeuroScan::findAdjacent( Id compartment, vector< Id >& ret )
 {
-	vector< Id > neighbour;
-	targets( compartment, "axial", neighbour );
-	targets( compartment, "raxial", neighbour );
-	return neighbour;
+	int size = ret.size();
+	targets( compartment, "axial", ret );
+	targets( compartment, "raxial", ret );
+	return ret.size() - size;
 }
+
+int NeuroScan::findChildren( Id compartment, vector< Id >& ret )
+{
+	int size = ret.size();
+	targets( compartment, "axial", ret );
+	return ret.size() - size;
+}
+
+//~ vector< Id > NeuroScan::children( Id self, Id parent )
+//~ {
+	//~ vector< Id > child = neighbours( self );
+	//~ child.erase(
+		//~ remove( child.begin(), child.end(), parent ),
+		//~ child.end()
+	//~ );
+	//~ return child;
+//~ }
+//~ 
+//~ vector< Id > NeuroScan::neighbours( Id compartment )
+//~ {
+	//~ vector< Id > neighbour;
+	//~ targets( compartment, "axial", neighbour );
+	//~ targets( compartment, "raxial", neighbour );
+	//~ return neighbour;
+//~ }
 
 vector< Id > NeuroScan::channels( Id compartment )
 {

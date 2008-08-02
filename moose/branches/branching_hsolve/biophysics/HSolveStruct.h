@@ -12,6 +12,21 @@
 
 typedef double ( *PFDD )( double, double );
 
+struct BranchStruct
+{
+	BranchStruct( int i, int r ) :
+		index( i ),
+		rank( r )
+	{ ; }
+	
+	bool operator< ( const BranchStruct& other ) const {
+		return ( index < other.index );
+	}
+	
+	unsigned int index;
+	unsigned int rank;
+};
+
 struct ChannelStruct
 {
 public:
@@ -100,10 +115,16 @@ struct CaConcStruct
  */
 struct HSolveStruct
 {
-	unsigned long             N_;
-	vector< unsigned long >   checkpoint_;
+	unsigned int              N_;
+	vector< BranchStruct >    branch_;
+	//~ vector< unsigned long >   checkpoint_;
 	vector< unsigned char >   channelCount_;
-	vector< double >          M_;
+	//~ vector< double >          M_;
+	vector< double >          MbranchCopy_;
+	vector< double >          Mbranch_;
+	vector< double >          Mlinear_;
+	vector< double* >         operand_;
+	vector< double* >         backOperand_;
 	vector< double >          V_;
 	vector< double >          VMid_;
 	vector< double >          CmByDt_;
