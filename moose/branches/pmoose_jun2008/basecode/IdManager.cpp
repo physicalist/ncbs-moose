@@ -17,12 +17,12 @@
 const Cinfo* initPostMasterCinfo();
 #endif
 
-const unsigned int UNKNOWN_NODE = ~0;
+const unsigned int UNKNOWN_NODE = UINT_MAX;
 // const unsigned int MIN_NODE = 1;
 // const unsigned int MAX_NODE = 65536; // Dream on.
 const unsigned int IdManager::numScratch = 1000;
 const unsigned int IdManager::blockSize = 1000;
-const unsigned int BAD_NODE = ~0;
+const unsigned int BAD_NODE = UINT_MAX;
 
 IdManager::IdManager()
 	: loadThresh_( 2000.0 ),
@@ -84,7 +84,10 @@ unsigned int IdManager::childId( unsigned int parent )
 			elementList_.resize( elementList_.size() * 2 );
 		lastId_ = mainIndex_;
 		mainIndex_++;
-		if ( pa.node() != Shell::myNode() ) {
+		if ( pa.node() == Id::GlobalNode ) {
+			// Make the object on node 0.
+			elementList_[ lastId_ ] = Enode( 0, Shell::myNode() );
+		} else if ( pa.node() != Shell::myNode() ) {
 			// Put object on parent node.
 			elementList_[ lastId_ ] = Enode( 0, pa.node() );
 		} else { // Parent is also on master
@@ -112,6 +115,8 @@ unsigned int IdManager::childId( unsigned int parent )
  * specification.  
  * Should only be called on master node, and parent should have been checked
  * In single-node mode it is equivalent to the scratchId and childId ops.
+ * \todo Need to add facility to create object globally.
+ *
  */
 unsigned int IdManager::makeIdOnNode( unsigned int childNode )
 {
@@ -138,10 +143,11 @@ Element* IdManager::getElement( const Id& id ) const
 			// We then get into managing how many entries are unknown...
 			assert( 0 );
 			return 0;
-		} else if ( ret.node() != Shell::myNode() ) {
-			return 0;
-		} else {
+		} else if ( ret.node() == Shell::myNode() || 
+			ret.node() == Id::GlobalNode ) {
 			return ret.e();
+		} else {
+			return 0;
 		}
 #endif
 		return ret.e();
@@ -182,18 +188,46 @@ bool IdManager::setElement( unsigned int index, Element* e )
 	}
 }
 
+#ifdef USE_MPI
 unsigned int IdManager::findNode( unsigned int index ) const 
 {
-#ifdef USE_MPI
 	const Enode& e = elementList_[ index ];
 	if ( e.node() == UNKNOWN_NODE )
 		return BAD_NODE;
 	return e.node();
-#else
-	return 0;
-#endif
 	
 }
+
+// Do not permit op if parent is not global
+void IdManager::setGlobal( unsigned int index )
+{
+	Enode& e = elementList_[ index ];
+	e.setGlobal();
+}
+
+bool IdManager::isGlobal( unsigned int index ) const 
+{
+	const Enode& e = elementList_[ index ];
+	return ( e.node() == Id::GlobalNode );
+}
+
+#else
+unsigned int IdManager::findNode( unsigned int index ) const 
+{
+	return 0;
+}
+
+bool IdManager::isGlobal( unsigned int index ) const 
+{
+	return 0;
+}
+
+void IdManager::setGlobal( unsigned int index )
+{
+	;
+}
+#endif
+
 
 /**
  * Returns the most recently created object.

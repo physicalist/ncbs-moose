@@ -136,6 +136,16 @@ class Id
 		unsigned int node() const;
 
 		/**
+		 * True if node is global
+		 */
+		bool isGlobal() const;
+
+		/**
+		 * Tells object it is a global. Used only by constructors.
+		 */
+		void setGlobal();
+
+		/**
 		 * The most recently created id on this node
 		 */
 		static Id lastId();
@@ -219,6 +229,7 @@ class Id
 		bool setElement( Element* e );
 		static const unsigned int AnyIndex;
 		static const unsigned int BadIndex;
+		static const unsigned int GlobalNode;
 
 		/**
 		 * Assignment of id to specific index. This was originally

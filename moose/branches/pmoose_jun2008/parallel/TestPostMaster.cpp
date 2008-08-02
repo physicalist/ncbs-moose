@@ -924,38 +924,66 @@ Id testParCreate( vector< Id >& testIds )
 
 /////////////////////////////////////////////////////////////////
 // Now test 'get' across nodes.
-// Normally this is invoked by the parser, which expects a
+// Normally the 'get' call is invoked by the parser, which expects a
 // value to come back. Note that the return must be asynchronous:
 // the parser cannot block since we need to execute MPI polling
 // operations on either side.
-// Not sure how to make this an invisible unit test.
 /////////////////////////////////////////////////////////////////
 void testParGet( Id tnId, vector< Id >& testIds )
 {
 	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
 	unsigned int numNodes = MPI::COMM_WORLD.Get_size();
+	Slot parGetSlot = initShellCinfo()->getSlot( "parallel.getSrc" );
 	char name[20];
 	string sname;
-	if ( myNode != 0 ) {
+	if ( myNode == 0 ) {
+		cout << "\ntesting parallel get" << flush;
+	} else {
 		sprintf( name, "foo%d", myNode * 2 );
 		sname = name;
 		set< string >( tnId.eref(), "name", sname );
 	}
 	MPI::COMM_WORLD.Barrier();
+	Eref e = Id::shellId().eref();
+	Shell* sh = static_cast< Shell* >( e.data() );
+	vector< unsigned int > rids( numNodes, 0 );
+	vector< string > ret( numNodes );
+	unsigned int origSize = sh->freeRidStack_.size();
+	ASSERT( origSize > 0 , "Stack initialized properly" );
 	if ( myNode == 0 ) {
-		Slot parGetSlot = 
-			initShellCinfo()->getSlot( "parallel.getSrc" );
 		for ( unsigned int i = 1; i < numNodes; i++ ) {
-			unsigned int tgt = ( i < myNode ) ? i : i - 1;
-			sendTo2< Id, string >(
-				Id::shellId().eref(), parGetSlot, tgt,
-				testIds[i - 1], "name"
+			rids[i] = 
+				openOffNodeValueRequest< string >( sh, &ret[i], 1 );
+			ASSERT( sh->freeRidStack_.size() == origSize - i, "stack in use" );
+			sendTo3< Id, string, unsigned int >(
+				Id::shellId().eref(), parGetSlot, i - 1,
+				testIds[i - 1], "name", rids[i]
 			);
 		}
 	}
+	// Here we explicitly do what the closeOffNodeValueRequest handles.
 	MPI::COMM_WORLD.Barrier();
-	pollPostmaster(); // There is a barrier in the polling operation itself
-	pollPostmaster();
+	// Cycle a few times to make sure all data gets back to node 0
+	for ( unsigned int i = 0; i < 5; i++ )
+		pollPostmaster();
+	
+	// Now go through to check all values have come back.
+	if ( myNode == 0 ) {
+		ASSERT( sh->freeRidStack_.size() == 1 + origSize - numNodes, 
+			"Stack still waiting" );
+		for ( unsigned int i = 1; i < numNodes; i++ ) {
+			sprintf( name, "foo%d", i * 2 );
+			sname = name;
+			ASSERT( sh->offNodeData_[ rids[i] ].numPending == 0,
+				"Pending requests cleared" );
+			ASSERT( sh->offNodeData_[ rids[i] ].data == 
+				static_cast< void* >( &ret[i] ), "Pointing to strings" );
+			ASSERT( ret[ i ] == sname, "All values returned correctly" );
+			// Clean up the debris
+			sh->offNodeData_[ rids[i] ].data = 0;
+			sh->freeRidStack_.push_back( rids[i] );
+		}
+	}
 }
 
 void testParSet( vector< Id >& testIds )
@@ -994,6 +1022,59 @@ void testParSet( vector< Id >& testIds )
 		Id checkId( sname );
 		// cout << "On " << myNode << ", checking id for " << sname << ": " << checkId << endl;
 		ASSERT( checkId.good(), "parallel set" );
+		cout << flush;
+	}
+}
+
+void testParDelete( vector< Id >& testIds )
+{
+	//////////////////////////////////////////////////////////////////
+	// Now test 'set' across nodes. This fits nicely as a unit test.
+	//////////////////////////////////////////////////////////////////
+	char name[20];
+	string sname;
+	vector< Id > kids;
+	Id victim;
+	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
+	MPI::COMM_WORLD.Barrier();
+	// First check the list of children, using node-local commands.
+	// If we later alter childList, must fix.
+	if ( myNode != 0 ) {
+		victim = Id();
+		get< vector< Id > >( Eref::root(), "childList", kids );
+		sprintf( name, "bar%d", myNode * 10 );
+		sname = name;
+		vector< Id >::iterator i;
+		for ( i = kids.begin(); i != kids.end(); i++ )
+			if ( (*i).eref()->name() == sname )
+				victim = *i;
+		ASSERT( victim != Id(), "testParDelete: found victim" );
+	}
+
+	if ( myNode == 0 ) {
+		Slot parDeleteSlot = 
+			initShellCinfo()->getSlot( "parallel.deleteSrc" );
+		cout << "\ntesting parallel delete" << flush;
+		vector< Id >::iterator i;
+		for ( i = testIds.begin(); i != testIds.end(); i++ ) {
+			unsigned int node = i->node();
+			ASSERT( node != 0, "testParDelete" );
+			sendTo1< Id >( Id::shellId().eref(), parDeleteSlot, node - 1,
+				*i );
+		}
+	}
+	MPI::COMM_WORLD.Barrier();
+	pollPostmaster(); // There is a barrier in the polling operation itself
+	pollPostmaster(); // There is a barrier in the polling operation itself
+	// Now check on the carnage. Must use local-node commands here.
+	if ( myNode != 0 ) {
+		vector< Id > remainingKids;
+		get< vector< Id > >( Eref::root(), "childList", remainingKids );
+		ASSERT( remainingKids.size() == kids.size() - 1, "testParDelete");
+		remainingKids.push_back( Id() );
+		for ( unsigned int j = 0; j < kids.size(); j++ )
+			if ( kids[j] != remainingKids[j] )
+				ASSERT( kids[j] == victim, "testParDelete" );
 		cout << flush;
 	}
 }
@@ -1052,6 +1133,9 @@ void testParCommandSequence()
 			Id checkId( sname );
 			// cout << "On " << myNode << ", checking id for " << sname << ": " << checkId << endl;
 			ASSERT( checkId.good(), "parallel command sequencing" );
+
+			// Clean up.
+			set( checkId.eref(), "destroy" );
 		}
 		cout << myNode << flush;
 	}
@@ -1191,6 +1275,85 @@ void testParMsg()
 }
 
 /**
+ * This routine tests traversal of nodes following a string path to
+ * find an id. We first create objects on remote nodes, and then
+ * try to find them by their paths. Later extend to having children
+ * on different nodes than parents.
+ *
+ * This test scrambles the synchrony between nodes. Don't use Barrier from
+ * here on.
+ */
+void testParTraversePath()
+{
+	const unsigned int numPoll = 20;
+	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
+	unsigned int numNodes = MPI::COMM_WORLD.Get_size();
+	vector< Id > parents;
+	vector< Id > children;
+	if ( myNode == 0 ) {
+		cout << "\ntesting parallel path traversal" << flush;
+	}
+	if ( myNode == 0 ) {
+		Slot remoteCreateSlot = 
+			initShellCinfo()->getSlot( "parallel.createSrc" );
+		Slot parSetSlot = 
+			initShellCinfo()->getSlot( "parallel.setSrc" );
+		for ( unsigned int i = 1; i < numNodes; i++ ) {
+			char name[20];
+			sprintf( name, "zug%d", i );
+			string sname = name;
+			unsigned int tgt = ( i < myNode ) ? i : i - 1;
+			Id newId = Id::makeIdOnNode( i );
+			parents.push_back( newId );
+			// cout << "Create op: sendTo4( shellId, slot, " << tgt << ", " << "Neutral, " << sname << ", root, " << newId << endl;
+			sendTo4< string, string, Nid, Nid >(
+				Id::shellId().eref(), remoteCreateSlot, tgt,
+				"Neutral", sname, 
+				Id(), newId
+			);
+			Id newId2 = Id::makeIdOnNode( i );
+			children.push_back( newId2 );
+			sname = "child";
+			sendTo4< string, string, Nid, Nid >(
+				Id::shellId().eref(), remoteCreateSlot, tgt,
+				"Neutral", sname, 
+				newId, newId2
+			);
+		}
+	}
+	MPI::COMM_WORLD.Barrier();
+	for ( unsigned int i = 0; i < numPoll; i++ )
+		pollPostmaster();
+
+	if ( myNode == 0 ) {
+		for ( unsigned int i = 1; i < numNodes; i++ ) {
+			char name[20];
+			string sname;
+			sprintf( name, "/zug%d/child", i );
+			sname = name;
+			Id checkId( sname );
+			// cout << "On " << myNode << ", checking id for " << sname << ": " << checkId << endl;
+			ASSERT( checkId.good(), "parallel obj lookup by path" );
+			ASSERT( checkId == children[i - 1], "Parallel obj lookup by path");
+		}
+	} 
+	// Get everyone past the point where ids are checked remotely,
+	// and clean up.
+	for ( unsigned int i = 0; i < numPoll; i++ )
+		pollPostmaster();
+
+	if ( myNode != 0 ) {
+		char name[20];
+		sprintf( name, "/zug%d", myNode );
+		string sname = name;
+		Id checkId( sname );
+		ASSERT( checkId.good(), "parallel obj lookup by path" );
+		set( checkId.eref(), "destroy" );
+	}
+}
+
+
+/**
  * This is an unusual unit test: it MUST run on all nodes, otherwise
  * the system will freeze.
  * First, it tests that the automatically set up messages between shells
@@ -1205,8 +1368,10 @@ void testPostMaster()
 	Id tnId = testParCreate( testIds );
 	testParGet( tnId, testIds  ); // This uses the objects created in testParCreate()
 	testParSet( testIds ); // This uses the objects created in testParCreate()
+	testParDelete( testIds ); // This cleans up the test objects
 	testParCommandSequence(); // Tests multiple commands in one poll
 	testParMsg();
+	testParTraversePath();
 
 #ifdef TABLE_DATA
 	///////////////////////////////////////////////////////////////

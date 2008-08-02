@@ -22,9 +22,11 @@ class Shell
 {
 #ifdef DO_UNIT_TESTS
 	friend void testShell();
+	friend void testOffNodeQueue();
 #ifdef USE_MPI
 	friend void testShellSetupAsyncParMsg();
 	friend void testBidirectionalParMsg();
+	friend void testParGet( Id tnId, vector< Id >& testIds );
 #endif // USE_MPI
 #endif // DO_UNIT_TESTS
 	public:
@@ -53,10 +55,16 @@ class Shell
 		 */
 		Id innerPath2eid( const string& path, const string& separator ) const;
 		/**
-		 * Deeper inner function that does the actual Id extraction work.
+		 * Deeper inner function: checks on local node then lauches out
+		 * on other nodes.
 		 */
 		static Id traversePath( Id start, vector< string >& );
 
+		/**
+		 * Innermost function that does the actual Id extraction work,
+		 * but only on a local node.
+		 */
+		static Id localTraversePath( Id start, vector< string >& );
 
 		/**
 		* Returns Id for off-node object specified by path.
@@ -137,6 +145,13 @@ class Shell
 		static void pope( const Conn* );
 
 		static void trigLe( const Conn*, Id parent );
+		static void handleRequestLe( const Conn* c, 
+			Nid parent, unsigned int requestId );
+		/**
+ 		* Undefined effects if more than one node has a matching target.
+ 		*/
+		static void handleReturnLe( const Conn* c,
+			vector< Nid > found, unsigned int requestId );
 
 		bool create( const string& type, const string& name,
 						Id parent, Id id );
@@ -313,8 +328,10 @@ class Shell
 		static void addParallelDest( const Conn* c,
 			Nid src, string srcTypeStr, Nid dest, string destField );
 
-		static void parGetField( const Conn* c, Id id, string field );
-		static void recvGetRequest( const Conn* c, string value );
+		static void parGetField( const Conn* c, 
+			Id id, string field, unsigned int requestId );
+		static void handleReturnGet( const Conn* c, 
+			string value, unsigned int requestId );
 		// setField is a regular command, no special stuff for it.
 
 		static void parCreateFunc( const Conn* c,
@@ -376,6 +393,11 @@ class Shell
  		*/
 		void decrementOffNodePending( unsigned int rid );
 		/**
+ 		* Zeroes out the off node pending count.
+ 		*/
+		void zeroOffNodePending( unsigned int rid );
+		
+		/**
  		* Returns number of pending responses to off node request.
  		*/
 		unsigned int numPendingOffNode( unsigned int rid );
@@ -414,6 +436,9 @@ class Shell
 
 		/// Number of nodes used by simulation.
 		static unsigned int numNodes_;
+
+		/// Number of requests allowed for off-node data transfer.
+		static const unsigned int maxNumOffNodeRequests;
 
 		/**
 		 * This keeps track of message requests sent off-node. 

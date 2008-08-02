@@ -1591,8 +1591,10 @@ void do_create( int argc, const char** const argv, Id s )
 	int childNode = -1; // Tell the system to figure out child node.
 	if ( name.rfind( "@" ) != string::npos ) {
 		string nodeNum = Shell::tail( name, "@" );
-		if( nodeNum.length() > 0 )
+		if ( nodeNum.length() > 0 ) {
 			childNode = atoi( nodeNum.c_str() );
+			name = Shell::head( name, "@" );
+		}
 		else
 			childNode = 0;
 	}
@@ -2066,11 +2068,17 @@ void GenesisParserWrapper::doLe( int argc, const char** argv, Id s )
 		}
 		send1< Id >( s(), requestLeSlot, e );
 	}
+
+	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data( 0 ) );
+
 	vector< Id >::iterator i = elist_.begin();
 	// This operation should really do it in a parallel-clean way.
 	/// \todo If any children, we should suffix the name with a '/'
-	for ( i = elist_.begin(); i != elist_.end(); i++ )
-		print( i->eref().saneName(current) );
+	for ( i = elist_.begin(); i != elist_.end(); i++ ) {
+		send2< Id, string >( s(), requestFieldSlot, *i, "name" );
+		print( gpw->getFieldValue() );
+	}
 	elist_.resize( 0 );
 }
 
@@ -4014,7 +4022,7 @@ void GenesisParserWrapper::gpAssert(
 
 void GenesisParserWrapper::unitTest()
 {
-	string lestr = "shell sched library proto solvers ";
+	string lestr = "shell sched library proto ";
 	cout << "\nDoing GenesisParserWrapper tests";
 	gpAssert( "le", lestr );
 	gpAssert( "create neutral /foo", "" );
