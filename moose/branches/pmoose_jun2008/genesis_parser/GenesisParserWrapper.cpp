@@ -1048,11 +1048,18 @@ void GenesisParserWrapper::doSet( int argc, const char** argv, Id s )
 	// in tabchannels. Example command looks like:
 	// 		setfield Ca Y_A->table[{i}] {y}
 	// so here we need to do setfield Ca/yGate/A table[{i}] {y}
-	
 	for ( int i = start; i < argc; i += 2 ) {
 		// s->setFuncLocal( path + "/" + argv[ i ], argv[ i + 1 ] );
 		string field = argv[i];
-		const string& className = elist_[0]()->className();
+
+		// This is a little non-general, using only the first elist
+		// entry for a conversion that may apply a wildcard. However,
+		// it applies only to the situation where we want to do a field
+		// name conversion, so hopefully it covers most use cases.
+		send2< Id, string >( s(), requestFieldSlot, elist_[0], "class" );
+		string className = fieldValue_;
+
+		// const string& className = elist_[0]()->className();
 		map< string, string >::iterator iter = 
 			sliFieldNameConvert().find( className + "." + field );
 		if ( iter != sliFieldNameConvert().end() ) 
@@ -1402,9 +1409,12 @@ char* GenesisParserWrapper::doGet( int argc, const char** argv, Id s )
 		cout << "usage:: " << argv[0] << " [element] field\n";
 		return copyString( "" );
 	}
+	fieldValue_ = "";
+	send2< Id, string >( s(),
+		requestFieldSlot, e, "class" );
 	map< string, string >::iterator i = 
-			sliFieldNameConvert().find( e()->className() + "." + field );
-	if ( i != sliFieldNameConvert().end() ) 
+			sliFieldNameConvert().find( fieldValue_ + "." + field );
+	if ( i != sliFieldNameConvert().end() )
 		field = i->second;
 
 	// Hack section to handle table field lookups.

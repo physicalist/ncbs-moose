@@ -7503,13 +7503,16 @@ Next steps:
 	- Sync messages
 	- Modify shell commands to operate node-independently
 		Currently only message setup works this way. Need:
-		- get
-		- set
+		* get
+		* set
 		- showfield
-		- le
+		* le
+		- ce
 		- pwe
 		* create (so it creates on node of parent)
+		* delete
 		- createmap (ditto)
+		- quit
 	- Fix up what happens when we operate on existing proxies.
 - Upgrade array operations to work across nodes
 	- Createmap etc
@@ -7604,5 +7607,30 @@ the shell and do an 'le' on them, though getfield croaks. Should add a 'node'
 field to Neutral, and fix the getfield. Along the way I've implemented delete
 on remote nodes, with unit tests for that too. 
 Should implement a proper 'quit' call that cleans up MPI.
+
+Checked in as revision 565 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Trying to do 'set' across nodes.
+Dies in sliFieldNameConvert, because it uses an element ptr directly and
+that element is off-node. Bad.
+
+Major change to wildcards, now set up to work at least partly in parallel.
+This is needed to get 'set' and showfield and other wildcard-arg commands
+to work.
+Got it compiled and clears current unit tests, but need to add new ones
+for the remote node set from script.
+
+==============================================================================
+3 Aug 2008
+The remote set from script turns out to use a different function, one that
+handles wildcards. This may actually be an opportunity to optimize, by 
+separating out the calls to go to different nodes. For now I'll do the
+simple, stupid thing and individually call set commands.
+
+Done.
+
+Need to set up a proper regression test suite now for the parallel commands.
+Several (like set and get) were tested using the Shell commands, but not 
+through the parser.
 
 ==============================================================================

@@ -114,8 +114,17 @@ class Shell
 // Special low-level operations that Shell handles using raw
 // serialized strings from PostMaster.
 //////////////////////////////////////////////////////////////////////
+		/**
+		 * Deprecated
+		 */
 		static void rawAddFunc( const Conn* c, string s );
+		/**
+		 * Deprecated
+		 */
 		static void rawCopyFunc( const Conn* c, string s );
+		/**
+		 * Deprecated
+		 */
 		static void rawTestFunc( const Conn* c, string s );
 //////////////////////////////////////////////////////////////////////
 // Infinite loop called on slave nodes to monitor commands from master.
@@ -177,24 +186,103 @@ class Shell
 		static void planarweight(const Conn& c, string source, string  destination, vector <double> parameter);
 		static void getSynCount2(const Conn* c, Id dest);
 		
+		/**
+		 * Delete an object. Works in parallel.
+		 */
 		static void staticDestroy( const Conn*, Id victim );
 
+
+		////////////////////////////////////////////////////////////////
+		// Group of functions for field access
+		////////////////////////////////////////////////////////////////
+		/**
+		 * Gets a field value. Works in parallel. Blocks.
+		 * Triggers a return
+		 * function on the remote Shell, and manages a return value queue
+		 * so that it can run in a thread-safe manner. Sets up a
+		 * non-preemptive busy loop to poll the postmaster, so it should
+		 * not result in a race condition. Ideally would do this using
+		 * a separate thread.
+		 */
 		static void getField( const Conn* c, Id id, string field );
+
+		/**
+		 * Add a temporary field
+		 */
 		static void addField( const Conn* c, Id id, string fieldname );
+
+		/**
+		 * Assign a field value to the id on the local node.
+		 */
+		static void localSetField( const Conn* c, 
+						Id id, string field, string value );
+		/**
+		 * Assign a field value to an id on any node, local or remote.
+		 * Does not block: just issues the request, and carries on.
+		 * The remote node executes a localSetField to handle the request.
+		 */
 		static void setField( const Conn* c, 
 						Id id, string field, string value );
+		/**
+		 * Assigns a field value to a vector of ids, on any node.
+		 * Does not block: just issues the request, and carries on.
+		 * Currently does this in a simple, non-optimized way by calling
+		 * setField lots of times.
+		 */
 		static void setVecField( const Conn* c, 
 				vector< Id > elist, string field, string value );
 
+		////////////////////////////////////////////////////////////////
+		// Group of functions for scheduling
+		////////////////////////////////////////////////////////////////
 		static void setClock( const Conn* c, int clockNo, double dt,
 				int stage );
 		static void useClock( const Conn* c,
 			Id tickId, vector< Id > path, string function );
 
+		////////////////////////////////////////////////////////////////
+		// Group of functions for wildcards. Also works in parallel
+		////////////////////////////////////////////////////////////////
+		/**
+		 * Searches all nodes for objects matching the wildcard path.
+		 */
 		static void getWildcardList( const Conn* c,
-						string path, bool ordered );
+			string path, bool ordered );
 
+		/**
+		 * Searches a single node for objects matching the wildcard path
+		 */
+		static void innerGetWildcardList( const Conn* c,
+			string path, bool ordered, vector< Id >& list
+		);
 
+		/**
+		 * Deals with off-node requests for a wildcard list
+		 */
+		static void handleParWildcardList( const Conn* c,
+			string path, bool ordered, unsigned int requestId );
+
+		////////////////////////////////////////////////////////////////
+		// Group of functions for messaging. Also works in parallel
+		////////////////////////////////////////////////////////////////
+
+		/**
+		 * This is called from the same node that the src is on, to send a 
+		 * message to a dest on a remote node. 
+		 * Note that an Id does not carry node info within itself. So we
+		 * use an Nid for the dest, as we need to retain node info
+		 */
+		static void addParallelSrc( const Conn* c,
+			Nid src, string srcField, Nid dest, string destField );
+
+		/**
+		 * Operates on the node of the destination object to complete the
+		 * message setup across nodes. This is the counterpart of 
+		 * addParallelSrc. Creates a proxy object if needed on the target
+		 * node.
+		 */
+		static void addParallelDest( const Conn* c,
+			Nid src, string srcTypeStr, Nid dest, string destField );
 		/**
 		 * addMessage creates a message between two Ids, which could
 		 * also represent array elements.
@@ -222,17 +310,21 @@ class Shell
 
 		/**
 		 * deleteMessage gets rid of the message identified by the Fid and
-		 * the integer lookup for it.
+		 * the integer lookup for it. Not parallel.
 		 */
 		static void deleteMessage( const Conn* c, Fid src, int msg );
 
 		/**
 		 * deleteEdge gets rid of messages specified as edges, that is,
 		 * using the same src/field and dest/field info that was used
-		 * to create the message.
+		 * to create the message. Not parallel.
 		 */
 		static void deleteMessageByDest( const Conn* c,
 			Id src, string srcField, Id dest, string destField );
+
+		/**
+		 * Delete a message, in a more general manner. Not parallel.
+		 */
 		static void deleteEdge( const Conn* c, Fid src, Fid dest );
 
 		/**
@@ -245,6 +337,9 @@ class Shell
 		static void listMessages( const Conn* c,
 				Id id, string field, bool isIncoming );
 
+		//////////////////////////////////////////////////////////
+		// Functions for handling moves and copies. Not yet parallelized
+		//////////////////////////////////////////////////////////
 		static void copy( const Conn* c, Id src, Id parent, string name );
 		static void copyIntoArray( const Conn* c, Id src, Id parent, string name, vector <double> parameter );
 		static void copyIntoArray1( const Conn* c, Id src, Id parent, string name, vector <double> parameter );
@@ -320,14 +415,10 @@ class Shell
 		void command( int argc, const char** argv );
 		*/
 
-		////////////////////////////////////////////////////////////////////
-		// functions for implementing inter-node shell-shell messaging
-		////////////////////////////////////////////////////////////////////
-		static void addParallelSrc( const Conn* c,
-			Nid src, string srcField, Nid dest, string destField );
-		static void addParallelDest( const Conn* c,
-			Nid src, string srcTypeStr, Nid dest, string destField );
 
+		////////////////////////////////////////////////////////////////////
+		// functions for implementing inter-node field assignments.
+		////////////////////////////////////////////////////////////////////
 		static void parGetField( const Conn* c, 
 			Id id, string field, unsigned int requestId );
 		static void handleReturnGet( const Conn* c, 

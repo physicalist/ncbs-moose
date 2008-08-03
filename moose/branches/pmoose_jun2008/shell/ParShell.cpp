@@ -423,6 +423,29 @@ void Shell::handleReturnLe( const Conn* c,
 	sh->decrementOffNodePending( requestId );
 }
 
+///////////////////////////////////////////////////////////////////////
+// Here we handle wildcard building requests.
+// Very similar to Le, and in fact we reuse the return handler.
+///////////////////////////////////////////////////////////////////////
+
+void Shell::handleParWildcardList( const Conn* c, 
+	string path, bool ordered, unsigned int requestId )
+{
+	vector< Id > ret;
+	vector< Nid > temp;
+	innerGetWildcardList( c, path, ordered, ret );
+	for ( vector< Id >::iterator i = ret.begin(); i != ret.end(); i++ )
+		if ( i->node() != Id::GlobalNode )
+			temp.push_back( *i );
+
+	// Turns out to be identical return operations as handleReturnLe,
+	// and the requestId
+	// keeps things straight between calling functions.
+	sendBack2< vector< Nid >, unsigned int >( c, returnLeSlot,
+		temp, requestId );
+}
+
+
 /**
  * The next two functions should always be called in pairs and should
  * be called within the same function, so that local variables do not

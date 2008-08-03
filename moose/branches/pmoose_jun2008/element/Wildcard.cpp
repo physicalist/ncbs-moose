@@ -177,6 +177,28 @@ int singleLevelWildcard( Id start, const string& path, vector< Id >& ret )
 	findBraceContent( path, beforeBrace, insideBrace, index );
 	if ( beforeBrace == "##" )
 		return allChildren( start, insideBrace, index, ret ); // recursive.
+
+	/*
+	 * Future off-node stuff. But this really needs to be delegated
+	 * to a separate routine, which does nothing but get the wildcard
+	 * list off node. Also should bring back the names and indices.
+	 *
+	vector< Nid > kids;
+	unsigned int requestId = openOffNodeValueRequest< vector< Nid > >( 
+		sh, &kids, sh->numNodes() - 1 );
+	send2< Nid, unsigned int >( shellE, requestLeSlot, start, requestId );
+	vector< Nid >* temp = 
+		closeOffNodeValueRequest< vector< Nid > >( sh, requestId );
+	assert( temp == &kids );
+		
+	vector< Nid >::iterator i;
+	for ( i = kids.begin(); i != kids.end(); i++ ) {
+		if ( matchName( start, *i, beforeBrace, insideBrace, index ) )
+			ret.push_back( *i );
+	}
+	return ret.size() - nret;
+	*/
+
 	vector< Id > kids; 
 	Neutral::getChildren( start.eref(), kids );
 // 	cout << start.eref().name() << endl;

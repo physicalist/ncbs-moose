@@ -29,6 +29,7 @@ class Neutral
 			static const string getName( Eref e );
 			static const int getIndex( Eref e );
 			static const string getClass( Eref e );
+			static const int getNode( Eref e );
 
 			/**
 			 * getParent is a static utility function to return the

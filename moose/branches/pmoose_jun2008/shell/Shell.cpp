@@ -317,7 +317,7 @@ const Cinfo* initShellCinfo()
 		new DestFinfo( "set",
 			// objId, field, value
 			Ftype3< Id, string, string >::global(),
-			RFCAST( &Shell::setField )
+			RFCAST( &Shell::localSetField )
 		),
 
 		/////////////////////////////////////////////////////
@@ -413,7 +413,7 @@ const Cinfo* initShellCinfo()
 		),
 
 		///////////////////////////////////////////////////////////
-		// This section deals with requests for le.
+		// This section deals with requests for le and wildcards 
 		///////////////////////////////////////////////////////////
 		
 		// args are: parent, requestId
@@ -424,9 +424,6 @@ const Cinfo* initShellCinfo()
 			Ftype2< Nid, unsigned int >::global(),
 			RFCAST( &Shell::handleRequestLe )
 		),
-		///////////////////////////////////////////////////////////
-		// This section deals with requests for le.
-		///////////////////////////////////////////////////////////
 
 		// args are: elist, requestId
 		new SrcFinfo( "returnLeSrc",
@@ -435,6 +432,15 @@ const Cinfo* initShellCinfo()
 		new DestFinfo( "returnLe",
 			Ftype2< vector< Nid >, unsigned int >::global(),
 			RFCAST( &Shell::handleReturnLe )
+		),
+
+		// args are: path, ordered, requestId
+		new SrcFinfo( "requestParWildcardSrc",
+			Ftype3< string, bool, unsigned int >::global()
+		),
+		new DestFinfo( "requestParWildcard",
+			Ftype3< string, bool, unsigned int >::global(),
+			RFCAST( &Shell::handleParWildcardList )
 		),
 	};
 
@@ -531,8 +537,14 @@ static const Slot pollSlot =
 static const Slot requestLeSlot =
 	initShellCinfo()->getSlot( "parallel.requestLeSrc" );
 
+static const Slot requestWildcardSlot =
+	initShellCinfo()->getSlot( "parallel.requestParWildcardSrc" );
+
 static const Slot parGetFieldSlot =
 	initShellCinfo()->getSlot( "parallel.getSrc" );
+
+static const Slot parSetFieldSlot =
+	initShellCinfo()->getSlot( "parallel.setSrc" );
 
 static const Slot parDeleteSlot =
 	initShellCinfo()->getSlot( "parallel.deleteSrc" );
@@ -1473,9 +1485,6 @@ void Shell::addField( const Conn* c, Id id, string fieldname )
 /**
  * This function handles request to get a field value. It triggers
  * a return function to the calling object, as a string.
- * The reason why we take this function to the Shell at all is because
- * we will eventually need to be able to handle this for off-node
- * object requests.
  */
 void Shell::getField( const Conn* c, Id id, string field )
 {
@@ -1640,35 +1649,62 @@ void Shell::move( const Conn* c, Id src, Id parent, string name )
 void Shell::setField( const Conn* c, Id id, string field, string value )
 {
 	assert( id.good() );
+	if ( id.isGlobal() ) { // do the set on all nodes
+		send3< Id, string, string >( c->target(), parSetFieldSlot,
+			id, field, value );
+	} else if ( id.node() == Shell::myNode() ) { // do a local set
+		localSetField( c, id, field, value );
+	} else {	// do a remote set on selected node
+		unsigned int tgt = ( id.node() < myNode() ) ? 
+			id.node() : id.node() - 1;
+		sendTo3< Id, string, string >( c->target(), parSetFieldSlot, tgt,
+			id, field, value );
+	}
+}
+
+/**
+ * This is the local function to handle the setfield command
+ * It is invoked by the parSetFieldSlot.
+ */
+void Shell::localSetField( const Conn* c, 
+	Id id, string field, string value )
+{
+	assert( id.node() == myNode() || id.isGlobal() );
 	Element* e = id();
 	if ( !e ) {
 		cout << "Shell::setField:Error: Element not found: " 
 			<< id << endl;
 		return;
 	}
-	// Appropriate off-node stuff here.
 
 	const Finfo* f = e->findFinfo( field );
 	if ( f ) {
 		if ( !f->strSet( e, value ) )
-			cout << "setField: Error: cannot set field " << e->name() <<
-					"." << field << " to " << value << endl;
+			cout << "localSetField@" << myNode() << 
+				": Error: cannot set field " << e->name() <<
+				"." << field << " to " << value << endl;
 	} else {
-		cout << "setField: Error: cannot find field: " << id.path() << ", " << e->name() <<
-				"." << field << endl;
+		cout << "localSetField@" << myNode() << 
+			": Error: cannot find field: " << id.path() << ", " 
+			<< e->name() << "." << field << endl;
 	}
 }
 
-// Static function
 /**
  * This function handles request to set identical field value for a 
  * vector of objects. Used for the GENESIS SET function.
+ * This could be optimized by organizing separate vectors, one for each
+ * target node. For now just do a simple setField for each id.
+ *
+ * static function.
  */
 void Shell::setVecField( const Conn* c, 
 				vector< Id > elist, string field, string value )
 {
 	vector< Id >::iterator i;
 	for ( i = elist.begin(); i != elist.end(); i++ ) {
+		setField( c, *i, field, value );
+/*
 		// Cannot use i->good() here because we might set fields on /root.
 		assert( !i->bad() ); 
 		//Element* e = ( *i )();
@@ -1683,6 +1719,7 @@ void Shell::setVecField( const Conn* c,
 			cout << "setVecField: Error: cannot find field: " << i->path() <<
 				"." << field << endl;
 		}
+*/
 	}
 }
 
@@ -1882,10 +1919,42 @@ void Shell::digestPath( string& path )
  * it becomes effectively random.
  * The flag specifies if we want a list in breadth-first order,
  * in which case commas are not permitted.
+ *
+ * In order to do this on multiple nodes, we simply issue the command
+ * on each node and harvest all the responses.
  */
 void Shell::getWildcardList( const Conn* c, string path, bool ordered )
 {
 	vector<Id> list;
+	//vector< Id > ret;
+	Shell* sh = static_cast< Shell* >( c->data() );
+
+	innerGetWildcardList( c, path, ordered, list );
+
+	vector< Nid > ret;
+	unsigned int requestId = openOffNodeValueRequest< vector< Nid > >(
+		sh, &ret, sh->numNodes() - 1 );
+	
+	// args are: path, ordered, requestId
+	send3< string, bool, unsigned int >( 
+		c->target(), requestWildcardSlot,
+		path, ordered, requestId );
+	
+	// Retrieve values
+	vector< Nid >* temp = closeOffNodeValueRequest< vector< Nid > >(
+		sh, requestId
+	);
+	assert( &ret == temp );
+
+	for( vector< Nid >::iterator i = ret.begin(); i != ret.end(); i++ )
+		list.push_back( *i );
+	
+	sendBack1< vector< Id > >( c, elistSlot, list );
+}
+
+void Shell::innerGetWildcardList( const Conn* c, string path, bool ordered,
+	vector< Id >& list)
+{
 	//vector< Id > ret;
 	static_cast< Shell* >( c->data() )->digestPath( path );
 
@@ -1902,7 +1971,7 @@ void Shell::getWildcardList( const Conn* c, string path, bool ordered )
 	//		*i = ( *j )->id();
 	
 	//GenesisParserWrapper::recvElist(conn, elist)
-	sendBack1< vector< Id > >( c, elistSlot, list );
+	// sendBack1< vector< Id > >( c, elistSlot, list );
 }
 
 /**
