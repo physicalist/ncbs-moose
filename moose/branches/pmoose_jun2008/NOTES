@@ -7505,7 +7505,7 @@ Next steps:
 		Currently only message setup works this way. Need:
 		* get
 		* set
-		- showfield
+		* showfield
 		- addmsg
 		* le
 		- ce
@@ -7653,5 +7653,13 @@ to the screen.
 
 Showfield in progress. At this point it does showfield * OK, but dies on 
 specific field showfields.. Now fixed.
+
+Checked in as revision 570 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Working on addMsg in parallel, and associated regression tests. Uncovered and
+fixed a bug in the parallel addMsg that the ealier unit tests had missed. 
+Also set up fixes so that proxies have their node number properly assigned.
+Looks like the messages are now set up properly, but we don't have the
+scheduling stuff working across nodes as yet.
 
 ==============================================================================

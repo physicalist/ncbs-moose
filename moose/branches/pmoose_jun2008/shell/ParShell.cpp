@@ -178,7 +178,7 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
 	// cout << "in Shell::addSingleMessage, src=" << src << "." << srcNode << ", srcField = " << srcField << ", dest = " << dest << "." << dest.node() << ", destField = " << destField << endl << flush;
 	if ( srcNode == sh->myNode_ ) {
 		if ( dest.node() == sh->myNode_ ) {
-			return addLocal( src, srcField, dest, destField );
+			return innerAddLocal( src, srcField, dest, destField );
 		} else {
 			addParallelSrc( c, src, srcField, dest, destField );
 			return 1;
@@ -191,6 +191,9 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
 				c->target(), addParallelSrcSlot, tgtMsg,
 				src, srcField, dest, destField );
 		} else {
+			cout << "adding " << src << "." << srcNode << " to " <<
+				dest << "." << dest.node() << " on " << sh->myNode() <<
+				endl << flush;
 			sendTo4< Id, string, Id, string >( 
 				c->target(),
 				addLocalSlot, tgtMsg,

@@ -509,6 +509,7 @@ map< string, string >& sliSrcLookup()
 	src[ "SUMTOTAL n nInit" ] = "nSrc";	// for molecules
 	src[ "SUMTOTAL output output" ] = "outputSrc";	// for tables
 	src[ "SLAVE output" ] = "outputSrc";	// for tables
+	src[ "SUM output" ] = "outputSrc";	// for tables
 	src[ "SLAVE n" ] = "nSrc";	// for direct connections between mols.
 	src[ "INTRAMOL n" ] = "nOut"; 	// target is an enzyme.
 	src[ "CONSERVE n nInit" ] = ""; 	// Deprecated
@@ -600,6 +601,7 @@ map< string, string >& sliDestLookup()
 	dest[ "SUMTOTAL n nInit" ] = "sumTotal";	// for molecules
 	dest[ "SUMTOTAL output output" ] = "sumTotal";	// for molecules
 	dest[ "SLAVE output" ] = "sumTotal";	// for molecules
+	dest[ "SUM output" ] = "sum";	// for tables
 	dest[ "SLAVE n" ] = "sumTotal";	// for molecules
 	dest[ "INTRAMOL n" ] = "intramolIn"; 	// target is an enzyme.
 	dest[ "CONSERVE n nInit" ] = ""; 	// Deprecated

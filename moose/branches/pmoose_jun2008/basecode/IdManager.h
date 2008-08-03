@@ -66,6 +66,10 @@ class Enode
 		void setGlobal() {
 			node_ = Id::GlobalNode;
 		}
+
+		void setNode( unsigned int node ) {
+			node_ = node;
+		}
 	private:
 		Element* e_;
 		unsigned int node_;
@@ -159,6 +163,11 @@ class IdManager
 		 * Turns object into a global.
 		 */
 		void setGlobal( unsigned int index );
+
+		/**
+		 * Assigns node # to an id. Used in setting up proxies.
+		 */
+		void setNode( unsigned int index, unsigned int node );
 		
 		/**
 		 * Returns the most recently created id on current node

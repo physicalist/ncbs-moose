@@ -316,7 +316,14 @@ class Shell
 		 * This one does the actual work for adding messages on the
 		 * local node
 		 */
-		static bool addLocal(
+		static bool innerAddLocal(
+			Id src, string srcField,
+			Id dest, string destField );
+
+		/**
+		 * Wrapper function for innerAddLocal so that messages can use it.
+		 */
+		static bool addLocal( const Conn* c,
 			Id src, string srcField,
 			Id dest, string destField );
 

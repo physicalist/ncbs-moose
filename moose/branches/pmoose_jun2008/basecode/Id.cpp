@@ -166,6 +166,11 @@ void Id::setGlobal()
 	manager().setGlobal( id_ );
 }
 
+void Id::setNode( unsigned int node )
+{
+	manager().setNode( id_, node );
+}
+
 Id Id::lastId()
 {
 	return manager().lastId();

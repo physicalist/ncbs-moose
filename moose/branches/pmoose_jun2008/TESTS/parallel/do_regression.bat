@@ -11,8 +11,11 @@ set MOOSE = ../../moose
 # failed
 set NEARDIFF = ../regression/neardiff
 
-foreach NUM_NODES ( 1 2 4 8 16 )
+foreach NUM_NODES ( 1 2 4 8 )
 	# First test checks the most basic element manipulation operations
 	echo -n element_manipulation
 	mpirun -np $NUM_NODES $MOOSE element_manipulation.g $NUM_NODES
+
+	echo -n showField
+	mpirun -np $NUM_NODES $MOOSE showField.g $NUM_NODES
 end

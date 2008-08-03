@@ -146,6 +146,11 @@ class Id
 		void setGlobal();
 
 		/**
+		 * Assignes node# to id. Used when creating proxy elements
+		 */
+		void setNode( unsigned int node );
+
+		/**
 		 * The most recently created id on this node
 		 */
 		static Id lastId();
