@@ -55,6 +55,10 @@ const Cinfo* initNeutralCinfo()
 					reinterpret_cast< GetFunc >( &Neutral::getClass ),
 					&dummyFunc
 		),
+		new ValueFinfo( "node", ValueFtype1< int >::global(),
+					reinterpret_cast< GetFunc >( &Neutral::getNode ),
+					&dummyFunc
+		),
 		new ValueFinfo( "childList",
 				ValueFtype1< vector< Id > >::global(), 
 				reinterpret_cast< GetFunc>( &Neutral::getChildList ),
@@ -196,6 +200,11 @@ const int Neutral::getIndex( Eref e )
 const string Neutral::getClass( Eref e )
 {
 		return e.e->className();
+}
+
+const int Neutral::getNode( Eref e )
+{
+		return e->id().node();
 }
 
 /////////////////////////////////////////////////////////////////////
