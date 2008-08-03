@@ -417,6 +417,25 @@ const Cinfo* initShellCinfo()
 		),
 
 		///////////////////////////////////////////////////////////
+		// This section is the converse: Look for the path of an
+		// eid on a remote node.
+		///////////////////////////////////////////////////////////
+		new SrcFinfo( "requestPathSrc",
+			Ftype2< Nid, unsigned int >::global()
+		),
+		new DestFinfo( "requestPath",
+			Ftype2< Nid, unsigned int >::global(),
+			RFCAST( &Shell::handlePathRequest )
+		),
+		new SrcFinfo( "returnPathSrc",
+			Ftype2< string, unsigned int >::global()
+		),
+		new DestFinfo( "returnPath",
+			Ftype2< string, unsigned int >::global(),
+			RFCAST( &Shell::handlePathReturn )
+		),
+
+		///////////////////////////////////////////////////////////
 		// This section deals with requests for le and wildcards 
 		///////////////////////////////////////////////////////////
 		
@@ -710,7 +729,7 @@ Id Shell::path2eid( const string& path, const string& separator )
 	return s->innerPath2eid( path, separator );
 }
 
-string Shell::eid2path( Id eid ) 
+string Shell::localEid2Path( Id eid ) 
 {
 	if ( eid.eref()->className() == "proxy" )
 		return "proxy";
@@ -2154,6 +2173,11 @@ Eref Shell::getPost( unsigned int node ) const
 Id Shell::parallelTraversePath( Id start, vector< string >& names )
 {
 	return Id::bad(); // Fails on single node version.
+}
+
+string Shell::eid2path( Id eid )
+{
+	return Shell::localEid2Path( eid );
 }
 
 #endif // USE_MPI

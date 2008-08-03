@@ -7506,14 +7506,19 @@ Next steps:
 		* get
 		* set
 		- showfield
+		- addmsg
 		* le
 		- ce
 		- pwe
 		* create (so it creates on node of parent)
-		* delete
 		- createmap (ditto)
-		- quit
+		- step
+		- reset
+		- setclock
+		* delete
+		* quit
 	- Fix up what happens when we operate on existing proxies.
+	- Set up a regression test for all of these.
 - Upgrade array operations to work across nodes
 	- Createmap etc
 	- Multinode array proxies
@@ -7639,5 +7644,14 @@ Implemented quit. Wanted to do it cleanly using a flag to get out of the
 main loop, but the current polling arrangement uses Barrier calls and these
 get out of sync, so one cannot terminate MPI properly. So I've just added a 
 brute-force exit( 0 ) call.
+
+Checked in as revision 569 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Implemented first set of parallel regression tests. But I need to figure out
+how to analyze the working of the tests, rather than just dumping diagnostics
+to the screen.
+
+Showfield in progress. At this point it does showfield * OK, but dies on 
+specific field showfields.. Now fixed.
 
 ==============================================================================

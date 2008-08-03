@@ -2034,10 +2034,14 @@ void GenesisParserWrapper::doShow( int argc, const char** argv, Id s )
 				showAllFields( e, s );
 			} else { // get specific field here.
 				fieldValue_ = "";
+				send2< Id, string >( s(), requestFieldSlot, e, "class" );
+				string className = fieldValue_;
+
+				fieldValue_ = "";
 				//Shell::getField(conn, e, argv[i])
 				string field = argv[i];
 				map< string, string >::iterator iter = 
-					sliFieldNameConvert().find( e()->className() + "." + field );
+					sliFieldNameConvert().find( className + "." + field );
 				if ( iter != sliFieldNameConvert().end() ) 
 					field = iter->second;
 					
