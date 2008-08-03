@@ -28,3 +28,5 @@ end
 
 echo after deletion:
 le
+
+quit

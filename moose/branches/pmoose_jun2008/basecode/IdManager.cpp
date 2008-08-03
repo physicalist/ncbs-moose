@@ -143,12 +143,15 @@ Element* IdManager::getElement( const Id& id ) const
 			// We then get into managing how many entries are unknown...
 			assert( 0 );
 			return 0;
+		}
+		/*
 		} else if ( ret.node() == Shell::myNode() || 
 			ret.node() == Id::GlobalNode ) {
 			return ret.e();
 		} else {
 			return 0;
 		}
+		*/
 #endif
 		return ret.e();
 	}
@@ -211,6 +214,14 @@ bool IdManager::isGlobal( unsigned int index ) const
 	return ( e.node() == Id::GlobalNode );
 }
 
+void IdManager::setNode( unsigned int index, unsigned int node )
+{
+	assert( node < Shell::numNodes() );
+	Enode& e = elementList_[ index ];
+	cout << "Setting node for " << index << " to " << node << endl;
+	e.setNode( node );
+}
+
 #else
 unsigned int IdManager::findNode( unsigned int index ) const 
 {
@@ -223,6 +234,11 @@ bool IdManager::isGlobal( unsigned int index ) const
 }
 
 void IdManager::setGlobal( unsigned int index )
+{
+	;
+}
+
+void IdManager::setNode( unsigned int index, unsigned int node )
 {
 	;
 }

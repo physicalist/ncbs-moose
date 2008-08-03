@@ -14,7 +14,10 @@ ProxyElement::ProxyElement( Id id, unsigned int node,
 	unsigned int proxyFuncId )
 	: 	Element( id ), node_( node ),
 		proxyVec_( FuncVec::getFuncVec( proxyFuncId ) )
-{;}
+{
+	id.setNode( node );
+}
+
 
 /**
  * The return value is undefined if msgNum is greater the numSrc but

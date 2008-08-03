@@ -2125,8 +2125,17 @@ void Shell::addMessage( const Conn* c,
 		cout << "msg add OK\n";
 }
 
-bool Shell::addLocal( Id src, string srcField, Id dest, string destField )
+bool Shell::addLocal( const Conn* c, 
+	Id src, string srcField, 
+	Id dest, string destField )
 {
+	return innerAddLocal( src, srcField, dest, destField );
+}
+
+bool Shell::innerAddLocal( 
+	Id src, string srcField, Id dest, string destField )
+{
+	cout << "innerAddLocal " << src << "." << src.node() << " to " << dest << "." << dest.node() << " on " << myNode() << endl << flush;
 	return src.eref().add( srcField, dest.eref(), destField,
 		ConnTainer::Default );
 }
@@ -2149,7 +2158,7 @@ bool Shell::addSingleMessage( const Conn* c,
 	Id src, string srcField, 
 	Id dest, string destField )
 {
-	return addLocal( src, srcField, dest, destField );
+	return innerAddLocal( src, srcField, dest, destField );
 }
 
 void Shell::addParallelSrc( const Conn* c, 
