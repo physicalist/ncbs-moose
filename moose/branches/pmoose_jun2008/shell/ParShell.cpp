@@ -51,6 +51,11 @@ static const Slot requestLeSlot =
 static const Slot returnLeSlot = 
 	initShellCinfo()->getSlot( "parallel.returnLeSrc" );
 
+static const Slot requestPathSlot = 
+	initShellCinfo()->getSlot( "parallel.requestPathSrc" );
+static const Slot returnPathSlot = 
+	initShellCinfo()->getSlot( "parallel.returnPathSrc" );
+
 
 
 /**
@@ -99,9 +104,10 @@ void Shell::parGetField( const Conn* c, Id id, string field,
 				requestId );
 			return;
 		}
-	}
-	cout << "Shell::parGetField: Failed to find field " << field << 
-		" on object " << id.path() << endl;
+	} else {
+		cout << "Shell::parGetField: Failed to find field " << field << 
+			" on object " << id.path() << endl;
+	}	
 	// Have to respond anyway.
 	sendBack2< string, unsigned int >( c, returnGetSlot, ret,
 		requestId );
@@ -445,6 +451,54 @@ void Shell::handleParWildcardList( const Conn* c,
 		temp, requestId );
 }
 
+////////////////////////////////////////////////////////////////////
+// Here we put in stuff to deal with eid2path
+////////////////////////////////////////////////////////////////////
+
+string Shell::eid2path( Id eid )
+{
+	if ( !eid.isGlobal() && eid.node() != Shell::myNode() ) {
+		Shell *sh = static_cast< Shell* >( Id::shellId().eref().data() );
+		unsigned int tgt = ( eid.node() < Shell::myNode() ) ?
+			eid.node() : eid.node() - 1;
+		string ret = "";
+		unsigned int requestId = 
+			openOffNodeValueRequest< string > ( sh, &ret, 1 ); 
+		// Send request to target node.
+		sendTo2< Nid, unsigned int >( 
+			Id::shellId().eref(), requestPathSlot, tgt, 
+				eid, requestId );
+		// Get the value back.
+		string* temp = closeOffNodeValueRequest< string >( sh, requestId );
+		assert ( &ret == temp );
+		return ret;
+	} else {
+		return localEid2Path( eid );
+	}
+}
+
+void Shell::handlePathRequest( const Conn* c, 
+	Nid eid, unsigned int requestId )
+{
+	assert( eid.node() == myNode() );
+	string ret = localEid2Path( eid );
+	sendBack2< string, unsigned int >( c, returnPathSlot,
+		ret, requestId );
+}
+
+void Shell::handlePathReturn( const Conn* c,
+	string ret, unsigned int requestId )
+{
+	Shell* sh = static_cast< Shell* >( c->data() );
+	string* temp = getOffNodeValuePtr< string >( sh, requestId );
+	*temp = ret;
+	sh->zeroOffNodePending( requestId );
+}
+
+
+////////////////////////////////////////////////////////////////////
+// Here we put in the offNodeValueRequest stuff.
+////////////////////////////////////////////////////////////////////
 
 /**
  * The next two functions should always be called in pairs and should

@@ -38,15 +38,34 @@ class Shell
 // holds the current working element, cwe. Second, many functions are
 // multinode and the Shell has to handle queries across nodes.
 ////////////////////////////////////////////////////////////////////
-		// string expandPath( const std::string& path ) const;
 		/** 
 		 * Returns a string with the fully expanded unix-like path of
-		 * the specified Id.
+		 * the specified Id. Now works in parallel, except for cases
+		 * where node boundaries are crossed above the root object.
 		 */
 		static string eid2path( Id eid );
 
 		/**
-		 * Returns an Id defined by the specified path.
+		 * This is the local node version of eid2path
+		 */
+		static string localEid2Path( Id eid );
+		/**
+		 * For parallel operation, we need to handle requests for the path
+		 * from different nodes. 
+		 */
+		static void handlePathRequest( const Conn* c, 
+			Nid eid, unsigned int requestId );
+		/**
+		 * For parallel operation, we need to return the path when requested
+		 */
+		static void handlePathReturn( const Conn* c, 
+			string path, unsigned int requestId );
+
+
+		/**
+		 * Returns an Id defined by the specified path. Works in parallel,
+		 * but not for cases where node boundaries are crossed above the
+		 * root object.
 		 */
 		static Id path2eid( const string& path, const string& separator );
 
@@ -54,6 +73,7 @@ class Shell
 		 * Inner function for extracting Id.
 		 */
 		Id innerPath2eid( const string& path, const string& separator ) const;
+
 		/**
 		 * Deeper inner function: checks on local node then lauches out
 		 * on other nodes.
