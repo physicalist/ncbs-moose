@@ -148,7 +148,7 @@ int main(int argc, char** argv)
 		#ifndef USE_READLINE
 		cout << "moose #" << lineNum << " > " << flush;
 		#endif //n USE_READLINE
-		while( 1 ) {
+		while( Shell::running() ) {
 			#ifdef USE_READLINE
 			char cname[10];
 			sprintf(cname, "moose #%d > ", lineNum);
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
 			// gui stuff here maybe.
 		}
 	} else { // All but master node.
-		while( 1 ) {
+		while( Shell::running ) {
 			pollPostmaster();
 		}
 	}

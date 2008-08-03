@@ -119,6 +119,7 @@ const Cinfo* initGenesisParserCinfo()
 					RFCAST( &GenesisParserWrapper::recvClocks ) ),
 		new SrcFinfo( "requestCurrentTime", Ftype0::global() ),
 		// Returns time in the default return value.
+		new SrcFinfo( "quit", Ftype0::global() ),
 		
 		///////////////////////////////////////////////////////////////
 		// Message functions
@@ -291,6 +292,8 @@ static const Slot requestClocksSlot =
 	initGenesisParserCinfo()->getSlot( "parser.requestClocks" );
 static const Slot requestCurrentTimeSlot = 
 	initGenesisParserCinfo()->getSlot( "parser.requestCurrentTime" );
+static const Slot quitSlot = 
+	initGenesisParserCinfo()->getSlot( "parser.quit" );
 
 static const Slot addMessageSlot = 
 	initGenesisParserCinfo()->getSlot( "parser.addMsg" );
@@ -1789,7 +1792,7 @@ void do_alias( int argc, const char** const argv, Id s )
 void do_quit( int argc, const char** const argv, Id s )
 {
 	// s->quitFuncLocal( );
-		exit( 0 );
+	send0( s(), quitSlot );
 }
 
 void do_stop( int argc, const char** const argv, Id s )
@@ -4150,6 +4153,6 @@ void GenesisParserWrapper::unitTest()
 	gpAssert( "delete /a", "" );
 	gpAssert( "delete /c", "" );
 	
-	cout << "\n";
+	cout << "\n" << flush;
 }
 #endif

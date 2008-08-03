@@ -494,6 +494,21 @@ class Shell
 		unsigned int numPendingOffNode( unsigned int rid );
 
 		/**
+		 * Flag: true till simulation quits. Used in the main loop.
+		 */
+		static bool running();
+
+		/**
+		 * Tells all nodes to quit, then quits.
+		 */
+		static void quit( const Conn* c );
+
+		/**
+		 * Sets running flag to 0, to get the simulator to quit
+		 */
+		static void innerQuit( const Conn* c );
+
+		/**
 		 * Used only in unit tests, when we spoof an off-node postmaster
 		 * using this hack.
 		 */
@@ -531,6 +546,10 @@ class Shell
 		/// Number of requests allowed for off-node data transfer.
 		static const unsigned int maxNumOffNodeRequests;
 
+		// Flag for main loop of simulator. When it becomes false,
+		// the simulator will exit.
+		static bool running_;
+
 		/**
 		 * This keeps track of message requests sent off-node. 
 		 * When the target node finishes its work it tells this one that
@@ -552,6 +571,7 @@ class Shell
 		vector< offNodeData > offNodeData_;
 		/// Manages the available Rids.
 		vector< unsigned int > freeRidStack_;
+
 };
 
 extern const Cinfo* initShellCinfo();

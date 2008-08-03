@@ -1545,6 +1545,7 @@ void testPostMaster()
 	}
 #endif // TABLE_DATA
 	MPI::COMM_WORLD.Barrier();
+	cout << flush;
 }
 #endif
 

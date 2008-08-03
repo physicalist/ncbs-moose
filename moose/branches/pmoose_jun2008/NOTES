@@ -7633,4 +7633,11 @@ Need to set up a proper regression test suite now for the parallel commands.
 Several (like set and get) were tested using the Shell commands, but not 
 through the parser.
 
+Checked in as revision 568 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Implemented quit. Wanted to do it cleanly using a flag to get out of the
+main loop, but the current polling arrangement uses Barrier calls and these
+get out of sync, so one cannot terminate MPI properly. So I've just added a 
+brute-force exit( 0 ) call.
+
 ==============================================================================
