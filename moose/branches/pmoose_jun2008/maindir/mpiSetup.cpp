@@ -160,11 +160,14 @@ void initParSched()
 void terminateMPI( unsigned int myNode )
 {
 #ifdef USE_MPI
+	/*
 	Eref shell = Id::shellId().eref();
 	if ( myNode != 0 ) {
 		bool ret = set( shell, "poll" );
 		assert( ret );
 	}
+	*/
+	MPI::COMM_WORLD.Barrier();
 	MPI::Finalize();
 #endif // USE_MPI
 }

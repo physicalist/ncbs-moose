@@ -22,12 +22,15 @@
 #include "../utility/randnum/Normal.h"
 #include "math.h"
 #include "sstream"
+
+extern void pollPostmaster(); // Defined in maindir/mpiSetup.cpp
 //////////////////////////////////////////////////////////////////////
 // Shell static initializers
 //////////////////////////////////////////////////////////////////////
 
 unsigned int Shell::myNode_ = 0;
 unsigned int Shell::numNodes_ = 1;
+bool Shell::running_ = 1;
 const unsigned int Shell::maxNumOffNodeRequests = 100;
 
 //////////////////////////////////////////////////////////////////////
@@ -156,7 +159,8 @@ const Cinfo* initShellCinfo()
 		new DestFinfo( "requestCurrTime",
 				Ftype0::global(), RFCAST( &Shell::requestCurrTime ) ),
 				// Returns it in the default string return value.
-
+		// Call this to end the simulation.
+		new DestFinfo( "quit", Ftype0::global(), RFCAST( &Shell::quit ) ),	
 		////////////////////////////////////////////////////////////
 		// Message functions
 		////////////////////////////////////////////////////////////
@@ -442,6 +446,11 @@ const Cinfo* initShellCinfo()
 			Ftype3< string, bool, unsigned int >::global(),
 			RFCAST( &Shell::handleParWildcardList )
 		),
+
+		// Called to terminate simulation.
+		new SrcFinfo( "quitSrc", Ftype0::global() ),
+		new DestFinfo( "quit", Ftype0::global(), 
+			RFCAST( &Shell::innerQuit ) ),
 	};
 
 	/**
@@ -548,6 +557,9 @@ static const Slot parSetFieldSlot =
 
 static const Slot parDeleteSlot =
 	initShellCinfo()->getSlot( "parallel.deleteSrc" );
+
+static const Slot parQuitSlot =
+	initShellCinfo()->getSlot( "parallel.quitSrc" );
 
 void printNodeInfo( const Conn* c );
 
@@ -2542,7 +2554,36 @@ void Shell::destroy( Id victim )
 	set( e, "destroy" );
 }
 
+/**
+ * Static function. True till simulator quits.
+ */
+bool Shell::running()
+{
+	return running_;
+}
 
+/**
+ * Tells all nodes to quit, then quits. Should be called only on 
+ * master node.
+ */
+void Shell::quit( const Conn* c )
+{
+	send0( c->target(), parQuitSlot );
+	pollPostmaster(); // needed to send the message out.
+	running_ = 0;
+	exit( 0 );
+}
+
+/**
+ * static function. Sets 'running' flag to zero, in due course the
+ * event loop will terminate.
+ */
+void Shell::innerQuit( const Conn* c)
+{
+	running_ = 0;
+	// Brute force, till we sort out the Barrier issue for quits.
+	exit( 0 );
+}
 
 //////////////////////////////////////////////////////////////////////
 // Deleted stuff.
