@@ -218,7 +218,7 @@ void IdManager::setNode( unsigned int index, unsigned int node )
 {
 	assert( node < Shell::numNodes() );
 	Enode& e = elementList_[ index ];
-	cout << "Setting node for " << index << " to " << node << endl;
+	// cout << "Setting node for " << index << " to " << node << endl;
 	e.setNode( node );
 }
 

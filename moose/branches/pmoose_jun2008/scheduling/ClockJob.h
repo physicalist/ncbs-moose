@@ -35,6 +35,7 @@ class ClockJob
 		static void startFunc( const Conn* c, double runTime );
 		void startFuncLocal( Eref e, double runTime );
 		static void stepFunc( const Conn* c, int nsteps );
+		static void handleStopCallback( const Conn* c, int flag );
 		static void reinitFunc( const Conn* c );
 		void reinitFuncLocal( Eref e );
 		static void reschedFunc( const Conn* c );
@@ -56,6 +57,8 @@ class ClockJob
 		int currentStep_;
 		double dt_;
 		ProcInfoBase info_;
+		static const int emptyCallback;
+		static const int doReschedCallback;
 };
 
 #endif // _CLOCKJOB_H

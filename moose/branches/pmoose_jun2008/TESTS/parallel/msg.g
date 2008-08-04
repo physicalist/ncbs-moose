@@ -29,6 +29,6 @@ end
 
 setfield /tab0 input 1 output 1 table->table[0] 1 table->table[1] 1
 
-reset
-step {numStages}
+// reset
+// step {numStages}
 showfield /tab# output

@@ -466,6 +466,23 @@ const Cinfo* initShellCinfo()
 			RFCAST( &Shell::handleParWildcardList )
 		),
 
+		///////////////////////////////////////////////////////////////
+		// This section handles scheduling and execution control
+		///////////////////////////////////////////////////////////////
+		new SrcFinfo( "reschedSrc", Ftype0::global() ),
+		new SrcFinfo( "reinitSrc", Ftype0::global() ),
+		new SrcFinfo( "stopSrc", Ftype0::global() ),
+		// Arg is runtime
+		new SrcFinfo( "stepSrc", Ftype1< double >::global() ),
+		new DestFinfo( "resched",
+				Ftype0::global(), RFCAST( &Shell::resched ) ),
+		new DestFinfo( "reinit",
+				Ftype0::global(), RFCAST( &Shell::reinit ) ),
+		new DestFinfo( "stop",
+				Ftype0::global(), RFCAST( &Shell::stop ) ),
+		new DestFinfo( "step",
+				Ftype1< double >::global(), // Arg is runtime
+				RFCAST( &Shell::step ) ),
 		// Called to terminate simulation.
 		new SrcFinfo( "quitSrc", Ftype0::global() ),
 		new DestFinfo( "quit", Ftype0::global(), 
@@ -576,6 +593,18 @@ static const Slot parSetFieldSlot =
 
 static const Slot parDeleteSlot =
 	initShellCinfo()->getSlot( "parallel.deleteSrc" );
+
+static const Slot parReschedSlot =
+	initShellCinfo()->getSlot( "parallel.reschedSrc" );
+
+static const Slot parReinitSlot =
+	initShellCinfo()->getSlot( "parallel.reinitSrc" );
+	
+static const Slot parStopSlot =
+	initShellCinfo()->getSlot( "parallel.stopSrc" );
+
+static const Slot parStepSlot =
+	initShellCinfo()->getSlot( "parallel.stepSrc" );
 
 static const Slot parQuitSlot =
 	initShellCinfo()->getSlot( "parallel.quitSrc" );
@@ -2023,6 +2052,8 @@ Element* findCj()
 
 void Shell::resched( const Conn* c )
 {
+	if ( myNode() == 0 )
+		send0( c->target(), parReschedSlot );
 	// Should be a msg
 	Element* cj = findCj();
 	set( cj, "resched" );
@@ -2033,6 +2064,8 @@ void Shell::resched( const Conn* c )
 
 void Shell::reinit( const Conn* c )
 {
+	if ( myNode() == 0 )
+		send0( c->target(), parReinitSlot );
 	// Should be a msg
 	Element* cj = findCj();
 	set( cj, "reinit" );
@@ -2046,6 +2079,8 @@ void Shell::stop( const Conn* c )
 
 void Shell::step( const Conn* c, double time )
 {
+	if ( myNode() == 0 )
+		send1< double >( c->target(), parStepSlot, time );
 	// Should be a msg
 	Element* cj = findCj();
 	set< double >( cj, "start", time );
@@ -2121,8 +2156,7 @@ void Shell::addMessage( const Conn* c,
 			}
 		}
 	}
-	if ( ok )
-		cout << "msg add OK\n";
+	// if ( ok ) cout << "msg add OK\n";
 }
 
 bool Shell::addLocal( const Conn* c, 
@@ -2135,7 +2169,7 @@ bool Shell::addLocal( const Conn* c,
 bool Shell::innerAddLocal( 
 	Id src, string srcField, Id dest, string destField )
 {
-	cout << "innerAddLocal " << src << "." << src.node() << " to " << dest << "." << dest.node() << " on " << myNode() << endl << flush;
+	// cout << "innerAddLocal " << src << "." << src.node() << " to " << dest << "." << dest.node() << " on " << myNode() << endl << flush;
 	return src.eref().add( srcField, dest.eref(), destField,
 		ConnTainer::Default );
 }
