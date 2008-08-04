@@ -393,12 +393,14 @@ void PostMaster::innerPoll( const Conn* c )
 		unsigned int nMsgs = *static_cast< const unsigned int* >(
 						static_cast< const void* >( data ) );
 		data += sizeof( unsigned int );
+		assert( dataSize >= sizeof( unsigned int ) + 
+			nMsgs * sizeof( AsyncStruct ) );
 
-		AsyncStruct foo( data );
-		// cout << ", nMsgs = " << nMsgs << ", proxyId = " << foo.proxy() << ", dataSize = " << foo.size() << ", func = " << foo.funcIndex() << endl;
-
+		// AsyncStruct foo( data );
 		for ( unsigned int i = 0; i < nMsgs; i++ ) {
 			AsyncStruct as( data );
+			cout << "nMsgs = " << nMsgs << ", i = " << i << ", proxyId = " << as.proxy() << ", dataSize = " << as.size() << ", func = " << as.funcIndex() << ", totDataSize = " << dataSize << endl << flush;
+
 
 			///\todo: temporary hack to deal with shell-shell messaging
 			if ( as.proxy() == Id::shellId() )
@@ -555,6 +557,7 @@ void* PostMaster::innerGetAsyncParBuf( const Conn* c, unsigned int size )
 	// get set to whatever the postmaster AsyncMsgDest uses.
 	// I'm pretty sure the sourceMsg is useless too.
 	// I'm going to put the message size in the third arg.
+	assert( c->source().id().good() );
 	AsyncStruct as( c->source().id(), c->funcIndex(), size );
 	char* sendBufPtr = &( sendBuf_[ sendBufPos_ ] );
 	*static_cast< AsyncStruct* >( static_cast< void* >( sendBufPtr ) ) = as;

@@ -7506,7 +7506,7 @@ Next steps:
 		* get
 		* set
 		* showfield
-		- addmsg
+		* addmsg
 		* le
 		- ce
 		- pwe
@@ -7661,5 +7661,29 @@ fixed a bug in the parallel addMsg that the ealier unit tests had missed.
 Also set up fixes so that proxies have their node number properly assigned.
 Looks like the messages are now set up properly, but we don't have the
 scheduling stuff working across nodes as yet.
+
+Checked in as revision 571 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Now setting up to test scheduling and running code. For now it dies on the
+msg.g parallel regression test.
+
+==============================================================================
+4 Aug 2008
+Stuck. I think that a garbage packet is being picked up or sent and that
+is causing the problems.
+
+mpirun -np 2 moose TESTS/parallel/msg.g 2
+
+I wonder if the issue is that the resched commands deletes the messages that
+control the postmaster. If this happened there could be debris from an
+incomplete process operation.
+
+Possible approach:
+	Have a 'running' flag or a 'reschedPending' flag that gets set from
+	the external 'resched' call if something is already going. As soon 
+	as the event loops gets to a safe place (no more messages in process)
+	the call is completed.
+
+Trying to set this up. No luck yet. Compiles but still doesn't handle it.
 
 ==============================================================================

@@ -8,6 +8,7 @@
 **********************************************************************/
 #include "moose.h"
 #include "Tick.h"
+#include "ClockJob.h"
 #include "../shell/Shell.h"
 
 /**
@@ -43,10 +44,15 @@ const Cinfo* initTickCinfo()
 		// from the following tick.
 		new DestFinfo( "nextTime", Ftype1< double >::global(), 
 			RFCAST( &Tick::receiveNextTime ) ),
-		// The third one is for propagating resched forward.
+		// propagating resched forward.
 		new SrcFinfo( "resched", Ftype0::global() ),
-		// The fourth one is for propagating reinit forward.
+		// propagating reinit forward.
 		new SrcFinfo( "reinit", Ftype1< ProcInfo >::global() ),
+		// Calling for clean termination including a callback identifier
+		new SrcFinfo( "stopSrc", Ftype1< int >::global() ),
+		// Executing the stop callback.
+		new DestFinfo( "stopCallback", Ftype1< int >::global(), 
+			RFCAST( &Tick::handleStopCallback ) ),
 	};
 
 	/**
@@ -72,6 +78,11 @@ const Cinfo* initTickCinfo()
 		// The fifth one is for receiving the reinit call.
 		new DestFinfo( "reinit", Ftype1< ProcInfo >::global(), 
 			RFCAST( &Tick::reinit ) ),
+		// The sixth entry is for receiving the stop call.
+		new DestFinfo( "stop", Ftype1< int >::global(), 
+			RFCAST( &Tick::handleStop ) ),
+		// The seventh entry is for sending back the callback from the stop.
+		new SrcFinfo( "stopCallbackSrc", Ftype1< int >::global() ),
 	};
 
 	/**
@@ -185,6 +196,11 @@ static const Slot updateDtSlot = initTickCinfo()->getSlot( "updateDtSrc" );
 static const Slot processSlot = 
 	initTickCinfo()->getSlot( "process.process" );
 static const Slot reinitSlot = initTickCinfo()->getSlot( "process.reinit" );
+
+static const Slot stopCallbackSlot = 
+	initTickCinfo()->getSlot( "prev.stopCallbackSrc" );
+static const Slot stopSlot = 
+	initTickCinfo()->getSlot( "next.stopSrc" );
 
 ///////////////////////////////////////////////////
 // Tick class definition functions
@@ -429,7 +445,7 @@ void Tick::innerStart( Eref e, ProcInfo info, double maxTime )
 
 	// cout << "Inner Start on node " << Shell::myNode() << endl;
 
-	while ( info->currTime_ < maxTime ) {
+	while ( running_ && info->currTime_ < maxTime ) {
 		endTime = maxTime + dt_;
 		if ( next_ && endTime > nextTickTime_ )
 			endTime = nextTickTime_ * JUST_OVER_ONE;
@@ -456,6 +472,10 @@ void Tick::innerStart( Eref e, ProcInfo info, double maxTime )
 				send2< ProcInfo, double >( 
 								e, nextSlot, info, nextTime_ );
 		}
+	}
+	if ( callback_ == ClockJob::doReschedCallback ) {
+		callback_ = 0;
+		send1< int >( e, stopCallbackSlot, doReschedCallback );
 	}
 }
 
@@ -488,5 +508,25 @@ void Tick::innerReinitFunc( Eref e, ProcInfo info )
 ///////////////////////////////////////////////////
 // Other function definitions
 ///////////////////////////////////////////////////
+//
+/**
+ * Handle a request to stop.
+ */
+void Tick::handleStop( const Conn* c, int v )
+{
+	Tick* t = static_cast< Tick* >( c->data() );
+	t->running_ = 0;
+	t->callback_ = v;
+}
+
+/**
+ * The next stage has stopped. What now?
+ */
+void Tick::handleStopCallback( const Conn* c, int v )
+{
+	;
+}
+
+
 int Tick::ordinalCounter_ = 0;
 

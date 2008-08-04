@@ -54,6 +54,9 @@ class Tick
 
 		static void start( const Conn* c, ProcInfo p, double maxTime );
 		void innerStart( Eref e, ProcInfo p, double maxTime );
+
+		static void handleStop( const Conn* c, int callbackFlag );
+		static void handleStopCallback( const Conn* c, int callbackFlag );
 		///////////////////////////////////////////////////////
 		// Utility function
 		///////////////////////////////////////////////////////
@@ -68,6 +71,8 @@ class Tick
 		virtual void innerReinitFunc( Eref e, ProcInfo info );
 
 	private:
+		bool running_;
+		int callback_;
 		double dt_;
 		int stage_;
 		double nextTime_;

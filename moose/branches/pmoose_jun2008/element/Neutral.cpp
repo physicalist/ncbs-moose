@@ -43,6 +43,10 @@ const Cinfo* initNeutralCinfo()
 					reinterpret_cast< GetFunc >( &Neutral::getName ),
 					reinterpret_cast< RecvFunc >( &Neutral::setName )
 		),
+		new ValueFinfo( "id", ValueFtype1< int >::global(),
+					reinterpret_cast< GetFunc >( &Neutral::getId ),
+					&dummyFunc
+		),
 		new ValueFinfo( "index", ValueFtype1< int >::global(),
 					reinterpret_cast< GetFunc >( &Neutral::getIndex ),
 					&dummyFunc
@@ -190,6 +194,11 @@ const string Neutral::getName( Eref e )
 void Neutral::setName( const Conn* c, const string s )
 {
 	c->target().e->setName( s );
+}
+
+const int Neutral::getId( Eref e )
+{
+		return e.id().id();
 }
 
 const int Neutral::getIndex( Eref e )

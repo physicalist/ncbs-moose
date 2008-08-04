@@ -94,6 +94,9 @@
 #include "ClockJob.h"
 #include "../shell/Shell.h"
 
+const int ClockJob::emptyCallback = 0;
+const int ClockJob::doReschedCallback = 1;
+
 const Cinfo* initClockJobCinfo()
 {
 
@@ -118,10 +121,15 @@ const Cinfo* initClockJobCinfo()
 		// from the following tick.
 		new DestFinfo( "recvNextTime", Ftype1< double >::global(), 
 			RFCAST( &ClockJob::receiveNextTime ) ),
-		// The third one is for propagating resched forward.
+		// propagating resched forward.
 		new SrcFinfo( "resched", Ftype0::global() ),
-		// The fourth one is for propagating reinit forward.
+		// propagating reinit forward.
 		new SrcFinfo( "reinit", Ftype1< ProcInfo >::global() ),
+		// invoke clean termination with a callback flag
+		new SrcFinfo( "stopSrc", Ftype1< int >::global() ),
+		// callback from termination
+		new DestFinfo( "stopCallback", Ftype1< int >::global(),
+			RFCAST( &ClockJob::handleStopCallback ) ),
 	};
 
 	static Finfo* clockFinfos[] =
@@ -208,6 +216,8 @@ static const Slot reschedSlot =
 	initClockJobCinfo()->getSlot( "tick.resched" );
 static const Slot reinitSlot = 
 	initClockJobCinfo()->getSlot( "tick.reinit" );
+static const Slot stopSlot = 
+	initClockJobCinfo()->getSlot( "tick.stopSrc" );
 
 ///////////////////////////////////////////////////
 // Field function definitions
@@ -316,8 +326,11 @@ void ClockJob::reinitFuncLocal( Eref e )
  */
 void ClockJob::reschedFunc( const Conn* c )
 {
+	send1< int >( c->target(), stopSlot, doReschedCallback );
+	/*
 	static_cast< ClockJob* >( c->data() )->reschedFuncLocal(
 					c->target() );
+	*/
 }
 
 class TickSeq {
@@ -401,6 +414,13 @@ void ClockJob::reschedFuncLocal( Eref er )
 		last = j->element();
 	}
 	send0( er, reschedSlot );
+}
+
+void ClockJob::handleStopCallback( const Conn* c, int flag )
+{
+	ClockJob* cj = static_cast< ClockJob* >( c->data() );
+	if ( flag == doReschedCallback )
+		cj->reschedFuncLocal( c->target() );
 }
 
 /**
