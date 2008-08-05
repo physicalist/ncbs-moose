@@ -130,6 +130,10 @@ const Cinfo* initClockJobCinfo()
 		// callback from termination
 		new DestFinfo( "stopCallback", Ftype1< int >::global(),
 			RFCAST( &ClockJob::handleStopCallback ) ),
+		new SrcFinfo( "checkRunning", Ftype0::global() ),
+		// callback from termination
+		new DestFinfo( "runningCallback", Ftype1< bool >::global(),
+			RFCAST( &ClockJob::handleRunningCallback ) ),
 	};
 
 	static Finfo* clockFinfos[] =
@@ -218,6 +222,8 @@ static const Slot reinitSlot =
 	initClockJobCinfo()->getSlot( "tick.reinit" );
 static const Slot stopSlot = 
 	initClockJobCinfo()->getSlot( "tick.stopSrc" );
+static const Slot checkRunningSlot = 
+	initClockJobCinfo()->getSlot( "tick.checkRunning" );
 
 ///////////////////////////////////////////////////
 // Field function definitions
@@ -326,10 +332,23 @@ void ClockJob::reinitFuncLocal( Eref e )
  */
 void ClockJob::reschedFunc( const Conn* c )
 {
-	send1< int >( c->target(), stopSlot, doReschedCallback );
+	ClockJob* cj = static_cast< ClockJob* >( c->data() );
+	cj->isRunning_ = 0;
+	send0( c->target(), checkRunningSlot );
+	if ( cj->isRunning_ ) {
+		send1< int >( c->target(), stopSlot, doReschedCallback );
+	} else {
+		static_cast< ClockJob* >( c->data() )->reschedFuncLocal( 
+			c->target() );
+	}
+
 	/*
-	static_cast< ClockJob* >( c->data() )->reschedFuncLocal(
-					c->target() );
+	static const int tickMsg = clockJobCinfo->findFinfo( "tick" )->msg();
+	if ( c->target()->numTargets( tickMsg ) > 0 )
+		send1< int >( c->target(), stopSlot, doReschedCallback );
+	else 
+		static_cast< ClockJob* >( c->data() )->reschedFuncLocal( 
+			c->target() );
 	*/
 }
 
@@ -422,6 +441,12 @@ void ClockJob::handleStopCallback( const Conn* c, int flag )
 	if ( flag == doReschedCallback )
 		cj->reschedFuncLocal( c->target() );
 }
+
+void ClockJob::handleRunningCallback( const Conn* c, bool flag )
+{
+	static_cast< ClockJob* >( c->data() )->isRunning_ = flag;
+}
+
 
 /**
  * ClearMessages removes the next/prev messages from each Tick.
