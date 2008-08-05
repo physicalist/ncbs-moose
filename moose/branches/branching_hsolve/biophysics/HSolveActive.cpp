@@ -10,8 +10,11 @@
 #include "HSolveActive.h"
 #include <set>
 
-void HSolveActive::setup( Id seed, double dt )
-{
+const int HSolveActive::INSTANT_X = 1;
+const int HSolveActive::INSTANT_Y = 2;
+const int HSolveActive::INSTANT_Z = 4;
+
+void HSolveActive::setup( Id seed, double dt ) {
 	this->HSolvePassive::setup( seed, dt );
 	
 	readChannels( );
@@ -20,41 +23,57 @@ void HSolveActive::setup( Id seed, double dt )
 	readSynapses( );
 	
 	createLookupTables( );
-	concludeInit( );
+	cleanup( );
 }
+
+void HSolveActive::solve( ProcInfo info ) {
+	if ( !Gk_.size() ) {
+		Gk_.resize( channel_.size() );
+		GkEk_.resize( channel_.size() );
+	}
+	
+	advanceChannels( info->dt_ );
+	calculateChannelCurrents( );
+	updateMatrix( );
+	this->HSolvePassive::solve( );
+	advanceCalcium( );
+	advanceSynChans( info );
+	sendSpikes( info );
+}
+
+//////////////////////////////////////////////////////////////////////
+// Setup of data structures
+//////////////////////////////////////////////////////////////////////
 
 void HSolveActive::readChannels( ) {
 	vector< Id >::iterator icompt;
 	vector< Id >::iterator ichan;
-	vector< Id > channelId;
+	int nChannel;
 	double Gbar, Ek;
 	double X, Y, Z;
 	double Xpower, Ypower, Zpower;
 	int instant;
 	
-	for ( icompt = compartmentId_.begin();
-	      icompt != compartmentId_.end();
-	      ++icompt )
+	for ( icompt = compartmentId_.begin(); icompt != compartmentId_.end(); ++icompt )
 	{
-		channelId = channels( *icompt );
-reverse( channelId.begin(), channelId.end() );
+		nChannel = BioScan::channels( *icompt, channelId_ );
+		
 		// todo: discard channels with Gbar = 0.0
-		channelId_.insert( channelId_.end(), channelId.begin(), channelId.end() );
-		channelCount_.push_back( ( unsigned char )( channelId.size( ) ) );
+		channelCount_.push_back( ( unsigned char ) nChannel );
 		
 		for ( ichan = channelId.begin(); ichan != channelId.end(); ++ichan ) {
 			channel_.resize( channel_.size() + 1 );
 			ChannelStruct& channel = channel_.back();
 			
-			field( *ichan, "Gbar", Gbar );
-			field( *ichan, "Ek", Ek );
-			field( *ichan, "X", X );
-			field( *ichan, "Y", Y );
-			field( *ichan, "Z", Z );
-			field( *ichan, "Xpower", Xpower );
-			field( *ichan, "Ypower", Ypower );
-			field( *ichan, "Zpower", Zpower );
-			field( *ichan, "instant", instant );
+			get< double >( *ichan, "Gbar", Gbar );
+			get< double >( *ichan, "Ek", Ek );
+			get< double >( *ichan, "X", X );
+			get< double >( *ichan, "Y", Y );
+			get< double >( *ichan, "Z", Z );
+			get< double >( *ichan, "Xpower", Xpower );
+			get< double >( *ichan, "Ypower", Ypower );
+			get< double >( *ichan, "Zpower", Zpower );
+			get< int >( *ichan, "instant", instant );
 			
 			channel.Gbar_ = Gbar;
 			channel.GbarEk_ = Gbar * Ek;
@@ -157,8 +176,8 @@ void HSolveActive::readSynapses( ) {
 	SpikeGenStruct spikegen;
 	SynChanStruct synchan;
 	
-	for ( unsigned int ic = 0; ic < N_; ++ic ) {
-		syn = postsyn( compartmentId_[ ic ] );
+	for ( unsigned int ic = 0; ic < nCompt_; ++ic ) {
+		syn = synchan( compartmentId_[ ic ] );
 		for ( isyn = syn.begin(); isyn != syn.end(); ++isyn ) {
 			synchan.compt_ = ic;
 			synchan.elm_ = ( *isyn )();
@@ -166,7 +185,7 @@ void HSolveActive::readSynapses( ) {
 			synchan_.push_back( synchan );
 		}
 		
-		spike = presyn( compartmentId_[ ic ] );
+		spike = spikegen( compartmentId_[ ic ] );
 		if ( spike.bad() )
 			continue;
 		
@@ -178,70 +197,6 @@ void HSolveActive::readSynapses( ) {
 		spikegen_.push_back( spikegen );
 	}
 }
-
-/*
-void HSolveActive::createMatrix( ) {
-	M_.resize( 5 * N_, 0.0 );
-	VMid_.resize( N_ );
-	double  Vm, Em, Cm, Rm,
-		Ra, Ra_parent,
-		R_inv, CmByDt, inject;
-	
-	unsigned long ia = 0, ic = 0;
-	unsigned long checkpoint, parentIndex;
-	for ( unsigned long icp = 0; icp < 1 + checkpoint_.size(); ++icp ) {
-		checkpoint = icp < checkpoint_.size() ?
-		             checkpoint_[ icp ] :
-		             N_ - 1;
-		
-		for ( ; ic < 1 + checkpoint; ++ic, ia += 5 ) {
-			// Read initVm instead of Vm, since we are at reset time
-			field( compartmentId_[ ic ], "initVm", Vm );
-			field( compartmentId_[ ic ], "Em", Em );
-			field( compartmentId_[ ic ], "Cm", Cm );
-			field( compartmentId_[ ic ], "Rm", Rm );
-			field( compartmentId_[ ic ], "Ra", Ra );
-			field( compartmentId_[ ic ], "inject", inject );
-			
-			if ( ic < N_ - 1 ) {
-				parentIndex = ic < checkpoint ?
-					      1 + ic :
-					      checkpoint_[ ++icp ];
-				field( compartmentId_[ parentIndex ],
-				       "Ra", Ra_parent );
-				R_inv = 2.0 / ( Ra + Ra_parent );
-				M_[ 5 * parentIndex + 3 ] += R_inv;
-			} else
-				R_inv = 0.0;
-			
-			//~ CmByDt = dt_ / ( 2.0 * Cm );
-			CmByDt = 2.0 * Cm / dt_;
-			CmByDt_.push_back( CmByDt );
-			EmByRm_.push_back( Em / Rm );
-			inject_.push_back( inject );
-			V_.push_back( Vm );
-			
-			M_[ 1 + ia ]  = -R_inv;
-			M_[ 2 + ia ]  = R_inv * R_inv;
-			M_[ 3 + ia ] += R_inv + 1.0 / Rm + CmByDt;
-			//~ 
-			//~ M_[ 1 + ia ]  = -R_inv / CmByDt;
-			//~ M_[ 2 + ia ]  = R_inv * R_inv / CmByDt;
-			//~ M_[ 3 + ia ] += R_inv + 1.0 / Rm + 1.0 / CmByDt;
-			
-			//~ M_[ 1 + ia ]  = -CmByDt * R_inv;
-			//~ M_[ 2 + ia ]  = CmByDt * CmByDt * R_inv * R_inv;
-			//~ M_[ 3 + ia ] += 1.0 + CmByDt * ( R_inv + 1.0 / Rm );
-		}
-	}
-	
-	for ( unsigned long ic = 0, ia = 0; ic < N_; ++ic, ia += 5 ) {
-		//~ M_[ 1 + ia ] /= CmByDt_[ ic ];
-		//~ M_[ 2 + ia ] /= CmByDt_[ ic ];
-		//~ M_[ 3 + ia ] *= CmByDt_[ ic ];
-	}
-}
-*/
 
 void HSolveActive::createLookupTables( ) {
 	std::set< Id > caSet;
@@ -339,7 +294,172 @@ void HSolveActive::createLookupTables( ) {
 			lookup_.push_back( vLookupGroup.slice( vType[ gateId_[ ig ] ] ) );
 }
 
-void HSolveActive::concludeInit( ) {
+void HSolveActive::cleanup( ) {
 //	compartmentId_.clear( );
+}
+
+//////////////////////////////////////////////////////////////////////
+// Numerical integration
+//////////////////////////////////////////////////////////////////////
+
+void HSolveActive::calculateChannelCurrents( ) {
+	vector< ChannelStruct >::iterator ichan;
+	vector< double >::iterator igk = Gk_.begin();
+	vector< double >::iterator igkek = GkEk_.begin();
+	double* istate = &state_[ 0 ];
+	
+	for ( ichan = channel_.begin(); ichan != channel_.end(); ++ichan ) {
+		ichan->process( istate, *igk, *igkek );
+		++igk, ++igkek;
+	}
+}
+
+void HSolveActive::updateMatrix( ) {
+	HJ_.assign( HJCopy_.begin(), HJCopy_.end() );
+	
+	double GkSum, GkEkSum;
+	vector< unsigned char >::iterator icco = channelCount_.begin();
+	vector< double >::iterator iml     = HS_.begin();
+	vector< double >::iterator iv      = V_.begin();
+	vector< double >::iterator igk     = Gk_.begin();
+	vector< double >::iterator igkek   = GkEk_.begin();
+	vector< CompartmentStruct >::iterator ic;
+	for ( ic = compartment_.begin(); ic != compartment_.end(); ++ic ) {
+		GkSum   = 0.0;
+		GkEkSum = 0.0;
+		for ( unsigned char ichan = 0; ichan < *icco; ++ichan ) {
+			GkSum   += *( igk++ );
+			GkEkSum += *( igkek++ );
+		}
+		
+		*iml         = *( 2 + iml ) + GkSum;
+		*( 3 + iml ) = ic->EmByRm + ic->CmByDt * *iv + GkEkSum + ic->inject;
+		//~ *ia         = *( 3 + ia ) + *icmbydt * GkSum;
+		//~ *( 4 + ia ) = *iv + *icmbydt * (*iembyrm + GkEkSum + *iinject);
+		++icco, iml += 4, ++iv;
+	}
+	
+	vector< SynChanStruct >::iterator isyn;
+	for ( isyn = synchan_.begin(); isyn != synchan_.end(); ++isyn ) {
+		unsigned ic = isyn->compt_;
+		HS_[ 4 * ic ] += isyn->Gk_;
+		HS_[ 4 * ic + 3 ] += isyn->Gk_ * isyn->Ek_;
+	}
+}
+
+void HSolveActive::advanceCalcium( ) {
+	unsigned char ichan;
+	vector< double* >::iterator icatarget = caTarget_.begin();
+	vector< double >::iterator igk = Gk_.begin();
+	vector< double >::iterator igkek = GkEk_.begin();
+	vector< double >::iterator ivmid = VMid_.begin();
+	vector< unsigned char >::iterator icco;
+	
+	caActivation_.assign( caActivation_.size(), 0.0 );
+	
+double v;
+vector< double >::iterator iv = V_.begin();
+	for ( icco = channelCount_.begin(); icco != channelCount_.end(); ++icco ) {
+		for ( ichan = 0; ichan < *icco; ++ichan, ++icatarget, ++igk, ++igkek )
+		{
+			v = 2 * *ivmid - *iv;
+			if ( *icatarget )
+				**icatarget += *igkek - *igk * v;
+				//~ **icatarget += *igkek - *igk * *ivmid;
+		}
+		++ivmid, ++iv;
+	}
+	
+	vector< CaConcStruct >::iterator icaconc;
+	vector< double >::iterator icaactivation = caActivation_.begin();
+	vector< double >::iterator ica = ca_.begin();
+	for ( icaconc = caConc_.begin(); icaconc != caConc_.end(); ++icaconc ) {
+		*ica = icaconc->process( *icaactivation );
+		++ica, ++icaactivation;
+	}
+}
+
+void HSolveActive::advanceChannels( double dt ) {
+	vector< double >::iterator iv;
+	vector< double >::iterator istate = state_.begin();
+	vector< double* >::iterator icadepend = caDepend_.begin();
+	vector< RateLookup >::iterator ilookup = lookup_.begin();
+	vector< unsigned char >::iterator icco = channelCount_.begin();
+	
+	LookupKey key;
+	LookupKey keyCa;
+	double C1, C2;
+	vector< ChannelStruct >::iterator ichan = channel_.begin();
+	vector< ChannelStruct >::iterator nextChan;
+	for ( iv = V_.begin(); iv != V_.end(); ++iv, ++icco ) {
+		if ( *icco == 0 )
+			continue;
+		
+		ilookup->getKey( *iv, key );
+		nextChan = ichan + *icco;
+		for ( ; ichan < nextChan; ++ichan, ++icadepend ) {
+			if ( ichan->Xpower_ ) {
+				ilookup->rates( key, C1, C2 );
+				//~ *istate = *istate * C1 + C2;
+				//~ *istate = ( C1 + ( 2 - C2 ) * *istate ) / C2;
+				if ( ichan->instant_ & INSTANT_X )
+					*istate = C1 / C2;
+				else {
+					double temp = 1.0 + dt / 2.0 * C2;
+					*istate = ( *istate * ( 2.0 - temp ) + dt * C1 ) / temp;
+				}
+				
+				++ilookup, ++istate;
+			}
+			
+			if ( ichan->Ypower_ ) {
+				ilookup->rates( key, C1, C2 );
+				//~ *istate = *istate * C1 + C2;
+				//~ *istate = ( C1 + ( 2 - C2 ) * *istate ) / C2;
+				if ( ichan->instant_ & INSTANT_Y )
+					*istate = C1 / C2;
+				else {
+					double temp = 1.0 + dt / 2.0 * C2;
+					*istate = ( *istate * ( 2.0 - temp ) + dt * C1 ) / temp;
+				}
+								
+				++ilookup, ++istate;
+			}
+			
+			if ( ichan->Zpower_ ) {
+				if ( *icadepend ) {
+					ilookup->getKey( **icadepend, keyCa );
+					ilookup->rates( keyCa, C1, C2 );
+				} else
+					ilookup->rates( key, C1, C2 );
+				
+				//~ *istate = *istate * C1 + C2;
+				//~ *istate = ( C1 + ( 2 - C2 ) * *istate ) / C2;
+				if ( ichan->instant_ & INSTANT_Z )
+					*istate = C1 / C2;
+				else {
+					double temp = 1.0 + dt / 2.0 * C2;
+					*istate = ( *istate * ( 2.0 - temp ) + dt * C1 ) / temp;
+				}
+				
+				++ilookup, ++istate;
+			}
+		}
+	}
+}
+
+void HSolveActive::advanceSynChans( ProcInfo info ) {
+	vector< SynChanStruct >::iterator isyn;
+	for ( isyn = synchan_.begin(); isyn != synchan_.end(); ++isyn )
+		isyn->process( info );
+}
+
+void HSolveActive::sendSpikes( ProcInfo info ) {
+	vector< SpikeGenStruct >::iterator ispike;
+	for ( ispike = spikegen_.begin(); ispike != spikegen_.end(); ++ispike ) {
+		set< double >( ispike->elm_, "Vm", V_[ ispike->compt_ ] );
+		SetConn c( ispike->elm_, 0 );
+		SpikeGen::processFunc( &c, info );
+	}
 }
 

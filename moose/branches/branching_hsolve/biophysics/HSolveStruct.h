@@ -1,7 +1,7 @@
 /**********************************************************************
 ** This program is part of 'MOOSE', the
 ** Messaging Object Oriented Simulation Environment.
-**           copyright (C) 2003-2007 Upinder S. Bhalla. and NCBS
+**   copyright (C) 2003-2007 Upinder S. Bhalla, Niraj Dudani and NCBS
 ** It is made available under the terms of the
 ** GNU Lesser General Public License version 2.1
 ** See the file COPYING.LIB for the full notice.
@@ -11,21 +11,6 @@
 #define _HSOLVE_STRUCT_H
 
 typedef double ( *PFDD )( double, double );
-
-struct BranchStruct
-{
-	BranchStruct( int i, int r ) :
-		index( i ),
-		rank( r )
-	{ ; }
-	
-	bool operator< ( const BranchStruct& other ) const {
-		return ( index < other.index );
-	}
-	
-	unsigned int index;
-	unsigned int rank;
-};
 
 struct ChannelStruct
 {
@@ -109,48 +94,5 @@ struct CaConcStruct
 	double process( double activation );
 };
 
-/**
- * This struct holds the data structures of the Hines's solver. These are shared
- * by the Hub, Scan and HSolve classes.
- */
-struct HSolveStruct
-{
-	unsigned int              N_;
-	vector< BranchStruct >    branch_;
-	//~ vector< unsigned long >   checkpoint_;
-	vector< unsigned char >   channelCount_;
-	//~ vector< double >          M_;
-	vector< double >          MbranchCopy_;
-	vector< double >          Mbranch_;
-	vector< double >          Mlinear_;
-	vector< double* >         operand_;
-	vector< double* >         backOperand_;
-	vector< double >          V_;
-	vector< double >          VMid_;
-	vector< double >          CmByDt_;
-	vector< double >          EmByRm_;
-	vector< double >          inject_;
-	vector< double >          Gk_;
-	vector< double >          GkEk_;
-	vector< double >          state_;
-	vector< int >             instant_;
-	double                    vMin_;
-	double                    vMax_;
-	int                       vDiv_;
-	double                    caMin_;
-	double                    caMax_;
-	int                       caDiv_;
-	
-	vector< RateLookup >      lookup_;
-	vector< RateLookupGroup > lookupGroup_;
-	vector< ChannelStruct >   channel_;
-	vector< SpikeGenStruct >  spikegen_;
-	vector< SynChanStruct >   synchan_;
-	vector< CaConcStruct >    caConc_;
-	vector< double >          ca_;
-	vector< double >          caActivation_;
-	vector< double* >         caTarget_;
-	vector< double* >         caDepend_;
-};
-
 #endif // _HSOLVE_STRUCT_H
+
