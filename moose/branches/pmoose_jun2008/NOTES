@@ -7685,5 +7685,13 @@ Possible approach:
 	the call is completed.
 
 Trying to set this up. No luck yet. Compiles but still doesn't handle it.
+Checked in as revision 574 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
 ==============================================================================
+5 Aug 2008
+Still struggling with this bug. 
+I have implemented a cleaner version of stop and resched,
+that waits till the current tick operations are over and then executes the
+stop/resched function as a callback. Even with this the problem persists
+with running the simulation in parallel.
+

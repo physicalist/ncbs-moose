@@ -53,6 +53,10 @@ const Cinfo* initTickCinfo()
 		// Executing the stop callback.
 		new DestFinfo( "stopCallback", Ftype1< int >::global(), 
 			RFCAST( &Tick::handleStopCallback ) ),
+		new SrcFinfo( "checkRunning", Ftype0::global() ),
+		// Executing the stop callback.
+		new DestFinfo( "runningCallback", Ftype1< bool >::global(), 
+			RFCAST( &Tick::handleRunningCallback ) ),
 	};
 
 	/**
@@ -83,6 +87,11 @@ const Cinfo* initTickCinfo()
 			RFCAST( &Tick::handleStop ) ),
 		// The seventh entry is for sending back the callback from the stop.
 		new SrcFinfo( "stopCallbackSrc", Ftype1< int >::global() ),
+		// The eightth entry is for receiving the checkRunning call.
+		new DestFinfo( "checkRunning", Ftype0::global(), 
+			RFCAST( &Tick::handleCheckRunning ) ),
+		// The seventh entry is for sending back the callback from the stop.
+		new SrcFinfo( "runningCallback", Ftype1< bool >::global() ),
 	};
 
 	/**
@@ -199,6 +208,8 @@ static const Slot reinitSlot = initTickCinfo()->getSlot( "process.reinit" );
 
 static const Slot stopCallbackSlot = 
 	initTickCinfo()->getSlot( "prev.stopCallbackSrc" );
+static const Slot runningCallbackSlot = 
+	initTickCinfo()->getSlot( "prev.runningCallback" );
 static const Slot stopSlot = 
 	initTickCinfo()->getSlot( "next.stopSrc" );
 
@@ -442,6 +453,7 @@ void Tick::innerStart( Eref e, ProcInfo info, double maxTime )
 	static double JUST_OVER_ONE = 1.000000000001;
 	double endTime;
 	maxTime = maxTime * NEARLY_ONE;
+	running_ = 1;
 
 	// cout << "Inner Start on node " << Shell::myNode() << endl;
 
@@ -475,7 +487,7 @@ void Tick::innerStart( Eref e, ProcInfo info, double maxTime )
 	}
 	if ( callback_ == ClockJob::doReschedCallback ) {
 		callback_ = 0;
-		send1< int >( e, stopCallbackSlot, doReschedCallback );
+		send1< int >( e, stopCallbackSlot, ClockJob::doReschedCallback );
 	}
 }
 
@@ -523,6 +535,24 @@ void Tick::handleStop( const Conn* c, int v )
  * The next stage has stopped. What now?
  */
 void Tick::handleStopCallback( const Conn* c, int v )
+{
+	;
+}
+
+/**
+ * Handle a request for the 'running' flag
+ */
+void Tick::handleCheckRunning( const Conn* c )
+{
+	Tick* t = static_cast< Tick* >( c->data() );
+	sendBack1< bool >( c, runningCallbackSlot, t->running_ );
+}
+
+/**
+ * Dummy function for handling the callback from CheckRunning. The real
+ * purpose of the routine is for the ClockJob to query the Tick.
+ */
+void Tick::handleRunningCallback( const Conn* c, bool v )
 {
 	;
 }

@@ -57,6 +57,9 @@ class Tick
 
 		static void handleStop( const Conn* c, int callbackFlag );
 		static void handleStopCallback( const Conn* c, int callbackFlag );
+
+		static void handleCheckRunning( const Conn* c );
+		static void handleRunningCallback( const Conn* c, bool isRunning );
 		///////////////////////////////////////////////////////
 		// Utility function
 		///////////////////////////////////////////////////////
