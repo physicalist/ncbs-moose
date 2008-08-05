@@ -1,96 +1,24 @@
 /**********************************************************************
 ** This program is part of 'MOOSE', the
 ** Messaging Object Oriented Simulation Environment.
-**           copyright (C) 2003-2007 Upinder S. Bhalla. and NCBS
+**   copyright (C) 2003-2007 Upinder S. Bhalla, Niraj Dudani and NCBS
 ** It is made available under the terms of the
 ** GNU Lesser General Public License version 2.1
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#include "moose.h"
-#include <queue>
-#include "SynInfo.h"
-#include "RateLookup.h"
-#include "HSolveStruct.h"
-#include "NeuroScanBase.h"
+#include "HinesMatrix.h"
 
-void NeuroScanBase::createMatrix( Id seed ) {
-	walkTree( seed );
-	doHinesNumbering( );
-	readCompartmentFields( );
+void NeuroScanBase::setup(
+	const vector< vector< int > >& tree,
+	const vector< double >& Ga )
+{
+	tree_ = &tree;
+	Ga_ = &Ga;
 	
 	makeJunctions( );
 	makeMatrix( );
 	makeOperands( );
-}
-
-// Stage 1
-void NeuroScanBase::walkTree( Id seed ) {
-	// Find leaf node
-	Id previous;
-	vector< Id > recent;
-	findAdjacent( seed, recent );
-	if ( recent.size() != 1 )
-		while ( !recent.empty() ) {
-			previous = seed;
-			seed = recent[ 0 ];
-			findAdjacent( seed, previous, recent );
-		}
-	
-	// Depth-first search
-	vector< vector< Id > > cstack;
-	Id above;
-	Id current;
-	cstack.resize( 1 );
-	cstack[ 0 ].push_back( seed );
-	while ( !cstack.empty() ) {
-		vector< Id >& top = cstack.back();
-		
-		if ( top.empty() ) {
-			cstack.pop_back();
-			if ( !cstack.empty() )
-				cstack.back().pop_back();
-		} else {
-			if ( cstack.size() > 1 )
-				above = cstack[ cstack.size() - 2 ].back();
-			
-			current = top.back();
-			compartmentId_.push_back( current );
-			
-			cstack.resize( cstack.size() + 1 );
-			findAdjacent( current, above, cstack.back() );
-		}
-	}
-}
-
-// Stage 2
-void NeuroScanBase::doHinesNumbering( ) {
-	reverse( compartmentId_.begin(), compartmentId_.end() );
-	
-	for ( unsigned int ic = 0; ic < compartmentId_.size(); ++ic )
-		hinesIndex_[ compartmentId_[ ic ] ] = ic;
-}
-
-void NeuroScanBase::readCompartmentFields( ) {
-	double Vm, Cm, Em, Rm, Ra, inject;
-	
-	N_ = compartmentId_.size();
-	VMid_.resize( N_ );
-	
-	for ( unsigned int ic = 0; ic < N_; ++ic ) {
-		field( compartmentId_[ ic ], "initVm", Vm );
-		field( compartmentId_[ ic ], "Cm", Cm );
-		field( compartmentId_[ ic ], "Em", Em );
-		field( compartmentId_[ ic ], "Rm", Rm );
-		field( compartmentId_[ ic ], "Ra", Ra );
-		field( compartmentId_[ ic ], "inject", inject );
-		
-		V_.push_back( Vm );
-		CmByDt_.push_back( 2.0 * Cm / dt_ );
-		EmByRm_.push_back( Em / Rm );
-		Ga_.push_back( 2.0 / Ra );
-		inject_.push_back( inject );
-	}
 }
 
 bool groupCompare(
@@ -105,68 +33,60 @@ bool groupCompare(
 // Stage 3
 void NeuroScanBase::makeJunctions( ) {
 	// 3.1
-	vector< Id > group;
-	vector< Id >::iterator ig;
-	for ( unsigned int ic = 0; ic < compartmentId_.size(); ++ic ) {
-		const Id& parent = compartmentId_[ ic ];
-		group.clear();
-		findChildren( parent, group );
-		
-		if ( group.size() > 1 ) {
-			group.push_back( parent );
-			
-			junctionGroup_.resize( junctionGroup_.size() + 1 );
-			for ( ig = group.begin(); ig != group.end(); ++ig )
-				junctionGroup_.back().push_back( hinesIndex_[ *ig ] );
-		}
-	}
+	vector< vector< int > >::iterator i;
+	for ( i = tree_->begin(); i != tree_->end(); ++i )
+		// If this compartment has children
+		if ( i->size() > 1 )
+			junctionGroup_.push_back( *i );
 	
 	// 3.2
-	vector< vector< unsigned int > >::iterator grp;
-	for ( grp = junctionGroup_.begin(); grp != junctionGroup_.end(); ++grp )
-		sort( grp->begin(), grp->end() );
+	vector< vector< unsigned int > >::iterator group;
+	for ( group = junctionGroup_.begin(); group != junctionGroup_.end(); ++group )
+		sort( group->begin(), group->end() );
 	
 	sort( junctionGroup_.begin(), junctionGroup_.end(), groupCompare );
 	
 	// 3.3
-	int index;
-	int rank;
-	for ( grp = junctionGroup_.begin(); grp != junctionGroup_.end(); ++grp )
+	unsigned int index;
+	unsigned int rank;
+	for ( group = junctionGroup_.begin(); group != junctionGroup_.end(); ++group )
 		// Loop uptil penultimate compartment in group
-		for ( unsigned int c = 0; c < grp->size() - 1; ++c ) {
-			index = ( *grp )[ c ];
-			rank = grp->size() - c;
-			branch_.push_back( BranchStruct( index, rank ) );
+		for ( unsigned int c = 0; c < group->size() - 1; ++c ) {
+			index = ( *group )[ c ];
+			rank = group->size() - c;
+			junction_.push_back( JunctionStruct( index, rank ) );
 			
-			groupNumber_[ index ] = grp - junctionGroup_.begin();
+			groupNumber_[ index ] = group - junctionGroup_.begin();
 		}
 	
-	sort( branch_.begin(), branch_.end() );
+	sort( junction_.begin(), junction_.end() );
 }
 
 // Stage 4
 void NeuroScanBase::makeMatrix( ) {
-	Mlinear_.resize( 4 * N_, 0.0 );
+	unsigned int nCompt = tree_->size();
+	const vector< double >& Ga = *Ga_;
 	
-	// Setting up Mlinear
-	for ( unsigned int i = 0; i < N_; ++i )
-		Mlinear_[ 4 * i + 2 ] = CmByDt_[ i ];
+	// Setting up HS
+	HS_.resize( 4 * nCompt, 0.0 );
+	for ( unsigned int i = 0; i < nCompt; ++i )
+		HS_[ 4 * i + 2 ] = CmByDt_[ i ];
 	
 	double gi, gj, gij;
-	vector< BranchStruct >::iterator branch = branch_.begin();
-	for ( unsigned int i = 0; i < N_ - 1; ++i ) {
-		if ( branch_.size() && i == branch->index ) {
-			++branch;
+	vector< JunctionStruct >::iterator junction = junction_.begin();
+	for ( unsigned int i = 0; i < nCompt - 1; ++i ) {
+		if ( junction_.size() && i == junction->index ) {
+			++junction;
 			continue;
 		}
 		
-		gi = Ga_[ i ];
-		gj = Ga_[ i + 1 ];
+		gi = Ga[ i ];
+		gj = Ga[ i + 1 ];
 		gij = gi * gj / ( gi + gj );
 		
-		Mlinear_[ 4 * i + 1 ] = -gij;
-		Mlinear_[ 4 * i + 2 ] += gij;
-		Mlinear_[ 4 * i + 6 ] += gij;
+		HS_[ 4 * i + 1 ] = -gij;
+		HS_[ 4 * i + 2 ] += gij;
+		HS_[ 4 * i + 6 ] += gij;
 	}
 	
 	vector< vector< unsigned int > >::iterator group;
@@ -175,58 +95,39 @@ void NeuroScanBase::makeMatrix( ) {
 		double gsum = 0.0;
 		
 		for ( i = group->begin(); i != group->end(); ++i )
-			gsum += Ga_[ *i ];
+			gsum += Ga[ *i ];
 		
 		for ( i = group->begin(); i != group->end(); ++i ) {
-			gi = Ga_[ *i ];
+			gi = Ga[ *i ];
 			
-			Mlinear_[ 4 * *i + 2 ] += gi * ( 1.0 - gi / gsum );
+			HS_[ 4 * *i + 2 ] += gi * ( 1.0 - gi / gsum );
 		}
 	}
 	
-	// Setting up Mbranch
-	//~ double g0, g1, g2;
-	//~ double g01, g12, g20;
+	// Setting up HJ
 	vector< unsigned int >::iterator j;
 	for ( group = junctionGroup_.begin(); group != junctionGroup_.end(); ++group ) {
 		double gsum = 0.0;
 		
 		for ( i = group->begin(); i != group->end(); ++i )
-			gsum += Ga_[ *i ];
+			gsum += Ga[ *i ];
 		
-		//~ const vector< int >& member = ( *group );
-		//~ if ( group->size() == 3 ) {
-			//~ g0 = Ga_[ member[ 0 ] ];
-			//~ g1 = Ga_[ member[ 1 ] ];
-			//~ g2 = Ga_[ member[ 2 ] ];
-			//~ 
-			//~ g01 = g0 * g1 / gsum;
-			//~ g12 = g1 * g2 / gsum;
-			//~ g20 = g2 * g0 / gsum;
-			//~ 
-			//~ Mbranch_.push_back( -g01 );
-			//~ operandBase_[ member[ 0 ] ] = &( Mbranch_.back() );
-			//~ Mbranch_.push_back( -g20 );
-			//~ 
-			//~ Mbranch_.push_back( -g12 );
-			//~ operandBase_[ member[ 1 ] ] = &( Mbranch_.back() );
-			//~ Mbranch_.push_back( -g12 ); // g21 = g12
-		//~ } else
 		for ( i = group->begin(); i != group->end() - 1; ++i ) {
-			int base = Mbranch_.size();
+			int base = HJ_.size();
 			
 			for ( j = i + 1; j != group->end(); ++j ) {
-				gij = Ga_[ *i ] * Ga_[ *j ] / gsum;
+				gij = Ga[ *i ] * Ga[ *j ] / gsum;
 				
-				Mbranch_.push_back( -gij );
-				Mbranch_.push_back( -gij );
+				HJ_.push_back( -gij );
+				HJ_.push_back( -gij );
 			}
 			
-			operandBase_[ *i ] = &Mbranch_[ base ];
+			operandBase_[ *i ] = &HJ_[ base ];
 		}
 	}
 	
-	MbranchCopy_.assign( Mbranch_.begin(), Mbranch_.end() );
+	// Create copy of HJ
+	HJCopy_.assign( HJ_.begin(), HJ_.end() );
 }
 
 // Stage 5
@@ -235,12 +136,16 @@ void NeuroScanBase::makeOperands( ) {
 	unsigned int rank;
 	unsigned int farIndex;
 	double* base;
-	vector< BranchStruct >::iterator branch;
+	vector< JunctionStruct >::iterator junction;
+	
+	// Allocate space in VMid. Needed, since we will store pointers to its
+	// elements below.
+	VMid_.resize( nCompt_ );
 	
 	// Operands for forward-elimination
-	for ( branch = branch_.begin(); branch != branch_.end(); ++branch ) {
-		index = branch->index;
-		rank = branch->rank;
+	for ( junction = junction_.begin(); junction != junction_.end(); ++junction ) {
+		index = junction->index;
+		rank = junction->rank;
 		base = operandBase_[ index ];
 		
 		// This is the list of compartments connected at a junction.
@@ -253,7 +158,7 @@ void NeuroScanBase::makeOperands( ) {
 			// Select 2nd last member.
 			farIndex = group[ group.size() - 2 ];
 			
-			operand_.push_back( &Mlinear_[ 4 * farIndex ] );
+			operand_.push_back( &HS_[ 4 * farIndex ] );
 			operand_.push_back( base );
 			operand_.push_back( &VMid_[ farIndex ] );
 		} else {
@@ -263,13 +168,13 @@ void NeuroScanBase::makeOperands( ) {
 				farIndex = group[ start + j ];
 				
 				// Diagonal elements
-				operand_.push_back( &Mlinear_[ 4 * farIndex ] );
+				operand_.push_back( &HS_[ 4 * farIndex ] );
 				operand_.push_back( base + 2 * j );
 				operand_.push_back( base + 2 * j + 1 );
 				
 				// Elements from B
-				operand_.push_back( &Mlinear_[ 4 * farIndex + 3 ] );
-				operand_.push_back( &Mlinear_[ 4 * index + 3 ] );
+				operand_.push_back( &HS_[ 4 * farIndex + 3 ] );
+				operand_.push_back( &HS_[ 4 * index + 3 ] );
 				operand_.push_back( base + 2 * j + 1 );
 			}
 			
@@ -313,12 +218,12 @@ void NeuroScanBase::makeOperands( ) {
 	}
 	
 	// Operands for backward substitution
-	for ( branch = branch_.begin(); branch != branch_.end(); ++branch ) {
-		if ( branch->rank < 3 )
+	for ( junction = junction_.begin(); junction != junction_.end(); ++junction ) {
+		if ( junction->rank < 3 )
 			continue;
 		
-		index = branch->index;
-		rank = branch->rank;
+		index = junction->index;
+		rank = junction->rank;
 		base = operandBase_[ index ];
 		
 		// This is the list of compartments connected at a junction.
@@ -335,22 +240,3 @@ void NeuroScanBase::makeOperands( ) {
 	}
 }
 
-
-
-		//~ if ( rank == 1 ) {
-			//~ backOperand.push_back( base );
-		//~ } else if ( rank == 2 ) {
-			//~ // Select 2nd last member.
-			//~ farIndex = group[ group.size() - 2 ];
-			//~ 
-			//~ backOperand_.push_back( base );
-			//~ backOperand_.push_back( &VMid_[ farIndex ] );
-		//~ } else {
-			//~ int start = group.size() - rank;
-			//~ for ( int j = 0; j < rank; ++j ) {
-				//~ farIndex = group[ start + j ];
-				//~ 
-				//~ backOperand_.push_back( base + 2 * j );
-				//~ backOperand_.push_back( &VMid_[ farIndex ] );
-			//~ }
-		//~ }

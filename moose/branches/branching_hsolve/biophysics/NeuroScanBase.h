@@ -91,12 +91,6 @@ protected:
 		vector< double >& B ) = 0;
 	virtual void synchanFields( Id synchan, SynChanStruct& scs ) = 0;
 	
-	map< Id, unsigned int > hinesIndex_;
-	vector< double > Ga_;
-	vector< vector< unsigned int > > junctionGroup_;
-	vector< double* > operandBase_;
-	map< unsigned int, unsigned int > groupNumber_;
-	
 	vector< Id > compartmentId_;
 	vector< Id > channelId_;
 	vector< Id > gateId_;
@@ -130,17 +124,8 @@ private:
 	
 protected:
 	unsigned int&              N_;
-	//~ vector< unsigned long >&   checkpoint_;
-	vector< BranchStruct >&    branch_;
 	vector< unsigned char >&   channelCount_;
-	//~ vector< double >&          M_;
-	vector< double >&          MbranchCopy_;
-	vector< double >&          Mbranch_;
-	vector< double >&          Mlinear_;
-	vector< double* >          operand_;
-	vector< double* >          backOperand_;
 	vector< double >&          V_;
-	vector< double >&          VMid_;
 	vector< double >&          CmByDt_;
 	vector< double >&          EmByRm_;
 	vector< double >&          inject_;
@@ -168,3 +153,4 @@ protected:
 };
 
 #endif // _NEURO_SCAN_BASE_H
+
