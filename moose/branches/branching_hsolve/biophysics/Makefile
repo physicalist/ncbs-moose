@@ -48,6 +48,7 @@ OBJ = \
 	PulseGen.o	\
 	RandomSpike.o \
 	Cell.o		\
+	BioScan.o	\
 	RateLookup.o	\
 	HSolveStruct.o	\
  	HinesMatrix.o \
@@ -88,6 +89,7 @@ ParSynChan.o:	SynChan.h SynInfo.h ParSynChan.h
 endif
 
 Cell.o:		Cell.h 
+BioScan.o:		BioScan.h SpikeGen.h SynChan.h
 RateLookup.o:	RateLookup.h
 HSolveStruct.o:	HSolveStruct.h
 HinesMatrix.o:	HinesMatrix.h

@@ -7,18 +7,25 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#include "HSolveActive.h"
-#include <set>
-#include "SpikeGen.h"  // to generate spikes
 #include "moose.h"
+#include <set>
+#include "SpikeGen.h"       // for generating spikes
+#include "SynInfo.h"        // for SynChanStruct in BioScan. Remove eventually.
+#include <queue>            // for SynChanStruct in BioScan. Remove eventually.
+#include "HSolveStruct.h"   // for SynChanStruct in BioScan. Remove eventually.
+#include "BioScan.h"
+#include "HinesMatrix.h"
+#include "HSolvePassive.h"
+#include "RateLookup.h"
+#include "HSolveActive.h"
 
 const int HSolveActive::INSTANT_X = 1;
 const int HSolveActive::INSTANT_Y = 2;
 const int HSolveActive::INSTANT_Z = 4;
 
-HSolve::HSolve()
+HSolveActive::HSolveActive()
 {
-	// Default lookup table size and resolution
+	// Default lookup table size and boundaries
 	vDiv_ = 3000;    // for voltage
 	vMin_ = -0.100;
 	vMax_ = 0.050;
@@ -48,8 +55,8 @@ void HSolveActive::solve( ProcInfo info ) {
 	advanceChannels( info->dt_ );
 	calculateChannelCurrents( );
 	updateMatrix( );
-	forwardEliminate( );     // inherited from HSolvePassive
-	backwardSubstitute( );   // inherited from HSolvePassive
+	HSolvePassive::forwardEliminate( );
+	HSolvePassive::backwardSubstitute( );
 	advanceCalcium( );
 	advanceSynChans( info );
 	sendSpikes( info );
@@ -75,19 +82,21 @@ void HSolveActive::readChannels( ) {
 		// todo: discard channels with Gbar = 0.0
 		channelCount_.push_back( ( unsigned char ) nChannel );
 		
-		for ( ichan = channelId.begin(); ichan != channelId.end(); ++ichan ) {
+		ichan = channelId_.end() - nChannel;
+		for ( ; ichan != channelId_.end(); ++ichan ) {
 			channel_.resize( channel_.size() + 1 );
 			ChannelStruct& channel = channel_.back();
 			
-			get< double >( *ichan, "Gbar", Gbar );
-			get< double >( *ichan, "Ek", Ek );
-			get< double >( *ichan, "X", X );
-			get< double >( *ichan, "Y", Y );
-			get< double >( *ichan, "Z", Z );
-			get< double >( *ichan, "Xpower", Xpower );
-			get< double >( *ichan, "Ypower", Ypower );
-			get< double >( *ichan, "Zpower", Zpower );
-			get< int >( *ichan, "instant", instant );
+			Eref elm = ( *ichan )();
+			get< double >( elm, "Gbar", Gbar );
+			get< double >( elm, "Ek", Ek );
+			get< double >( elm, "X", X );
+			get< double >( elm, "Y", Y );
+			get< double >( elm, "Z", Z );
+			get< double >( elm, "Xpower", Xpower );
+			get< double >( elm, "Ypower", Ypower );
+			get< double >( elm, "Zpower", Zpower );
+			get< int >( elm, "instant", instant );
 			
 			channel.Gbar_ = Gbar;
 			channel.GbarEk_ = Gbar * Ek;
@@ -109,9 +118,10 @@ void HSolveActive::readGates( ) {
 	unsigned int nGates;
 	int useConcentration;
 	for ( ichan = channelId_.begin(); ichan != channelId_.end(); ++ichan ) {
-		nGates = gates( *ichan, gateId_ );
+		nGates = BioScan::gates( *ichan, gateId_ );
 		gCaDepend_.insert( gCaDepend_.end(), nGates, 0 );
-		get< double >( *ichan, "useConcentration", useConcentration );
+		Eref elm = ( *ichan )();
+		get< int >( elm, "useConcentration", useConcentration );
 		if ( useConcentration )
 			gCaDepend_.back() = 1;
 	}
@@ -128,14 +138,14 @@ void HSolveActive::readCalcium( ) {
 	vector< Id >::iterator iconc;
 	
 	for ( unsigned int ichan = 0; ichan < channel_.size(); ++ichan ) {
-		caConcId.resize( 0 );
+		caConcId.clear( );
 		
-		nTarget = caTarget( channelId_[ ichan ], caConcId );
+		nTarget = BioScan::caTarget( channelId_[ ichan ], caConcId );
 		if ( nTarget == 0 )
 			// No calcium pools fed by this channel.
 			caTargetIndex.push_back( -1 );
 		
-		nDepend = caDepend( channelId_[ ichan ], caConcId );
+		nDepend = BioScan::caDepend( channelId_[ ichan ], caConcId );
 		if ( nDepend == 0 )
 			// Channel does not depend on calcium.
 			caDependIndex.push_back( -1 );
@@ -145,10 +155,11 @@ void HSolveActive::readCalcium( ) {
 		
 		for ( iconc = caConcId.begin(); iconc != caConcId.end(); ++iconc )
 			if ( caConcIndex.find( *iconc ) == caConcIndex.end() ) {
-				get< double >( *iconc, "Ca", Ca );
-				get< double >( *iconc, "CaBasal", CaBasal );
-				get< double >( *iconc, "tau", tau );
-				get< double >( *iconc, "B", B );
+				Eref elm = ( *iconc )();
+				get< double >( elm, "Ca", Ca );
+				get< double >( elm, "CaBasal", CaBasal );
+				get< double >( elm, "tau", tau );
+				get< double >( elm, "B", B );
 				
 				caConc.c_ = Ca - CaBasal;
 				caConc.factor1_ = 4.0 / ( 2.0 + dt_ / tau ) - 1.0;
@@ -192,26 +203,30 @@ void HSolveActive::readSynapses( ) {
 	SynChanStruct synchan;
 	
 	for ( unsigned int ic = 0; ic < nCompt_; ++ic ) {
-		synchan( compartmentId_[ ic ], synId );
+		/* Request for synchans in current compartment. Also send 'dt', so that
+		 * the synchan elements can be initialized.
+		 */
+		BioScan::synchan( compartmentId_[ ic ], synId, dt_ );
 		for ( syn = synId.begin(); syn != synId.end(); ++syn ) {
 			synchan.compt_ = ic;
 			synchan.elm_ = ( *syn )();
-			synchanFields( *syn, synchan );
+			BioScan::synchanFields( *syn, synchan, dt_ );
 			synchan_.push_back( synchan );
 		}
 		
-		int nSpike = spikegen( compartmentId_[ ic ], spikeId );
+		int nSpike = BioScan::spikegen( compartmentId_[ ic ], spikeId );
 		if ( nSpike == 0 )
 			continue;
 		
 		// Very unlikely that there will be >1 spikegens in a compartment,
 		// but lets take care of it anyway.
-		for ( spike = spikeId.begin(); spike != spikeId.end(); ++spike )
+		for ( spike = spikeId.begin(); spike != spikeId.end(); ++spike ) {
 			spikegen.compt_ = ic;
-			spikegen.elm_ = spike();
-			get< double >( spike, "threshold", spikegen.threshold_ );
-			get< double >( spike, "refractT", spikegen.refractT_ );
-			get< double >( spike, "state", spikegen.state_ );
+			spikegen.elm_ = ( *spike )();
+			Eref elm = ( *spike )();
+			get< double >( elm, "threshold", spikegen.threshold_ );
+			get< double >( elm, "refractT", spikegen.refractT_ );
+			get< double >( elm, "state", spikegen.state_ );
 			spikegen_.push_back( spikegen );
 		}
 	}
@@ -260,7 +275,7 @@ void HSolveActive::createLookupTables( ) {
 	}
 	
 	for ( unsigned int ig = 0; ig < caGate.size(); ++ig ) {
-		rates( caGate[ ig ], grid, A, B );
+		BioScan::rates( caGate[ ig ], grid, A, B );
 		
 		ia = A.begin();
 		ib = B.begin();
@@ -287,7 +302,7 @@ void HSolveActive::createLookupTables( ) {
 	}
 	
 	for ( unsigned int ig = 0; ig < vGate.size(); ++ig ) {
-		rates( vGate[ ig ], grid, A, B );
+		BioScan::rates( vGate[ ig ], grid, A, B );
 		
 		ia = A.begin();
 		ib = B.begin();
@@ -476,9 +491,13 @@ void HSolveActive::advanceSynChans( ProcInfo info ) {
 void HSolveActive::sendSpikes( ProcInfo info ) {
 	vector< SpikeGenStruct >::iterator ispike;
 	for ( ispike = spikegen_.begin(); ispike != spikegen_.end(); ++ispike ) {
-		set< double >( ispike->elm_, "Vm", V_[ ispike->compt_ ] );
+		/* Scope resolution used here to resolve ambiguity between the "set"
+		 * function (used here for setting element field values) which belongs
+		 * in the global namespace, and the STL "set" container, which is in the
+		 * std namespace.
+		 */
+		::set< double >( ispike->elm_, "Vm", V_[ ispike->compt_ ] );
 		SetConn c( ispike->elm_, 0 );
 		SpikeGen::processFunc( &c, info );
 	}
 }
-

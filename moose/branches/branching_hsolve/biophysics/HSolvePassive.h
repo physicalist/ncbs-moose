@@ -45,9 +45,9 @@ private:
 	void initialize( );
 	void storeTree( );
 	
-	vector< vector< int > >  tree_;
-	vector< double >         Ga_;
-	vector< double >         CmByDt_;
+	vector< vector< unsigned int > >  tree_;
+	vector< double >                  Ga_;
+	vector< double >                  CmByDt_;
 };
 
 #endif // _HSOLVE_PASSIVE_H

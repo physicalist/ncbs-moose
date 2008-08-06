@@ -19,7 +19,8 @@ public:
 	static int channels( Id compartment, vector< Id >& ret );
 	static int gates( Id channel, vector< Id >& ret );
 	static int spikegen( Id compartment, vector< Id >& ret );
-	static int synchan( Id compartment, vector< Id >& ret );
+	// We need 'dt' to initialize the synchan elements.
+	static int synchan( Id compartment, vector< Id >& ret, double dt );
 	static int caTarget( Id channel, vector< Id >& ret );
 	static int caDepend( Id channel, vector< Id >& ret );
 	static void rates(
@@ -27,17 +28,16 @@ public:
 		const vector< double >& grid,
 		vector< double >& A,
 		vector< double >& B );
-	static void synchanFields( Id synchan, SynChanStruct& scs );
+	static void synchanFields( Id synchan, SynChanStruct& scs, double dt );
 
 private:
 	static int targets(
 		Id object,
 		const string& msg,
 		vector< Id >& target,
-		const string& type );
+		const string& type = "" );
 
 	static bool isType( Id object, const string& type );
 };
 
 #endif // _BIO_SCAN_H
-
