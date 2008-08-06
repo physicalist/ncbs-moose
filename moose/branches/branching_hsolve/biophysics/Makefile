@@ -24,11 +24,8 @@ OBJ = \
 	SynChan.o	\
 	ParSynChan.o	\
 	HSolveStruct.o	\
-	HSolveBase.o	\
 	HSolve.o \
-	NeuroScanBase.o \
-	NeuroScan.o \
-	NeuroHub.o \
+	HSolveHub.o \
 	Cell.o	\
 	TestBiophysics.o	\
 	BinSynchan.o	\
@@ -53,12 +50,11 @@ OBJ = \
 	Cell.o		\
 	RateLookup.o	\
 	HSolveStruct.o	\
- 	HSolveBase.o	\
- 	HSolve.o \
  	HinesMatrix.o \
- 	NeuroScanBase.o \
- 	NeuroScan.o \
- 	NeuroHub.o \
+ 	HSolvePassive.o	\
+ 	HSolveActive.o	\
+ 	HSolve.o \
+ 	HSolveHub.o \
 	TestBiophysics.o \
 	script_out.o
 endif
@@ -91,15 +87,14 @@ ifneq (,$(findstring -DCRL_MPI,$(CFLAGS)))
 ParSynChan.o:	SynChan.h SynInfo.h ParSynChan.h
 endif
 
+Cell.o:		Cell.h 
 RateLookup.o:	RateLookup.h
 HSolveStruct.o:	HSolveStruct.h
-HSolveBase.o:	HSolveBase.h HSolveStruct.h
-HSolve.o:	HSolve.h HSolveBase.h HSolveStruct.h
-HinesMatrix.o:	NeuroScanBase.h HSolveStruct.h
-NeuroScanBase.o:	NeuroScanBase.h HSolveStruct.h
-NeuroScan.o:	NeuroScan.h NeuroScanBase.h HSolveStruct.h
-NeuroHub.o:	NeuroHub.h HSolveStruct.h
-Cell.o:		Cell.h 
+HinesMatrix.o:	HinesMatrix.h
+HSolvePassive.o:	HinesMatrix.h HSolvePassive.h
+HSolveActive.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h
+HSolve.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h HSolve.h
+HSolveHub.o:	Compartment.h HHChannel.h SpikeGen.h SynChan.h HSolveHub.h
 StochSynchan.o:	StochSynchan.h StochSynInfo.h
 BinSynchan.o:	BinSynchan.h BinSynInfo.h ../utility/randnum/BinomialRng.h
 .cpp.o:

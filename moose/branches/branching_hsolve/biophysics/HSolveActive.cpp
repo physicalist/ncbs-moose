@@ -9,10 +9,23 @@
 
 #include "HSolveActive.h"
 #include <set>
+#include "SpikeGen.h"  // to generate spikes
+#include "moose.h"
 
 const int HSolveActive::INSTANT_X = 1;
 const int HSolveActive::INSTANT_Y = 2;
 const int HSolveActive::INSTANT_Z = 4;
+
+HSolve::HSolve()
+{
+	// Default lookup table size and resolution
+	vDiv_ = 3000;    // for voltage
+	vMin_ = -0.100;
+	vMax_ = 0.050;
+	caDiv_ = 3000;   // for calcium
+	caMin_ = 0.0;
+	caMax_ = 1000.0;
+}
 
 void HSolveActive::setup( Id seed, double dt ) {
 	this->HSolvePassive::setup( seed, dt );
@@ -35,7 +48,8 @@ void HSolveActive::solve( ProcInfo info ) {
 	advanceChannels( info->dt_ );
 	calculateChannelCurrents( );
 	updateMatrix( );
-	this->HSolvePassive::solve( );
+	forwardEliminate( );     // inherited from HSolvePassive
+	backwardSubstitute( );   // inherited from HSolvePassive
 	advanceCalcium( );
 	advanceSynChans( info );
 	sendSpikes( info );
@@ -97,7 +111,7 @@ void HSolveActive::readGates( ) {
 	for ( ichan = channelId_.begin(); ichan != channelId_.end(); ++ichan ) {
 		nGates = gates( *ichan, gateId_ );
 		gCaDepend_.insert( gCaDepend_.end(), nGates, 0 );
-		field( *ichan, "useConcentration", useConcentration );
+		get< double >( *ichan, "useConcentration", useConcentration );
 		if ( useConcentration )
 			gCaDepend_.back() = 1;
 	}
@@ -131,10 +145,10 @@ void HSolveActive::readCalcium( ) {
 		
 		for ( iconc = caConcId.begin(); iconc != caConcId.end(); ++iconc )
 			if ( caConcIndex.find( *iconc ) == caConcIndex.end() ) {
-				field( *iconc, "Ca", Ca );
-				field( *iconc, "CaBasal", CaBasal );
-				field( *iconc, "tau", tau );
-				field( *iconc, "B", B );
+				get< double >( *iconc, "Ca", Ca );
+				get< double >( *iconc, "CaBasal", CaBasal );
+				get< double >( *iconc, "tau", tau );
+				get< double >( *iconc, "B", B );
 				
 				caConc.c_ = Ca - CaBasal;
 				caConc.factor1_ = 4.0 / ( 2.0 + dt_ / tau ) - 1.0;
@@ -170,31 +184,36 @@ void HSolveActive::readCalcium( ) {
 }
 
 void HSolveActive::readSynapses( ) {
-	Id spike;
-	vector< Id > syn;
-	vector< Id >::iterator isyn;
+	vector< Id > spikeId;
+	vector< Id > synId;
+	vector< Id >::iterator syn;
+	vector< Id >::iterator spike;
 	SpikeGenStruct spikegen;
 	SynChanStruct synchan;
 	
 	for ( unsigned int ic = 0; ic < nCompt_; ++ic ) {
-		syn = synchan( compartmentId_[ ic ] );
-		for ( isyn = syn.begin(); isyn != syn.end(); ++isyn ) {
+		synchan( compartmentId_[ ic ], synId );
+		for ( syn = synId.begin(); syn != synId.end(); ++syn ) {
 			synchan.compt_ = ic;
-			synchan.elm_ = ( *isyn )();
-			synchanFields( *isyn, synchan );
+			synchan.elm_ = ( *syn )();
+			synchanFields( *syn, synchan );
 			synchan_.push_back( synchan );
 		}
 		
-		spike = spikegen( compartmentId_[ ic ] );
-		if ( spike.bad() )
+		int nSpike = spikegen( compartmentId_[ ic ], spikeId );
+		if ( nSpike == 0 )
 			continue;
 		
-		spikegen.compt_ = ic;
-		spikegen.elm_ = spike();
-		field( spike, "threshold", spikegen.threshold_ );
-		field( spike, "refractT", spikegen.refractT_ );
-		field( spike, "state", spikegen.state_ );
-		spikegen_.push_back( spikegen );
+		// Very unlikely that there will be >1 spikegens in a compartment,
+		// but lets take care of it anyway.
+		for ( spike = spikeId.begin(); spike != spikeId.end(); ++spike )
+			spikegen.compt_ = ic;
+			spikegen.elm_ = spike();
+			get< double >( spike, "threshold", spikegen.threshold_ );
+			get< double >( spike, "refractT", spikegen.refractT_ );
+			get< double >( spike, "state", spikegen.state_ );
+			spikegen_.push_back( spikegen );
+		}
 	}
 }
 
@@ -319,7 +338,7 @@ void HSolveActive::updateMatrix( ) {
 	
 	double GkSum, GkEkSum;
 	vector< unsigned char >::iterator icco = channelCount_.begin();
-	vector< double >::iterator iml     = HS_.begin();
+	vector< double >::iterator ihs     = HS_.begin();
 	vector< double >::iterator iv      = V_.begin();
 	vector< double >::iterator igk     = Gk_.begin();
 	vector< double >::iterator igkek   = GkEk_.begin();
@@ -332,11 +351,11 @@ void HSolveActive::updateMatrix( ) {
 			GkEkSum += *( igkek++ );
 		}
 		
-		*iml         = *( 2 + iml ) + GkSum;
-		*( 3 + iml ) = ic->EmByRm + ic->CmByDt * *iv + GkEkSum + ic->inject;
+		*ihs         = *( 2 + ihs ) + GkSum;
+		*( 3 + ihs ) = ic->EmByRm + ic->CmByDt * *iv + GkEkSum + ic->inject;
 		//~ *ia         = *( 3 + ia ) + *icmbydt * GkSum;
 		//~ *( 4 + ia ) = *iv + *icmbydt * (*iembyrm + GkEkSum + *iinject);
-		++icco, iml += 4, ++iv;
+		++icco, ihs += 4, ++iv;
 	}
 	
 	vector< SynChanStruct >::iterator isyn;

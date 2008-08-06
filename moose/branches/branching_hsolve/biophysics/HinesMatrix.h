@@ -30,28 +30,30 @@ class HinesMatrix
 public:
 	void setup(
 		const vector< vector< unsigned int > >& tree,
-		const vector< double >& Ga );
+		const vector< double >& Ga,
+		const vector< double >& CmByDt );
 
 protected:
+	unsigned int              nCompt_;
 	vector< JunctionStruct >  junction_;
 	vector< double >          HS_;
 	vector< double >          HJ_;
-	vector< double >          HJcopy_;
+	vector< double >          HJCopy_;
 	vector< double >          VMid_;
 	vector< double* >         operand_;
 	vector< double* >         backOperand_;
 
 private:
-	makeJunctions( );
-	makeMatrix( );
-	makeOperands( );
+	void makeJunctions( );
+	void makeMatrix( );
+	void makeOperands( );
 
-	vector< vector< unsigned int > >*  tree_;
-	vector< double >*                  Ga_;
-	vector< vector< unsigned int > >   junctionGroup_;
-	vector< double* >                  operandBase_;
-	map< unsigned int, unsigned int >  groupNumber_;
+	vector< vector< unsigned int > > const  *tree_;
+	vector< double > const                  *Ga_;
+	vector< double > const                  *CmByDt_;
+	vector< vector< unsigned int > >         junctionGroup_;
+	vector< double* >                        operandBase_;
+	map< unsigned int, unsigned int >        groupNumber_;
 };
 
 #endif // _HINES_MATRIX_H
-
