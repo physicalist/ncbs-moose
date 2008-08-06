@@ -7,6 +7,15 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#include <algorithm>
+#include <vector>
+#include <map>
+
+using namespace std;
+
+#include "moose.h"
+#include "BioScan.h"
+#include "HinesMatrix.h"
 #include "HSolvePassive.h"
 
 void HSolvePassive::setup( Id seed, double dt ) {
@@ -16,7 +25,7 @@ void HSolvePassive::setup( Id seed, double dt ) {
 	initialize( );
 	storeTree( );
 	
-	this->HinesMatrix::setup( tree_, Ga_ );
+	HinesMatrix::setup( tree_, Ga_, CmByDt_ );
 }
 
 void HSolvePassive::solve( ) {
@@ -71,8 +80,6 @@ void HSolvePassive::walkTree( Id seed ) {
 }
 
 void HSolvePassive::initialize( ) {
-	nCompt_ = compartmentId_.size();
-	
 	double Vm, Cm, Em, Rm, Ra, inject;
 	vector< Id >::iterator ic;
 	for ( ic = compartmentId_.begin(); ic != compartmentId_.end(); ++ic ) {
@@ -117,6 +124,8 @@ void HSolvePassive::storeTree( ) {
 		for ( child = children.begin(); child != children.end(); ++child )
 			tree_.back().push_back(
 				hinesIndex[ *child ] );
+		
+		CmByDt_.push_back( compartment_[ ic ].CmByDt );
 	}
 }
 
@@ -246,4 +255,3 @@ void HSolveBase::backwardSubstitute( ) {
 		--ic, ++ivmid, ++iv, iml += 4;
 	}
 }
-

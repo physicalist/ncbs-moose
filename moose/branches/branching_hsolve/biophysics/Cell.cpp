@@ -39,9 +39,9 @@ const Cinfo* initCellCinfo()
 			RFCAST( &Cell::reinitFunc ) ),
 	};
 	
-	static Finfo* solveShared[] =
+	static Finfo* integShared[] =
 	{
-		new SrcFinfo( "solveInit",
+		new SrcFinfo( "integSetup",
 			Ftype2< Id, double >::global() ),
 		// Placeholder for receiving list of compartments from solver.
 		new DestFinfo( "comptList",
@@ -88,8 +88,8 @@ const Cinfo* initCellCinfo()
 	//////////////////////////////////////////////////////////////////
 	// Shared definitions
 	//////////////////////////////////////////////////////////////////
-		new SharedFinfo( "cell-solve", solveShared,
-			sizeof( solveShared ) / sizeof( Finfo* ) ),
+		new SharedFinfo( "cell-integ", integShared,
+			sizeof( integShared ) / sizeof( Finfo* ) ),
 		process,
 	};
 	
@@ -119,8 +119,8 @@ const Cinfo* initCellCinfo()
 
 static const Cinfo* cellCinfo = initCellCinfo();
 
-static const Slot solveInitSlot =
-	initCellCinfo()->getSlot( "cell-solve.solveInit" );
+static const Slot integSetupSlot =
+	initCellCinfo()->getSlot( "cell-integ.integSetup" );
 
 ///////////////////////////////////////////////////
 // Class function definitions
@@ -140,51 +140,6 @@ void Cell::addMethod(
 	mi.isVariableDt = isVariableDt;
 	mi.isImplicit = isImplicit;
 	methodMap_[name] = mi;
-}
-
-///////////////////////////////////////////////////
-// Field function definitions
-///////////////////////////////////////////////////
-
-void Cell::setMethod( const Conn* c, string method )
-{
-	static_cast< Cell* >( c->data() )->innerSetMethod( method );
-}
-
-void Cell::innerSetMethod( string value )
-{
-	map< string, MethodInfo >::iterator i = methodMap_.find( value );
-	if ( i != methodMap_.end() ) {
-		method_ = value;
-		variableDt_ = i->second.isVariableDt;
-		implicit_ = i->second.isImplicit;
-		description_ = i->second.description;
-	} else {
-		method_ = "hsolve";
-		cout << "Warning: method '" << value << "' not known. Using '"
-		     <<	method_ << "'\n";
-		innerSetMethod( method_ );
-	}
-}
-
-string Cell::getMethod( Eref e )
-{
-	return static_cast< Cell* >( e.data() )->method_;
-}
-
-bool Cell::getVariableDt( Eref e )
-{
-	return static_cast< Cell* >( e.data() )->variableDt_;
-}
-
-bool Cell::getImplicit( Eref e )
-{
-	return static_cast< Cell* >( e.data() )->implicit_;
-}
-
-string Cell::getDescription( Eref e )
-{
-	return static_cast< Cell* >( e.data() )->description_;
 }
 
 ///////////////////////////////////////////////////
@@ -263,7 +218,7 @@ void Cell::setupSolver( Id cell, Id seed, double dt ) const
 	if ( oldSolve.good() )
 		set( oldSolve(), "destroy" );
 	
-	// Create solve, and its children: scan, hub, integ.
+	// Create solve, and its children: integ and hub.
 	Element* solve = Neutral::create( "Neutral", "solve",
 		cell, Id::scratchId() );
 	
@@ -271,24 +226,61 @@ void Cell::setupSolver( Id cell, Id seed, double dt ) const
 	Element* integ = Neutral::create( "HSolve", "integ",
 		solve->id(), Id::scratchId() );
 	assert( integ != 0 );
-	Eref( cell() ).add( "cell-solve", integ, "cell-solve" );
+	Eref( cell() ).add( "cell-integ", integ, "cell-integ" );
 	
-	// scan
-	bool ret = set( integ, "scanCreate" );
-	assert( ret );
-	
-	// hub
-	Id scan( solve->id().path() + "/scan" );
-	assert( scan.good() );
-	ret = set( scan(), "hubCreate" );
-	assert( ret );
-	
-	// Request solver to read model, and initialize itself.
-	// Solver gets autoscheduled on t0 during its creation.
-	send2< Id, double >( cell(), solveInitSlot,	seed, dt );
+	// With this request, the HSolve integrator sets itself up (reads in the
+	// cell model). Then it creates the hub as its sibling (i.e., child of
+	// 'solve'). The solver gets autoscheduled on t0 during its creation.
+	send2< Id, double >( cell(), integSetupSlot, seed, dt );
 }
 
 void Cell::checkTree( ) const
 {
 	;
 }
+
+///////////////////////////////////////////////////
+// Field function definitions
+///////////////////////////////////////////////////
+
+void Cell::setMethod( const Conn* c, string method )
+{
+	static_cast< Cell* >( c->data() )->innerSetMethod( method );
+}
+
+void Cell::innerSetMethod( string value )
+{
+	map< string, MethodInfo >::iterator i = methodMap_.find( value );
+	if ( i != methodMap_.end() ) {
+		method_ = value;
+		variableDt_ = i->second.isVariableDt;
+		implicit_ = i->second.isImplicit;
+		description_ = i->second.description;
+	} else {
+		method_ = "hsolve";
+		cout << "Warning: method '" << value << "' not known. Using '"
+		     <<	method_ << "'\n";
+		innerSetMethod( method_ );
+	}
+}
+
+string Cell::getMethod( Eref e )
+{
+	return static_cast< Cell* >( e.data() )->method_;
+}
+
+bool Cell::getVariableDt( Eref e )
+{
+	return static_cast< Cell* >( e.data() )->variableDt_;
+}
+
+bool Cell::getImplicit( Eref e )
+{
+	return static_cast< Cell* >( e.data() )->implicit_;
+}
+
+string Cell::getDescription( Eref e )
+{
+	return static_cast< Cell* >( e.data() )->description_;
+}
+

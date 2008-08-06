@@ -7,19 +7,19 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#ifndef _NEURO_HUB_H
-#define _NEURO_HUB_H
+#ifndef _HSOLVE_HUB_H
+#define _HSOLVE_HUB_H
 
 /**
  * Biophysical elements in a neuronal model hand over control (computation,
- * fields, messages) to the solver. NeuroHub handles the fields and messages--
+ * fields, messages) to the solver. HSolveHub handles the fields and messages--
  * it can do so because the solver's data structures are shared between the
- * integrator, hub and the scanner.
+ * integrator and the hub.
  */
-class NeuroHub
+class HSolveHub
 {
 public:
-	NeuroHub();
+	HSolveHub();
 	
 	///////////////////////////////////////////////////
 	// Field functions
@@ -80,13 +80,10 @@ private:
 		unsigned int eIndex, vector< unsigned int >& map,
 		vector< Element *>* elist, bool retain );
 	static void redirectDynamicMessages( Element* e );
-	static NeuroHub* getHubFromZombie( Eref e, unsigned int& index );
+	static HSolveHub* getHubFromZombie( Eref e, unsigned int& index );
 	
 	vector< double >* V_;
 	vector< double >* state_;
 };
 
-// Used by the scanner
-extern const Cinfo* initNeuroHubCinfo();
-
-#endif // _NEURO_HUB_H
+#endif // _HSOLVE_HUB_H

@@ -26,29 +26,28 @@ struct CompartmentStruct
 class HSolvePassive: public HinesMatrix
 {
 public:
-	void setup( Id seed );
+	void setup( Id seed, double dt );
 	void solve( );
 
 protected:
+	// Integration
+	void forwardEliminate( );
+	void backwardSubstitute( );
+	
 	double                       dt_;
-	unsigned int                 nCompt_;
 	vector< CompartmentStruct >  compartment_;
 	vector< Id >                 compartmentId_;
 	vector< double >             V_;
 
 private:
 	// Setting up of data structures
-	void walkTree( seed );
+	void walkTree( Id seed );
 	void initialize( );
 	void storeTree( );
 	
-	// Integration
-	void forwardEliminate( );
-	void backwardSubstitute( );
-	
 	vector< vector< int > >  tree_;
 	vector< double >         Ga_;
+	vector< double >         CmByDt_;
 };
 
 #endif // _HSOLVE_PASSIVE_H
-

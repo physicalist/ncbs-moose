@@ -7,14 +7,23 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#include <algorithm>
+#include <vector>
+#include <map>
+
+using namespace std;
+
 #include "HinesMatrix.h"
 
-void NeuroScanBase::setup(
-	const vector< vector< int > >& tree,
-	const vector< double >& Ga )
+void HinesMatrix::setup(
+	const vector< vector< unsigned int > >& tree,
+	const vector< double >& Ga,
+	const vector< double >& CmByDt )
 {
+	nCompt_ = tree.size();
 	tree_ = &tree;
 	Ga_ = &Ga;
+	CmByDt_ = &CmByDt;
 	
 	makeJunctions( );
 	makeMatrix( );
@@ -31,9 +40,9 @@ bool groupCompare(
 }
 
 // Stage 3
-void NeuroScanBase::makeJunctions( ) {
+void HinesMatrix::makeJunctions( ) {
 	// 3.1
-	vector< vector< int > >::iterator i;
+	vector< vector< unsigned int > >::const_iterator i;
 	for ( i = tree_->begin(); i != tree_->end(); ++i )
 		// If this compartment has children
 		if ( i->size() > 1 )
@@ -63,18 +72,18 @@ void NeuroScanBase::makeJunctions( ) {
 }
 
 // Stage 4
-void NeuroScanBase::makeMatrix( ) {
-	unsigned int nCompt = tree_->size();
+void HinesMatrix::makeMatrix( ) {
 	const vector< double >& Ga = *Ga_;
+	const vector< double >& CmByDt = *CmByDt_;
 	
 	// Setting up HS
-	HS_.resize( 4 * nCompt, 0.0 );
-	for ( unsigned int i = 0; i < nCompt; ++i )
-		HS_[ 4 * i + 2 ] = CmByDt_[ i ];
+	HS_.resize( 4 * nCompt_, 0.0 );
+	for ( unsigned int i = 0; i < nCompt_; ++i )
+		HS_[ 4 * i + 2 ] = CmByDt[ i ];
 	
 	double gi, gj, gij;
 	vector< JunctionStruct >::iterator junction = junction_.begin();
-	for ( unsigned int i = 0; i < nCompt - 1; ++i ) {
+	for ( unsigned int i = 0; i < nCompt_ - 1; ++i ) {
 		if ( junction_.size() && i == junction->index ) {
 			++junction;
 			continue;
@@ -131,7 +140,7 @@ void NeuroScanBase::makeMatrix( ) {
 }
 
 // Stage 5
-void NeuroScanBase::makeOperands( ) {
+void HinesMatrix::makeOperands( ) {
 	unsigned int index;
 	unsigned int rank;
 	unsigned int farIndex;
@@ -239,4 +248,3 @@ void NeuroScanBase::makeOperands( ) {
 		}
 	}
 }
-

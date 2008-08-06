@@ -1,7 +1,7 @@
 /**********************************************************************
 ** This program is part of 'MOOSE', the
 ** Messaging Object Oriented Simulation Environment.
-**           copyright (C) 2003-2007 Upinder S. Bhalla. and NCBS
+**   copyright (C) 2003-2007 Upinder S. Bhalla, Niraj Dudani and NCBS
 ** It is made available under the terms of the
 ** GNU Lesser General Public License version 2.1
 ** See the file COPYING.LIB for the full notice.
@@ -11,16 +11,16 @@
 #define _HSOLVE_H
 
 /**
- * HSolve adapts the integrator HSolveBase into a MOOSE class.
+ * HSolve adapts the integrator HSolveActive into a MOOSE class.
  */
-class HSolve: public HSolveBase
+class HSolve: public HSolveActive
 {
 public:
 	HSolve()
-	:
-		scanData_( structure_ ),
-		scanElm_( 0 )
 	{ ; }
+	
+	static void processFunc( const Conn* c, ProcInfo p );
+	static void setupFunc( const Conn* c, Id seed, double dt );
 	
 	static string getPath( Eref e );
 	static void setVDiv( const Conn* c, int vDiv );
@@ -35,17 +35,13 @@ public:
 	static double getCaMin( Eref e );
 	static void setCaMax( const Conn* c, double caMax );
 	static double getCaMax( Eref e );
-	static void processFunc( const Conn* c, ProcInfo p );
-	static void scanCreateFunc( const Conn* c );
-	static void initFunc( const Conn* c, Id seed, double dt );
 	
 private:
-	void innerScanCreateFunc( Eref e );
-	void innerInitFunc( Eref solve, Id seed, double dt );
+	void setup( Eref integ, Id seed, double dt );
+	void setupHub( Eref integ );
 	
-	NeuroScan scanData_;
-	Element* scanElm_;
 	string path_;
 };
 
 #endif // _HSOLVE_H
+

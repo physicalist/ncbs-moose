@@ -7,7 +7,12 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#include "moose.h"
 #include "BioScan.h"
+
+// Biophysics headers required for initialization of elements
+#include "SpikeGen.h"
+#include "SynChan.h"
 
 int BioScan::adjacent( Id compartment, Id exclude, vector< Id >& ret )
 {

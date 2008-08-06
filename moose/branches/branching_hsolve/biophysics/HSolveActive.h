@@ -16,6 +16,29 @@ public:
 	void setup( Id seed, double dt );
 	void solve( ProcInfo info );
 
+protected:
+	double                    vMin_;
+	double                    vMax_;
+	int                       vDiv_;
+	double                    caMin_;
+	double                    caMax_;
+	int                       caDiv_;
+
+	vector< double >          Gk_;
+	vector< double >          GkEk_;
+	vector< double >          state_;
+	vector< int >             instant_;
+	vector< RateLookup >      lookup_;
+	vector< RateLookupGroup > lookupGroup_;
+	vector< ChannelStruct >   channel_;
+	vector< SpikeGenStruct >  spikegen_;
+	vector< SynChanStruct >   synchan_;
+	vector< CaConcStruct >    caConc_;
+	vector< double >          ca_;
+	vector< double >          caActivation_;
+	vector< double* >         caTarget_;
+	vector< double* >         caDepend_;
+
 private:
 	// Setting up of data structures
 	void readChannels( );
@@ -34,28 +57,6 @@ private:
 	void advanceChannels( double dt );
 	void advanceSynChans( ProcInfo info );
 	void sendSpikes( ProcInfo info );
-
-	vector< double >          Gk_;
-	vector< double >          GkEk_;
-	vector< double >          state_;
-	vector< int >             instant_;
-	double                    vMin_;
-	double                    vMax_;
-	int                       vDiv_;
-	double                    caMin_;
-	double                    caMax_;
-	int                       caDiv_;
-
-	vector< RateLookup >      lookup_;
-	vector< RateLookupGroup > lookupGroup_;
-	vector< ChannelStruct >   channel_;
-	vector< SpikeGenStruct >  spikegen_;
-	vector< SynChanStruct >   synchan_;
-	vector< CaConcStruct >    caConc_;
-	vector< double >          ca_;
-	vector< double >          caActivation_;
-	vector< double* >         caTarget_;
-	vector< double* >         caDepend_;
 
 	static const int INSTANT_X;
 	static const int INSTANT_Y;
