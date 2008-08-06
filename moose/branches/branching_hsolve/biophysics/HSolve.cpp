@@ -9,12 +9,13 @@
 
 #include "moose.h"
 #include "../element/Neutral.h"
-#include <queue>
 #include "SynInfo.h"
-#include "RateLookup.h"
+#include <queue>
 #include "HSolveStruct.h"
-#include "NeuroHub.h"
-#include "HSolveBase.h"
+#include "HinesMatrix.h"
+#include "HSolvePassive.h"
+#include "RateLookup.h"
+#include "HSolveActive.h"
 #include "HSolve.h"
 
 const Cinfo* initHSolveCinfo()
@@ -99,6 +100,8 @@ const Cinfo* initHSolveCinfo()
 	//////////////////////////////////////////////////////////////////
 		new SharedFinfo( "cell-integ", cellShared,
 			sizeof( cellShared ) / sizeof( Finfo* ) ),
+		new SharedFinfo( "integ-hub", hubShared,
+			sizeof( hubShared ) / sizeof( Finfo* ) ),
 		process,
 	};
 	
@@ -207,7 +210,7 @@ string HSolve::getPath( Eref e )
 
 void HSolve::setVDiv( const Conn* c, int vDiv )
 {
-	static_cast< const HSolve* >( c->data() )->vDiv_ = vDiv;
+	static_cast< HSolve* >( c->data() )->vDiv_ = vDiv;
 }
 
 int HSolve::getVDiv( Eref e )
@@ -217,7 +220,7 @@ int HSolve::getVDiv( Eref e )
 
 void HSolve::setVMin( const Conn* c, double vMin )
 {
-	static_cast< const HSolve* >( c->data() )->vMin_ = vMin;
+	static_cast< HSolve* >( c->data() )->vMin_ = vMin;
 }
 
 double HSolve::getVMin( Eref e )
@@ -227,7 +230,7 @@ double HSolve::getVMin( Eref e )
 
 void HSolve::setVMax( const Conn* c, double vMax )
 {
-	static_cast< const HSolve* >( c->data() )->vMax_ = vMax;
+	static_cast< HSolve* >( c->data() )->vMax_ = vMax;
 }
 
 double HSolve::getVMax( Eref e )
@@ -237,7 +240,7 @@ double HSolve::getVMax( Eref e )
 
 void HSolve::setCaDiv( const Conn* c, int caDiv )
 {
-	static_cast< const HSolve* >( c->data() )->caDiv_ = caDiv;
+	static_cast< HSolve* >( c->data() )->caDiv_ = caDiv;
 }
 
 int HSolve::getCaDiv( Eref e )
@@ -247,7 +250,7 @@ int HSolve::getCaDiv( Eref e )
 
 void HSolve::setCaMin( const Conn* c, double caMin )
 {
-	static_cast< const HSolve* >( c->data() )->caMin_ = caMin;
+	static_cast< HSolve* >( c->data() )->caMin_ = caMin;
 }
 
 double HSolve::getCaMin( Eref e )
@@ -257,11 +260,10 @@ double HSolve::getCaMin( Eref e )
 
 void HSolve::setCaMax( const Conn* c, double caMax )
 {
-	static_cast< const HSolve* >( c->data() )->caMax_ = caMax;
+	static_cast< HSolve* >( c->data() )->caMax_ = caMax;
 }
 
 double HSolve::getCaMax( Eref e )
 {
 	return static_cast< const HSolve* >( e.data() )->caMax_;
 }
-

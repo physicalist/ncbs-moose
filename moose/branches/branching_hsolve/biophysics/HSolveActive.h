@@ -13,6 +13,8 @@
 class HSolveActive: public HSolvePassive
 {
 public:
+	HSolveActive();
+	
 	void setup( Id seed, double dt );
 	void solve( ProcInfo info );
 
@@ -38,6 +40,10 @@ protected:
 	vector< double >          caActivation_;
 	vector< double* >         caTarget_;
 	vector< double* >         caDepend_;
+	vector< Id >              channelId_;
+	vector< Id >              gateId_;
+	vector< bool >            gCaDepend_;
+	vector< unsigned char >   channelCount_;
 
 private:
 	// Setting up of data structures
@@ -64,4 +70,3 @@ private:
 };
 
 #endif // _HSOLVE_ACTIVE_H
-

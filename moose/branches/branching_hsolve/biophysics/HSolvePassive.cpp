@@ -7,13 +7,10 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#include <algorithm>
-#include <vector>
-#include <map>
-
-using namespace std;
-
 #include "moose.h"
+#include "SynInfo.h"		// for SynChanStruct in BioScan. Remove eventually.
+#include <queue>			// for SynChanStruct in BioScan. Remove eventually.
+#include "HSolveStruct.h"	// for SynChanStruct in BioScan. Remove eventually.
 #include "BioScan.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"
@@ -83,12 +80,12 @@ void HSolvePassive::initialize( ) {
 	double Vm, Cm, Em, Rm, Ra, inject;
 	vector< Id >::iterator ic;
 	for ( ic = compartmentId_.begin(); ic != compartmentId_.end(); ++ic ) {
-		get< double >( *ic, "initVm", Vm );
-		get< double >( *ic, "Cm", Cm );
-		get< double >( *ic, "Em", Em );
-		get< double >( *ic, "Rm", Rm );
-		get< double >( *ic, "Ra", Ra );
-		get< double >( *ic, "inject", inject );
+		get< double >( ( *ic )(), "initVm", Vm );
+		get< double >( ( *ic )(), "Cm", Cm );
+		get< double >( ( *ic )(), "Em", Em );
+		get< double >( ( *ic )(), "Rm", Rm );
+		get< double >( ( *ic )(), "Ra", Ra );
+		get< double >( ( *ic )(), "inject", inject );
 		
 		CompartmentStruct compartment (
 			2.0 * Cm / dt_,
@@ -114,7 +111,7 @@ void HSolvePassive::storeTree( ) {
 		const Id& parent = compartmentId_[ ic ];
 		
 		children.clear();
-		findChildren( parent, children );
+		BioScan::children( parent, children );
 		
 		tree_.resize( tree_.size() + 1 );
 		// Push hines' index of parent
@@ -133,32 +130,32 @@ void HSolvePassive::storeTree( ) {
 // Numerical integration
 //////////////////////////////////////////////////////////////////////
 
-void HSolveBase::forwardEliminate( ) {
+void HSolvePassive::forwardEliminate( ) {
 	unsigned int ic = 0;
-	vector< double >::iterator iml = Mlinear_.begin();
+	vector< double >::iterator ihs = HS_.begin();
 	vector< double* >::iterator iop = operand_.begin();
-	vector< BranchStruct >::iterator branch;
+	vector< JunctionStruct >::iterator junction;
 	
 	double *l;
 	double *b;
 	double pivot;
 	unsigned int index;
 	unsigned int rank;
-	for ( branch = branch_.begin(); branch != branch_.end(); ++branch ) {
-		index = branch->index;
-		rank = branch->rank;
+	for ( junction = junction_.begin(); junction != junction_.end(); ++junction ) {
+		index = junction->index;
+		rank = junction->rank;
 		
 		while ( ic < index ) {
-			*( iml + 4 ) -= *( iml + 1 ) / *iml * *( iml + 1 );
-			*( iml + 7 ) -= *( iml + 1 ) / *iml * *( iml + 3 );
+			*( ihs + 4 ) -= *( ihs + 1 ) / *ihs * *( ihs + 1 );
+			*( ihs + 7 ) -= *( ihs + 1 ) / *ihs * *( ihs + 3 );
 			
-			++ic, iml += 4;
+			++ic, ihs += 4;
 		}
 		
-		pivot = *iml;
+		pivot = *ihs;
 		if ( rank == 1 ) {
-			*( iml + 4 ) -= *( *iop + 1 ) / pivot * **iop;
-			*( iml + 7 ) -= *( *iop + 1 ) / pivot * *( iml + 3 );
+			*( ihs + 4 ) -= *( *iop + 1 ) / pivot * **iop;
+			*( ihs + 7 ) -= *( *iop + 1 ) / pivot * *( ihs + 3 );
 			
 			iop += 1;
 		} else if ( rank == 2 ) {
@@ -166,9 +163,9 @@ void HSolveBase::forwardEliminate( ) {
 			b = *( iop + 1 );
 			
 			*l         -= *( b + 1 ) / pivot * *b;
-			*( l + 3 ) -= *( b + 1 ) / pivot * *( iml + 3 );
+			*( l + 3 ) -= *( b + 1 ) / pivot * *( ihs + 3 );
 			*( l + 4 ) -= *( b + 3 ) / pivot * *( b + 2 );
-			*( l + 7 ) -= *( b + 3 ) / pivot * *( iml + 3 );
+			*( l + 7 ) -= *( b + 3 ) / pivot * *( ihs + 3 );
 			*( b + 4 ) -= *( b + 1 ) / pivot * *( b + 2 );
 			*( b + 5 ) -= *( b + 3 ) / pivot * *b;
 			
@@ -180,78 +177,78 @@ void HSolveBase::forwardEliminate( ) {
 				**iop -= **( iop + 2 ) / pivot * **( iop + 1 );
 		}
 		
-		++ic, iml += 4;
+		++ic, ihs += 4;
 	}
 	
-	while ( ic < N_ ) {
-		*( iml + 4 ) -= *( iml + 1 ) / *iml * *( iml + 1 );
-		*( iml + 7 ) -= *( iml + 1 ) / *iml * *( iml + 3 );
+	while ( ic < nCompt_ ) {
+		*( ihs + 4 ) -= *( ihs + 1 ) / *ihs * *( ihs + 1 );
+		*( ihs + 7 ) -= *( ihs + 1 ) / *ihs * *( ihs + 3 );
 		
-		++ic, iml += 4;
+		++ic, ihs += 4;
 	}
 }
 
-void HSolveBase::backwardSubstitute( ) {
-	int ic = N_ - 1;
+void HSolvePassive::backwardSubstitute( ) {
+	int ic = nCompt_ - 1;
 	vector< double >::reverse_iterator ivmid = VMid_.rbegin();
 	vector< double >::reverse_iterator iv = V_.rbegin();
-	vector< double >::reverse_iterator iml = Mlinear_.rbegin();
+	vector< double >::reverse_iterator ihs = HS_.rbegin();
 	vector< double* >::reverse_iterator iop = operand_.rbegin();
 	vector< double* >::reverse_iterator ibop = backOperand_.rbegin();
-	vector< BranchStruct >::reverse_iterator branch;
+	vector< JunctionStruct >::reverse_iterator junction;
 	
-	*ivmid = *iml / *( iml + 3 );
+	*ivmid = *ihs / *( ihs + 3 );
 	*iv = 2 * *ivmid - *iv;
-	--ic, ++ivmid, ++iv, iml += 4;
+	--ic, ++ivmid, ++iv, ihs += 4;
 	
 	double *b;
 	double *v;
 	int index;
 	int rank;
-	for ( branch = branch_.rbegin(); branch != branch_.rend(); ++branch ) {
-		index = branch->index;
-		rank = branch->rank;
+	for ( junction = junction_.rbegin(); junction != junction_.rend(); ++junction ) {
+		index = junction->index;
+		rank = junction->rank;
 		
 		while ( ic > index ) {
-			*ivmid = ( *iml - *( iml + 2 ) * *( ivmid - 1 ) ) / *( iml + 3 );
+			*ivmid = ( *ihs - *( ihs + 2 ) * *( ivmid - 1 ) ) / *( ihs + 3 );
 			*iv = 2 * *ivmid - *iv;
 			
-			--ic, ++ivmid, ++iv, iml += 4;
+			--ic, ++ivmid, ++iv, ihs += 4;
 		}
 		
 		if ( rank == 1 ) {
-			*ivmid = ( *iml - **iop * *( ivmid - 1 ) ) / *( iml + 3 );
+			*ivmid = ( *ihs - **iop * *( ivmid - 1 ) ) / *( ihs + 3 );
 			
 			iop += 1;
 		} else if ( rank == 2 ) {
 			v = *iop;
 			b = *( iop + 1 );
 			
-			*ivmid = ( *iml
+			*ivmid = ( *ihs
 			           - *b * *v
 			           - *( b + 2 ) * *( v + 1 )
-			         ) / *( iml + 3 );
+			         ) / *( ihs + 3 );
 			
 			iop += 3;
 		} else {
-			*ivmid = *iml;
+			*ivmid = *ihs;
 			for ( int i = 0; i < rank; ++i ) {
 				*ivmid -= **ibop * **( ibop + 1 );
 				ibop += 2;
 			}
-			*ivmid /= *( iml + 3 );
+			*ivmid /= *( ihs + 3 );
 			
 			iop += 3 * rank * ( rank + 1 );
 		}
 		
 		*iv = 2 * *ivmid - *iv;
-		--ic, ++ivmid, ++iv, iml += 4;
+		--ic, ++ivmid, ++iv, ihs += 4;
 	}
 	
 	while ( ic >= 0 ) {
-		*ivmid = ( *iml - *( iml + 2 ) * *( ivmid - 1 ) ) / *( iml + 3 );
+		*ivmid = ( *ihs - *( ihs + 2 ) * *( ivmid - 1 ) ) / *( ihs + 3 );
 		*iv = 2 * *ivmid - *iv;
 		
-		--ic, ++ivmid, ++iv, iml += 4;
+		--ic, ++ivmid, ++iv, ihs += 4;
 	}
 }

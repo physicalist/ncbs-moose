@@ -8,6 +8,9 @@
 **********************************************************************/
 
 #include "moose.h"
+#include "SynInfo.h"        // for SynChanStruct. Remove eventually.
+#include <queue>            // for SynChanStruct. Remove eventually.
+#include "HSolveStruct.h"   // for SynChanStruct. Remove eventually.
 #include "BioScan.h"
 
 // Biophysics headers required for initialization of elements
@@ -17,7 +20,7 @@
 int BioScan::adjacent( Id compartment, Id exclude, vector< Id >& ret )
 {
 	int size = ret.size();
-	findAdjacent( compartment, ret );
+	adjacent( compartment, ret );
 	ret.erase(
 		remove( ret.begin(), ret.end(), exclude ),
 		ret.end()
@@ -42,7 +45,7 @@ int BioScan::channels( Id compartment, vector< Id >& ret )
 {
 	// Request for elements of type "HHChannel" only since
 	// channel messages can lead to synchans as well.
-	return targets( compartment, "channel", channel, "HHChannel" );
+	return targets( compartment, "channel", ret, "HHChannel" );
 }
 
 int BioScan::gates( Id channel, vector< Id >& ret )
@@ -70,7 +73,8 @@ int BioScan::spikegen( Id compartment, vector< Id >& ret )
 	return size;
 }
 
-int BioScan::synchan( Id compartment, vector< Id >& ret )
+// We need 'dt' to initialize the synchan elements.
+int BioScan::synchan( Id compartment, vector< Id >& ret, double dt )
 {
 	// "channel" msgs lead to SynChans as well HHChannels, so request
 	// explicitly for former.
@@ -78,10 +82,10 @@ int BioScan::synchan( Id compartment, vector< Id >& ret )
 	
 	// Reinitialize
 	ProcInfoBase p;
-	p.dt_ = dt_;
-	vector< Id >::iterator ispike;
+	p.dt_ = dt;
+	vector< Id >::iterator isyn;
 	for ( isyn = size + ret.begin(); isyn != ret.end(); ++isyn ) {
-		SetConn c( ( *ichan )(), 0 );
+		SetConn c( ( *isyn )(), 0 );
 		SynChan::reinitFunc( &c, &p );
 	}
 	
@@ -98,11 +102,11 @@ int BioScan::caDepend( Id channel, vector< Id >& ret )
 	return targets( channel, "concen", ret );
 }
 
-void BioScan::synchanFields( Id synchan, SynChanStruct& scs )
+void BioScan::synchanFields( Id synchan, SynChanStruct& scs, double dt )
 {
 	SetConn c( synchan(), 0 );
 	ProcInfoBase p;
-	p.dt_ = dt_;
+	p.dt_ = dt;
 	
 	SynChan::reinitFunc( &c, &p );
 	set< SynChanStruct* >( synchan(), "scan", &scs );
@@ -119,8 +123,7 @@ void BioScan::rates(
 {
 //~ Temporary
 HHGate* h = static_cast< HHGate *>( gate()->data() );
-	scanElm_.add( "gate", gate(), "gate" );
-	
+
 	A.resize( grid.size() );
 	B.resize( grid.size() );
 	
@@ -137,18 +140,11 @@ HHGate* h = static_cast< HHGate *>( gate()->data() );
 	vector< double >::iterator ia = A.begin();
 	vector< double >::iterator ib = B.begin();
 	for ( igrid = grid.begin(); igrid != grid.end(); ++igrid ) {
-		//~ send1< double >( scanElm_, gateVmSlot, *igrid );
-		//~ Temporary
-		A_ = h->A().innerLookup( *igrid );
-		B_ = h->B().innerLookup( *igrid );
+		*ia = h->A().innerLookup( *igrid );
+		*ib = h->B().innerLookup( *igrid );
 		
-		// locals A_ and B_ receive rate values from gate via a callback.
-		*ia = A_;
-		*ib = B_;
 		++ia, ++ib;
 	}
-	
-	scanElm_.dropAll( "gate" );
 }
 
 ///////////////////////////////////////////////////
@@ -159,7 +155,8 @@ int BioScan::targets(
 	Id object,
 	const string& msg,
 	vector< Id >& target,
-	const string& type ) const
+	const string& type )
+// default argument: type = ""
 {
 	unsigned int oldSize = target.size();
 	
@@ -177,8 +174,7 @@ int BioScan::targets(
 	return target.size() - oldSize;
 }
 
-bool BioScan::isType( Id object, const string& type ) const
+bool BioScan::isType( Id object, const string& type )
 {
 	return object()->cinfo()->isA( Cinfo::find( type ) );
 }
-

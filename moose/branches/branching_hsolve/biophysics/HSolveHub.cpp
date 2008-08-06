@@ -12,6 +12,9 @@
 #include "Compartment.h"
 #include "HHChannel.h"
 #include "SpikeGen.h"
+#include "SynInfo.h"        // for SynChanStruct. Remove eventually.
+#include <queue>            // for SynChanStruct. Remove eventually.
+#include "HSolveStruct.h"   // for SynChanStruct. Remove eventually.
 #include "SynChan.h"
 #include "ThisFinfo.h"
 #include "SolveFinfo.h"

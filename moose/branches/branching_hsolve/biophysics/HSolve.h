@@ -44,4 +44,3 @@ private:
 };
 
 #endif // _HSOLVE_H
-
