@@ -108,9 +108,9 @@ void testShell()
 	path = sh.eid2path( a2 );
 	ASSERT( path == "/a/a2", "a2 eid2path" );
 
-	Id eid = sh.innerPath2eid( "/a/a1", "/" );
+	Id eid = sh.innerPath2eid( "/a/a1", "/", 1 );
 	ASSERT( eid == a1, "a1 path2eid" );
-	eid = sh.innerPath2eid( "/a/a2", "/" );
+	eid = sh.innerPath2eid( "/a/a2", "/", 1 );
 	ASSERT( eid == a2, "a2 path2eid" );
 
 	/////////////////////////////////////////

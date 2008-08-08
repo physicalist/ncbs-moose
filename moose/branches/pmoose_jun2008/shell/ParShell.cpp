@@ -461,10 +461,13 @@ void Shell::handleParWildcardList( const Conn* c,
 string Shell::eid2path( Id eid )
 {
 	if ( !eid.isGlobal() && eid.node() != Shell::myNode() ) {
-		Shell *sh = static_cast< Shell* >( Id::shellId().eref().data() );
-		unsigned int tgt = ( eid.node() < Shell::myNode() ) ?
-			eid.node() : eid.node() - 1;
+		//Shell *sh = static_cast< Shell* >( Id::shellId().eref().data() );
+		// unsigned int tgt = ( eid.node() < Shell::myNode() ) ?  eid.node() : eid.node() - 1;
 		string ret = "";
+		getOffNodeValue< string, Nid >( Id::shellId().eref(),
+			requestPathSlot, eid.node(),
+			&ret, eid );
+		/*
 		unsigned int requestId = 
 			openOffNodeValueRequest< string > ( sh, &ret, 1 ); 
 		// Send request to target node.
@@ -474,6 +477,7 @@ string Shell::eid2path( Id eid )
 		// Get the value back.
 		string* temp = closeOffNodeValueRequest< string >( sh, requestId );
 		assert ( &ret == temp );
+		*/
 		return ret;
 	} else {
 		return localEid2Path( eid );

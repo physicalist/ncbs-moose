@@ -37,10 +37,14 @@ Id::Id( unsigned int i, unsigned int index )
 	: id_( i ), index_( index )
 {;}
 
-///\todo Lots of stuff to do here, mostly to refer to Shell's operations.
 Id::Id( const string& path, const string& separator )
 {
-	*this = Shell::path2eid( path, separator );
+	*this = Shell::path2eid( path, separator, 0 ); // flag says parallel
+}
+
+Id Id::localId( const string& path, const string& separator )
+{
+	return Shell::path2eid( path, separator, 1 ); // flag says local only
 }
 
 // static func

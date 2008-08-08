@@ -33,8 +33,11 @@ else
     CXX = g++
 endif
 
+# This Wno-long-long flag is needed to compile mpich_shmem on Ubuntu 8.04
+# It is a problem with all recent versions of mpich, which define MPI_Offset
+# as a long long, which is illegal in ISO C++.
 .cpp.o:
-	$(CXX) $(CFLAGS) -I../basecode $< -c
+	$(CXX) $(CFLAGS) -Wno-long-long -I../basecode $< -c
 
 $(TARGET):		$(OBJ) $(HEADERS)
 	$(LD) -r -o $(TARGET) $(OBJ)

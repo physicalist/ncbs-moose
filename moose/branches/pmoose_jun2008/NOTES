@@ -7695,3 +7695,177 @@ that waits till the current tick operations are over and then executes the
 stop/resched function as a callback. Even with this the problem persists
 with running the simulation in parallel.
 
+Checked in as revision 575 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+A clue. Seems like the nested polling has led to overwrite of the recv buffer.
+Where does this happen? Func 17 is resched. Func 10 is parTraversePathSrc
+Func 11 is parTraversePathReturnSrc.
+And guess what, the Shell::resched calls Id( "/kinetics" ) to see if it is
+there. It is not in this run, so it goes to look off-node.
+Should use a local version for such commands.
+
+Anyway, the issue remains: what to do if we have nesting of polling? Clearly,
+need to set up distinct recv buffers to handle this.
+
+For now, implemented Id::localId( const string& path ) which looks only on the
+local node for the path. This gets round the crash, but the model still does
+not run correctly.
+
+Confirmed that messaging at least is working, as follows:
+- Ran msg.g on 2 nodes.
+- Did reset within msg.g
+- Did individual step calls by hand
+- Showed the output values. They were OK.
+
+Cases where it fails:
+- If I run step 10, the values all go wrong. Even after they have been running
+	OK with individual step calls.
+	Try echoing on each step to check sequencing.
+- If I run it on 4 nodes, it hangs on reset.
+
+
+==============================================================================
+6 Aug.
+Some additional analysis: If I run for a large number of steps then the node-1
+values are OK, even though the node0 values don't show up properly.
+I think we have some fundamental flaws with the message sequencing here.
+
+- Async messages are completely unconstrained. This won't do for any big
+model, like a network model.
+- Need sync messages for the specific test here
+- Need to separate the buffers for different clocks, since the pj calls
+	a whole sequence of operations with the cj, leading to nesting.
+- Need a general nesting facility even within one clock, cf the example
+	with resched and parTraversePath.
+
+Things have sort of ground to a halt because there are so many issues.
+Let's start with the problem of node coordination in a completely async model.
+- Each node keeps track of its tick# (of course). Use this to coordinate.
+- Base requirements:
+	- Each node must complete N internal ticks within a block.
+	- Within a block, messages can arrive at any time.
+	- Messages from A to B must arrive in order.
+	- No order is specified for arrival of messages from different nodes.
+	- All messages within a block must be handled within the block.
+- Implementations:
+	- Set a number of ticks between barriers
+		- On each node:
+		- Every time the ticks are done, send a message to node0. 
+		- Then poll. This mops up messages pending from other nodes.
+		- Node0 polls for these barrier messages and sends out an 'OK'
+			message when all ticks are in.
+	  I can envision this failing as follows:
+	  Suppose node B has finished and A is the last to go.
+	  Suppose A sends a msg to B and then the terminal msg to Node0
+	  Suppose Node0 gets A's message and gets back to B _before_ the
+	  	message from A reaches B (This is easily possible)
+	  THEN: we could complete the block before all messages within the
+	  block are done.
+	- Set a number of ticks between barriers
+		- When the ticks are done, execute a barrier.
+			- Issue is that we may need to mop up pending stuff,
+			which will need polling.
+	- Mixed async/sync messaging
+		- Do the regular async stuff until we need to set a sync point.
+		- On the last tick, all connected nodes send out n sync msg too.
+		- All nodes know this sync info is coming, and it comes in the
+		same packet as the async message. 
+		- All nodes poll incoming.
+		- Since MPI guarantees arrival order, the final sync message
+		will arrive only after all the other msgs hvea been polled.
+		This should do it.
+	- Compromise on base requirements: say that messages must wait
+		at most as long as one inter-barrier period, but may fall
+		on either side of the barrier.
+		- Use a periodic Barrier. Here is a scenario:
+		- A takes over, sends all data out before B starts. A on barrier
+		- B executes, sends all data out. But A is on barrier, so it
+			won't see it this cycle. 
+		- But it is guaranteed to get into A's buffer before the barrier
+			as I understand it. So A will see it as soon as the
+			ticks resume.
+
+
+The sync model, on the other hand, seems well capable of coordination. All
+the input from every connected node must arrive before the next step.
+
+
+==============================================================================
+7 Aug 2008
+Tracked down the reset problem for 4-node operation. The donePoll_ flag on
+all postmasters was true, so they never were getting to send back the
+acknowledgement of the poll command. So the calling ParTick never had
+completion in the pendingCalls() function, and so was in
+an infinite loop polling them.
+
+Issues:
+- Did the RESET mess up the return of the poll ack?
+- Why is ParTick polling for acks at all?
+- We'll get stuck if we have any infinite polling loops in a big 
+	simulation. How to eliminate dead nodes?
+
+Some major redesign later:
+We need to consider three kinds of data transmission: async setup,
+	async runtime, and sync (possibly plus async) runtime.
+
+Async setup:
+	- Much tighter event loop. 
+		- Slaves use MPI_Wait to block on arrival 
+		  of data into buffer given by iRecv.
+		- Node 0 adds events from GUI and command line into the
+		  mix, or possibly polls with a timer.
+		- Separate messages to postmaster, perhaps even bypass 
+		  scheduler.
+
+Async runtime (where there are no sync messages at all)
+	- Actually boils down to sync data transmission, because we cannot
+		permit nodes to diverge too far.
+		- Allow data accumulation in send buffers for X timesteps.
+		- Must send message, even if empty.
+		- The target node blocks for data arrival on the Xth step.
+		- Need to look at interleaving sends/recvs for different nodes
+		  at different phases of the X timesteps. Later optimization.
+Sync
+	- The same as before. Blocking poll loop to ensure arrival of data
+	  from all connected nodes, at each timestep. Note that async data
+	  can also come along.
+  Summary: Setup has a different scheduling, Async and Sync now converge in
+  polling structure.
+
+Possible buffer redesign:
+	- Current: unique send and recv buffers for each postmaster, ie, for
+	  each of the other N-1 nodes.
+	- Proposed: Singe recv buffer, using MPI-any-source.
+		- Sync data is known size, so precise buffer allocation is easy.
+		- Advantage only for async data flow, where a single big
+		  buffer is much less likely to overflow.
+		- Will there be a hidden cost of managing messages from multiple
+		  sources? Now off-node sends won't have a unique target 
+		  buffer for their data.
+	- For sync messaging, it is probably better to use a composite 
+	  sync/async buffer for both send and recv, so that only one packet
+	  goes out from any given node at a time.
+  Summary: Don't optimize on this yet if at all. First get things to work with
+  	the original, distinct buffer approach.
+
+Relationship between setup and data messaging
+	- Common data option (current): Single send and single recv buffer
+  	  per postmaster.
+		- To handle nested calls, need to extract all data from 
+		  recv buffer before executing operations.
+		- Push requests onto a stack?
+		- Needed only if there are > 1 operations in the message.
+		  Subsequent ops get pushed.
+	- Separate data option: Separate buffers for setup operations.
+		- Nested calls use a function-local buffer on the heap.
+		- Not sure how to deal with nested calls at runtime.
+		- Issues with separating how we put data into the buffers.
+		  Could use distinct proxy types, but it is messy.
+  Summary: Stick with single send and single recv buffer per postmaster.
+
+==============================================================================
+8 Aug 2008.
+Consolidated the blocking off-node calls into a single templated call: 
+getOffNodeValue. This will make it easier to split into multithread versions
+as needed.
+==============================================================================

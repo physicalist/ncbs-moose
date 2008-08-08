@@ -712,7 +712,7 @@ Id Shell::localTraversePath( Id start, vector< string >& names )
 // nodes, via the shell as usual. Then we set up a busy poll loop till 
 // the answer comes back.
 Id Shell::innerPath2eid( 
-		const string& path, const string& separator ) const
+		const string& path, const string& separator, bool isLocal ) const
 {
 	if ( path == separator || path == "/root" )
 			return Id();
@@ -740,11 +740,15 @@ Id Shell::innerPath2eid(
 		start = cwe_;
 		separateString( path, names, separator );
 	}
-	return traversePath( start, names );
+	if ( isLocal )
+		return localTraversePath( start, names );
+	else
+		return traversePath( start, names );
 }
 
 // This is the static version of the function.
-Id Shell::path2eid( const string& path, const string& separator )
+Id Shell::path2eid( const string& path, const string& separator, 
+	bool isLocal )
 {
 	/*
 	Id shellId;
@@ -755,7 +759,7 @@ Id Shell::path2eid( const string& path, const string& separator )
 	Shell* s = static_cast< Shell* >( shellId()->data() );
 	*/
 	Shell* s = static_cast< Shell* >( ( Id::shellId() )()->data( 0 ) );
-	return s->innerPath2eid( path, separator );
+	return s->innerPath2eid( path, separator, isLocal );
 }
 
 string Shell::localEid2Path( Id eid ) 
@@ -1000,6 +1004,10 @@ void Shell::trigLe( const Conn* c, Id parent )
 		bool flag = get< vector< Id > >( 
 			parent.eref(), "childList", ret );
 		assert( flag );
+		getOffNodeValue< vector< Nid >, Nid >( c->target(), 
+			requestLeSlot, sh->numNodes(),
+			&nret, parent );
+/*
 		unsigned int requestId = 
 			openOffNodeValueRequest< vector< Nid > >( sh, &nret, 
 			sh->numNodes() - 1 ); // ask all nodes for values.
@@ -1008,10 +1016,15 @@ void Shell::trigLe( const Conn* c, Id parent )
 		vector< Nid >* temp = 
 			closeOffNodeValueRequest< vector< Nid > > ( sh, requestId );
 		assert( temp == &nret );
+*/
 	} else if ( parent.node() == 0 ) {
 		bool flag = get< vector< Id > >( parent.eref(), "childList", ret );
 		assert( flag );
 	} else { // Off-node to single node.
+		getOffNodeValue< vector< Nid >, Nid >( c->target(), 
+			requestLeSlot, parent.node(),
+			&nret, parent );
+/*
 		unsigned int node = parent.node();
 		unsigned int tgt = ( node < sh->myNode() ) ? node : node - 1;
 		unsigned int requestId = 
@@ -1021,6 +1034,7 @@ void Shell::trigLe( const Conn* c, Id parent )
 		vector< Nid >* temp = 
 			closeOffNodeValueRequest< vector< Nid > > ( sh, requestId );
 		assert( temp == &nret );
+*/
 	}
 	ret.insert( ret.end(), nret.begin(), nret.end() );
 	sendBack1< vector< Id > >( c, elistSlot, ret );
@@ -1821,8 +1835,9 @@ void Shell::setClock( const Conn* c, int clockNo, double dt,
 	sprintf( line, "t%d", clockNo );
 	string TickName = line;
 	string clockPath = string( "/sched/cj/" + TickName );
-	Id id = sh->innerPath2eid( clockPath, "/" );
-	Id cj = sh->innerPath2eid( "/sched/cj", "/" );
+	Id id = sh->innerPath2eid( clockPath, "/", 1 );
+	Id cj = sh->innerPath2eid( "/sched/cj", "/", 1 );
+	assert( cj.good() );
 	Element* tick = 0;
 	if ( id.zero() || id.bad() ) {
 		tick = Neutral::create( 
@@ -2057,7 +2072,7 @@ void Shell::resched( const Conn* c )
 	// Should be a msg
 	Element* cj = findCj();
 	set( cj, "resched" );
-	Id kinetics( "/kinetics" );
+	Id kinetics = Id::localId( "/kinetics" );
 	if ( kinetics.good() )
 		set( kinetics(), "resched" );
 }

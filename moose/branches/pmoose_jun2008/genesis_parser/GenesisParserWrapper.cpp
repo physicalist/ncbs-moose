@@ -24,6 +24,11 @@
 #include <fstream>
 	using namespace std;
 
+/*
+static const char nullChar( '\0' );
+static const char* nullCharPtr = &nullChar;
+*/
+
 const Cinfo* initGenesisParserCinfo()
 {
 	/**
