@@ -39,8 +39,16 @@ class Id
 		 */
 		Id( const std::string& path, const std::string& separator = "/" );
 
-                ~Id(){}
+		/**
+		 * Destroys an Id. Doesn't do anything much.
+		 */
+		~Id(){}
     
+		/**
+		 * Returns an Id found by traversing the specified path on the
+		 * local node only
+		 */
+		static Id localId( const std::string& path, const std::string& separator = "/" );
 
 		/**
 		 * Creates a new childId based on location of parent node and

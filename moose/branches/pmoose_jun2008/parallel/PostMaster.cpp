@@ -300,7 +300,7 @@ bool setupProxyMsg( unsigned int srcNode,
 void PostMaster::innerPostIrecv()
 {
 	// cout << "!" << flush;
-//	cout << "inner PostIrecv on node " << localNode_ << " from " << remoteNode_ << endl << flush;
+	// cout << "inner PostIrecv on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( localNode_ != remoteNode_ ) {
 		if ( requestFlag_ ) { // Not used last time, recycle.
 			donePoll_ = 0;
@@ -399,7 +399,7 @@ void PostMaster::innerPoll( const Conn* c )
 		// AsyncStruct foo( data );
 		for ( unsigned int i = 0; i < nMsgs; i++ ) {
 			AsyncStruct as( data );
-			cout << "nMsgs = " << nMsgs << ", i = " << i << ", proxyId = " << as.proxy() << ", dataSize = " << as.size() << ", func = " << as.funcIndex() << ", totDataSize = " << dataSize << endl << flush;
+			// cout << "Poll " << localNode_ << "<-" << remoteNode_ << ":nMsgs=" << nMsgs << ", i=" << i << ", proxyId=" << as.proxy() << ", size=" << as.size() << ", func=" << as.funcIndex() << ", totSize=" << dataSize << endl << flush;
 
 
 			///\todo: temporary hack to deal with shell-shell messaging
@@ -472,6 +472,33 @@ void PostMaster::postSend( const Conn* c, int ordinal )
 {
 	static_cast< PostMaster* >( c->data() )->innerPostSend();
 }
+
+/////////////////////////////////////////////////////////////////////
+#if 0
+/**
+ * This function handles the setup event loop, bypassing the scheduler.
+ */
+void PostMaster::setupEventLoop( const Conn* c, bool isBlocking )
+{
+	static_cast< PostMaster* >( c->data() )->innerEventLoop( isBlocking );
+}
+
+void PostMaster::innerEventLoop( const Conn* c, bool isBlocking )
+{
+	if ( localNode_ != remoteNode_ && numSendBufMsgs_ > 0 ) {
+		comm_->Send( data, sendBufPos_, MPI_CHAR, remoteNode_, DATA_TAG );
+
+	request_ = comm_->Irecv(
+		&( recvBuf_[0] ), recvBuf_.size(), MPI_CHAR, 
+			remoteNode_, DATA_TAG );
+
+	if ( remoteNode_ == 0 ) {
+		int originatingNode = MPI::Request::Waitany( numNodes - 1, 
+			requestArray_, status_ );
+		// Here we deal with stuff on the node that received the data.
+	}
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////
 
@@ -559,6 +586,7 @@ void* PostMaster::innerGetAsyncParBuf( const Conn* c, unsigned int size )
 	// I'm going to put the message size in the third arg.
 	assert( c->source().id().good() );
 	AsyncStruct as( c->source().id(), c->funcIndex(), size );
+	// cout << "buf " << localNode_ << "->" << remoteNode_ << ": proxyId = " << as.proxy() << ", dataSize = " << as.size() << ", func = " << as.funcIndex() << endl << flush;
 	char* sendBufPtr = &( sendBuf_[ sendBufPos_ ] );
 	*static_cast< AsyncStruct* >( static_cast< void* >( sendBufPtr ) ) = as;
 	sendBufPtr += sizeof( AsyncStruct );

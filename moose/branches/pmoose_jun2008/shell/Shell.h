@@ -66,13 +66,16 @@ class Shell
 		 * Returns an Id defined by the specified path. Works in parallel,
 		 * but not for cases where node boundaries are crossed above the
 		 * root object.
+		 * If the 'isLocal' flag is set does NOT try to go off-node.
 		 */
-		static Id path2eid( const string& path, const string& separator );
+		static Id path2eid( const string& path, 
+			const string& separator, bool isLocal );
 
 		/**
 		 * Inner function for extracting Id.
 		 */
-		Id innerPath2eid( const string& path, const string& separator ) const;
+		Id innerPath2eid( const string& path, 
+			const string& separator, bool isLocal ) const;
 
 		/**
 		 * Deeper inner function: checks on local node then lauches out
@@ -604,6 +607,68 @@ class Shell
 extern const Cinfo* initShellCinfo();
 
 
+/**
+ * Do the whole operation of a blocking remote call, typically with a
+ * return value.
+ * Returns true if success.
+ *   Shell is a ptr to the Shell object.
+ *   Value is a pointer to the locally allocated data storage to be filled.
+ *   	It can and should be a local variable, for thread safety.
+ *   Arg is the data to be sent to the remote node.
+ *   Slot identifies target message
+ *   offNode identifies target node. If it is numNodes, this is handled
+ *      as a broadcast request going to all nodes.
+ *
+ * This function requires two handlers (MsgDest) to be defined:
+ * One for the remote shell, to deal with the request and return the
+ * value, and one for the local shell, to deal with the return value.
+ * This function requires two MsgSrcs to be defined: One for the requesting
+ * Slot, and one for the return.
+ *
+ *   Naming:
+ *      outgoing SrcFinfo: request<Value>Src
+ *      return SrcFinfo:   return<Value>Src
+ *      remote DestFinfo:  request<Value>
+ *      return DestFinfo:  return<Value>
+ *      outgoing Slot:     request<Value>Slot
+ *      return Slot:       return<Value>Slot
+ *
+ * Restrictions on use:
+ * 1. In single-threaded version, this call can only be used at Setup time.
+ *    At runtime it would lead to node asynchrony.
+ * 2. In both single and multi-threaded versions, the value must be local
+ *    or otherwise unique storage.
+ * 3. In both versions, the recv buffer has to be stacked if there are any
+ *    further operations pending. Otherwise the return value overwrites the
+ *    buffer.
+ */
+template< class T, class A > void getOffNodeValue( 
+	Eref shellE, Slot slot, unsigned int offNode,
+	T* value, const A& arg )
+{
+	Shell* sh = static_cast< Shell* >( shellE.data() );
+	if ( offNode >= sh->numNodes() ) {
+		unsigned int requestId = 
+			sh->openOffNodeValueRequestInner( 
+				static_cast< void* >( value ), sh->numNodes() - 1 );
+		send2< A, unsigned int >( shellE, slot, arg, requestId );
+
+		T* temp = static_cast< T* >( 
+			sh->closeOffNodeValueRequestInner( requestId ) );
+		assert( value == temp );
+	} else {
+		if ( offNode > sh->myNode() )
+			offNode--;
+		unsigned int requestId = 
+			sh->openOffNodeValueRequestInner( 
+				static_cast< void* >( value ), 1 );
+		sendTo2< A, unsigned int >( shellE, slot, offNode, arg, requestId );
+
+		T* temp = static_cast< T* >( 
+			sh->closeOffNodeValueRequestInner( requestId ) );
+		assert( value == temp );
+	}
+}
 
 /** 
  * Here again are the two matching functions for opening and closing
