@@ -1322,8 +1322,10 @@ void testParTraversePath()
 		}
 	}
 	MPI::COMM_WORLD.Barrier();
-	for ( unsigned int i = 0; i < numPoll; i++ )
+	for ( unsigned int i = 0; i < numPoll; i++ ) {
 		pollPostmaster();
+		
+	}
 
 	if ( myNode == 0 ) {
 		for ( unsigned int i = 1; i < numNodes; i++ ) {

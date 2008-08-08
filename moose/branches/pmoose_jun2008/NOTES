@@ -7808,14 +7808,27 @@ Some major redesign later:
 We need to consider three kinds of data transmission: async setup,
 	async runtime, and sync (possibly plus async) runtime.
 
-Async setup:
-	- Much tighter event loop. 
-		- Slaves use MPI_Wait to block on arrival 
-		  of data into buffer given by iRecv.
+Async setup. Basically two options:
+	- Use separate RecvBuf for WAIT_ALL, with blocking.
 		- Node 0 adds events from GUI and command line into the
 		  mix, or possibly polls with a timer.
-		- Separate messages to postmaster, perhaps even bypass 
-		  scheduler.
+		- Tight event loop without busy looping on other nodes.
+		- Distinct tag needed to avoid clash with regular
+		  data transfers
+		- Can set up special stuff on shell proxies at startup.
+		- Works best for threaded systems.
+	- Use current system, but harvest all incoming Shell msgs into a stack.
+		- Command execution order has to be maintained. Insert commands
+		  into stack when scanning through recv buffer, and push
+		  commands onto stack when handling nested calls.
+		- At beginning of scan of recv buffer, set insert 
+		  pointer to top of stack.
+		- Pop-back commands at end of loop, to execute.
+			- At this stage may need to nest back into clock loop.
+		- A single parser command may occur over many clock ticks.
+		- Return from poll when stack is empty.
+  Summary:
+  	For now use the polling method with Shell msgs harvested to stack.
 
 Async runtime (where there are no sync messages at all)
 	- Actually boils down to sync data transmission, because we cannot
@@ -7829,8 +7842,8 @@ Sync
 	- The same as before. Blocking poll loop to ensure arrival of data
 	  from all connected nodes, at each timestep. Note that async data
 	  can also come along.
-  Summary: Setup has a different scheduling, Async and Sync now converge in
-  polling structure.
+  Summary: Async and Sync now converge in polling structure. Setup does 
+  	a non-blocking poll loop with a small wait period to avoid CPU bashing.
 
 Possible buffer redesign:
 	- Current: unique send and recv buffers for each postmaster, ie, for
@@ -7868,4 +7881,11 @@ Relationship between setup and data messaging
 Consolidated the blocking off-node calls into a single templated call: 
 getOffNodeValue. This will make it easier to split into multithread versions
 as needed.
+
+Checked in as revision 583 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Implemented the setup stack. Without stressing it yet, it works with the
+old unit tests up to 4 nodes. Need to fix the tests to scale better.
+But it still doesn't clear the reset on the parallel regression test msg.g.
+
 ==============================================================================
