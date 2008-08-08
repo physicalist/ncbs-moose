@@ -366,6 +366,7 @@ unsigned int proxy2tgt( const AsyncStruct& as, char* data )
 void PostMaster::innerPoll( const Conn* c )
 {
 	Eref e = c->target();
+	vector< vector< char > > setupStack;
 	// cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( donePoll_ )
 			return;
@@ -402,21 +403,40 @@ void PostMaster::innerPoll( const Conn* c )
 			// cout << "Poll " << localNode_ << "<-" << remoteNode_ << ":nMsgs=" << nMsgs << ", i=" << i << ", proxyId=" << as.proxy() << ", size=" << as.size() << ", func=" << as.funcIndex() << ", totSize=" << dataSize << endl << flush;
 
 
-			///\todo: temporary hack to deal with shell-shell messaging
-			if ( as.proxy() == Id::shellId() )
-				as.hackProxy( shellProxy_ );
+			// Here we put the shell messages onto a stack for evaluating
+			// away from the recvBuffer, which may be needed again for 
+			// nested polling.
+			if ( as.proxy() == Id::shellId() ) {
+				unsigned int size = sizeof( AsyncStruct ) + as.size();
 
-			data += sizeof( AsyncStruct );
-			unsigned int size = proxy2tgt( as, data );
-			// assert( size == as.size() );
-			data += size;
+				vector< char > temp( data, data + size );
+				setupStack.push_back( temp );
+				data += size;
+			} else {
+				data += sizeof( AsyncStruct );
+				unsigned int size = proxy2tgt( as, data );
+				data += size;
+			}
 		}
-
 		donePoll_ = 1;
 	}
 	if ( syncInfo_.size() == 0 ) { // Do only one pass if it is async.
 		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
 		donePoll_ = 1;
+	}
+	// Now we are clear of dependencies on recvBuf and the messages coming
+	// to this PostMaster. So we can execute the setup operations.
+	// Note that any nested calls coming here will use their own
+	// setupStack, and when they terminate, we will be back at the
+	// proxy2tgt line.
+	for ( unsigned int i = 0 ; i < setupStack.size(); i++ ) {
+		char* data = &( setupStack[i][0] );
+		AsyncStruct as( data );
+		///\todo: temporary hack to deal with shell-shell messaging
+		as.hackProxy( shellProxy_ );
+		data += sizeof( AsyncStruct );
+		unsigned int size = proxy2tgt( as, data );
+		assert ( sizeof( AsyncStruct ) + size == setupStack[i].size() );
 	}
 }
 
