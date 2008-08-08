@@ -12,7 +12,7 @@
 
 struct JunctionStruct
 {
-	JunctionStruct( int i, int r ) :
+	JunctionStruct( unsigned int i, unsigned int r ) :
 		index( i ),
 		rank( r )
 	{ ; }
@@ -29,9 +29,11 @@ class HinesMatrix
 {
 public:
 	void setup(
-		const vector< vector< unsigned int > >& tree,
+		const vector< vector< unsigned int > >& children,
 		const vector< double >& Ga,
 		const vector< double >& CmByDt );
+	
+	double entry( unsigned int row, unsigned int col );
 
 protected:
 	unsigned int              nCompt_;
@@ -48,11 +50,11 @@ private:
 	void makeMatrix( );
 	void makeOperands( );
 
-	vector< vector< unsigned int > > const  *tree_;
+	vector< vector< unsigned int > > const  *children_;
 	vector< double > const                  *Ga_;
 	vector< double > const                  *CmByDt_;
 	vector< vector< unsigned int > >         junctionGroup_;
-	vector< double* >                        operandBase_;
+	map< unsigned int, double* >             operandBase_;
 	map< unsigned int, unsigned int >        groupNumber_;
 };
 

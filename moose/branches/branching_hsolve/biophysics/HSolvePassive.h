@@ -45,7 +45,7 @@ private:
 	void initialize( );
 	void storeTree( );
 	
-	vector< vector< unsigned int > >  tree_;
+	vector< vector< unsigned int > >  children_;
 	vector< double >                  Ga_;
 	vector< double >                  CmByDt_;
 };

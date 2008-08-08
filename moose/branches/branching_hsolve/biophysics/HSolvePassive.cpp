@@ -22,7 +22,7 @@ void HSolvePassive::setup( Id seed, double dt ) {
 	initialize( );
 	storeTree( );
 	
-	HinesMatrix::setup( tree_, Ga_, CmByDt_ );
+	HinesMatrix::setup( children_, Ga_, CmByDt_ );
 }
 
 void HSolvePassive::solve( ) {
@@ -100,27 +100,22 @@ void HSolvePassive::initialize( ) {
 }
 
 void HSolvePassive::storeTree( ) {
+	// Create a map from the MOOSE Id to Hines' index.
 	map< Id, unsigned int > hinesIndex;
 	for ( unsigned int ic = 0; ic < compartmentId_.size(); ++ic )
 		hinesIndex[ compartmentId_[ ic ] ] = ic;
 	
-	vector< Id > children;
+	vector< Id > childId;
 	vector< Id >::iterator child;
 	
+	children_.resize( nCompt_ );
 	for ( unsigned int ic = 0; ic < compartmentId_.size(); ++ic ) {
-		const Id& parent = compartmentId_[ ic ];
-		
-		children.clear();
-		BioScan::children( parent, children );
-		
-		tree_.resize( tree_.size() + 1 );
-		// Push hines' index of parent
-		tree_.back().push_back( ic );
+		// Find current compartment's children
+		BioScan::children( compartmentId_[ ic ], childId );
 		
 		// Push hines' indices of children
-		for ( child = children.begin(); child != children.end(); ++child )
-			tree_.back().push_back(
-				hinesIndex[ *child ] );
+		for ( child = childId.begin(); child != childId.end(); ++child )
+			children_[ ic ].push_back( hinesIndex[ *child ] );
 		
 		CmByDt_.push_back( compartment_[ ic ].CmByDt );
 	}
