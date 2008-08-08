@@ -18,6 +18,7 @@ extern void testCaConc(); // Defined in CaConc.cpp
 extern void testNernst(); // Defined in Nernst.cpp
 extern void testSpikeGen(); // Defined in SpikeGen.cpp
 extern void testSynChan(); // Defined in SynChan.cpp
+extern void testHinesMatrix(); // Defined in HinesMatrix.cpp
 
 void testBiophysics()
 {
@@ -27,6 +28,9 @@ void testBiophysics()
 	testNernst();
 	testSpikeGen();
 	testSynChan();
+	
+	// solver related
+	testHinesMatrix();
 }
 
 #endif

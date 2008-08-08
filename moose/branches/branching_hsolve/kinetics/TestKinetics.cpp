@@ -395,7 +395,7 @@ void testStoich()
 	ASSERT( dret == 0, "New DynamicFinfo message redirect" );
 	ret = lookupGet< double, unsigned int >( table2, "table", dret, 0 );
 	ASSERT( ret, "New DynamicFinfo message redirect" );
-	ASSERT( dret == 0, New "DynamicFinfo message redirect" );
+	ASSERT( dret == 0, "New DynamicFinfo message redirect" );
 
 	Table::process( &c2, &p );
 
@@ -404,7 +404,7 @@ void testStoich()
 	ASSERT( dret == 12.5, "New DynamicFinfo message redirect" );
 	ret = lookupGet< double, unsigned int >( table2, "table", dret, 0 );
 	ASSERT( ret, "New DynamicFinfo message redirect" );
-	ASSERT( dret == 12.5, New "DynamicFinfo message redirect" );
+	ASSERT( dret == 12.5, "New DynamicFinfo message redirect" );
 
 	/////////////////////////////////////////////////////////
 	// Get rid of all the compartments.
