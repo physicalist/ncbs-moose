@@ -9,24 +9,15 @@
 **********************************************************************/
 #ifdef DO_UNIT_TESTS
 
-#include <fstream>
 #include "header.h"
 
-extern void testCompartment(); // Defined in Compartment.cpp
-extern void testHHChannel(); // Defined in HHChannel.cpp
-extern void testCaConc(); // Defined in CaConc.cpp
-extern void testNernst(); // Defined in Nernst.cpp
-extern void testSpikeGen(); // Defined in SpikeGen.cpp
-extern void testSynChan(); // Defined in SynChan.cpp
+extern void testHinesMatrix(); // Defined in HinesMatrix.cpp
+extern void testBioScan(); // Defined in BioScan.cpp
 
-void testBiophysics()
+void testHSolve()
 {
-	testCompartment();
-	testHHChannel();
-	testCaConc();
-	testNernst();
-	testSpikeGen();
-	testSynChan();
+	testHinesMatrix();
+	testBioScan();
 }
 
 #endif

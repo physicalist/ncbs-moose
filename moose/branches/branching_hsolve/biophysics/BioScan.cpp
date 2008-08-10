@@ -178,3 +178,161 @@ bool BioScan::isType( Id object, const string& type )
 {
 	return object()->cinfo()->isA( Cinfo::find( type ) );
 }
+
+////////////////////////////////////////////////////////////////////////////
+
+#ifdef DO_UNIT_TESTS
+#include "../element/Neutral.h"
+
+void testBioScan( )
+{
+	cout << "\nTesting Bioscan" << flush;
+	bool success;
+	
+	Element* n =
+		Neutral::create( "Neutral", "n", Element::root()->id(), Id::scratchId() );
+	
+	/**
+	 *  First we test the functions which return the compartments linked to a
+	 *  given compartment: adjacent(), and children().
+	 *  
+	 *  A small tree is created for this:
+	 *  
+	 *               c0
+	 *                L c1
+	 *                   L c2
+	 *                   L c3
+	 *                   L c4
+	 *                   L c5
+	 *  
+	 *  (c0 is the parent of c1. c1 is the parent of c2, c3, c4, c5.)
+	 */
+	Element* c[ 6 ];
+	c[ 0 ] = Neutral::create( "Compartment", "c0", n->id(), Id::scratchId() );
+	c[ 1 ] = Neutral::create( "Compartment", "c1", n->id(), Id::scratchId() );
+	c[ 2 ] = Neutral::create( "Compartment", "c2", n->id(), Id::scratchId() );
+	c[ 3 ] = Neutral::create( "Compartment", "c3", n->id(), Id::scratchId() );
+	c[ 4 ] = Neutral::create( "Compartment", "c4", n->id(), Id::scratchId() );
+	c[ 5 ] = Neutral::create( "Compartment", "c5", n->id(), Id::scratchId() );
+	
+	success = Eref( c[ 0 ] ).add( "axial", c[ 1 ], "raxial" );
+	ASSERT( success, "Linking compartments" );
+	success = Eref( c[ 1 ] ).add( "axial", c[ 2 ], "raxial" );
+	ASSERT( success, "Linking compartments" );
+	success = Eref( c[ 1 ] ).add( "axial", c[ 3 ], "raxial" );
+	ASSERT( success, "Linking compartments" );
+	success = Eref( c[ 1 ] ).add( "axial", c[ 4 ], "raxial" );
+	ASSERT( success, "Linking compartments" );
+	success = Eref( c[ 1 ] ).add( "axial", c[ 5 ], "raxial" );
+	ASSERT( success, "Linking compartments" );
+	
+	vector< Id > found;
+	unsigned int nFound;
+	
+	/** Testing version 1 of BioScan::adjacent.
+	 *  It finds all neighbours of given compartment.
+	 */
+	// Neighbours of c0
+	nFound = BioScan::adjacent( c[ 0 ]->id(), found );
+	ASSERT( nFound == found.size(), "Finding adjacent compartments" );
+	// c1 is adjacent
+	ASSERT( nFound == 1, "Finding adjacent compartments" );
+	ASSERT( found[ 0 ] == c[ 1 ]->id(), "Finding adjacent compartments" );
+	
+	// Neighbours of c1
+	found.clear();
+	nFound = BioScan::adjacent( c[ 1 ]->id(), found );
+	ASSERT( nFound == 5, "Finding adjacent compartments" );
+	// c0 is adjacent
+	success =
+		find( found.begin(), found.end(), c[ 0 ]->id() ) != found.end();
+	ASSERT( success, "Finding adjacent compartments" );
+	// c2 - c5 are adjacent
+	for ( int i = 2; i < 6; i++ ) {
+		success =
+			find( found.begin(), found.end(), c[ i ]->id() ) != found.end();
+		ASSERT( success, "Finding adjacent compartments" );
+	}
+	
+	// Neighbours of c2
+	found.clear();
+	nFound = BioScan::adjacent( c[ 2 ]->id(), found );
+	// c1 is adjacent
+	ASSERT( nFound == 1, "Finding adjacent compartments" );
+	ASSERT( found[ 0 ] == c[ 1 ]->id(), "Finding adjacent compartments" );
+	
+	/** Testing version 2 of BioScan::adjacent.
+	 *  It finds all but one neighbours of given compartment.
+	 *  The the second argument to 'adjacent' is the one that is excluded.
+	 */
+	// Neighbours of c1 (excluding c0)
+	found.clear();
+	nFound = BioScan::adjacent( c[ 1 ]->id(), c[ 0 ]->id(), found );
+	ASSERT( nFound == 4, "Finding adjacent compartments" );
+	// c2 - c5 are adjacent
+	for ( int i = 2; i < 6; i++ ) {
+		success =
+			find( found.begin(), found.end(), c[ i ]->id() ) != found.end();
+		ASSERT( success, "Finding adjacent compartments" );
+	}
+	
+	// Neighbours of c1 (excluding c2)
+	found.clear();
+	nFound = BioScan::adjacent( c[ 1 ]->id(), c[ 2 ]->id(), found );
+	ASSERT( nFound == 4, "Finding adjacent compartments" );
+	// c0 is adjacent
+	success =
+		find( found.begin(), found.end(), c[ 0 ]->id() ) != found.end();
+	ASSERT( success, "Finding adjacent compartments" );
+	// c3 - c5 are adjacent
+	for ( int i = 3; i < 6; i++ ) {
+		success =
+			find( found.begin(), found.end(), c[ i ]->id() ) != found.end();
+		ASSERT( success, "Finding adjacent compartments" );
+	}
+	
+	// Neighbours of c2 (excluding c1)
+	found.clear();
+	nFound = BioScan::adjacent( c[ 2 ]->id(), c[ 1 ]->id(), found );
+	// None adjacent, if c1 is excluded
+	ASSERT( nFound == 0, "Finding adjacent compartments" );
+	
+	// Neighbours of c2 (excluding c3)
+	found.clear();
+	nFound = BioScan::adjacent( c[ 2 ]->id(), c[ 3 ]->id(), found );
+	// c1 is adjacent, while c3 is not even connected
+	ASSERT( nFound == 1, "Finding adjacent compartments" );
+	ASSERT( found[ 0 ] == c[ 1 ]->id(), "Finding adjacent compartments" );
+	
+	/** Testing BioScan::children.
+	 *  It finds all compartments which are dests for the "axial" message.
+	 */
+	// Children of c0
+	found.clear();
+	nFound = BioScan::children( c[ 0 ]->id(), found );
+	ASSERT( nFound == 1, "Finding child compartments" );
+	// c1 is a child
+	ASSERT( found[ 0 ] == c[ 1 ]->id(), "Finding child compartments" );
+	
+	// Children of c1
+	found.clear();
+	nFound = BioScan::children( c[ 1 ]->id(), found );
+	ASSERT( nFound == 4, "Finding child compartments" );
+	// c2 - c5 are c1's children
+	for ( int i = 2; i < 6; i++ ) {
+		success =
+			find( found.begin(), found.end(), c[ i ]->id() ) != found.end();
+		ASSERT( success, "Finding child compartments" );
+	}
+	
+	// Children of c2
+	found.clear();
+	nFound = BioScan::children( c[ 2 ]->id(), found );
+	// c2 has no children
+	ASSERT( nFound == 0, "Finding child compartments" );
+	
+	// Clean up
+	set( n, "destroy" );
+}
+
+#endif // DO_UNIT_TESTS
