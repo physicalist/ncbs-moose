@@ -57,6 +57,7 @@ OBJ = \
  	HSolve.o \
  	HSolveHub.o \
 	TestBiophysics.o \
+	TestHSolve.o \
 	script_out.o
 endif
 
