@@ -103,7 +103,14 @@ const Cinfo* initParTickCinfo()
 		// Warning: this message should only be called on a single
 		// target postmaster using sendTo. Otherwise each target postmaster
 		// will try to set a barrier.
-		new SrcFinfo( "barrier", Ftype0::global() ),
+		//
+		// Deprecated.
+		// new SrcFinfo( "barrier", Ftype0::global() ),
+		
+		// This entry tells the postMaster to execute pending setup ops.
+		// These are blocking calls, but they may invoke nested polling
+		// calls.
+		new SrcFinfo( "clearSetupStack", Ftype0::global() ),
 	};
 
 
@@ -175,8 +182,10 @@ static const Slot sendSlot =
 	initParTickCinfo()->getSlot( "parTick.postSend" );
 static const Slot pollSlot = 
 	initParTickCinfo()->getSlot( "parTick.poll" );
-static const Slot barrierSlot = 
-	initParTickCinfo()->getSlot( "parTick.barrier" );
+// static const Slot barrierSlot = 
+	// initParTickCinfo()->getSlot( "parTick.barrier" );
+static const Slot clearSetupStackSlot = 
+	initParTickCinfo()->getSlot( "parTick.clearSetupStack" );
 
 ///////////////////////////////////////////////////
 // Field function definitions
@@ -255,9 +264,12 @@ void ParTick::innerProcessFunc( Eref e, ProcInfo info )
 		// cout << "." << flush;
 		send1< int >( e, pollSlot, ordinal() );
 	}
+
+	// Phase 5: Clear all shell setup commands that have piled up.
+	send0( e, clearSetupStackSlot );
+
 	// Phase 5: execute barrier to sync all nodes.
-	if ( barrier_ )
-		sendTo0( e, barrierSlot, 0 );
+	// if ( barrier_ ) sendTo0( e, barrierSlot, 0 );
 }
 
 void ParTick::initPending( Eref e )

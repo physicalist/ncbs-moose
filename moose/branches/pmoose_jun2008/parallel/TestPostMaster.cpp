@@ -12,6 +12,8 @@
 #include "moose.h"
 #include <math.h>
 #include <mpi.h>
+#include <unistd.h> // Will need to replace for other OSs
+				// Used for the usleep definition
 #include "PostMaster.h"
 #include "ProxyElement.h"
 #include "AsyncDestFinfo.h"
@@ -909,13 +911,16 @@ Id testParCreate( vector< Id >& testIds )
 	}
 	MPI::COMM_WORLD.Barrier();
 	pollPostmaster(); // There is a barrier in the polling operation itself
+	MPI::COMM_WORLD.Barrier();
+	pollPostmaster();
+	MPI::COMM_WORLD.Barrier();
 	pollPostmaster();
 	MPI::COMM_WORLD.Barrier();
 	char name[20];
 	sprintf( name, "/tn%d", myNode );
 	string sname = name;
 	if ( myNode != 0 ) {
-		Id tnId( sname );
+		Id tnId = Id::localId( sname );
 		ASSERT( tnId.good(), "postmaster created obj on remote node" );
 		return tnId;
 	}
@@ -964,8 +969,10 @@ void testParGet( Id tnId, vector< Id >& testIds )
 	// Here we explicitly do what the closeOffNodeValueRequest handles.
 	MPI::COMM_WORLD.Barrier();
 	// Cycle a few times to make sure all data gets back to node 0
-	for ( unsigned int i = 0; i < 5; i++ )
+	for ( unsigned int i = 0; i < 5; i++ ) {
 		pollPostmaster();
+		MPI::COMM_WORLD.Barrier();
+	}
 	
 	// Now go through to check all values have come back.
 	if ( myNode == 0 ) {
@@ -1012,14 +1019,14 @@ void testParSet( vector< Id >& testIds )
 		}
 	}
 	MPI::COMM_WORLD.Barrier();
-	pollPostmaster(); // There is a barrier in the polling operation itself
-	pollPostmaster(); // There is a barrier in the polling operation itself
-	pollPostmaster(); // There is a barrier in the polling operation itself
-	pollPostmaster(); // There is a barrier in the polling operation itself
+	pollPostmaster();
+	MPI::COMM_WORLD.Barrier();
+	pollPostmaster();
+
 	if ( myNode != 0 ) {
 		sprintf( name, "/bar%d", myNode * 10 );
 		sname = name;
-		Id checkId( sname );
+		Id checkId = Id::localId( sname );
 		// cout << "On " << myNode << ", checking id for " << sname << ": " << checkId << endl;
 		ASSERT( checkId.good(), "parallel set" );
 		cout << flush;
@@ -1063,9 +1070,10 @@ void testParDelete( vector< Id >& testIds )
 				*i );
 		}
 	}
-	MPI::COMM_WORLD.Barrier();
-	pollPostmaster(); // There is a barrier in the polling operation itself
-	pollPostmaster(); // There is a barrier in the polling operation itself
+	for ( unsigned int i = 0; i < 5; i++ ) {
+		pollPostmaster();
+		MPI::COMM_WORLD.Barrier();
+	}
 	// Now check on the carnage. Must use local-node commands here.
 	if ( myNode != 0 ) {
 		vector< Id > remainingKids;
@@ -1121,16 +1129,15 @@ void testParCommandSequence()
 			}
 		}
 	}
-	MPI::COMM_WORLD.Barrier();
-	pollPostmaster(); // There is a barrier in the polling operation itself
-	pollPostmaster(); // There is a barrier in the polling operation itself
-	pollPostmaster(); // There is a barrier in the polling operation itself
-	pollPostmaster(); // There is a barrier in the polling operation itself
+	for ( unsigned int i = 0 ; i < 5; i++ ) {
+		pollPostmaster();
+		MPI::COMM_WORLD.Barrier();
+	}
 	if ( myNode != 0 ) {
 		for ( unsigned int j = 0; j < numSeq; j++ ) {
 			sprintf( name, "/zug%d.%d.extra", myNode, j );
 			sname = name;
-			Id checkId( sname );
+			Id checkId = Id::localId( sname );
 			// cout << "On " << myNode << ", checking id for " << sname << ": " << checkId << endl;
 			ASSERT( checkId.good(), "parallel command sequencing" );
 
@@ -1203,13 +1210,13 @@ void testParMsg()
 			*/
 		}
 	}
-	MPI::COMM_WORLD.Barrier();
-	pollPostmaster();
-	pollPostmaster();
-	MPI::COMM_WORLD.Barrier();
+	for ( unsigned int i = 0; i < 5; i++ ) {
+		pollPostmaster();
+		MPI::COMM_WORLD.Barrier();
+	}
 	sprintf( name, "/tab%d", myNode );
 	sname = name;
-	Id checkId( sname );
+	Id checkId = Id::localId( sname );
 	ASSERT( checkId.good(), "parallel msgs" );
 	int stepmode;
 	get< int >( checkId.eref(), "stepmode", stepmode );
@@ -1226,13 +1233,11 @@ void testParMsg()
 			}
 		}
 	}
-	MPI::COMM_WORLD.Barrier();
-	pollPostmaster();
-	pollPostmaster();
-	pollPostmaster();
-	pollPostmaster();
+	for ( unsigned int i = 0; i < 5; i++ ) {
+		pollPostmaster();
+		MPI::COMM_WORLD.Barrier();
+	}
 	cout << flush;
-	MPI::COMM_WORLD.Barrier();
 
 	// Check that the messages were made. Node 0 and 1 are special
 	unsigned int numOutputSrc = numNodes - myNode - 1;
@@ -1254,9 +1259,12 @@ void testParMsg()
 	set( cjId.eref(), "resched" );
 	ASSERT( checkId.eref()->numTargets( "process" ) == 1, "sched par msg");
 	// set< int >( cjId.eref(), "step", static_cast< int >( numNodes ) );
-	set< int >( cjId.eref(), "step", numNodes * 2 + 3 );
-	MPI::COMM_WORLD.Barrier();
-	set< int >( cjId.eref(), "step", numNodes * 2 + 3 );
+	for ( unsigned int i = 0; i < numNodes * 5; i++ ) {
+		// set< int >( cjId.eref(), "step", numNodes * 2 + 3 );
+		set< int >( cjId.eref(), "step", 1 );
+		usleep( 10000 );
+		MPI::COMM_WORLD.Barrier();
+	}
 	double f1 = 0.0;
 	double f2 = 1.0;
 	double f = 1.0;
@@ -1321,10 +1329,10 @@ void testParTraversePath()
 			);
 		}
 	}
-	MPI::COMM_WORLD.Barrier();
 	for ( unsigned int i = 0; i < numPoll; i++ ) {
 		pollPostmaster();
-		
+		usleep( 10000 );
+		MPI::COMM_WORLD.Barrier();
 	}
 
 	if ( myNode == 0 ) {
@@ -1341,8 +1349,18 @@ void testParTraversePath()
 	} 
 	// Get everyone past the point where ids are checked remotely,
 	// and clean up.
-	for ( unsigned int i = 0; i < numPoll; i++ )
+	// Note that we cannot put a barrier in this loop because the remote
+	// nodes need to poll till they can respond to the off-node 
+	// checkId request.
+	Id cjId = Id::localId( "/sched/cj" );
+	assert( cjId.good() );
+	for ( unsigned int i = 0; i < numNodes * 3; i++ ) {
+		// set< int >( cjId.eref(), "step", 1 );
 		pollPostmaster();
+		usleep( 10000 );
+	}
+	// cout << "Past Id check loop on " << myNode << flush;
+	MPI::COMM_WORLD.Barrier();
 
 	if ( myNode != 0 ) {
 		char name[20];

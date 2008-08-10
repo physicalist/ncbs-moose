@@ -45,10 +45,14 @@ const Cinfo* initPostMasterCinfo()
 		// It comes back when the polling on that postmaster is done.
 		new SrcFinfo( "harvestPoll", Ftype1< unsigned int >::global() ),
 
+		new DestFinfo( "clearSetupStack", Ftype0::global(), 
+			RFCAST( &PostMaster::clearSetupStack ) ),
+		
+		// 
+		// Removed. We want barrier-free synchronization where needed.
 		// The last entry tells targets to execute a Barrier command,
 		// in order to synchronize all nodes.
-		new DestFinfo( "barrier", Ftype0::global(), 
-			RFCAST( &PostMaster::barrier ) ),
+		// new DestFinfo( "barrier", Ftype0::global(), RFCAST( &PostMaster::barrier ) ),
 	};
 
 	static Finfo* serialShared[] =
@@ -370,7 +374,7 @@ void PostMaster::innerPoll( const Conn* c )
 	// cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( donePoll_ )
 			return;
-	if ( !requestFlag_ ) {
+	if ( !requestFlag_ ) { // Need to add check for whether msg was expected
 		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
 		donePoll_ = 1;
 		return;
@@ -420,15 +424,40 @@ void PostMaster::innerPoll( const Conn* c )
 		}
 		donePoll_ = 1;
 	}
+	setupStack_ = setupStack;
 	if ( syncInfo_.size() == 0 ) { // Do only one pass if it is async.
 		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
 		donePoll_ = 1;
 	}
+}
+
+/**
+ * This blocking function works through the setup stack. It is where
+ * the system may recurse into further polling.
+ */
+void PostMaster::clearSetupStack( const Conn* c )
+{
+	static_cast< PostMaster* >( c->data() )->innerClearSetupStack();
+}
+
+/**
+ * This blocking function works through the setup stack. It is where
+ * the system may recurse into further polling.
+ */
+void PostMaster::innerClearSetupStack( )
+{
+	// need a local copy for the recursion, since the object copy will
+	// be overwritten.
+	vector< vector< char > > setupStack = setupStack_; 
+	
 	// Now we are clear of dependencies on recvBuf and the messages coming
 	// to this PostMaster. So we can execute the setup operations.
 	// Note that any nested calls coming here will use their own
 	// setupStack, and when they terminate, we will be back at the
 	// proxy2tgt line.
+	//
+	// Still some issues with how we to insert polling cycles
+	// into ongoing clock ticks.
 	for ( unsigned int i = 0 ; i < setupStack.size(); i++ ) {
 		char* data = &( setupStack[i][0] );
 		AsyncStruct as( data );
@@ -440,6 +469,9 @@ void PostMaster::innerPoll( const Conn* c )
 	}
 }
 
+/**
+ * Deprecated. We don't want to use barriers in a real simulation.
+ */
 void PostMaster::innerBarrier( )
 {
 	// Just for paranoia: Only allow this function to be called for

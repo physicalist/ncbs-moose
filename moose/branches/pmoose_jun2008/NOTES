@@ -7818,15 +7818,16 @@ Async setup. Basically two options:
 		- Can set up special stuff on shell proxies at startup.
 		- Works best for threaded systems.
 	- Use current system, but harvest all incoming Shell msgs into a stack.
-		- Command execution order has to be maintained. Insert commands
-		  into stack when scanning through recv buffer, and push
-		  commands onto stack when handling nested calls.
-		- At beginning of scan of recv buffer, set insert 
-		  pointer to top of stack.
+		- Command execution order has to be maintained.
 		- Pop-back commands at end of loop, to execute.
 			- At this stage may need to nest back into clock loop.
 		- A single parser command may occur over many clock ticks.
 		- Return from poll when stack is empty.
+		- Note that nesting will play havoc with polling. We need
+		  to postpone the stack ops till after polling completes.
+		  Then we do a single pass through each of the postmasters
+		  to execute their pending stack ops. At this point nested
+		  polling may occur, safely.
   Summary:
   	For now use the polling method with Shell msgs harvested to stack.
 
@@ -7887,5 +7888,15 @@ Checked in as revision 583 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 Implemented the setup stack. Without stressing it yet, it works with the
 old unit tests up to 4 nodes. Need to fix the tests to scale better.
 But it still doesn't clear the reset on the parallel regression test msg.g.
+
+Checked in as revision 584 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+==============================================================================
+10 Aug 2008
+After much fine-tuning of polling loops, the updated changes on the
+setup stack work through unit tests on 16 nodes. Next step is to 
+reconfigure the runtime scheduling in two respects:
+- Make it blocking through monitoring completions of data transfer on every dt
+- Make it handle polling loop insertions for shell command completion.
 
 ==============================================================================
