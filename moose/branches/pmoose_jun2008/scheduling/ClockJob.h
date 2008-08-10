@@ -13,11 +13,7 @@
 class ClockJob
 {
 	public:
-		ClockJob()
-			: runTime_( 0.0 ), currentTime_( 0.0 ), nextTime_( 0.0 ),
-			nSteps_( 0 ), currentStep_( 0 ), dt_( 1.0 ), isRunning_( 0 ),
-			info_()
-		{;}
+		ClockJob();
 
 		//////////////////////////////////////////////////////////
 		//  Field assignment functions
@@ -65,6 +61,7 @@ class ClockJob
 		double dt_;
 		bool isRunning_;
 		ProcInfoBase info_;
+		int callback_;
 };
 
 #endif // _CLOCKJOB_H

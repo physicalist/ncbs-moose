@@ -226,6 +226,20 @@ static const Slot checkRunningSlot =
 	initClockJobCinfo()->getSlot( "tick.checkRunning" );
 
 ///////////////////////////////////////////////////
+// Constructor
+///////////////////////////////////////////////////
+ClockJob::ClockJob()
+	: runTime_( 0.0 ), 
+	  currentTime_( 0.0 ), 
+	  nextTime_( 0.0 ),
+	  nSteps_( 0 ), 
+	  currentStep_( 0 ), 
+	  dt_( 1.0 ), 
+	  isRunning_( 0 ),
+	  info_(),
+	  callback_( emptyCallback )
+{;}
+///////////////////////////////////////////////////
 // Field function definitions
 ///////////////////////////////////////////////////
 
@@ -296,6 +310,10 @@ void ClockJob::startFuncLocal( Eref e, double runTime )
 			processSrc_ );
 	currentTime_ = info_.currTime_;
 	*/
+	// Finally we are out of all the loops. Do the resched if needed.
+	if ( callback_ == doReschedCallback )
+		reschedFuncLocal( e );
+	callback_ = emptyCallback;
 }
 
 void ClockJob::stepFunc( const Conn* c, int nsteps )
@@ -438,8 +456,8 @@ void ClockJob::reschedFuncLocal( Eref er )
 void ClockJob::handleStopCallback( const Conn* c, int flag )
 {
 	ClockJob* cj = static_cast< ClockJob* >( c->data() );
-	if ( flag == doReschedCallback )
-		cj->reschedFuncLocal( c->target() );
+	cout << "Handling stop callback\n";
+	cj->callback_ = flag;
 }
 
 void ClockJob::handleRunningCallback( const Conn* c, bool flag )

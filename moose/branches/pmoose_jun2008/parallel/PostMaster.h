@@ -103,6 +103,13 @@ class PostMaster
 		static void barrier( const Conn* c );
 		void innerBarrier( );
 
+		/**
+ 		* This blocking function works through the setup stack. It is where
+ 		* the system may recurse into further polling.
+ 		*/
+		static void clearSetupStack( const Conn* c );
+		void innerClearSetupStack( );
+
 		/*
 		void addIncomingFunc( unsigned int connId, unsigned int index );
 		// This static function handles response to an addmsg request,
@@ -126,7 +133,10 @@ class PostMaster
 
 		Id shellProxy_; // Hack for msgs between shells on different nodes.
 
+
 		bool requestFlag_; // True if request is pending.
+
+		vector< vector< char > > setupStack_; // Used to manage pending setup data.
 		MPI::Request request_;
 
 		MPI::Status status_;
