@@ -87,6 +87,7 @@ int main(int argc, char** argv)
 #ifdef DO_UNIT_TESTS
 	if ( myNode == 0 )
 	{
+		/*
 		testBasecode();
 		testNeutral();
 		testSparseMatrix();
@@ -98,6 +99,7 @@ int main(int argc, char** argv)
 		testSchedProcess();
 		testBiophysics();
 		testKinetics();
+		*/
 //		testAverage();
 		testParMsgOnSingleNode();
 	}
@@ -174,7 +176,7 @@ int main(int argc, char** argv)
 			// gui stuff here maybe.
 		}
 	} else { // All but master node.
-		while( Shell::running ) {
+		while( Shell::running() ) {
 			pollPostmaster();
 		}
 	}

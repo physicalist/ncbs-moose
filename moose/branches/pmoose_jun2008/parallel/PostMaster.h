@@ -41,6 +41,8 @@ class PostMaster
 	friend void testParAsyncObj2Post2Obj();
 	friend void testShellSetupAsyncParMsg();
 	friend void testBidirectionalParMsg();
+	friend void testNodeSetup();
+	friend void testParMsg();
 #endif // DO_UNIT_TESTS
 	public:
 		PostMaster();
@@ -68,6 +70,12 @@ class PostMaster
 		static Id getShellProxy( Eref e );
 		static void setShellProxy( const Conn* c, Id value );
 
+		/**
+		 * Hack for keeping track of number of incoming and outgoing async
+		 * msgs.
+		 */
+		static void incrementNumAsyncIn( const Conn* c );
+		static void incrementNumAsyncOut( const Conn* c );
 		//////////////////////////////////////////////////////////////
 		// Function to stuff data into async buffer. Used mostly
 		// for testing.
@@ -92,10 +100,40 @@ class PostMaster
 	// Message handling
 		static void postIrecv( const Conn* c, int ordinal );
 		void innerPostIrecv();
+
+		/**
+		 * Wrapper for innerPoll
+		 */
 		static void poll( const Conn* c, int ordinal );
+		/**
+ 		* This function does the main work of sending incoming messages
+ 		* to dests. It grinds through the irecv'ed data and sends it out
+ 		* to local dest objects.
+ 		* This is called by the poll function
+ 		*
+ 		* Does nothing if polling is complete (donePoll_ is true)
+ 		* If no message is expected:
+ 		* 	- Do single pass, test for message. Deal with it if needed
+ 		* 	  In any case, send back poll ack and set donePoll_ to 1
+ 		* If a message is expected:
+ 		*  - Do single pass, test for message, deal with it if needed.
+ 		*    - If message comes, deal with it, send back poll ack, 
+		*      set donePoll_ = 1
+ 		* 	 - If message does not come, do nothing. Will need to poll later
+ 		*/
 		void innerPoll( const Conn* c );
 		static void postSend( const Conn* c, int ordinal );
 		void innerPostSend( );
+
+		/**
+		 * Handles synchronous data incoming in buffer.
+		 */
+		void handleSyncData();
+
+		/**
+		 * Handles asynchronous data incoming in buffer.
+		 */
+		void handleAsyncData();
 
 		/**
 		 * Executes an MPI::Barrier command if this is postmaster 0
@@ -125,6 +163,16 @@ class PostMaster
 		unsigned int sendBufPos_;
 		unsigned int numSendBufMsgs_;
 
+		
+		/**
+		 * Number of incoming async messages set up. On any given timestep,
+		 * zero to numAsyncIn_ msgs may actually arrive.
+		 */
+		unsigned int numAsyncIn_; 
+
+		/// Number of outgoing async messages set up.
+		unsigned int numAsyncOut_;
+
 		vector< char > recvBuf_;
 
 		vector< ParSyncMsgInfo > syncInfo_;
@@ -134,7 +182,7 @@ class PostMaster
 		Id shellProxy_; // Hack for msgs between shells on different nodes.
 
 
-		bool requestFlag_; // True if request is pending.
+		bool isRequestPending_; // True if request is pending.
 
 		vector< vector< char > > setupStack_; // Used to manage pending setup data.
 		MPI::Request request_;

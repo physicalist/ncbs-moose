@@ -209,6 +209,12 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
  * to a dest on a remote node. 
  * Note that an Id does not carry node info within itself. So we use an
  * Nid for the dest, as we need to retain node info.
+ *
+ * We always need to tell the postmaster to increment the number of
+ * outgoing async msgs. If the msg is bidirectional, we increment both
+ * sync and async. Actually the # of async msgs doesn't matter, it is
+ * that they are nonzero. 
+ * \todo: Later we may need to set up more info to handle traversal.
  */
 void Shell::addParallelSrc( const Conn* c,
 	Nid src, string srcField, Nid dest, string destField )
@@ -242,6 +248,8 @@ void Shell::addParallelSrc( const Conn* c,
 		ret = setupProxyMsg( destNode, 
 			dest, sf->asyncFuncId(), 
 			src, srcMsg );
+		if ( ret )
+			set( de, "incrementNumAsyncIn" );
 	} else {
 		ret = se.add( srcField, de, "async" );
 		// bool ret = add2Post( destNode, se, srcField );
@@ -260,6 +268,8 @@ void Shell::addParallelSrc( const Conn* c,
 			
 		// Set up an entry to check for completion. 
 		sh->parMessagePending_[dest] = src; 
+		// Check somehow that it is an async message.
+		set( de, "incrementNumAsyncOut" );
 	} else {
 		cout << "Error: Shell::addParallelSrc failed to set up msg from\n" <<
 			src.path() << " to " << dest.path() << endl;
@@ -279,7 +289,7 @@ const Finfo* findFinfoOnCinfo( const string& name )
 
 void Shell::addParallelDest( const Conn* c,
 	Nid src, string srcField, Nid dest, string destField )
-{
+{ 
 	Shell* sh = static_cast< Shell* >( c->data() );
 	// cout << "in Shell::addParallelDest on node=" << sh->myNode_ << ", src=" << src << "." << src.node() << ", srcField = " << srcField << ", dest = " << dest << "." << dest.node() << ", destField = " << destField << endl << flush;
 
@@ -330,7 +340,20 @@ void Shell::addParallelDest( const Conn* c,
 	int tgtMsg = tgtFinfo->msg();
 	bool ret = setupProxyMsg( srcNode, src, asyncFuncId, dest, tgtMsg );
 	if ( ret ) {
-		// sendBack2< Id, Id > ( c, parMsgOkSlot, src, dest );
+#ifdef DO_UNIT_TESTS
+		Eref se = sh->getPostForUnitTests( srcNode );
+		if ( se.e == 0 )
+			se = Id::postId( srcNode ).eref();
+#else
+		// One of the unit tests puts them on the same node.
+		assert( destNode != srcNode );
+		assert( Id::postId( srcNode ).good() );
+		assert( Id::postId( srcNode ).eref().e != 0 );
+		Eref se = Id::postId( srcNode ).eref();
+#endif
+		set( se, "incrementNumAsyncIn" );
+		if ( !tgtFinfo->isDestOnly() ) // Shared msg, handling srcs too.
+			set( se, "incrementNumAsyncOut" );
 	}
 	assert( ret );
 }
