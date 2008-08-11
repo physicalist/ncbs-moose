@@ -655,6 +655,11 @@ void testShellSetupAsyncParMsg()
 	SetConn c( esh0 , 0 );
 	Shell::addParallelSrc( &c, t->id(), "sVecSrc", tdest->id(), "sVec" );
 
+	ASSERT( pm0->numAsyncOut_ == 1, "Svec Msg between shells" );
+	ASSERT( pm0->numAsyncIn_ == 0, "Svec Msg between shells" );
+	ASSERT( pm1->numAsyncOut_ == 0, "Svec Msg between shells" );
+	ASSERT( pm1->numAsyncIn_ == 1, "Svec Msg between shells" );
+
 	/////////////////////////////////////////////////////////////////
 	// Activate the message.
 	/////////////////////////////////////////////////////////////////
@@ -749,6 +754,12 @@ void testBidirectionalParMsg()
 	Id proxy1 = Id::lastId(); 
 	// Proxy0 was created one before proxy1.
 	Id proxy0( proxy1.id() - 1, proxy1.index() );
+
+	ASSERT( pm0->numAsyncOut_ == 1, "logSrc Msg between shells" );
+	ASSERT( pm0->numAsyncIn_ == 1, "logSrc Msg between shells" );
+	ASSERT( pm1->numAsyncOut_ == 1, "logDest Msg between shells" );
+	ASSERT( pm1->numAsyncIn_ == 1, "logDest Msg between shells" );
+
 
 	/////////////////////////////////////////////////////////////////
 	// Activate the message. This part is similar to what we did
@@ -856,6 +867,12 @@ void testNodeSetup()
 		unsigned int remoteNode;
 		get< unsigned int >( p, "remoteNode", remoteNode );
 		ASSERT( remoteNode == i, "CheckPostMaster" );
+		PostMaster* pm = static_cast< PostMaster* >( p.data() );
+
+		// Check that at setup they are left at zero, even though
+		// the messages do interconnect.
+		ASSERT( pm->numAsyncOut_ == 0, "CheckPostMaster" );
+		ASSERT( pm->numAsyncIn_ == 0, "CheckPostMaster" );
 	}
 
 	unsigned int numTargets = 
@@ -1253,6 +1270,20 @@ void testParMsg()
 	ASSERT( checkId.eref()->numTargets( "sum" ) == numSum, "par msg" );
 	MPI::COMM_WORLD.Barrier();
 
+	// Check that the right number of messages are set up.
+	for ( unsigned int i = 0; i < numNodes; i++ ) {
+		PostMaster* pm = static_cast< PostMaster* >( Id::postId( i ).eref().data() );
+		unsigned int numOut = 0;
+		unsigned int numIn = 0;
+		if ( i == myNode + 1 || i == myNode + 2 )
+			numOut = 1;
+
+		if ( i == myNode - 1 || i == myNode - 2 )
+			numIn = 1;
+		ASSERT( pm->numAsyncOut_ == numOut, "parallel messaging: numAsyncOut" );
+		ASSERT( pm->numAsyncIn_ == numIn, "parallel messaging: numAsyncIn" );
+	}
+
 	// Now try to send data through this beast.
 	Id cjId( "/sched/cj" );
 	assert( cjId.good() );
@@ -1280,6 +1311,13 @@ void testParMsg()
 	ASSERT( x == f, "par msg fibonacci" );
 
 	set( checkId.eref(), "destroy" );
+
+	///\todo: need to set up parallel message delete.
+	for ( unsigned int i = 0; i < numNodes; i++ ) {
+		PostMaster* pm = static_cast< PostMaster* >( Id::postId( i ).eref().data() );
+		pm->numAsyncOut_ = 0;
+		pm->numAsyncIn_ = 0;
+	}
 }
 
 /**

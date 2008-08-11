@@ -7894,9 +7894,23 @@ Checked in as revision 584 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 ==============================================================================
 10 Aug 2008
 After much fine-tuning of polling loops, the updated changes on the
-setup stack work through unit tests on 16 nodes. Next step is to 
+setup stack work through unit tests on 16 nodes. 
+
+Checked in as revision 589 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Next step is to 
 reconfigure the runtime scheduling in two respects:
 - Make it blocking through monitoring completions of data transfer on every dt
 - Make it handle polling loop insertions for shell command completion.
+
+Working through monitoring the addParallelSrc and addParallelDest so that 
+we can save the asyncNum value 
+
+==============================================================================
+11 Aug 2008
+Fixed up the scheduling for doing blocking transfer when messages are set up
+between two nodes. Clears unit tests, still messes up the ordering in the
+regression test msg.g. As before, it is OK when I do individual steps, giving
+it time to sync nodes. This also works for 4 nodes.
 
 ==============================================================================

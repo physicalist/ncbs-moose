@@ -83,6 +83,15 @@ const Cinfo* initPostMasterCinfo()
 					RFCAST( &PostMaster::setShellProxy )
 		),
 
+		/**
+		 * A bit of a hack to keep track of # of async msgs coming in 
+		 * and leaving.
+		 */
+		new DestFinfo( "incrementNumAsyncIn", Ftype0::global(), 
+			RFCAST( &PostMaster::incrementNumAsyncIn ) ),
+		new DestFinfo( "incrementNumAsyncOut", Ftype0::global(), 
+			RFCAST( &PostMaster::incrementNumAsyncOut ) ),
+
 		// derived from DestFinfo, main difference is it accepts all
 		// kinds of incoming data.
 		new AsyncDestFinfo( "async", 
@@ -130,10 +139,12 @@ PostMaster::PostMaster()
 	sendBuf_( 1000, 0 ), 
 	sendBufPos_( sizeof( unsigned int ) ), 
 	numSendBufMsgs_( 0 ), 
+	numAsyncIn_( 0 ), 
+	numAsyncOut_( 0 ), 
 	recvBuf_( 1000, 0 ), 
 	donePoll_( 0 ), 
 	shellProxy_(), // Initializes to a null Id.
-	requestFlag_( 0 ),
+	isRequestPending_( 0 ),
 	comm_( &MPI::COMM_WORLD )
 {
 	localNode_ = MPI::COMM_WORLD.Get_rank(); 
@@ -166,6 +177,16 @@ Id PostMaster::getShellProxy( Eref e )
 void PostMaster::setShellProxy( const Conn* c, Id value )
 {
 		static_cast< PostMaster* >( c->data() )->shellProxy_ = value;
+}
+
+void PostMaster::incrementNumAsyncIn( const Conn* c )
+{
+		static_cast< PostMaster* >( c->data() )->numAsyncIn_++;
+}
+
+void PostMaster::incrementNumAsyncOut( const Conn* c )
+{
+		static_cast< PostMaster* >( c->data() )->numAsyncOut_++;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -306,15 +327,13 @@ void PostMaster::innerPostIrecv()
 	// cout << "!" << flush;
 	// cout << "inner PostIrecv on node " << localNode_ << " from " << remoteNode_ << endl << flush;
 	if ( localNode_ != remoteNode_ ) {
-		if ( requestFlag_ ) { // Not used last time, recycle.
-			donePoll_ = 0;
-		} else {
+		donePoll_ = 0;
+		if ( !isRequestPending_ ) { // Irecv has been used up. Post another.
 			request_ = comm_->Irecv(
 				&( recvBuf_[0] ), recvBuf_.size(), MPI_CHAR, 
 					remoteNode_, DATA_TAG );
-			requestFlag_ = 1;
+			isRequestPending_ = 1;
 			// cout << inBufSize_ << " innerPostIrecv: request_ empty?" << ( request_ == static_cast< MPI::Request >( 0 ) ) << "\n";
-			donePoll_ = 0;
 		}
 	} else {
 		donePoll_ = 1;
@@ -361,74 +380,83 @@ unsigned int proxy2tgt( const AsyncStruct& as, char* data )
 	return as.size();
 }
 
+void PostMaster::handleSyncData()
+{
+	
+}
+
+void PostMaster::handleAsyncData()
+{
+	// Handle async data in the buffer
+	char* data = &( recvBuf_[ 0 ] );
+	unsigned int nMsgs = *static_cast< const unsigned int* >(
+					static_cast< const void* >( data ) );
+	data += sizeof( unsigned int );
+	unsigned int dataSize = status_.Get_count( MPI_CHAR );
+	assert( dataSize >= sizeof( unsigned int ) + 
+		nMsgs * sizeof( AsyncStruct ) );
+
+	// AsyncStruct foo( data );
+	for ( unsigned int i = 0; i < nMsgs; i++ ) {
+		AsyncStruct as( data );
+		// cout << "AsyncData " << localNode_ << "<-" << remoteNode_ << ":nMsgs=" << nMsgs << ", i=" << i << ", proxyId=" << as.proxy() << ", size=" << as.size() << ", func=" << as.funcIndex() << ", totSize=" << dataSize << endl << flush;
+		// Here we put the shell messages onto a stack for evaluating
+		// away from the recvBuffer, which may be needed again for 
+		// nested polling.
+		if ( as.proxy() == Id::shellId() ) {
+			unsigned int size = sizeof( AsyncStruct ) + as.size();
+
+			vector< char > temp( data, data + size );
+			setupStack_.push_back( temp );
+			data += size;
+		} else {
+			data += sizeof( AsyncStruct );
+			unsigned int size = proxy2tgt( as, data );
+			data += size;
+		}
+	}
+}
+
 /**
  * This function does the main work of sending incoming messages
  * to dests. It grinds through the irecv'ed data and sends it out
  * to local dest objects.
  * This is called by the poll function
+ *
+ * Does nothing if polling is complete (donePoll_ is true)
+ * If no message is expected:
+ * 	- Do single pass, test for message. Deal with it if needed
+ * 	  In any case, send back poll ack and set donePoll_ to 1
+ * If a message is expected:
+ *  - Do single pass, test for message, deal with it if needed.
+ *    - If message comes, deal with it, Send back poll ack, donePoll_ = 1
+ * 	  - If message does not come, do nothing.
+ *
  */
 void PostMaster::innerPoll( const Conn* c )
 {
 	Eref e = c->target();
-	vector< vector< char > > setupStack;
-	// cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << endl << flush;
+	// cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << ", numAsyncIn = " << numAsyncIn_ << ", out= " << numAsyncOut_ << ", donePoll = " << donePoll_ << endl << flush;
 	if ( donePoll_ )
 			return;
-	if ( !requestFlag_ ) { // Need to add check for whether msg was expected
-		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
+
+	// isRequestPending_ flag protects the request_ field.
+	if ( isRequestPending_ && request_.Test( status_ ) ) {
+		isRequestPending_ = 0;
 		donePoll_ = 1;
+		handleSyncData();
+		handleAsyncData();
+		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
 		return;
 	}
-	if ( request_.Test( status_ ) ) {
-		// I believe that when this is true, the request is deallocated.
-		// MPI documentation is obscure on this point.
-		
-		// Data has arrived. How big was it?
-		unsigned int dataSize = status_.Get_count( MPI_CHAR );
-		// cout << dataSize << " bytes of data arrived on " << localNode_ << " from " << remoteNode_;
-		requestFlag_ = 0;
-		if ( dataSize < sizeof( unsigned int ) ) return;
 
-		if ( syncInfo_.size() > 0 ) {
-			// Here we deal with SyncFinfos
-		}
-
-		// Handle async data in the buffer
-		char* data = &( recvBuf_[ 0 ] );
-		unsigned int nMsgs = *static_cast< const unsigned int* >(
-						static_cast< const void* >( data ) );
-		data += sizeof( unsigned int );
-		assert( dataSize >= sizeof( unsigned int ) + 
-			nMsgs * sizeof( AsyncStruct ) );
-
-		// AsyncStruct foo( data );
-		for ( unsigned int i = 0; i < nMsgs; i++ ) {
-			AsyncStruct as( data );
-			// cout << "Poll " << localNode_ << "<-" << remoteNode_ << ":nMsgs=" << nMsgs << ", i=" << i << ", proxyId=" << as.proxy() << ", size=" << as.size() << ", func=" << as.funcIndex() << ", totSize=" << dataSize << endl << flush;
-
-
-			// Here we put the shell messages onto a stack for evaluating
-			// away from the recvBuffer, which may be needed again for 
-			// nested polling.
-			if ( as.proxy() == Id::shellId() ) {
-				unsigned int size = sizeof( AsyncStruct ) + as.size();
-
-				vector< char > temp( data, data + size );
-				setupStack.push_back( temp );
-				data += size;
-			} else {
-				data += sizeof( AsyncStruct );
-				unsigned int size = proxy2tgt( as, data );
-				data += size;
-			}
-		}
-		donePoll_ = 1;
-	}
-	setupStack_ = setupStack;
-	if ( syncInfo_.size() == 0 ) { // Do only one pass if it is async.
+	// Fall through: No message came, none expected.
+	if ( numAsyncIn_ == 0 && syncInfo_.size() == 0 ) { // No msg expected.
 		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
 		donePoll_ = 1;
 	}
+
+	// If it gets here, the poll failed and will have to go around again.
 }
 
 /**
@@ -446,9 +474,12 @@ void PostMaster::clearSetupStack( const Conn* c )
  */
 void PostMaster::innerClearSetupStack( )
 {
+	// if ( setupStack_.size() > 0 ) cout << "innerClearSetupStack on node " << localNode_ << " from " << remoteNode_ << ", numCmds = " << setupStack_.size() << endl << flush;
 	// need a local copy for the recursion, since the object copy will
-	// be overwritten.
+	// be overwritten. Here it must be single-threaded.
 	vector< vector< char > > setupStack = setupStack_; 
+	setupStack_.resize( 0 );
+	// Below here it can be multithreaded.
 	
 	// Now we are clear of dependencies on recvBuf and the messages coming
 	// to this PostMaster. So we can execute the setup operations.
@@ -503,9 +534,11 @@ void PostMaster::innerPostSend( )
 	char* data = &( sendBuf_[ 0 ] );
 	*static_cast< unsigned int* >( static_cast< void* >( data ) ) = 
 		numSendBufMsgs_;
-	// cout << "sending " << sendBufPos_ << " bytes: " << &sendBuf_[0] << " from node " << localNode_ << " to " << remoteNode_;
-	if ( localNode_ != remoteNode_ && numSendBufMsgs_ > 0 ) {
+	// We cannot simply check for numAsyncOut here because it is zero for
+	// shell-shell messaging.
+	if ( localNode_ != remoteNode_ && ( numAsyncOut_ > 0 || numSendBufMsgs_ > 0 ) ) {
 		comm_->Send( data, sendBufPos_, MPI_CHAR, remoteNode_, DATA_TAG );
+	// cout << "sending " << sendBufPos_ << " bytes: " << &sendBuf_[0] << " from node " << localNode_ << " to " << remoteNode_ << " with numAsyncOut_ = " << numAsyncOut_ << endl << flush;
 
 		/*
 		unsigned int nMsgs = *static_cast< const unsigned int* >(
