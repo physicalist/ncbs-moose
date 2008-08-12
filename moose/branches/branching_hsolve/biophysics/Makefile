@@ -93,9 +93,9 @@ Cell.o:		Cell.h
 BioScan.o:		BioScan.h SpikeGen.h SynChan.h
 RateLookup.o:	RateLookup.h
 HSolveStruct.o:	HSolveStruct.h
-HinesMatrix.o:	HinesMatrix.h
-HSolvePassive.o:	HinesMatrix.h HSolvePassive.h
-HSolveActive.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h
+HinesMatrix.o:	HinesMatrix.h TestHSolve.h
+HSolvePassive.o:	HinesMatrix.h HSolvePassive.h TestHSolve.h
+HSolveActive.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h TestHSolve.h
 HSolve.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h HSolve.h
 HSolveHub.o:	Compartment.h HHChannel.h SpikeGen.h SynChan.h HSolveHub.h
 StochSynchan.o:	StochSynchan.h StochSynInfo.h
