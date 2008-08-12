@@ -17,4 +17,31 @@
 #include "PathUtility.h"
 #include "ArgParser.h"
 #include "randnum/NumUtil.h"
+
+#include <cmath>
+#include <limits>    // for floating-point comparison
+
+/**
+ * Check 2 floating-point numbers for "equality".
+ * Algorithm (from Knuth) 'a' and 'b' are close if:
+ *      | ( a - b ) / a | < e AND | ( a - b ) / b | < e
+ * where 'e' is a small number.
+ * 
+ * In this function, 'e' is computed as:
+ * 	    e = tolerance * machine-epsilon
+ */
+template< class T >
+bool isClose( T a, T b, T tolerance )
+{
+	// Takes care of 0.0
+	if ( a == b )
+		return true;
+	
+	return (
+		fabs( ( a - b ) / a ) < tolerance * numeric_limits< T >::epsilon()
+		&&
+		fabs( ( a - b ) / b ) < tolerance * numeric_limits< T >::epsilon()
+	);
+}
+
 #endif

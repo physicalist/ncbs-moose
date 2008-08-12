@@ -64,7 +64,7 @@ void HinesMatrix::makeJunctions( ) {
 		// Loop uptil penultimate compartment in group
 		for ( unsigned int c = 0; c < group->size() - 1; ++c ) {
 			index = ( *group )[ c ];
-			rank = group->size() - c;
+			rank = group->size() - c - 1;
 			junction_.push_back( JunctionStruct( index, rank ) );
 			
 			groupNumber_[ index ] = group - junctionGroup_.begin();

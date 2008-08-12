@@ -25,6 +25,10 @@ struct CompartmentStruct
 
 class HSolvePassive: public HinesMatrix
 {
+#ifdef DO_UNIT_TESTS
+	friend void testHSolvePassive();
+#endif
+
 public:
 	void setup( Id seed, double dt );
 	void solve( );
