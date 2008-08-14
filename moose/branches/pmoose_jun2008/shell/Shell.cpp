@@ -1840,8 +1840,15 @@ void Shell::setClock( const Conn* c, int clockNo, double dt,
 	assert( cj.good() );
 	Element* tick = 0;
 	if ( id.zero() || id.bad() ) {
-		tick = Neutral::create( 
+		if ( numNodes() > 1 ) {
+			tick = Neutral::create( 
+						"ParTick", TickName, cj, Id::scratchId() );
+			set< bool >( tick, "doSync", 1 );
+			cout << "setClock: Creating parTick on node " << myNode() << endl;
+		} else {
+			tick = Neutral::create( 
 						"Tick", TickName, cj, Id::scratchId() );
+		}
 	} else {
 		tick = id();
 	}
@@ -2067,8 +2074,10 @@ Element* findCj()
 
 void Shell::resched( const Conn* c )
 {
-	if ( myNode() == 0 )
+	if ( myNode() == 0 ) {
 		send0( c->target(), parReschedSlot );
+		// getOffNodeValue< vector< Nid >, Nid >( c->target(), requestLeSlot, sh->numNodes(), &nret, parent );
+	}
 	// Should be a msg
 	Element* cj = findCj();
 	set( cj, "resched" );
@@ -2094,8 +2103,11 @@ void Shell::stop( const Conn* c )
 
 void Shell::step( const Conn* c, double time )
 {
-	if ( myNode() == 0 )
+	if ( myNode() == 0 ) {
 		send1< double >( c->target(), parStepSlot, time );
+		// The send only goes out after at least one poll cycle.
+		pollPostmaster();
+	}
 	// Should be a msg
 	Element* cj = findCj();
 	set< double >( cj, "start", time );

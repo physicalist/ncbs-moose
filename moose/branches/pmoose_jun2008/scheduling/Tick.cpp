@@ -373,11 +373,23 @@ void Tick::innerIncrementTick(
  * Resched is used to rebuild the scheduling. It does NOT mean that
  * the timings have to be updated: we may need to resched during a
  * run without missing a beat.
+ *
+ * The function does two things: It sorts out the ordering of the tick
+ * sequencing between ticks, and it may juggle around the ordering of
+ * calls to scheduled objects. For example, parTicks use this to 
+ * decide which objects get scheduled for outgoingProcess and which
+ * remain on the local node. Yet more gory things may happen for
+ * multithreading. The base Tick class does not worry about
+ * such details.
  */
 void Tick::resched( const Conn* c )
 {
-	static_cast< Tick* >( c->data() )->
-			updateNextTickTime( c->target() );
+	static_cast< Tick* >( c->data() )->innerResched( c );
+}
+
+void Tick::innerResched( const Conn* c )
+{
+	updateNextTickTime( c->target() );
 }
 
 /**

@@ -30,15 +30,14 @@ const Cinfo* initPostMasterCinfo()
 	static Finfo* parShared[] = 
 	{
 		// This first entry is to tell the PostMaster to post iRecvs
-		// The argument is the ordinal number of the clock tick
-		new DestFinfo( "postIrecv", Ftype1< int >::global(), 
+		new DestFinfo( "postIrecv", Ftype0::global(), 
 			RFCAST( &PostMaster::postIrecv ) ),
 		// The second entry is to tell the PostMaster to post 'send'
-		new DestFinfo( "postSend", Ftype1< int >::global(), 
+		new DestFinfo( "postSend", Ftype1< bool >::global(), 
 			RFCAST( &PostMaster::postSend ) ),
 		// The third entry is for polling the receipt of incoming data.
 		// Each PostMaster does an MPI_Test on the earlier posted iRecv.
-		new DestFinfo( "poll", Ftype1< int >::global(), 
+		new DestFinfo( "poll", Ftype1< bool >::global(), 
 			RFCAST( &PostMaster::poll ) ),
 		// The fourth entry is for harvesting the poll request.
 		// The argument is the node number handled by the postmaster.
@@ -52,7 +51,7 @@ const Cinfo* initPostMasterCinfo()
 		// Removed. We want barrier-free synchronization where needed.
 		// The last entry tells targets to execute a Barrier command,
 		// in order to synchronize all nodes.
-		// new DestFinfo( "barrier", Ftype0::global(), RFCAST( &PostMaster::barrier ) ),
+		new DestFinfo( "barrier", Ftype0::global(), RFCAST( &PostMaster::barrier ) ),
 	};
 
 	static Finfo* serialShared[] =
@@ -340,7 +339,7 @@ void PostMaster::innerPostIrecv()
 	}
 }
 
-void PostMaster::postIrecv( const Conn* c, int ordinal )
+void PostMaster::postIrecv( const Conn* c )
 {
 	static_cast< PostMaster* >( c->data() )->innerPostIrecv();
 }
@@ -433,7 +432,13 @@ void PostMaster::handleAsyncData()
  * 	  - If message does not come, do nothing.
  *
  */
-void PostMaster::innerPoll( const Conn* c )
+
+void PostMaster::poll( const Conn* c, bool doSync )
+{
+	static_cast< PostMaster* >( c->data() )->innerPoll( c, doSync );
+}
+
+void PostMaster::innerPoll( const Conn* c, bool doSync )
 {
 	Eref e = c->target();
 	// cout << "inner Poll on node " << localNode_ << " from " << remoteNode_ << ", numAsyncIn = " << numAsyncIn_ << ", out= " << numAsyncOut_ << ", donePoll = " << donePoll_ << endl << flush;
@@ -447,12 +452,19 @@ void PostMaster::innerPoll( const Conn* c )
 		handleSyncData();
 		handleAsyncData();
 		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
+		// cout << "_" << remoteNode_ << "." << localNode_ << "_" << doSync << "_" << flush;
 		return;
 	}
 
-	// Fall through: No message came, none expected.
-	if ( numAsyncIn_ == 0 && syncInfo_.size() == 0 ) { // No msg expected.
+	// doSync is true when in runtime mode.
+	// If we are in setup mode, then we don't care about numAsyncIn or
+	// 	  syncInfo. We should just send back saying poll is done.
+	// If we are in runtime mode then we can wrap up poll only if
+	//    numAsyncIn_ == 0 and syncInfo is empty.
+	if ( !doSync || ( numAsyncOut_ == 0 && numAsyncIn_ == 0 && syncInfo_.size() == 0 ) ) {
+		// No msg expected or we don't care.
 		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
+		// cout << ":" << remoteNode_ << "." << localNode_ << ":" << flush;
 		donePoll_ = 1;
 	}
 
@@ -513,11 +525,6 @@ void PostMaster::innerBarrier( )
 	}
 }
 
-void PostMaster::poll( const Conn* c, int ordinal )
-{
-	static_cast< PostMaster* >( c->data() )->innerPoll( c );
-}
-
 void PostMaster::barrier( const Conn* c )
 {
 	static_cast< PostMaster* >( c->data() )->innerBarrier( );
@@ -527,8 +534,11 @@ void PostMaster::barrier( const Conn* c )
  * This uses a blocking send to send out the data. Normally this
  * should be immediate provided the iRecv has been posted at the
  * destination.
+ * The doSync flag forces the send provided there is at least one outgoing
+ * message. This should be true when invoked during simulation time,
+ * and false when invoked at setup time.
  */
-void PostMaster::innerPostSend( )
+void PostMaster::innerPostSend( bool doSync )
 {
 	// send out the filled buffer here to the other nodes..
 	char* data = &( sendBuf_[ 0 ] );
@@ -536,9 +546,9 @@ void PostMaster::innerPostSend( )
 		numSendBufMsgs_;
 	// We cannot simply check for numAsyncOut here because it is zero for
 	// shell-shell messaging.
-	if ( localNode_ != remoteNode_ && ( numAsyncOut_ > 0 || numSendBufMsgs_ > 0 ) ) {
+	if ( localNode_ != remoteNode_ && ( (doSync && ( numAsyncOut_ > 0 || numAsyncIn_ > 0 ) ) || numSendBufMsgs_ > 0 ) ) {
 		comm_->Send( data, sendBufPos_, MPI_CHAR, remoteNode_, DATA_TAG );
-	// cout << "sending " << sendBufPos_ << " bytes: " << &sendBuf_[0] << " from node " << localNode_ << " to " << remoteNode_ << " with numAsyncOut_ = " << numAsyncOut_ << endl << flush;
+	 // cout << "\nsending " << numSendBufMsgs_ << "." << sendBufPos_ << " : " << &sendBuf_[0] << " from node " << localNode_ << " to " << remoteNode_ << " with numAsyncOut_ = " << numAsyncOut_ << "doSync=" << doSync << endl << flush;
 
 		/*
 		unsigned int nMsgs = *static_cast< const unsigned int* >(
@@ -553,9 +563,9 @@ void PostMaster::innerPostSend( )
 	numSendBufMsgs_ = 0;
 }
 
-void PostMaster::postSend( const Conn* c, int ordinal )
+void PostMaster::postSend( const Conn* c, bool doSync )
 {
-	static_cast< PostMaster* >( c->data() )->innerPostSend();
+	static_cast< PostMaster* >( c->data() )->innerPostSend( doSync );
 }
 
 /////////////////////////////////////////////////////////////////////

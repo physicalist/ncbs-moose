@@ -9,6 +9,7 @@
 #include "moose.h"
 #include "Tick.h"
 #include "ParTick.h"
+#include "../shell/Shell.h"
 
 /**
  * The ParTick handles scheduling in a parallel simulation. It works
@@ -85,18 +86,23 @@ const Cinfo* initParTickCinfo()
 	static Finfo* parShared[] =
 	{
 		// This first entry is to tell the PostMaster to post iRecvs
-		// The argument is the ordinal number of the clock tick
-		new SrcFinfo( "postIrecv", Ftype1< int >::global() ),
+		new SrcFinfo( "postIrecv", Ftype0::global() ),
 		// The second entry is to tell the PostMaster to post 'send'
-		new SrcFinfo( "postSend",  Ftype1< int >::global() ),
+		new SrcFinfo( "postSend",  Ftype1< bool >::global() ),
 		// The third entry is for polling the receipt of incoming data.
 		// Each PostMaster does an MPI_Test on the earlier posted iRecv.
-		new SrcFinfo( "poll", Ftype1< int >::global() ),
+		new SrcFinfo( "poll", Ftype1< bool >::global() ),
 		// The fourth entry is for harvesting the poll request.
 		// The argument is the node number handled by the postmaster.
 		// It comes back when the polling on that postmaster is done.
 		new DestFinfo( "harvestPoll", Ftype1< unsigned int >::global(),
 						RFCAST( &ParTick::pollFunc ) ),
+
+		
+		// This entry tells the postMaster to execute pending setup ops.
+		// These are blocking calls, but they may invoke nested polling
+		// calls.
+		new SrcFinfo( "clearSetupStack", Ftype0::global() ),
 
 		// The last entry is to tell targets to execute a Barrier
 		// command, used to synchronize all nodes.
@@ -104,13 +110,7 @@ const Cinfo* initParTickCinfo()
 		// target postmaster using sendTo. Otherwise each target postmaster
 		// will try to set a barrier.
 		//
-		// Deprecated.
-		// new SrcFinfo( "barrier", Ftype0::global() ),
-		
-		// This entry tells the postMaster to execute pending setup ops.
-		// These are blocking calls, but they may invoke nested polling
-		// calls.
-		new SrcFinfo( "clearSetupStack", Ftype0::global() ),
+		new SrcFinfo( "barrier", Ftype0::global() ),
 	};
 
 
@@ -122,6 +122,10 @@ const Cinfo* initParTickCinfo()
 		new ValueFinfo( "barrier", ValueFtype1< int >::global(),
 			GFCAST( &ParTick::getBarrier ),
 			RFCAST( &ParTick::setBarrier )
+		),
+		new ValueFinfo( "doSync", ValueFtype1< bool >::global(),
+			GFCAST( &ParTick::getSync ),
+			RFCAST( &ParTick::setSync )
 		),
 	///////////////////////////////////////////////////////
 	// Shared message definitions
@@ -182,8 +186,8 @@ static const Slot sendSlot =
 	initParTickCinfo()->getSlot( "parTick.postSend" );
 static const Slot pollSlot = 
 	initParTickCinfo()->getSlot( "parTick.poll" );
-// static const Slot barrierSlot = 
-	// initParTickCinfo()->getSlot( "parTick.barrier" );
+static const Slot barrierSlot = 
+	initParTickCinfo()->getSlot( "parTick.barrier" );
 static const Slot clearSetupStackSlot = 
 	initParTickCinfo()->getSlot( "parTick.clearSetupStack" );
 
@@ -210,6 +214,25 @@ int ParTick::getBarrier( Eref e )
 	return static_cast< ParTick* >( e.data() )->barrier_;
 }
 
+/**
+ * This is called to set the barrier flag. When it is true, then the
+ * ParTick terminates only when an MPI_barrier is crossed. This
+ * requires all nodes to cross the Barrier.
+ */
+void ParTick::setSync( const Conn* c, bool v )
+{
+	static_cast< ParTick* >( c->data() )->doSync_ = v;
+}
+
+/**
+ * The getStage just looks up the local stage, much less involved than
+ * the setStage function.
+ */
+bool ParTick::getSync( Eref e )
+{
+	return static_cast< ParTick* >( e.data() )->doSync_;
+}
+
 
 ///////////////////////////////////////////////////
 // Dest function definitions
@@ -233,6 +256,13 @@ bool ParTick::pendingData() const
 	return ( pendingCount_ != 0 );
 }
 
+void ParTick::printPos( const string& s )
+{
+	for ( unsigned int i = 0; i < Shell::myNode(); ++i )
+		cout << "	";
+	cout << s << doSync_ << endl << flush;
+}
+
 /**
  * This is a virtual function that handles the issuing of 
  * Process calls to all targets. For the ParTick, this means
@@ -250,26 +280,34 @@ bool ParTick::pendingData() const
  */
 void ParTick::innerProcessFunc( Eref e, ProcInfo info )
 {
+	// Phase 6: execute barrier to sync all nodes, but only in sim mode.
+	if ( doSync_ )  {
+//		printPos( "bar" );
+		sendTo0( e, barrierSlot, 0 );
+	}
 	// Phase 0: post iRecv
-	send1< int >( e, iRecvSlot, ordinal() );
+//	printPos( "irc" );
+	send0( e, iRecvSlot );
 	// Phase 1: call Process for objects connected off-node
+//	printPos( "op1" );
 	send1< ProcInfo >( e, outgoingProcessSlot, info );
 	// Phase 2: send data off node
-	send1< int >( e, sendSlot, ordinal() );
+//	printPos( "snd" );
+	send1< bool >( e, sendSlot, doSync_ );
 	// Phase 3: Call regular process for locally connected objects
+//	printPos( "op2" );
 	send1< ProcInfo >( e, processSlot, info );
 	// Phase 4: Poll for arrival of all data
 	initPending( e );
+//	printPos( "pol" );
 	while( pendingData() ) {
 		// cout << "." << flush;
-		send1< int >( e, pollSlot, ordinal() );
+		send1< int >( e, pollSlot, doSync_ );
 	}
 
 	// Phase 5: Clear all shell setup commands that have piled up.
 	send0( e, clearSetupStackSlot );
 
-	// Phase 5: execute barrier to sync all nodes.
-	// if ( barrier_ ) sendTo0( e, barrierSlot, 0 );
 }
 
 void ParTick::initPending( Eref e )
@@ -307,7 +345,78 @@ void ParTick::innerReinitFunc( Eref e, ProcInfo info )
 		send1< int >( e, pollSlot, ordinal() );
 }
 
+/** 
+ * Iterate through all process and outgoingProcess targets, 
+ * make up a vector, then sort through and reassign depending on 
+ * whether they have off-node messages to worry about.  
+ *
+ * Current version doesn't know what to do about array msgs.
+ *
+ */
+void ParTick::innerResched( const Conn* c )
+{
+	updateNextTickTime( c->target() ); // sort out tick sequencing
+	
+	
+	Eref tick = c->target();
+
+	vector< Eref > targets;
+	vector< int > targetMsgs;
+
+	const Finfo* procFinfo = tick->findFinfo( "process" );
+	const Finfo* outgoingProcFinfo = tick->findFinfo( "outgoingProcess" );
+	assert( procFinfo != 0 );
+	assert( outgoingProcFinfo != 0 );
+
+	/////////////////////////////////////////////////////////////////////
+	// Back up the target list
+	/////////////////////////////////////////////////////////////////////
+	Conn* i = tick->targets( procFinfo->msg(), tick.i );
+	for ( ; i->good(); i->increment() ) {
+		targets.push_back( i->target() );
+		targetMsgs.push_back( i->targetMsg() );
+	}
+	delete i;
+
+	i = tick->targets( outgoingProcFinfo->msg(), tick.i );
+	for ( ; i->good(); i->increment() ) {
+		targets.push_back( i->target() );
+		targetMsgs.push_back( i->targetMsg() );
+	}
+	delete i;
+
+	/////////////////////////////////////////////////////////////////////
+	// Clean up old messages
+	/////////////////////////////////////////////////////////////////////
+	Msg* procMsg = tick->varMsg( procFinfo->msg() );
+	Msg* outgoingProcMsg = tick->varMsg( outgoingProcFinfo->msg() );
+
+	procMsg->dropAll( tick.e );
+	outgoingProcMsg->dropAll( tick.e );
+
+	/////////////////////////////////////////////////////////////////////
+	// Build new messages, checking for off-node msgs.
+	/////////////////////////////////////////////////////////////////////
+	
+	assert( targets.size() == targetMsgs.size() );
+	for ( unsigned int j = 0; j < targets.size(); j++ ) {
+		Eref& tgt = targets[j];
+		const Finfo* destFinfo = tgt->findFinfo( targetMsgs[j] );
+		///\todo: to test, just connect up all objects to outgoing.
+		// Later do it right and use all processed msgs.
+		bool ret = outgoingProcFinfo->add( tick, tgt, destFinfo, 
+			ConnTainer::Default );
+		assert( ret );
+	}
+}
 
 ///////////////////////////////////////////////////
 // Other function definitions
 ///////////////////////////////////////////////////
+/// virtual function to start up ticks.  May need to set barrier.
+void ParTick::innerStart( Eref e, ProcInfo p, double maxTime )
+{
+	// if ( doSync_ ) sendTo0( e, barrierSlot, 0 );
+
+	Tick::innerStart( e, p, maxTime );
+}

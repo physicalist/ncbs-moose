@@ -132,7 +132,8 @@ int main(int argc, char** argv)
                 Id t1("/sched/cj/t1");
                 
 		// Doesn't do much. Just sets dt and stage, and cals reset.
-		setupDefaultSchedule( t0(), t1(), cj() );
+		if ( Shell::numNodes() == 1 )
+			setupDefaultSchedule( t0(), t1(), cj() );
 
 		const Finfo* parseFinfo = sli->findFinfo( "parse" );
 		assert ( parseFinfo != 0 );
