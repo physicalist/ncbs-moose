@@ -8,6 +8,8 @@
 **********************************************************************/
 
 #include <utility/utility.h>
+#include <time.h> // for nanosleep. This is POSIX, so should be available
+				// even from Windows.
 
 #ifdef USE_MPI
 #include <mpi.h>
@@ -62,6 +64,7 @@ void initParSched()
 #ifdef USE_MPI
 	unsigned int totalnodes = Shell::numNodes();
 	unsigned int myNode = Shell::myNode();
+	bool ret = 0;
 
 	// Breakpoint for parallel debugging
 
@@ -78,7 +81,7 @@ void initParSched()
 	// This one handles parser and postmaster scheduling.
 	Id sched( "/sched" );
 	Id cj( "/sched/cj" );
-	Id t0id( "/sched/cj/t0" );
+	Id t0id = Id::localId( "/sched/cj/t0" );
 	if ( t0id.good() ) {
 		set( t0id(), "destroy" );
 	}
@@ -86,11 +89,15 @@ void initParSched()
 		Neutral::create( "ClockJob", "pj", sched, Id::scratchId() );
 	Element* t0 =
 			Neutral::create( "ParTick", "t0", cj, Id::scratchId() );
-	set< int >( t0, "barrier", 1 ); // when running, ensure sync after t0
+	// set< int >( t0, "barrier", 1 ); // when running, ensure sync after t0
+	
+	// ensure sync for runtime clock ticks.
+	ret = set< bool >( t0, "doSync", 1 ); 
+	assert( ret );
 
 	Element* pt0 =
 			Neutral::create( "ParTick", "t0", pj->id(), Id::scratchId() );
-	set< int >( pt0, "barrier", 1 ); // when running, ensure sync after t0
+	// set< int >( pt0, "barrier", 1 ); // when running, ensure sync after t0
 
 	///////////////////////////////////////////////////////////////////
 	//	Here we connect up the postmasters to the shell and the ParTick.
@@ -112,7 +119,6 @@ void initParSched()
 	// connections between shell on this node to all other onodes
 	// Shell::addParallelSrc( &c, 
 
-	bool ret;
 	for ( unsigned int i = 0; i < totalnodes; i++ ) {
 		if ( i != myNode) {
 			ret = setupProxyMsg( i, 
@@ -174,6 +180,7 @@ void terminateMPI( unsigned int myNode )
 
 void pollPostmaster()
 {
+	static struct timespec ts = { 0, 10000000L }; // 10000000 nsec, 10 msec.
 	if ( pj != 0 ) {
 		/*
 		if ( Shell::numNodes() > 1 )
@@ -181,6 +188,7 @@ void pollPostmaster()
 			*/
 		bool ret = set< int >( pj, stepFinfo, 1 );
 		assert( ret );
+		nanosleep( &ts, 0 );
 	}
 }
 

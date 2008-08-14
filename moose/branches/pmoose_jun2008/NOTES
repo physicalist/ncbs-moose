@@ -7913,4 +7913,149 @@ between two nodes. Clears unit tests, still messes up the ordering in the
 regression test msg.g. As before, it is OK when I do individual steps, giving
 it time to sync nodes. This also works for 4 nodes.
 
+Checked in as revision 590 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Further fixes in the scheduling. There is now a doSync flag which should be
+1 for runtime and 0 for setup.  I think I just need to fix this.
+Also put in a small delay in the polling, which seems to lessen the
+CPU grinding substantially. But there should be a different polling call for
+the generic outer loop, and for cases where we expect data back quickly.
+
 ==============================================================================
+12 Aug 2008
+
+The objects with outgoing messages were not being scheduled on outgoingProcess.
+Fixed this, somewhat brute-force, by putting them all on it. That works.
+Reset works. Step seems not to. I think that node0 starts off right away
+with doSync=1, but the other nodes aren't yet ready for this. Perhaps separate
+out the step call to operate in setup mode, and switch into step mode only 
+after this goes out.
+
+send out -> start. May end up sending info from the first timestep before
+targets can change gears.
+
+getOffNodeValue: send out, off node sends back... off node needs to complete
+send in setup mode, then switch to sim mode.
+
+Beyond these issues, there is nothing to stop node0 from going ahead and doing
+all its steps without waiting for any of the other nodes. This is because node0
+only sends output, does not recieve it. Target nodes would then have
+a series of pending inputs all at once, that will sum onto each other.
+Checking if we can enforce that any two connected nodes are in sync with
+each other.
+
+==============================================================================
+13 Aug 2008
+
+Inter-node scheduling still messed up. Need to re-examine from scratch.
+Cases:
+- Setup time: No synchrony, but a pause between ticks to lessen thrashing.
+- Regular ticking along: Must have synchrony.
+- Stop request: Individual scheds must stop at the end of an outer step.
+	All nodes must stop at same time.
+- Start request: All nodes must begin in lockstep
+- Restart request: All nodes must carry on from where they stopped
+- Resched call: All nodes must halt at same time, cj must be rebuilt 
+	on all nodes, and the whole mess carries on without a break.
+	- Consider doing resched without rebuilding, just well-timed 
+ 	  addition/removal of messages.
+- Reinit call: Stop, then all nodes must reinit their schedule.
+- Blocking call from any node during runtime: Remote nodes just handle it
+	along with other message traffic. Calling function must tap into the
+	running ticks and keep them going till returns arrive, then seamlessly
+	return control to the original context.
+
+
+Runtime blocking calls: 
+	1. A shell command comes in that needs blocking.
+	2. Because it is a shell command it is executed after the last 
+	irecv poll, but before any new irecvs are posted.
+	3. It sends data. This goes into the outbound buffer.
+	4. It blocks. This must call the process loop at least twice:
+		- First to work through to the buffer send. (t + 1)
+		- Then the target nodes must recv it and handle it (t + 1 )
+		- Then the target nodes must send their buffer back. (t + 2)
+		- Then the 
+
+Loop is: irecv, outgoing Proc, send, local Proc, poll, exec setup.
+
+Suppose node0 likes to be ahead.
+Node 0			Node 1		Notes
+----t=0 on 0------------t=0 on 1----
+irecv			
+oproc
+send					Often send will block till irecv posts.
+lproc							
+poll					Blocks till node 1 wakes up.
+			irecv	
+			oproc
+			send		Suppose we switch over to node0 again.
+exec
+----t=1 on 0-------
+irecv
+oproc
+send
+lproc
+poll					Blocks till node 1 handles next cycle
+			lproc
+			poll		This may now pick up stuff from 2 sends!
+			exec
+
+Hm. My long-standing basic synchronization model is bad.
+Options:
+	- Multiple data tags? Implying multiple recv buffers, ugh.
+	  Would need 2, probably no more. Alternate between them.
+	  Then the 'sends' never pile up in same irecv buffer.
+	- Barrier after end of poll when in sim mode.
+	  Will need to benchmark, later.
+	  Familiar issues of barrier mismatch and blocking poll loops. 
+	- Master node 'tick' message, perhaps using scatter/gather.
+	  Local nodes poll till they get the 'tick', then do exactly one
+	  process cycle (or N, if we permit that much slop).
+	  Local nodes send back (gather phase) info only when their local 
+	  poll is done.
+
+Suppose node0 likes to be ahead.
+Node 0			Node 1		Notes
+----t=0 on 0------------t=0 on 1----
+irecv			
+oproc
+send					Often send will block till irecv posts.
+lproc							
+poll					Blocks till node 1 completes send
+			irecv	
+			oproc
+			send		Now we switch over to node0 again as 
+					soon as this send lets its poll complete
+barrier					Now we have to switch right back.
+			lproc
+			poll		OK, we have cleared the node0 send.
+			barrier		All matched up now.
+exec
+----t=1 on 0-------
+irecv
+oproc
+send
+lproc
+poll					Blocks till node1 completes send.
+			exec
+		    ----t=1 on 1-------
+			irecv
+			oproc
+			send
+barrier					Blocks till node 1 handles next cycle
+
+
+Despite the barrier being reinstated, I still have a backlog of 4 msgs 
+from node0 to 1.
+==============================================================================
+14 Aug 2008
+Finally got the msg.g regression test to work, on 2, 4 and 8 nodes. The key
+to the debugging was a simple function that printed debug statements in
+separate columns depending on the node#. With this it became much easier to
+see where things were stuck. I now have a barrier in the main async data
+transfer loop, will see now how to ease this requirement. I also had to fix
+a difference in dt between nodes that had been lurking in the main function.
+
+
+

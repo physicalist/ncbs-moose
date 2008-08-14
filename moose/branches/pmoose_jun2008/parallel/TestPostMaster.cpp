@@ -867,6 +867,10 @@ void testNodeSetup()
 		unsigned int remoteNode;
 		get< unsigned int >( p, "remoteNode", remoteNode );
 		ASSERT( remoteNode == i, "CheckPostMaster" );
+
+		unsigned int localNode;
+		get< unsigned int >( p, "localNode", localNode );
+		ASSERT( localNode == myNode, "CheckPostMaster" );
 		PostMaster* pm = static_cast< PostMaster* >( p.data() );
 
 		// Check that at setup they are left at zero, even though

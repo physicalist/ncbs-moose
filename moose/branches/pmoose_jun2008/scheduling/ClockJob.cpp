@@ -301,8 +301,10 @@ void ClockJob::startFuncLocal( Eref e, double runTime )
 {
 	// cout << "starting run on " << Shell::myNode() << " for " << runTime << " sec.\n";
 
+	isRunning_ = 1;
 	send2< ProcInfo, double >( e, startSlot, &info_, 
 					info_.currTime_ + runTime );
+	isRunning_ = 0;
 	/*
 	info_.currTime_ = currentTime_;
 	if ( tick_ )
@@ -351,8 +353,8 @@ void ClockJob::reinitFuncLocal( Eref e )
 void ClockJob::reschedFunc( const Conn* c )
 {
 	ClockJob* cj = static_cast< ClockJob* >( c->data() );
-	cj->isRunning_ = 0;
-	send0( c->target(), checkRunningSlot );
+	// cj->isRunning_ = 0;
+	// send0( c->target(), checkRunningSlot );
 	if ( cj->isRunning_ ) {
 		send1< int >( c->target(), stopSlot, doReschedCallback );
 	} else {
@@ -456,7 +458,7 @@ void ClockJob::reschedFuncLocal( Eref er )
 void ClockJob::handleStopCallback( const Conn* c, int flag )
 {
 	ClockJob* cj = static_cast< ClockJob* >( c->data() );
-	cout << "Handling stop callback\n";
+	cout << "Handling stop callback = " << flag << " on node " << Shell::myNode() << " at time = " << cj->info_.currTime_ << endl << flush;
 	cj->callback_ = flag;
 }
 

@@ -33,7 +33,7 @@ $(OBJ)	: $(HEADERS)
 #MyClassWrapper.o: MyClassWrapper.h
 
 ifneq (,$(findstring DUSE_MPI,$(CFLAGS)))
-    CXX = mpicxx
+    CXX = mpicxx -Wno-long-long
 else
     CXX = g++
 endif

@@ -98,13 +98,13 @@ class PostMaster
 					*/
 
 	// Message handling
-		static void postIrecv( const Conn* c, int ordinal );
+		static void postIrecv( const Conn* c );
 		void innerPostIrecv();
 
 		/**
 		 * Wrapper for innerPoll
 		 */
-		static void poll( const Conn* c, int ordinal );
+		static void poll( const Conn* c, bool doSync );
 		/**
  		* This function does the main work of sending incoming messages
  		* to dests. It grinds through the irecv'ed data and sends it out
@@ -121,9 +121,9 @@ class PostMaster
 		*      set donePoll_ = 1
  		* 	 - If message does not come, do nothing. Will need to poll later
  		*/
-		void innerPoll( const Conn* c );
-		static void postSend( const Conn* c, int ordinal );
-		void innerPostSend( );
+		void innerPoll( const Conn* c, bool doSync );
+		static void postSend( const Conn* c, bool doSync );
+		void innerPostSend( bool doSync );
 
 		/**
 		 * Handles synchronous data incoming in buffer.
