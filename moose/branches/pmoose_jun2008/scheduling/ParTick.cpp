@@ -283,7 +283,7 @@ void ParTick::innerProcessFunc( Eref e, ProcInfo info )
 	// Phase 6: execute barrier to sync all nodes, but only in sim mode.
 	if ( doSync_ )  {
 //		printPos( "bar" );
-		sendTo0( e, barrierSlot, 0 );
+		// sendTo0( e, barrierSlot, 0 );
 	}
 	// Phase 0: post iRecv
 //	printPos( "irc" );
@@ -416,7 +416,7 @@ void ParTick::innerResched( const Conn* c )
 /// virtual function to start up ticks.  May need to set barrier.
 void ParTick::innerStart( Eref e, ProcInfo p, double maxTime )
 {
-	// if ( doSync_ ) sendTo0( e, barrierSlot, 0 );
+	if ( doSync_ ) sendTo0( e, barrierSlot, 0 );
 
 	Tick::innerStart( e, p, maxTime );
 }

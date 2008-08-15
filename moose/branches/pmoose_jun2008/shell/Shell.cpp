@@ -919,7 +919,6 @@ void Shell::setNodes( unsigned int myNode, unsigned int numNodes )
 
 void Shell::setCwe( const Conn* c, Id id )
 {
-	/// \todo: Need some work here to fix up with new id scheme.
 	// This should only be called on master node.
 	if ( !id.bad() ) {
 		Shell* s = static_cast< Shell* >( c->data() );
@@ -2665,7 +2664,7 @@ void Shell::quit( const Conn* c )
 	send0( c->target(), parQuitSlot );
 	pollPostmaster(); // needed to send the message out.
 	running_ = 0;
-	exit( 0 );
+	// exit( 0 );
 }
 
 /**
@@ -2676,7 +2675,7 @@ void Shell::innerQuit( const Conn* c)
 {
 	running_ = 0;
 	// Brute force, till we sort out the Barrier issue for quits.
-	exit( 0 );
+	// exit( 0 );
 }
 
 //////////////////////////////////////////////////////////////////////
