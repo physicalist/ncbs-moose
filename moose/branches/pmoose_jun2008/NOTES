@@ -8114,3 +8114,12 @@ model, except use stochastic target synapses.
 Fixed the 'quit' command so it works cleanly.
 Checked the management of current working element. This is not clean and I
 have a test, parallel/ce.g, which causes it to dump.
+
+Checked in as revision 600 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Implemented a new parallel regression test, arrayElement.g, which tests
+creation and field access for array elements. This uncovered a bug with
+field access that had been fixed in the main code branch. This needed
+fixes both with local and with parallel field access.
+
+==============================================================================

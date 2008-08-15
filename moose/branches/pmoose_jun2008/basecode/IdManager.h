@@ -29,7 +29,7 @@ class NodeLoad
 /**
  * Handy structure to sit in the data field of the wrapper element
  * used to convey info about off node objects.
- */
+ * Deprecated.
 class OffNodeInfo
 {
 	public:
@@ -40,6 +40,7 @@ class OffNodeInfo
 		Element* post;
 		Id id;
 };
+ */
 
 /**
  * Wrapper class for element and node, used in ElementList.

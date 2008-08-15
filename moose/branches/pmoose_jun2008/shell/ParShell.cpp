@@ -99,7 +99,7 @@ void Shell::parGetField( const Conn* c, Id id, string field,
 
 	const Finfo* f = e->findFinfo( field );
 	if ( f ) {
-		if ( f->strGet( e, ret ) ) {
+		if ( f->strGet( id.eref(), ret ) ) {
 			sendBack2< string, unsigned int >( c, returnGetSlot, ret,
 				requestId );
 			return;
@@ -157,6 +157,49 @@ void Shell::parCreateFunc ( const Conn* c,
 		// send message to create child on remote node. This includes
 		// 	messaging from proxy to child.
 		// set up local messaging to connect to child.
+	}
+
+	if ( ret ) { // Tell the master node it was created happily.
+		// sendTo2< Id, bool >( e, createCheckSlot, c.targetIndex(), newobj, 1 );
+	} else { // Tell master node that the create failed.
+		// sendTo2< Id, bool >( e, createCheckSlot, c.targetIndex(), newobj, 0 );
+	}
+}
+
+/**
+ * Creates a new array object. For now must be called on the same node as 
+ * the parent object.
+ */
+void Shell::parCreateArrayFunc ( const Conn* c, 
+				string objtype, string objname, 
+				pair< Nid, Nid > nids, vector< double > parameter )
+{
+	Shell* s = static_cast< Shell* >( c->data() );
+	Nid parent = nids.first;
+	Nid newobj = nids.second;
+	assert( newobj.node() == myNode_ );
+	assert( parameter.size() == 6 );
+
+	if ( parent == Id() || parent == Id::shellId() ) {
+		parent.setNode( s->myNode_ );
+	}
+
+	assert ( s->myNode_ == parent.node() );
+	bool ret = 0;
+	// both parent and child are here. Straightforward.
+	if ( parent.node() == newobj.node() ) {
+		int nx = static_cast< int >( parameter[0] );
+		int ny = static_cast< int >( parameter[1] );
+		assert( nx > 0 && ny > 0 );
+		ret = s->createArray( objtype, objname, parent, newobj, nx * ny );
+		Element* child = newobj();
+		ArrayElement* f = static_cast< ArrayElement *>( child );
+		f->setNoOfElements( nx, ny );
+		f->setDistances( parameter[2], parameter[3] );
+		f->setOrigin( parameter[4], parameter[5] );
+		// Should really send back successful creation info here.
+	} else {
+		cout << "Shell::parCreateFunc: Currently cannot put child on different node than parent\n";
 	}
 
 	if ( ret ) { // Tell the master node it was created happily.
