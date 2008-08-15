@@ -183,6 +183,6 @@ int main(int argc, char** argv)
 	}
 #endif
 	terminateMPI( myNode );
-
-	cout << "done" << endl;
+	if ( myNode == 0 )
+		cout << ".. bye\n" << flush;
 }

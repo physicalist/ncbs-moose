@@ -8057,5 +8057,60 @@ see where things were stuck. I now have a barrier in the main async data
 transfer loop, will see now how to ease this requirement. I also had to fix
 a difference in dt between nodes that had been lurking in the main function.
 
+Checked in as revision 599 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Going back to yesterday's concern about the barrier-free synchronization:
+Actually a single irecv will only clear a single send. So it ought to be OK.
+Tried it. Works. Good.
+
+Now let's see if we can terminate the program (quit) more cleanly. OK, done.
 
 
+Way back from 28 July, these were the goals:
+...........................................................................
+Next steps:
+- Make it usable for running multinode simulations
+	* Shell/parser commands for node-specific object creation
+	- Sync messages
+	- Modify shell commands to operate node-independently
+		Currently only message setup works this way. Need:
+		* get
+		* set
+		* showfield
+		* addmsg
+		- deletemsg
+		* le
+		- ce
+		- pwe
+		* create (so it creates on node of parent)
+		- createmap (ditto)
+		* step
+		+ reset: Find which msgs are going off-node to do scheduling.
+		- setclock
+		+ delete: Still doesn't handle clearing up msgs/proxies.
+		* quit
+	- Fix up what happens when we operate on existing proxies.
+	+ Set up a regression test for all of these.
+- Upgrade array operations to work across nodes
+	- Createmap etc
+	- Multinode array proxies
+	- Multinode messaging
+- Design decisions on 
+	- limiting Async node drift
+		- Use the barrier for now.
+		- Later a scatter/gather kind of check using the asyncs?
+		Still does not guarantee arbitrary pair message completion.
+	- Managing synchronization on sync models.
+		Already did this. Force polling till all irecvs are in.
+
+For now, the goal is to be able to use scripts to set up nice big multinode
+spiking models. So start with the first set of goals.
+...........................................................................
+Spiking model: Let's set up the equivalent of my hippocampal spiking neuron
+model, except use stochastic target synapses.
+
+==============================================================================
+15 Aug 2008
+Fixed the 'quit' command so it works cleanly.
+Checked the management of current working element. This is not clean and I
+have a test, parallel/ce.g, which causes it to dump.

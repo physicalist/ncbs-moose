@@ -173,6 +173,7 @@ void terminateMPI( unsigned int myNode )
 		assert( ret );
 	}
 	*/
+	cout << myNode << "." << flush;
 	MPI::COMM_WORLD.Barrier();
 	MPI::Finalize();
 #endif // USE_MPI
