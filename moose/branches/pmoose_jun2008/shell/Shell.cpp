@@ -338,6 +338,16 @@ const Cinfo* initShellCinfo()
 		new DestFinfo( "create",
 				Ftype4< string, string, Nid, Nid >::global(),
 				RFCAST( &Shell::parCreateFunc ) ),
+		new SrcFinfo( "createArraySrc", 
+			// type, name, parentId, newObjId.
+			Ftype4< string, string, pair< Nid, Nid >, 
+				vector< double > >::global()
+		),
+		// Creating an object
+		new DestFinfo( "createArray",
+				Ftype4< string, string, pair< Nid, Nid >, 
+					vector< double > >::global(),
+				RFCAST( &Shell::parCreateArrayFunc ) ),
 		new SrcFinfo( "deleteSrc", 
 			// type, name, parentId, newObjId.
 			Ftype1< Id >::global()
@@ -573,6 +583,8 @@ static const Slot listMessageSlot =
 
 static const Slot rCreateSlot =
 	initShellCinfo()->getSlot( "parallel.createSrc" );
+static const Slot rCreateArraySlot =
+	initShellCinfo()->getSlot( "parallel.createArraySrc" );
 static const Slot rGetSlot = initShellCinfo()->getSlot( "parallel.getSrc" );
 static const Slot rSetSlot = initShellCinfo()->getSlot( "parallel.setSrc" );
 static const Slot rAddSlot = initShellCinfo()->getSlot( "parallel.addLocalSrc" );
@@ -1090,6 +1102,7 @@ void Shell::staticCreate( const Conn* c, string type,
 // Static function
 // parameter has following clumped in the order mentioned, Nx, Ny, dx, dy, xorigin, yorigin
 // creates array of simple elements. Will swtich to arrayelements later.
+/*
 void Shell::staticCreateArray1( const Conn* c, string type,
 					string name, Id parent, vector <double> parameter )
 {
@@ -1134,27 +1147,29 @@ void Shell::staticCreateArray1( const Conn* c, string type,
 		}
 	}
 }
+*/
 
 
 // Static function
 // parameter has following clumped in the order mentioned, Nx, Ny, dx, dy, xorigin, yorigin
+// Unlike the regular staticCreate function, here we have no option of
+// specifying target node. Just sit on whatever node the parent is on.
 void Shell::staticCreateArray( const Conn* c, string type,
 					string name, Id parent, vector <double> parameter )
 {
-
-	Eref eref = c->target();
-	//Element* e = c->targetElement();
 	Shell* s = static_cast< Shell* >( c->data() );
+	assert( s->myNode_ == 0 );
+	Nid paNid( parent );
 
 	// This is where the IdManager does clever load balancing etc
-	// to assign child node.
+	// to assign child node. If parent is not node 0, put child on parent.
 	Id id = Id::childId( parent );
 	// Id id = Id::scratchId();
-	Element* child = id();
-	if ( child == 0 ) { // local node
+	if ( id.node() == 0 ) { // local node
 		int n = (int) (parameter[0]*parameter[1]);
 		bool ret = s->createArray( type, name, parent, id, n );
 		assert(parameter.size() == 6);
+		Element* child = id();
 		ArrayElement* f = static_cast <ArrayElement *> (child);
 		f->setNoOfElements((int)(parameter[0]), (int)(parameter[1]));
 		f->setDistances(parameter[2], parameter[3]);
@@ -1163,24 +1178,19 @@ void Shell::staticCreateArray( const Conn* c, string type,
 			//GenesisParserWrapper::recvCreate(conn, id)
 			sendBack1< Id >( c, createSlot, id);
 		}
-	} else {
-		// Shell-to-shell messaging here with the request to
-		// create a child.
-		// This must only happen on node 0.
-		assert( eref.id().node() == 0 );
+	} else { // Make child on remote node.
 		assert( id.node() > 0 );
-		OffNodeInfo* oni = static_cast< OffNodeInfo* >( child->data() );
+		// OffNodeInfo* oni = static_cast< OffNodeInfo* >( child->data() );
 		// Element* post = oni->post;
-		unsigned int target = 0;
+		unsigned int target = id.node() - 1;
 		//e->connSrcBegin( rCreateSlot.msg() ) - e->lookupConn( 0 ) +
 		//	id.node() - 1;
-		sendTo4< string , string, Id, Id>( 
-			eref, rCreateSlot, target,
-			type, name, 
-			parent, oni->id );
-		// Here it needs to fork till the object creation is complete.
-		delete oni;
-		delete child;
+		pair< Nid, Nid > temp( paNid, id );
+		sendTo4< string , string, pair< Nid, Nid >, vector< double > >( 
+			c->target(), rCreateArraySlot, target,
+			type, name, temp, parameter );
+		// delete oni;
+		// delete child;
 	}
 }
 
@@ -1752,7 +1762,7 @@ void Shell::localSetField( const Conn* c,
 
 	const Finfo* f = e->findFinfo( field );
 	if ( f ) {
-		if ( !f->strSet( e, value ) )
+		if ( !f->strSet( id.eref(), value ) )
 			cout << "localSetField@" << myNode() << 
 				": Error: cannot set field " << e->name() <<
 				"." << field << " to " << value << endl;

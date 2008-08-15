@@ -200,8 +200,7 @@ class Shell
 		static void staticCreate( const Conn*, string type,
 						string name, int node, Id parent );
 
-		static void staticCreateArray1( const Conn*, string type,
-						string name, Id parent, vector <double> parameter );
+		// static void staticCreateArray1( const Conn*, string type, string name, Id parent, vector <double> parameter );
 		static void staticCreateArray( const Conn*, string type,
 						string name, Id parent, vector <double> parameter );
 		static void planarconnect( const Conn* c, string source, string dest, double probability);
@@ -455,9 +454,18 @@ class Shell
 			string value, unsigned int requestId );
 		// setField is a regular command, no special stuff for it.
 
+		/**
+		 * Create an object on a remote node
+		 */
 		static void parCreateFunc( const Conn* c,
 			string objtype, string objname, 
 			Nid parentId, Nid newObjId );
+		/**
+		 * Create an array element on a remote node
+		 */
+		static void parCreateArrayFunc ( const Conn* c, 
+				string objtype, string objname, 
+				pair< Nid, Nid > nids, vector< double > parameter );
 		
 		static void parMsgErrorFunc( const Conn* c, 
 			string errMsg, Id src, Id dest );
