@@ -35,6 +35,7 @@ public:
 
 protected:
 	// Integration
+	void updateMatrix( );
 	void forwardEliminate( );
 	void backwardSubstitute( );
 	

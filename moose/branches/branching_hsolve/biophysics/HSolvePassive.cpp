@@ -26,6 +26,7 @@ void HSolvePassive::setup( Id seed, double dt ) {
 }
 
 void HSolvePassive::solve( ) {
+	updateMatrix( );
 	forwardEliminate( );
 	backwardSubstitute( );
 }
@@ -128,7 +129,23 @@ void HSolvePassive::storeTree( ) {
 // Numerical integration
 //////////////////////////////////////////////////////////////////////
 
+void HSolvePassive::updateMatrix( ) {
+	HJ_.assign( HJCopy_.begin(), HJCopy_.end() );
+	
+	vector< double >::iterator ihs = HS_.begin();
+	vector< double >::iterator iv  = V_.begin();
+	
+	vector< CompartmentStruct >::iterator ic;
+	for ( ic = compartment_.begin(); ic != compartment_.end(); ++ic ) {
+		*( 3 + ihs ) = *iv * ic->CmByDt + ic->EmByRm + ic->inject;
+		
+		ihs += 4, ++iv;
+	}
+}
+
 void HSolvePassive::forwardEliminate( ) {
+	stage_ = 0;    // Forward elimination begins.
+	
 	unsigned int ic = 0;
 	vector< double >::iterator ihs = HS_.begin();
 	vector< double* >::iterator iop = operand_.begin();
@@ -184,6 +201,8 @@ void HSolvePassive::forwardEliminate( ) {
 		
 		++ic, ihs += 4;
 	}
+	
+	stage_ = 1;    // Forward elimination done.
 }
 
 void HSolvePassive::backwardSubstitute( ) {
@@ -249,6 +268,8 @@ void HSolvePassive::backwardSubstitute( ) {
 		
 		--ic, ++ivmid, ++iv, ihs += 4;
 	}
+	
+	stage_ = 2;    // Backward substitution done.
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -284,11 +305,15 @@ void testHSolvePassive()
 	cout << "\nTesting HSolvePassive" << flush;
 	
 	bool success;
-	unsigned int i;
-	unsigned int j;
-	unsigned int NCOMPT = 20;
+	double epsilon;
+	
+	int i;
+	int j;
+	int NCOMPT = 20;
 	vector< double > Ga;
 	vector< double > CmByDt;
+	vector< double > Em;
+	vector< double > Rm;
 	double dt = 50e-6;
 	
 	// The i-th entry in 'children' is the list of children of the i-th compt.
@@ -309,6 +334,10 @@ void testHSolvePassive()
 	 *  implementation.
 	 */
 	vector< vector< double > > matrix;
+	
+	vector< double > B;
+	vector< double > V;
+	vector< double > VMid;
 	
 	int ch_array[ ] =
 	{
@@ -379,6 +408,9 @@ void testHSolvePassive()
 	for ( i = 0; i < NCOMPT; i++ ) {
 		Ga.push_back( 15.0 + 3.0 * i );
 		CmByDt.push_back( 500.0 + 200.0 * i * i );
+		Em.push_back( -0.06 );
+		Rm.push_back( 400.0 + 50 * i * i );
+		V.push_back( -0.06 + 0.01 * i );
 	}
 	
 	array2vec( ch_array, sizeof( ch_array ) / sizeof( int ), children );
@@ -397,21 +429,24 @@ void testHSolvePassive()
 		
 		set< double >( c[ i ](), "Ra", 2.0 / Ga[ i ] );
 		set< double >( c[ i ](), "Cm", CmByDt[ i ] * ( dt / 2 ) );
+		set< double >( c[ i ](), "Em", Em[ i ] );
+		set< double >( c[ i ](), "Rm", Rm[ i ] );
+		set< double >( c[ i ](), "initVm", V[ i ] );
 	}
 	
 	for ( i = 0; i < NCOMPT; i++ ) {
 		vector< unsigned int >& child = children[ i ];
-		for ( j = 0; j < child.size(); j++ ) {
+		for ( j = 0; j < ( int )( child.size() ); j++ ) {
 			success = Eref( c[ i ]() ).add( "axial", c[ child[ j ] ](), "raxial" );
 			ASSERT( success, "Creating test model" );
 		}
 	}
 	
 	HSolvePassive HP;
-	HP.setup( c[ 2 ], dt );
+	HP.setup( c[ 19 ], dt );
 	
 	vector< Id >& hc = HP.compartmentId_;
-	ASSERT( hc.size() == NCOMPT, "Tree traversal" );
+	ASSERT( ( int )( hc.size() ) == NCOMPT, "Tree traversal" );
 	for ( i = 0; i < NCOMPT; i++ )
 		ASSERT(
 			find( hc.begin(), hc.end(), c[ i ] ) != hc.end(), "Tree traversal"
@@ -432,16 +467,85 @@ void testHSolvePassive()
 	updateIndices( coupling, permutation );
 	
 	makeFullMatrix(	NCOMPT, children, coupling, Ga, CmByDt, matrix );
+	VMid.resize( NCOMPT );
+	B.resize( NCOMPT );
+	for ( i = 0; i < NCOMPT; i++ )
+		B[ i ] = CmByDt[ i ] * V[ i ] + Em[ i ] / Rm[ i ];
 	
+	epsilon = 1.0e-11;
+	double e = 0.0;
 	for ( i = 0; i < NCOMPT; ++i )
 		for ( j = 0; j < NCOMPT; ++j ) {
+			if ( fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) > e ) {
+				e = fabs( HP.getA( i, j ) - matrix[ i ][ j ] );
+				cout << i << "," << j << "|" << e << flush;
+			}
 			ostringstream error;
 			error << "Testing matrix construction: (" << i << ", " << j << ")";
-			ASSERT(
-				isClose< double >( matrix[ i ][ j ], HP.entry( i, j ), 1.0 ),
+			ASSERT (
+				fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) < epsilon,
 				error.str()
 			);
 		}
+	
+	/* Gaussian elimination
+	 */
+	
+	// Forward elimination
+	HP.updateMatrix( );
+	HP.forwardEliminate( );
+	
+	int k;
+	for ( i = 0; i < NCOMPT - 1; i++ )
+		for ( j = i + 1; j < NCOMPT; j++ ) {
+			double div = matrix[ j ][ i ] / matrix[ i ][ i ];
+			for ( k = 0; k < NCOMPT; k++ )
+				matrix[ j ][ k ] -= div * matrix[ i ][ k ];
+			B[ j ] -= div * B[ i ];
+		}
+	
+	epsilon = 1.0e-11;
+	for ( i = 0; i < NCOMPT; ++i )
+		for ( j = 0; j < NCOMPT; ++j ) {
+			ostringstream error;
+			error << "Forward elimination: A(" << i << ", " << j << ")";
+			ASSERT (
+				fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) < epsilon,
+				error.str()
+			);
+		}
+	
+	epsilon = 1.0e-11;
+	for ( i = 0; i < NCOMPT; ++i ) {
+		ostringstream error;
+		error << "Forward elimination: B(" << i << ")";
+		ASSERT (
+			fabs( HP.getB( i ) - B[ i ] ) < epsilon,
+			error.str()
+		);
+	}
+	
+	// Backward substitution
+	HP.backwardSubstitute( );
+	
+	for ( i = NCOMPT - 1; i >= 0; i-- ) {
+		VMid[ i ] = B[ i ];
+		
+		for ( j = NCOMPT - 1; j > i; j-- )
+			VMid[ i ] -= VMid[ j ] * matrix[ i ][ j ];
+		
+		VMid[ i ] /= matrix[ i ][ i ];
+	}
+	
+	epsilon = 1.0e-11;
+	for ( i = NCOMPT - 1; i >= 0; i-- ) {
+		ostringstream error;
+		error << "Back substitution: B(" << i << ")";
+		ASSERT (
+			fabs( HP.getVMid( i ) - VMid[ i ] ) < epsilon,
+			error.str()
+		);
+	}
 	
 	// cleanup
 	set( n, "destroy" );
