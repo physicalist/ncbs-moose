@@ -117,6 +117,15 @@ void HinesMatrix::makeMatrix( ) {
 	
 	// Setting up HJ
 	vector< unsigned int >::iterator j;
+	unsigned int size = 0;
+	unsigned int rank;
+	for ( group = junctionGroup_.begin(); group != junctionGroup_.end(); ++group ) {
+		rank = group->size();
+		size += rank * ( rank + 1 );
+	}
+	
+	HJ_.reserve( size );
+	
 	for ( group = junctionGroup_.begin(); group != junctionGroup_.end(); ++group ) {
 		double gsum = 0.0;
 		
@@ -257,8 +266,11 @@ void HinesMatrix::makeOperands( ) {
 ///////////////////////////////////////////////////////////////////////////
 // Interface to matrix entries
 ///////////////////////////////////////////////////////////////////////////
-double HinesMatrix::entry( unsigned int row, unsigned int col )
+double HinesMatrix::getA( unsigned int row, unsigned int col )
 {
+	if ( stage_ == 1 && row > col )
+		return 0.0;
+	
 	if ( row >= nCompt_ || col >= nCompt_ )
 		return 0.0;
 	
@@ -300,6 +312,16 @@ double HinesMatrix::entry( unsigned int row, unsigned int col )
 			return 0.0;
 		}
 	}
+}
+
+double HinesMatrix::getB( unsigned int row )
+{
+	return HS_[ 4 * row + 3 ];
+}
+
+double HinesMatrix::getVMid( unsigned int row )
+{
+	return VMid_[ row ];
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -447,7 +469,7 @@ void testHinesMatrix()
 			ostringstream error;
 			error << "Testing Hines' Matrix: (" << i << ", " << j << ")";
 			ASSERT(
-				matrix[ i ][ j ] == H.entry( i, j ),
+				matrix[ i ][ j ] == H.getA( i, j ),
 				error.str()
 			);
 		}

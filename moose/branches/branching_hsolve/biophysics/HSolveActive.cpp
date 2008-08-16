@@ -367,9 +367,8 @@ void HSolveActive::updateMatrix( ) {
 		}
 		
 		*ihs         = *( 2 + ihs ) + GkSum;
-		*( 3 + ihs ) = ic->EmByRm + ic->CmByDt * *iv + GkEkSum + ic->inject;
-		//~ *ia         = *( 3 + ia ) + *icmbydt * GkSum;
-		//~ *( 4 + ia ) = *iv + *icmbydt * (*iembyrm + GkEkSum + *iinject);
+		*( 3 + ihs ) = *iv * ic->CmByDt + ic->EmByRm + ic->inject + GkEkSum;
+		
 		++icco, ihs += 4, ++iv;
 	}
 	

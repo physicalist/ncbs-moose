@@ -33,7 +33,9 @@ public:
 		const vector< double >& Ga,
 		const vector< double >& CmByDt );
 	
-	double entry( unsigned int row, unsigned int col );
+	double getA( unsigned int row, unsigned int col );
+	double getB( unsigned int row );
+	double getVMid( unsigned int row );
 
 protected:
 	unsigned int              nCompt_;
@@ -44,6 +46,7 @@ protected:
 	vector< double >          VMid_;
 	vector< double* >         operand_;
 	vector< double* >         backOperand_;
+	int                       stage_;
 
 private:
 	void makeJunctions( );
