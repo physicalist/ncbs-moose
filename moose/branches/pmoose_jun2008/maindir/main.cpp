@@ -88,6 +88,7 @@ int main(int argc, char** argv)
 	if ( myNode == 0 )
 	{
 		/*
+		*/
 		testBasecode();
 		testNeutral();
 		testSparseMatrix();
@@ -99,7 +100,6 @@ int main(int argc, char** argv)
 		testSchedProcess();
 		testBiophysics();
 		testKinetics();
-		*/
 //		testAverage();
 		testParMsgOnSingleNode();
 	}

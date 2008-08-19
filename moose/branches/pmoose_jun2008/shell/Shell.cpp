@@ -493,6 +493,13 @@ const Cinfo* initShellCinfo()
 		new DestFinfo( "step",
 				Ftype1< double >::global(), // Arg is runtime
 				RFCAST( &Shell::step ) ),
+		// Handle requests for setting values for a clock tick.
+		// args are clockNo, dt, stage
+		new SrcFinfo( "setClockSrc",
+				Ftype3< int, double, int >::global() ),
+		new DestFinfo( "setClock",
+				Ftype3< int, double, int >::global(),
+				RFCAST( &Shell::setClock ) ),
 		// Called to terminate simulation.
 		new SrcFinfo( "quitSrc", Ftype0::global() ),
 		new DestFinfo( "quit", Ftype0::global(), 
@@ -520,8 +527,16 @@ const Cinfo* initShellCinfo()
 	static Finfo* shellFinfos[] =
 	{
 		new ValueFinfo( "cwe", ValueFtype1< Id >::global(),
-				reinterpret_cast< GetFunc >( &Shell::getCwe ),
+				GFCAST( &Shell::getCwe ),
 				RFCAST( &Shell::setCwe ) ),
+
+		new ValueFinfo( "numNodes", ValueFtype1< int >::global(),
+				GFCAST( &Shell::getNumNodes ),
+				&dummyFunc ),
+
+		new ValueFinfo( "myNode", ValueFtype1< int >::global(),
+				GFCAST( &Shell::getMyNode ),
+				&dummyFunc ),
 
 		new DestFinfo( "xrawAdd", // Addmsg as a raw string.
 			Ftype1< string >::global(),
@@ -617,6 +632,9 @@ static const Slot parStopSlot =
 
 static const Slot parStepSlot =
 	initShellCinfo()->getSlot( "parallel.stepSrc" );
+
+static const Slot parSetClockSlot =
+	initShellCinfo()->getSlot( "parallel.setClockSrc" );
 
 static const Slot parQuitSlot =
 	initShellCinfo()->getSlot( "parallel.quitSrc" );
@@ -909,9 +927,20 @@ void Shell::pollFunc( const Conn* c )
 	}
 }
 
+
+int Shell::getMyNode( Eref e )
+{
+	return Shell::myNode();
+}
+
 unsigned int Shell::myNode()
 {
 	return myNode_;
+}
+
+int Shell::getNumNodes( Eref e )
+{
+	return Shell::numNodes();
 }
 
 unsigned int Shell::numNodes()
@@ -940,10 +969,10 @@ void Shell::setCwe( const Conn* c, Id id )
 	}
 }
 
-Id Shell::getCwe( const Element* e )
+Id Shell::getCwe( Eref e )
 {
-	assert( e != 0 );
-	const Shell* s = static_cast< const Shell* >( e->data( 0 ) );
+	assert( e.e != 0 );
+	const Shell* s = static_cast< const Shell* >( e.data() );
 	return s->cwe_;
 }
 
@@ -1840,12 +1869,18 @@ void Shell::setClock( const Conn* c, int clockNo, double dt,
 				int stage )
 {
 	Shell* sh = static_cast< Shell* >( c->data() );
+	if ( sh->myNode() == 0 ) {
+		send3< int, double, int >( c->target(), parSetClockSlot,
+			clockNo, dt, stage );
+	}
 	char line[20];
 	sprintf( line, "t%d", clockNo );
 	string TickName = line;
 	string clockPath = string( "/sched/cj/" + TickName );
-	Id id = sh->innerPath2eid( clockPath, "/", 1 );
-	Id cj = sh->innerPath2eid( "/sched/cj", "/", 1 );
+	Id id = Id::localId( clockPath );
+	Id cj = Id::localId( "/sched/cj" );
+	// Id id = sh->innerPath2eid( clockPath, "/", 1 );
+	// Id cj = sh->innerPath2eid( "/sched/cj", "/", 1 );
 	assert( cj.good() );
 	Element* tick = 0;
 	if ( id.zero() || id.bad() ) {
@@ -2282,6 +2317,7 @@ void Shell::deleteEdge( const Conn* c, Fid src, Fid dest )
 }
 
 /**
+ * static func.
  * listMessages builds a list of messages associated with the 
  * specified element on the named field, and sends it back to
  * the calling parser. It extracts the
@@ -2291,44 +2327,44 @@ void Shell::deleteEdge( const Conn* c, Fid src, Fid dest )
 void Shell::listMessages( const Conn* c,
 				Id id, string field, bool isIncoming )
 {
-	assert( !id.bad() );
+	// Shell* sh = static_cast< Shell* >( c->data() );
+	vector< Id > ret;
+	string remoteFields = "";
+	if ( id.node() != 0 ) {
+		cout << "listMessages: Sorry, cannot list off-node messages yet\n";
+	} else {
+		innerListMessages( c, id, field, isIncoming, ret, remoteFields );
+	}
+	sendBack2< vector< Id >, string >(
+		c, listMessageSlot, ret, remoteFields );
+}
+
+void Shell::innerListMessages( const Conn* c,
+				Id id, string field, bool isIncoming,
+				vector< Id >& ret, string& remoteFields )
+{
+	assert( !id.bad() && id.node() == myNode() );
 	Element* e = id();
 	const Finfo* f = e->findFinfo( field );
 	assert( f != 0 );
 
-	vector< pair< Element*, unsigned int > > list;
-	vector< Id > ret;
-	string remoteFields = "";
+	// vector< pair< Element*, unsigned int > > list;
 	string separator = "";
 	Conn* tc = e->targets( f->msg(), id.index() );
 	while( tc->good() ) {
 		Eref tgt = tc->target();
 		ret.push_back( tgt.id() );
-		const Finfo* targetFinfo = tgt.e->findFinfo( tc->targetMsg() );
-		assert( targetFinfo != 0 );
-		remoteFields = remoteFields + separator + targetFinfo->name();
+		if ( tgt.id().node() == myNode() ) {
+			const Finfo* targetFinfo = tgt.e->findFinfo( tc->targetMsg() );
+			assert( targetFinfo != 0 );
+			remoteFields = remoteFields + separator + targetFinfo->name();
+		} else {
+			remoteFields = remoteFields + separator + "proxy";
+		}
 		separator = ", ";
 		tc->increment();
 	}
 	delete tc;
-
-	/*
-	const Msg* m = e->msg( f->msg() );
-	vector< ConnTainer* >::const_iterator i;
-	for ( i = m->begin(); i != m->end(); i++ ) {
-		Element* temp = ( isIncoming ) ? ( *i )->e1() : ( *i )->e2();
-		ret.push_back( temp->id() );
-		const Finfo* targetFinfo = temp->findFinfo( *i );
-		assert( targetFinfo != 0 );
-		if ( i == m->begin() )
-			remoteFields = remoteFields + targetFinfo->name();
-		else
-			remoteFields = remoteFields + ", " + targetFinfo->name();
-	}
-	*/
-
-	sendBack2< vector< Id >, string >(
-		c, listMessageSlot, ret, remoteFields );
 }
 
 void Shell::readCell( const Conn* c, string filename, string cellpath,

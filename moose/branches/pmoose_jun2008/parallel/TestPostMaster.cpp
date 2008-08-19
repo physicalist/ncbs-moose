@@ -1274,6 +1274,10 @@ void testParMsg()
 	ASSERT( checkId.eref()->numTargets( "sum" ) == numSum, "par msg" );
 	MPI::COMM_WORLD.Barrier();
 
+	// True for all but the last node
+	if ( myNode < numNodes - 1 )
+		ASSERT( checkId.eref()->isTarget( Id::postId( 0 ).eref().e ), "isTarget" );
+
 	// Check that the right number of messages are set up.
 	for ( unsigned int i = 0; i < numNodes; i++ ) {
 		PostMaster* pm = static_cast< PostMaster* >( Id::postId( i ).eref().data() );

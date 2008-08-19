@@ -389,6 +389,7 @@ void Tick::resched( const Conn* c )
 
 void Tick::innerResched( const Conn* c )
 {
+	// cout << "Oops, this is Tick::innerResched on " << c->target()->name() << "\n";
 	updateNextTickTime( c->target() );
 }
 

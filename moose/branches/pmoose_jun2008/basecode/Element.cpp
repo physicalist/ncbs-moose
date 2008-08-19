@@ -65,6 +65,15 @@ Element::~Element()
 		id_.setElement( 0 );
 }
 
+bool Element::isTarget( const Element* tgt ) const
+{
+	unsigned int n = numMsg();
+	for ( unsigned int i = 0; i < n; ++i )
+		if ( msg( i )->isTarget( this, tgt ) )
+			return 1;
+	return 0;
+}
+
 /**
  * Here we work with a single big array of all ids. Off-node elements
  * are represented by their postmasters. When we hit a postmaster we

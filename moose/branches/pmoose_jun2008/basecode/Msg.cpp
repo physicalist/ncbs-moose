@@ -572,3 +572,18 @@ ConnTainer* findExistingConnTainer( Eref src, Eref dest,
 	}
 	return 0;
 }
+
+/**
+ * Returns True if tgt is a target of Element src.
+ * Handles bidirectional messages too. Does not worry about indices,
+ * on either src or dest. 
+ */
+bool Msg::isTarget( const Element* src, const Element* tgt ) const
+{
+	for( vector< ConnTainer* >::const_iterator i = c_.begin(); 
+		i != c_.end(); ++i )
+		if ( ( (*i)->e1() == src && (*i)->e2() == tgt ) ||
+			( (*i)->e2() == src && (*i)->e1() == tgt ) )
+			return 1;
+	return 0;
+}

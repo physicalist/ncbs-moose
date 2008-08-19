@@ -286,20 +286,20 @@ void ParTick::innerProcessFunc( Eref e, ProcInfo info )
 		// sendTo0( e, barrierSlot, 0 );
 	}
 	// Phase 0: post iRecv
-//	printPos( "irc" );
+	// printPos( "irc" );
 	send0( e, iRecvSlot );
 	// Phase 1: call Process for objects connected off-node
-//	printPos( "op1" );
+	// printPos( "op1" );
 	send1< ProcInfo >( e, outgoingProcessSlot, info );
 	// Phase 2: send data off node
-//	printPos( "snd" );
+	// printPos( "snd" );
 	send1< bool >( e, sendSlot, doSync_ );
 	// Phase 3: Call regular process for locally connected objects
-//	printPos( "op2" );
+	// printPos( "op2" );
 	send1< ProcInfo >( e, processSlot, info );
 	// Phase 4: Poll for arrival of all data
 	initPending( e );
-//	printPos( "pol" );
+	// printPos( "pol" );
 	while( pendingData() ) {
 		// cout << "." << flush;
 		send1< int >( e, pollSlot, doSync_ );
@@ -331,18 +331,32 @@ void ParTick::innerReinitFunc( Eref e, ProcInfo info )
 	// separateOutgoingTargets
 	//
 
-	// Phase 0: post iRecv
-	send1< int >( e, iRecvSlot, ordinal() );
-	// Phase 1: call Reinit for objects connected off-node
-	send1< ProcInfo >( e, outgoingReinitSlot, info );
-	// Phase 2: send data off node
-	send1< int >( e, sendSlot, ordinal() );
-	// Phase 3: Call regular reinit for locally connected objects
-	send1< ProcInfo >( e, reinitSlot, info );
-	// Phase 4: Poll for arrival of all data
-	initPending( e );
-	while( pendingData() )
-		send1< int >( e, pollSlot, ordinal() );
+	if ( numOutgoing_ > 0 ) {
+		// Phase 0: post iRecv
+		// printPos( e->name() + "rirc" );
+		send0( e, iRecvSlot );
+		// Phase 1: call Reinit for objects connected off-node
+		// printPos( e->name() + "reni0" );
+		send1< ProcInfo >( e, outgoingReinitSlot, info );
+		// Phase 2: send data off node
+		// printPos( e->name() + "rsnd" );
+		send1< bool >( e, sendSlot, doSync_ );
+		// Phase 3: Call regular reinit for locally connected objects
+		// printPos( e->name() + "reni1" );
+		send1< ProcInfo >( e, reinitSlot, info );
+		// Phase 4: Poll for arrival of all data
+		initPending( e );
+		// printPos( e->name() + "rpol" );
+		while( pendingData() )
+			send1< bool >( e, pollSlot, doSync_ );
+	
+		// Phase 5: Clear all shell setup commands that have piled up.
+		send0( e, clearSetupStackSlot );
+	} else {
+		// Phase 3: Call regular reinit for locally connected objects
+		// printPos( e->name() + "reni1" );
+		send1< ProcInfo >( e, reinitSlot, info );
+	}
 }
 
 /** 
@@ -393,22 +407,34 @@ void ParTick::innerResched( const Conn* c )
 
 	procMsg->dropAll( tick.e );
 	outgoingProcMsg->dropAll( tick.e );
+	numOutgoing_ = 0;
 
 	/////////////////////////////////////////////////////////////////////
 	// Build new messages, checking for off-node msgs.
 	/////////////////////////////////////////////////////////////////////
 	
 	assert( targets.size() == targetMsgs.size() );
+	Element* post = Id::postId( 0 ).eref().e;
+	assert ( post != 0 );
 	for ( unsigned int j = 0; j < targets.size(); j++ ) {
 		Eref& tgt = targets[j];
 		const Finfo* destFinfo = tgt->findFinfo( targetMsgs[j] );
 		///\todo: to test, just connect up all objects to outgoing.
 		// Later do it right and use all processed msgs.
-		bool ret = outgoingProcFinfo->add( tick, tgt, destFinfo, 
-			ConnTainer::Default );
+		bool ret = 0;
+		if ( tgt->isTarget( post ) ) {
+			ret = outgoingProcFinfo->add( tick, tgt, destFinfo, 
+				ConnTainer::Default );
+			++numOutgoing_;
+		} else {
+			ret = procFinfo->add( tick, tgt, destFinfo, 
+				ConnTainer::Default );
+		}
 		assert( ret );
 	}
+	// cout << c->target()->name() << "@" << Shell::myNode() << ": numOutgoing = " << numOutgoing_ << ", numTgts=" << targets.size() << endl << flush;
 }
+
 
 ///////////////////////////////////////////////////
 // Other function definitions

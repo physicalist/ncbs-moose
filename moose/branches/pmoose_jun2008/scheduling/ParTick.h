@@ -58,6 +58,7 @@ class ParTick: public Tick
 	private:
 		vector< bool > pendingNodes_; // Entries are true if node is pending
 		unsigned int pendingCount_; // How many nodes remain to finish poll
+		unsigned int numOutgoing_; // How many outgoing messages?
 		bool barrier_; // True if this Tick should end with a barrier.
 
 		/**

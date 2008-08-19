@@ -13,7 +13,13 @@
  * E-mail:          ray.subhasis@gmail.com
  * Created:         2007-09-25 15:38:08
  ********************************************************************/
+#include <iostream>
+#include "../basecode/header.h"
+#include "../basecode/moose.h"
+#include "../element/Neutral.h"
+#include "../basecode/IdManager.h"
 #include "init.h"
+#include "../shell/Shell.h"
 #include <utility/utility.h>
 #include <scheduling/ClockJob.h>
 
@@ -112,8 +118,13 @@ void initSched()
     // May need only t0 for AUTOSCHEDULE=false
     // But creating a few extra clock ticks does not hurt as much as
     // not allowing user to change the clock settings
-    Neutral::create( "Tick", "t0", cj->id(), Id::scratchId() );
-    Neutral::create( "Tick", "t1", cj->id(), Id::scratchId() );
+#ifdef USE_MPI
+   	Neutral::create( "ParTick", "t1", cj->id(), Id::scratchId() );
+  	Neutral::create( "ParTick", "t0", cj->id(), Id::scratchId() );
+#else
+   	Neutral::create( "Tick", "t1", cj->id(), Id::scratchId() );
+   	Neutral::create( "Tick", "t0", cj->id(), Id::scratchId() );
+#endif // USE_MPI
 }
 
 void setupDefaultSchedule( 

@@ -8083,7 +8083,8 @@ Next steps:
 		- ce
 		- pwe
 		* create (so it creates on node of parent)
-		- createmap (ditto)
+		+ createmap (ditto) (need to check on a proto)
+		- readcell (ditto)
 		* step
 		+ reset: Find which msgs are going off-node to do scheduling.
 		- setclock
@@ -8092,20 +8093,22 @@ Next steps:
 	- Fix up what happens when we operate on existing proxies.
 	+ Set up a regression test for all of these.
 - Upgrade array operations to work across nodes
-	- Createmap etc
+	+ Createmap etc: This now can create a remote array, but not a 
+		cross-node array.
 	- Multinode array proxies
 	- Multinode messaging
-- Design decisions on 
-	- limiting Async node drift
-		- Use the barrier for now.
-		- Later a scatter/gather kind of check using the asyncs?
+* Design decisions on 
+	* limiting Async node drift
+		- Fixed, now we use non-barrier sync equivalent.
 		Still does not guarantee arbitrary pair message completion.
-	- Managing synchronization on sync models.
+	* Managing synchronization on sync models.
 		Already did this. Force polling till all irecvs are in.
 
 For now, the goal is to be able to use scripts to set up nice big multinode
 spiking models. So start with the first set of goals.
 ...........................................................................
+I have now updated them.
+
 Spiking model: Let's set up the equivalent of my hippocampal spiking neuron
 model, except use stochastic target synapses.
 
@@ -8121,5 +8124,72 @@ Implemented a new parallel regression test, arrayElement.g, which tests
 creation and field access for array elements. This uncovered a bug with
 field access that had been fixed in the main code branch. This needed
 fixes both with local and with parallel field access.
+
+Checked in as revision 602 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+This should give the capability of testing a cross-node network model.
+- readcell
+- createmap from proto
+- scheduling different dt.
+- Scheduling transmission only for some dt, esp at > main dt.
+- Separating local and outgoing calculations.
+
+Stage 1: try moose_synchan.g in parallel. This tests 3
+Stage 2: try moose_synapse_solve.g in parallel. Tests all.
+
+Working on step 1, using genesis/SFmus/pmoose/TESTS/parallel/synchan.g
+Still croaks.
+==============================================================================
+16 Aug 2008
+Fixed the crash: It was another case of the parser referring to the element
+pointer, to get the class name. Went through and fixed up a few more of them,
+pre-emptively. Now to the real heart of the matter, handling the clocks.
+
+==============================================================================
+17 Aug 2008
+Trying still to get the scheduling to work across nodes. I have implemented
+a check for the presence of outgoing messages and use that to decide when to
+do the reinits and whether to go off-node with them.
+The check function is Element::isTarget(), and it clears unit tests. However,
+it fails to identify messages to the postmaster.
+Tried to clean up showmsg. Got it so it doesn't crash, but going off-node
+with showmsg is nasty. For now just a placeholder.
+
+
+==============================================================================
+18 Aug 2008
+Looking more closely at the parallel scheduling. For 1 tick it is OK,
+but otherwise quite a mess. Let's set some rules:
+- ParTicks always used when MPI is on. In fact, the original Tick object
+	simply gets redefined.
+- Resched never needed. Make it a dummy function. This requires that all
+	scheduling operations like object creation and changing clocks,
+	happen on-line.
+- Initially, t0 and t1 handle different phases of clock 0. They are
+	created by default on all nodes.
+- Whenever 'setclock' is called a new tick is made if needed, again on 
+	all nodes. 
+- Setclock may rearrange ticks in the schedule. Done right away, no resched.
+- All scheduled objects are tied to their appropriate tick on creation.
+- As soon as an object acquires an off-node outgoing messge, it is shifted 
+	to the outgoingProcess of the same tick. No resched needed.
+	- Count of outgoing messages on tick is incremented.
+	- Shell, or perhaps postmaster, handles this.
+- As soon as an object acquires an off-node incoming message,
+	count of incoming messages on tick is incremented. 
+	Shell handles this. Or should postmaster?
+- ParTicks block if there is either an incoming or an outgoing message
+	on that tick.
+- Alteration of scheduled ticks is done on pollJob and is barrier-protected.
+	- Poll Job is never altered.
+
+
+Current scheduling is a horrible mess. I am simply trying to pull it back
+to where it was, let alone do the above. It now crashes even on single node.
+==============================================================================
+19 Aug 2008
+Salvage operation. Managed to get unit tests working till at least 8 nodes,
+and the msg.g works for 2 nodes but not more. Key thing was to connect t1
+to the postmaster, which had not been done earlier.
 
 ==============================================================================

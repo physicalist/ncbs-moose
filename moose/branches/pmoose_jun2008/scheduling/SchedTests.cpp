@@ -168,6 +168,10 @@ void testSched()
 				*/
 
 	ASSERT( tt->numTargets( "process" ) == 4, "sched num ticks" );
+	ASSERT( t1a->isTarget( tt ), "isTarget" );
+	ASSERT( t1b->isTarget( tt ), "isTarget" );
+	ASSERT( t2->isTarget( tt ), "isTarget" );
+	ASSERT( t5->isTarget( tt ), "isTarget" );
 
 	ASSERT( set( cj, "resched" ), "resched" );
 

@@ -207,6 +207,9 @@ void msgFinfoTest()
 	ASSERT( ( *e1.msg_[ 0 ].begin() )->size() == 1, "Finfo Msg" );
 	ASSERT( ( *e1.msg_[ 1 ].begin() )->size() == 1, "Finfo Msg" );
 
+	ASSERT( e1.isTarget( &e2 ), "isTarget" );
+	ASSERT( !e2.isTarget( &e1 ), "isTarget" );
+
 	targetIndex.resize( 2 );
 	targetIndex[0] = 0;
 	targetIndex[1] = 0;

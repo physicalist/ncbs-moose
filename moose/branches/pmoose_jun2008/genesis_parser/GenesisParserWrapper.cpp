@@ -941,20 +941,25 @@ void GenesisParserWrapper::doAdd(
 			return;
 		}
 
-		if ( msgType == "CHANNEL Gk Ek" && src()->className() == "SynChan" && dest()->className() == "Mg_block" )
-			msgType = src()->className() + "." + dest()->className() + "." + msgType;
-		if ( msgType == "SPIKE" && src()->className() == "SpikeGen" )
-			msgType = src()->className() + "." + msgType;
-		if ( msgType == "INPUT Vm" && dest()->className() == "SpikeGen" )
-			msgType = dest()->className() + "." + msgType;
-                if ( msgType == "SPIKE" && src()->className() == "RandomSpike" )
-                         msgType = src()->className() + "." + msgType;
-                if (msgType == "INPUT Vm" && dest()->className() == "RandomSpike")
-                         msgType = dest()->className() + "." + msgType;                
-                if( msgType == "INPUT output" && src()->className() == "PulseGen" )
-                         msgType = src()->className() + "." + msgType;
-                if( msgType == "INPUT output" && dest()->className() == "PulseGen" )
-                         msgType = dest()->className() + "." + msgType;
+		send2< Id, string >( s(), requestFieldSlot, src, "class" );
+		string srcClassName = fieldValue_;
+		send2< Id, string >( s(), requestFieldSlot, dest, "class" );
+		string destClassName = fieldValue_;
+
+		if ( msgType == "CHANNEL Gk Ek" && srcClassName == "SynChan" && destClassName == "Mg_block" )
+			msgType = srcClassName + "." + destClassName + "." + msgType;
+		if ( msgType == "SPIKE" && srcClassName == "SpikeGen" )
+			msgType = srcClassName + "." + msgType;
+		if ( msgType == "INPUT Vm" && destClassName == "SpikeGen" )
+			msgType = destClassName + "." + msgType;
+                if ( msgType == "SPIKE" && srcClassName == "RandomSpike" )
+                         msgType = srcClassName + "." + msgType;
+                if (msgType == "INPUT Vm" && destClassName == "RandomSpike")
+                         msgType = destClassName + "." + msgType;                
+                if( msgType == "INPUT output" && srcClassName == "PulseGen" )
+                         msgType = srcClassName + "." + msgType;
+                if( msgType == "INPUT output" && destClassName == "PulseGen" )
+                         msgType = destClassName + "." + msgType;
                 
 
 		bool usingMULTGATE = 0;
@@ -1343,8 +1348,11 @@ bool GenesisParserWrapper::fieldExists(
 			Id eid, const string& field, Id s )
 {
 	//conversion of field
+	send2< Id, string >( s(), requestFieldSlot, eid, "class" );
+	string className = fieldValue_;
+
 	map< string, string >::iterator i = 
-			sliFieldNameConvert().find( eid()->className() + "." + field );
+			sliFieldNameConvert().find( className + "." + field );
 	string newfield = field;
 	if ( i != sliFieldNameConvert().end() ) 
 		newfield = i->second;
@@ -2404,12 +2412,15 @@ Id findChanGateId( int argc, const char** const argv, Id s )
 	gate = gate + "/" + type;
 	Id gateId( gate );
 	if ( gateId.bad() ) {// Don't give up, it might be a tabgate or might not have been created
+		GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
+			( s()->data( 0 ) );
 		Id id = Id( argv[1] );
-		Element *el = id();
 		
-		if ( el->className() == "HHGate" )
+		send2< Id, string >( s(), requestFieldSlot, id, "class" );
+		string className = gpw->getFieldValue();
+		if ( className == "HHGate" )
 			gateId = id;
-		else if ( el->className() == "HHChannel" ) {
+		else if ( className == "HHChannel" ) {
 			if (type != "") {
 				send4< string, string, int, Id >( s(), 
 					createSlot, "HHGate", type, id.node(), id );
