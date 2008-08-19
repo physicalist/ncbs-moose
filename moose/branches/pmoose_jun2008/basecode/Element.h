@@ -85,6 +85,13 @@ class Element
 		 */
 		virtual unsigned int numTargets( const string& finfoName ) const = 0;
 
+		/**
+		 * Returns true if the specified Element is a target of any
+		 * of the messages emanating from this Element.
+		 * Ignores indices.
+		 */
+		virtual bool isTarget( const Element* tgt ) const;
+
 		///////////////////////////////////////////////////////////////
 		// Information functions
 		///////////////////////////////////////////////////////////////

@@ -171,10 +171,13 @@ class Shell
 ////////////////////////////////////////////////////////////////////
 
 		static void setCwe( const Conn*, Id id );
-		static Id getCwe( const Element* );
+		static Id getCwe( Eref e );
 		static void trigCwe( const Conn* );
 		static void pushe( const Conn*, Id id );
 		static void pope( const Conn* );
+
+		static int getMyNode( Eref e );
+		static int getNumNodes( Eref e );
 
 		static void trigLe( const Conn*, Id parent );
 		static void handleRequestLe( const Conn* c, 
@@ -365,6 +368,13 @@ class Shell
  		*/
 		static void listMessages( const Conn* c,
 				Id id, string field, bool isIncoming );
+				
+		/**
+		 * Does the actual work to build message list, on a local node.
+		 */
+		static void innerListMessages( const Conn* c,
+				Id id, string field, bool isIncoming,
+				vector< Id >& ret, string& remoteFields );
 
 		//////////////////////////////////////////////////////////
 		// Functions for handling moves and copies. Not yet parallelized

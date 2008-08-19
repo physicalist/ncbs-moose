@@ -44,9 +44,24 @@ unsigned int initMPI( int argc, char** argv )
 	Shell::setNodes( myNode, totalNodes );
 
 	// cerr << myNode << ".2a\n";
+	// Damn compiler has optimized away this busy loop.
+	
+	/*
+	bool glug; 
+	glug = (argc == 2 && strncmp( argv[1], "-m", 2 ) == 0 );
+	while ( glug ) {
+		sleep( 1 );
+	}
+	*/
 
-	bool glug = (argc == 2 && strncmp( argv[1], "-m", 2 ) == 0 );
-	while ( glug );
+	if (argc == 2 && strncmp( argv[1], "-m", 2 ) == 0 ) {
+		if ( myNode == 0 ) {
+			cout << "Paused, hit return to continue" << flush;
+			getchar();
+			// char * foo  = readline( "Paused, hit return to continue" );
+		}
+		MPI::COMM_WORLD.Barrier();
+	}
 
 	return myNode;
 #else // USE_MPI
@@ -77,26 +92,43 @@ void initParSched()
 		Eref pe = Eref( postmasters, i );
 		set< unsigned int >( pe, "remoteNode", i );
 	}
+	Id sched = Id::localId( "/sched" );
+	assert( sched.good() );
+	Id cj = Id::localId( "/sched/cj" );
+	assert( cj.good() );
+	Id t0id = Id::localId( "/sched/cj/t0" );
+	assert( t0id.good() );
+	Id t1id = Id::localId( "/sched/cj/t1" );
+	assert( t1id.good() );
+	Element* t0 = t0id.eref().e;
+	Element* t1 = t1id.eref().e;
+
+	ret = set< bool >( t0, "doSync", 1 ); 
+	assert( ret );
+	ret = set< bool >( t1, "doSync", 1 ); 
+	assert( ret );
 	// cerr << myNode << ".2c\n";
 	// This one handles parser and postmaster scheduling.
-	Id sched( "/sched" );
-	Id cj( "/sched/cj" );
+	/*
 	Id t0id = Id::localId( "/sched/cj/t0" );
 	if ( t0id.good() ) {
 		set( t0id(), "destroy" );
 	}
-	pj =
-		Neutral::create( "ClockJob", "pj", sched, Id::scratchId() );
 	Element* t0 =
 			Neutral::create( "ParTick", "t0", cj, Id::scratchId() );
+	Element* t1 =
+			Neutral::create( "ParTick", "t1", cj, Id::scratchId() );
+	*/
+	pj = Neutral::create( "ClockJob", "pj", sched, Id::scratchId() );
+	assert( pj != 0 );
+	cout << "pjid = " << pj->id() << endl;
 	// set< int >( t0, "barrier", 1 ); // when running, ensure sync after t0
 	
 	// ensure sync for runtime clock ticks.
-	ret = set< bool >( t0, "doSync", 1 ); 
-	assert( ret );
 
 	Element* pt0 =
 			Neutral::create( "ParTick", "t0", pj->id(), Id::scratchId() );
+	assert( pt0 != 0 );
 	// set< int >( pt0, "barrier", 1 ); // when running, ensure sync after t0
 
 	///////////////////////////////////////////////////////////////////
@@ -141,6 +173,9 @@ void initParSched()
 	assert( ret );
 	Eref pe = Id::postId( Id::AnyIndex ).eref();
 	ret = Eref( t0 ).add( "parTick", pe , "parTick",
+		ConnTainer::One2All );
+	assert( ret );
+	ret = Eref( t1 ).add( "parTick", pe , "parTick",
 		ConnTainer::One2All );
 	assert( ret );
 	ret = Eref( pt0 ).add( "parTick", pe, "parTick",

@@ -427,19 +427,29 @@ void ClockJob::reschedFuncLocal( Eref er )
 	}
 	tickList.resize( 0 );
 
+	unsigned int totTargets = 0;
 	for ( i = childList.begin(); i != childList.end(); i++ ) {
 		const Finfo* procFinfo = (*i)()->findFinfo( "process" );
 		assert ( procFinfo != 0 );
 		unsigned int numTargets = ( *i )()->numTargets( procFinfo->msg() );
-		numTargets += ( *i )()->numTargets( "parTick" );
-		if ( numTargets > 0 )
+		// numTargets += ( *i )()->numTargets( "parTick" );
+
+		procFinfo = (*i)()->findFinfo( "outgoingProcess" );
+		if ( procFinfo != 0 )
+			numTargets += ( *i )()->numTargets( procFinfo->msg() );
+		// numTargets += ( *i )()->numTargets( "parTick" );
+
+		// if ( numTargets > 0 )
 			tickList.push_back( TickSeq( *i ) );
+		totTargets += numTargets;
 	}
 
 	if ( tickList.size() == 0 )
 		return;
 
 	sort( tickList.begin(), tickList.end() );
+	cout << "Sorted ticklist with " << tickList.size() << " ticks and " <<
+		totTargets << " targets on node " << Shell::myNode() << endl;
 
 	Eref last = tickList.front().element();
 	bool ret = er.add( "tick", last, "prev" );

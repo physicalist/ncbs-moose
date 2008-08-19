@@ -252,6 +252,13 @@ class Msg
 		 */
 		bool copy( const ConnTainer* c, Element* e1, Element* e2, bool isArray) const;
 
+		/**
+		 *  Returns True if tgt is a target of Element src.
+		 *  Handles bidirectional messages too. Does not worry about
+		 *  indices, on either src or dest
+		 */
+		bool isTarget( const Element* src, const Element* tgt ) const;
+
 	private:
 		/**
 		 * This manages the ConnTainers.
