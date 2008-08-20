@@ -8086,8 +8086,8 @@ Next steps:
 		+ createmap (ditto) (need to check on a proto)
 		- readcell (ditto)
 		* step
-		+ reset: Find which msgs are going off-node to do scheduling.
-		- setclock
+		* reset: Find which msgs are going off-node to do scheduling.
+		* setclock
 		+ delete: Still doesn't handle clearing up msgs/proxies.
 		* quit
 	- Fix up what happens when we operate on existing proxies.
@@ -8216,4 +8216,20 @@ The problem boiled down to synchronization between clocks doing reinit, which
 was solved by putting in a barrier like for the step functions. And like for
 the step functions, it was necessary to add a polling cycle on the master
 node to send out the request to all others.
+
+Checked in as revision 606 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Working toward getting the network.g simulation to run. 
+Did some work on getting planarconnect to work in parallel. Havent tested
+yet because the network.g fails even in single-node mode.
+
+Turns out that
+this regression test fails even with just one node, as do several others.
+At least one of those failures has to do with the reset function. Two
+resets fix it in some cases, but not in network.g
+
+Also fixed a bug in le: It did not see children of global objects like 
+/library.
+
 ==============================================================================
+

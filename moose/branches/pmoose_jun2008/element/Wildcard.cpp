@@ -10,6 +10,7 @@
 #include "moose.h"
 #include "Neutral.h"
 #include "Wildcard.h"
+// #include "../shell/Shell.h"
 #define NOINDEX (UINT_MAX - 2)
 
 static int wildcardRelativeFind( Id start, const vector< string >& path, 
@@ -168,8 +169,35 @@ int singleLevelWildcard( Id start, const string& path, vector< Id >& ret )
 {
 	if ( path.length() == 0 )
 		return 0;
-
 	unsigned int nret = ret.size();
+
+/*
+#ifdef USE_MPI
+	// Won't work for global nodes
+	if ( start.node() != Shell::myNode() ) {
+		Eref shellE = Id::shellId().eref();
+		Shell* sh = static_cast< Shell* >( shellE.data() );
+		assert( shellE.e != 0 );
+		vector< Nid > kids;
+		unsigned int requestId = openOffNodeValueRequest< vector< Nid > >( 
+			sh, &kids, 1 );
+		unsigned int tgtNode = start.node();
+		if ( tgtNode > Shell::myNode() )
+			--tgtNode;
+		sendTo3< Nid, string, unsigned int >( 
+			shellE, singleLevelWildcardSlot, tgtNode,
+			start, path, requestId );
+		vector< Nid >* temp = 
+			closeOffNodeValueRequest< vector< Nid > >( sh, requestId );
+		assert( temp == &kids );
+		for ( size_t i = 0; i < kids.size(); ++i ) {
+			ret.push_back( kids[i] );
+		}
+		return ret.size() - nret;
+	}
+#endif
+*/
+
 	string beforeBrace;
 	string insideBrace;
 	unsigned int index;

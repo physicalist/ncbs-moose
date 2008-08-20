@@ -568,6 +568,37 @@ void Shell::handlePathReturn( const Conn* c,
 	sh->zeroOffNodePending( requestId );
 }
 
+/*
+///////////////////////////////////////////////////////////////////////
+// Here we put in a first pass at handling wildcards.
+// Note that this may be redundant given the existing handling of
+// wildcard lists above.
+///////////////////////////////////////////////////////////////////////
+
+void Shell::handleSingleLevelWildcard( const Conn* c, 
+	Nid eid, string path, unsigned int requestId )
+{
+	assert( eid.node() == myNode() );
+	vector< Nid > ret;
+	vector< Id > temp;
+	singleLevelWildcard( start, path, temp );
+	for ( vector< Id >::iterator i = temp.begin(); i != temp.end(); ++i )
+		ret.push_back( temp );
+	sendBack2< vector< Nid >, unsigned int >( 
+		c, returnSingleLevelWildcardSlot,
+		ret, requestId );
+}
+
+void Shell::handleSingleLevelWildcardReturn( const Conn* c,
+	vector< Nid > ret, unsigned int requestId )
+{
+	Shell* sh = static_cast< Shell* >( c->data() );
+	vector< Nid >* temp = getOffNodeValuePtr< vector< Nid > >( 
+		sh, requestId );
+	*temp = ret;
+	sh->zeroOffNodePending( requestId );
+}
+*/
 
 ////////////////////////////////////////////////////////////////////
 // Here we put in the offNodeValueRequest stuff.

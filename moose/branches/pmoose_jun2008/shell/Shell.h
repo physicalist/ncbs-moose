@@ -270,14 +270,24 @@ class Shell
 		////////////////////////////////////////////////////////////////
 		/**
 		 * Searches all nodes for objects matching the wildcard path.
+		 * Sends back the list on the a return message.
 		 */
 		static void getWildcardList( const Conn* c,
 			string path, bool ordered );
 
 		/**
 		 * Searches a single node for objects matching the wildcard path
+		 * Handles off-node cases too.
 		 */
 		static void innerGetWildcardList( const Conn* c,
+			string path, bool ordered, vector< Id >& list
+		);
+
+		/**
+		 * Does the actual work of getting the wildcard list, on the
+		 * local node only.
+		 */
+		static void localGetWildcardList( const Conn* c,
 			string path, bool ordered, vector< Id >& list
 		);
 
