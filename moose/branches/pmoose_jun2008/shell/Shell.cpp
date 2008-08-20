@@ -1057,7 +1057,7 @@ void Shell::trigLe( const Conn* c, Id parent )
 			closeOffNodeValueRequest< vector< Nid > > ( sh, requestId );
 		assert( temp == &nret );
 */
-	} else if ( parent.node() == 0 ) {
+	} else if ( parent.node() == 0 || parent.isGlobal() ) {
 		bool flag = get< vector< Id > >( parent.eref(), "childList", ret );
 		assert( flag );
 	} else { // Off-node to single node.
@@ -1109,10 +1109,13 @@ void Shell::staticCreate( const Conn* c, string type,
 	}
 	if ( parent == Id() || parent == Id::shellId() )
 		paNid.setNode( id.node() );
-	if ( id.node() == 0 && paNid.node() == 0 ) { // local node
+	if ( id.node() == 0 && ( paNid.node() == 0 || paNid.isGlobal() ) ) { // local node
 		bool ret = s->create( type, name, parent, id );
 		if ( ret ) { // Tell the parser it was created happily.
 			sendBack1< Id >( c, createSlot, id );
+		} else {
+			cout << "Error: Shell::staticCreate: unable to create '" <<
+				name << "' on parent " << parent.path() << endl;
 		}
 	} else {
 		// Shell-to-shell messaging here with the request to
@@ -1223,15 +1226,23 @@ void Shell::staticCreateArray( const Conn* c, string type,
 	}
 }
 
-void Shell::planarconnect(const Conn* c, string source, string dest, double probability){
-	vector <Id> src_list, dst_list;
-	simpleWildcardFind( source, src_list );
-	simpleWildcardFind( dest, dst_list );
-	for(size_t i = 0; i < src_list.size(); i++) {
+void Shell::planarconnect( const Conn* c, 
+	string source, string dest, double probability)
+{
+	vector<Id> src_list; 
+	vector<Id > dst_list;
+
+	innerGetWildcardList( c, source, 1, src_list );
+	innerGetWildcardList( c, dest, 1, dst_list );
+	// simpleWildcardFind( source, src_list );
+	// simpleWildcardFind( dest, dst_list );
+	for (size_t i = 0; i < src_list.size(); i++) {
+		/*
 		if (src_list[i]()->className() != "SpikeGen" && src_list[i]()->className() != "RandomSpike"){
 			cout << "The source element must be SpikeGen or RandomSpike" << endl;
 			return;
 		}
+		*/
 		for(size_t j = 0; j < dst_list.size(); j++) {
 			//cout << src_list[i]->id().path() << " " << dst_list[i]->id().path() << endl;
 			if (dst_list[j]()->className() != "SynChan"){
@@ -1242,7 +1253,10 @@ void Shell::planarconnect(const Conn* c, string source, string dest, double prob
 			if (mtrand() <= probability){
 // 				cout << i+1 << " " << j+1 << endl;
 
-				src_list[i].eref().add( "event", dst_list[j].eref(), "synapse" );
+				// This is a parallelized call
+				addSingleMessage( c, src_list[i], "event", 
+					dst_list[j], "synapse" );
+				// src_list[i].eref().add( "event", dst_list[j].eref(), "synapse" );
 				// src_list[i]()->findFinfo("event")->add(src_list[i](), dst_list[j](), dst_list[j]()->findFinfo("synapse"));
 			}
 		}
@@ -2057,11 +2071,23 @@ void Shell::digestPath( string& path )
  */
 void Shell::getWildcardList( const Conn* c, string path, bool ordered )
 {
-	vector<Id> list;
+	vector< Id > list;
+	innerGetWildcardList( c, path, ordered, list );
+	
+	sendBack1< vector< Id > >( c, elistSlot, list );
+}
+
+/**
+ * Inner utility function for getting wildcard list in parallel.
+ * Used by other functions such as planarconnect.
+ */
+void Shell::innerGetWildcardList( const Conn* c, string path, 
+	bool ordered, vector<Id>& list )
+{
 	//vector< Id > ret;
 	Shell* sh = static_cast< Shell* >( c->data() );
 
-	innerGetWildcardList( c, path, ordered, list );
+	localGetWildcardList( c, path, ordered, list );
 
 	vector< Nid > ret;
 	unsigned int requestId = openOffNodeValueRequest< vector< Nid > >(
@@ -2080,11 +2106,12 @@ void Shell::getWildcardList( const Conn* c, string path, bool ordered )
 
 	for( vector< Nid >::iterator i = ret.begin(); i != ret.end(); i++ )
 		list.push_back( *i );
-	
-	sendBack1< vector< Id > >( c, elistSlot, list );
 }
 
-void Shell::innerGetWildcardList( const Conn* c, string path, bool ordered,
+/**
+ * Does its stuff on local node only
+ */
+void Shell::localGetWildcardList( const Conn* c, string path, bool ordered,
 	vector< Id >& list)
 {
 	//vector< Id > ret;
