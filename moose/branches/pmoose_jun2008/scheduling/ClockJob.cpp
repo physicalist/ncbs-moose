@@ -448,8 +448,7 @@ void ClockJob::reschedFuncLocal( Eref er )
 		return;
 
 	sort( tickList.begin(), tickList.end() );
-	cout << "Sorted ticklist with " << tickList.size() << " ticks and " <<
-		totTargets << " targets on node " << Shell::myNode() << endl;
+	// cout << "Sorted ticklist with " << tickList.size() << " ticks and " << totTargets << " targets on node " << Shell::myNode() << endl;
 
 	Eref last = tickList.front().element();
 	bool ret = er.add( "tick", last, "prev" );

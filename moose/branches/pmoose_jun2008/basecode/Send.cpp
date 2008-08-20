@@ -34,10 +34,12 @@ void sendTo0( Eref e, Slot src, unsigned int tgt )
 {
 	// This will traverse through next() if needed, to get to the msg.
 	const Msg* m = e.e->msg( src.msg() ); 
-	RecvFunc rf = m->func( src.func() );
 	Conn* j = m->findConn( e, tgt, src.func() );
-	rf( j );
-	delete j;
+	if ( j ) {
+		RecvFunc rf = m->func( src.func() );
+		rf( j );
+		delete j;
+	}
 }
 
 void sendBack0( const Conn* c, Slot src )

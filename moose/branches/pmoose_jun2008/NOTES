@@ -8191,5 +8191,29 @@ to where it was, let alone do the above. It now crashes even on single node.
 Salvage operation. Managed to get unit tests working till at least 8 nodes,
 and the msg.g works for 2 nodes but not more. Key thing was to connect t1
 to the postmaster, which had not been done earlier.
+Checked in as revision 605 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
+Looking at hanging run in msg.g with 4 nodes. 
+The sequence of calls is resched, reinit (clears these, and is in the reinit
+poll sequece.) Then a step call comes and it hangs. Node zero sends out call
+and goes to barrier. One node gets the call and reaches barrier, the other
+two are still polling for the reinit.
+Tried to enforce polling between all nodes. Does not help.
+Tried to put in an intermediate call without the barrier. Still does not help.
+Clearly there is a message that does not reach the expectant nodes.
+Additionally, there is always one node (plus node0) which does clear the
+poll.
+Also, the order of execution in the preceding reinit is always: node0,
+cleared node, other 2 nodes.
+
+==============================================================================
+20 Aug 2008
+Finally cleared the synchan.g test, along with the msg.g tests and the unit
+tests for parallel functioning. Took about 3 min to run synchan.g on my
+laptop, which goes for only 10K timesteps.
+
+The problem boiled down to synchronization between clocks doing reinit, which
+was solved by putting in a barrier like for the step functions. And like for
+the step functions, it was necessary to add a polling cycle on the master
+node to send out the request to all others.
 ==============================================================================
