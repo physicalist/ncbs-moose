@@ -461,7 +461,8 @@ void PostMaster::innerPoll( const Conn* c, bool doSync )
 	// 	  syncInfo. We should just send back saying poll is done.
 	// If we are in runtime mode then we can wrap up poll only if
 	//    numAsyncIn_ == 0 and syncInfo is empty.
-	if ( !doSync || ( numAsyncOut_ == 0 && numAsyncIn_ == 0 && syncInfo_.size() == 0 ) ) {
+	// if ( !doSync || ( numAsyncOut_ == 0 && numAsyncIn_ == 0 && syncInfo_.size() == 0 ) ) {
+	if ( !doSync ) {
 		// No msg expected or we don't care.
 		sendBack1< unsigned int >( c, pollSlot, remoteNode_ );
 		// cout << ":" << remoteNode_ << "." << localNode_ << ":" << flush;
@@ -489,7 +490,7 @@ void PostMaster::innerClearSetupStack( )
 	// if ( setupStack_.size() > 0 ) cout << "innerClearSetupStack on node " << localNode_ << " from " << remoteNode_ << ", numCmds = " << setupStack_.size() << endl << flush;
 	// need a local copy for the recursion, since the object copy will
 	// be overwritten. Here it must be single-threaded.
-	vector< vector< char > > setupStack = setupStack_; 
+	vector< vector< char > > tempStack = setupStack_; 
 	setupStack_.resize( 0 );
 	// Below here it can be multithreaded.
 	
@@ -501,14 +502,16 @@ void PostMaster::innerClearSetupStack( )
 	//
 	// Still some issues with how we to insert polling cycles
 	// into ongoing clock ticks.
-	for ( unsigned int i = 0 ; i < setupStack.size(); i++ ) {
-		char* data = &( setupStack[i][0] );
+	for ( unsigned int i = 0 ; i < tempStack.size(); i++ ) {
+		char* data = &( tempStack[i][0] );
 		AsyncStruct as( data );
 		///\todo: temporary hack to deal with shell-shell messaging
 		as.hackProxy( shellProxy_ );
 		data += sizeof( AsyncStruct );
+		// cout << "@" << localNode_ << "f" << remoteNode_ << " ncommand=" << tempStack.size() << " size=" << as.size() << " func=" << as.funcIndex() << " before." << flush;
 		unsigned int size = proxy2tgt( as, data );
-		assert ( sizeof( AsyncStruct ) + size == setupStack[i].size() );
+		// cout << ".after" << flush;
+		assert ( sizeof( AsyncStruct ) + size == tempStack[i].size() );
 	}
 }
 
@@ -546,7 +549,8 @@ void PostMaster::innerPostSend( bool doSync )
 		numSendBufMsgs_;
 	// We cannot simply check for numAsyncOut here because it is zero for
 	// shell-shell messaging.
-	if ( localNode_ != remoteNode_ && ( (doSync && ( numAsyncOut_ > 0 || numAsyncIn_ > 0 ) ) || numSendBufMsgs_ > 0 ) ) {
+//	if ( localNode_ != remoteNode_ && ( (doSync && ( numAsyncOut_ > 0 || numAsyncIn_ > 0 ) ) || numSendBufMsgs_ > 0 ) ) {
+	if ( localNode_ != remoteNode_ && ( doSync || numSendBufMsgs_ > 0 ) ) {
 		comm_->Send( data, sendBufPos_, MPI_CHAR, remoteNode_, DATA_TAG );
 	 // cout << "\nsending " << numSendBufMsgs_ << "." << sendBufPos_ << " : " << &sendBuf_[0] << " from node " << localNode_ << " to " << remoteNode_ << " with numAsyncOut_ = " << numAsyncOut_ << "doSync=" << doSync << endl << flush;
 

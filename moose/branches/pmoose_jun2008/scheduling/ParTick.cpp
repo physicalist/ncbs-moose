@@ -11,6 +11,8 @@
 #include "ParTick.h"
 #include "../shell/Shell.h"
 
+// #define PRINT_POS
+
 /**
  * The ParTick handles scheduling in a parallel simulation. It works
  * closely with the PostMaster and does reordering of the
@@ -279,31 +281,44 @@ void ParTick::printPos( const string& s )
  * 		The poll process relies on return info from each PostMaster.
  */
 void ParTick::innerProcessFunc( Eref e, ProcInfo info )
-{
-	// Phase 6: execute barrier to sync all nodes, but only in sim mode.
-	if ( doSync_ )  {
-//		printPos( "bar" );
-		// sendTo0( e, barrierSlot, 0 );
-	}
-	// Phase 0: post iRecv
-	// printPos( "irc" );
+{ 
+#ifdef PRINT_POS
+	printPos( "irc" );
 	send0( e, iRecvSlot );
 	// Phase 1: call Process for objects connected off-node
-	// printPos( "op1" );
+	printPos( "op1" );
 	send1< ProcInfo >( e, outgoingProcessSlot, info );
 	// Phase 2: send data off node
-	// printPos( "snd" );
+	printPos( "snd" );
 	send1< bool >( e, sendSlot, doSync_ );
 	// Phase 3: Call regular process for locally connected objects
-	// printPos( "op2" );
+	printPos( "op2" );
 	send1< ProcInfo >( e, processSlot, info );
 	// Phase 4: Poll for arrival of all data
 	initPending( e );
-	// printPos( "pol" );
+	printPos( "pol" );
 	while( pendingData() ) {
-		// cout << "." << flush;
-		send1< int >( e, pollSlot, doSync_ );
+		send1< bool >( e, pollSlot, doSync_ );
 	}
+#else
+	// Phase 6: execute barrier to sync all nodes, but only in sim mode.
+	if ( doSync_ )  {
+		// sendTo0( e, barrierSlot, 0 );
+	}
+	// Phase 0: post iRecv
+	send0( e, iRecvSlot );
+	// Phase 1: call Process for objects connected off-node
+	send1< ProcInfo >( e, outgoingProcessSlot, info );
+	// Phase 2: send data off node
+	send1< bool >( e, sendSlot, doSync_ );
+	// Phase 3: Call regular process for locally connected objects
+	send1< ProcInfo >( e, processSlot, info );
+	// Phase 4: Poll for arrival of all data
+	initPending( e );
+	while( pendingData() ) {
+		send1< bool >( e, pollSlot, doSync_ );
+	}
+#endif
 
 	// Phase 5: Clear all shell setup commands that have piled up.
 	send0( e, clearSetupStackSlot );
@@ -325,13 +340,42 @@ void ParTick::initPending( Eref e )
  */ 
 void ParTick::innerReinitFunc( Eref e, ProcInfo info )
 {
+	/*
+	*/
+	if ( doSync_ ) {
+#ifdef PRINT_POS
+		printPos( e->name() + "reinbar" );
+#endif
+		sendTo0( e, barrierSlot, 0 );
+	}
+#ifdef PRINT_POS
+		send0( e, iRecvSlot );
+		printPos( e->name() + "reni0" );
+		send1< ProcInfo >( e, outgoingReinitSlot, info );
+		// Phase 2: send data off node
+		printPos( e->name() + "rsnd" );
+		send1< bool >( e, sendSlot, doSync_ );
+		// Phase 3: Call regular reinit for locally connected objects
+		printPos( e->name() + "reni1" );
+		send1< ProcInfo >( e, reinitSlot, info );
+		// Phase 4: Poll for arrival of all data
+		initPending( e );
+		printPos( e->name() + "rpol" );
+		while( pendingData() )
+			send1< bool >( e, pollSlot, doSync_ );
+	
+		// Phase 5: Clear all shell setup commands that have piled up.
+		printPos( e->name() + "doop" );
+		send0( e, clearSetupStackSlot );
+#else
 	// Here we need to scan all managed objects and decide if they
 	// need to be on the outgoing process list or if they are local.
 	//
 	// separateOutgoingTargets
 	//
+	// if ( doSync_ ) sendTo0( e, barrierSlot, 0 );
 
-	if ( numOutgoing_ > 0 ) {
+//	if ( numOutgoing_ > 0 ) {
 		// Phase 0: post iRecv
 		// printPos( e->name() + "rirc" );
 		send0( e, iRecvSlot );
@@ -352,11 +396,14 @@ void ParTick::innerReinitFunc( Eref e, ProcInfo info )
 	
 		// Phase 5: Clear all shell setup commands that have piled up.
 		send0( e, clearSetupStackSlot );
+	/*
 	} else {
 		// Phase 3: Call regular reinit for locally connected objects
 		// printPos( e->name() + "reni1" );
 		send1< ProcInfo >( e, reinitSlot, info );
 	}
+	*/
+#endif
 }
 
 /** 
@@ -442,7 +489,12 @@ void ParTick::innerResched( const Conn* c )
 /// virtual function to start up ticks.  May need to set barrier.
 void ParTick::innerStart( Eref e, ProcInfo p, double maxTime )
 {
-	if ( doSync_ ) sendTo0( e, barrierSlot, 0 );
+	if ( doSync_ ) {
+#ifdef PRINT_POS
+		printPos( "stbar" );
+#endif
+		sendTo0( e, barrierSlot, 0 );
+	}
 
 	Tick::innerStart( e, p, maxTime );
 }

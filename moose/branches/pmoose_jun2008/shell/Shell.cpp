@@ -1887,8 +1887,14 @@ void Shell::setClock( const Conn* c, int clockNo, double dt,
 		if ( numNodes() > 1 ) {
 			tick = Neutral::create( 
 						"ParTick", TickName, cj, Id::scratchId() );
-			set< bool >( tick, "doSync", 1 );
+			assert( tick != 0 );
+			bool ret = set< bool >( tick, "doSync", 1 );
+			assert(ret );
 			cout << "setClock: Creating parTick on node " << myNode() << endl;
+			Eref pe = Id::postId( Id::AnyIndex ).eref();
+			ret = Eref( tick ).add( "parTick", pe, "parTick", 
+				ConnTainer::One2All );
+			assert(ret );
 		} else {
 			tick = Neutral::create( 
 						"Tick", TickName, cj, Id::scratchId() );
@@ -2132,8 +2138,10 @@ void Shell::resched( const Conn* c )
 
 void Shell::reinit( const Conn* c )
 {
-	if ( myNode() == 0 )
+	if ( myNode() == 0 ) {
 		send0( c->target(), parReinitSlot );
+		pollPostmaster(); // Needed so info goes out to other nodes.
+	}
 	// Should be a msg
 	Element* cj = findCj();
 	set( cj, "reinit" );
