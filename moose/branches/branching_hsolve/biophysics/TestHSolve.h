@@ -16,9 +16,7 @@ void array2vec(
 	vector< vector< unsigned int > >& vec );
 
 void makeFullMatrix(
-	unsigned int size,
 	const vector< vector< unsigned int > >& children,
-	const vector< vector< unsigned int > >& coupling,
 	const vector< double >& Ga,
 	const vector< double >& CmByDt,
 	vector< vector< double > >& matrix );

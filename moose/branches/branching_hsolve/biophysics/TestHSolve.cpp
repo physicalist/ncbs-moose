@@ -20,7 +20,7 @@ void testHSolve()
 {
 	testBioScan();
 	testHinesMatrix();
-	testHSolvePassive();
+	//~ testHSolvePassive();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -32,6 +32,8 @@ void array2vec(
 	int size,
 	vector< vector< unsigned int > >& vec )
 {
+	vec.clear();
+	
 	for ( int i = 0; i < size; i++ )
 		if ( array[ i ] == -1 )
 			vec.resize( vec.size() + 1 );
@@ -40,13 +42,25 @@ void array2vec(
 }
 
 void makeFullMatrix(
-	unsigned int size,
 	const vector< vector< unsigned int > >& children,
-	const vector< vector< unsigned int > >& coupling,
 	const vector< double >& Ga,
 	const vector< double >& CmByDt,
 	vector< vector< double > >& matrix )
 {
+	unsigned int size = children.size();
+	
+	/* Each entry in 'coupled' is a list of electrically coupled compartments.
+	 * These compartments could be linked at junctions, or even in linear segments
+	 * of the cell.
+	 */
+	vector< vector< unsigned int > > coupled;
+	for ( unsigned int i = 0; i < children.size(); i++ )
+		if ( children[ i ].size() >= 1 ) {
+			coupled.push_back( children[ i ] );
+			coupled.back().push_back( i );
+		}
+	
+	matrix.clear( );
 	matrix.resize( size );
 	for ( unsigned int i = 0; i < size; ++i )
 		matrix[ i ].resize( size );
@@ -56,9 +70,9 @@ void makeFullMatrix(
 		matrix[ i ][ i ] = CmByDt[ i ];
 	
 	double gi;
-	vector< vector< unsigned int > >::const_iterator group;
-	vector< unsigned int >::const_iterator ic;
-	for ( group = coupling.begin(); group != coupling.end(); ++group ) {
+	vector< vector< unsigned int > >::iterator group;
+	vector< unsigned int >::iterator ic;
+	for ( group = coupled.begin(); group != coupled.end(); ++group ) {
 		double gsum = 0.0;
 		
 		for ( ic = group->begin(); ic != group->end(); ++ic )
@@ -73,8 +87,8 @@ void makeFullMatrix(
 	
 	// Setting off-diagonal elements
 	double gij;
-	vector< unsigned int >::const_iterator jc;
-	for ( group = coupling.begin(); group != coupling.end(); ++group ) {
+	vector< unsigned int >::iterator jc;
+	for ( group = coupled.begin(); group != coupled.end(); ++group ) {
 		double gsum = 0.0;
 		
 		for ( ic = group->begin(); ic != group->end(); ++ic )
