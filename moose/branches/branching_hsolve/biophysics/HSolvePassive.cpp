@@ -148,12 +148,11 @@ void HSolvePassive::forwardEliminate( ) {
 	
 	unsigned int ic = 0;
 	vector< double >::iterator ihs = HS_.begin();
-	vector< double* >::iterator iop = operand_.begin();
+	vector< vdIterator >::iterator iop = operand_.begin();
 	vector< JunctionStruct >::iterator junction;
 	
-	double *l;
-	double *b;
 	double pivot;
+	double division;
 	unsigned int index;
 	unsigned int rank;
 	for ( junction = junction_.begin(); junction != junction_.end(); ++junction ) {
@@ -169,24 +168,33 @@ void HSolvePassive::forwardEliminate( ) {
 		
 		pivot = *ihs;
 		if ( rank == 1 ) {
-			*( ihs + 4 ) -= *( *iop + 1 ) / pivot * **iop;
-			*( ihs + 7 ) -= *( *iop + 1 ) / pivot * *( ihs + 3 );
+			vdIterator j = *iop;
+			vdIterator s = *( iop + 1 );
 			
-			iop += 1;
-		} else if ( rank == 2 ) {
-			l = *iop;
-			b = *( iop + 1 );
-			
-			*l         -= *( b + 1 ) / pivot * *b;
-			*( l + 3 ) -= *( b + 1 ) / pivot * *( ihs + 3 );
-			*( l + 4 ) -= *( b + 3 ) / pivot * *( b + 2 );
-			*( l + 7 ) -= *( b + 3 ) / pivot * *( ihs + 3 );
-			*( b + 4 ) -= *( b + 1 ) / pivot * *( b + 2 );
-			*( b + 5 ) -= *( b + 3 ) / pivot * *b;
+			division = *( j + 1 ) / pivot;
+			*( s )     -= division * *j;
+			*( s + 3 ) -= division * *( ihs + 3 );
 			
 			iop += 3;
+		} else if ( rank == 2 ) {
+			vdIterator j = *iop;
+			vdIterator s;
+			
+			s = *( iop + 1 );
+			division = *( j + 1 ) / pivot;
+			*( s )     -= division * *j;
+			*( j + 4 ) -= division * *( j + 2 );
+			*( s + 3 ) -= division * *( ihs + 3 );
+			
+			s = *( iop + 3 );
+			division = *( j + 3 ) / pivot;
+			*( j + 5 ) -= division * *j;
+			*( s )     -= division * *( j + 2 );
+			*( s + 3 ) -= division * *( ihs + 3 );
+			
+			iop += 5;
 		} else {
-			vector< double* >::iterator
+			vector< vdIterator >::iterator
 				end = iop + 3 * rank * ( rank + 1 );
 			for ( ; iop < end; iop += 3 )
 				**iop -= **( iop + 2 ) / pivot * **( iop + 1 );
@@ -195,7 +203,7 @@ void HSolvePassive::forwardEliminate( ) {
 		++ic, ihs += 4;
 	}
 	
-	while ( ic < nCompt_ ) {
+	while ( ic < nCompt_ - 1 ) {
 		*( ihs + 4 ) -= *( ihs + 1 ) / *ihs * *( ihs + 1 );
 		*( ihs + 7 ) -= *( ihs + 1 ) / *ihs * *( ihs + 3 );
 		
@@ -210,16 +218,14 @@ void HSolvePassive::backwardSubstitute( ) {
 	vector< double >::reverse_iterator ivmid = VMid_.rbegin();
 	vector< double >::reverse_iterator iv = V_.rbegin();
 	vector< double >::reverse_iterator ihs = HS_.rbegin();
-	vector< double* >::reverse_iterator iop = operand_.rbegin();
-	vector< double* >::reverse_iterator ibop = backOperand_.rbegin();
+	vector< vdIterator >::reverse_iterator iop = operand_.rbegin();
+	vector< vdIterator >::reverse_iterator ibop = backOperand_.rbegin();
 	vector< JunctionStruct >::reverse_iterator junction;
 	
 	*ivmid = *ihs / *( ihs + 3 );
 	*iv = 2 * *ivmid - *iv;
 	--ic, ++ivmid, ++iv, ihs += 4;
 	
-	double *b;
-	double *v;
 	int index;
 	int rank;
 	for ( junction = junction_.rbegin(); junction != junction_.rend(); ++junction ) {
@@ -234,19 +240,20 @@ void HSolvePassive::backwardSubstitute( ) {
 		}
 		
 		if ( rank == 1 ) {
-			*ivmid = ( *ihs - **iop * *( ivmid - 1 ) ) / *( ihs + 3 );
-			
-			iop += 1;
-		} else if ( rank == 2 ) {
-			v = *iop;
-			b = *( iop + 1 );
-			
-			*ivmid = ( *ihs
-			           - *b * *v
-			           - *( b + 2 ) * *( v + 1 )
-			         ) / *( ihs + 3 );
+			*ivmid = ( *ihs - **iop * **( iop + 2 ) ) / *( ihs + 3 );
 			
 			iop += 3;
+		} else if ( rank == 2 ) {
+			vdIterator v0 = *( iop );
+			vdIterator v1 = *( iop + 2 );
+			vdIterator j  = *( iop + 4 );
+			
+			*ivmid = ( *ihs
+			           - *v0 * *( j + 2 )
+			           - *v1 * *j
+			         ) / *( ihs + 3 );
+			
+			iop += 5;
 		} else {
 			*ivmid = *ihs;
 			for ( int i = 0; i < rank; ++i ) {
@@ -341,50 +348,50 @@ void testHSolvePassive()
 	
 	int ch_array[ ] =
 	{
-		/* c0  */    -1, 
-		/* c1  */    -1, 0,
-		/* c2  */    -1, 1,
-		/* c3  */    -1, 
-		/* c4  */    -1, 3,
-		/* c5  */    -1, 
-		/* c6  */    -1, 5,
-		/* c7  */    -1, 4, 6,
-		/* c8  */    -1, 7,
-		/* c9  */    -1, 8,
-		/* c10 */    -1, 
-		/* c11 */    -1, 10,
-		/* c12 */    -1, 
-		/* c13 */    -1, 12,
-		/* c14 */    -1, 11, 13,
-		/* c15 */    -1, 14, 16,
-		/* c16 */    -1, 17,
-		/* c17 */    -1, 2, 9, 18,
-		/* c18 */    -1, 19,
-		/* c19 */    -1, 
+		/* c0  */  -1, 
+		/* c1  */  -1, 0,
+		/* c2  */  -1, 1,
+		/* c3  */  -1, 
+		/* c4  */  -1, 3,
+		/* c5  */  -1, 
+		/* c6  */  -1, 5,
+		/* c7  */  -1, 4, 6,
+		/* c8  */  -1, 7,
+		/* c9  */  -1, 8,
+		/* c10 */  -1, 
+		/* c11 */  -1, 10,
+		/* c12 */  -1, 
+		/* c13 */  -1, 12,
+		/* c14 */  -1, 11, 13,
+		/* c15 */  -1, 14, 16,
+		/* c16 */  -1, 17,
+		/* c17 */  -1, 2, 9, 18,
+		/* c18 */  -1, 19,
+		/* c19 */  -1, 
 	};
 	
 	int ad_array[ ] =
 	{
-		/* c0  */    -1, 1,
-		/* c1  */    -1, 0, 2,
-		/* c2  */    -1, 1, 17,
-		/* c3  */    -1, 4,
-		/* c4  */    -1, 3, 7,
-		/* c5  */    -1, 6,
-		/* c6  */    -1, 5, 7,
-		/* c7  */    -1, 4, 6, 8,
-		/* c8  */    -1, 7, 9,
-		/* c9  */    -1, 8, 17,
-		/* c10 */    -1, 11,
-		/* c11 */    -1, 10, 14,
-		/* c12 */    -1, 13,
-		/* c13 */    -1, 12, 14,
-		/* c14 */    -1, 11, 13, 15,
-		/* c15 */    -1, 14, 16,
-		/* c16 */    -1, 15, 17,
-		/* c17 */    -1, 2, 9, 16, 18,
-		/* c18 */    -1, 17, 19,
-		/* c19 */    -1, 18,
+		/* c0  */  -1, 1,
+		/* c1  */  -1, 0, 2,
+		/* c2  */  -1, 1, 17,
+		/* c3  */  -1, 4,
+		/* c4  */  -1, 3, 7,
+		/* c5  */  -1, 6,
+		/* c6  */  -1, 5, 7,
+		/* c7  */  -1, 4, 6, 8,
+		/* c8  */  -1, 7, 9,
+		/* c9  */  -1, 8, 17,
+		/* c10 */  -1, 11,
+		/* c11 */  -1, 10, 14,
+		/* c12 */  -1, 13,
+		/* c13 */  -1, 12, 14,
+		/* c14 */  -1, 11, 13, 15,
+		/* c15 */  -1, 14, 16,
+		/* c16 */  -1, 15, 17,
+		/* c17 */  -1, 2, 9, 16, 18,
+		/* c18 */  -1, 17, 19,
+		/* c19 */  -1, 18,
 	};
 	
 	int co_array[ ] =
@@ -466,7 +473,7 @@ void testHSolvePassive()
 	updateIndices( children, permutation );
 	updateIndices( coupling, permutation );
 	
-	makeFullMatrix(	NCOMPT, children, coupling, Ga, CmByDt, matrix );
+	makeFullMatrix(	children, Ga, CmByDt, matrix );
 	VMid.resize( NCOMPT );
 	B.resize( NCOMPT );
 	for ( i = 0; i < NCOMPT; i++ )

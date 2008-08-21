@@ -38,26 +38,29 @@ public:
 	double getVMid( unsigned int row );
 
 protected:
+	typedef vector< double >::iterator vdIterator;
+	
 	unsigned int              nCompt_;
 	vector< JunctionStruct >  junction_;
 	vector< double >          HS_;
 	vector< double >          HJ_;
 	vector< double >          HJCopy_;
 	vector< double >          VMid_;
-	vector< double* >         operand_;
-	vector< double* >         backOperand_;
+	vector< vdIterator >      operand_;
+	vector< vdIterator >      backOperand_;
 	int                       stage_;
 
 private:
 	void makeJunctions( );
 	void makeMatrix( );
 	void makeOperands( );
+	void refresh( );
 
 	vector< vector< unsigned int > > const  *children_;
 	vector< double > const                  *Ga_;
 	vector< double > const                  *CmByDt_;
-	vector< vector< unsigned int > >         junctionGroup_;
-	map< unsigned int, double* >             operandBase_;
+	vector< vector< unsigned int > >         coupled_;
+	map< unsigned int, vdIterator >          operandBase_;
 	map< unsigned int, unsigned int >        groupNumber_;
 };
 
