@@ -361,20 +361,10 @@ void testHSolvePassive()
 	////////////////////////////////////////////////////////////////////////////
 	// Run tests
 	////////////////////////////////////////////////////////////////////////////
+	/*
+	 * Solver instance.
+	 */
 	HSolvePassive HP;
-	vector< TreeNode > tree;
-				
-	bool success;
-	double epsilon;
-	
-	double dt = 50e-6;
-	vector< double > Ga;
-	vector< double > CmByDt;
-	vector< double > Em;
-	vector< double > Rm;
-	
-	// The i-th entry in 'children' is the list of children of the i-th compt.
-	vector< vector< unsigned int > > children;
 	
 	/* 
 	 * This is the full reference matrix which will be compared to its sparse
@@ -382,13 +372,23 @@ void testHSolvePassive()
 	 */
 	vector< vector< double > > matrix;
 	
+	/*
+	 * Model details.
+	 */
+	double dt = 50e-6;
+	vector< TreeNode > tree;
+	vector< double > Em;
+	vector< double > Rm;
 	vector< double > B;
 	vector< double > V;
 	vector< double > VMid;
-	vector< Id > c;
 	
+	/*
+	 * Loop over cells.
+	 */
 	int i;
 	int j;
+	bool success;
 	int nCompt;
 	int* array;
 	unsigned int arraySize;
@@ -426,8 +426,7 @@ void testHSolvePassive()
 		Element* n =
 			Neutral::create( "Neutral", "n", Element::root()->id(), Id::scratchId() );
 		
-		c.clear();
-		c.resize( nCompt );
+		vector< Id > c( nCompt );
 		for ( i = 0; i < nCompt; i++ ) {
 			ostringstream name;
 			name << "c" << i;
@@ -484,8 +483,11 @@ void testHSolvePassive()
 			permutation[ i ] = newIndex;
 		}
 		
-		// Shuffle tree list according to new order
+		// Shuffle compartment properties according to new order
 		permute< TreeNode >( tree, permutation );
+		permute< double >( Em, permutation );
+		permute< double >( Rm, permutation );
+		permute< double >( V, permutation );
 		
 		// Update indices of children
 		for ( i = 0; i < nCompt; i++ ) {
@@ -510,37 +512,45 @@ void testHSolvePassive()
 		/*
 		 * Compare initial matrices
 		 */
-		epsilon = 1.0e-11;
-		double e = 0.0;
 		for ( i = 0; i < nCompt; ++i )
 			for ( j = 0; j < nCompt; ++j ) {
-				if ( fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) > e ) {
-					e = fabs( HP.getA( i, j ) - matrix[ i ][ j ] );
-					cout << i << "," << j << "|" << e << flush;
-				}
 				ostringstream error;
 				error << "Testing matrix construction: (" << i << ", " << j << ")";
 				ASSERT (
-					fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) < epsilon,
+					isClose< double >( HP.getA( i, j ), matrix[ i ][ j ], 2.0 ),
 					error.str()
 				);
 			}
 		
-		e = 0.0;
-		for ( i = 0; i < nCompt; i++ )
-			if ( fabs( HP.getB( i ) - B[ i ] ) > e ) {
-				e = fabs( HP.getB( i ) - B[ i ] );
-				cout << i << "|" << e << endl;
-			}
-		
 		/* 
+		 * 
 		 * Gaussian elimination
+		 * 
 		 */
 		
-		// Forward elimination
+		/*
+		 * First update terms in the equation. This involves setting up the B 
+		 * in Ax = B, using the latest voltage values.
+		 */
 		HP.updateMatrix( );
+		
+		for ( i = 0; i < nCompt; ++i ) {
+			ostringstream error;
+			error << "Updating right-hand side values: B(" << i << ")";
+			ASSERT (
+				isClose< double >( HP.getB( i ), B[ i ], 2.0 ),
+				error.str()
+			);
+		}
+		
+		/*
+		 *  Forward elimination..
+		 */
+		
+		// ..in solver..
 		HP.forwardEliminate( );
 		
+		// ..and locally..
 		int k;
 		for ( i = 0; i < nCompt - 1; i++ )
 			for ( j = i + 1; j < nCompt; j++ ) {
@@ -550,30 +560,35 @@ void testHSolvePassive()
 				B[ j ] -= div * B[ i ];
 			}
 		
-		epsilon = 1.0e-11;
+		// ..then compare A..
 		for ( i = 0; i < nCompt; ++i )
 			for ( j = 0; j < nCompt; ++j ) {
 				ostringstream error;
 				error << "Forward elimination: A(" << i << ", " << j << ")";
 				ASSERT (
-					fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) < epsilon,
+					isClose< double >( HP.getA( i, j ), matrix[ i ][ j ], 2.0 ),
 					error.str()
 				);
 			}
 		
-		epsilon = 1.0e-11;
+		// ..and also B.
 		for ( i = 0; i < nCompt; ++i ) {
 			ostringstream error;
 			error << "Forward elimination: B(" << i << ")";
 			ASSERT (
-				fabs( HP.getB( i ) - B[ i ] ) < epsilon,
+				isClose< double >( HP.getB( i ), B[ i ], 2.0 ),
 				error.str()
 			);
 		}
 		
-		// Backward substitution
+		/*
+		 *  Backward substitution..
+		 */
+		
+		// ..in solver..
 		HP.backwardSubstitute( );
 		
+		// ..and full back-sub on local matrix equation..
 		for ( i = nCompt - 1; i >= 0; i-- ) {
 			VMid[ i ] = B[ i ];
 			
@@ -583,12 +598,12 @@ void testHSolvePassive()
 			VMid[ i ] /= matrix[ i ][ i ];
 		}
 		
-		epsilon = 1.0e-11;
+		// ..and then compare VMid.
 		for ( i = nCompt - 1; i >= 0; i-- ) {
 			ostringstream error;
-			error << "Back substitution: B(" << i << ")";
+			error << "Back substitution: VMid(" << i << ")";
 			ASSERT (
-				fabs( HP.getVMid( i ) - VMid[ i ] ) < epsilon,
+				isClose< double >( HP.getVMid( i ), VMid[ i ], 2.0 ),
 				error.str()
 			);
 		}

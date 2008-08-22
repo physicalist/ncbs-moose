@@ -33,24 +33,18 @@
 template< class T >
 bool isClose( T a, T b, T tolerance )
 {
-	//~ T max = numeric_limits< T >::max();
-	//~ T min = numeric_limits< T >::min();
-	//~ T epsilon = numeric_limits< T >::epsilon();
-	//~ 
-	//~ if ( ( b < 1.0 ) && ( a > b * max )  ||    // overflow
-		 //~ ( b > 1.0 ) && ( a < b * min ) )      // underflow
-		 //~ return false;
-	//~ 
-	//~ return (
-		//~ ( ( 1 - epsilon ) < ( a / b ) ) &&
-		//~ ( ( a / b ) < ( 1 + epsilon ) ) ); 
+	T epsilon = numeric_limits< T >::epsilon();
+	
 	if ( a == b )
 		return true;
 	
+	if ( a == 0 || b == 0 )
+		return ( fabs( a - b ) < tolerance * epsilon );
+	
 	return (
-		fabs( ( a - b ) / a ) < tolerance * numeric_limits< T >::epsilon()
+		fabs( ( a - b ) / a ) < tolerance * epsilon
 		&&
-		fabs( ( a - b ) / b ) < tolerance * numeric_limits< T >::epsilon()
+		fabs( ( a - b ) / b ) < tolerance * epsilon
 	);
 }
 
