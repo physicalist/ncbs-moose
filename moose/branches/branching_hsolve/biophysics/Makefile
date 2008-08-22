@@ -94,7 +94,7 @@ BioScan.o:		BioScan.h SpikeGen.h SynChan.h
 RateLookup.o:	RateLookup.h
 HSolveStruct.o:	HSolveStruct.h
 HinesMatrix.o:	HinesMatrix.h TestHSolve.h
-HSolvePassive.o:	HinesMatrix.h HSolvePassive.h TestHSolve.h
+HSolvePassive.o:	HinesMatrix.h HSolvePassive.h TestHSolve.h ../utility/utility.h
 HSolveActive.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h TestHSolve.h
 HSolve.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h HSolve.h
 HSolveHub.o:	Compartment.h HHChannel.h SpikeGen.h SynChan.h HSolveHub.h
