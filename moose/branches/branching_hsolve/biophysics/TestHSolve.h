@@ -10,15 +10,9 @@
 #ifndef _TEST_HSOLVE_H
 #define _TEST_HSOLVE_H
 
-void array2vec(
-	int *array,
-	int size,
-	vector< vector< unsigned int > >& vec );
-
 void makeFullMatrix(
-	const vector< vector< unsigned int > >& children,
-	const vector< double >& Ga,
-	const vector< double >& CmByDt,
+	const vector< TreeNode >& tree,
+	double dt,
 	vector< vector< double > >& matrix );
 
 template< class T >
@@ -36,9 +30,5 @@ void permute(
 	for ( unsigned int i = 0; i < g.size(); i++ )
 		g[ i ] = copy[ i ];
 }
-
-void updateIndices(
-	vector< vector< unsigned int > >& v,
-	const vector< unsigned int >& permutation );
 
 #endif // _TEST_HSOLVE_H

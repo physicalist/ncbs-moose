@@ -8,21 +8,19 @@
 **********************************************************************/
 
 #include "moose.h"
-#include "SynInfo.h"		// for SynChanStruct in BioScan. Remove eventually.
-#include <queue>			// for SynChanStruct in BioScan. Remove eventually.
-#include "HSolveStruct.h"	// for SynChanStruct in BioScan. Remove eventually.
 #include "BioScan.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"
 
 void HSolvePassive::setup( Id seed, double dt ) {
+	refresh( );
+
 	dt_ = dt;
-	
 	walkTree( seed );
 	initialize( );
 	storeTree( );
 	
-	HinesMatrix::setup( children_, Ga_, CmByDt_ );
+	HinesMatrix::setup( tree_, dt_ );
 }
 
 void HSolvePassive::solve( ) {
@@ -34,6 +32,14 @@ void HSolvePassive::solve( ) {
 //////////////////////////////////////////////////////////////////////
 // Setup of data structures
 //////////////////////////////////////////////////////////////////////
+
+void HSolvePassive::refresh( ) {
+	dt_ = 0.0;
+	compartment_.clear( );
+	compartmentId_.clear( );
+	V_.clear( );
+	tree_.clear( );
+}
 
 void HSolvePassive::walkTree( Id seed ) {
 	// Find leaf node
@@ -80,14 +86,16 @@ void HSolvePassive::walkTree( Id seed ) {
 }
 
 void HSolvePassive::initialize( ) {
-	double Vm, Cm, Em, Rm, Ra, inject;
+	nCompt_ = compartmentId_.size();
+	
+	double Vm, Cm, Em, Rm, inject;
+	
 	vector< Id >::iterator ic;
 	for ( ic = compartmentId_.begin(); ic != compartmentId_.end(); ++ic ) {
 		get< double >( ( *ic )(), "initVm", Vm );
 		get< double >( ( *ic )(), "Cm", Cm );
 		get< double >( ( *ic )(), "Em", Em );
 		get< double >( ( *ic )(), "Rm", Rm );
-		get< double >( ( *ic )(), "Ra", Ra );
 		get< double >( ( *ic )(), "inject", inject );
 		
 		CompartmentStruct compartment (
@@ -97,31 +105,38 @@ void HSolvePassive::initialize( ) {
 		);
 		
 		V_.push_back( Vm );
-		Ga_.push_back( 2.0 / Ra );
 		compartment_.push_back( compartment );
 	}
 }
 
 void HSolvePassive::storeTree( ) {
+	double Ra, Cm;
+	
 	// Create a map from the MOOSE Id to Hines' index.
 	map< Id, unsigned int > hinesIndex;
-	for ( unsigned int ic = 0; ic < compartmentId_.size(); ++ic )
+	for ( unsigned int ic = 0; ic < nCompt_; ++ic )
 		hinesIndex[ compartmentId_[ ic ] ] = ic;
 	
 	vector< Id > childId;
 	vector< Id >::iterator child;
 	
-	children_.resize( compartmentId_.size() );
-	for ( unsigned int ic = 0; ic < compartmentId_.size(); ++ic ) {
+	vector< Id >::iterator ic;
+	for ( ic = compartmentId_.begin(); ic != compartmentId_.end(); ++ic ) {
 		childId.clear();
-		// Find current compartment's children
-		BioScan::children( compartmentId_[ ic ], childId );
 		
+		BioScan::children( *ic, childId );
+		get< double >( ( *ic )(), "Ra", Ra );
+		get< double >( ( *ic )(), "Cm", Cm );
+		
+		TreeNode node;
 		// Push hines' indices of children
 		for ( child = childId.begin(); child != childId.end(); ++child )
-			children_[ ic ].push_back( hinesIndex[ *child ] );
+			node.children.push_back( hinesIndex[ *child ] );
 		
-		CmByDt_.push_back( compartment_[ ic ].CmByDt );
+		node.Ra = Ra;
+		node.Cm = Cm;
+		
+		tree_.push_back( node );
 	}
 }
 
@@ -310,43 +325,13 @@ void HSolvePassive::backwardSubstitute( ) {
 void testHSolvePassive()
 {
 	cout << "\nTesting HSolvePassive" << flush;
+	vector< int > N;
+	vector< int* > childArray;
+	vector< unsigned int > childArraySize;
 	
-	bool success;
-	double epsilon;
+	N.push_back( 20 );
 	
-	int i;
-	int j;
-	int NCOMPT = 20;
-	vector< double > Ga;
-	vector< double > CmByDt;
-	vector< double > Em;
-	vector< double > Rm;
-	double dt = 50e-6;
-	
-	// The i-th entry in 'children' is the list of children of the i-th compt.
-	vector< vector< unsigned int > > children;
-	
-	/* The i-th entry in 'adjacent' is the list of adjacent (children and parent)
-	 * compts of the i-th compt.
-	 */
-	vector< vector< unsigned int > > adjacent;
-	
-	/* Each entry in 'coupling' is a list of electrically coupled compartments.
-	 * These compartments could be linked at junctions, or even in linear segments
-	 * of the cell.
-	 */
-	vector< vector< unsigned int > > coupling;
-	
-	/* This is the full reference matrix which will be compared to its sparse
-	 *  implementation.
-	 */
-	vector< vector< double > > matrix;
-	
-	vector< double > B;
-	vector< double > V;
-	vector< double > VMid;
-	
-	int ch_array[ ] =
+	int childArray_1[ ] =
 	{
 		/* c0  */  -1, 
 		/* c1  */  -1, 0,
@@ -370,192 +355,247 @@ void testHSolvePassive()
 		/* c19 */  -1, 
 	};
 	
-	int ad_array[ ] =
-	{
-		/* c0  */  -1, 1,
-		/* c1  */  -1, 0, 2,
-		/* c2  */  -1, 1, 17,
-		/* c3  */  -1, 4,
-		/* c4  */  -1, 3, 7,
-		/* c5  */  -1, 6,
-		/* c6  */  -1, 5, 7,
-		/* c7  */  -1, 4, 6, 8,
-		/* c8  */  -1, 7, 9,
-		/* c9  */  -1, 8, 17,
-		/* c10 */  -1, 11,
-		/* c11 */  -1, 10, 14,
-		/* c12 */  -1, 13,
-		/* c13 */  -1, 12, 14,
-		/* c14 */  -1, 11, 13, 15,
-		/* c15 */  -1, 14, 16,
-		/* c16 */  -1, 15, 17,
-		/* c17 */  -1, 2, 9, 16, 18,
-		/* c18 */  -1, 17, 19,
-		/* c19 */  -1, 18,
-	};
+	childArray.push_back( childArray_1 );
+	childArraySize.push_back( sizeof( childArray_1 ) / sizeof( int ) );
 	
-	int co_array[ ] =
-	{
-		-1, 0, 1,
-		-1, 1, 2,
-		-1, 2, 9, 17, 18,
-		-1, 3, 4,
-		-1, 4, 6, 7,
-		-1, 5, 6,
-		-1, 7, 8,
-		-1, 8, 9,
-		-1, 10, 11,
-		-1, 11, 13, 14,
-		-1, 12, 13,
-		-1, 14, 15, 16,
-		-1, 16, 17,
-		-1, 18, 19
-	};
-	
-	for ( i = 0; i < NCOMPT; i++ ) {
-		Ga.push_back( 15.0 + 3.0 * i );
-		CmByDt.push_back( 500.0 + 200.0 * i * i );
-		Em.push_back( -0.06 );
-		Rm.push_back( 400.0 + 50 * i * i );
-		V.push_back( -0.06 + 0.01 * i );
-	}
-	
-	array2vec( ch_array, sizeof( ch_array ) / sizeof( int ), children );
-	array2vec( ad_array, sizeof( ad_array ) / sizeof( int ), adjacent );
-	array2vec( co_array, sizeof( co_array ) / sizeof( int ), coupling );
-	
-	Element* n =
-		Neutral::create( "Neutral", "n", Element::root()->id(), Id::scratchId() );
-	
-	vector< Id > c( NCOMPT );
-	for ( i = 0; i < NCOMPT; i++ ) {
-		ostringstream name;
-		name << "c" << i;
-		c[ i ] = Neutral::create( "Compartment", name.str(), n->id(),
-			Id::scratchId() )->id();
-		
-		set< double >( c[ i ](), "Ra", 2.0 / Ga[ i ] );
-		set< double >( c[ i ](), "Cm", CmByDt[ i ] * ( dt / 2 ) );
-		set< double >( c[ i ](), "Em", Em[ i ] );
-		set< double >( c[ i ](), "Rm", Rm[ i ] );
-		set< double >( c[ i ](), "initVm", V[ i ] );
-	}
-	
-	for ( i = 0; i < NCOMPT; i++ ) {
-		vector< unsigned int >& child = children[ i ];
-		for ( j = 0; j < ( int )( child.size() ); j++ ) {
-			success = Eref( c[ i ]() ).add( "axial", c[ child[ j ] ](), "raxial" );
-			ASSERT( success, "Creating test model" );
-		}
-	}
-	
+	////////////////////////////////////////////////////////////////////////////
+	// Run tests
+	////////////////////////////////////////////////////////////////////////////
 	HSolvePassive HP;
-	HP.setup( c[ 19 ], dt );
+	vector< TreeNode > tree;
+				
+	bool success;
+	double epsilon;
 	
-	vector< Id >& hc = HP.compartmentId_;
-	ASSERT( ( int )( hc.size() ) == NCOMPT, "Tree traversal" );
-	for ( i = 0; i < NCOMPT; i++ )
-		ASSERT(
-			find( hc.begin(), hc.end(), c[ i ] ) != hc.end(), "Tree traversal"
-		);
+	double dt = 50e-6;
+	vector< double > Ga;
+	vector< double > CmByDt;
+	vector< double > Em;
+	vector< double > Rm;
 	
-	vector< unsigned int > permutation( NCOMPT );
-	for ( i = 0; i < NCOMPT; i++ ) {
-		unsigned int newIndex =
-			find( hc.begin(), hc.end(), c[ i ] ) - hc.begin();
-		permutation[ i ] = newIndex;
-	}
+	// The i-th entry in 'children' is the list of children of the i-th compt.
+	vector< vector< unsigned int > > children;
 	
-	permute< double >( Ga, permutation );
-	permute< double >( CmByDt, permutation );
-	permute< vector< unsigned int > >( children, permutation );
-	
-	updateIndices( children, permutation );
-	updateIndices( coupling, permutation );
-	
-	makeFullMatrix(	children, Ga, CmByDt, matrix );
-	VMid.resize( NCOMPT );
-	B.resize( NCOMPT );
-	for ( i = 0; i < NCOMPT; i++ )
-		B[ i ] = CmByDt[ i ] * V[ i ] + Em[ i ] / Rm[ i ];
-	
-	epsilon = 1.0e-11;
-	double e = 0.0;
-	for ( i = 0; i < NCOMPT; ++i )
-		for ( j = 0; j < NCOMPT; ++j ) {
-			if ( fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) > e ) {
-				e = fabs( HP.getA( i, j ) - matrix[ i ][ j ] );
-				cout << i << "," << j << "|" << e << flush;
-			}
-			ostringstream error;
-			error << "Testing matrix construction: (" << i << ", " << j << ")";
-			ASSERT (
-				fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) < epsilon,
-				error.str()
-			);
-		}
-	
-	/* Gaussian elimination
+	/* 
+	 * This is the full reference matrix which will be compared to its sparse
+	 * implementation.
 	 */
+	vector< vector< double > > matrix;
 	
-	// Forward elimination
-	HP.updateMatrix( );
-	HP.forwardEliminate( );
+	vector< double > B;
+	vector< double > V;
+	vector< double > VMid;
+	vector< Id > c;
 	
-	int k;
-	for ( i = 0; i < NCOMPT - 1; i++ )
-		for ( j = i + 1; j < NCOMPT; j++ ) {
-			double div = matrix[ j ][ i ] / matrix[ i ][ i ];
-			for ( k = 0; k < NCOMPT; k++ )
-				matrix[ j ][ k ] -= div * matrix[ i ][ k ];
-			B[ j ] -= div * B[ i ];
+	int i;
+	int j;
+	int nCompt;
+	int* array;
+	unsigned int arraySize;
+	for ( unsigned int cell = 0; cell < childArray.size(); cell++ ) {
+		nCompt = N[ cell ];
+		array = childArray[ cell ];
+		arraySize = childArraySize[ cell ];
+		
+		//////////////////////////////////////////
+		// Prepare local information on cell
+		//////////////////////////////////////////
+		tree.clear();
+		tree.resize( nCompt );
+		Em.clear();
+		Rm.clear();
+		V.clear();
+		for ( i = 0; i < nCompt; i++ ) {
+			tree[ i ].Ra = 15.0 + 3.0 * i;
+			tree[ i ].Cm = 500.0 + 200.0 * i * i;
+			Em.push_back( -0.06 );
+			Rm.push_back( 400.0 + 50 * i * i );
+			V.push_back( -0.06 + 0.01 * i );
 		}
-	
-	epsilon = 1.0e-11;
-	for ( i = 0; i < NCOMPT; ++i )
-		for ( j = 0; j < NCOMPT; ++j ) {
+		
+		int count = -1;
+		for ( unsigned int a = 0; a < arraySize; a++ )
+			if ( array[ a ] == -1 )
+				count++;
+			else		
+				tree[ count ].children.push_back( array[ a ] );
+		
+		//////////////////////////////////////////
+		// Create cell inside moose; setup solver.
+		//////////////////////////////////////////
+		Element* n =
+			Neutral::create( "Neutral", "n", Element::root()->id(), Id::scratchId() );
+		
+		c.clear();
+		c.resize( nCompt );
+		for ( i = 0; i < nCompt; i++ ) {
+			ostringstream name;
+			name << "c" << i;
+			c[ i ] = Neutral::create( "Compartment", name.str(), n->id(),
+				Id::scratchId() )->id();
+			
+			set< double >( c[ i ](), "Ra", tree[ i ].Ra );
+			set< double >( c[ i ](), "Cm", tree[ i ].Cm );
+			set< double >( c[ i ](), "Em", Em[ i ] );
+			set< double >( c[ i ](), "Rm", Rm[ i ] );
+			set< double >( c[ i ](), "initVm", V[ i ] );
+		}
+		
+		for ( i = 0; i < nCompt; i++ ) {
+			vector< unsigned int >& child = tree[ i ].children;
+			for ( j = 0; j < ( int )( child.size() ); j++ ) {
+				success = Eref( c[ i ]() ).add( "axial", c[ child[ j ] ](), "raxial" );
+				ASSERT( success, "Creating test model" );
+			}
+		}
+		
+		HP.setup( c[ 0 ], dt );
+		
+		/*
+		 * Here we check if the cell was read in correctly by the solver.
+		 * This test only checks if all the created compartments were read in.
+		 * It doesn't check if they have been assigned hines' indices correctly.
+		 */
+		vector< Id >& hc = HP.compartmentId_;
+		ASSERT( ( int )( hc.size() ) == nCompt, "Tree traversal" );
+		for ( i = 0; i < nCompt; i++ )
+			ASSERT(
+				find( hc.begin(), hc.end(), c[ i ] ) != hc.end(), "Tree traversal"
+			);
+		
+		//////////////////////////////////////////
+		// Setup local matrix
+		//////////////////////////////////////////
+		
+		/*
+		 * First we need to ensure that the hines' indices for the local model
+		 * and those inside the solver match. If the numbering is different,
+		 * then the matrices will not agree.
+		 * 
+		 * In the following, we find out the indices assigned by the solver, 
+		 * and impose them on the local data structures.
+		 */
+		
+		// Figure out new indices
+		vector< unsigned int > permutation( nCompt );
+		for ( i = 0; i < nCompt; i++ ) {
+			unsigned int newIndex =
+				find( hc.begin(), hc.end(), c[ i ] ) - hc.begin();
+			permutation[ i ] = newIndex;
+		}
+		
+		// Shuffle tree list according to new order
+		permute< TreeNode >( tree, permutation );
+		
+		// Update indices of children
+		for ( i = 0; i < nCompt; i++ ) {
+			vector< unsigned int >& child = tree[ i ].children;
+			for ( j = 0; j < ( int )( child.size() ); j++ )
+				child[ j ] = permutation[ child[ j ] ];
+		}
+		
+		// Create local reference matrix
+		makeFullMatrix(	tree, dt, matrix );
+		VMid.resize( nCompt );
+		B.resize( nCompt );
+		for ( i = 0; i < nCompt; i++ )
+			B[ i ] =
+				V[ i ] * tree[ i ].Cm / ( dt / 2.0 ) +
+				Em[ i ] / Rm[ i ];
+		
+		//////////////////////////////////////////
+		// Run comparisons
+		//////////////////////////////////////////
+		
+		/*
+		 * Compare initial matrices
+		 */
+		epsilon = 1.0e-11;
+		double e = 0.0;
+		for ( i = 0; i < nCompt; ++i )
+			for ( j = 0; j < nCompt; ++j ) {
+				if ( fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) > e ) {
+					e = fabs( HP.getA( i, j ) - matrix[ i ][ j ] );
+					cout << i << "," << j << "|" << e << flush;
+				}
+				ostringstream error;
+				error << "Testing matrix construction: (" << i << ", " << j << ")";
+				ASSERT (
+					fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) < epsilon,
+					error.str()
+				);
+			}
+		
+		e = 0.0;
+		for ( i = 0; i < nCompt; i++ )
+			if ( fabs( HP.getB( i ) - B[ i ] ) > e ) {
+				e = fabs( HP.getB( i ) - B[ i ] );
+				cout << i << "|" << e << endl;
+			}
+		
+		/* 
+		 * Gaussian elimination
+		 */
+		
+		// Forward elimination
+		HP.updateMatrix( );
+		HP.forwardEliminate( );
+		
+		int k;
+		for ( i = 0; i < nCompt - 1; i++ )
+			for ( j = i + 1; j < nCompt; j++ ) {
+				double div = matrix[ j ][ i ] / matrix[ i ][ i ];
+				for ( k = 0; k < nCompt; k++ )
+					matrix[ j ][ k ] -= div * matrix[ i ][ k ];
+				B[ j ] -= div * B[ i ];
+			}
+		
+		epsilon = 1.0e-11;
+		for ( i = 0; i < nCompt; ++i )
+			for ( j = 0; j < nCompt; ++j ) {
+				ostringstream error;
+				error << "Forward elimination: A(" << i << ", " << j << ")";
+				ASSERT (
+					fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) < epsilon,
+					error.str()
+				);
+			}
+		
+		epsilon = 1.0e-11;
+		for ( i = 0; i < nCompt; ++i ) {
 			ostringstream error;
-			error << "Forward elimination: A(" << i << ", " << j << ")";
+			error << "Forward elimination: B(" << i << ")";
 			ASSERT (
-				fabs( HP.getA( i, j ) - matrix[ i ][ j ] ) < epsilon,
+				fabs( HP.getB( i ) - B[ i ] ) < epsilon,
 				error.str()
 			);
 		}
-	
-	epsilon = 1.0e-11;
-	for ( i = 0; i < NCOMPT; ++i ) {
-		ostringstream error;
-		error << "Forward elimination: B(" << i << ")";
-		ASSERT (
-			fabs( HP.getB( i ) - B[ i ] ) < epsilon,
-			error.str()
-		);
-	}
-	
-	// Backward substitution
-	HP.backwardSubstitute( );
-	
-	for ( i = NCOMPT - 1; i >= 0; i-- ) {
-		VMid[ i ] = B[ i ];
 		
-		for ( j = NCOMPT - 1; j > i; j-- )
-			VMid[ i ] -= VMid[ j ] * matrix[ i ][ j ];
+		// Backward substitution
+		HP.backwardSubstitute( );
 		
-		VMid[ i ] /= matrix[ i ][ i ];
+		for ( i = nCompt - 1; i >= 0; i-- ) {
+			VMid[ i ] = B[ i ];
+			
+			for ( j = nCompt - 1; j > i; j-- )
+				VMid[ i ] -= VMid[ j ] * matrix[ i ][ j ];
+			
+			VMid[ i ] /= matrix[ i ][ i ];
+		}
+		
+		epsilon = 1.0e-11;
+		for ( i = nCompt - 1; i >= 0; i-- ) {
+			ostringstream error;
+			error << "Back substitution: B(" << i << ")";
+			ASSERT (
+				fabs( HP.getVMid( i ) - VMid[ i ] ) < epsilon,
+				error.str()
+			);
+		}
+		
+		// cleanup
+		set( n, "destroy" );
 	}
-	
-	epsilon = 1.0e-11;
-	for ( i = NCOMPT - 1; i >= 0; i-- ) {
-		ostringstream error;
-		error << "Back substitution: B(" << i << ")";
-		ASSERT (
-			fabs( HP.getVMid( i ) - VMid[ i ] ) < epsilon,
-			error.str()
-		);
-	}
-	
-	// cleanup
-	set( n, "destroy" );
 }
 
 #endif // DO_UNIT_TESTS

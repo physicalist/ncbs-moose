@@ -10,6 +10,8 @@
 #ifndef _BIO_SCAN_H
 #define _BIO_SCAN_H
 
+struct SynChanStruct;
+
 class BioScan
 {
 public:
