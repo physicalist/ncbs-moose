@@ -39,20 +39,18 @@ protected:
 	void forwardEliminate( );
 	void backwardSubstitute( );
 	
-	double                       dt_;
 	vector< CompartmentStruct >  compartment_;
 	vector< Id >                 compartmentId_;
 	vector< double >             V_;
 
 private:
 	// Setting up of data structures
+	void refresh( );
 	void walkTree( Id seed );
 	void initialize( );
 	void storeTree( );
 	
-	vector< vector< unsigned int > >  children_;
-	vector< double >                  Ga_;
-	vector< double >                  CmByDt_;
+	vector< TreeNode > tree_;
 };
 
 #endif // _HSOLVE_PASSIVE_H

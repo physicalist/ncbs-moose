@@ -10,9 +10,8 @@
 #include "moose.h"
 #include <set>
 #include "SpikeGen.h"       // for generating spikes
-#include "SynInfo.h"        // for SynChanStruct in BioScan. Remove eventually.
 #include <queue>            // for SynChanStruct in BioScan. Remove eventually.
-#include "HSolveStruct.h"   // for SynChanStruct in BioScan. Remove eventually.
+#include "HSolveStruct.h"
 #include "BioScan.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"

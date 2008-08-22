@@ -11,21 +11,40 @@
 #include "HinesMatrix.h"
 #include <sstream>
 
-void HinesMatrix::setup(
-	const vector< vector< unsigned int > >& children,
-	const vector< double >& Ga,
-	const vector< double >& CmByDt )
+void HinesMatrix::setup( const vector< TreeNode >& tree, double dt )
 {
 	refresh( );
 	
-	nCompt_ = children.size();
-	children_ = &children;
-	Ga_ = &Ga;
-	CmByDt_ = &CmByDt;
+	nCompt_ = tree.size();
+	dt_ = dt;
+	tree_ = &tree;
+	
+	for ( unsigned int i = 0; i < nCompt_; i++ )
+		Ga_.push_back( 2.0 / tree[ i ].Ra );
 	
 	makeJunctions( );
 	makeMatrix( );
 	makeOperands( );
+}
+
+void HinesMatrix::refresh( )
+{
+	nCompt_ = 0;
+	dt_ = 0.0;
+	junction_.clear( );
+	HS_.clear( );
+	HJ_.clear( );
+	HJCopy_.clear( );
+	VMid_.clear( );
+	operand_.clear( );
+	backOperand_.clear( );
+	stage_ = 0;
+	
+	tree_ = 0;
+	Ga_.clear();
+	coupled_.clear( );
+	operandBase_.clear( );
+	groupNumber_.clear( );
 }
 
 bool groupCompare(
@@ -40,8 +59,8 @@ bool groupCompare(
 // Stage 3
 void HinesMatrix::makeJunctions( ) {
 	// 3.1
-	for ( unsigned int i = 0; i < children_->size(); ++i ) {
-		const vector< unsigned int >& c = ( *children_ )[ i ];
+	for ( unsigned int i = 0; i < nCompt_; ++i ) {
+		const vector< unsigned int >& c = ( *tree_ )[ i ].children;
 		
 		if ( c.size() == 0 )
 			continue;
@@ -84,13 +103,12 @@ void HinesMatrix::makeJunctions( ) {
 
 // Stage 4
 void HinesMatrix::makeMatrix( ) {
-	const vector< double >& Ga = *Ga_;
-	const vector< double >& CmByDt = *CmByDt_;
+	const vector< TreeNode >& node = *tree_;
 	
 	// Setting up HS
 	HS_.resize( 4 * nCompt_, 0.0 );
 	for ( unsigned int i = 0; i < nCompt_; ++i )
-		HS_[ 4 * i + 2 ] = CmByDt[ i ];
+		HS_[ 4 * i + 2 ] = node[ i ].Cm / ( dt_ / 2.0 );
 	
 	double gi, gj, gij;
 	vector< JunctionStruct >::iterator junction = junction_.begin();
@@ -98,13 +116,13 @@ void HinesMatrix::makeMatrix( ) {
 		if ( junction_.size() &&
 		     junction < junction_.end() &&
 		     i == junction->index )
-	{
+		{
 			++junction;
 			continue;
 		}
 		
-		gi = Ga[ i ];
-		gj = Ga[ i + 1 ];
+		gi = Ga_[ i ];
+		gj = Ga_[ i + 1 ];
 		gij = gi * gj / ( gi + gj );
 		
 		HS_[ 4 * i + 1 ] = -gij;
@@ -118,10 +136,10 @@ void HinesMatrix::makeMatrix( ) {
 		double gsum = 0.0;
 		
 		for ( i = group->begin(); i != group->end(); ++i )
-			gsum += Ga[ *i ];
+			gsum += Ga_[ *i ];
 		
 		for ( i = group->begin(); i != group->end(); ++i ) {
-			gi = Ga[ *i ];
+			gi = Ga_[ *i ];
 			
 			HS_[ 4 * *i + 2 ] += gi * ( 1.0 - gi / gsum );
 		}
@@ -142,13 +160,13 @@ void HinesMatrix::makeMatrix( ) {
 		double gsum = 0.0;
 		
 		for ( i = group->begin(); i != group->end(); ++i )
-			gsum += Ga[ *i ];
+			gsum += Ga_[ *i ];
 		
 		for ( i = group->begin(); i != group->end() - 1; ++i ) {
 			int base = HJ_.size();
 			
 			for ( j = i + 1; j != group->end(); ++j ) {
-				gij = Ga[ *i ] * Ga[ *j ] / gsum;
+				gij = Ga_[ *i ] * Ga_[ *j ] / gsum;
 				
 				HJ_.push_back( -gij );
 				HJ_.push_back( -gij );
@@ -220,7 +238,7 @@ void HinesMatrix::makeOperands( ) {
 				
 				// Elements from B
 				operand_.push_back( HS_.begin() + 4 * farIndex + 3 );
-				operand_.push_back( HS_.begin() + 4 * farIndex + 3 );
+				operand_.push_back( HS_.begin() + 4 * index + 3 );
 				operand_.push_back( base + 2 * j + 1 );
 			}
 			
@@ -284,25 +302,6 @@ void HinesMatrix::makeOperands( ) {
 			backOperand_.push_back( VMid_.begin() + farIndex );
 		}
 	}
-}
-
-void HinesMatrix::refresh( )
-{
-	nCompt_ = 0;
-	junction_.clear( );
-	HS_.clear( );
-	HJ_.clear( );
-	HJCopy_.clear( );
-	VMid_.clear( );
-	operand_.clear( );
-	backOperand_.clear( );
-	stage_ = 0;
-	
-	children_ = 0;
-	Ga_ = 0;
-	coupled_.clear( );
-	operandBase_.clear( );
-	groupNumber_.clear( );
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -610,17 +609,16 @@ void testHinesMatrix()
 	// Run tests
 	////////////////////////////////////////////////////////////////////////////
 	HinesMatrix H;
-	vector< double > Ga;
-	vector< double > CmByDt;
+	vector< TreeNode > tree;
+	double dt = 50e-6;
 	
-	// The i-th entry in 'children' is the list of children of the i-th compt.
-	vector< vector< unsigned int > > children;
-	
-	/* This is the full reference matrix which will be compared to its sparse
-	 *  implementation.
+	/* 
+	 * This is the full reference matrix which will be compared to its sparse
+	 * implementation.
 	 */
 	vector< vector< double > > matrix;
 	
+	double epsilon = 1e-17;
 	unsigned int i;
 	unsigned int j;
 	unsigned int nCompt;
@@ -632,33 +630,34 @@ void testHinesMatrix()
 		arraySize = childArraySize[ cell ];
 		
 		// Prepare cell
-		Ga.clear();
-		CmByDt.clear();
+		tree.clear();
+		tree.resize( nCompt );
 		for ( i = 0; i < nCompt; ++i ) {
-			Ga.push_back( 15.0 + 3.0 * i );
-			CmByDt.push_back( 500.0 + 200.0 * i * i );
+			tree[ i ].Ra = 15.0 + 3.0 * i;
+			tree[ i ].Cm = 500.0 + 200.0 * i * i;
 		}
 		
-		children.clear();
+		int count = -1;
 		for ( unsigned int a = 0; a < arraySize; a++ )
 			if ( array[ a ] == -1 )
-				children.resize( children.size() + 1 );
+				count++;
 			else		
-				children.back().push_back( array[ a ] );
+				tree[ count ].children.push_back( array[ a ] );
 		
 		// Prepare local matrix
-		makeFullMatrix(	children, Ga, CmByDt, matrix );
+		makeFullMatrix(	tree, dt, matrix );
 		
 		// Prepare sparse matrix
-		H.setup( children, Ga, CmByDt );
+		H.setup( tree, dt );
 		
 		// Compare matrices
 		for ( i = 0; i < nCompt; ++i )
 			for ( j = 0; j < nCompt; ++j ) {
 				ostringstream error;
-				error << "Testing Hines' Matrix: (" << i << ", " << j << ")";
+				error << "Testing Hines' Matrix: Cell# "
+				      << cell + 1 << ", entry (" << i << ", " << j << ")";
 				ASSERT(
-					matrix[ i ][ j ] == H.getA( i, j ),
+					fabs( matrix[ i ][ j ] - H.getA( i, j ) ) < epsilon,
 					error.str()
 				);
 			}

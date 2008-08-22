@@ -25,13 +25,17 @@ struct JunctionStruct
 	unsigned int rank;
 };
 
+struct TreeNode
+{
+	vector< unsigned int > children;
+	double Ra;
+	double Cm;
+};
+
 class HinesMatrix
 {
 public:
-	void setup(
-		const vector< vector< unsigned int > >& children,
-		const vector< double >& Ga,
-		const vector< double >& CmByDt );
+	void setup( const vector< TreeNode >& tree, double dt );
 	
 	double getA( unsigned int row, unsigned int col );
 	double getB( unsigned int row );
@@ -41,6 +45,8 @@ protected:
 	typedef vector< double >::iterator vdIterator;
 	
 	unsigned int              nCompt_;
+	double                    dt_;
+	
 	vector< JunctionStruct >  junction_;
 	vector< double >          HS_;
 	vector< double >          HJ_;
@@ -51,14 +57,13 @@ protected:
 	int                       stage_;
 
 private:
+	void refresh( );
 	void makeJunctions( );
 	void makeMatrix( );
 	void makeOperands( );
-	void refresh( );
 
-	vector< vector< unsigned int > > const  *children_;
-	vector< double > const                  *Ga_;
-	vector< double > const                  *CmByDt_;
+	const vector< TreeNode >                *tree_;
+	vector< double >                         Ga_;
 	vector< vector< unsigned int > >         coupled_;
 	map< unsigned int, vdIterator >          operandBase_;
 	map< unsigned int, unsigned int >        groupNumber_;

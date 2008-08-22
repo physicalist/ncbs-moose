@@ -59,6 +59,7 @@ struct SpikeGenStruct
 	double lastEvent_;
 };
 
+class SynInfo;
 struct SynChanStruct
 {
 	// Index of parent compartment
@@ -95,4 +96,3 @@ struct CaConcStruct
 };
 
 #endif // _HSOLVE_STRUCT_H
-

@@ -10,7 +10,10 @@
 #ifdef DO_UNIT_TESTS
 
 #include <vector>
+#include <map>
 using namespace std;
+
+#include "HinesMatrix.h"
 
 extern void testBioScan(); // Defined in BioScan.cpp
 extern void testHinesMatrix(); // Defined in HinesMatrix.cpp
@@ -20,43 +23,38 @@ void testHSolve()
 {
 	testBioScan();
 	testHinesMatrix();
-	//~ testHSolvePassive();
+	testHSolvePassive();
 }
 
 //////////////////////////////////////////////////////////////////////////////
 // Helper functions called in testHinesMatrix, testHSolvePassive, etc.
 //////////////////////////////////////////////////////////////////////////////
 
-void array2vec(
-	int *array,
-	int size,
-	vector< vector< unsigned int > >& vec )
-{
-	vec.clear();
-	
-	for ( int i = 0; i < size; i++ )
-		if ( array[ i ] == -1 )
-			vec.resize( vec.size() + 1 );
-		else		
-			vec.back().push_back( array[ i ] );
-}
-
 void makeFullMatrix(
-	const vector< vector< unsigned int > >& children,
-	const vector< double >& Ga,
-	const vector< double >& CmByDt,
+	const vector< TreeNode >& tree,
+	double dt,
 	vector< vector< double > >& matrix )
 {
-	unsigned int size = children.size();
+	unsigned int size = tree.size();
+	
+	/*
+	 * Some convenience variables
+	 */
+	vector< double > CmByDt;
+	vector< double > Ga;
+	for ( unsigned int i = 0; i < tree.size(); i++ ) {
+		CmByDt.push_back( tree[ i ].Cm / ( dt / 2.0 ) );
+		Ga.push_back( 2.0 / tree[ i ].Ra );
+	}
 	
 	/* Each entry in 'coupled' is a list of electrically coupled compartments.
 	 * These compartments could be linked at junctions, or even in linear segments
 	 * of the cell.
 	 */
 	vector< vector< unsigned int > > coupled;
-	for ( unsigned int i = 0; i < children.size(); i++ )
-		if ( children[ i ].size() >= 1 ) {
-			coupled.push_back( children[ i ] );
+	for ( unsigned int i = 0; i < tree.size(); i++ )
+		if ( tree[ i ].children.size() >= 1 ) {
+			coupled.push_back( tree[ i ].children );
 			coupled.back().push_back( i );
 		}
 	
