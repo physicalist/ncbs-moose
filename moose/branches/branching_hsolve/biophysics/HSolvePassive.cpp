@@ -295,6 +295,15 @@ void HSolvePassive::backwardSubstitute( ) {
 }
 
 ///////////////////////////////////////////////////////////////////////////
+// Public interface
+///////////////////////////////////////////////////////////////////////////
+
+double HSolvePassive::getV( unsigned int row )
+{
+	return V_[ row ];
+}
+
+///////////////////////////////////////////////////////////////////////////
 
 #ifdef DO_UNIT_TESTS
 
@@ -303,31 +312,32 @@ void HSolvePassive::backwardSubstitute( ) {
 #include <sstream>
 #include "TestHSolve.h"
 
-/**
- *  We test if the Hines' matrix is correctly setup for the following cell:
- * 
- *   Soma--->  15 - 14 - 13 - 12
- *              |    |
- *              |    L 11 - 10
- *              |
- *              L 16 - 17 - 18 - 19
- *                      |
- *                      L 9 - 8 - 7 - 6 - 5
- *                      |         |
- *                      |         L 4 - 3
- *                      |
- *                      L 2 - 1 - 0
- * 
- *  The numbers are the hines indices of compartments. Compartment X is the
- *  child of compartment Y if X is one level further away from the soma (#15)
- *  than Y. So #17 is the parent of #'s 2, 9 and 18.
- */
 void testHSolvePassive()
 {
 	cout << "\nTesting HSolvePassive" << flush;
 	vector< int > N;
 	vector< int* > childArray;
 	vector< unsigned int > childArraySize;
+	
+	/**
+	 *  We test passive-cable solver for the following cell:
+	 * 
+	 *   Soma--->  15 - 14 - 13 - 12
+	 *              |    |
+	 *              |    L 11 - 10
+	 *              |
+	 *              L 16 - 17 - 18 - 19
+	 *                      |
+	 *                      L 9 - 8 - 7 - 6 - 5
+	 *                      |         |
+	 *                      |         L 4 - 3
+	 *                      |
+	 *                      L 2 - 1 - 0
+	 * 
+	 *  The numbers are the hines indices of compartments. Compartment X is the
+	 *  child of compartment Y if X is one level further away from the soma (#15)
+	 *  than Y. So #17 is the parent of #'s 2, 9 and 18.
+	 */
 	
 	N.push_back( 20 );
 	
@@ -357,6 +367,184 @@ void testHSolvePassive()
 	
 	childArray.push_back( childArray_1 );
 	childArraySize.push_back( sizeof( childArray_1 ) / sizeof( int ) );
+	
+	/**
+	 *  Cell 2:
+	 * 
+	 *             3
+	 *             |
+	 *   Soma--->  2
+	 *            / \
+	 *           /   \
+	 *          1     0
+	 * 
+	 */
+	
+	N.push_back( 4 );
+	
+	int childArray_2[ ] =
+	{
+		/* c0  */  -1, 
+		/* c1  */  -1,
+		/* c2  */  -1, 0, 1, 3,
+		/* c3  */  -1, 
+	};
+	
+	childArray.push_back( childArray_2 );
+	childArraySize.push_back( sizeof( childArray_2 ) / sizeof( int ) );
+	
+	/**
+	 *  Cell 3:
+	 * 
+	 *             3
+	 *             |
+	 *             2
+	 *            / \
+	 *           /   \
+	 *          1     0  <--- Soma
+	 * 
+	 */
+	
+	N.push_back( 4 );
+	
+	int childArray_3[ ] =
+	{
+		/* c0  */  -1, 2, 
+		/* c1  */  -1,
+		/* c2  */  -1, 1, 3,
+		/* c3  */  -1, 
+	};
+	
+	childArray.push_back( childArray_3 );
+	childArraySize.push_back( sizeof( childArray_3 ) / sizeof( int ) );
+	
+	/**
+	 *  Cell 4:
+	 * 
+	 *             3  <--- Soma
+	 *             |
+	 *             2
+	 *            / \
+	 *           /   \
+	 *          1     0
+	 * 
+	 */
+	
+	N.push_back( 4 );
+	
+	int childArray_4[ ] =
+	{
+		/* c0  */  -1,
+		/* c1  */  -1,
+		/* c2  */  -1, 0, 1,
+		/* c3  */  -1, 2,
+	};
+	
+	childArray.push_back( childArray_4 );
+	childArraySize.push_back( sizeof( childArray_4 ) / sizeof( int ) );
+	
+	/**
+	 *  Cell 5:
+	 * 
+	 *             1  <--- Soma
+	 *             |
+	 *             2
+	 *            / \
+	 *           4   0
+	 *          / \
+	 *         3   5
+	 * 
+	 */
+	
+	N.push_back( 6 );
+	
+	int childArray_5[ ] =
+	{
+		/* c0  */  -1,
+		/* c1  */  -1, 2,
+		/* c2  */  -1, 0, 4,
+		/* c3  */  -1,
+		/* c4  */  -1, 3, 5,
+		/* c5  */  -1,
+	};
+	
+	childArray.push_back( childArray_5 );
+	childArraySize.push_back( sizeof( childArray_5 ) / sizeof( int ) );
+	
+	/**
+	 *  Cell 6:
+	 * 
+	 *             3  <--- Soma
+	 *             L 4
+	 *               L 6
+	 *               L 5
+	 *               L 2
+	 *               L 1
+	 *               L 0
+	 * 
+	 */
+	
+	N.push_back( 7 );
+	
+	int childArray_6[ ] =
+	{
+		/* c0  */  -1,
+		/* c1  */  -1,
+		/* c2  */  -1,
+		/* c3  */  -1, 4,
+		/* c4  */  -1, 0, 1, 2, 5, 6,
+		/* c5  */  -1,
+		/* c6  */  -1,
+	};
+	
+	childArray.push_back( childArray_6 );
+	childArraySize.push_back( sizeof( childArray_6 ) / sizeof( int ) );
+	
+	/**
+	 *  Cell 7: Single compartment
+	 */
+	
+	N.push_back( 1 );
+	
+	int childArray_7[ ] =
+	{
+		/* c0  */  -1,
+	};
+	
+	childArray.push_back( childArray_7 );
+	childArraySize.push_back( sizeof( childArray_7 ) / sizeof( int ) );
+	
+	/**
+	 *  Cell 8: 3 compartments; soma is in the middle.
+	 */
+	
+	N.push_back( 3 );
+	
+	int childArray_8[ ] =
+	{
+		/* c0  */  -1,
+		/* c1  */  -1, 0, 2,
+		/* c2  */  -1,
+	};
+	
+	childArray.push_back( childArray_8 );
+	childArraySize.push_back( sizeof( childArray_8 ) / sizeof( int ) );
+	
+	/**
+	 *  Cell 9: 3 compartments; first compartment is soma.
+	 */
+	
+	N.push_back( 3 );
+	
+	int childArray_9[ ] =
+	{
+		/* c0  */  -1, 1,
+		/* c1  */  -1, 2,
+		/* c2  */  -1,
+	};
+	
+	childArray.push_back( childArray_9 );
+	childArraySize.push_back( sizeof( childArray_9 ) / sizeof( int ) );
 	
 	////////////////////////////////////////////////////////////////////////////
 	// Run tests
@@ -500,24 +688,27 @@ void testHSolvePassive()
 		makeFullMatrix(	tree, dt, matrix );
 		VMid.resize( nCompt );
 		B.resize( nCompt );
-		for ( i = 0; i < nCompt; i++ )
-			B[ i ] =
-				V[ i ] * tree[ i ].Cm / ( dt / 2.0 ) +
-				Em[ i ] / Rm[ i ];
+		
+		vector< vector< double > > matrixCopy;
+		matrixCopy.assign( matrix.begin(), matrix.end() );
 		
 		//////////////////////////////////////////
 		// Run comparisons
 		//////////////////////////////////////////
+		double tolerance;
 		
 		/*
 		 * Compare initial matrices
 		 */
+		
+		tolerance = 1.0;
+		
 		for ( i = 0; i < nCompt; ++i )
 			for ( j = 0; j < nCompt; ++j ) {
 				ostringstream error;
 				error << "Testing matrix construction: (" << i << ", " << j << ")";
 				ASSERT (
-					isClose< double >( HP.getA( i, j ), matrix[ i ][ j ], 2.0 ),
+					isClose< double >( HP.getA( i, j ), matrix[ i ][ j ], tolerance ),
 					error.str()
 				);
 			}
@@ -528,86 +719,128 @@ void testHSolvePassive()
 		 * 
 		 */
 		
-		/*
-		 * First update terms in the equation. This involves setting up the B 
-		 * in Ax = B, using the latest voltage values.
-		 */
-		HP.updateMatrix( );
+		tolerance = 4.0;
 		
-		for ( i = 0; i < nCompt; ++i ) {
-			ostringstream error;
-			error << "Updating right-hand side values: B(" << i << ")";
-			ASSERT (
-				isClose< double >( HP.getB( i ), B[ i ], 2.0 ),
-				error.str()
-			);
-		}
-		
-		/*
-		 *  Forward elimination..
-		 */
-		
-		// ..in solver..
-		HP.forwardEliminate( );
-		
-		// ..and locally..
-		int k;
-		for ( i = 0; i < nCompt - 1; i++ )
-			for ( j = i + 1; j < nCompt; j++ ) {
-				double div = matrix[ j ][ i ] / matrix[ i ][ i ];
-				for ( k = 0; k < nCompt; k++ )
-					matrix[ j ][ k ] -= div * matrix[ i ][ k ];
-				B[ j ] -= div * B[ i ];
-			}
-		
-		// ..then compare A..
-		for ( i = 0; i < nCompt; ++i )
-			for ( j = 0; j < nCompt; ++j ) {
+		for ( int pass = 0; pass < 2; pass++ ) {
+			/*
+			 * First update terms in the equation. This involves setting up the B 
+			 * in Ax = B, using the latest voltage values. Also, the coefficients
+			 * stored in A have to be restored to their original values, since
+			 * the matrix is modified at the end of every pass of gaussian
+			 * elimination.
+			 */
+			
+			// Do so in the solver..
+			HP.updateMatrix( );
+			
+			// ..locally..
+			matrix.assign( matrixCopy.begin(), matrixCopy.end() );
+			
+			for ( i = 0; i < nCompt; i++ )
+				B[ i ] =
+					V[ i ] * tree[ i ].Cm / ( dt / 2.0 ) +
+					Em[ i ] / Rm[ i ];
+			
+			// ..and compare B.
+			for ( i = 0; i < nCompt; ++i ) {
 				ostringstream error;
-				error << "Forward elimination: A(" << i << ", " << j << ")";
+				error << "Updating right-hand side values:"
+				      << "Pass " << pass
+				      << "B(" << i << ")";
 				ASSERT (
-					isClose< double >( HP.getA( i, j ), matrix[ i ][ j ], 2.0 ),
+					isClose< double >( HP.getB( i ), B[ i ], tolerance ),
 					error.str()
 				);
 			}
-		
-		// ..and also B.
-		for ( i = 0; i < nCompt; ++i ) {
-			ostringstream error;
-			error << "Forward elimination: B(" << i << ")";
-			ASSERT (
-				isClose< double >( HP.getB( i ), B[ i ], 2.0 ),
-				error.str()
-			);
-		}
-		
-		/*
-		 *  Backward substitution..
-		 */
-		
-		// ..in solver..
-		HP.backwardSubstitute( );
-		
-		// ..and full back-sub on local matrix equation..
-		for ( i = nCompt - 1; i >= 0; i-- ) {
-			VMid[ i ] = B[ i ];
 			
-			for ( j = nCompt - 1; j > i; j-- )
-				VMid[ i ] -= VMid[ j ] * matrix[ i ][ j ];
+			/*
+			 *  Forward elimination..
+			 */
 			
-			VMid[ i ] /= matrix[ i ][ i ];
+			// ..in solver..
+			HP.forwardEliminate( );
+			
+			// ..and locally..
+			int k;
+			for ( i = 0; i < nCompt - 1; i++ )
+				for ( j = i + 1; j < nCompt; j++ ) {
+					double div = matrix[ j ][ i ] / matrix[ i ][ i ];
+					for ( k = 0; k < nCompt; k++ )
+						matrix[ j ][ k ] -= div * matrix[ i ][ k ];
+					B[ j ] -= div * B[ i ];
+				}
+			
+			// ..then compare A..
+			for ( i = 0; i < nCompt; ++i )
+				for ( j = 0; j < nCompt; ++j ) {
+					ostringstream error;
+					error << "Forward elimination:"
+					      << " Pass " << pass
+					      << " Cell# " << cell + 1
+					      << " A(" << i << ", " << j << ")";
+					ASSERT (
+						isClose< double >( HP.getA( i, j ), matrix[ i ][ j ], tolerance ),
+						error.str()
+					);
+				}
+			
+			// ..and also B.
+			for ( i = 0; i < nCompt; ++i ) {
+				ostringstream error;
+				error << "Forward elimination:"
+				      << " Pass " << pass
+				      << " Cell# " << cell + 1
+				      << " B(" << i << ")";
+				ASSERT (
+					isClose< double >( HP.getB( i ), B[ i ], tolerance ),
+					error.str()
+				);
+			}
+			
+			/*
+			 *  Backward substitution..
+			 */
+			
+			// ..in solver..
+			HP.backwardSubstitute( );
+			
+			// ..and full back-sub on local matrix equation..
+			for ( i = nCompt - 1; i >= 0; i-- ) {
+				VMid[ i ] = B[ i ];
+				
+				for ( j = nCompt - 1; j > i; j-- )
+					VMid[ i ] -= VMid[ j ] * matrix[ i ][ j ];
+				
+				VMid[ i ] /= matrix[ i ][ i ];
+				
+				V[ i ] = 2 * VMid[ i ] - V[ i ];
+			}
+			
+			// ..and then compare VMid.
+			for ( i = nCompt - 1; i >= 0; i-- ) {
+				ostringstream error;
+				error << "Back substitution:"
+				      << " Pass " << pass
+				      << " Cell# " << cell + 1
+				      << " VMid(" << i << ")";
+				ASSERT (
+					isClose< double >( HP.getVMid( i ), VMid[ i ], tolerance ),
+					error.str()
+				);
+			}
+			
+			for ( i = nCompt - 1; i >= 0; i-- ) {
+				ostringstream error;
+				error << "Back substitution:"
+				      << " Pass " << pass
+				      << " Cell# " << cell + 1
+				      << " V(" << i << ")";
+				ASSERT (
+					isClose< double >( HP.getV( i ), V[ i ], tolerance ),
+					error.str()
+				);
+			}
 		}
-		
-		// ..and then compare VMid.
-		for ( i = nCompt - 1; i >= 0; i-- ) {
-			ostringstream error;
-			error << "Back substitution: VMid(" << i << ")";
-			ASSERT (
-				isClose< double >( HP.getVMid( i ), VMid[ i ], 2.0 ),
-				error.str()
-			);
-		}
-		
 		// cleanup
 		set( n, "destroy" );
 	}
