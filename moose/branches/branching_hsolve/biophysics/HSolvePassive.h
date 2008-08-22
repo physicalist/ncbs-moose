@@ -32,6 +32,8 @@ class HSolvePassive: public HinesMatrix
 public:
 	void setup( Id seed, double dt );
 	void solve( );
+	
+	double getV( unsigned int row );
 
 protected:
 	// Integration
