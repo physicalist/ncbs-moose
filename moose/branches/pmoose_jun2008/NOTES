@@ -8258,5 +8258,14 @@ Oddly, glu is also listed in the HHChannel.
 Much messing around later, fixed it. The All2One connector needed quite a bit
 of fixing up. Also issues with the scheduling. Now clears the network.g
 regression test.
+Checked in as revision 620 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Now, finally, get back to doing this in parallel. I anticipate fun and
+games with the global objects.
+
+Implemented creates on globals, also the corresponding unit test. This 
+involved updates to IdManager and Id, as well as TestPostMaster. It clears
+the unit tests but at exit there is a free of an invalid pointer,
+so it croaks then.
 
 ==============================================================================

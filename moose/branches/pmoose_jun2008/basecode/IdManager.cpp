@@ -63,10 +63,12 @@ unsigned int IdManager::scratchId()
 	} else {
 		if ( scratchIndex_ < numScratch ) {
 			lastId_ = scratchIndex_;
+			elementList_[ lastId_ ].setNode( Shell::myNode() );
 			++scratchIndex_;
 			return lastId_;
 		} else {
 			regularizeScratch();
+			elementList_[ scratchIndex_ ].setNode( Shell::myNode() );
 			return ( lastId_ = scratchIndex_ );
 		}
 	} 
@@ -84,18 +86,20 @@ unsigned int IdManager::childId( unsigned int parent )
 			elementList_.resize( elementList_.size() * 2 );
 		lastId_ = mainIndex_;
 		mainIndex_++;
-		if ( pa.node() == Id::GlobalNode ) {
-			// Make the object on node 0.
-			elementList_[ lastId_ ] = Enode( 0, Shell::myNode() );
-		} else if ( pa.node() != Shell::myNode() ) {
-			// Put object on parent node.
-			elementList_[ lastId_ ] = Enode( 0, pa.node() );
-		} else { // Parent is also on master
-			// Crude load balancing calculation here, better will come.
+
+		if ( parent == 0 || pa.node() == 0 ) { // Do load balancing.
 			unsigned int targetNode = 
 				static_cast< unsigned int >( mainIndex_ / loadThresh_ ) %
 				Shell::numNodes();
 			elementList_[ lastId_ ] = Enode( 0, targetNode );
+		} else if ( pa.node() == Id::GlobalNode ) {
+			// Child is also global
+			elementList_[ lastId_ ] = Enode( 0, Id::GlobalNode );
+		} else if ( pa.node() != Shell::myNode() ) {
+			// Put object on parent node.
+			elementList_[ lastId_ ] = Enode( 0, pa.node() );
+		} else {
+			assert( 0 );
 		}
 		return lastId_;
 	}
@@ -158,7 +162,10 @@ Element* IdManager::getElement( const Id& id ) const
 	return 0;
 }
 
-/// \todo: This needs additional work for node safety.
+/**
+ * All this does is assign the element. The node must be assigned at
+ * the time the id is created.
+ */
 bool IdManager::setElement( unsigned int index, Element* e )
 {
 	if ( index >= elementList_.size() )
@@ -167,7 +174,8 @@ bool IdManager::setElement( unsigned int index, Element* e )
 	if ( index < mainIndex_ ) {
 		Enode& old = elementList_[ index ];
 		if ( old.node() == UNKNOWN_NODE || old.e() == 0 ) {
-			elementList_[ index ] = Enode( e, Shell::myNode() );
+			elementList_[ index ].setElement( e );
+			// = Enode( e, Shell::myNode() );
 			return 1;
 		} else if ( e == 0 ) {
 			// Here we are presumably clearing out an element. Permit it.
@@ -185,7 +193,8 @@ bool IdManager::setElement( unsigned int index, Element* e )
 		// Here we have been told by the master node to make a child 
 		// at a specific index before the elementList has been
 		// expanded to that index. Just expand it to fit.
-		elementList_[ index ] = Enode( e, Shell::myNode() );
+		elementList_[ index ].setElement( e );
+		// = Enode( e, Shell::myNode() );
 		mainIndex_ = index + 1;
 		return 1;
 	}
@@ -216,7 +225,7 @@ bool IdManager::isGlobal( unsigned int index ) const
 
 void IdManager::setNode( unsigned int index, unsigned int node )
 {
-	assert( node < Shell::numNodes() );
+	assert( node < Shell::numNodes() || node == Id::GlobalNode );
 	Enode& e = elementList_[ index ];
 	// cout << "Setting node for " << index << " to " << node << endl;
 	e.setNode( node );
