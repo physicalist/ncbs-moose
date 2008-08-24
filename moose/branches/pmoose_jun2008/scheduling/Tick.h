@@ -13,7 +13,7 @@ class Tick
 {
 	public:
 		Tick()
-			: dt_( 1.0 ), stage_( 0 ), nextTime_( 0.0 ),
+			: callback_( 0 ), dt_( 1.0 ), stage_( 0 ), nextTime_( 0.0 ),
 				nextTickTime_( 0.0 ), next_( 0 )
 		{
 			;

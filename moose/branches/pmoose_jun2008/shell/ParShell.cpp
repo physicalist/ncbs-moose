@@ -508,7 +508,7 @@ void Shell::handleParWildcardList( const Conn* c,
 {
 	vector< Id > ret;
 	vector< Nid > temp;
-	innerGetWildcardList( c, path, ordered, ret );
+	localGetWildcardList( c, path, ordered, ret );
 	for ( vector< Id >::iterator i = ret.begin(); i != ret.end(); i++ )
 		if ( i->node() != Id::GlobalNode )
 			temp.push_back( *i );

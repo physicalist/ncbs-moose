@@ -1873,12 +1873,16 @@ void GenesisParserWrapper::step( int argc, const char** const argv )
 	send1< double >( e, stepSlot, runtime );
 }
 
+// Args are clock number, dt, optionally stage.
+// If we do not specify stage, then the system uses the pre-existing
+// stage. This is specified by a dummy stage value of -1.
 void do_setclock( int argc, const char** const argv, Id s )
 {
 	if ( argc == 3 ) {
 			send3< int, double, int >( s(),
 				setClockSlot, 
-				atoi( argv[1] ), atof( argv[2] ), 0 );
+				//
+				atoi( argv[1] ), atof( argv[2] ), -1 );
 	} else if ( argc == 4 ) {
 			send3< int, double, int >( s(),
 				setClockSlot, 

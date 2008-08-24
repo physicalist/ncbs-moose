@@ -1918,7 +1918,8 @@ void Shell::setClock( const Conn* c, int clockNo, double dt,
 	}
 	assert ( tick != 0 && tick != Element::root() );
 	set< double >( tick, "dt", dt );
-	set< int >( tick, "stage", stage );
+	if ( stage >= 0 ) // Otherwise leave it at earlier value.
+		set< int >( tick, "stage", stage );
 	set( cj(), "resched" );
 	// Call the function
 }
@@ -1962,14 +1963,14 @@ void Shell::useClock( const Conn* c,
 		if ( func ) {
 			Conn* c = e->targets( func->msg(), i->index() );
 			if ( !c->good() ) {
-				ret = Eref( tick ).add( tickProc->msg(), e, func->msg(),
+				ret = Eref( tick ).add( tickProc->msg(), i->eref(), func->msg(),
 					ConnTainer::Default );
 				// ret = tickProc->add( tick, e, func );
 				assert( ret );
 			} else {
 				if ( c->target().e != tick ) {
-					Eref( e ).dropAll( func->msg() );
-					Eref( tick ).add( tickProc->msg(), e, func->msg(),
+					i->eref().dropAll( func->msg() );
+					Eref( tick ).add( tickProc->msg(), i->eref(), func->msg(),
 						ConnTainer::Default);
 					// tick->add( tickProc->msg(), e, func->msg() );
 				}

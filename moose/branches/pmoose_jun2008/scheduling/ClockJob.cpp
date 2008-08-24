@@ -455,12 +455,15 @@ void ClockJob::reschedFuncLocal( Eref er )
 	assert( ret );
 	ret = er.add( "startSrc", last, "start" );
 	assert( ret );
+	// cout << "Ticklist: " << last->name() << "	";
 	for ( j = tickList.begin() + 1; j != tickList.end(); j++ ) {
 		bool ret = last.add( "next", j->element(), "prev" );
 		assert( ret );
 			// buildMessages( last, j->element() );
 		last = j->element();
+		// cout << last->name() << "	";
 	}
+	// cout << endl << flush;
 	send0( er, reschedSlot );
 }
 

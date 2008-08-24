@@ -449,7 +449,7 @@ Element* Cinfo::createArray( Id id, const std::string& name,
  * Connect up new element to the clock ticks that will control its
  * runtime operations.
  */
-bool Cinfo::schedule( Element* e ) const
+bool Cinfo::schedule( Element* e, unsigned int connTainerOption ) const
 {
 	if ( scheduling_.size() == 0 ) 
 		return 1;
@@ -485,7 +485,7 @@ bool Cinfo::schedule( Element* e ) const
 		}
 		assert( tick.good() );
 		tick.eref().add( procFinfo->msg(), e, i->finfo->msg(),
-			ConnTainer::Default );
+			connTainerOption );
 		// procFinfo->add( tick(), e, i->finfo );
 	}
 	

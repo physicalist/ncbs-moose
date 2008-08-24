@@ -10,6 +10,7 @@
 #include "header.h"
 #include "SimpleConn.h"
 #include "One2AllConn.h"
+#include "All2OneConn.h"
 #include "../utility/SparseMatrix.h"
 #include "Many2ManyConn.h"
 #include "One2OneMapConn.h"
@@ -18,6 +19,7 @@ const unsigned int ConnTainer::Default = UINT_MAX;
 const unsigned int ConnTainer::Simple = 0;
 const unsigned int ConnTainer::One2All = 2;
 const unsigned int ConnTainer::Many2Many = 4;
+const unsigned int ConnTainer::All2One = 6;
 const unsigned int ConnTainer::One2OneMap = 8;
 
 /**
@@ -60,6 +62,7 @@ ConnTainer* selectConnTainer( Eref src, Eref dest,
 	}
 
 	ConnTainer* ct = 0;
+	// cout << "selectContainer: option " << connTainerOption << " from " << src->name() << "." << src.i << " to " << dest->name() << "." << dest.i << endl;
 	switch ( connTainerOption )
 	{
 		case 0:
