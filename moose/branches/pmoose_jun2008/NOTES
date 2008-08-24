@@ -8267,5 +8267,10 @@ Implemented creates on globals, also the corresponding unit test. This
 involved updates to IdManager and Id, as well as TestPostMaster. It clears
 the unit tests but at exit there is a free of an invalid pointer,
 so it croaks then.
+Checked in as revision 621 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Looks like we have overlap between scratchIndex and mainIndex.
+Fixed it. This still doesn't fix the problem of things barfing when I quit.
+
 
 ==============================================================================

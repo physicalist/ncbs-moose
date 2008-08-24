@@ -26,7 +26,7 @@ const unsigned int BAD_NODE = UINT_MAX;
 
 IdManager::IdManager()
 	: loadThresh_( 2000.0 ),
-	scratchIndex_( 3 ), mainIndex_( 3 )
+	scratchIndex_( 3 ), mainIndex_( numScratch )
 	// Start at 2 because root is 0 and shell is 1 and postmaster is 2.
 {
 	elementList_.resize( blockSize + numScratch );
@@ -50,7 +50,7 @@ void IdManager::setNodes( unsigned int myNode, unsigned int numNodes )
 /**
  * Returns the next available id and allocates space for it.
  * Later can be refined to mop up freed ids. 
- * Don't bother with the scratch space if we are on master node.
+ * Don't bother with the scratch space if we are on a single node.
  */
 unsigned int IdManager::scratchId()
 {
@@ -67,6 +67,8 @@ unsigned int IdManager::scratchId()
 			++scratchIndex_;
 			return lastId_;
 		} else {
+			cout << "Ran out of scratch Ids on node " << 
+				Shell::myNode() << "\n";
 			regularizeScratch();
 			elementList_[ scratchIndex_ ].setNode( Shell::myNode() );
 			return ( lastId_ = scratchIndex_ );
