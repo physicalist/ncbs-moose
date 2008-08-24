@@ -33,6 +33,15 @@ Id::Id()
 	: id_( 0 ), index_( 0 )
 {;}
 
+Id::Id( Nid nid )
+	: id_( nid.id() ), index_( nid.index() )
+{ 
+	if ( id_ == BAD_ID )
+		this->setNode( Shell::myNode() );
+	else
+		this->setNode( nid.node() );
+}
+
 Id::Id( unsigned int i, unsigned int index )
 	: id_( i ), index_( index )
 {;}

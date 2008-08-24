@@ -71,6 +71,10 @@ class Enode
 		void setNode( unsigned int node ) {
 			node_ = node;
 		}
+
+		void setElement( Element* e ) {
+			e_ = e;
+		}
 	private:
 		Element* e_;
 		unsigned int node_;

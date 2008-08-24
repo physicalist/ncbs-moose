@@ -139,18 +139,16 @@ void Shell::parCreateFunc ( const Conn* c,
 				string objtype, string objname, 
 				Nid parent, Nid newobj )
 {
+	Shell* s = static_cast< Shell* >( c->data() );
+	assert ( s->myNode_ == parent.node() || parent.isGlobal() );
 	// printNodeInfo( c );
 	// cout << "in slaveCreateFunc :" << objtype << " " << objname << " " << parent << "." << parent.node() << " " << newobj << "." << newobj.node() << "\n";
 
-	Shell* s = static_cast< Shell* >( c->data() );
-	if ( parent == Id() || parent == Id::shellId() ) {
-		parent.setNode( s->myNode_ );
-	}
-
-	assert ( s->myNode_ == parent.node() );
 	// both parent and child are here. Straightforward.
 	bool ret = 1;
-	if ( parent.node() == newobj.node() ) {
+	if ( parent.node() == newobj.node() || // both local or both global
+		( parent == Id() && newobj.node() == s->myNode_ ) )
+	{
 		ret = s->create( objtype, objname, parent, newobj );
 	} else {
 		cout << "Shell::parCreateFunc: Currently cannot put child on different node than parent\n";

@@ -1082,8 +1082,19 @@ void Shell::trigLe( const Conn* c, Id parent )
 
 /**
  * Creates an object on the specified node, on the specified parent object.
+ * This function is only called on node 0.
  * If node < 0 then the new object is created as per system algorithm,
  * which normally just places the child on the same node as the parent.
+ * Whenever the parent isGlobal, the child is created on all nodes.
+	// Illegal cases: 
+	// 		( pa != Id() && !pa.isGlobal() ) && id.isGlobal, 
+	// 		pa.isGlobal && !id.isGlobal
+	// Local cases:
+	// 		pa.node == 0, id.node == 0
+	// Remote cases:
+	// 		pa.node != 0
+	// Global cases:
+	// 		pa.isGlobal, id.isGlobal
  */
 void Shell::staticCreate( const Conn* c, string type,
 					string name, int node, Id parent )
@@ -1099,7 +1110,7 @@ void Shell::staticCreate( const Conn* c, string type,
 	if ( node < 0 ) { // Leave it to the system.
 		// This is where the IdManager does clever load balancing etc
 		// to assign child node.
-		id = Id::childId( parent );
+		id = Id::childId( paNid );
 	} else if ( unode >= s->numNodes_ ) {
 		cout << "Error: Shell::staticCreate: unallocated target node " <<
 			unode << endl;
@@ -1107,25 +1118,45 @@ void Shell::staticCreate( const Conn* c, string type,
 	} else {
 		id = Id::makeIdOnNode( unode );
 	}
-	if ( parent == Id() || parent == Id::shellId() )
-		paNid.setNode( id.node() );
-	if ( id.node() == 0 && ( paNid.node() == 0 || paNid.isGlobal() ) ) { // local node
+	if ( id.isGlobal() && !( parent == Id() || paNid.isGlobal() ) ) {
+		cout << "Error: Cannot create global object unless parent is global\n";
+		return;
+	}
+	if ( ( !( parent == Id() ) && paNid.isGlobal( )) && !id.isGlobal() ) {
+		cout << "Error: Cannot create local object on global parent\n";
+		return;
+	}
+	
+	if ( ( paNid.isGlobal() || paNid.node() == 0 || parent == Id() ) &&
+		( id.isGlobal() || id.node() == 0 ) ) { // Make it here.
 		bool ret = s->create( type, name, parent, id );
 		if ( ret ) { // Tell the parser it was created happily.
+#ifdef DO_UNIT_TESTS
+			// Nasty issue of callback to a SetConn here.
+			if ( dynamic_cast< const SetConn* >( c ) == 0 )
+				sendBack1< Id >( c, createSlot, id );
+#else
 			sendBack1< Id >( c, createSlot, id );
+#endif
 		} else {
 			cout << "Error: Shell::staticCreate: unable to create '" <<
 				name << "' on parent " << parent.path() << endl;
 		}
-	} else {
-		// Shell-to-shell messaging here with the request to
-		// create a child. This goes to the node of the parent object.
-		assert( id.node() > 0 );
-		assert( unode > 0 );
-		unsigned int target = paNid.node() - 1;
+		if ( id.isGlobal() ) { // also make it on all other nodes
+			send4< string, string, Nid, Nid >( 
+				c->target(), rCreateSlot,
+				type, name, 
+				paNid, id );
+		}
+	} else { // Has to go off-node, to a single target node.
+		unsigned int targetNode = paNid.node();
+		if ( parent == Id() )
+			targetNode = id.node();
+		assert( targetNode != 0 );
+		assert( targetNode < numNodes() );
 
 		sendTo4< string, string, Nid, Nid >( 
-			c->target(), rCreateSlot, target,
+			c->target(), rCreateSlot, targetNode - 1,
 			type, name, 
 			paNid, id );
 	}

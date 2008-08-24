@@ -17,6 +17,7 @@ using namespace std;
 
 class Element;
 class IdManager;
+class Nid;
 
 /**
  * This class manages id lookups for elements. Ids provide a uniform
@@ -31,7 +32,16 @@ class Id
 		//////////////////////////////////////////////////////////////
 		//	Id creation
 		//////////////////////////////////////////////////////////////
+		/**
+		 * Returns the root Id
+		 */
 		Id();
+
+		/**
+		 * Sets up the Id with the Nid info. Would be automatic except
+		 * that the node info also has to be transferred.
+		 */
+		Id( Nid nid );
 
 		/**
 		 * Returns an id found by traversing the specified path

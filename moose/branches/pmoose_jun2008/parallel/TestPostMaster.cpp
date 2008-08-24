@@ -900,10 +900,10 @@ void testNodeSetup()
 }
 
 /**
- * Creates objects on remote nodes
+ * Creates objects on remote nodes.
+ * Also tests that objects on /library get created on all nodes.
  * \todo: Needs to be extended by creating objects on remote nodes with
  * parents on different remote nodes.
- * Also need to convert Ids to Nids for the send command.
  */
 Id testParCreate( vector< Id >& testIds )
 {
@@ -912,6 +912,8 @@ Id testParCreate( vector< Id >& testIds )
 	MPI::COMM_WORLD.Barrier();
 	cout << "b" << myNode << flush;
 	MPI::COMM_WORLD.Barrier();
+	Eref shellE = Id::shellId().eref();
+	assert( shellE.e != 0 );
 	if ( myNode == 0 ) {
 		Slot remoteCreateSlot = 
 			initShellCinfo()->getSlot( "parallel.createSrc" );
@@ -924,11 +926,20 @@ Id testParCreate( vector< Id >& testIds )
 			testIds.push_back( newId );
 			// cout << "Create op: sendTo4( shellId, slot, " << tgt << ", " << "Neutral, " << sname << ", root, " << newId << endl;
 			sendTo4< string, string, Nid, Nid >(
-				Id::shellId().eref(), remoteCreateSlot, tgt,
+				shellE, remoteCreateSlot, tgt,
 				"Neutral", sname, 
 				Id(), newId
 			);
 		}
+		Id libid = Id::localId( "/library" ); // a global
+		ASSERT( libid.good(), "create libkids" );
+		ASSERT( libid.isGlobal(), "create libkids" );
+		SetConn c( shellE );
+		Shell::staticCreate( &c, "Neutral", "foo", -1, libid );
+		/*
+		set< string, string, int, Id >( shellE, "parser.create",
+			"Neutral", "foo", -1, libid );
+			*/
 	}
 	MPI::COMM_WORLD.Barrier();
 	pollPostmaster(); // There is a barrier in the polling operation itself
@@ -940,6 +951,11 @@ Id testParCreate( vector< Id >& testIds )
 	char name[20];
 	sprintf( name, "/tn%d", myNode );
 	string sname = name;
+	Id kidid = Id::localId( "/library/foo" );
+	ASSERT( kidid.good(), "create libkids" );
+	ASSERT( kidid.isGlobal(), "create libkids" );
+	bool ret = set( kidid.eref(), "destroy" );
+	ASSERT( ret, "destroy libkids" );
 	if ( myNode != 0 ) {
 		Id tnId = Id::localId( sname );
 		ASSERT( tnId.good(), "postmaster created obj on remote node" );
