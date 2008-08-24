@@ -214,26 +214,46 @@ void Shell::parCreateArrayFunc ( const Conn* c,
 bool Shell::addSingleMessage( const Conn* c, Id src, string srcField, 
 	Id dest, string destField )
 {
+	assert( myNode() == 0 );
 	Shell* sh = static_cast< Shell* >( c->data() );
 	unsigned int srcNode = src.node();
+	unsigned int destNode = dest.node();
 	// cout << "in Shell::addSingleMessage, src=" << src << "." << srcNode << ", srcField = " << srcField << ", dest = " << dest << "." << dest.node() << ", destField = " << destField << endl << flush;
-	if ( srcNode == sh->myNode_ ) {
-		if ( dest.node() == sh->myNode_ ) {
+	if ( srcNode == myNode() ) {
+		if ( destNode == myNode()  || destNode == Id::GlobalNode) {
 			return innerAddLocal( src, srcField, dest, destField );
-		} else {
+		} else { // off-node dest.
 			addParallelSrc( c, src, srcField, dest, destField );
+			return 1;
+		}
+	} else if ( srcNode == Id::GlobalNode ) {
+		if ( destNode == myNode()  ) { // local target.
+			return innerAddLocal( src, srcField, dest, destField );
+		} else if ( destNode == Id::GlobalNode) { // global src and tgt
+			// First, tell all other nodes to add msg too.
+			send4< Nid, string, Nid, string >( 
+				c->target(), addParallelSrcSlot,
+				src, srcField, dest, destField );
+			// Then do msg here.
+			return innerAddLocal( src, srcField, dest, destField );
+		} else { // Go to dest node to do msg from its own instance of src.
+			unsigned int tgtMsg = 
+				( destNode <= myNode() ) ? destNode: destNode - 1;
+			sendTo4< Nid, string, Nid, string >( 
+				c->target(), addParallelSrcSlot, tgtMsg,
+				src, srcField, dest, destField );
 			return 1;
 		}
 	} else { // Off-node source. Deal with it remotely.
 		unsigned int tgtMsg = 
 			( srcNode <= sh->myNode_ ) ? srcNode: srcNode - 1;
-		if ( dest.node() != srcNode ) {
+		if ( destNode != srcNode ) {
 			sendTo4< Nid, string, Nid, string >( 
 				c->target(), addParallelSrcSlot, tgtMsg,
 				src, srcField, dest, destField );
 		} else {
 			cout << "adding " << src << "." << srcNode << " to " <<
-				dest << "." << dest.node() << " on " << sh->myNode() <<
+				dest << "." << destNode << " on " << sh->myNode() <<
 				endl << flush;
 			sendTo4< Id, string, Id, string >( 
 				c->target(),
