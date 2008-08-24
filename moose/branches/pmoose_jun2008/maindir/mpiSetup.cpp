@@ -107,6 +107,8 @@ void initParSched()
 	assert( ret );
 	ret = set< bool >( t1, "doSync", 1 ); 
 	assert( ret );
+	ret = set< int >( t1, "stage", 1 ); 
+	assert( ret );
 	// cerr << myNode << ".2c\n";
 	// This one handles parser and postmaster scheduling.
 	/*

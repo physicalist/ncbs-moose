@@ -114,6 +114,7 @@ class Cinfo
 					bool noDelFlag = 0 ) const;
 
 			bool schedule( Element* e ) const;
+			bool schedule( Element* e, unsigned int connTainerOption ) const;
 			// void destroy( void* ) const ;
 
 			const Ftype* ftype() const {

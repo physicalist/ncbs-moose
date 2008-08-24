@@ -490,6 +490,7 @@ void HHChannel::innerProcessFunc( Eref e, ProcInfo info )
 
 void HHChannel::reinitFunc( const Conn* c, ProcInfo p )
 {
+	// cout << "HHChannel reinit: " << c->data() << " on " << c->target().name() << " from " << c->source().name() << endl << flush;
 	static_cast< HHChannel* >( c->data() )->innerReinitFunc( c->target(), p );
 }
 
@@ -550,6 +551,7 @@ void HHChannel::innerReinitFunc( Eref er, ProcInfo info )
 
 void HHChannel::channelFunc( const Conn* c, double Vm )
 {
+	// cout << "channelFunc for " << c->data() << " on " << c->target().name() << " from " << c->source().name() << " with Vm= " << Vm << endl;
 	static_cast< HHChannel* >( c->data() )->Vm_ = Vm;
 }
 

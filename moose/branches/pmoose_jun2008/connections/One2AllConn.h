@@ -244,7 +244,6 @@ class ReverseOne2AllConn: public Conn
 typedef SimpleConnTainer One2ManyConnTainer;
 typedef SimpleConnTainer Many2OneConnTainer;
 typedef SimpleConnTainer Many2AllConnTainer;
-typedef SimpleConnTainer All2OneConnTainer;
 typedef SimpleConnTainer All2ManyConnTainer;
 typedef SimpleConnTainer All2AllMapConnTainer;
 

@@ -89,6 +89,7 @@ static const Slot gateSlot =
 void HHGate::gateFunc( const Conn* c, double v )
 {
 	// static_cast< HHGate *>( c.data() )->innerGateFunc( c, v );
+	// cout << "HHGate func: " << c->data() << " with v= " << v << " on " << c->target().name() << " from " << c->source().name() << endl << flush;
 	HHGate *h = static_cast< HHGate *>( c->data() );
 
 	sendBack2< double, double >( c, gateSlot,

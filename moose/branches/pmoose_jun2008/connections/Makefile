@@ -20,6 +20,7 @@ OBJ = \
 	ConnTainer.o	\
 	SimpleConn.o	\
 	One2AllConn.o	\
+	All2OneConn.o	\
 	Many2ManyConn.o	\
 	One2OneMapConn.o	\
 	TraverseMsgConn.o	\

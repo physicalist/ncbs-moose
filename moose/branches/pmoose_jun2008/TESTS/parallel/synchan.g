@@ -68,5 +68,3 @@ closefile "test.plot"
 
 tab2file "test.plot" /plot table
 quit
-/*
-*/

@@ -8230,6 +8230,33 @@ resets fix it in some cases, but not in network.g
 
 Also fixed a bug in le: It did not see children of global objects like 
 /library.
+Checked in as revision 607 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 
 ==============================================================================
+22 Aug 2008
+Some progress on getting network.g to run. Now moose does not even clear
+this unit tests, serially or parallely. Fixed up an issue with useClock.
+Still bugs remain.
 
+==============================================================================
+23 Aug 2008
+Fixed an infinite recurse in the wildcards, that occurred whenever multinode
+wildcards were being done.
+Still crashes on single node when regression testing network.g
+
+Analyzed this further. It is because the system now implements the t1 at
+setup time. Several objects that are handled by t1 are now being reinited,
+where they weren't in network.g. This causes things to barf. Shouldn't,
+but it isn't quite the same as the older version.
+
+I think we have a messaging issue, specifically that One2OneMap is sending
+all stuff from the compt to the tchan[0] only.
+Nope, checked that using printf, and it all seems to be OK.
+Oddly, glu is also listed in the HHChannel.
+==============================================================================
+24 Aug 2008
+Much messing around later, fixed it. The All2One connector needed quite a bit
+of fixing up. Also issues with the scheduling. Now clears the network.g
+regression test.
+
+==============================================================================
