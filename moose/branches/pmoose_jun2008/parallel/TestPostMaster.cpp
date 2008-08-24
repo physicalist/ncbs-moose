@@ -936,10 +936,6 @@ Id testParCreate( vector< Id >& testIds )
 		ASSERT( libid.isGlobal(), "create libkids" );
 		SetConn c( shellE );
 		Shell::staticCreate( &c, "Neutral", "foo", -1, libid );
-		/*
-		set< string, string, int, Id >( shellE, "parser.create",
-			"Neutral", "foo", -1, libid );
-			*/
 	}
 	MPI::COMM_WORLD.Barrier();
 	pollPostmaster(); // There is a barrier in the polling operation itself
