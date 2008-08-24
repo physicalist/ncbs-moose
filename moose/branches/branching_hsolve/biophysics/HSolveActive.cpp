@@ -18,6 +18,8 @@
 #include "RateLookup.h"
 #include "HSolveActive.h"
 
+extern ostream& operator <<( ostream& s, const HinesMatrix& m );
+
 const int HSolveActive::INSTANT_X = 1;
 const int HSolveActive::INSTANT_Y = 2;
 const int HSolveActive::INSTANT_Z = 4;
@@ -377,6 +379,8 @@ void HSolveActive::updateMatrix( ) {
 		HS_[ 4 * ic ] += isyn->Gk_;
 		HS_[ 4 * ic + 3 ] += isyn->Gk_ * isyn->Ek_;
 	}
+	
+	stage_ = 0;    // Update done.
 }
 
 void HSolveActive::advanceCalcium( ) {

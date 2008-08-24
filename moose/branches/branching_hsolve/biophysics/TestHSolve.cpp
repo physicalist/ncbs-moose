@@ -65,7 +65,7 @@ void makeFullMatrix(
 	
 	// Setting diagonal elements
 	for ( unsigned int i = 0; i < size; i++ )
-		matrix[ i ][ i ] = CmByDt[ i ];
+		matrix[ i ][ i ] = CmByDt[ i ] + 1.0 / tree[ i ].Rm;
 	
 	double gi;
 	vector< vector< unsigned int > >::iterator group;

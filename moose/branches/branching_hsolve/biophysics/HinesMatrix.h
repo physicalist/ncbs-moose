@@ -29,6 +29,7 @@ struct TreeNode
 {
 	vector< unsigned int > children;
 	double Ra;
+	double Rm;
 	double Cm;
 };
 
@@ -37,9 +38,10 @@ class HinesMatrix
 public:
 	void setup( const vector< TreeNode >& tree, double dt );
 	
-	double getA( unsigned int row, unsigned int col );
-	double getB( unsigned int row );
-	double getVMid( unsigned int row );
+	unsigned int getSize( ) const;
+	double getA( unsigned int row, unsigned int col ) const;
+	double getB( unsigned int row ) const;
+	double getVMid( unsigned int row ) const;
 
 protected:
 	typedef vector< double >::iterator vdIterator;
