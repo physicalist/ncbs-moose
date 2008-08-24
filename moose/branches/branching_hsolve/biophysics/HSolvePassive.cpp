@@ -12,6 +12,8 @@
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"
 
+extern ostream& operator <<( ostream& s, const HinesMatrix& m );
+
 void HSolvePassive::setup( Id seed, double dt ) {
 	refresh( );
 
@@ -110,7 +112,7 @@ void HSolvePassive::initialize( ) {
 }
 
 void HSolvePassive::storeTree( ) {
-	double Ra, Cm;
+	double Ra, Rm, Cm;
 	
 	// Create a map from the MOOSE Id to Hines' index.
 	map< Id, unsigned int > hinesIndex;
@@ -127,6 +129,7 @@ void HSolvePassive::storeTree( ) {
 		BioScan::children( *ic, childId );
 		get< double >( ( *ic )(), "Ra", Ra );
 		get< double >( ( *ic )(), "Cm", Cm );
+		get< double >( ( *ic )(), "Rm", Rm );
 		
 		TreeNode node;
 		// Push hines' indices of children
@@ -134,6 +137,7 @@ void HSolvePassive::storeTree( ) {
 			node.children.push_back( hinesIndex[ *child ] );
 		
 		node.Ra = Ra;
+		node.Rm = Rm;
 		node.Cm = Cm;
 		
 		tree_.push_back( node );
@@ -152,15 +156,16 @@ void HSolvePassive::updateMatrix( ) {
 	
 	vector< CompartmentStruct >::iterator ic;
 	for ( ic = compartment_.begin(); ic != compartment_.end(); ++ic ) {
+		*ihs         = *( 2 + ihs );
 		*( 3 + ihs ) = *iv * ic->CmByDt + ic->EmByRm + ic->inject;
 		
 		ihs += 4, ++iv;
 	}
+	
+	stage_ = 0;    // Update done.
 }
 
 void HSolvePassive::forwardEliminate( ) {
-	stage_ = 0;    // Forward elimination begins.
-	
 	unsigned int ic = 0;
 	vector< double >::iterator ihs = HS_.begin();
 	vector< vdIterator >::iterator iop = operand_.begin();
@@ -563,10 +568,9 @@ void testHSolvePassive()
 	/*
 	 * Model details.
 	 */
-	double dt = 50e-6;
+	double dt = 1.0;
 	vector< TreeNode > tree;
 	vector< double > Em;
-	vector< double > Rm;
 	vector< double > B;
 	vector< double > V;
 	vector< double > VMid;
@@ -591,13 +595,12 @@ void testHSolvePassive()
 		tree.clear();
 		tree.resize( nCompt );
 		Em.clear();
-		Rm.clear();
 		V.clear();
 		for ( i = 0; i < nCompt; i++ ) {
 			tree[ i ].Ra = 15.0 + 3.0 * i;
+			tree[ i ].Rm = 45.0 + 15.0 * i;
 			tree[ i ].Cm = 500.0 + 200.0 * i * i;
 			Em.push_back( -0.06 );
-			Rm.push_back( 400.0 + 50 * i * i );
 			V.push_back( -0.06 + 0.01 * i );
 		}
 		
@@ -622,9 +625,9 @@ void testHSolvePassive()
 				Id::scratchId() )->id();
 			
 			set< double >( c[ i ](), "Ra", tree[ i ].Ra );
+			set< double >( c[ i ](), "Rm", tree[ i ].Rm );
 			set< double >( c[ i ](), "Cm", tree[ i ].Cm );
 			set< double >( c[ i ](), "Em", Em[ i ] );
-			set< double >( c[ i ](), "Rm", Rm[ i ] );
 			set< double >( c[ i ](), "initVm", V[ i ] );
 		}
 		
@@ -674,7 +677,6 @@ void testHSolvePassive()
 		// Shuffle compartment properties according to new order
 		permute< TreeNode >( tree, permutation );
 		permute< double >( Em, permutation );
-		permute< double >( Rm, permutation );
 		permute< double >( V, permutation );
 		
 		// Update indices of children
@@ -706,7 +708,9 @@ void testHSolvePassive()
 		for ( i = 0; i < nCompt; ++i )
 			for ( j = 0; j < nCompt; ++j ) {
 				ostringstream error;
-				error << "Testing matrix construction: (" << i << ", " << j << ")";
+				error << "Testing matrix construction:"
+				      << " Cell# " << cell + 1
+				      << " A(" << i << ", " << j << ")";
 				ASSERT (
 					isClose< double >( HP.getA( i, j ), matrix[ i ][ j ], tolerance ),
 					error.str()
@@ -739,14 +743,15 @@ void testHSolvePassive()
 			for ( i = 0; i < nCompt; i++ )
 				B[ i ] =
 					V[ i ] * tree[ i ].Cm / ( dt / 2.0 ) +
-					Em[ i ] / Rm[ i ];
+					Em[ i ] / tree[ i ].Rm;
 			
 			// ..and compare B.
 			for ( i = 0; i < nCompt; ++i ) {
 				ostringstream error;
 				error << "Updating right-hand side values:"
-				      << "Pass " << pass
-				      << "B(" << i << ")";
+				      << " Pass " << pass
+				      << " Cell# " << cell + 1
+				      << " B(" << i << ")";
 				ASSERT (
 					isClose< double >( HP.getB( i ), B[ i ], tolerance ),
 					error.str()

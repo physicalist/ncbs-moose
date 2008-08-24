@@ -10,6 +10,7 @@
 #include "moose.h"
 #include "HinesMatrix.h"
 #include <sstream>
+#include <iomanip>
 
 void HinesMatrix::setup( const vector< TreeNode >& tree, double dt )
 {
@@ -108,7 +109,9 @@ void HinesMatrix::makeMatrix( ) {
 	// Setting up HS
 	HS_.resize( 4 * nCompt_, 0.0 );
 	for ( unsigned int i = 0; i < nCompt_; ++i )
-		HS_[ 4 * i + 2 ] = node[ i ].Cm / ( dt_ / 2.0 );
+		HS_[ 4 * i + 2 ] =
+			node[ i ].Cm / ( dt_ / 2.0 ) +
+			1.0 / node[ i ].Rm;
 	
 	double gi, gj, gij;
 	vector< JunctionStruct >::iterator junction = junction_.begin();
@@ -305,11 +308,20 @@ void HinesMatrix::makeOperands( ) {
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// Interface to matrix entries
+// Public interface to matrix
 ///////////////////////////////////////////////////////////////////////////
-double HinesMatrix::getA( unsigned int row, unsigned int col )
+unsigned int HinesMatrix::getSize( ) const
 {
-	if ( stage_ == 1 && row > col )
+	return nCompt_;
+}
+
+double HinesMatrix::getA( unsigned int row, unsigned int col ) const
+{
+	/*
+	 * If forward elimination is done, or backward substitution is done, and
+	 * if (row, col) is in the lower triangle, then return 0.
+	 */
+	if ( ( stage_ == 1 || stage_ == 2 ) && row > col )
 		return 0.0;
 	
 	if ( row >= nCompt_ || col >= nCompt_ )
@@ -327,7 +339,9 @@ double HinesMatrix::getA( unsigned int row, unsigned int col )
 		else
 			return 0.0;
 	} else {
-		unsigned int groupNumber = groupNumber_[ smaller ];
+		// We could use: groupNumber = groupNumber_[ smaller ], but this is a
+		// const function
+		unsigned int groupNumber = groupNumber_.find( smaller )->second;
 		const vector< unsigned int >& group = coupled_[ groupNumber ];
 		unsigned int location, size;
 		unsigned int smallRank, bigRank;
@@ -355,14 +369,39 @@ double HinesMatrix::getA( unsigned int row, unsigned int col )
 	}
 }
 
-double HinesMatrix::getB( unsigned int row )
+double HinesMatrix::getB( unsigned int row ) const
 {
 	return HS_[ 4 * row + 3 ];
 }
 
-double HinesMatrix::getVMid( unsigned int row )
+double HinesMatrix::getVMid( unsigned int row ) const
 {
 	return VMid_[ row ];
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Inserting into a stream
+///////////////////////////////////////////////////////////////////////////
+ostream& operator <<( ostream& s, const HinesMatrix& m )
+{
+	unsigned int size = m.getSize( );
+	
+	s << "\nA:\n";
+	for ( unsigned int i = 0; i < size; i++ ) {
+		for ( unsigned int j = 0; j < size; j++ )
+			s << setw( 12 ) << setprecision( 5 ) << m.getA( i, j );
+		s << "\n";
+	}
+	
+	s << "\n" << "V:\n";
+	for ( unsigned int i = 0; i < size; i++ )
+		s << m.getVMid( i ) << "\n";
+	
+	s << "\n" << "B:\n";
+	for ( unsigned int i = 0; i < size; i++ )
+		s << m.getB( i ) << "\n";
+	
+	return s;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -610,7 +649,7 @@ void testHinesMatrix()
 	////////////////////////////////////////////////////////////////////////////
 	HinesMatrix H;
 	vector< TreeNode > tree;
-	double dt = 50e-6;
+	double dt = 1.0;
 	
 	/* 
 	 * This is the full reference matrix which will be compared to its sparse
@@ -634,6 +673,7 @@ void testHinesMatrix()
 		tree.resize( nCompt );
 		for ( i = 0; i < nCompt; ++i ) {
 			tree[ i ].Ra = 15.0 + 3.0 * i;
+			tree[ i ].Rm = 45.0 + 15.0 * i;
 			tree[ i ].Cm = 500.0 + 200.0 * i * i;
 		}
 		
