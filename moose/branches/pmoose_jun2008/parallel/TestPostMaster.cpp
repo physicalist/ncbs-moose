@@ -1035,6 +1035,8 @@ void testParSet( vector< Id >& testIds )
 	string sname;
 	unsigned int myNode = MPI::COMM_WORLD.Get_rank();
 	unsigned int numNodes = MPI::COMM_WORLD.Get_size();
+	Eref shellE = Id::shellId().eref();
+	assert( shellE.e != 0 );
 	MPI::COMM_WORLD.Barrier();
 	if ( myNode == 0 ) {
 		cout << "\ntesting parallel set" << flush;
@@ -1046,11 +1048,17 @@ void testParSet( vector< Id >& testIds )
 			unsigned int tgt = ( i < myNode ) ? i : i - 1;
 			// objId, field, value
 			sendTo3< Id, string, string >(
-				Id::shellId().eref(), parSetSlot, tgt,
+				shellE, parSetSlot, tgt,
 				testIds[i - 1], "name", sname
 			);
 		}
+		Id libid = Id::localId( "/library" ); // a global
+		ASSERT( libid.good(), "create libkids" );
+		ASSERT( libid.isGlobal(), "create libkids" );
+		SetConn c( shellE );
+		Shell::staticCreate( &c, "Neutral", "foo", -1, libid );
 	}
+	
 	MPI::COMM_WORLD.Barrier();
 	pollPostmaster();
 	MPI::COMM_WORLD.Barrier();
@@ -1064,6 +1072,33 @@ void testParSet( vector< Id >& testIds )
 		ASSERT( checkId.good(), "parallel set" );
 		cout << flush;
 	}
+
+	////////////////////////////////////////////////////////////////
+	// Here we check for assignment on globals.
+	////////////////////////////////////////////////////////////////
+	Id kidid = Id::localId( "/library/foo" );
+	ASSERT( kidid.good(), "setting libkids" );
+	ASSERT( kidid.isGlobal(), "setting libkids" );
+	MPI::COMM_WORLD.Barrier();
+	if ( myNode == 0 ) {
+		cout << "\ntesting global set" << flush;
+		SetConn c( shellE );
+		Shell::setField( &c, kidid, "name", "bar" );
+	}
+	MPI::COMM_WORLD.Barrier();
+	pollPostmaster();
+	MPI::COMM_WORLD.Barrier();
+	pollPostmaster();
+	
+	Id newKidid = Id::localId( "/library/bar" );
+	ASSERT( newKidid == kidid, "setting libkids" );
+	ASSERT( newKidid.good(), "setting libkids" );
+	ASSERT( newKidid.isGlobal(), "setting libkids" );
+	
+	bool ret = set( kidid.eref(), "destroy" );
+	ASSERT( ret, "destroy libkids" );
+	cout << flush;
+	MPI::COMM_WORLD.Barrier();
 }
 
 void testParDelete( vector< Id >& testIds )

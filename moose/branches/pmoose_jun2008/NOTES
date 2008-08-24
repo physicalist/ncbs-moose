@@ -8090,6 +8090,8 @@ Next steps:
 		* setclock
 		+ delete: Still doesn't handle clearing up msgs/proxies.
 		* quit
+		- Handle create, createmap, copy, set, get, addmsg 
+			on library objects.
 	- Fix up what happens when we operate on existing proxies.
 	+ Set up a regression test for all of these.
 - Upgrade array operations to work across nodes
@@ -8272,5 +8274,20 @@ Checked in as revision 621 with unit test flags on, Smoldyn off, -g, GSL, MPI on
 Looks like we have overlap between scratchIndex and mainIndex.
 Fixed it. This still doesn't fix the problem of things barfing when I quit.
 
+Checked in as revision 623 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+Tried recompiling the whole thing. Still doesn't work. Move on to set for
+globals.
+
+For global objects we need to handle:
+	*create, 
+	-createmap, 
+	-copy, 
+	-move
+	*set,
+	-get, 
+	+addmsg 
+
+Now implemented the set and addmsg, both pretty painless. Did unit tests
+for global set.
 
 ==============================================================================

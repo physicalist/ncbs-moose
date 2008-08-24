@@ -1809,6 +1809,7 @@ void Shell::setField( const Conn* c, Id id, string field, string value )
 	if ( id.isGlobal() ) { // do the set on all nodes
 		send3< Id, string, string >( c->target(), parSetFieldSlot,
 			id, field, value );
+		localSetField( c, id, field, value );
 	} else if ( id.node() == Shell::myNode() ) { // do a local set
 		localSetField( c, id, field, value );
 	} else {	// do a remote set on selected node
