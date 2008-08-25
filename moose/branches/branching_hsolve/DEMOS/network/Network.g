@@ -11,7 +11,7 @@ echo "
 
 float DT = 10e-6
 float PLOTDT = 100e-6
-float RUNTIME = 0.1
+float RUNTIME = 0.15
 
 setclock 0 {DT}
 setclock 1 {DT}
@@ -70,7 +70,7 @@ for ( i = 0; i < 10; i = i + 1 )
 	call /plots/table[{i}] TABCREATE {RUNTIME / PLOTDT} 0 {RUNTIME}
 	useclock /plots/table[{i}] 2
 	setfield /plots/table[{i}] step_mode 3
-	addmsg /outarray/outcompt[{i}]/glu /plots/table[{i}] INPUT Gk
+	addmsg /outarray/outcompt[{i}] /plots/table[{i}] INPUT Vm
 end
 reset
 
