@@ -72,7 +72,7 @@ addmsg /axon/n99/i20/spike /cable/c1/syn SPIKE
 ********************************************************************/
 create table /plot
 call /plot TABCREATE {runtime / iodt} 0 {runtime}
-useclock /plot 1
+useclock /plot 2
 setfield /plot step_mode 3
 
 addmsg /cable/c10 /plot INPUT Vm
@@ -82,8 +82,9 @@ addmsg /cable/c10 /plot INPUT Vm
 ********************************************************************/
 
 /* Set up the clocks that we are going to use */
-setclock 0 {dt}
-setclock 1 {iodt}
+setclock 0 {dt} 0
+setclock 1 {dt} 1
+setclock 2 {iodt} 0
 
 /* Set the stimulus conditions */
 setfield /axon/soma inject {inj}
@@ -101,11 +102,6 @@ if ( !{MOOSE} )
 		chanmode 3
 	call /cable/solve SETUP
 	setmethod 11
-else
-	// Temporary hack to sidestep issues in channel init
-	setfield /axon method ee
-	reset
-	setfield /axon method hsolve
 end
 
 /* run the simulation */
