@@ -94,7 +94,7 @@ const Cinfo* initCellCinfo()
 	};
 	
 	// Clock 0 will do for reset.
-	static SchedInfo schedInfo[] = { { process, 0, 0 } };
+	static SchedInfo schedInfo[] = { { process, 0, 2 } };
 	
 	static Cinfo cellCinfo(
 		"Cell",
@@ -154,7 +154,8 @@ void Cell::reinitFunc( const Conn* c, ProcInfo p )
 
 void Cell::innerReinitFunc( Id cell, ProcInfo p )
 {
-	double dt = p->dt_;
+	double dt;
+	
 	if ( method_ == "ee" ) {
 		// Delete existing solver
 		Id oldSolve( cell.path() + "/solve" );
@@ -163,9 +164,15 @@ void Cell::innerReinitFunc( Id cell, ProcInfo p )
 		return;
 	}
 	
+	// Find any compartment that is a (grand)child of this cell
 	Id seed = findCompt( cell );
 	if ( seed.bad() ) // No compartment found.
 		return;
+	
+	// t0's dt is used to set the solver's dt
+	Id t0( "/sched/cj/t0" );
+	assert( t0.good() );
+	get< double >( t0(), "dt", dt );
 	
 	// The solver could be set up to send back a list of solved compartments.
 	setupSolver( cell, seed, dt );

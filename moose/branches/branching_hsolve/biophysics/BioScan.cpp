@@ -13,10 +13,6 @@
 #include "HSolveStruct.h"   // for SynChanStruct. Remove eventually.
 #include "BioScan.h"
 
-// Biophysics headers required for initialization of elements
-#include "SpikeGen.h"
-#include "SynChan.h"
-
 int BioScan::adjacent( Id compartment, Id exclude, vector< Id >& ret )
 {
 	int size = ret.size();
@@ -60,36 +56,14 @@ int BioScan::gates( Id channel, vector< Id >& ret )
 
 int BioScan::spikegen( Id compartment, vector< Id >& ret )
 {
-	int size = targets( compartment, "VmSrc", ret );
-	
-	// Reinitialize
-	ProcInfoBase p;
-	vector< Id >::iterator ispike;
-	for ( ispike = size + ret.begin(); ispike != ret.end(); ++ispike ) {
-		SetConn c( ( *ispike )(), 0 );
-		SpikeGen::reinitFunc( &c, &p );
-	}
-	
-	return size;
+	return targets( compartment, "VmSrc", ret );
 }
 
-// We need 'dt' to initialize the synchan elements.
-int BioScan::synchan( Id compartment, vector< Id >& ret, double dt )
+int BioScan::synchan( Id compartment, vector< Id >& ret )
 {
 	// "channel" msgs lead to SynChans as well HHChannels, so request
 	// explicitly for former.
-	int size = targets( compartment, "channel", ret, "SynChan" );
-	
-	// Reinitialize
-	ProcInfoBase p;
-	p.dt_ = dt;
-	vector< Id >::iterator isyn;
-	for ( isyn = size + ret.begin(); isyn != ret.end(); ++isyn ) {
-		SetConn c( ( *isyn )(), 0 );
-		SynChan::reinitFunc( &c, &p );
-	}
-	
-	return size;
+	return targets( compartment, "channel", ret, "SynChan" );
 }
 
 int BioScan::caTarget( Id channel, vector< Id >& ret )
@@ -102,13 +76,8 @@ int BioScan::caDepend( Id channel, vector< Id >& ret )
 	return targets( channel, "concen", ret );
 }
 
-void BioScan::synchanFields( Id synchan, SynChanStruct& scs, double dt )
+void BioScan::synchanFields( Id synchan, SynChanStruct& scs )
 {
-	SetConn c( synchan(), 0 );
-	ProcInfoBase p;
-	p.dt_ = dt;
-	
-	SynChan::reinitFunc( &c, &p );
 	set< SynChanStruct* >( synchan(), "scan", &scs );
 }
 

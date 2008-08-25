@@ -207,11 +207,11 @@ void HSolveActive::readSynapses( ) {
 		/* Request for synchans in current compartment. Also send 'dt', so that
 		 * the synchan elements can be initialized.
 		 */
-		BioScan::synchan( compartmentId_[ ic ], synId, dt_ );
+		BioScan::synchan( compartmentId_[ ic ], synId );
 		for ( syn = synId.begin(); syn != synId.end(); ++syn ) {
 			synchan.compt_ = ic;
 			synchan.elm_ = ( *syn )();
-			BioScan::synchanFields( *syn, synchan, dt_ );
+			BioScan::synchanFields( *syn, synchan );
 			synchan_.push_back( synchan );
 		}
 		

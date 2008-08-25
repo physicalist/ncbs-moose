@@ -94,7 +94,7 @@ void HSolvePassive::initialize( ) {
 	
 	vector< Id >::iterator ic;
 	for ( ic = compartmentId_.begin(); ic != compartmentId_.end(); ++ic ) {
-		get< double >( ( *ic )(), "initVm", Vm );
+		get< double >( ( *ic )(), "Vm", Vm );
 		get< double >( ( *ic )(), "Cm", Cm );
 		get< double >( ( *ic )(), "Em", Em );
 		get< double >( ( *ic )(), "Rm", Rm );
@@ -628,7 +628,7 @@ void testHSolvePassive()
 			set< double >( c[ i ](), "Rm", tree[ i ].Rm );
 			set< double >( c[ i ](), "Cm", tree[ i ].Cm );
 			set< double >( c[ i ](), "Em", Em[ i ] );
-			set< double >( c[ i ](), "initVm", V[ i ] );
+			set< double >( c[ i ](), "Vm", V[ i ] );
 		}
 		
 		for ( i = 0; i < nCompt; i++ ) {
