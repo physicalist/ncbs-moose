@@ -222,6 +222,13 @@ class Element
 		 */
 		static Element* root();
 
+		/**
+		 * Redefines the id associated with this element. Should only
+		 * be accessed by the IdManager, which may need to do this in
+		 * the redefineScratchIds function.
+		 */
+		void setId( Id id );
+
 		virtual Id id() const {
 			return id_;
 		}

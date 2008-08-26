@@ -389,9 +389,36 @@ class Shell
 		//////////////////////////////////////////////////////////
 		// Functions for handling moves and copies. Not yet parallelized
 		//////////////////////////////////////////////////////////
+		/**
+		 * There are two versions of copy, selected by #ifdef USE_MPI.
+		 * The single node version just makes a local copy.
+		 * The multinode version is still a bit skeletal. It doesn't 
+		 * handle any cases of copying between nodes, including cases
+		 * where the target is a global. On the other hand it is OK with
+		 * copying globals to globals, and copying on remote nodes
+		 * provided src and dest are on the same node. 
+		 * Another current limitation is that it does not return the 
+		 * new object Id in cases where the object creation is off-node.
+		 */
 		static void copy( const Conn* c, Id src, Id parent, string name );
+
+		/**
+		 * This function copies the prototype element in form of an array.
+		 * It is similar to copy() only that it creates an array of copied 
+		 * elements. Not yet parallel.
+		 */
 		static void copyIntoArray( const Conn* c, Id src, Id parent, string name, vector <double> parameter );
-		static void copyIntoArray1( const Conn* c, Id src, Id parent, string name, vector <double> parameter );
+
+		/**  
+		 * Handles a copy on a local node. If the Id is defined, then it 
+		 * redefines the entire list. Otherwise, it leaves things on the
+		 * scratchIds as default. At some point this needs to be upgraded
+		 * to return the created id to the master node.
+		 */  
+		static void parCopy( const Conn* c, Nid src, Nid parent, 
+			string name, Nid kid );
+		// deprecated
+		// static void copyIntoArray1( const Conn* c, Id src, Id parent, string name, vector <double> parameter );
 		static void move( const Conn* c, Id src, Id parent, string name );
 		
 		//////////////////////////////////////////////////////////

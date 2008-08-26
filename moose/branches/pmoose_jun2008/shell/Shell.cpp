@@ -357,6 +357,16 @@ const Cinfo* initShellCinfo()
 				Ftype1< Id >::global(),
 				RFCAST( &Shell::staticDestroy ) ),
 
+		// Send copy request to remote (src) node
+		new SrcFinfo( "copySrc", 
+			// srcId, parentId, name, Id to give kid.
+			Ftype4< Nid, Nid, string, Nid >::global()
+		),
+		// Creating an object
+		new DestFinfo( "copy",
+				Ftype4< Nid, Nid, string, Nid >::global(),
+				RFCAST( &Shell::parCopy ) ),
+
 		/////////////////////////////////////////////////////
 		// Msg stuff
 		/////////////////////////////////////////////////////
@@ -788,7 +798,10 @@ Id Shell::path2eid( const string& path, const string& separator,
 	assert( !shellId.bad() );
 	Shell* s = static_cast< Shell* >( shellId()->data() );
 	*/
-	Shell* s = static_cast< Shell* >( ( Id::shellId() )()->data( 0 ) );
+	Eref ShellE = Id::shellId().eref();
+	assert( ShellE.e != 0 );
+	Shell* s = static_cast< Shell* >( ShellE.data() );
+	assert( s != 0 );
 	return s->innerPath2eid( path, separator, isLocal );
 }
 
@@ -1678,6 +1691,7 @@ void Shell::getField( const Conn* c, Id id, string field )
 	}
 }
 
+#ifndef USE_MPI
 // Static function
 /**
  * This copies the element tree from src to parent. If name arg is 
@@ -1695,6 +1709,14 @@ void Shell::copy( const Conn* c,
 	}
 }
 
+// Static function. Dummy for the single-node version.
+void Shell::parCopy( const Conn* c, Id src, Id parent, 
+	string name, Id kid )
+{
+	;
+}
+
+/*
 void Shell::copyIntoArray1( const Conn* c, 
 				Id src, Id parent, string name, vector <double> parameter )
 {
@@ -1709,6 +1731,7 @@ void Shell::copyIntoArray1( const Conn* c,
 			sendBack1< Id >( c, createSlot, e->id() );
 	}
 }
+*/
 
 
 /**
@@ -1732,6 +1755,7 @@ void Shell::copyIntoArray( const Conn* c,
 	if ( e )  // Send back the id of the new element base
 		sendBack1< Id >( c, createSlot, e->id() );
 }
+#endif // ndef USE_MPI
 
 // Static placeholder.
 /**

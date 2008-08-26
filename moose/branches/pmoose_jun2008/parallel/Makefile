@@ -15,6 +15,7 @@ OBJ = \
 	ProxyElement.o	\
 	AsyncDestFinfo.o	\
 	TestPostMaster.o	\
+	TestParOps.o	\
 
 HEADERS = \
 	../basecode/header.h \

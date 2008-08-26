@@ -74,6 +74,11 @@ bool Element::isTarget( const Element* tgt ) const
 	return 0;
 }
 
+void Element::setId( Id id )
+{
+	id_ = id;
+}
+
 /**
  * Here we work with a single big array of all ids. Off-node elements
  * are represented by their postmasters. When we hit a postmaster we

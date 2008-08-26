@@ -104,13 +104,18 @@ Id Id::assignIndex( unsigned int index ) const
 	return i;
 }
 
-/**
- *
- * Deprecated
-void Id::setIndex(unsigned int index){
-	id_ = index;
+// Static function
+Id Id::nextScratchId() 
+{
+	return Id( manager().scratchIndex() );
 }
-*/
+
+// static function
+bool Id::redefineScratchIds( Id last, Nid base )
+{
+	return manager().redefineScratchIds( last.id(), base.id(), 
+		base.node() );
+}
 
 //////////////////////////////////////////////////////////////
 //	Id manager static access function. Private.

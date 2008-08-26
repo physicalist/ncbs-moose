@@ -58,7 +58,8 @@ void initMoose()
     assert ( childSrc != 0 );
 
 	Element* shell = Neutral::create( "Shell", "shell", Id(), Id::shellId() );
-	Id::shellId().setGlobal();
+	Id::shellId().setNode( Shell::myNode() );
+	// Id::shellId().setGlobal();
 	/* Deprecated
 	Element* shell = c->create( Id( 1 ), "shell" );
 	bool ret = Eref::root().add( "childSrc", shell, "child" );

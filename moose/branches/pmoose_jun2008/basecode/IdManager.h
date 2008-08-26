@@ -103,6 +103,10 @@ class IdManager
 		unsigned int myNode();
 		unsigned int numNodes();
 
+		/**
+		 * Returns the upcoming scratch index. No allocation is done.
+		 */
+		unsigned int scratchIndex() const;
 
 		/**
 		 * Generates an id for a child object, using parent id
@@ -126,6 +130,13 @@ class IdManager
 		* scratchId and childId ops.
  		*/
 		unsigned int makeIdOnNode( unsigned int childNode );
+
+		/**
+		 * Moves a set of scratchIds starting at last, to regular Ids
+		 * starting at base, on node 'node'
+		 */
+		bool redefineScratchIds( unsigned int last, 
+			unsigned int base, unsigned int node );
 		
 		//////////////////////////////////////////////////////////////////
 		// Id info
@@ -189,7 +200,6 @@ class IdManager
 		 * True if specified index is for a scratch id
 		 */
 		bool isScratch( unsigned int index ) const;
-
 
 		/**
 		 * Returns local node
