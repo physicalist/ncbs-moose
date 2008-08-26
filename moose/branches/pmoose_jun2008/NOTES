@@ -8280,14 +8280,51 @@ globals.
 
 For global objects we need to handle:
 	*create, 
-	-createmap, 
 	-copy, 
+	-createmap/copyIntoArray 
 	-move
 	*set,
 	-get, 
 	+addmsg 
+	-readcell
 
 Now implemented the set and addmsg, both pretty painless. Did unit tests
 for global set.
+Checked in as revision 624 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+Steps remaining to test a big network:
+	- get global stuff up to readcell to work.
+		Can hack together within-global copy and createmap and readcell
+		Basically issue the commands to all nodes.
+	- Regression tests
+	- Do a bit of cleaning up of scheduling into outgoing and regular procs
+	- Compile and test on cluster
+	- Scale up and profile.
+
+==============================================================================
+25 Aug 2008
+Working on copy. Initially thought it would be a piece of cake, but there
+is a serious issue with copies within globals: the 'copy' function uses
+scratchIds and I will have to have a way to align the ids. If we guarantee
+element creation order (within copy) being the same on all nodes I can pass
+in the starting Id of the created set on the master node, and then reposition
+all the scratch ids to start with this one.
+
+Testing parCopy now with unit tests.
+
+Things have gone downhill. Now even parCreate fails.
+
+==============================================================================
+26 Aug 2008
+After much struggling, I have pinpointed the problem to an apparently minor
+one-line change: in init.cpp I had commented out the line that makes the 
+ShellId a global.
+
+OK, the issue was that the shellId did not have a node specified at all. When I
+set it to Shell::myNode() it clears the first tests but now 'le' on / 
+gives a separate instance for each shell, and this too is wrong.
+Fixed this too. Now we're back to where we were earlier. Uncommented out the
+parCopy tests: Croaks there.
+Fixed it up. It was due to a send command without full type specification.
+Now global copies seem to work.
 
 ==============================================================================

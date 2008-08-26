@@ -110,6 +110,25 @@ class Id
 		 */
 
 		//////////////////////////////////////////////////////////////
+		//	Id management for updating values
+		//////////////////////////////////////////////////////////////
+
+		/**
+		 * Returns the most recently created ScratchId + 1. Used as a
+		 * starting point for the redefinition of scratch Ids. Does
+		 * not allocate any new Ids.
+		 */
+		static Id nextScratchId();
+
+		/**
+		 * Shifts a block of scratchIds, from 'last' to the most recent,
+		 * to a set of regular Ids beginning at base. 
+		 * The base must be an Nid because we don't yet have its node#
+		 * recorded on this node. Node might be global.
+		 */
+		static bool redefineScratchIds( Id last, Nid base );
+
+		//////////////////////////////////////////////////////////////
 		//	Id info
 		//////////////////////////////////////////////////////////////
 		/**
@@ -165,6 +184,7 @@ class Id
 
 		/**
 		 * Assignes node# to id. Used when creating proxy elements
+		 * and Global objects.
 		 */
 		void setNode( unsigned int node );
 

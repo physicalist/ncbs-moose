@@ -56,6 +56,11 @@ static const Slot requestPathSlot =
 static const Slot returnPathSlot = 
 	initShellCinfo()->getSlot( "parallel.returnPathSrc" );
 
+static const Slot createSlot =
+	initShellCinfo()->getSlot( "parser.createSrc" );
+static const Slot parCopySlot = 
+	initShellCinfo()->getSlot( "parallel.copySrc" );
+
 
 
 /**
@@ -252,9 +257,7 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
 				c->target(), addParallelSrcSlot, tgtMsg,
 				src, srcField, dest, destField );
 		} else {
-			cout << "adding " << src << "." << srcNode << " to " <<
-				dest << "." << destNode << " on " << sh->myNode() <<
-				endl << flush;
+			// cout << "adding " << src << "." << srcNode << " to " << dest << "." << destNode << " on " << sh->myNode() << endl << flush;
 			sendTo4< Id, string, Id, string >( 
 				c->target(),
 				addLocalSlot, tgtMsg,
@@ -494,7 +497,7 @@ void Shell::handleRequestLe( const Conn* c,
 	vector< Id >::iterator i;
 	vector< Nid > temp;
 	for ( i = ret.begin(); i != ret.end(); i++ )
-		if ( i->node() != Id::GlobalNode )
+		if ( i->node() != Id::GlobalNode && *i != Id::shellId() )
 			temp.push_back( *i );
 
 	sendBack2< vector< Nid >, unsigned int >( c, returnLeSlot,
@@ -617,6 +620,138 @@ void Shell::handleSingleLevelWildcardReturn( const Conn* c,
 	sh->zeroOffNodePending( requestId );
 }
 */
+/////////////////////////////////////////////////////////////////////////
+// Here we put in multinode versions of the copy operations.
+/////////////////////////////////////////////////////////////////////////
+
+// Static function
+/**
+ * This is the multinode version of copy. 
+ *
+ * It is still a bit skeletal. It doesn't handle any cases of copying
+ * between nodes, including cases where the target is a global. 
+ * On the * other hand it is OK with copying globals to globals,
+ * and copying on remote nodes provided src and dest are on the same node.
+ *
+ * Another current limitation is that it does not return the new object
+ * Id in cases where the object creation is off-node.
+ */
+void Shell::copy( const Conn* c, Id src, Id parent, string name )
+{
+	assert( myNode() == 0 );
+	if( src == Id() ) {
+		cout << "Shell::copy( root, " << parent << 
+			") Error, cannot yet copy object across nodes\n";
+		
+		return;
+	}
+	Element* e = 0;
+	if ( src.isGlobal() ) {
+		if ( parent == Id() ) { // Do copy on node0
+			e = src()->copy( parent(), name );
+		} else if ( parent.node() == 0 ) { // Local copy
+			e = src()->copy( parent(), name );
+		} else if ( parent.isGlobal() ) { // All-node copy of globals
+			e = src()->copy( parent(), name );
+			// cout << "in Shell::copy, e->id() = " << e->id() << ", node = " << e->id().node() << endl << flush;
+			send4< Nid, Nid, string, Nid >( c->target(), parCopySlot,
+				src, parent, name, e->id() ); 
+				// Ensure all nodes use same id.
+		} else if ( parent.node() < numNodes() ) {	// Off-node copy 
+			unsigned int tgtNode = parent.node();
+			// Id id = Id::makeIdOnNode( tgtNode );
+			if ( tgtNode > myNode() )
+				--tgtNode;
+			sendTo4< Nid, Nid, string, Nid >( 
+				c->target(), parCopySlot, tgtNode,
+				src, parent, name, Id() ); // Tell node to use scratchIds.
+			// Later will need a way to get the new id back.
+		} else {
+			assert( 0 );
+		}
+	} else if ( src.node() == 0 ) {
+		if ( parent == Id() || parent.node() == 0 ) { // local copy
+			e = src()->copy( parent(), name );
+		} else if ( parent.isGlobal() ) { // Can't handle yet.
+			cout << "Shell::copy( " << src << ", " << parent << 
+			"): Sorry, cannot yet copy object into global\n";
+		} else if ( parent.node() < numNodes() ) {	// Off-node copy
+			cout << "Shell::copy( " << src << ", " << parent << 
+			"): Sorry, cannot yet copy object across nodes\n";
+		} else {
+			assert( 0 );
+		}
+	} else if ( src.node() < numNodes() ) { // off-node src.
+		if ( parent == Id() || parent.node() == src.node() ) {
+			// local copy on target node.
+			unsigned int tgtNode = src.node();
+			if ( tgtNode > myNode() )
+				--tgtNode;
+			sendTo4< Nid, Nid, string, Nid >( 
+				c->target(), parCopySlot, tgtNode,
+				src, parent, name, Id() ); 
+		} else if ( parent.isGlobal() ) { // Can't handle yet.
+			cout << "Shell::copy( " << src << ", " << parent << 
+			"): Sorry, cannot yet copy object into global\n";
+		} else if ( parent.node() < numNodes() ) {	// Off-node copy
+			cout << "Shell::copy( " << src << ", " << parent << 
+			"): Sorry, cannot yet copy object across nodes\n";
+		} else {
+			assert( 0 );
+		}
+	}
+	Id retId; // Default is empty
+	// Later need a way of getting the new id from the target node.
+	if ( e ) // Send back the id of the new element base
+		retId = e->id();
+#ifdef DO_UNIT_TESTS
+	// Nasty issue of callback to a SetConn here.
+	if ( dynamic_cast< const SetConn* >( c ) == 0 )
+		sendBack1< Id >( c, createSlot, retId );
+#else
+	sendBack1< Id >( c, createSlot, retid );
+#endif
+}
+
+/**
+ * Handles a copy on a local node. If the Id is defined, then it redefines
+ * the entire list. Otherwise, it leaves things on the scratchIds as default
+ * At some point this needs to be upgraded to return the created id to
+ * the master node.
+ */
+void Shell::parCopy( const Conn* c, Nid src, Nid parent, 
+	string name, Nid kid )
+{
+	Id last = Id::nextScratchId();
+	Element* e = src()->copy( parent(), name );
+	assert ( e->id() == last );
+	if ( kid != Id() ) { // redefine the new scratch Ids, up to the latest.
+		Id::redefineScratchIds( last, kid );
+	}
+}
+
+/**
+ * This function copies the prototype element in form of an array.
+ * It is similar to copy() only that it creates an array of copies 
+ * elements
+*/
+
+void Shell::copyIntoArray( const Conn* c, 
+				Id src, Id parent, string name, vector <double> parameter )
+{
+	// Shell* s = static_cast< Shell* >( c.targetElement()->data() );
+	int n = (int) (parameter[0]*parameter[1]);
+	Element* e = src()->copyIntoArray( parent, name, n );
+	//assign the other parameters to the arrayelement
+	assert(parameter.size() == 6);
+	ArrayElement* f = static_cast <ArrayElement *> (e);
+	f->setNoOfElements((int)(parameter[0]), (int)(parameter[1]));
+	f->setDistances(parameter[2], parameter[3]);
+	f->setOrigin(parameter[4], parameter[5]);
+	if ( e )  // Send back the id of the new element base
+		sendBack1< Id >( c, createSlot, e->id() );
+}
+
 
 ////////////////////////////////////////////////////////////////////
 // Here we put in the offNodeValueRequest stuff.

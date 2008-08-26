@@ -202,6 +202,31 @@ bool IdManager::setElement( unsigned int index, Element* e )
 	}
 }
 
+unsigned int IdManager::scratchIndex() const
+{
+	return scratchIndex_;
+}
+
+bool IdManager::redefineScratchIds( unsigned int last,
+	unsigned int base, unsigned int node )
+{
+	// Problem here, if we spill over the scratchIndex size.
+	// May well happen for big cells. Need to resolve.
+	assert( last < scratchIndex_ );
+	unsigned int num = scratchIndex_ - last;
+	if ( num + base >= elementList_.size() )
+		elementList_.resize( ( 1 + (num + base) / blockSize ) * blockSize );
+	for ( unsigned int i = last; i < scratchIndex_; ++i ) {
+		Enode& en = elementList_[ i ];
+		elementList_[ base ] = Enode( en.e(), node );
+		en.e()->setId( Id( base, 0 ) );
+		++base;
+		en = Enode();
+	}
+	return 1;
+}
+
+
 #ifdef USE_MPI
 unsigned int IdManager::findNode( unsigned int index ) const 
 {

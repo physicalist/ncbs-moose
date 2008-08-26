@@ -66,6 +66,7 @@ HEADERS = \
 	Slot.h \
 	Finfo.h \
 	Id.h \
+	IdManager.h \
 	Msg.h \
 	Element.h \
 	Class.h \
