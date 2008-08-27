@@ -84,7 +84,7 @@ addmsg /cell/c{2 ** MAX_DEPTH - 1} /plots/vn INPUT Vm
 //=====================================
 //  Stimulus
 //=====================================
-setfield /cell/c1 inject {INJECT}
+setfield /cell/c1023 inject {INJECT}
 
 //=====================================
 //  Clocks
@@ -106,7 +106,6 @@ if ( GENESIS )
 	create hsolve /cell/solve
 	setfield /cell/solve \
 		path /cell/##[TYPE=symcompartment],/cell/##[TYPE=compartment] \
-		comptmode 1  \
 		chanmode 3
 	call /cell/solve SETUP
 	setmethod 11
