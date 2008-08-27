@@ -362,10 +362,20 @@ const Cinfo* initShellCinfo()
 			// srcId, parentId, name, Id to give kid.
 			Ftype4< Nid, Nid, string, Nid >::global()
 		),
-		// Creating an object
+		// Copying an object
 		new DestFinfo( "copy",
 				Ftype4< Nid, Nid, string, Nid >::global(),
 				RFCAST( &Shell::parCopy ) ),
+
+		// Send array copy request to remote (src) node
+		new SrcFinfo( "copyIntoArraySrc", 
+			// srcId, parentId, name, Id to give kid.
+			Ftype3< vector< Nid >, string, vector< double > >::global()
+		),
+		// Copying into an array
+		new DestFinfo( "copyIntoArray",
+				Ftype3< vector< Nid >, string, vector< double > >::global(),
+				RFCAST( &Shell::parCopyIntoArray ) ),
 
 		/////////////////////////////////////////////////////
 		// Msg stuff
@@ -1190,7 +1200,7 @@ void Shell::staticCreateArray( const Conn* c, string type,
 	// to assign child node. If parent is not node 0, put child on parent.
 	Id id = Id::childId( parent );
 	// Id id = Id::scratchId();
-	if ( id.node() == 0 ) { // local node
+	if ( id.node() == 0 || id.isGlobal() ) { // local node
 		int n = (int) (parameter[0]*parameter[1]);
 		bool ret = s->createArray( type, name, parent, id, n );
 		assert(parameter.size() == 6);
@@ -1200,10 +1210,16 @@ void Shell::staticCreateArray( const Conn* c, string type,
 		f->setDistances(parameter[2], parameter[3]);
 		f->setOrigin(parameter[4], parameter[5]);
 		if ( ret ) { // Tell the parser it was created happily.
+			if ( id.isGlobal() ) { // Also make child on all remote nodes.
+				pair< Nid, Nid > temp( paNid, id );
+				send4< string, string, pair< Nid, Nid >, vector< double > >( 
+				c->target(), rCreateArraySlot,
+				type, name, temp, parameter );
+			}
 			//GenesisParserWrapper::recvCreate(conn, id)
 			sendBack1< Id >( c, createSlot, id);
 		}
-	} else { // Make child on remote node.
+	} else { // Make child on single remote node.
 		assert( id.node() > 0 );
 		// OffNodeInfo* oni = static_cast< OffNodeInfo* >( child->data() );
 		// Element* post = oni->post;
@@ -1665,31 +1681,20 @@ void Shell::parCopy( const Conn* c, Id src, Id parent,
 	;
 }
 
-/*
-void Shell::copyIntoArray1( const Conn* c, 
-				Id src, Id parent, string name, vector <double> parameter )
-{
-	// Shell* s = static_cast< Shell* >( c.targetElement()->data() );
-	int n = (int) (parameter[0]*parameter[1]);
-	for (int i = 0; i < n; i ++){
-		char sname[20];
-		sprintf(sname, "%s[%d]", src()->name().c_str(), i);
-		Element* e = src()->copy( parent(), sname );
-		//assign the other parameters to the arrayelement
-		if ( e )  // Send back the id of the new element base
-			sendBack1< Id >( c, createSlot, e->id() );
-	}
-}
-*/
-
-
 /**
  * This function copies the prototype element in form of an array.
- * It is similar to copy() only that it creates an array of copies 
- * elements
+ * It is similar to copy() only that it creates an array of copied 
+ * elements. Used in createmap.
 */
-
 void Shell::copyIntoArray( const Conn* c, 
+				Id src, Id parent, string name, vector <double> parameter )
+{
+	if ( localCopyIntoArray( c, src, parent, name, parameter ) != 0 )
+		sendBack1< Id >( c, createSlot, e->id() );
+}
+#endif // ndef USE_MPI
+
+Element* Shell::localCopyIntoArray( const Conn* c, 
 				Id src, Id parent, string name, vector <double> parameter )
 {
 	// Shell* s = static_cast< Shell* >( c.targetElement()->data() );
@@ -1701,12 +1706,9 @@ void Shell::copyIntoArray( const Conn* c,
 	f->setNoOfElements((int)(parameter[0]), (int)(parameter[1]));
 	f->setDistances(parameter[2], parameter[3]);
 	f->setOrigin(parameter[4], parameter[5]);
-	if ( e )  // Send back the id of the new element base
-		sendBack1< Id >( c, createSlot, e->id() );
+	return e;
 }
-#endif // ndef USE_MPI
 
-// Static placeholder.
 /**
  * This moves the element tree from src to parent. If name arg is 
  * not empty, it renames the resultant object. It first verifies

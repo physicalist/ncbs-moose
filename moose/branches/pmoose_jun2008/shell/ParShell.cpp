@@ -60,6 +60,8 @@ static const Slot createSlot =
 	initShellCinfo()->getSlot( "parser.createSrc" );
 static const Slot parCopySlot = 
 	initShellCinfo()->getSlot( "parallel.copySrc" );
+static const Slot parCopyIntoArraySlot = 
+	initShellCinfo()->getSlot( "parallel.copyIntoArraySrc" );
 
 
 
@@ -187,7 +189,7 @@ void Shell::parCreateArrayFunc ( const Conn* c,
 		parent.setNode( s->myNode_ );
 	}
 
-	assert ( s->myNode_ == parent.node() );
+	assert ( s->myNode_ == parent.node() || parent.isGlobal() );
 	bool ret = 0;
 	// both parent and child are here. Straightforward.
 	if ( parent.node() == newobj.node() ) {
@@ -236,16 +238,16 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
 			return innerAddLocal( src, srcField, dest, destField );
 		} else if ( destNode == Id::GlobalNode) { // global src and tgt
 			// First, tell all other nodes to add msg too.
-			send4< Nid, string, Nid, string >( 
-				c->target(), addParallelSrcSlot,
+			send4< Id, string, Id, string >( 
+				c->target(), addLocalSlot,
 				src, srcField, dest, destField );
 			// Then do msg here.
 			return innerAddLocal( src, srcField, dest, destField );
 		} else { // Go to dest node to do msg from its own instance of src.
 			unsigned int tgtMsg = 
 				( destNode <= myNode() ) ? destNode: destNode - 1;
-			sendTo4< Nid, string, Nid, string >( 
-				c->target(), addParallelSrcSlot, tgtMsg,
+			sendTo4< Id, string, Id, string >( 
+				c->target(), addLocalSlot, tgtMsg,
 				src, srcField, dest, destField );
 			return 1;
 		}
@@ -630,7 +632,7 @@ void Shell::handleSingleLevelWildcardReturn( const Conn* c,
  *
  * It is still a bit skeletal. It doesn't handle any cases of copying
  * between nodes, including cases where the target is a global. 
- * On the * other hand it is OK with copying globals to globals,
+ * On the other hand it is OK with copying globals to globals,
  * and copying on remote nodes provided src and dest are on the same node.
  *
  * Another current limitation is that it does not return the new object
@@ -641,7 +643,7 @@ void Shell::copy( const Conn* c, Id src, Id parent, string name )
 	assert( myNode() == 0 );
 	if( src == Id() ) {
 		cout << "Shell::copy( root, " << parent << 
-			") Error, cannot yet copy object across nodes\n";
+			") Error, cannot copy the root element\n";
 		
 		return;
 	}
@@ -739,19 +741,108 @@ void Shell::parCopy( const Conn* c, Nid src, Nid parent,
 void Shell::copyIntoArray( const Conn* c, 
 				Id src, Id parent, string name, vector <double> parameter )
 {
-	// Shell* s = static_cast< Shell* >( c.targetElement()->data() );
-	int n = (int) (parameter[0]*parameter[1]);
-	Element* e = src()->copyIntoArray( parent, name, n );
-	//assign the other parameters to the arrayelement
-	assert(parameter.size() == 6);
-	ArrayElement* f = static_cast <ArrayElement *> (e);
-	f->setNoOfElements((int)(parameter[0]), (int)(parameter[1]));
-	f->setDistances(parameter[2], parameter[3]);
-	f->setOrigin(parameter[4], parameter[5]);
-	if ( e )  // Send back the id of the new element base
-		sendBack1< Id >( c, createSlot, e->id() );
+	assert( myNode() == 0 );
+	if( src == Id() ) {
+		cout << "Shell::copyIntoArray( root, " << parent << 
+			") Error, cannot copy the root object\n";
+		return;
+	}
+	cout << "in Shell::copyIntoArray on node=" << myNode() << ", src=" << src << "." << src.node() << ", dest = " << parent << "." << parent.node() <<  " name= " << name << endl << flush;
+	Element* ret = 0;
+	vector< Nid > temp; // Used to pass Nid args to remote nodes.
+	temp.push_back( src );
+	temp.push_back( parent );
+	if ( src.isGlobal() ) {
+		if ( parent == Id() ) { // Do copy on node0
+			ret = localCopyIntoArray( c, src, parent, name, parameter );
+		} else if ( parent.node() == 0 ) { // Local copy
+			ret = localCopyIntoArray( c, src, parent, name, parameter );
+		} else if ( parent.isGlobal() ) { // All-node copy of globals
+			ret = localCopyIntoArray( c, src, parent, name, parameter );
+			// cout << "in Shell::copy, e->id() = " << e->id() << ", node = " << e->id().node() << endl << flush;
+			temp.push_back( ret->id() ); // Want to assign Id of new object.
+			send3< vector< Nid >, string, vector< double > >( 
+				c->target(), parCopyIntoArraySlot,
+				temp, name, parameter ); 
+		} else if ( parent.node() < numNodes() ) {	// Off-node copy 
+			unsigned int tgtNode = parent.node();
+			// Id id = Id::makeIdOnNode( tgtNode );
+			if ( tgtNode > myNode() )
+				--tgtNode;
+			// Later will need a way to get the new id back.
+			temp.push_back( Id() ); // Tell node to use scratchIds.
+			sendTo3< vector< Nid >, string, vector< double > >( 
+				c->target(), parCopyIntoArraySlot, tgtNode,
+				temp, name, parameter ); 
+		} else {
+			assert( 0 );
+		}
+	} else if ( src.node() == 0 ) {
+		if ( parent == Id() || parent.node() == 0 ) { // local copy
+			ret = localCopyIntoArray( c, src, parent, name, parameter );
+		} else if ( parent.isGlobal() ) { // Can't handle yet.
+			cout << "Shell::copy( " << src << ", " << parent << 
+			"): Sorry, cannot yet copy object into global\n";
+		} else if ( parent.node() < numNodes() ) {	// Off-node copy
+			cout << "Shell::copy( " << src << ", " << parent << 
+			"): Sorry, cannot yet copy object across nodes\n";
+		} else {
+			assert( 0 );
+		}
+	} else if ( src.node() < numNodes() ) { // off-node src.
+		if ( parent == Id() || parent.node() == src.node() ) {
+			// local copy on target node.
+			unsigned int tgtNode = src.node();
+			if ( tgtNode > myNode() )
+				--tgtNode;
+			// Later will need a way to get the new id back.
+			temp.push_back( Id() ); // Tell node to use scratchIds.
+			sendTo3< vector< Nid >, string, vector< double > >( 
+				c->target(), parCopyIntoArraySlot, tgtNode,
+				temp, name, parameter ); 
+		} else if ( parent.isGlobal() ) { // Can't handle yet.
+			cout << "Shell::copy( " << src << ", " << parent << 
+			"): Sorry, cannot yet copy object into global\n";
+		} else if ( parent.node() < numNodes() ) {	// Off-node copy
+			cout << "Shell::copy( " << src << ", " << parent << 
+			"): Sorry, cannot yet copy object across nodes\n";
+		} else {
+			assert( 0 );
+		}
+	}
+	Id retId; // Default is empty
+	// Later need a way of getting the new id from the target node.
+	if ( ret ) // Send back the id of the new element base
+		retId = ret->id();
+#ifdef DO_UNIT_TESTS
+	// Nasty issue of callback to a SetConn here.
+	if ( dynamic_cast< const SetConn* >( c ) == 0 )
+		sendBack1< Id >( c, createSlot, retId );
+#else
+	sendBack1< Id >( c, createSlot, retid );
+#endif
 }
 
+/**
+ * Handles a copy into an array on a local node. 
+ * At some point this needs to be upgraded to return the created id to
+ * the master node.
+ * The nids vector is src, parent, child.
+ * If the child nid == Id(), it tells the remote node to make the usual
+ * scratchId.
+ */
+void Shell::parCopyIntoArray( const Conn* c, vector< Nid > nids,
+	string name, vector< double > parameter )
+{
+	assert( nids.size() == 3 );
+	Id last = Id::nextScratchId();
+	Element* e = localCopyIntoArray( c, nids[0], nids[1], name, parameter );
+	cout << "in Shell::parCopyIntoArray on node=" << myNode() << ", src=" << nids[0] << "." << nids[0].node() << ", dest = " << nids[1] << "." << nids[1].node() << ", child = " << nids[2] << "." << nids[2].node() << " name= " << name << ", last= " << last << ", e->name() = " << e->name() << ", e->id = " << e->id() << endl << flush;
+	assert ( e->id().id() == last.id() ); // Index will differ.
+	if ( nids[2] != Id() ) { // redefine the new scratch Ids, up to latest.
+		Id::redefineScratchIds( last, nids[2] );
+	}
+}
 
 ////////////////////////////////////////////////////////////////////
 // Here we put in the offNodeValueRequest stuff.
