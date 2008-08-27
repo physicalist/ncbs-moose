@@ -113,7 +113,7 @@ we will need when the rate parameters do not fit this form.
 // For speed during execution, set the calculation mode to "no interpolation"
 // and use TABFILL to expand the table to 3000 entries.
            setfield Ca Y_A->calc_mode 0   Y_B->calc_mode 0
-           call Ca TABFILL Y 3000 0
+           call Ca TABFILL Y 3000 2
 end
 
 /****************************************************************************
@@ -225,7 +225,7 @@ function make_K_AHP
 // For speed during execution, set the calculation mode to "no interpolation"
 // and use TABFILL to expand the table to 3000 entries.
         setfield K_AHP Z_A->calc_mode 0   Z_B->calc_mode 0
-        call K_AHP TABFILL Z 3000 0
+        call K_AHP TABFILL Z 3000 2
 // Use an added field to tell the cell reader to set up the
 // CONCEN message from the Ca_concen element
         addfield K_AHP addmsg1
@@ -286,7 +286,7 @@ function make_K_C
 // Expand the tables to 3000 entries to use without interpolation
 	setfield K_C X_A->calc_mode 0 X_B->calc_mode 0
 	setfield K_C Xpower 1
-	call K_C TABFILL X 3000 0
+	call K_C TABFILL X 3000 2
 
 // Create a table for the function of concentration, allowing a
 // concentration range of 0 to 1000, with 50 divisions.  This is done
@@ -320,7 +320,7 @@ function make_K_C
 // Make it an instantaneous gate (no time constant)
 	setfield K_C instant {INSTANTZ}
 // Expand the table to 3000 entries to use without interpolation. 
-	call K_C TABFILL Z 3000 0
+	call K_C TABFILL Z 3000 2
 
 // Now we need to provide for messages that link to external elements.
 // The message that sends the Ca concentration to the Z gate tables is stored
