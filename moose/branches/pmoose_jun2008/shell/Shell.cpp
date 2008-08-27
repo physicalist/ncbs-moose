@@ -1177,57 +1177,6 @@ void Shell::staticCreate( const Conn* c, string type,
 
 // Static function
 // parameter has following clumped in the order mentioned, Nx, Ny, dx, dy, xorigin, yorigin
-// creates array of simple elements. Will swtich to arrayelements later.
-/*
-void Shell::staticCreateArray1( const Conn* c, string type,
-					string name, Id parent, vector <double> parameter )
-{
-	
-	Eref eref = c->target();
-// 	Element* e = c->targetElement();
-	Shell* s = static_cast< Shell* >( c->data() );
-
-	int n = (int) (parameter[0]*parameter[1]);
-	
-	for (int i = 0; i < n; i++){
-		Id id = Id::childId( parent );
-		Element* child = id();
-		char sname[20];
-		sprintf(sname, "%s[%d]", name.c_str(), i); 
-		if ( child == 0 ) { // local node
-			bool ret = s->create( type, sname, parent, id );
-			if ( ret ) { // Tell the parser it was created happily.
-				//GenesisParserWrapper::recvCreate(conn, id)
-				sendBack1< Id >( c, createSlot, id);
-				//sendTo1< Id >( e, 0, createSlot, c->targetIndex(), id);
-			}
-		}
-		else {
-			// Shell-to-shell messaging here with the request to
-			// create a child.
-			// This must only happen on node 0.
-			assert( eref.id().node() == 0 );
-			assert( id.node() > 0 );
-			OffNodeInfo* oni = static_cast< OffNodeInfo* >( child->data( 0 ) );
-			// Element* post = oni->post;
-			unsigned int target = 0;
-			//eref.connSrcBegin( rCreateSlot.msg() ) - e->lookupConn( 0 ) +
-			//	id.node() - 1;
-			sendTo4< string, string, Id, Id>( 
-				eref, rCreateSlot, target,
-				type, sname, 
-				parent, oni->id );
-			// Here it needs to fork till the object creation is complete.
-			delete oni;
-			delete child;
-		}
-	}
-}
-*/
-
-
-// Static function
-// parameter has following clumped in the order mentioned, Nx, Ny, dx, dy, xorigin, yorigin
 // Unlike the regular staticCreate function, here we have no option of
 // specifying target node. Just sit on whatever node the parent is on.
 void Shell::staticCreateArray( const Conn* c, string type,

@@ -8327,4 +8327,15 @@ parCopy tests: Croaks there.
 Fixed it up. It was due to a send command without full type specification.
 Now global copies seem to work.
 
+Checked in as revision 628 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Tested if the new global operations are the direct cause of the ugly error
+messages on exit from MOOSE. Removed them. Still get the error messages.
+
+Moving on, despite these errors: going through the network simulation.
+Seems like the system is confused about sending messages, possibly because
+it doesn't know how to handle ce across multiple nodes. Or possibly 
+because I try to send two messages between the same objects and the system
+doesn't recognize how to deal with proxies for this shared message.
+
 ==============================================================================
