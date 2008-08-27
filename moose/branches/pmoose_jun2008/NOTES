@@ -8339,3 +8339,20 @@ because I try to send two messages between the same objects and the system
 doesn't recognize how to deal with proxies for this shared message.
 
 ==============================================================================
+27 Aug 2008
+Omitted TestParOps.cpp file from last checkin.
+Checked in as revision 629 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Fixed many of the issues with object setup on global (/library). There
+were several bugs in the message setup code, all to do with cases where a
+local message had to be set up on a remote node, but instead the remote node
+was being asked to set up a parallel message.
+Now it crashes when I try to do an off-node createmap.
+
+Got createmap to work across nodes. Just like the changes needed for copy,
+the copyIntoArray command needed to be updated. Now it successfully 
+uses the library to create remote arrays OK. It crashes now on the 
+planarconnect between nodes in the network.g script.
+
+
+==============================================================================

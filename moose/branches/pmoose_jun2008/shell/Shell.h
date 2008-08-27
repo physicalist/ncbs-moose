@@ -405,9 +405,19 @@ class Shell
 		/**
 		 * This function copies the prototype element in form of an array.
 		 * It is similar to copy() only that it creates an array of copied 
-		 * elements. Not yet parallel.
+		 * elements. 
+		 * Implemented as two different versions, depending on whether we
+		 * are running in parallel mode or not. Like copy, some limitations
+		 * apply to the parallel version: Cannot copy across nodes, and
+		 * cannot return new object Id if the new array is off-node.
 		 */
 		static void copyIntoArray( const Conn* c, Id src, Id parent, string name, vector <double> parameter );
+
+		/**
+		 * This function does the actual node-local array copy.
+		 */
+		static Element* localCopyIntoArray( const Conn* c, 
+			Id src, Id parent, string name, vector <double> parameter );
 
 		/**  
 		 * Handles a copy on a local node. If the Id is defined, then it 
@@ -417,8 +427,18 @@ class Shell
 		 */  
 		static void parCopy( const Conn* c, Nid src, Nid parent, 
 			string name, Nid kid );
-		// deprecated
-		// static void copyIntoArray1( const Conn* c, Id src, Id parent, string name, vector <double> parameter );
+
+		/**
+		 * This manages remote requests for copying an array.
+		 * The same concerns with ensuring compatibility of Id remains,
+		 * for globals. 
+		 * First arg is a 3 Nid vector: src, parent, child.
+		 * Later we may want to put in a callback so that we can return
+		 * info on success of operation.
+		 */
+		static void parCopyIntoArray( const Conn* c, 
+			vector< Nid > nids, string name, vector< double > parameter );
+		
 		static void move( const Conn* c, Id src, Id parent, string name );
 		
 		//////////////////////////////////////////////////////////
