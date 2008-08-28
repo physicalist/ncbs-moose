@@ -8354,5 +8354,43 @@ the copyIntoArray command needed to be updated. Now it successfully
 uses the library to create remote arrays OK. It crashes now on the 
 planarconnect between nodes in the network.g script.
 
+Checked in as revision 631 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+The addmsg in planarconnect is failing, seems to lose the node info of 
+wildcard list. Fixed.
+
+Then it ran out of space in the send buf. Fixed.
+
+Now it is unhappy about sparse matrix, which is called by Many2ManyConn.cpp.
 
 ==============================================================================
+28 Aug 2008.
+Tracked down the problem: Array elements conflicting with simple Proxy 
+elements: The proxy element is looked up by Id. When we have
+an array element on the originating node, the same Id is used, but with a
+different index. On the destination node, this retrieves the same proxy 
+element even if the index differs. Messages are set up, incorrectly, 
+originating from the same proxy element. The eventual mapping of incoming
+data to targets will also be lost, but it crashes before it gets there.
+
+Furthermore, it seems that the selectConnTainer function will always give
+an array msg type to the proxy. This happens because the function tests if
+the Element is a SimpleElement, and if not, adopts the array option. It
+doesn't distinguish between Proxy and Array element types.
+
+Yet more insights: The Many2ManyConn is formed both at src and dest. At src
+it is because the system sees an array as the src, and the postmasters are in
+an array at the dest. At dest it sees an array at dest and a single proxy at
+src: not sure why it goes for Many2Many. In both cases the thing initializes
+a SparseMatrix incorrectly, because neither the postmaster nor the proxy
+have the same dimensions as the corresponding message target.
+
+For now: Put in a few lines so that the Proxy correctly handles indexing of
+message source, doesn't even extra storage.
+Pending: Resolve issue of initialization of the Proxy so it knows how big
+an array it represents. I think the best thing is to send a separate request
+to initialize a proxy, rather than lumping it in with the message creation.
+This may eventually be extended for multi-node arrays.
+
+For now, check in the assorted fix-ups so far.
+

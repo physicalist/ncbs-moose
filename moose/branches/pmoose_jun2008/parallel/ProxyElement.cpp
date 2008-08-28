@@ -37,9 +37,10 @@ unsigned int ProxyElement::numTargets( int msgNum ) const
 	return 0;
 }
 
-void ProxyElement::sendData( unsigned int funcIndex, const char* data )
+void ProxyElement::sendData( unsigned int funcIndex, const char* data, 
+	unsigned int eIndex )
 {
-	SetConn c( this, 0 );
+	SetConn c( this, eIndex );
 	ProxyFunc pf = reinterpret_cast< ProxyFunc >( 
 		proxyVec_->func( funcIndex ) ); 
 	pf( &c, data, Slot( 0, funcIndex ) );
