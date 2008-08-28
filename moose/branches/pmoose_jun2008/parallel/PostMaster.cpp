@@ -230,7 +230,7 @@ void PostMaster::async( const Conn* c, char* data, unsigned int size )
  * both.
  */
 bool setupProxyMsg( unsigned int srcNode, 
-	Id proxy, unsigned int asyncFuncId, 
+	Id proxy, unsigned int asyncFuncId, unsigned int proxySize,
 	Id dest, int destMsg )
 {
 	const Finfo* destFinfo = dest()->findFinfo( destMsg );
@@ -257,7 +257,7 @@ bool setupProxyMsg( unsigned int srcNode,
 	if ( proxy == Id::shellId() ) {
 		get< Id >( Id::postId( 0 ).eref(), "shellProxy", proxy );
 		proxy = Id::scratchId();
-		pe = new ProxyElement( proxy, srcNode, pfid );
+		pe = new ProxyElement( proxy, srcNode, pfid, proxySize );
 		set< Id >( Id::postId( srcNode ).eref(), "shellProxy", proxy );
 		assert( proxy.eref().data() == Id::postId( srcNode ).eref().data() );
 		/*
@@ -275,7 +275,7 @@ bool setupProxyMsg( unsigned int srcNode,
 	if ( proxy.isProxy() ) {
 		pe = proxy();
 	} else {
-		pe = new ProxyElement( proxy, srcNode, pfid );
+		pe = new ProxyElement( proxy, srcNode, pfid, proxySize );
 	}
 	unsigned int srcIndex = pe->numTargets( 0, proxy.index() );
 	unsigned int destIndex = dest()->numTargets( destMsg, dest.index() );

@@ -11,13 +11,13 @@
 #include "ProxyElement.h"
 
 ProxyElement::ProxyElement( Id id, unsigned int node, 
-	unsigned int proxyFuncId )
+	unsigned int proxyFuncId, unsigned int size )
 	: 	Element( id ), node_( node ),
-		proxyVec_( FuncVec::getFuncVec( proxyFuncId ) )
+		proxyVec_( FuncVec::getFuncVec( proxyFuncId ) ),
+		numEntries_( size )
 {
 	id.setNode( node );
 }
-
 
 /**
  * The return value is undefined if msgNum is greater the numSrc but

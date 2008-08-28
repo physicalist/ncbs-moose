@@ -28,7 +28,7 @@
 extern void pollPostmaster(); // Defined in maindir/mpiSetup.cpp
 extern unsigned int proxy2tgt( const AsyncStruct& as, char* data );
 extern bool setupProxyMsg( unsigned int srcNode, 
-		Id proxy, unsigned int asyncFuncId, 
+		Id proxy, unsigned int asyncFuncId, unsigned int proxySize,
 		Id dest, int destMsg );
 
 ////////////////////////////////////////////////////////////////////////
@@ -392,8 +392,9 @@ void testParAsyncObj2Post2Obj()
 	Id proxyId[ 6 ];
 
 	// proxyId[ 0 ] = Id::scratchId();
+	// bool setupProxyMsg( unsigned int srcNode, Id proxy, unsigned int asyncFuncId, unsigned int proxySize, Id dest, int destMsg )
 	// ret = setupProxyMsg( 0, proxyId[ 0 ], 0, tdest->id(), tgtMsg );
-	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, 1, tdest->id(), tgtMsg );
 	// The setupProxyMsg creates a new proxy specially for these tests.
 	proxyId[0] = Id::lastId(); 
 
@@ -404,7 +405,7 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "msg to post" );
 	tgtMsg = tdest->findFinfo( "x" )->msg();
 
-	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, 1, tdest->id(), tgtMsg );
 	proxyId[ 1 ] = Id::lastId();
 	ASSERT( ret, "msg from post to tgt x" );
 	///////////////////////////////////////////
@@ -413,7 +414,7 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "msg to post" );
 	tgtMsg = tdest->findFinfo( "s" )->msg();
 
-	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, 1, tdest->id(), tgtMsg );
 	proxyId[ 2 ] = Id::lastId();
 	ASSERT( ret, "msg from post to tgt s" );
 	///////////////////////////////////////////
@@ -422,7 +423,7 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "msg to post" );
 	tgtMsg = tdest->findFinfo( "idVec" )->msg();
 
-	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, 1, tdest->id(), tgtMsg );
 	proxyId[ 3 ] = Id::lastId();
 	ASSERT( ret, "msg from post to tgt idVec" );
 	///////////////////////////////////////////
@@ -431,7 +432,7 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "msg to post" );
 	tgtMsg = tdest->findFinfo( "sVec" )->msg();
 
-	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, 1, tdest->id(), tgtMsg );
 	proxyId[ 4 ] = Id::lastId();
 	ASSERT( ret, "msg from post to tgt sVec" );
 	///////////////////////////////////////////
@@ -440,7 +441,7 @@ void testParAsyncObj2Post2Obj()
 	ASSERT( ret, "Shared msg to post" );
 	tgtMsg = tdest->findFinfo( "ix" )->msg();
 
-	ret = setupProxyMsg( 0, t->id(), 0, tdest->id(), tgtMsg );
+	ret = setupProxyMsg( 0, t->id(), 0, 1, tdest->id(), tgtMsg );
 	proxyId[ 5 ] = Id::lastId();
 	ASSERT( ret, "msg from post to tgt ix" );
 

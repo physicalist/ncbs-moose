@@ -263,4 +263,63 @@ template< class T1, class T2, class T3, class T4 >
 	delete flip;
 }
 
+//////////////////////////////////////////////////////////////////////////
+//                      Five argument section
+//////////////////////////////////////////////////////////////////////////
+/**
+ * This templated function sends four-argument messages.
+ */
+template < class T1, class T2, class T3, class T4, class T5 > void send5(
+	Eref e, Slot src, T1 v1, T2 v2, T3 v3, T4 v4, T5 v5 )
+{
+	const Msg* m = e.e->msg( src.msg() );
+	if ( m->funcId() == 0 ) return;
+	do {
+		void( *rf )( const Conn*, T1, T2, T3, T4, T5 ) = 
+			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3, T4, T5 ) >(
+				m->func( src.func() )
+			);
+		vector< ConnTainer* >::const_iterator i;
+		for ( i = m->begin(); i != m->end(); i++ ) {
+			Conn* j = ( *i )->conn( e, src.func() );
+			for ( ; j->good(); j->increment() )
+				rf( j, v1, v2, v3, v4, v5 );
+			delete j;
+		}
+	// Yes, it is an assignment, not a comparison
+	} while ( ( m = m->next( e.e ) ) );
+}
+
+/**
+ * This templated function sends a single-argument message to the
+ * target specified by the conn argument. Note that this refers
+ * to the index in the local conn_ vector.
+ */
+template< class T1, class T2, class T3, class T4, class T5 > void sendTo5(
+	Eref e, Slot src, unsigned int tgt, T1 v1, T2 v2, T3 v3, T4 v4, T5 v5 )
+{
+	const Msg* m = e.e->msg( src.msg() );
+	void( *rf )( const Conn*, T1, T2, T3, T4, T5 ) = 
+			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3, T4, T5 ) >(
+			m->func( src.func() )
+		);
+	const Conn* j = m->findConn( e, tgt, src.func() );
+	rf( j,  v1, v2, v3, v4, v5 );
+	delete j;
+}
+
+template< class T1, class T2, class T3, class T4, class T5 > 
+	void sendBack5( const Conn* c, Slot src, 
+	T1 v1, T2 v2, T3 v3, T4 v4, T5 v5 )
+{
+	const Msg* m = c->target().e->msg( src.msg() );
+	void( *rf )( const Conn*, T1, T2, T3, T4, T5 ) = 
+			reinterpret_cast< void ( * )( const Conn*, T1, T2, T3, T4, T5 ) >(
+			m->func( src.func() )
+		);
+	const Conn* flip = c->flip( src.func() );
+	rf( flip, v1, v2, v3, v4, v5 );
+	delete flip;
+}
+
 #endif // _SEND_H

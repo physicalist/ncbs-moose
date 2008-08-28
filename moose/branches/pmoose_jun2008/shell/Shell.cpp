@@ -389,8 +389,8 @@ const Cinfo* initShellCinfo()
 			Ftype4< Nid, string, Nid, string >::global()
 		),
 		new SrcFinfo( "addParallelDestSrc",
-				// srcObjId, srcField, destObjId, destField
-			Ftype4< Nid, string, Nid, string >::global()
+				// srcObjId, srcSize, srcField, destObjId, destField
+			Ftype5< Nid, unsigned int, string, Nid, string >::global()
 		),
 
 		new DestFinfo( "addLocal",
@@ -402,7 +402,7 @@ const Cinfo* initShellCinfo()
 			RFCAST( &Shell::addParallelSrc )
 		),
 		new DestFinfo( "addParallelDest",
-			Ftype4< Nid, string, Nid, string >::global(),
+			Ftype5< Nid, unsigned int, string, Nid, string >::global(),
 			RFCAST( &Shell::addParallelDest )
 		),
 
@@ -2324,7 +2324,8 @@ void Shell::addParallelSrc( const Conn* c,
 }
 
 void Shell::addParallelDest( const Conn* c,
-	Nid src, string srcTypeStr, Nid dest, string destField )
+	Nid src, unsigned int srcSize, string srcTypeStr, 
+	Nid dest, string destField )
 {
 	;
 }
