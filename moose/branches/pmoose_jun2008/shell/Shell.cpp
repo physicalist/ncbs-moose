@@ -1254,10 +1254,12 @@ void Shell::planarconnect( const Conn* c,
 		*/
 		for(size_t j = 0; j < dst_list.size(); j++) {
 			//cout << src_list[i]->id().path() << " " << dst_list[i]->id().path() << endl;
+			/*
 			if (dst_list[j]()->className() != "SynChan"){
 				cout <<  "The dest element must be SynChan" << endl;
 				return;
 			}
+			*/
 			// RD: random number has to be changed. 
 			if (mtrand() <= probability){
 // 				cout << i+1 << " " << j+1 << endl;
@@ -2112,8 +2114,13 @@ void Shell::innerGetWildcardList( const Conn* c, string path,
 	);
 	assert( &ret == temp );
 
-	for( vector< Nid >::iterator i = ret.begin(); i != ret.end(); i++ )
-		list.push_back( *i );
+	// cout << "innerGetWildcardList: on " << myNode() << " list nodes= ";
+	for( vector< Nid >::iterator i = ret.begin(); i != ret.end(); i++ ) {
+		list.push_back( Id( *i ) );
+		// cout << *i << "." << i->node() << ", ";
+		// cout << list.back() << "." << list.back().node() << "       ";
+	}
+	// cout << endl << flush;
 }
 
 /**

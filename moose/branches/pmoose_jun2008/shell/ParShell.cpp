@@ -532,9 +532,11 @@ void Shell::handleParWildcardList( const Conn* c,
 	vector< Id > ret;
 	vector< Nid > temp;
 	localGetWildcardList( c, path, ordered, ret );
-	for ( vector< Id >::iterator i = ret.begin(); i != ret.end(); i++ )
-		if ( i->node() != Id::GlobalNode )
+	for ( vector< Id >::iterator i = ret.begin(); i != ret.end(); i++ ) {
+		if ( i->node() != Id::GlobalNode ) {
 			temp.push_back( *i );
+		}
+	}
 
 	// Turns out to be identical return operations as handleReturnLe,
 	// and the requestId
@@ -747,7 +749,7 @@ void Shell::copyIntoArray( const Conn* c,
 			") Error, cannot copy the root object\n";
 		return;
 	}
-	cout << "in Shell::copyIntoArray on node=" << myNode() << ", src=" << src << "." << src.node() << ", dest = " << parent << "." << parent.node() <<  " name= " << name << endl << flush;
+	// cout << "in Shell::copyIntoArray on node=" << myNode() << ", src=" << src << "." << src.node() << ", dest = " << parent << "." << parent.node() <<  " name= " << name << endl << flush;
 	Element* ret = 0;
 	vector< Nid > temp; // Used to pass Nid args to remote nodes.
 	temp.push_back( src );
@@ -837,7 +839,7 @@ void Shell::parCopyIntoArray( const Conn* c, vector< Nid > nids,
 	assert( nids.size() == 3 );
 	Id last = Id::nextScratchId();
 	Element* e = localCopyIntoArray( c, nids[0], nids[1], name, parameter );
-	cout << "in Shell::parCopyIntoArray on node=" << myNode() << ", src=" << nids[0] << "." << nids[0].node() << ", dest = " << nids[1] << "." << nids[1].node() << ", child = " << nids[2] << "." << nids[2].node() << " name= " << name << ", last= " << last << ", e->name() = " << e->name() << ", e->id = " << e->id() << endl << flush;
+	// cout << "in Shell::parCopyIntoArray on node=" << myNode() << ", src=" << nids[0] << "." << nids[0].node() << ", dest = " << nids[1] << "." << nids[1].node() << ", child = " << nids[2] << "." << nids[2].node() << " name= " << name << ", last= " << last << ", e->name() = " << e->name() << ", e->id = " << e->id() << endl << flush;
 	assert ( e->id().id() == last.id() ); // Index will differ.
 	if ( nids[2] != Id() ) { // redefine the new scratch Ids, up to latest.
 		Id::redefineScratchIds( last, nids[2] );

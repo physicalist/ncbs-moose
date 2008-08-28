@@ -54,7 +54,8 @@ class ProxyElement: public Element
 		/////////////////////////////////////////////////////////////
 		// Hack here to deal with proxy msgs
 		/////////////////////////////////////////////////////////////
-		void sendData( unsigned int funcIndex, const char* data );
+		void sendData( unsigned int funcIndex, const char* data,
+			unsigned int eIndex );
 
 		/////////////////////////////////////////////////////////////
 		// Msg traversal functions, part of API

@@ -121,7 +121,7 @@ class ConnTainer
  * Currently most of the options revert to SimpleConnTainer.
  */
 extern ConnTainer* selectConnTainer( Eref src, Eref dest, 
-	unsigned int srcMsg, unsigned int destMsg,
+	int srcMsg, int destMsg,
 	unsigned int srcIndex, unsigned int destIndex,
 	unsigned int connTainerOption = ConnTainer::Default );
 

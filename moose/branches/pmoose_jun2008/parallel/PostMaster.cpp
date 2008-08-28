@@ -15,11 +15,14 @@
 #include "ProxyElement.h"
 #include "AsyncDestFinfo.h"
 #include <sstream>
+#include "../shell/Shell.h"
 // #include <typeinfo>
 // #include "../element/Neutral.h" // Possibly only need this for testing.
 // #include "../shell/Shell.h" // Possibly only need this for testing.
 
 #define DATA_TAG 0
+
+const unsigned int BUFFER_SIZE = 10000;
 
 const Cinfo* initPostMasterCinfo()
 {
@@ -135,12 +138,12 @@ static const Slot testSlot =
 //////////////////////////////////////////////////////////////////
 PostMaster::PostMaster()
 	: remoteNode_( 0 ), 
-	sendBuf_( 1000, 0 ), 
+	sendBuf_( BUFFER_SIZE, 0 ), 
 	sendBufPos_( sizeof( unsigned int ) ), 
 	numSendBufMsgs_( 0 ), 
 	numAsyncIn_( 0 ), 
 	numAsyncOut_( 0 ), 
-	recvBuf_( 1000, 0 ), 
+	recvBuf_( BUFFER_SIZE, 0 ), 
 	donePoll_( 0 ), 
 	shellProxy_(), // Initializes to a null Id.
 	isRequestPending_( 0 ),
@@ -278,6 +281,7 @@ bool setupProxyMsg( unsigned int srcNode,
 	unsigned int destIndex = dest()->numTargets( destMsg, dest.index() );
 	unsigned int destFuncId = destFinfo->funcId();
 
+	// cout << "In setupProxyMsg, on node=" << Shell::myNode() << ", srcNode=" << srcNode << ", destNode = " << dest.node() << ", proxy=" << proxy << ", pe=" << pe << ", numTgts=" << srcIndex << ", dest = " << dest << ", destFuncId = " << destFuncId << endl;
 	bool ret = Msg::add( 
 		proxy.eref(), dest.eref(), 
 		0,	// This is the msg# for the srcFinfo. But the src here is a
@@ -303,8 +307,8 @@ bool setupProxyMsg( unsigned int srcNode,
 					// proxy.
 		ConnTainer::Default /// \todo: need to get better info on option.
 	);
-
 	// cout << "In setupProxyMsg, ret= " << ret << ", proxy=" << proxy << ", dest = " << dest << ", destFuncId = " << destFuncId << endl;
+
 	
 	// Need to find the type of the dest and use the add from the proxy 
 	// to the dest. 
@@ -358,7 +362,7 @@ unsigned int proxy2tgt( const AsyncStruct& as, char* data )
 	ProxyElement* pe = dynamic_cast< ProxyElement* >( proxy.e );
 	assert( pe != 0 );
 
-	pe->sendData( as.funcIndex(), data );
+	pe->sendData( as.funcIndex(), data, proxy.i );
 	/*
 	// Second arg here should be target message. For the proxy
 	// this is the one and only message, so it should be zero.
@@ -673,7 +677,8 @@ void* getAsyncParBuf( const Conn* c, unsigned int size )
 void* PostMaster::innerGetAsyncParBuf( const Conn* c, unsigned int size )
 {
 	if ( size + sendBufPos_ > sendBuf_.size() ) {
-		cout << "in getParBuf: Out of space in sendBuf_\n";
+		cout << "in getParBuf: Out of space in sendBuf_, need " <<
+			size + sendBufPos_ << " bytes\n";
 		// Do something clever here to send another installment
 		return 0;
 	}

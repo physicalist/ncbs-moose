@@ -40,7 +40,7 @@ const unsigned int ConnTainer::One2OneMap = 8;
  * 	How do I set up a fully connected matrix? Override the default.
  */
 ConnTainer* selectConnTainer( Eref src, Eref dest, 
-	unsigned int srcMsg, unsigned int destMsg,
+	int srcMsg, int destMsg,
 	unsigned int srcIndex, unsigned int destIndex,
 	unsigned int connTainerOption )
 {
