@@ -61,6 +61,7 @@ HEADERS = \
 	Ftype2.h \
 	Ftype3.h \
 	Ftype4.h \
+	Ftype5.h \
 	Serializer.h \
 	FuncVec.h \
 	Slot.h \

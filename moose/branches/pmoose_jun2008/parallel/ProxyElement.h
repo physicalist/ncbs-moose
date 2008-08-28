@@ -23,7 +23,7 @@ class ProxyElement: public Element
 {
 	public:
 		ProxyElement( Id id, unsigned int node, 
-			unsigned int proxyFuncId);
+			unsigned int proxyFuncId, unsigned int numEntries );
 
 		/// Nothing much to do here.
 		~ProxyElement() {
@@ -165,7 +165,7 @@ class ProxyElement: public Element
 		 * Returns size of data array. For ProxyElement it is always 1.
 		 */
 		unsigned int numEntries() const {
-			return 1;
+			return numEntries_;
 		}
 
 		/////////////////////////////////////////////////////////////
@@ -352,6 +352,11 @@ class ProxyElement: public Element
 		 * to identify the correct funcs.
 		 */
 		const FuncVec* proxyVec_; /// Vector of proxy Funcs
+
+		/**
+		 * Size of element array handled by original.
+		 */
+		unsigned int numEntries_;
 };
 
 #endif // _PROXY_ELEMENT_H

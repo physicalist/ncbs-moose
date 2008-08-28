@@ -317,7 +317,8 @@ class Shell
 		 * node.
 		 */
 		static void addParallelDest( const Conn* c,
-			Nid src, string srcTypeStr, Nid dest, string destField );
+			Nid src, unsigned int srcSize, string srcTypeStr, 
+			Nid dest, string destField );
 		/**
 		 * addMessage creates a message between two Ids, which could
 		 * also represent array elements.
@@ -538,6 +539,11 @@ class Shell
 			string errMsg, Id src, Id dest );
 		static void parMsgOkFunc( const Conn* c, Id src, Id dest );
 
+		/**
+		 * Find how big a remote element array is. Returns 1 if it is
+		 * a simpleElement.
+		 */
+		static unsigned int getNumDestEntries( Nid dest );
 		/**
 		 * Returns the Eref for the specified postmaster.
 		 */

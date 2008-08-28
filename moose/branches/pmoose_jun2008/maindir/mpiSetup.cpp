@@ -21,6 +21,7 @@
 
 extern bool setupProxyMsg(
 	unsigned int srcNode, Id proxy, unsigned int srcFuncId,
+	unsigned int proxySize,
 	Id dest, int destMsg );
 
 
@@ -150,13 +151,12 @@ void initParSched()
 
 	SetConn c( shellE );
 	// Here we need to set up the local connections that will become
-	// connections between shell on this node to all other onodes
-	// Shell::addParallelSrc( &c, 
+	// connections between shell on this node to all other nodes
 
 	for ( unsigned int i = 0; i < totalnodes; i++ ) {
 		if ( i != myNode) {
 			ret = setupProxyMsg( i, 
-				Id::shellId(), parallelFinfo->asyncFuncId(), 
+				Id::shellId(), parallelFinfo->asyncFuncId(), 1,
 				Id::shellId(), parallelFinfo->msg()
 			);
 			assert( ret != 0 );

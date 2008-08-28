@@ -8394,3 +8394,13 @@ This may eventually be extended for multi-node arrays.
 
 For now, check in the assorted fix-ups so far.
 
+Implemented Ftype5, send5, and an extra field to pass to the 
+setupProxyMsg function, to indicate size of proxy object. 
+Much to my surprise, this clears the network.g test with a bunch of tweaks
+to set it up on 2 nodes. The remaining issue is the useclock command which
+causes things to crash. I bypassed this, it only changes # of plotted points.
+Surprisingly, the output matches except that it is 10x too big, and of course,
+the # of plotted points is too big. This file is now checked in as 
+TESTS/parallel/network.g. 
+
+==============================================================================

@@ -76,6 +76,7 @@ static const Slot parCopyIntoArraySlot =
  */
 extern bool setupProxyMsg( 
 	unsigned int srcNode, Id proxy, unsigned int srcFuncId, 
+	unsigned int proxySize,
 	Id dest, int destMsg );
 
 
@@ -271,6 +272,15 @@ bool Shell::addSingleMessage( const Conn* c, Id src, string srcField,
 }
 
 /**
+ * Return the number of entries (the size of the array) of a remote
+ * object.
+ */
+unsigned int Shell::getNumDestEntries( Nid dest )
+{
+	return 1; // Dummy function for now.
+}
+
+/**
  * This is called from the same node that the src is on, to send a message
  * to a dest on a remote node. 
  * Note that an Id does not carry node info within itself. So we use an
@@ -311,8 +321,9 @@ void Shell::addParallelSrc( const Conn* c,
 		// In this case it must be a SharedFinfo
 		// with some info coming back. So we set up a local proxy too.
 		int srcMsg = sf->msg();
+		unsigned int numDestEntries = getNumDestEntries( dest );
 		ret = setupProxyMsg( destNode, 
-			dest, sf->asyncFuncId(), 
+			dest, sf->asyncFuncId(), numDestEntries,
 			src, srcMsg );
 		if ( ret )
 			set( de, "incrementNumAsyncIn" );
@@ -328,9 +339,9 @@ void Shell::addParallelSrc( const Conn* c,
 	if ( ret ) {
 		unsigned int tgtMsg = 
 			( destNode <= sh->myNode_ ) ? destNode : destNode - 1;
-		sendTo4< Nid, string, Nid, string >( 
+		sendTo5< Nid, unsigned int, string, Nid, string >( 
 			c->target(), addParallelDestSlot, tgtMsg, 
-			src, srcFinfoStr, dest, destField );
+			src, se->numEntries(), srcFinfoStr, dest, destField );
 			
 		// Set up an entry to check for completion. 
 		sh->parMessagePending_[dest] = src; 
@@ -354,7 +365,8 @@ const Finfo* findFinfoOnCinfo( const string& name )
 }
 
 void Shell::addParallelDest( const Conn* c,
-	Nid src, string srcField, Nid dest, string destField )
+	Nid src, unsigned int srcSize, string srcField, 
+	Nid dest, string destField )
 { 
 	Shell* sh = static_cast< Shell* >( c->data() );
 	// cout << "in Shell::addParallelDest on node=" << sh->myNode_ << ", src=" << src << "." << src.node() << ", srcField = " << srcField << ", dest = " << dest << "." << dest.node() << ", destField = " << destField << endl << flush;
@@ -404,7 +416,8 @@ void Shell::addParallelDest( const Conn* c,
 
 	unsigned int srcNode = src.node();
 	int tgtMsg = tgtFinfo->msg();
-	bool ret = setupProxyMsg( srcNode, src, asyncFuncId, dest, tgtMsg );
+	bool ret = setupProxyMsg( srcNode, src, asyncFuncId, srcSize,
+		dest, tgtMsg );
 	if ( ret ) {
 #ifdef DO_UNIT_TESTS
 		Eref se = sh->getPostForUnitTests( srcNode );
