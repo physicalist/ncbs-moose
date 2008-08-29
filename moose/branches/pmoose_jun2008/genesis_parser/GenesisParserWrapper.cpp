@@ -159,8 +159,9 @@ const Cinfo* initGenesisParserCinfo()
 		///////////////////////////////////////////////////////////////
 		// Cell reader: filename cellpath
 		///////////////////////////////////////////////////////////////
-		new SrcFinfo( "readcell", Ftype3< string, string, 
-			vector< double > >::global() ),
+		// parent, cell, parms, node
+		new SrcFinfo( "readcell", 
+			Ftype4< string, string, vector< double >, int >::global() ),
 
 		///////////////////////////////////////////////////////////////
 		// Channel setup functions
@@ -1582,6 +1583,27 @@ void GenesisParserWrapper::doShowMsg( int argc, const char** argv, Id s)
 	}
 }
 
+/**
+ * Identify child node specification in the name@nodeNum format.
+ * Return node.
+ * Modify name to strip out node info.
+ */
+int parseNodeNum( string& name )
+{
+	int childNode = -1; // Tell the system to figure out child node.
+	if ( name.rfind( "@" ) != string::npos ) {
+		string nodeNum = Shell::tail( name, "@" );
+		if ( nodeNum.length() > 0 ) {
+			name = Shell::head( name, "@" );
+			childNode = atoi( nodeNum.c_str() );
+		}
+		else
+			childNode = 0;
+	}
+	return childNode;
+}
+
+
 void do_create( int argc, const char** const argv, Id s )
 {
 	if ( argc != 3 ) {
@@ -1616,6 +1638,8 @@ void do_create( int argc, const char** const argv, Id s )
 		return;
 	}
 
+	int childNode = parseNodeNum( name );
+	/*
 	int childNode = -1; // Tell the system to figure out child node.
 	if ( name.rfind( "@" ) != string::npos ) {
 		string nodeNum = Shell::tail( name, "@" );
@@ -1626,6 +1650,7 @@ void do_create( int argc, const char** const argv, Id s )
 		else
 			childNode = 0;
 	}
+	*/
 
 	string parent = Shell::head( argv[2], "/" );
 	if ( argv[2][0] == '/' && parent == "" )
@@ -2398,6 +2423,8 @@ void do_readcell( int argc, const char** const argv, Id s )
 		cout << "usage:: " << argv[0] << " filename cellpath\n";
 		return;
 	}
+	string cellpath = argv[2];
+	int childNode = parseNodeNum( cellpath );
 
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
 			( s()->data( 0 ) );
@@ -2406,10 +2433,9 @@ void do_readcell( int argc, const char** const argv, Id s )
 
 
 	string filename = argv[1];
-	string cellpath = argv[2];
 
- 	send3< string, string, vector< double > >( 
-		s(), readCellSlot, filename, cellpath, globalParms );
+ 	send4< string, string, vector< double >, int >( 
+		s(), readCellSlot, filename, cellpath, globalParms, childNode );
 }
 
 Id findChanGateId( int argc, const char** const argv, Id s ) 

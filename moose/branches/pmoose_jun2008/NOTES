@@ -8280,12 +8280,12 @@ globals.
 
 For global objects we need to handle:
 	*create, 
-	-copy, 
-	-createmap/copyIntoArray 
+	*copy, 
+	*createmap/copyIntoArray 
 	-move
 	*set,
 	-get, 
-	+addmsg 
+	*addmsg 
 	-readcell
 
 Now implemented the set and addmsg, both pretty painless. Did unit tests
@@ -8432,5 +8432,14 @@ interleaves local node calls to writefile to put in breaks between plots,
 and the off-node calls for tab2file, the interleaving goes awry. 
 One option is to put a blocking call in for tab2file and other output 
 operations.
+
+Checked in as revision 648 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Next: readcell. This should be nearly the last key module for getting basic 
+models to run in parallel. After that the fun begins with lots of stuff for
+integrating chem and biophys models.
+
+Implemented, clears unit tests, but the readcell itself is pretty buggy so
+the test program moose_readcell.g ran fails too.
 
 ==============================================================================
