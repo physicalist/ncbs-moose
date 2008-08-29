@@ -393,7 +393,7 @@ void testSchedProcess()
 	Id t0Id = Neutral::getChildByName( cjId(), "t0" );
 	ASSERT( !t0Id.zero() && !t0Id.bad(), "find t0Id" );
 
-	Shell::useClock( &c, t0Id, path, string( "process" ) );
+	Shell::innerUseClock( t0Id, path, string( "process" ) );
 	ASSERT( t0Id()->numTargets( proc->msg() ) == 4, "useClock" );
 	Shell::resched( &c );
 	ASSERT( t0Id()->numTargets( proc->msg() ) == 4, "useClock" );

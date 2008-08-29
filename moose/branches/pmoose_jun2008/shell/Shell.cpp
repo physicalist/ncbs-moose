@@ -125,9 +125,9 @@ const Cinfo* initShellCinfo()
 				RFCAST( &Shell::setClock ) ),
 
 		// Handle requests to assign a path to a given clock tick.
-		// args are tick id, path, function
+		// args are tickname, path, function
 		new DestFinfo( "useClock",
-				Ftype3< Id, vector< Id >, string >::global(),
+				Ftype3< string, string, string >::global(),
 				RFCAST( &Shell::useClock ) ),
 		
 		// Getting a wildcard path of elements: handling request
@@ -520,6 +520,13 @@ const Cinfo* initShellCinfo()
 		new DestFinfo( "setClock",
 				Ftype3< int, double, int >::global(),
 				RFCAST( &Shell::setClock ) ),
+		// Handle requests to assign a path to a given clock tick.
+		// args are tickname, path, function
+		new SrcFinfo( "useClockSrc",
+				Ftype3< string, string, string >::global() ),
+		new DestFinfo( "useClock",
+				Ftype3< string, string, string >::global(),
+				RFCAST( &Shell::localUseClock ) ),
 		// Called to terminate simulation.
 		new SrcFinfo( "quitSrc", Ftype0::global() ),
 		new DestFinfo( "quit", Ftype0::global(), 
@@ -1135,9 +1142,10 @@ void Shell::staticCreate( const Conn* c, string type,
 		// to assign child node.
 		id = Id::childId( paNid );
 	} else if ( unode >= s->numNodes_ ) {
-		cout << "Error: Shell::staticCreate: unallocated target node " <<
-			unode << endl;
-		return;
+		cout << "Warning: Shell::staticCreate: unallocated target node " <<
+			unode << ", using node 0\n";
+		unode = 0;
+		id = Id::childId( paNid );
 	} else {
 		id = Id::makeIdOnNode( unode );
 	}
@@ -1949,10 +1957,22 @@ void Shell::setClock( const Conn* c, int clockNo, double dt,
  * It is the job of the parser to provide defaults
  * and to decode the path list from wildcards.
  */
-void Shell::useClock( const Conn* c,
-	Id tickId, vector< Id > path, string function )
+void Shell::localUseClock( const Conn* c, 
+	string tickName, string pathStr, string function )
 {
-	assert( !tickId.zero() );
+	Id tickId = Id::localId( tickName );
+	vector< Id > path;
+	localGetWildcardList( c, pathStr, 1, path );
+
+	if ( !tickId.good() || path.size() == 0 ) {
+		// cout << "Shell::localUseClock@" << myNode() << ": Warning: no tick " << tickName << " or empty target path " << pathStr << endl;
+		return;
+	}
+	innerUseClock( tickId, path, function );
+}
+
+void Shell::innerUseClock( Id tickId, vector< Id >& path, string function )
+{
 	Element* tick = tickId();
 	assert ( tick != 0 );
 	const Finfo* tickProc = tick->findFinfo( "process" );
@@ -1986,19 +2006,6 @@ void Shell::useClock( const Conn* c,
 			}
 			delete c;
 
-			/*
-			Msg* m = e->varMsg( func->msg() );
-			if ( m->size() == 0 ) {
-			// if ( func->numIncoming( e ) == 0 )
-				ret = tickProc->add( tick, e, func );
-				assert( ret );
-			} else {
-				if ( ( *m->begin() )->e1() != tick ) {
-					m->dropAll( e );
-					tickProc->add( tick, e, func );
-				}
-			}
-			*/
 		} else {
 			// This cannot be an 'assertion' error because the 
 			// user might do a typo.
@@ -2343,6 +2350,13 @@ Id Shell::parallelTraversePath( Id start, vector< string >& names )
 string Shell::eid2path( Id eid )
 {
 	return Shell::localEid2Path( eid );
+}
+
+// static function
+void Shell::useClock( const Conn* c, string tickName, string path,
+	string function )
+{
+	localUseClock( c, tickName, path, function );
 }
 
 #endif // USE_MPI

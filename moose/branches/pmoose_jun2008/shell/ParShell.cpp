@@ -62,6 +62,8 @@ static const Slot parCopySlot =
 	initShellCinfo()->getSlot( "parallel.copySrc" );
 static const Slot parCopyIntoArraySlot = 
 	initShellCinfo()->getSlot( "parallel.copyIntoArraySrc" );
+static const Slot parUseClockSlot = 
+	initShellCinfo()->getSlot( "parallel.useClockSrc" );
 
 
 
@@ -857,6 +859,18 @@ void Shell::parCopyIntoArray( const Conn* c, vector< Nid > nids,
 	if ( nids[2] != Id() ) { // redefine the new scratch Ids, up to latest.
 		Id::redefineScratchIds( last, nids[2] );
 	}
+}
+
+////////////////////////////////////////////////////////////////////
+// Some scheduling stuff.
+////////////////////////////////////////////////////////////////////
+// static function
+void Shell::useClock( const Conn* c, string tickName, string path,
+	string function )
+{
+	localUseClock( c, tickName, path, function );
+	send3< string, string, string >( c->target(), parUseClockSlot,
+		tickName, path, function );
 }
 
 ////////////////////////////////////////////////////////////////////

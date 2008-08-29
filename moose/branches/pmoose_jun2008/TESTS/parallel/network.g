@@ -66,7 +66,7 @@ int j
 
 for ( i = 0; i < 10; i = i + 1 )
 	call /plots/plot[{i}] TABCREATE {RUNTIME / PLOTDT} 0 {RUNTIME}
-//	useclock /plots/plot[{i}] 2
+	useclock /plots/plot[{i}] 2
 	setfield /plots/plot[{i}] step_mode 3
 	addmsg /outarray/outcompt[{i}]/glu /plots/plot[{i}] INPUT Gk
 end

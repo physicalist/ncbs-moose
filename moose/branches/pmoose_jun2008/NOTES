@@ -8413,5 +8413,24 @@ Why is there 10x response?
 	(should only make 1 proxy with 1 Many2Many)
 
 Fixed. Turned out that the test for existing projections was not working.
+So new Many2Many projections got set up for each input. Not quite clear to me
+why these resulted in a 10x change, though. Each should have worked 
+independently.
+Checked in as revision 644 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+Next, fix useclock.
+Fixed, works correctly in the test. Updated network.g to reflect it.
+Also put in a minor fix to Shell::staticCreate so it does the sensible
+fallback thing when the script asks for a non-existent node. It now makes the
+object on node 0. Now network.g works with 1 and 2 nodes.
+
+One nagging issue is that of tab2file from off-node. The command goes to
+the appropriate object, but if it is off-node then it has to wait till the
+remote node polls for input. This is not an issue with the network.g script,
+since it just piles all the plots up sequentially. However, if one 
+interleaves local node calls to writefile to put in breaks between plots,
+and the off-node calls for tab2file, the interleaving goes awry. 
+One option is to put a blocking call in for tab2file and other output 
+operations.
 
 ==============================================================================
