@@ -461,6 +461,10 @@ class Shell
 		//////////////////////////////////////////////////////////
 		static void readCell( 
 					const Conn* c, string filename, string cellpath,
+					vector< double > globalParms, int node );
+		static void localReadCell( 
+					const Conn* c, string filename, string cellname,
+					Nid pa, Nid cellId, 
 					vector< double > globalParms );
 
 		//////////////////////////////////////////////////////////

@@ -198,7 +198,7 @@ const Cinfo* initShellCinfo()
 		////////////////////////////////////////////////////////////
 		// Args are: file cellpath globalParms
 		new DestFinfo( "readcell",
-			Ftype3< string, string, vector< double > >::global(), 
+			Ftype4< string, string, vector< double >, int >::global(),
 					RFCAST( &Shell::readCell ) ),
 		////////////////////////////////////////////////////////////
 		// Channel setup functions
@@ -376,6 +376,15 @@ const Cinfo* initShellCinfo()
 		new DestFinfo( "copyIntoArray",
 				Ftype3< vector< Nid >, string, vector< double > >::global(),
 				RFCAST( &Shell::parCopyIntoArray ) ),
+
+		// Args are: file cellpath parentId, childId, globalParms
+		new SrcFinfo( "readcellSrc",
+			Ftype5< string, string, Nid, Nid, vector< double > >::global() 
+		),
+		new DestFinfo( "readcell",
+			Ftype5< string, string, Nid, Nid, vector< double > >::global(),
+					RFCAST( &Shell::localReadCell )
+		),
 
 		/////////////////////////////////////////////////////
 		// Msg stuff
@@ -630,6 +639,10 @@ static const Slot rCreateArraySlot =
 static const Slot rGetSlot = initShellCinfo()->getSlot( "parallel.getSrc" );
 static const Slot rSetSlot = initShellCinfo()->getSlot( "parallel.setSrc" );
 static const Slot rAddSlot = initShellCinfo()->getSlot( "parallel.addLocalSrc" );
+
+static const Slot parReadCellSlot =
+	initShellCinfo()->getSlot( "parallel.readcellSrc" );
+
 static const Slot pollSlot =
 	initShellCinfo()->getSlot( "pollSrc" );
 
@@ -2432,12 +2445,73 @@ void Shell::innerListMessages( const Conn* c,
 	delete tc;
 }
 
+/**
+ * Node = -1 tells the system to do the default, based on the
+ * node of cellpath parent.
+ * So it needs to find cellpath parent and decide there. This includes
+ * building on a global such as /library.
+ * node = 0 .. numNodes - 1 tells the system to build on specified node.
+ * This is legal only if the parent is /root
+ */
 void Shell::readCell( const Conn* c, string filename, string cellpath,
+	vector< double > globalParms, int node )
+{
+	if ( static_cast< unsigned int >( node ) >= numNodes() ) {
+		cout << "readcell: warning: requested node " << node << " > numNodes(" << numNodes() << "), using 0\n";
+		node = 0;
+	} 
+
+	string::size_type pos = cellpath.find_last_of( "/" );
+	Id pa;
+	string cellname;
+	if ( pos == string::npos ) {
+		pa = getCwe( c->target() );
+		cellname = cellpath;
+	} else if ( pos == 0 ) {
+		pa = Id();
+		cellname = cellpath.substr( 1 );
+	} else {
+		pa = Id( cellpath.substr( 0, pos ), "/" );
+		if ( pa.bad() ) {
+			cout << "Error: readCell: cell path '" << cellpath << "' not found.\n";
+			return;
+		}
+		cellname = cellpath.substr( pos + 1 );
+	}
+	
+	Id cellId;
+	if ( node < 0 ) { // Use default. Find parent, and put there.
+		cellId = Id::makeIdOnNode( pa.node() );
+	} else { // Legal node # request
+		unsigned int unode = static_cast< unsigned int >( node );
+		if ( pa.node() == unode || pa == Id() ) { // make on unode.
+			cellId = Id::makeIdOnNode( unode );
+		}
+	}
+	
+	// Now we know both where to put parent and child.
+	if ( cellId.node() == 0 ) {
+		localReadCell( c, filename, cellname, pa, cellId, globalParms );
+	} else if ( cellId.isGlobal() ) {
+		localReadCell( c, filename, cellname, pa, cellId, globalParms );
+		send5< string, string, Nid, Nid, vector< double > >( 
+			c->target(), parReadCellSlot,
+			filename, cellname, Nid( pa ), Nid( cellId ), globalParms );
+	} else { // Off on some specific target node.
+		sendTo5< string, string, Nid, Nid, vector< double > >( 
+			c->target(), parReadCellSlot, cellId.node() - 1,
+			filename, cellname, Nid( pa ), Nid( cellId ), globalParms );
+	}
+}
+
+void Shell::localReadCell( const Conn* c, 
+	string filename, string cellname,
+	Nid pa, Nid cellId, 
 	vector< double > globalParms )
 {
 	ReadCell rc( globalParms );
 	
-	rc.read( filename, cellpath );
+	rc.read( filename, cellname, Id( pa ), Id( cellId ) );
 }
 
 void Shell::setupAlpha( const Conn* c, Id gateId,
