@@ -108,6 +108,7 @@ bool Msg::add( Eref src, Eref dest,
 	// Start out by looking for matches among existing Msgs.
 	// This is relevant only if there are possible 'fat' edges, that is,
 	// array messages.
+	connTainerOption = connOption( src, dest, connTainerOption );
 	ConnTainer* ct = findExistingConnTainer( src, dest, srcMsg, destMsg,
 		srcFuncId, destFuncId, connTainerOption );
 	// Also it only applies if the connTainerOption is a 'Many', since
@@ -561,10 +562,12 @@ ConnTainer* findExistingConnTainer( Eref src, Eref dest,
 	if ( srcMsg >= 0 ) {
 		Msg* m = src->varMsg( static_cast< unsigned int >( srcMsg ) );
 		m = m->matchByFuncId( src.e, destFuncId );
+		// cout << "findExistingConnTainer: src=" << src.name() << ", dest=" << dest.name() << ", destFuncId=" << destFuncId << ", match=" << m << endl << flush;
 		if ( !m )
 			return 0;
 		vector< ConnTainer* >::iterator i;
 		for ( i = m->varBegin(); i != m->varEnd(); i++ ) {
+				// cout << "e2=" << (*i)->e2()->name() << ", =" << dest.name() << ", msg2=" << (*i)->msg2() << ", =" << destMsg << ", option=" << (*i)->option() << ", =" << connTainerOption << endl << flush;
 			if ( (*i)->e2() == dest.e && (*i)->msg2() == destMsg && 
 				(*i)->option() == connTainerOption )
 				return *i;

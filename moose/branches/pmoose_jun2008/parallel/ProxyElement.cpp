@@ -10,6 +10,8 @@
 #include "moose.h"
 #include "ProxyElement.h"
 
+// #include "../shell/Shell.h"
+
 ProxyElement::ProxyElement( Id id, unsigned int node, 
 	unsigned int proxyFuncId, unsigned int size )
 	: 	Element( id ), node_( node ),
@@ -17,6 +19,7 @@ ProxyElement::ProxyElement( Id id, unsigned int node,
 		numEntries_( size )
 {
 	id.setNode( node );
+	// cout << "Making proxy for " << id << "." << node << " on node " << Shell::myNode() << endl << flush;
 }
 
 /**

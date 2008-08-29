@@ -8403,4 +8403,15 @@ Surprisingly, the output matches except that it is 10x too big, and of course,
 the # of plotted points is too big. This file is now checked in as 
 TESTS/parallel/network.g. 
 
+Checked in as revision 642 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+==============================================================================
+29 Aug 2008
+Why is there 10x response?
+- 10x proxies
+- Each proxy makes 10x Many2Many projections 
+	(should only make 1 proxy with 1 Many2Many)
+
+Fixed. Turned out that the test for existing projections was not working.
+
 ==============================================================================

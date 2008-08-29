@@ -2,7 +2,7 @@
 // should be run on 2 nodes.
 float DT = 10e-6
 float PLOTDT = 100e-6
-float RUNTIME = 0.1
+float RUNTIME = 0.02
 
 setclock 0 {DT}
 setclock 1 {DT}

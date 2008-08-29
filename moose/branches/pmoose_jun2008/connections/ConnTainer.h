@@ -125,4 +125,18 @@ extern ConnTainer* selectConnTainer( Eref src, Eref dest,
 	unsigned int srcIndex, unsigned int destIndex,
 	unsigned int connTainerOption = ConnTainer::Default );
 
+/**
+ * This function picks a suitable container depending on the
+ * properties of the src and dest, and the status of the incoming option.
+ * It is flawed in various ways:
+ * - Uses string comparisons to find element type, rather than a 
+ *   virtual func
+ * - Doesn't handle proxies
+ * - Can't handle conversion of a SimpleElement to ArrayElement.
+ *
+ * Also not clear how to deal with conversion of a Many2Many to an
+ * All2All if needed.
+ */
+extern unsigned int connOption( Eref src, Eref dest, unsigned int option );
+
 #endif // _CONN_TAINER_H
