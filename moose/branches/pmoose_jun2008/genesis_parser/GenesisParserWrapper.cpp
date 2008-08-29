@@ -103,8 +103,8 @@ const Cinfo* initGenesisParserCinfo()
 		new SrcFinfo( "setClock", // clockNo, dt, stage
 				Ftype3< int, double, int >::global() ),
 		// Assigning path and function to a clock tick: useClock
-		new SrcFinfo( "useClock", // tick id, path, function
-				Ftype3< Id, vector< Id >, string >::global() ),
+		new SrcFinfo( "useClock", // tickname, path, function
+				Ftype3< string, string, string >::global() ),
 
 		// Getting a wildcard path of elements: send out request
 		// args are path, flag true for breadth-first list.
@@ -1915,6 +1915,13 @@ void do_showclocks( int argc, const char** const argv, Id s )
 	}
 }
 
+/**
+ * This function simply sends the strings over to the Shell. This is
+ * necessary because we don't know ahead of time what the tick ids
+ * will be on different nodes. Furthermore, the scheduling operations
+ * need to go to individual nodes anyway, so we'll let them do the
+ * wildcarding for the path, too.
+ */
 void do_useclock( int argc, const char** const argv, Id s )
 {
 	char tickName[40];
@@ -1929,6 +1936,7 @@ void do_useclock( int argc, const char** const argv, Id s )
 		return;
 	}
 
+	/*
 	// Id tickId = GenesisParserWrapper::path2eid( tickName, s );
 	Id tickId( tickName );
 	if ( tickId.bad() ) {
@@ -1936,16 +1944,23 @@ void do_useclock( int argc, const char** const argv, Id s )
 				tickName << "\n";
 		return;
 	}
+	*/
 
 	string path = argv[1];
+	send3< string, string, string >( 
+		s(), useClockSlot, tickName, path, func );
+
+	/*
 	Element* e = s();
 	GenesisParserWrapper* gpw = static_cast< GenesisParserWrapper* >
 			( e->data( 0 ) );
-	gpw->useClock( tickId, path, func, s );
+	gpw->useClock( tickName, path, func, s );
+	*/
 }
 
+/*
 void GenesisParserWrapper::useClock(
-	Id tickId, const string& path, const string& func, Id s )
+	string tickName, const string& path, const string& func, Id s )
 {
 	Element* e = s();
 
@@ -1959,6 +1974,7 @@ void GenesisParserWrapper::useClock(
 	send3< Id, vector< Id >, string >( 
 		s(), useClockSlot, tickId, elist_, func );
 }
+*/
 
 void do_show( int argc, const char** const argv, Id s )
 {

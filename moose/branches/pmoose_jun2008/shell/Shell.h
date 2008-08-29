@@ -263,7 +263,11 @@ class Shell
 		static void setClock( const Conn* c, int clockNo, double dt,
 				int stage );
 		static void useClock( const Conn* c,
-			Id tickId, vector< Id > path, string function );
+			string tickName, string path, string function );
+		static void localUseClock( const Conn* c,
+			string tickName, string path, string function );
+		static void innerUseClock( 
+			Id tickId, vector< Id >& path, string function );
 
 		////////////////////////////////////////////////////////////////
 		// Group of functions for wildcards. Also works in parallel
