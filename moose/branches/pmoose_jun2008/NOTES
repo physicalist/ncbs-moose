@@ -8442,4 +8442,12 @@ integrating chem and biophys models.
 Implemented, clears unit tests, but the readcell itself is pretty buggy so
 the test program moose_readcell.g ran fails too.
 
+Checked in as revision 651 with unit test flags on, Smoldyn off, -g, GSL, MPI on
+
+==============================================================================
+31 Aug 2008
+Finally tracked down problem with readcell. Issue with simple elements with
+indices, and finding them in the child list. Now the readcell test works
+for reading all compartments, but does not load the channel Kca_mit_usb.
+
 ==============================================================================

@@ -393,7 +393,7 @@ Id Neutral::getParent( Eref e )
 }
 
 string str(int a){
-	char e[6];
+	char e[20];
 	sprintf(e, "%d", a);
 	return string(e);
 }
@@ -429,11 +429,15 @@ Id Neutral::getChildByName( Eref er, const string& s )
 		index = er.i;
 	}
 
-	for ( i = m->begin(); i != m->end(); i++ ){
+	for ( i = m->begin(); i != m->end(); i++ ) {
 		// Going through ConnTainers here, not Conns.
 		Element* e2 = ( *i )->e2();
-		if ( e2->name() == name ){
-			if ( e2->elementType() == "Simple" )
+		//takes care of simple elements which are of the form cc[2]
+		if ( e2->name() == s && e2->elementType() == "Simple")
+			return e2->id();
+
+		if ( e2->name() == name ) {
+			if ( e2->elementType() == "Simple" && index == 0 )
 				return e2->id();
 			else if ( e2->elementType() == "Array" )
 				return e2->id().assignIndex( index );
@@ -444,13 +448,12 @@ Id Neutral::getChildByName( Eref er, const string& s )
 			// messy because they may be scattered over many nodes.
 			else if ( e2->elementType() == "Proxy" )
 				return e2->id();
-			else
-				return Id::badId();
 		}
-		//takes care of simple elements which are of the form cc[2]
-		if ( ( e2->name() == name + '[' + str(index) + ']' ) &&
+		/*
+		if ( ( e2->name() == name + "[" + str(index) + "]" ) &&
 				e2->elementType() == "Simple")
-			return e2->id().assignIndex( index );
+				*/
+			//return e2->id().assignIndex( index );
 	}
 	return Id::badId();
 }
