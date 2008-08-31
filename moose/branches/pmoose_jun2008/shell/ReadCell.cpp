@@ -263,7 +263,9 @@ Element* ReadCell::buildCompartment(
 	} else if ( parent == "none" || parent == "nil" ) {
 			pa = Element::root();
 	} else {
-		Id paId( currCell_->id().path() + "/" + parent );
+		string paPath = currCell_->id().path() + "/" + parent;
+		// Id paId = Id::localId( currCell_->id().path() + "/" + parent );
+		Id paId = Id::localId( paPath );
 		if ( paId.bad() ) {
 			cout << "Error: ReadCell: could not find parent compt '" <<
 					parent << "' for child '" << name << "'\n";
@@ -278,9 +280,24 @@ Element* ReadCell::buildCompartment(
 				currCell_, "lookupChild", childId, name );
 	assert( ret );
 	if ( !childId.bad() ) {
-		cout << "Error: ReadCell: duplicate child on parent compt '" <<
-				parent << "' for child '" << name << "'\n";
-		return 0;
+		if ( name[ name.length() - 1 ] == ']' ) {
+			string::size_type pos = name.rfind( '[' );
+			if ( pos == string::npos ) {
+				cout << "Error: ReadCell: bad child name:" << name << endl;
+				return 0;
+			}
+			unsigned int index = 
+				atoi( name.substr( pos + 1, name.length() - pos ).c_str() );
+			if ( childId.index() == index ) {
+				cout << "Error: ReadCell: duplicate child on parent compt '" <<
+						parent << "' for child '" << name << "'\n";
+				return 0;
+			}
+		} else {
+			cout << "Error: ReadCell: duplicate child on parent compt '" <<
+					parent << "' for child '" << name << "'\n";
+			return 0;
+		}
 	}
 
 	Element* compt;
