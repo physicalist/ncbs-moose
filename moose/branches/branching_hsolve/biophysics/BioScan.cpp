@@ -81,36 +81,21 @@ void BioScan::synchanFields( Id synchan, SynChanStruct& scs )
 	set< SynChanStruct* >( synchan(), "scan", &scs );
 }
 
-//~ Meant for small hack below. Temporary.
-#include "../builtins/Interpol.h"
-#include "HHGate.h"
 void BioScan::rates(
 	Id gate,
 	const vector< double >& grid,
 	vector< double >& A,
 	vector< double >& B )
 {
-//~ Temporary
-HHGate* h = static_cast< HHGate *>( gate()->data() );
-
 	A.resize( grid.size() );
 	B.resize( grid.size() );
-	
-	//~ Uglier hack to access Interpol's tables directly.
-	//~ Strictly for debugging purposes
-	//~ const vector< double >& AA = h->A().table();
-	//~ const vector< double >& BB = h->B().table();
-	//~ for ( unsigned int i = 0; i < grid.size(); i++ ) {
-		//~ A[ i ] = AA[ i ];
-		//~ B[ i ] = BB[ i ];
-	//~ }
 	
 	vector< double >::const_iterator igrid;
 	vector< double >::iterator ia = A.begin();
 	vector< double >::iterator ib = B.begin();
 	for ( igrid = grid.begin(); igrid != grid.end(); ++igrid ) {
-		*ia = h->A().innerLookup( *igrid );
-		*ib = h->B().innerLookup( *igrid );
+		lookupGet< double, double >( gate(), "A", *ia, *igrid );
+		lookupGet< double, double >( gate(), "B", *ib, *igrid );
 		
 		++ia, ++ib;
 	}
