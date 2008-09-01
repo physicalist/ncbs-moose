@@ -16,6 +16,9 @@ class HHGate
 		HHGate()
 		{ ; }
 
+		static double getAValue( Eref e, const double& v );
+		static double getBValue( Eref e, const double& v );
+		
 		static void gateFunc(
 				const Conn* c, double v );
 		static void postCreate( const Conn* c );
