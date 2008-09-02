@@ -93,6 +93,9 @@ end
 //  Simulation
 //=====================================
 reset
+if ( MOOSE )
+	setfield /CA3/solve/integ CaAdvance 0
+end
 step {SIMLENGTH} -time
 
 
