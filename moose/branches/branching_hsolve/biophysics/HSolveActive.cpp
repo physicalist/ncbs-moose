@@ -50,9 +50,8 @@ void HSolveActive::setup( Id seed, double dt ) {
 }
 
 void HSolveActive::solve( ProcInfo info ) {
-	if ( !Gk_.size() ) {
-		Gk_.resize( channel_.size() );
-		GkEk_.resize( channel_.size() );
+	if ( !current_.size() ) {
+		current_.resize( channel_.size() );
 	}
 	
 	advanceChannels( info->dt_ );
@@ -90,6 +89,9 @@ void HSolveActive::readChannels( ) {
 			channel_.resize( channel_.size() + 1 );
 			ChannelStruct& channel = channel_.back();
 			
+			current_.resize( current_.size() + 1 );
+			CurrentStruct& current = current_.back();
+			
 			Eref elm = ( *ichan )();
 			get< double >( elm, "Gbar", Gbar );
 			get< double >( elm, "Ek", Ek );
@@ -101,8 +103,9 @@ void HSolveActive::readChannels( ) {
 			get< double >( elm, "Zpower", Zpower );
 			get< int >( elm, "instant", instant );
 			
+			current.Ek = Ek;
+			
 			channel.Gbar_ = Gbar;
-			channel.GbarEk_ = Gbar * Ek;
 			channel.setPowers( Xpower, Ypower, Zpower );
 			channel.instant_ = instant;
 			
@@ -341,13 +344,12 @@ void HSolveActive::cleanup( ) {
 
 void HSolveActive::calculateChannelCurrents( ) {
 	vector< ChannelStruct >::iterator ichan;
-	vector< double >::iterator igk = Gk_.begin();
-	vector< double >::iterator igkek = GkEk_.begin();
+	vector< CurrentStruct >::iterator icurrent = current_.begin();
 	double* istate = &state_[ 0 ];
 	
 	for ( ichan = channel_.begin(); ichan != channel_.end(); ++ichan ) {
-		ichan->process( istate, *igk, *igkek );
-		++igk, ++igkek;
+		ichan->process( istate, *icurrent );
+		++icurrent;
 	}
 }
 
@@ -356,17 +358,18 @@ void HSolveActive::updateMatrix( ) {
 	
 	double GkSum, GkEkSum;
 	vector< unsigned char >::iterator icco = channelCount_.begin();
-	vector< double >::iterator ihs     = HS_.begin();
-	vector< double >::iterator iv      = V_.begin();
-	vector< double >::iterator igk     = Gk_.begin();
-	vector< double >::iterator igkek   = GkEk_.begin();
+	vector< double >::iterator ihs = HS_.begin();
+	vector< double >::iterator iv = V_.begin();
+	vector< CurrentStruct >::iterator icurrent = current_.begin();
 	vector< CompartmentStruct >::iterator ic;
 	for ( ic = compartment_.begin(); ic != compartment_.end(); ++ic ) {
 		GkSum   = 0.0;
 		GkEkSum = 0.0;
 		for ( unsigned char ichan = 0; ichan < *icco; ++ichan ) {
-			GkSum   += *( igk++ );
-			GkEkSum += *( igkek++ );
+			GkSum   += icurrent->Gk;
+			GkEkSum += icurrent->Gk * icurrent->Ek;
+			
+			++icurrent;
 		}
 		
 		*ihs         = *( 2 + ihs ) + GkSum;
@@ -388,8 +391,7 @@ void HSolveActive::updateMatrix( ) {
 void HSolveActive::advanceCalcium( ) {
 	unsigned char ichan;
 	vector< double* >::iterator icatarget = caTarget_.begin();
-	vector< double >::iterator igk = Gk_.begin();
-	vector< double >::iterator igkek = GkEk_.begin();
+	vector< CurrentStruct >::iterator icurrent = current_.begin();
 	vector< double >::iterator ivmid = VMid_.begin();
 	vector< unsigned char >::iterator icco;
 	
@@ -405,18 +407,26 @@ void HSolveActive::advanceCalcium( ) {
 	 */	
 	if ( caAdvance_ == 1 ) {
 		for ( icco = channelCount_.begin(); icco != channelCount_.end(); ++icco ) {
-			for ( ichan = 0; ichan < *icco; ++ichan, ++icatarget, ++igk, ++igkek )
+			for ( ichan = 0; ichan < *icco; ++ichan ) {
 				if ( *icatarget )
-					**icatarget += *igkek - *igk * *ivmid;
+					**icatarget += icurrent->Gk * ( icurrent->Ek - *ivmid );
+				
+				++icatarget, ++icurrent;
+			}
 			
 			++ivmid;
 		}
 	} else if ( caAdvance_ == 0 ) {
 		vector< double >::iterator iv = V_.begin();
 		for ( icco = channelCount_.begin(); icco != channelCount_.end(); ++icco ) {
-			for ( ichan = 0; ichan < *icco; ++ichan, ++icatarget, ++igk, ++igkek )
-				if ( *icatarget )
-					**icatarget += *igkek - *igk * ( 2 * *ivmid - *iv );
+			for ( ichan = 0; ichan < *icco; ++ichan ) {
+				if ( *icatarget ) {
+					double v0 = ( 2 * *ivmid - *iv );
+					**icatarget += icurrent->Gk * ( icurrent->Ek - v0 );
+				}
+				
+				++icatarget, ++icurrent;
+			}
 			
 			++ivmid, ++iv;
 		}

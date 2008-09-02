@@ -12,11 +12,16 @@
 
 typedef double ( *PFDD )( double, double );
 
+struct CurrentStruct
+{
+	double Gk;
+	double Ek;
+};
+
 struct ChannelStruct
 {
 public:
 	double Gbar_;
-	double GbarEk_;
 	PFDD takeXpower_;
 	PFDD takeYpower_;
 	PFDD takeZpower_;
@@ -26,7 +31,7 @@ public:
 	int instant_;
 	
 	void setPowers( double Xpower, double Ypower, double Zpower );
-	void process( double*& state, double& gk, double& gkek );
+	void process( double*& state, CurrentStruct& current );
 	
 private:
 	static PFDD selectPower( double power );

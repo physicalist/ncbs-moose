@@ -51,8 +51,7 @@ protected:
 	/**
 	 * Internal data structures
 	 */
-	vector< double >          Gk_;
-	vector< double >          GkEk_;
+	vector< CurrentStruct >   current_;
 	vector< double >          state_;
 	vector< int >             instant_;
 	vector< RateLookup >      lookup_;
