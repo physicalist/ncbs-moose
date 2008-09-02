@@ -50,7 +50,7 @@ PFDD ChannelStruct::selectPower( double power )
 		return powerN;
 }
 
-void ChannelStruct::process( double*& state, double& gk, double& gkek )
+void ChannelStruct::process( double*& state, CurrentStruct& current )
 {
 	double fraction = 1.0;
 	
@@ -61,8 +61,7 @@ void ChannelStruct::process( double*& state, double& gk, double& gkek )
 	if( Zpower_ )
 		fraction *= takeZpower_( *( state++ ), Zpower_ );
 	
-	gk = Gbar_ * fraction;
-	gkek = GbarEk_ * fraction;
+	current.Gk = Gbar_ * fraction;
 }
 
 void SynChanStruct::process( ProcInfo info ) {
