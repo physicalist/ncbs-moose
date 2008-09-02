@@ -156,13 +156,13 @@ void Cell::innerReinitFunc( Id cell, ProcInfo p )
 {
 	double dt;
 	
-	if ( method_ == "ee" ) {
-		// Delete existing solver
-		Id oldSolve( cell.path() + "/solve" );
-		if ( oldSolve.good() )
-			set( oldSolve(), "destroy" );
+	// Delete existing solver
+	Id oldSolve( cell.path() + "/solve" );
+	if ( oldSolve.good() )
+		set( oldSolve(), "destroy" );
+	
+	if ( method_ == "ee" )
 		return;
-	}
 	
 	// Find any compartment that is a (grand)child of this cell
 	Id seed = findCompt( cell );
@@ -194,7 +194,7 @@ Id Cell::findCompt( Id cell )
 	 * the root element (the Cell) to the current element.
 	 */
 	vector< vector< Id > > cstack;
-	Id seed;
+	Id seed = Id::badId();
 	const Cinfo* compartment = Cinfo::find( "Compartment" );
 	
 	cstack.push_back( Neutral::getChildList( cell() ) );
@@ -220,11 +220,6 @@ Id Cell::findCompt( Id cell )
 
 void Cell::setupSolver( Id cell, Id seed, double dt ) const
 {
-	// Destroy any existing child called 'solve'.
-	Id oldSolve( cell.path() + "/solve" );
-	if ( oldSolve.good() )
-		set( oldSolve(), "destroy" );
-	
 	// Create solve, and its children: integ and hub.
 	Element* solve = Neutral::create( "Neutral", "solve",
 		cell, Id::scratchId() );
