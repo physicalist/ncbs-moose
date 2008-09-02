@@ -19,6 +19,28 @@ public:
 	void solve( ProcInfo info );
 
 protected:
+	/**
+	 * Solver parameters: exposed as fields in MOOSE
+	 */
+	
+	/**
+	 * caAdvance_: This flag determines how current flowing into a calcium pool
+	 * is computed. A value of 0 means that the membrane potential at the
+	 * beginning of the time-step is used for the calculation. This is how
+	 * GENESIS does its computations. A value of 1 means the membrane potential
+	 * at the middle of the time-step is used. This is the correct way of
+	 * integration, and is the default way.
+	 */	
+	int                       caAdvance_;
+	
+	/**
+	 * vMin_, vMax_, vDiv_,
+	 * caMin_, caMax_, caDiv_:
+	 * 
+	 * These are the parameters for the lookup tables for rate constants.
+	 * 'min' and 'max' are the boundaries within which the function is defined.
+	 * 'div' is the number of divisions between min and max.
+	 */
 	double                    vMin_;
 	double                    vMax_;
 	int                       vDiv_;
@@ -26,6 +48,9 @@ protected:
 	double                    caMax_;
 	int                       caDiv_;
 
+	/**
+	 * Internal data structures
+	 */
 	vector< double >          Gk_;
 	vector< double >          GkEk_;
 	vector< double >          state_;

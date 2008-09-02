@@ -26,6 +26,8 @@ const int HSolveActive::INSTANT_Z = 4;
 
 HSolveActive::HSolveActive()
 {
+	caAdvance_ = 1;
+	
 	// Default lookup table size and boundaries
 	vDiv_ = 3000;    // for voltage
 	vMin_ = -0.100;
@@ -393,17 +395,31 @@ void HSolveActive::advanceCalcium( ) {
 	
 	caActivation_.assign( caActivation_.size(), 0.0 );
 	
-double v;
-vector< double >::iterator iv = V_.begin();
-	for ( icco = channelCount_.begin(); icco != channelCount_.end(); ++icco ) {
-		for ( ichan = 0; ichan < *icco; ++ichan, ++icatarget, ++igk, ++igkek )
-		{
-			v = 2 * *ivmid - *iv;
-			if ( *icatarget )
-				**icatarget += *igkek - *igk * v;
-				//~ **icatarget += *igkek - *igk * *ivmid;
+	/*
+	 * caAdvance_: This flag determines how current flowing into a calcium pool
+	 * is computed. A value of 0 means that the membrane potential at the
+	 * beginning of the time-step is used for the calculation. This is how
+	 * GENESIS does its computations. A value of 1 means the membrane potential
+	 * at the middle of the time-step is used. This is the correct way of
+	 * integration, and is the default way.
+	 */	
+	if ( caAdvance_ == 1 ) {
+		for ( icco = channelCount_.begin(); icco != channelCount_.end(); ++icco ) {
+			for ( ichan = 0; ichan < *icco; ++ichan, ++icatarget, ++igk, ++igkek )
+				if ( *icatarget )
+					**icatarget += *igkek - *igk * *ivmid;
+			
+			++ivmid;
 		}
-		++ivmid, ++iv;
+	} else if ( caAdvance_ == 0 ) {
+		vector< double >::iterator iv = V_.begin();
+		for ( icco = channelCount_.begin(); icco != channelCount_.end(); ++icco ) {
+			for ( ichan = 0; ichan < *icco; ++ichan, ++icatarget, ++igk, ++igkek )
+				if ( *icatarget )
+					**icatarget += *igkek - *igk * ( 2 * *ivmid - *iv );
+			
+			++ivmid, ++iv;
+		}
 	}
 	
 	vector< CaConcStruct >::iterator icaconc;
@@ -458,7 +474,7 @@ void HSolveActive::advanceChannels( double dt ) {
 					double temp = 1.0 + dt / 2.0 * C2;
 					*istate = ( *istate * ( 2.0 - temp ) + dt * C1 ) / temp;
 				}
-								
+				
 				++ilookup, ++istate;
 			}
 			

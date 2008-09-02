@@ -23,6 +23,8 @@ public:
 	static void setupFunc( const Conn* c, Id seed, double dt );
 	
 	static string getPath( Eref e );
+	static void setCaAdvance( const Conn* c, int value );
+	static int getCaAdvance( Eref e );
 	static void setVDiv( const Conn* c, int vDiv );
 	static int getVDiv( Eref e );
 	static void setVMin( const Conn* c, double vMin );

@@ -63,6 +63,10 @@ const Cinfo* initHSolveCinfo()
 			GFCAST( &HSolve::getPath ),
 			dummyFunc
 		),
+		new ValueFinfo( "CaAdvance", ValueFtype1< int >::global(),
+			GFCAST( &HSolve::getCaAdvance ),
+			RFCAST( &HSolve::setCaAdvance )
+		),		
 		new ValueFinfo( "VDiv", ValueFtype1< int >::global(),
 			GFCAST( &HSolve::getVDiv ),
 			RFCAST( &HSolve::setVDiv )
@@ -206,6 +210,21 @@ void HSolve::setupHub( Eref integ )
 string HSolve::getPath( Eref e )
 {
 	return static_cast< const HSolve* >( e.data() )->path_;
+}
+
+void HSolve::setCaAdvance( const Conn* c, int value )
+{
+	if ( value != 0 && value != 1 ) {
+		cout << "Error: HSolve: caAdvance should be either 0 or 1.\n";
+		return;
+	}
+	
+	static_cast< HSolve* >( c->data() )->caAdvance_ = value;
+}
+
+int HSolve::getCaAdvance( Eref e )
+{
+	return static_cast< const HSolve* >( e.data() )->caAdvance_;
 }
 
 void HSolve::setVDiv( const Conn* c, int vDiv )
