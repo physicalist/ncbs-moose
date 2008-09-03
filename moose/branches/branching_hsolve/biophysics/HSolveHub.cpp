@@ -116,8 +116,10 @@ static const Finfo* synchanSolveFinfo =
 
 Finfo* initCompartmentZombieFinfo()
 {
-	// These fields will replace the original compartment fields so that
-	// the lookups refer to the solver rather than the compartment.
+	/* 
+	 * These fields will replace the original compartment fields so that
+	 * the lookups refer to the solver rather than the compartment.
+	 */
 	static Finfo* compartmentFields[] =
 	{
 		new ValueFinfo( "Vm",
@@ -125,10 +127,20 @@ Finfo* initCompartmentZombieFinfo()
 			GFCAST( &HSolveHub::getCompartmentVm ),
 			RFCAST( &HSolveHub::setCompartmentVm )
 		),
+		new ValueFinfo( "Em",
+			ValueFtype1< double >::global(),
+			GFCAST( &HSolveHub::getCompartmentEm ),
+			RFCAST( &HSolveHub::setCompartmentEm )
+		),
+		new ValueFinfo( "Im",
+			ValueFtype1< double >::global(),
+			GFCAST( &HSolveHub::getCompartmentIm ),
+			&dummyFunc
+		),
 		new ValueFinfo( "inject",
 			ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getInject ),
-			RFCAST( &HSolveHub::setInject )
+			GFCAST( &HSolveHub::getCompartmentInject ),
+			RFCAST( &HSolveHub::setCompartmentInject )
 		),
 	};
 
@@ -581,7 +593,39 @@ double HSolveHub::getCompartmentVm( Eref e )
 	return 0.0;
 }
 
-void HSolveHub::setInject( const Conn* c, double value )
+void HSolveHub::setCompartmentEm( const Conn* c, double value )
+{
+	unsigned int comptIndex;
+	HSolveHub* nh = getHubFromZombie( c->target(), comptIndex );
+	if ( nh ) {
+		assert ( comptIndex < nh->V_->size() );
+		( *nh->V_ )[ comptIndex ] = value;
+	}
+}
+
+double HSolveHub::getCompartmentEm( Eref e )
+{
+	unsigned int comptIndex;
+	HSolveHub* nh = getHubFromZombie( e, comptIndex );
+	if ( nh ) {
+		assert ( comptIndex < nh->V_->size() );
+		return ( *nh->V_ )[ comptIndex ];
+	}
+	return 0.0;
+}
+
+double HSolveHub::getCompartmentIm( Eref e )
+{
+	unsigned int comptIndex;
+	HSolveHub* nh = getHubFromZombie( e, comptIndex );
+	if ( nh ) {
+		assert ( comptIndex < nh->V_->size() );
+		return ( *nh->V_ )[ comptIndex ];
+	}
+	return 0.0;
+}
+
+void HSolveHub::setCompartmentInject( const Conn* c, double value )
 {
 	//~ unsigned int comptIndex;
 	//~ HSolveHub* nh = getHubFromZombie( 
@@ -592,7 +636,7 @@ void HSolveHub::setInject( const Conn* c, double value )
 	//~ }
 }
 
-double HSolveHub::getInject( Eref e )
+double HSolveHub::getCompartmentInject( Eref e )
 {
 	//~ unsigned int comptIndex;
 	//~ HSolveHub* nh = getHubFromZombie( e, comptIndex );

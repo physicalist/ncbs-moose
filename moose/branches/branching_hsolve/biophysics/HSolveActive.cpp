@@ -82,7 +82,7 @@ void HSolveActive::readChannels( ) {
 		nChannel = BioScan::channels( *icompt, channelId_ );
 		
 		// todo: discard channels with Gbar = 0.0
-		channelCount_.push_back( ( unsigned char ) nChannel );
+		channelCount_.push_back( nChannel );
 		
 		ichan = channelId_.end() - nChannel;
 		for ( ; ichan != channelId_.end(); ++ichan ) {
@@ -116,6 +116,13 @@ void HSolveActive::readChannels( ) {
 			if ( Zpower )
 				state_.push_back( Z );
 		}
+	}
+	
+	int nCumulative = 0;
+	currentBoundary_.resize( nCompt_ );
+	for ( unsigned int ic = 0; ic < nCompt_; ++ic ) {
+		nCumulative += channelCount_[ ic ];
+		currentBoundary_[ ic ] = current_.begin() + nCumulative;
 	}
 }
 
@@ -209,9 +216,6 @@ void HSolveActive::readSynapses( ) {
 	SynChanStruct synchan;
 	
 	for ( unsigned int ic = 0; ic < nCompt_; ++ic ) {
-		/* Request for synchans in current compartment. Also send 'dt', so that
-		 * the synchan elements can be initialized.
-		 */
 		BioScan::synchan( compartmentId_[ ic ], synId );
 		for ( syn = synId.begin(); syn != synId.end(); ++syn ) {
 			synchan.compt_ = ic;
@@ -357,25 +361,24 @@ void HSolveActive::updateMatrix( ) {
 	HJ_.assign( HJCopy_.begin(), HJCopy_.end() );
 	
 	double GkSum, GkEkSum;
-	vector< unsigned char >::iterator icco = channelCount_.begin();
+	vector< CurrentStruct >::iterator icurrent = current_.begin();
+	vector< currentVecIter >::iterator iboundary = currentBoundary_.begin();
 	vector< double >::iterator ihs = HS_.begin();
 	vector< double >::iterator iv = V_.begin();
-	vector< CurrentStruct >::iterator icurrent = current_.begin();
+	
 	vector< CompartmentStruct >::iterator ic;
 	for ( ic = compartment_.begin(); ic != compartment_.end(); ++ic ) {
 		GkSum   = 0.0;
 		GkEkSum = 0.0;
-		for ( unsigned char ichan = 0; ichan < *icco; ++ichan ) {
+		for ( ; icurrent < *iboundary; ++icurrent ) {
 			GkSum   += icurrent->Gk;
 			GkEkSum += icurrent->Gk * icurrent->Ek;
-			
-			++icurrent;
 		}
 		
-		*ihs         = *( 2 + ihs ) + GkSum;
+		*ihs = *( 2 + ihs ) + GkSum;
 		*( 3 + ihs ) = *iv * ic->CmByDt + ic->EmByRm + ic->inject + GkEkSum;
 		
-		++icco, ihs += 4, ++iv;
+		++iboundary, ihs += 4, ++iv;
 	}
 	
 	vector< SynChanStruct >::iterator isyn;
@@ -389,11 +392,10 @@ void HSolveActive::updateMatrix( ) {
 }
 
 void HSolveActive::advanceCalcium( ) {
-	unsigned char ichan;
 	vector< double* >::iterator icatarget = caTarget_.begin();
-	vector< CurrentStruct >::iterator icurrent = current_.begin();
 	vector< double >::iterator ivmid = VMid_.begin();
-	vector< unsigned char >::iterator icco;
+	vector< CurrentStruct >::iterator icurrent = current_.begin();
+	vector< currentVecIter >::iterator iboundary = currentBoundary_.begin();
 	
 	caActivation_.assign( caActivation_.size(), 0.0 );
 	
@@ -406,26 +408,29 @@ void HSolveActive::advanceCalcium( ) {
 	 * integration, and is the default way.
 	 */	
 	if ( caAdvance_ == 1 ) {
-		for ( icco = channelCount_.begin(); icco != channelCount_.end(); ++icco ) {
-			for ( ichan = 0; ichan < *icco; ++ichan ) {
+		for ( ; iboundary != currentBoundary_.end(); ++iboundary ) {
+			for ( ; icurrent < *iboundary; ++icurrent ) {
 				if ( *icatarget )
 					**icatarget += icurrent->Gk * ( icurrent->Ek - *ivmid );
 				
-				++icatarget, ++icurrent;
+				++icatarget;
 			}
 			
 			++ivmid;
 		}
 	} else if ( caAdvance_ == 0 ) {
 		vector< double >::iterator iv = V_.begin();
-		for ( icco = channelCount_.begin(); icco != channelCount_.end(); ++icco ) {
-			for ( ichan = 0; ichan < *icco; ++ichan ) {
+		double v0;
+		
+		for ( ; iboundary != currentBoundary_.end(); ++iboundary ) {
+			for ( ; icurrent < *iboundary; ++icurrent ) {
 				if ( *icatarget ) {
-					double v0 = ( 2 * *ivmid - *iv );
+					v0 = ( 2 * *ivmid - *iv );
+					
 					**icatarget += icurrent->Gk * ( icurrent->Ek - v0 );
 				}
 				
-				++icatarget, ++icurrent;
+				++icatarget;
 			}
 			
 			++ivmid, ++iv;
@@ -446,20 +451,22 @@ void HSolveActive::advanceChannels( double dt ) {
 	vector< double >::iterator istate = state_.begin();
 	vector< double* >::iterator icadepend = caDepend_.begin();
 	vector< RateLookup >::iterator ilookup = lookup_.begin();
-	vector< unsigned char >::iterator icco = channelCount_.begin();
+	vector< int >::iterator ichannelcount = channelCount_.begin();
+	vector< ChannelStruct >::iterator ichan = channel_.begin();
+	vector< ChannelStruct >::iterator chanBoundary;
 	
 	LookupKey key;
 	LookupKey keyCa;
 	double C1, C2;
-	vector< ChannelStruct >::iterator ichan = channel_.begin();
-	vector< ChannelStruct >::iterator nextChan;
-	for ( iv = V_.begin(); iv != V_.end(); ++iv, ++icco ) {
-		if ( *icco == 0 )
+	for ( iv = V_.begin(); iv != V_.end(); ++iv ) {
+		if ( *ichannelcount == 0 ) {
+			++ichannelcount;
 			continue;
+		}
 		
 		ilookup->getKey( *iv, key );
-		nextChan = ichan + *icco;
-		for ( ; ichan < nextChan; ++ichan, ++icadepend ) {
+		chanBoundary = ichan + *ichannelcount;
+		for ( ; ichan < chanBoundary; ++ichan ) {
 			if ( ichan->Xpower_ ) {
 				ilookup->rates( key, C1, C2 );
 				//~ *istate = *istate * C1 + C2;
@@ -506,7 +513,11 @@ void HSolveActive::advanceChannels( double dt ) {
 				
 				++ilookup, ++istate;
 			}
+			
+			++icadepend;
 		}
+		
+		++ichannelcount;
 	}
 }
 
