@@ -45,8 +45,14 @@ public:
 	static void setCompartmentVm( const Conn* c, double value );
 	static double getCompartmentVm( Eref e );
 	
-	static void setInject( const Conn* c, double value );
-	static double getInject( Eref e );
+	static void setCompartmentEm( const Conn* c, double value );
+	static double getCompartmentEm( Eref e );
+	
+	// Im is read-only
+	static double getCompartmentIm( Eref e );
+	
+	static void setCompartmentInject( const Conn* c, double value );
+	static double getCompartmentInject( Eref e );
 	
 	static void setChannelGbar( const Conn* c, double value );
 	static double getChannelGbar( Eref e );

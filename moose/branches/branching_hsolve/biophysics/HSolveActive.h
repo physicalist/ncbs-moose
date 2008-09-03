@@ -12,6 +12,8 @@
 
 class HSolveActive: public HSolvePassive
 {
+	typedef vector< CurrentStruct >::iterator currentVecIter;
+	
 public:
 	HSolveActive();
 	
@@ -67,7 +69,8 @@ protected:
 	vector< Id >              channelId_;
 	vector< Id >              gateId_;
 	vector< bool >            gCaDepend_;
-	vector< unsigned char >   channelCount_;
+	vector< int >             channelCount_;
+	vector< currentVecIter >  currentBoundary_;
 
 private:
 	// Setting up of data structures
