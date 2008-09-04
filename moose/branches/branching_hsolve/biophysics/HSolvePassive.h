@@ -44,6 +44,7 @@ protected:
 	vector< CompartmentStruct >  compartment_;
 	vector< Id >                 compartmentId_;
 	vector< double >             V_;
+	vector< TreeNode >           tree_;
 
 private:
 	// Setting up of data structures
@@ -51,8 +52,6 @@ private:
 	void walkTree( Id seed );
 	void initialize( );
 	void storeTree( );
-	
-	vector< TreeNode > tree_;
 };
 
 #endif // _HSOLVE_PASSIVE_H

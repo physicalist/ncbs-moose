@@ -54,6 +54,7 @@ OBJ = \
  	HinesMatrix.o \
  	HSolvePassive.o	\
  	HSolveActive.o	\
+	HSolveInterface.o \
  	HSolve.o \
  	HSolveHub.o \
 	TestBiophysics.o \
@@ -96,6 +97,7 @@ HSolveStruct.o:	HSolveStruct.h
 HinesMatrix.o:	HinesMatrix.h TestHSolve.h
 HSolvePassive.o:	HinesMatrix.h HSolvePassive.h TestHSolve.h ../utility/utility.h
 HSolveActive.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h TestHSolve.h
+HSolveInterface.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h TestHSolve.h
 HSolve.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h HSolve.h
 HSolveHub.o:	Compartment.h HHChannel.h SpikeGen.h SynChan.h HSolveHub.h
 StochSynchan.o:	StochSynchan.h StochSynInfo.h

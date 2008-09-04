@@ -29,30 +29,21 @@ public:
 	///////////////////////////////////////////////////
 	// Dest functions
 	///////////////////////////////////////////////////
-	static void compartmentFunc(
-		const Conn* c,
-		vector< double >* V,
-		vector< Element* >* elist );
-	static void channelFunc( const Conn* c, vector< Element* >* elist );
-	static void spikegenFunc( const Conn* c, vector< Element* >* elist );
-	static void synchanFunc( const Conn* c, vector< Element* >* elist );
+	static void hubFunc( const Conn* c, HSolveActive* integ );
 	static void destroy( const Conn* c );
 	static void childFunc( const Conn* c, int stage );
 	
 	///////////////////////////////////////////////////
 	// Field functions (Biophysics)
 	///////////////////////////////////////////////////
-	static void setCompartmentVm( const Conn* c, double value );
-	static double getCompartmentVm( Eref e );
-	
-	static void setCompartmentEm( const Conn* c, double value );
-	static double getCompartmentEm( Eref e );
+	static void setVm( const Conn* c, double value );
+	static double getVm( Eref e );
 	
 	// Im is read-only
-	static double getCompartmentIm( Eref e );
+	static double getIm( Eref e );
 	
-	static void setCompartmentInject( const Conn* c, double value );
-	static double getCompartmentInject( Eref e );
+	static void setInject( const Conn* c, double value );
+	static double getInject( Eref e );
 	
 	static void setChannelGbar( const Conn* c, double value );
 	static double getChannelGbar( Eref e );
@@ -66,13 +57,8 @@ public:
 	static void comptInjectMsgFunc( const Conn* c, double I );
 	
 private:
-	void innerCompartmentFunc(
-		Eref e,
-		vector< double >* V,
-		vector< Element* >* elist );
-	void innerChannelFunc( Eref e, vector< Element* >* elist );
-	void innerSpikegenFunc( Eref e, vector< Element* >* elist );
-	void innerSynchanFunc( Eref e, vector< Element* >* elist );
+	void innerHubFunc( Eref hub, HSolveActive* integ );
+	void manageCompartments( ) const;
 	
 	static void zombify( 
 		Eref hub, Eref e,
@@ -88,8 +74,8 @@ private:
 	static void redirectDynamicMessages( Element* e );
 	static HSolveHub* getHubFromZombie( Eref e, unsigned int& index );
 	
-	vector< double >* V_;
-	vector< double >* state_;
+	Eref hub_;
+	HSolveActive* integ_;
 };
 
 #endif // _HSOLVE_HUB_H
