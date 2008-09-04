@@ -15,6 +15,11 @@
 #include "SynInfo.h"        // for SynChanStruct. Remove eventually.
 #include <queue>            // for SynChanStruct. Remove eventually.
 #include "HSolveStruct.h"   // for SynChanStruct. Remove eventually.
+#include "BioScan.h"
+#include "HinesMatrix.h"
+#include "HSolvePassive.h"
+#include "RateLookup.h"
+#include "HSolveActive.h"
 #include "SynChan.h"
 #include "ThisFinfo.h"
 #include "SolveFinfo.h"
@@ -33,25 +38,6 @@ const Cinfo* initHSolveHubCinfo()
 		new SrcFinfo( "reinit", Ftype1< ProcInfo >::global() ),
 	};
 	
-	/**
-	 * This is the destination of the several messages from the integrator.
-	 */
-	static Finfo* integShared[] =
-	{
-		new DestFinfo( "compartment",
-			Ftype2< vector< double >*, vector< Element* >* >::global(),
-			RFCAST( &HSolveHub::compartmentFunc ) ),
-		new DestFinfo( "channel",
-			Ftype1< vector< Element* >* >::global(),
-			RFCAST( &HSolveHub::channelFunc ) ),
-		new DestFinfo( "spikegen",
-			Ftype1< vector< Element* >* >::global(),
-			RFCAST( &HSolveHub::spikegenFunc ) ),
-		new DestFinfo( "synchan",
-			Ftype1< vector< Element* >* >::global(),
-			RFCAST( &HSolveHub::synchanFunc ) ),
-	};
-	
 	static Finfo* HSolveHubFinfos[] =
 	{
 	///////////////////////////////////////////////////////
@@ -65,6 +51,9 @@ const Cinfo* initHSolveHubCinfo()
 	///////////////////////////////////////////////////////
 	// MsgDest definitions
 	///////////////////////////////////////////////////////
+		new DestFinfo( "integ-hub",
+			Ftype1< HSolveActive* >::global(),
+			RFCAST( &HSolveHub::hubFunc ) ),
 		new DestFinfo( "destroy", Ftype0::global(),
 			&HSolveHub::destroy ),
 		// override the Neutral::childFunc here, so that when this
@@ -74,8 +63,8 @@ const Cinfo* initHSolveHubCinfo()
 	///////////////////////////////////////////////////////
 	// Shared definitions
 	///////////////////////////////////////////////////////
-		new SharedFinfo( "integ-hub", integShared, 
-			sizeof( integShared ) / sizeof( Finfo* ) ),
+		//~ new SharedFinfo( "integ-hub", integShared, 
+			//~ sizeof( integShared ) / sizeof( Finfo* ) ),
 		new SharedFinfo( "compartmentSolve", zombieShared, 
 			sizeof( zombieShared ) / sizeof( Finfo* ) ),
 		new SharedFinfo( "channelSolve", zombieShared, 
@@ -124,23 +113,18 @@ Finfo* initCompartmentZombieFinfo()
 	{
 		new ValueFinfo( "Vm",
 			ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getCompartmentVm ),
-			RFCAST( &HSolveHub::setCompartmentVm )
-		),
-		new ValueFinfo( "Em",
-			ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getCompartmentEm ),
-			RFCAST( &HSolveHub::setCompartmentEm )
+			GFCAST( &HSolveHub::getVm ),
+			RFCAST( &HSolveHub::setVm )
 		),
 		new ValueFinfo( "Im",
 			ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getCompartmentIm ),
+			GFCAST( &HSolveHub::getIm ),
 			&dummyFunc
 		),
 		new ValueFinfo( "inject",
 			ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getCompartmentInject ),
-			RFCAST( &HSolveHub::setCompartmentInject )
+			GFCAST( &HSolveHub::getInject ),
+			RFCAST( &HSolveHub::setInject )
 		),
 	};
 
@@ -217,7 +201,7 @@ static Finfo* synchanZombieFinfo = initSynChanZombieFinfo();
 // Constructor
 /////////////////////////////////////////////////////////////////////////
 HSolveHub::HSolveHub( )
-	: V_( 0 ), state_( 0 )
+	: integ_( 0 )
 { ; }
 
 /////////////////////////////////////////////////////////////////////////
@@ -227,6 +211,12 @@ HSolveHub::HSolveHub( )
 /////////////////////////////////////////////////////////////////////////
 // Dest functions (for Hub)
 /////////////////////////////////////////////////////////////////////////
+
+void HSolveHub::hubFunc( const Conn* c, HSolveActive* integ )
+{
+	static_cast< HSolveHub* >( c->data() )->
+		innerHubFunc( c->target(), integ );
+}
 
 /**
  * In this destructor we need to put messages back to process,
@@ -293,36 +283,36 @@ void HSolveHub::childFunc( const Conn* c, int stage )
 	Neutral::childFunc( c, stage );
 }
 
-void HSolveHub::compartmentFunc(
-	const Conn* c,
-	vector< double >* V,
-	vector< Element* >* elist )
+/////////////////////////////////////////////////////////////////////////
+// Class functions
+/////////////////////////////////////////////////////////////////////////
+
+void HSolveHub::innerHubFunc( Eref hub, HSolveActive* integ )
 {
-	static_cast< HSolveHub* >( c->data() )->
-		innerCompartmentFunc( c->target(), V, elist );
+	hub_ = hub;
+	integ_ = integ;
+	
+	manageCompartments( );
 }
 
-void HSolveHub::innerCompartmentFunc(
-	Eref hub,
-	vector< double >* V,
-	vector< Element* >* elist )
+void HSolveHub::manageCompartments( ) const
 {
-	V_ = V;
+	const vector< Id >& elist = integ_->getCompartments( );
 	
 	//~ // for redirecting inject messages
 	//~ const Finfo* injectFinfo = initCompartmentCinfo()->findFinfo( "inject" );
 	const Finfo* initFinfo = initCompartmentCinfo()->findFinfo( "init" );
 	
-	// Note that here we have perfect alignment between the order of the
-	// V_ vector and the elist vector. This is used implicitly in the
-	// ordering of the process messages that get set up between the Hub
-	// and the objects.
-	vector< Element* >::iterator i;
-	for ( i = elist->begin(); i != elist->end(); ++i ) {
-		zombify( hub, *i, compartmentSolveFinfo, compartmentZombieFinfo );
+	vector< Id >::const_iterator i;
+	for ( i = elist.begin(); i != elist.end(); ++i ) {
+		Element* e = ( *i )();
+		
+		zombify( hub_, e, compartmentSolveFinfo, compartmentZombieFinfo );
+		
 		// Compartment receives 2 shared messages from Tick's "process"
-		Eref( *i ).dropAll( initFinfo->msg() );
-		redirectDynamicMessages( *i );
+		Eref( e ).dropAll( initFinfo->msg() );
+		
+		redirectDynamicMessages( e );
 	}
 	
 	//~ for ( i = elist->begin(); i != elist->end(); i++ ) {
@@ -334,54 +324,6 @@ void HSolveHub::innerCompartmentFunc(
 	//~ }
 }
 
-void HSolveHub::channelFunc( const Conn* c, vector< Element* >* elist )
-{
-	static_cast< HSolveHub* >( c->data() )->
-		innerChannelFunc( c->target(), elist );
-}
-
-void HSolveHub::innerChannelFunc( Eref hub, vector< Element* >* elist )
-{
-	vector< Element* >::iterator i;
-	for ( i = elist->begin(); i != elist->end(); ++i ) {
-		zombify( hub, *i, channelSolveFinfo, channelZombieFinfo );
-		//~ redirectDynamicMessages( *i );
-	}
-}
-
-void HSolveHub::spikegenFunc( const Conn* c, vector< Element* >* elist )
-{
-	static_cast< HSolveHub* >( c->data() )->
-		innerSpikegenFunc( c->target(), elist );
-}
-
-void HSolveHub::innerSpikegenFunc( Eref hub, vector< Element* >* elist )
-{
-	vector< Element* >::iterator i;
-	for ( i = elist->begin(); i != elist->end(); ++i ) {
-//		zombify( hub, *i, spikegenSolveFinfo, spikegenZombieFinfo );
-		redirectDynamicMessages( *i );
-	}
-}
-
-void HSolveHub::synchanFunc( const Conn* c, vector< Element* >* elist )
-{
-	static_cast< HSolveHub* >( c->data() )->
-		innerSynchanFunc( c->target(), elist );
-}
-
-void HSolveHub::innerSynchanFunc( Eref hub, vector< Element* >* elist )
-{
-	vector< Element* >::iterator i;
-	for ( i = elist->begin(); i != elist->end(); ++i ) {
-		zombify( hub, *i, synchanSolveFinfo, synchanZombieFinfo );
-		redirectDynamicMessages( *i );
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////
-// Class functions
-/////////////////////////////////////////////////////////////////////////
 /**
  * Clears out all the messages to zombie objects
  */
@@ -572,79 +514,54 @@ HSolveHub* HSolveHub::getHubFromZombie( Eref e, unsigned int& index )
  * For the compartment set/get operations, the lookup order is identical
  * to the message order. So we don't need an intermediate table.
  */
-void HSolveHub::setCompartmentVm( const Conn* c, double value )
+void HSolveHub::setVm( const Conn* c, double value )
 {
-	unsigned int comptIndex;
-	HSolveHub* nh = getHubFromZombie( c->target(), comptIndex );
-	if ( nh ) {
-		assert ( comptIndex < nh->V_->size() );
-		( *nh->V_ )[ comptIndex ] = value;
-	}
+	unsigned int index;
+	
+	HSolveHub* nh = getHubFromZombie( c->target(), index );
+	if ( nh )
+		nh->integ_->setVm( index, value );
 }
 
-double HSolveHub::getCompartmentVm( Eref e )
+double HSolveHub::getVm( Eref e )
 {
-	unsigned int comptIndex;
-	HSolveHub* nh = getHubFromZombie( e, comptIndex );
-	if ( nh ) {
-		assert ( comptIndex < nh->V_->size() );
-		return ( *nh->V_ )[ comptIndex ];
-	}
+	unsigned int index;
+	
+	HSolveHub* nh = getHubFromZombie( e, index );
+	if ( nh )
+		return nh->integ_->getVm( index );
+	
 	return 0.0;
 }
 
-void HSolveHub::setCompartmentEm( const Conn* c, double value )
+void HSolveHub::setInject( const Conn* c, double value )
 {
-	unsigned int comptIndex;
-	HSolveHub* nh = getHubFromZombie( c->target(), comptIndex );
-	if ( nh ) {
-		assert ( comptIndex < nh->V_->size() );
-		( *nh->V_ )[ comptIndex ] = value;
-	}
+	unsigned int index;
+	
+	HSolveHub* nh = getHubFromZombie( c->target(), index );
+	if ( nh )
+		nh->integ_->setInject( index, value );
 }
 
-double HSolveHub::getCompartmentEm( Eref e )
+double HSolveHub::getInject( Eref e )
 {
-	unsigned int comptIndex;
-	HSolveHub* nh = getHubFromZombie( e, comptIndex );
-	if ( nh ) {
-		assert ( comptIndex < nh->V_->size() );
-		return ( *nh->V_ )[ comptIndex ];
-	}
+	unsigned int index;
+	
+	HSolveHub* nh = getHubFromZombie( e, index );
+	if ( nh )
+		return nh->integ_->getInject( index );
+	
 	return 0.0;
 }
 
-double HSolveHub::getCompartmentIm( Eref e )
+double HSolveHub::getIm( Eref e )
 {
-	unsigned int comptIndex;
-	HSolveHub* nh = getHubFromZombie( e, comptIndex );
-	if ( nh ) {
-		assert ( comptIndex < nh->V_->size() );
-		return ( *nh->V_ )[ comptIndex ];
-	}
-	return 0.0;
-}
-
-void HSolveHub::setCompartmentInject( const Conn* c, double value )
-{
-	//~ unsigned int comptIndex;
-	//~ HSolveHub* nh = getHubFromZombie( 
-		//~ c.targetElement(), comptIndex );
-	//~ if ( nh ) {
-		//~ assert ( comptIndex < nh->inject_.size() );
-		//~ ( nh->inject_ )[ comptIndex ] = value;
-	//~ }
-}
-
-double HSolveHub::getCompartmentInject( Eref e )
-{
-	//~ unsigned int comptIndex;
-	//~ HSolveHub* nh = getHubFromZombie( e, comptIndex );
-	//~ if ( nh ) {
-		//~ assert ( comptIndex < nh->inject_.size() );
-		//~ return ( nh->inject_ )[ comptIndex ];
-	//~ }
-	//~ return 0.0;
+	unsigned int index;
+	
+	HSolveHub* nh = getHubFromZombie( e, index );
+	if ( nh )
+		return nh->integ_->getIm( index );
+	
 	return 0.0;
 }
 
@@ -673,11 +590,4 @@ double HSolveHub::getSynChanGbar( Eref e )
 /////////////////////////////////////////////////////////////////////////
 void HSolveHub::comptInjectMsgFunc( const Conn* c, double I )
 {
-/*
-	Compartment* compt = static_cast< Compartment* >(
-		c.targetElement()->data() );
-	compt->sumInject_ += I;
-	compt->Im_ += I;
-*/
 }
-

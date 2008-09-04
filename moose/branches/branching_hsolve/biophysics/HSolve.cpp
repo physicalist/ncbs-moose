@@ -27,10 +27,10 @@ const Cinfo* initHSolveCinfo()
 		new DestFinfo( "reinit", Ftype1< ProcInfo >::global(),
 			dummyFunc ),
 	};
-        
+	
 	static Finfo* process = new SharedFinfo( "process", processShared,
 		sizeof( processShared ) / sizeof( Finfo* ) );
-        
+	
 	// Shared message from Cell
 	static Finfo* cellShared[] =
 	{
@@ -39,19 +39,6 @@ const Cinfo* initHSolveCinfo()
 			RFCAST( &HSolve::setupFunc ) ),
 		new SrcFinfo( "comptList",
 			Ftype1< const vector< Id >* >::global() ),
-	};
-	
-	// Shared message to Hub
-	static Finfo* hubShared[] =
-	{
-		new SrcFinfo( "compartment",
-			Ftype2< vector< double >*, vector< Element* >* >::global() ),
-		new SrcFinfo( "channel",
-			Ftype1< vector< Element* >* >::global() ),
-		new SrcFinfo( "spikegen",
-			Ftype1< vector< Element* >* >::global() ),
-		new SrcFinfo( "synchan",
-			Ftype1< vector< Element* >* >::global() ),
 	};
 	
 	static Finfo* hsolveFinfos[] = 
@@ -94,6 +81,8 @@ const Cinfo* initHSolveCinfo()
 	//////////////////////////////////////////////////////////////////
 	// MsgSrc definitions
 	//////////////////////////////////////////////////////////////////
+		new SrcFinfo( "integ-hub",
+			Ftype1< HSolveActive* >::global() ),
 	
 	//////////////////////////////////////////////////////////////////
 	// MsgDest definitions
@@ -104,8 +93,6 @@ const Cinfo* initHSolveCinfo()
 	//////////////////////////////////////////////////////////////////
 		new SharedFinfo( "cell-integ", cellShared,
 			sizeof( cellShared ) / sizeof( Finfo* ) ),
-		new SharedFinfo( "integ-hub", hubShared,
-			sizeof( hubShared ) / sizeof( Finfo* ) ),
 		process,
 	};
 	
@@ -129,14 +116,8 @@ static const Cinfo* hsolveCinfo = initHSolveCinfo();
 
 static const Slot comptListSlot =
 	initHSolveCinfo()->getSlot( "cell-integ.comptList" );
-static const Slot hubCompartmentSlot =
-	initHSolveCinfo()->getSlot( "integ-hub.compartment" );
-static const Slot hubChannelSlot =
-	initHSolveCinfo()->getSlot( "integ-hub.channel" );
-static const Slot hubSpikegenSlot =
-	initHSolveCinfo()->getSlot( "integ-hub.spikegen" );
-static const Slot hubSynchanSlot =
-	initHSolveCinfo()->getSlot( "integ-hub.synchan" );
+static const Slot hubSlot =
+	initHSolveCinfo()->getSlot( "integ-hub" );
 
 ///////////////////////////////////////////////////
 // Dest function definitions
@@ -174,33 +155,8 @@ void HSolve::setupHub( Eref integ )
 	bool ret = Eref( integ ).add( "integ-hub", hub, "integ-hub" );
 	assert( ret );
 	
-	// Sending element lists for zombification
-	vector< Id >::iterator i;
-	vector< Element* > elist;
-	for ( i = compartmentId_.begin(); i != compartmentId_.end(); ++i )
-		elist.push_back( ( *i )() );
-	send2< vector< double >*, vector< Element* >* >(
-		integ, hubCompartmentSlot, &V_, &elist );
-	
-	elist.clear();
-	for ( i = channelId_.begin(); i != channelId_.end(); ++i )
-		elist.push_back( ( *i )() );
-	send1< vector< Element* >* >(
-		integ, hubChannelSlot, &elist );
-	
-	elist.clear();
-	vector< SpikeGenStruct >::iterator j;
-	for ( j = spikegen_.begin(); j != spikegen_.end(); ++j )
-		elist.push_back( j->elm_ );
-	send1< vector< Element* >* >(
-		integ, hubSpikegenSlot, &elist );
-	
-	elist.clear();
-	vector< SynChanStruct >::iterator k;
-	for ( k = synchan_.begin(); k != synchan_.end(); ++k )
-		elist.push_back( k->elm_ );
-	send1< vector< Element* >* >(
-		integ, hubSynchanSlot, &elist );
+	send1< HSolveActive* >(
+		integ, hubSlot, dynamic_cast< HSolveActive* >( this ) );
 }
 
 ///////////////////////////////////////////////////

@@ -547,6 +547,7 @@ map< string, string >& sliSrcLookup()
 	src[ "SpikeGen.INPUT Vm" ] = "VmSrc";
         src[ "RandomSpike.INPUT Vm" ] = "eventSrc";        
 	src[ "INPUT Vm" ] = "Vm";
+	src[ "INPUT Im" ] = "Im";
 	src[ "INPUT Ca" ] = "Ca";
 	src[ "INPUT Ik" ] = "Ik";
 	src[ "INPUT Gk" ] = "Gk";
@@ -557,6 +558,7 @@ map< string, string >& sliSrcLookup()
 	src[ "PLOT Co" ] = "conc";
 	src[ "PLOT n" ] = "n";
 	src[ "PLOT Vm" ] = "Vm";
+	src[ "PLOT Im" ] = "Im";
 	src[ "PLOT Ca" ] = "Ca";
 	src[ "PLOT Ik" ] = "Ik";
 	src[ "PLOT Gk" ] = "Gk";
@@ -642,6 +644,7 @@ map< string, string >& sliDestLookup()
         
 	// Some messages for tables
 	dest[ "INPUT Vm" ] = "inputRequest";
+	dest[ "INPUT Im" ] = "inputRequest";
 	dest[ "INPUT Ca" ] = "inputRequest";
 	dest[ "INPUT Ik" ] = "inputRequest";
 	dest[ "INPUT Gk" ] = "inputRequest";
@@ -651,6 +654,7 @@ map< string, string >& sliDestLookup()
         
 	// Messages for having tables pretend to be an xplot
 	dest[ "PLOT Vm" ] = "inputRequest";
+	dest[ "PLOT Im" ] = "inputRequest";
 	dest[ "PLOT Ca" ] = "inputRequest";
 	dest[ "PLOT Ik" ] = "inputRequest";
 	dest[ "PLOT Gk" ] = "inputRequest";

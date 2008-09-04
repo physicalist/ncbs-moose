@@ -19,6 +19,16 @@ public:
 	
 	void setup( Id seed, double dt );
 	void solve( ProcInfo info );
+	
+	/**
+	 * Functions to access the solver's data. Defined in HSolveInterface.cpp
+	 */
+	const vector< Id >& getCompartments( ) const;
+	double getVm( unsigned int index ) const;
+	void setVm( unsigned int index, double value );
+	double getInject( unsigned int index ) const;
+	void setInject( unsigned int index, double value );
+	double getIm( unsigned int index ) const;
 
 protected:
 	/**
