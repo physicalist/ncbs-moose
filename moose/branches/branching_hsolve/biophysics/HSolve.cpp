@@ -98,7 +98,7 @@ const Cinfo* initHSolveCinfo()
 	
 	static SchedInfo schedInfo[] = { { process, 0, 0 } };
 	
-        static Cinfo hsolveCinfo(
+	static Cinfo hsolveCinfo(
 		"HSolve",
 		"Niraj Dudani, 2007, NCBS",
 		"HSolve: Hines solver, for solving branching neuron models.",
