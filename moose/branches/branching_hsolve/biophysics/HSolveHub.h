@@ -12,9 +12,10 @@
 
 /**
  * Biophysical elements in a neuronal model hand over control (computation,
- * fields, messages) to the solver. HSolveHub handles the fields and messages--
- * it can do so because the solver's data structures are shared between the
- * integrator and the hub.
+ * fields, messages) to the solver. The integrator (HSolve) takes care of the
+ * computation, while the hub (HSolveHub) handles field requests and incoming
+ * messages. It can do so because it has access to HSolve's data through an
+ * interface.
  */
 class HSolveHub
 {
@@ -24,7 +25,6 @@ public:
 	///////////////////////////////////////////////////
 	// Field functions
 	///////////////////////////////////////////////////
-	static unsigned int getNcompt( Eref e );
 	
 	///////////////////////////////////////////////////
 	// Dest functions
@@ -54,11 +54,11 @@ public:
 	///////////////////////////////////////////////////
 	// Dest functions (Biophysics)
 	///////////////////////////////////////////////////
-	static void comptInjectMsgFunc( const Conn* c, double I );
+	static void comptInjectMsgFunc( const Conn* c, double value );
 	
 private:
 	void innerHubFunc( Eref hub, HSolveActive* integ );
-	void manageCompartments( ) const;
+	void manageCompartments( );
 	
 	static void zombify( 
 		Eref hub, Eref e,
@@ -69,13 +69,14 @@ private:
 	static void redirectDestMessages(
 		Eref hub, Eref e,
 		const Finfo* hubFinfo, const Finfo* eFinfo,
-		unsigned int eIndex, vector< unsigned int >& map,
-		vector< Element *>* elist, bool retain );
+		unsigned int eIndex, vector< unsigned int >& map, 
+		vector< Element *>*  elist, bool retain );
 	static void redirectDynamicMessages( Element* e );
 	static HSolveHub* getHubFromZombie( Eref e, unsigned int& index );
 	
 	Eref hub_;
 	HSolveActive* integ_;
+	vector< unsigned int > comptInjectMap_;
 };
 
 #endif // _HSOLVE_HUB_H

@@ -14,7 +14,7 @@
 
 void HinesMatrix::setup( const vector< TreeNode >& tree, double dt )
 {
-	refresh( );
+	clear( );
 	
 	nCompt_ = tree.size();
 	dt_ = dt;
@@ -28,7 +28,7 @@ void HinesMatrix::setup( const vector< TreeNode >& tree, double dt )
 	makeOperands( );
 }
 
-void HinesMatrix::refresh( )
+void HinesMatrix::clear( )
 {
 	nCompt_ = 0;
 	dt_ = 0.0;

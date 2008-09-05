@@ -12,6 +12,18 @@
 
 typedef double ( *PFDD )( double, double );
 
+struct CompartmentStruct
+{
+	double CmByDt;
+	double EmByRm;
+};
+
+struct InjectStruct
+{
+	double injectVarying;
+	double injectBasal;
+};
+
 struct CurrentStruct
 {
 	double Gk;

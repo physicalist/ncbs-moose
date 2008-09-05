@@ -60,11 +60,11 @@ const Cinfo* initHSolveHubCinfo()
 		// is deleted all the zombies are reanimated.
 		new DestFinfo( "child", Ftype1< int >::global(),
 			RFCAST( &HSolveHub::childFunc ) ),
+		new DestFinfo( "inject", Ftype1< double >::global(),
+			RFCAST( &HSolveHub::comptInjectMsgFunc ) ),
 	///////////////////////////////////////////////////////
 	// Shared definitions
 	///////////////////////////////////////////////////////
-		//~ new SharedFinfo( "integ-hub", integShared, 
-			//~ sizeof( integShared ) / sizeof( Finfo* ) ),
 		new SharedFinfo( "compartmentSolve", zombieShared, 
 			sizeof( zombieShared ) / sizeof( Finfo* ) ),
 		new SharedFinfo( "channelSolve", zombieShared, 
@@ -98,6 +98,8 @@ static const Finfo* spikegenSolveFinfo =
 	initHSolveHubCinfo()->findFinfo( "spikegenSolve" );
 static const Finfo* synchanSolveFinfo = 
 	initHSolveHubCinfo()->findFinfo( "synchanSolve" );
+static const Finfo* hubInjectFinfo =
+	initHSolveHubCinfo()->findFinfo( "inject" );
 
 /////////////////////////////////////////////////////////////////////////
 // Replacement fields for aspiring zombies
@@ -295,33 +297,42 @@ void HSolveHub::innerHubFunc( Eref hub, HSolveActive* integ )
 	manageCompartments( );
 }
 
-void HSolveHub::manageCompartments( ) const
+void HSolveHub::manageCompartments( )
 {
-	const vector< Id >& elist = integ_->getCompartments( );
+	const vector< Id >& idlist = integ_->getCompartments( );
 	
-	//~ // for redirecting inject messages
-	//~ const Finfo* injectFinfo = initCompartmentCinfo()->findFinfo( "inject" );
+	// Converting to Ids to Element pointers
+	vector< Element* > elist;
+	elist.reserve( idlist.size() );
+	vector< Id >::const_iterator id;
+	for ( id = idlist.begin(); id != idlist.end(); id++ )
+		elist.push_back( ( *id )() );
+	
 	const Finfo* initFinfo = initCompartmentCinfo()->findFinfo( "init" );
-	
-	vector< Id >::const_iterator i;
-	for ( i = elist.begin(); i != elist.end(); ++i ) {
-		Element* e = ( *i )();
-		
-		zombify( hub_, e, compartmentSolveFinfo, compartmentZombieFinfo );
+	vector< Element* >::const_iterator i;
+	for ( i = elist.begin(); i != elist.end(); i++ ) {
+		zombify( hub_, *i, compartmentSolveFinfo, compartmentZombieFinfo );
 		
 		// Compartment receives 2 shared messages from Tick's "process"
-		Eref( e ).dropAll( initFinfo->msg() );
+		Eref( *i ).dropAll( initFinfo->msg() );
 		
-		redirectDynamicMessages( e );
+		redirectDynamicMessages( *i );
 	}
 	
-	//~ for ( i = elist->begin(); i != elist->end(); i++ ) {
-		//~ // Here we replace the injectMessages from outside the tree.
-		//~ // The 'retain' flag at the end is 1: we do not want to delete
-		//~ // the original message to the compartment.
-		//~ redirectDestMessages( hub, *i, molSumFinfo, sumTotFinfo, 
-			//~ i - elist->begin(), molSumMap_, elist, 1 );
-	//~ }
+	/*
+	 * Redirecting inject messages
+	 */
+	const Finfo* comptInjectFinfo =
+		initCompartmentCinfo()->findFinfo( "injectMsg" );
+	for ( i = elist.begin(); i != elist.end(); i++ ) {
+		// The 'retain' flag at the end is 1: we do not want to delete 
+		// the original message to the compartment.
+		redirectDestMessages(
+			hub_, *i,
+			hubInjectFinfo, comptInjectFinfo, 
+			i - elist.begin(), comptInjectMap_,
+			&elist, 1 );
+	}
 }
 
 /**
@@ -334,7 +345,7 @@ void HSolveHub::clearFunc( Eref hub )
 	clearMsgsFromFinfo( hub, spikegenSolveFinfo );
 	clearMsgsFromFinfo( hub, synchanSolveFinfo );
 
-	//~ hub.dropAll( injectFinfo->msg() );
+	//~ hub.dropAll( comptInjectFinfo->msg() );
 }
 
 void HSolveHub::clearMsgsFromFinfo( Eref hub, const Finfo * f )
@@ -391,11 +402,12 @@ void HSolveHub::zombify(
  * eFinfo is the Finfo holding those messages.
  * hubFinfo is the Finfo on the hub which will now handle the messages.
  * eIndex is the index to look up the element.
-*/
+ */
 void HSolveHub::redirectDestMessages(
-	Eref hub, Eref e, const Finfo* hubFinfo, const Finfo* eFinfo,
+	Eref hub, Eref e,
+	const Finfo* hubFinfo, const Finfo* eFinfo,
 	unsigned int eIndex, vector< unsigned int >& map, 
-	vector< Element *>* elist, bool retain )
+	vector< Element *>*  elist, bool retain )
 {
 	Conn* i = e.e->targets( eFinfo->msg(), e.i );
 	vector< Eref > srcElements;
@@ -507,18 +519,11 @@ HSolveHub* HSolveHub::getHubFromZombie( Eref e, unsigned int& index )
 // Field access functions (Biophysics)
 /////////////////////////////////////////////////////////////////////////
 
-/**
- * Here we provide the zombie function to set the 'Vm' field of the 
- * compartment. It first sets the solver location handling this
- * field, then the compartment itself.
- * For the compartment set/get operations, the lookup order is identical
- * to the message order. So we don't need an intermediate table.
- */
 void HSolveHub::setVm( const Conn* c, double value )
 {
 	unsigned int index;
-	
 	HSolveHub* nh = getHubFromZombie( c->target(), index );
+	
 	if ( nh )
 		nh->integ_->setVm( index, value );
 }
@@ -526,8 +531,8 @@ void HSolveHub::setVm( const Conn* c, double value )
 double HSolveHub::getVm( Eref e )
 {
 	unsigned int index;
-	
 	HSolveHub* nh = getHubFromZombie( e, index );
+	
 	if ( nh )
 		return nh->integ_->getVm( index );
 	
@@ -537,8 +542,8 @@ double HSolveHub::getVm( Eref e )
 void HSolveHub::setInject( const Conn* c, double value )
 {
 	unsigned int index;
-	
 	HSolveHub* nh = getHubFromZombie( c->target(), index );
+	
 	if ( nh )
 		nh->integ_->setInject( index, value );
 }
@@ -546,8 +551,8 @@ void HSolveHub::setInject( const Conn* c, double value )
 double HSolveHub::getInject( Eref e )
 {
 	unsigned int index;
-	
 	HSolveHub* nh = getHubFromZombie( e, index );
+	
 	if ( nh )
 		return nh->integ_->getInject( index );
 	
@@ -557,8 +562,8 @@ double HSolveHub::getInject( Eref e )
 double HSolveHub::getIm( Eref e )
 {
 	unsigned int index;
-	
 	HSolveHub* nh = getHubFromZombie( e, index );
+	
 	if ( nh )
 		return nh->integ_->getIm( index );
 	
@@ -588,6 +593,14 @@ double HSolveHub::getSynChanGbar( Eref e )
 /////////////////////////////////////////////////////////////////////////
 // Dest functions (Biophysics)
 /////////////////////////////////////////////////////////////////////////
-void HSolveHub::comptInjectMsgFunc( const Conn* c, double I )
+void HSolveHub::comptInjectMsgFunc( const Conn* c, double value )
 {
+	Element* hub = c->target().e;
+	unsigned int index = c->targetIndex();
+	HSolveHub* nh = static_cast< HSolveHub* >( hub->data() );
+	
+	assert( index < nh->comptInjectMap_.size() );
+	
+	if ( nh )
+		nh->integ_->addInject( nh->comptInjectMap_[ index ], value );
 }

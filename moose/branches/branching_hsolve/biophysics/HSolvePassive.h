@@ -10,19 +10,6 @@
 #ifndef _HSOLVE_PASSIVE_H
 #define _HSOLVE_PASSIVE_H
 
-struct CompartmentStruct
-{
-	CompartmentStruct( double c, double e, double i ) :
-		CmByDt( c ),
-		EmByRm( e ),
-		inject( i )
-	{ ; }
-
-	double CmByDt;
-	double EmByRm;
-	double inject;
-};
-
 class HSolvePassive: public HinesMatrix
 {
 #ifdef DO_UNIT_TESTS
@@ -41,14 +28,15 @@ protected:
 	void forwardEliminate( );
 	void backwardSubstitute( );
 	
-	vector< CompartmentStruct >  compartment_;
-	vector< Id >                 compartmentId_;
-	vector< double >             V_;
-	vector< TreeNode >           tree_;
+	vector< CompartmentStruct >       compartment_;
+	vector< Id >                      compartmentId_;
+	vector< double >                  V_;
+	vector< TreeNode >                tree_;
+	map< unsigned int, InjectStruct > inject_;
 
 private:
 	// Setting up of data structures
-	void refresh( );
+	void clear( );
 	void walkTree( Id seed );
 	void initialize( );
 	void storeTree( );

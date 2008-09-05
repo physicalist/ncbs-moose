@@ -8,9 +8,7 @@
 **********************************************************************/
 
 #include "moose.h"
-#include <set>
-#include "SpikeGen.h"       // for generating spikes
-#include <queue>            // for SynChanStruct in BioScan. Remove eventually.
+#include <queue>
 #include "HSolveStruct.h"
 #include "BioScan.h"
 #include "HinesMatrix.h"
@@ -45,8 +43,14 @@ double HSolveActive::getInject( unsigned int index ) const
 {
 	assert( index < nCompt_ );
 	
-	if ( index < nCompt_ )
-		return compartment_[ index ].inject;
+	map< unsigned int, InjectStruct >::const_iterator i;
+	
+	if ( index < nCompt_ ) {
+		i = inject_.find( index );
+		
+		if ( i != inject_.end() )
+			return i->second.injectBasal;
+	}
 	
 	return 0.0;
 }
@@ -56,7 +60,7 @@ void HSolveActive::setInject( unsigned int index, double value )
 	assert( index < nCompt_ );
 	
 	if ( index < nCompt_ )
-		compartment_[ index ].inject = value;
+		inject_[ index ].injectBasal = value;
 }
 
 double HSolveActive::getIm( unsigned int index ) const
@@ -80,4 +84,9 @@ double HSolveActive::getIm( unsigned int index ) const
 		Im += ( icurrent->Ek - V_[ index ] ) * icurrent->Gk;
 	
 	return Im;
+}
+
+void HSolveActive::addInject( unsigned int index, double value )
+{
+	inject_[ index ].injectVarying += value;
 }

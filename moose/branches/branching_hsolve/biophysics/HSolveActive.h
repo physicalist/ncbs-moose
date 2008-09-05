@@ -29,6 +29,7 @@ public:
 	double getInject( unsigned int index ) const;
 	void setInject( unsigned int index, double value );
 	double getIm( unsigned int index ) const;
+	void addInject( unsigned int index, double value );
 
 protected:
 	/**
