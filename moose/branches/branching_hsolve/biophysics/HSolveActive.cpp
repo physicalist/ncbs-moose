@@ -376,14 +376,24 @@ void HSolveActive::updateMatrix( ) {
 		}
 		
 		*ihs = *( 2 + ihs ) + GkSum;
-		*( 3 + ihs ) = *iv * ic->CmByDt + ic->EmByRm + ic->inject + GkEkSum;
+		*( 3 + ihs ) = *iv * ic->CmByDt + ic->EmByRm + GkEkSum;
 		
 		++iboundary, ihs += 4, ++iv;
 	}
 	
+	map< unsigned int, InjectStruct >::iterator inject;
+	for ( inject = inject_.begin(); inject != inject_.end(); inject++ ) {
+		unsigned int ic = inject->first;
+		InjectStruct& value = inject->second;
+		
+		HS_[ 4 * ic + 3 ] += value.injectVarying + value.injectBasal;
+		
+		value.injectVarying = 0.0;
+	}
+	
 	vector< SynChanStruct >::iterator isyn;
 	for ( isyn = synchan_.begin(); isyn != synchan_.end(); ++isyn ) {
-		unsigned ic = isyn->compt_;
+		unsigned int ic = isyn->compt_;
 		HS_[ 4 * ic ] += isyn->Gk_;
 		HS_[ 4 * ic + 3 ] += isyn->Gk_ * isyn->Ek_;
 	}

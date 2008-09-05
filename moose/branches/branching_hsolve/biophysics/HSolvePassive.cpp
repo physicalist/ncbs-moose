@@ -8,6 +8,8 @@
 **********************************************************************/
 
 #include "moose.h"
+#include <queue>
+#include "HSolveStruct.h"
 #include "BioScan.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"
@@ -15,7 +17,7 @@
 extern ostream& operator <<( ostream& s, const HinesMatrix& m );
 
 void HSolvePassive::setup( Id seed, double dt ) {
-	refresh( );
+	clear( );
 
 	dt_ = dt;
 	walkTree( seed );
@@ -35,12 +37,13 @@ void HSolvePassive::solve( ) {
 // Setup of data structures
 //////////////////////////////////////////////////////////////////////
 
-void HSolvePassive::refresh( ) {
+void HSolvePassive::clear( ) {
 	dt_ = 0.0;
 	compartment_.clear( );
 	compartmentId_.clear( );
 	V_.clear( );
 	tree_.clear( );
+	inject_.clear( );
 }
 
 void HSolvePassive::walkTree( Id seed ) {
@@ -92,22 +95,26 @@ void HSolvePassive::initialize( ) {
 	
 	double Vm, Cm, Em, Rm, inject;
 	
-	vector< Id >::iterator ic;
-	for ( ic = compartmentId_.begin(); ic != compartmentId_.end(); ++ic ) {
-		get< double >( ( *ic )(), "Vm", Vm );
-		get< double >( ( *ic )(), "Cm", Cm );
-		get< double >( ( *ic )(), "Em", Em );
-		get< double >( ( *ic )(), "Rm", Rm );
-		get< double >( ( *ic )(), "inject", inject );
+	for ( unsigned int ic; ic < compartmentId_.size(); ++ic ) {
+		Eref e = compartmentId_[ ic ]();
 		
-		CompartmentStruct compartment (
-			2.0 * Cm / dt_,
-			Em / Rm,
-			inject
-		);
+		get< double >( e, "Vm", Vm );
+		get< double >( e, "Cm", Cm );
+		get< double >( e, "Em", Em );
+		get< double >( e, "Rm", Rm );
+		get< double >( e, "inject", inject );
 		
 		V_.push_back( Vm );
+		
+		CompartmentStruct compartment;
+		compartment.CmByDt = 2.0 * Cm / dt_;
+		compartment.EmByRm = Em / Rm;
 		compartment_.push_back( compartment );
+		
+		if ( inject != 0.0 ) {
+			inject_[ ic ].injectVarying = 0.0;
+			inject_[ ic ].injectBasal = inject;
+		}
 	}
 }
 
@@ -157,9 +164,19 @@ void HSolvePassive::updateMatrix( ) {
 	vector< CompartmentStruct >::iterator ic;
 	for ( ic = compartment_.begin(); ic != compartment_.end(); ++ic ) {
 		*ihs         = *( 2 + ihs );
-		*( 3 + ihs ) = *iv * ic->CmByDt + ic->EmByRm + ic->inject;
+		*( 3 + ihs ) = *iv * ic->CmByDt + ic->EmByRm;
 		
 		ihs += 4, ++iv;
+	}
+	
+	map< unsigned int, InjectStruct >::iterator inject;
+	for ( inject = inject_.begin(); inject != inject_.end(); inject++ ) {
+		unsigned int ic = inject->first;
+		InjectStruct& value = inject->second;
+		
+		HS_[ 4 * ic + 3 ] += value.injectVarying + value.injectBasal;
+		
+		value.injectVarying = 0.0;
 	}
 	
 	stage_ = 0;    // Update done.

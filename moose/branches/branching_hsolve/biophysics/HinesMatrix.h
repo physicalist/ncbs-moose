@@ -59,7 +59,7 @@ protected:
 	int                       stage_;
 
 private:
-	void refresh( );
+	void clear( );
 	void makeJunctions( );
 	void makeMatrix( );
 	void makeOperands( );
