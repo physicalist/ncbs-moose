@@ -515,7 +515,7 @@ map< string, string >& sliSrcLookup()
 	src[ "AXIAL previous_state" ] = "axial";
 	src[ "RAXIAL Ra Vm" ] = "";
 	src[ "RAXIAL Ra previous_state" ] = "";
-	src[ "INJECT output" ] = "output";
+	src[ "INJECT output" ] = "outputSrc";
 
 	// Some messages for channels.
 	src[ "VOLTAGE Vm" ] = "";
