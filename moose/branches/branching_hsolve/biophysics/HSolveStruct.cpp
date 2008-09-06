@@ -64,19 +64,6 @@ void ChannelStruct::process( double*& state, CurrentStruct& current )
 	current.Gk = Gbar_ * fraction;
 }
 
-void SynChanStruct::process( ProcInfo info ) {
-	while ( !pendingEvents_->empty() &&
-		pendingEvents_->top().delay <= info->currTime_ ) {
-		*activation_ += pendingEvents_->top().weight / info->dt_;
-		pendingEvents_->pop();
-	}
-	X_ = *modulation_ * *activation_ * xconst1_ + X_ * xconst2_;
-	Y_ = X_ * yconst1_ + Y_ * yconst2_;
-	Gk_ = Y_ * norm_;
-	*activation_ = 0.0;
-	*modulation_ = 1.0;
-}
-
 double CaConcStruct::process( double activation ) {
 	c_ = factor1_ * c_ + factor2_ * activation;
 	return ( CaBasal_ + c_ );

@@ -9,16 +9,22 @@
 
 #include "moose.h"
 #include <set>
-#include "SpikeGen.h"       // for generating spikes
-#include <queue>            // for SynChanStruct in BioScan. Remove eventually.
 #include "HSolveStruct.h"
 #include "BioScan.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"
 #include "RateLookup.h"
 #include "HSolveActive.h"
+#include "SpikeGen.h"
+#include <queue>
+#include "SynInfo.h"
+#include "SynChan.h"
 
 extern ostream& operator <<( ostream& s, const HinesMatrix& m );
+
+static const Finfo* synGkFinfo = initSynChanCinfo()->findFinfo( "Gk" );
+static const Finfo* synEkFinfo = initSynChanCinfo()->findFinfo( "Ek" );
+static const Finfo* spikeVmFinfo = initSpikeGenCinfo()->findFinfo( "Vm" );
 
 const int HSolveActive::INSTANT_X = 1;
 const int HSolveActive::INSTANT_Y = 2;
@@ -109,12 +115,25 @@ void HSolveActive::readChannels( ) {
 			channel.setPowers( Xpower, Ypower, Zpower );
 			channel.instant_ = instant;
 			
+			/*
+			 * Map channel index to state index. This is useful in the
+			 * interface to find gate values.
+			 */
+			chan2state_.push_back( state_.size() );
+			
 			if ( Xpower )
 				state_.push_back( X );
 			if ( Ypower )
 				state_.push_back( Y );
 			if ( Zpower )
 				state_.push_back( Z );
+			
+			/*
+			 * Map channel index to compartment index. This is useful in the
+			 * interface to generate channel Ik values (since we then need the
+			 * compartment Vm).
+			 */
+			chan2compt_.push_back( icompt - compartmentId_.begin() );
 		}
 	}
 	
@@ -216,27 +235,21 @@ void HSolveActive::readSynapses( ) {
 	SynChanStruct synchan;
 	
 	for ( unsigned int ic = 0; ic < nCompt_; ++ic ) {
+		synId.clear( );
 		BioScan::synchan( compartmentId_[ ic ], synId );
 		for ( syn = synId.begin(); syn != synId.end(); ++syn ) {
 			synchan.compt_ = ic;
 			synchan.elm_ = ( *syn )();
-			BioScan::synchanFields( *syn, synchan );
 			synchan_.push_back( synchan );
 		}
 		
-		int nSpike = BioScan::spikegen( compartmentId_[ ic ], spikeId );
-		if ( nSpike == 0 )
-			continue;
-		
+		spikeId.clear( );
+		BioScan::spikegen( compartmentId_[ ic ], spikeId );
 		// Very unlikely that there will be >1 spikegens in a compartment,
 		// but lets take care of it anyway.
 		for ( spike = spikeId.begin(); spike != spikeId.end(); ++spike ) {
 			spikegen.compt_ = ic;
 			spikegen.elm_ = ( *spike )();
-			Eref elm = ( *spike )();
-			get< double >( elm, "threshold", spikegen.threshold_ );
-			get< double >( elm, "refractT", spikegen.refractT_ );
-			get< double >( elm, "state", spikegen.state_ );
 			spikegen_.push_back( spikegen );
 		}
 	}
@@ -391,11 +404,15 @@ void HSolveActive::updateMatrix( ) {
 		value.injectVarying = 0.0;
 	}
 	
+	double Gk, Ek;
 	vector< SynChanStruct >::iterator isyn;
 	for ( isyn = synchan_.begin(); isyn != synchan_.end(); ++isyn ) {
+		get< double >( isyn->elm_, synGkFinfo, Gk );
+		get< double >( isyn->elm_, synEkFinfo, Ek );
+		
 		unsigned int ic = isyn->compt_;
-		HS_[ 4 * ic ] += isyn->Gk_;
-		HS_[ 4 * ic + 3 ] += isyn->Gk_ * isyn->Ek_;
+		HS_[ 4 * ic ] += Gk;
+		HS_[ 4 * ic + 3 ] += Gk * Ek;
 	}
 	
 	stage_ = 0;    // Update done.
@@ -531,10 +548,11 @@ void HSolveActive::advanceChannels( double dt ) {
 	}
 }
 
+/**
+ * SynChans are currently not under solver's control
+ */
 void HSolveActive::advanceSynChans( ProcInfo info ) {
-	vector< SynChanStruct >::iterator isyn;
-	for ( isyn = synchan_.begin(); isyn != synchan_.end(); ++isyn )
-		isyn->process( info );
+	return;
 }
 
 void HSolveActive::sendSpikes( ProcInfo info ) {
@@ -545,8 +563,6 @@ void HSolveActive::sendSpikes( ProcInfo info ) {
 		 * in the global namespace, and the STL "set" container, which is in the
 		 * std namespace.
 		 */
-		::set< double >( ispike->elm_, "Vm", V_[ ispike->compt_ ] );
-		SetConn c( ispike->elm_, 0 );
-		SpikeGen::processFunc( &c, info );
+		::set< double >( ispike->elm_, spikeVmFinfo, V_[ ispike->compt_ ] );
 	}
 }

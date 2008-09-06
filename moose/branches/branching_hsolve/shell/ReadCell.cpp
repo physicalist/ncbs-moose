@@ -24,8 +24,6 @@
 #include "../biophysics/HHGate.h"
 #include <queue>
 #include "../biophysics/SynInfo.h"
-#include "../biophysics/RateLookup.h"
-#include "../biophysics/HSolveStruct.h"
 #include "../biophysics/SynChan.h"
 #include "../biophysics/SpikeGen.h"
 #include "../biophysics/Nernst.h"

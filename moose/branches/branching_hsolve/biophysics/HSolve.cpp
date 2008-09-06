@@ -9,8 +9,6 @@
 
 #include "moose.h"
 #include "../element/Neutral.h"
-#include "SynInfo.h"
-#include <queue>
 #include "HSolveStruct.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"

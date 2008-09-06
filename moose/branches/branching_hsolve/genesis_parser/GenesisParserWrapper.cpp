@@ -551,6 +551,11 @@ map< string, string >& sliSrcLookup()
 	src[ "INPUT Ca" ] = "Ca";
 	src[ "INPUT Ik" ] = "Ik";
 	src[ "INPUT Gk" ] = "Gk";
+	src[ "INPUT Ek" ] = "Ek";
+	src[ "INPUT Gbar" ] = "Gbar";
+	src[ "INPUT X" ] = "X";
+	src[ "INPUT Y" ] = "Y";
+	src[ "INPUT Z" ] = "Z";
 	src[ "INPUT n" ] = "n";
 	src[ "INPUT Co" ] = "conc";
 
@@ -562,6 +567,11 @@ map< string, string >& sliSrcLookup()
 	src[ "PLOT Ca" ] = "Ca";
 	src[ "PLOT Ik" ] = "Ik";
 	src[ "PLOT Gk" ] = "Gk";
+	src[ "PLOT Ek" ] = "Ek";
+	src[ "PLOT Gbar" ] = "Gbar";
+	src[ "PLOT X" ] = "X";
+	src[ "PLOT Y" ] = "Y";
+	src[ "PLOT Z" ] = "Z";
         src[ "PLOT output" ] = "output";
         
 	return src;
@@ -648,6 +658,11 @@ map< string, string >& sliDestLookup()
 	dest[ "INPUT Ca" ] = "inputRequest";
 	dest[ "INPUT Ik" ] = "inputRequest";
 	dest[ "INPUT Gk" ] = "inputRequest";
+	dest[ "INPUT Ek" ] = "inputRequest";
+	dest[ "INPUT Gbar" ] = "inputRequest";
+	dest[ "INPUT X" ] = "inputRequest";
+	dest[ "INPUT Y" ] = "inputRequest";
+	dest[ "INPUT Z" ] = "inputRequest";
 	dest[ "INPUT n" ] = "inputRequest";
 	dest[ "INPUT Co" ] = "inputRequest";
         dest[ "INPUT output" ] = "inputRequest";
@@ -658,6 +673,11 @@ map< string, string >& sliDestLookup()
 	dest[ "PLOT Ca" ] = "inputRequest";
 	dest[ "PLOT Ik" ] = "inputRequest";
 	dest[ "PLOT Gk" ] = "inputRequest";
+	dest[ "PLOT Ek" ] = "PLOTRequest";
+	dest[ "PLOT Gbar" ] = "PLOTRequest";
+	dest[ "PLOT X" ] = "PLOTRequest";
+	dest[ "PLOT Y" ] = "PLOTRequest";
+	dest[ "PLOT Z" ] = "PLOTRequest";
 	dest[ "PLOT n" ] = "inputRequest";
 	dest[ "PLOT Co" ] = "inputRequest";
         dest[ "PLOT output" ] = "inputRequest";

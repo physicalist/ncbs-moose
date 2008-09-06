@@ -67,39 +67,14 @@ struct SpikeGenStruct
 {
 	// Index of parent compartment
 	unsigned int compt_;
-	Element* elm_;
-	// SpikeGen fields
-	double threshold_;
-	double refractT_;
-	double amplitude_;
-	double state_;
-	double lastEvent_;
+	Eref elm_;
 };
 
-class SynInfo;
 struct SynChanStruct
 {
 	// Index of parent compartment
 	unsigned int compt_;
-	Element* elm_;
-	// SynChan fields
-	double Ek_;
-	double Gk_;
-	double Gbar_;
-	double xconst1_;
-	double yconst1_;
-	double xconst2_;
-	double yconst2_;
-	double norm_;
-	double X_;
-	double Y_;
-	// The following 3 are still under SynChan's control. Here we simply
-	// peek into their values.
-	double *activation_;
-	double *modulation_;
-	priority_queue< SynInfo >* pendingEvents_;
-	
-	void process( ProcInfo p );
+	Eref elm_;
 };
 
 struct CaConcStruct
