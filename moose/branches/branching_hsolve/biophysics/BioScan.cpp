@@ -8,9 +8,6 @@
 **********************************************************************/
 
 #include "moose.h"
-#include "SynInfo.h"        // for SynChanStruct. Remove eventually.
-#include <queue>            // for SynChanStruct. Remove eventually.
-#include "HSolveStruct.h"   // for SynChanStruct. Remove eventually.
 #include "BioScan.h"
 
 int BioScan::adjacent( Id compartment, Id exclude, vector< Id >& ret )
@@ -74,11 +71,6 @@ int BioScan::caTarget( Id channel, vector< Id >& ret )
 int BioScan::caDepend( Id channel, vector< Id >& ret )
 {
 	return targets( channel, "concen", ret );
-}
-
-void BioScan::synchanFields( Id synchan, SynChanStruct& scs )
-{
-	set< SynChanStruct* >( synchan(), "scan", &scs );
 }
 
 void BioScan::rates(

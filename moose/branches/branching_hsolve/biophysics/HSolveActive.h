@@ -23,6 +23,7 @@ public:
 	/**
 	 * Functions to access the solver's data. Defined in HSolveInterface.cpp
 	 */
+	/// Interface to compartments
 	const vector< Id >& getCompartments( ) const;
 	double getVm( unsigned int index ) const;
 	void setVm( unsigned int index, double value );
@@ -30,7 +31,24 @@ public:
 	void setInject( unsigned int index, double value );
 	double getIm( unsigned int index ) const;
 	void addInject( unsigned int index, double value );
-
+	
+	/// Interface to channels
+	const vector< Id >& getHHChannels( ) const;
+	double getHHChannelGbar( unsigned int index ) const;
+	void setHHChannelGbar( unsigned int index, double value );
+	double getEk( unsigned int index ) const;
+	void setEk( unsigned int index, double value );
+	double getGk( unsigned int index ) const;
+	void setGk( unsigned int index, double value );
+	// Ik is read-only
+	double getIk( unsigned int index ) const;
+	double getX( unsigned int index ) const;
+	void setX( unsigned int index, double value );
+	double getY( unsigned int index ) const;
+	void setY( unsigned int index, double value );
+	double getZ( unsigned int index ) const;
+	void setZ( unsigned int index, double value );
+	
 protected:
 	/**
 	 * Solver parameters: exposed as fields in MOOSE
@@ -61,6 +79,7 @@ protected:
 	double                    caMax_;
 	int                       caDiv_;
 
+private:
 	/**
 	 * Internal data structures
 	 */
@@ -79,11 +98,13 @@ protected:
 	vector< double* >         caDepend_;
 	vector< Id >              channelId_;
 	vector< Id >              gateId_;
+	vector< Id >              synchanId_;
 	vector< bool >            gCaDepend_;
 	vector< int >             channelCount_;
 	vector< currentVecIter >  currentBoundary_;
+	vector< unsigned int >    chan2compt_;
+	vector< unsigned int >    chan2state_;
 
-private:
 	// Setting up of data structures
 	void readChannels( );
 	void readGates( );

@@ -36,20 +36,29 @@ public:
 	///////////////////////////////////////////////////
 	// Field functions (Biophysics)
 	///////////////////////////////////////////////////
+	/// Compartment fields
 	static void setVm( const Conn* c, double value );
 	static double getVm( Eref e );
-	
 	// Im is read-only
 	static double getIm( Eref e );
-	
 	static void setInject( const Conn* c, double value );
 	static double getInject( Eref e );
 	
-	static void setChannelGbar( const Conn* c, double value );
-	static double getChannelGbar( Eref e );
-	
-	static void setSynChanGbar( const Conn* c, double value );
-	static double getSynChanGbar( Eref e );
+	/// HHChannel fields
+	static void setHHChannelGbar( const Conn* c, double value );
+	static double getHHChannelGbar( Eref e );
+	static void setEk( const Conn* c, double value );
+	static double getEk( Eref e );
+	static void setGk( const Conn* c, double value );
+	static double getGk( Eref e );
+	// Ik is read-only
+	static double getIk( Eref e );
+	static void setX( const Conn* c, double value );
+	static double getX( Eref e );
+	static void setY( const Conn* c, double value );
+	static double getY( Eref e );
+	static void setZ( const Conn* c, double value );
+	static double getZ( Eref e );
 	
 	///////////////////////////////////////////////////
 	// Dest functions (Biophysics)
@@ -59,6 +68,7 @@ public:
 private:
 	void innerHubFunc( Eref hub, HSolveActive* integ );
 	void manageCompartments( );
+	void manageHHChannels( );
 	
 	static void zombify( 
 		Eref hub, Eref e,
