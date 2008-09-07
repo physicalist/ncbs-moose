@@ -199,6 +199,7 @@ void HSolveActive::readCalcium( ) {
 				caConc.CaBasal_ = CaBasal;
 				
 				caConc_.push_back( caConc );
+				caConcId_.push_back( *iconc );
 				caConcIndex[ *iconc ] = caConc_.size() - 1;
 			}
 		
