@@ -49,6 +49,11 @@ public:
 	double getZ( unsigned int index ) const;
 	void setZ( unsigned int index, double value );
 	
+	/// Interface to CaConc
+	const vector< Id >& getCaConcs( ) const;
+	double getCa( unsigned int index ) const;
+	void setCa( unsigned int index, double value );
+	
 protected:
 	/**
 	 * Solver parameters: exposed as fields in MOOSE
@@ -98,7 +103,7 @@ private:
 	vector< double* >         caDepend_;
 	vector< Id >              channelId_;
 	vector< Id >              gateId_;
-	vector< Id >              synchanId_;
+	vector< Id >              caConcId_;
 	vector< bool >            gCaDepend_;
 	vector< int >             channelCount_;
 	vector< currentVecIter >  currentBoundary_;

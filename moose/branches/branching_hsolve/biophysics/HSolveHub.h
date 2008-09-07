@@ -60,6 +60,9 @@ public:
 	static void setZ( const Conn* c, double value );
 	static double getZ( Eref e );
 	
+	/// CaConc fields
+	static void setCa( const Conn* c, double value );
+	static double getCa( Eref e );
 	///////////////////////////////////////////////////
 	// Dest functions (Biophysics)
 	///////////////////////////////////////////////////
@@ -69,6 +72,7 @@ private:
 	void innerHubFunc( Eref hub, HSolveActive* integ );
 	void manageCompartments( );
 	void manageHHChannels( );
+	void manageCaConcs( );
 	
 	static void zombify( 
 		Eref hub, Eref e,

@@ -26,6 +26,11 @@ const vector< Id >& HSolveActive::getHHChannels( ) const
 	return channelId_;
 }
 
+const vector< Id >& HSolveActive::getCaConcs( ) const
+{
+	return caConcId_;
+}
+
 double HSolveActive::getVm( unsigned int index ) const
 {
 	assert( index < V_.size() );
@@ -278,5 +283,25 @@ void HSolveActive::setZ( unsigned int index, double value )
 		assert( stateIndex < state_.size() );
 		
 		state_[ stateIndex ] = value;
+	}
+}
+
+double HSolveActive::getCa( unsigned int index ) const
+{
+	assert( index < caConc_.size() );
+	
+	if ( index < caConc_.size() )
+		return ca_[ index ];
+	
+	return 0.0;
+}
+
+void HSolveActive::setCa( unsigned int index, double value )
+{
+	assert( index < caConc_.size() );
+	
+	if ( index < caConc_.size() ) {
+		ca_[ index ] = value;
+		caConc_[ index ].c_ = value - caConc_[ index ].CaBasal_;
 	}
 }

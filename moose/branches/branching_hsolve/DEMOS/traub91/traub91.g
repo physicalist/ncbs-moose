@@ -43,14 +43,21 @@ readcell CA3.p /CA3
 ////////////////////////////////////////////////////////////////////////////////
 // PLOTTING
 ////////////////////////////////////////////////////////////////////////////////
-create table /plot
-call /plot TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plot step_mode 3
+create neutral /plots
+
+create table /plots/Vm
+call /plots/Vm TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /plots/Vm step_mode 3
+
+create table /plots/Ca
+call /plots/Ca TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /plots/Ca step_mode 3
 
 //=====================================
 //  Record from compartment
 //=====================================
-addmsg /CA3/soma /plot INPUT Vm
+addmsg /CA3/soma /plots/Vm INPUT Vm
+addmsg /CA3/soma/Ca_conc /plots/Ca INPUT Ca
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -75,7 +82,8 @@ else
 	setclock 2 {IODT}
 end
 
-useclock /plot 2
+useclock /plots/Vm 2
+useclock /plots/Ca 2
 
 //=====================================
 //  Solvers
@@ -102,11 +110,27 @@ step {SIMLENGTH} -time
 ////////////////////////////////////////////////////////////////////////////////
 //  Write Plots
 ////////////////////////////////////////////////////////////////////////////////
-openfile "test.plot" w
-writefile "test.plot" "/newplot"
-writefile "test.plot" "/plotname Vm"
-closefile "test.plot"
-tab2file test.plot /plot table
+str filename
+str extension
+if ( MOOSE )
+	extension = ".moose.plot"
+else
+	extension = ".genesis.plot"
+end
+
+filename = "Vm" @ {extension}
+openfile {filename} w
+writefile {filename} "/newplot"
+writefile {filename} "/plotname Vm"
+closefile {filename}
+tab2file {filename} /plots/Vm table
+
+filename = "Ca" @ {extension}
+openfile {filename} w
+writefile {filename} "/newplot"
+writefile {filename} "/plotname Ca"
+closefile {filename}
+tab2file {filename} /plots/Ca table
 
 
 echo "

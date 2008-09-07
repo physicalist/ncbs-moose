@@ -11,6 +11,7 @@
 #include "../element/Neutral.h"
 #include "Compartment.h"
 #include "HHChannel.h"
+#include "CaConc.h"
 #include "HSolveStruct.h"
 #include "BioScan.h"
 #include "HinesMatrix.h"
@@ -65,6 +66,8 @@ const Cinfo* initHSolveHubCinfo()
 			sizeof( zombieShared ) / sizeof( Finfo* ) ),
 		new SharedFinfo( "hhchannelSolve", zombieShared, 
 			sizeof( zombieShared ) / sizeof( Finfo* ) ),
+		new SharedFinfo( "caconcSolve", zombieShared, 
+			sizeof( zombieShared ) / sizeof( Finfo* ) ),
 	};
 	
 	static Cinfo HSolveHubCinfo(
@@ -86,6 +89,8 @@ static const Finfo* compartmentSolveFinfo =
 	initHSolveHubCinfo()->findFinfo( "compartmentSolve" );
 static const Finfo* hhchannelSolveFinfo = 
 	initHSolveHubCinfo()->findFinfo( "hhchannelSolve" );
+static const Finfo* caconcSolveFinfo = 
+	initHSolveHubCinfo()->findFinfo( "caconcSolve" );
 static const Finfo* hubInjectFinfo =
 	initHSolveHubCinfo()->findFinfo( "injectMsg" );
 const Finfo* comptInjectFinfo =
@@ -180,8 +185,32 @@ Finfo* initHHChannelZombieFinfo()
 	return &hhchannelZombieFinfo;
 }
 
+Finfo* initCaConcZombieFinfo()
+{
+	static Finfo* caconcFields[] =
+	{
+		new ValueFinfo( "Ca", ValueFtype1< double >::global(),
+			GFCAST( &HSolveHub::getCa ), 
+			RFCAST( &HSolveHub::setCa )
+		),
+	};
+
+	static const ThisFinfo* tf = dynamic_cast< const ThisFinfo* >( 
+		initCaConcCinfo()->getThisFinfo( ) );
+	assert( tf != 0 );
+
+	static SolveFinfo caconcZombieFinfo( 
+		caconcFields, 
+		sizeof( caconcFields ) / sizeof( Finfo* ),
+		tf
+	);
+
+	return &caconcZombieFinfo;
+}
+
 static Finfo* compartmentZombieFinfo = initCompartmentZombieFinfo();
 static Finfo* hhchannelZombieFinfo = initHHChannelZombieFinfo();
+static Finfo* caconcZombieFinfo = initCaConcZombieFinfo();
 
 /////////////////////////////////////////////////////////////////////////
 // End of static initializers.
@@ -206,6 +235,16 @@ void HSolveHub::hubFunc( const Conn* c, HSolveActive* integ )
 {
 	static_cast< HSolveHub* >( c->data() )->
 		innerHubFunc( c->target(), integ );
+}
+
+void HSolveHub::innerHubFunc( Eref hub, HSolveActive* integ )
+{
+	hub_ = hub;
+	integ_ = integ;
+	
+	manageCompartments( );
+	manageHHChannels( );
+	manageCaConcs( );
 }
 
 /**
@@ -257,15 +296,6 @@ void HSolveHub::childFunc( const Conn* c, int stage )
 // Class functions
 /////////////////////////////////////////////////////////////////////////
 
-void HSolveHub::innerHubFunc( Eref hub, HSolveActive* integ )
-{
-	hub_ = hub;
-	integ_ = integ;
-	
-	manageCompartments( );
-	manageHHChannels( );
-}
-
 void HSolveHub::manageCompartments( )
 {
 	const vector< Id >& idlist = integ_->getCompartments( );
@@ -316,6 +346,25 @@ void HSolveHub::manageHHChannels( )
 	vector< Element* >::const_iterator i;
 	for ( i = elist.begin(); i != elist.end(); i++ ) {
 		zombify( hub_, *i, hhchannelSolveFinfo, hhchannelZombieFinfo );
+		
+		redirectDynamicMessages( *i );
+	}
+}
+
+void HSolveHub::manageCaConcs( )
+{
+	const vector< Id >& idlist = integ_->getCaConcs( );
+	
+	// Converting to Ids to Element pointers
+	vector< Element* > elist;
+	elist.reserve( idlist.size() );
+	vector< Id >::const_iterator id;
+	for ( id = idlist.begin(); id != idlist.end(); id++ )
+		elist.push_back( ( *id )() );
+	
+	vector< Element* >::const_iterator i;
+	for ( i = elist.begin(); i != elist.end(); i++ ) {
+		zombify( hub_, *i, caconcSolveFinfo, caconcZombieFinfo );
 		
 		redirectDynamicMessages( *i );
 	}
@@ -444,7 +493,9 @@ void HSolveHub::redirectDynamicMessages( Element* e )
 	for( i = flist.begin(); i != flist.end(); ++i )
 	{
 		const DynamicFinfo *df = dynamic_cast< const DynamicFinfo* >( *i );
-		assert( df != 0 );
+		if ( df == 0 )
+			continue;
+		
 		vector< Eref > srcElements;
 		vector< const Finfo* > srcFinfos;
 		Conn* c = e->targets( ( *i )->msg(), 0 ); //zero index for SE
@@ -681,6 +732,26 @@ double HSolveHub::getZ( Eref e )
 	
 	if ( nh )
 		return nh->integ_->getZ( index );
+	
+	return 0.0;
+}
+
+void HSolveHub::setCa( const Conn* c, double value )
+{
+	unsigned int index;
+	HSolveHub* nh = getHubFromZombie( c->target(), index );
+	
+	if ( nh )
+		nh->integ_->setCa( index, value );
+}
+
+double HSolveHub::getCa( Eref e )
+{
+	unsigned int index;
+	HSolveHub* nh = getHubFromZombie( e, index );
+	
+	if ( nh )
+		return nh->integ_->getCa( index );
 	
 	return 0.0;
 }
