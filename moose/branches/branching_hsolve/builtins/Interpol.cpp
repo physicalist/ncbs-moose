@@ -434,6 +434,11 @@ void Interpol::localAppendTableVector( const vector< double >& value )
 
 void Interpol::innerTabFill( int newXDivs, int mode )
 {
+	if ( newXDivs < 3 ) {
+		cout << "Error: TabFill: # divs must be >= 3. Not filling table.\n";
+		return;
+	}
+	
 	int oldXDivs = table_.size() - 1;
 	int oldMode = mode_;
 	
@@ -441,10 +446,18 @@ void Interpol::innerTabFill( int newXDivs, int mode )
 	newtab.resize( newXDivs + 1, 0.0 );
 	
 	double dx = ( xmax_ - xmin_ ) / static_cast< double >( newXDivs );
-	
+	/**
+	 * During filling:
+	 *   Mode 0 : B-Splines
+	 *   Mode 2 : Linear interpolation for fill 
+	 * 
+	 * During lookup:
+	 *   Mode 0 : No interpolation
+	 *   Mode 1 : Linear interpolation
+	 */
 	if ( mode == 2 ) {
 		// Linear Interpolation
-		mode_ = 1; // Has to be, so we can interpolate.
+		mode_ = 1;  // for lookup
 		for ( int i = 0; i <= newXDivs; i++ )
 			newtab[ i ] = innerLookup(
 				xmin_ + dx * static_cast< double >( i ) );
@@ -464,16 +477,17 @@ void Interpol::innerTabFill( int newXDivs, int mode )
 		double p;
 		
 		// filling up newtab till first element in old array
-		for ( p = 0.0; i <= 1; p += step ) {
+		while( i <= 1 ) {
 			newtab[ j ] = 
 				( p - static_cast< double >( i ) ) *
 				( table_[ i + 1 ] - table_[ i ] ) + table_[ i ];
 			
+			p += step;
 			i = static_cast< int >( p );
 			j++;
 		}
 		
-		for( ; i < oldXDivs - 1; p += step ) {
+		while( i < oldXDivs - 1 ) {
 			double t = p - static_cast< double >( i );
 			
 			nc1 =
@@ -499,11 +513,12 @@ void Interpol::innerTabFill( int newXDivs, int mode )
 				nc1 * table_[ i - 1 ] + nc2 * table_[ i ] +
 				nc3 * table_[ i + 1 ] + nc4 * table_[ i + 2 ];
 			
+			p += step;
 			i = static_cast< int >( p );
 			j++;
 		}
 		
-		for ( ; j <= newXDivs; p += step ) {
+		while( j <= newXDivs ) {
 			if ( i < oldXDivs )
 				newtab[ j ] =
 					( p - static_cast< double >( i ) ) *
@@ -511,6 +526,7 @@ void Interpol::innerTabFill( int newXDivs, int mode )
 			else
 				newtab[ j ] = table_[ oldXDivs ];
 			
+			p += step;
 			i = static_cast< int >( p );
 			j++;
 		}
