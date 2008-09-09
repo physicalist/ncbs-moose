@@ -93,6 +93,8 @@ void RateLookupGroup::addTable(
 	// Then duplicate the last point
 	*( iTable )     = C1.back();
 	*( iTable + 1 ) = C2.back();
+	
+	interpolate_[ species ] = interpolate;
 }
 
 RateLookup RateLookupGroup::slice( unsigned int species )
