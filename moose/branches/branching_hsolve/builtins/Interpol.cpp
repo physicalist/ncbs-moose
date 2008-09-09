@@ -464,6 +464,10 @@ void Interpol::innerTabFill( int newXDivs, int mode )
 		
 	} else if ( mode == 0 ) {
 		// B-spline
+		
+		/*
+		 * B-spline code copied here from GENESIS source, with some clean-up.
+		 */
 		double nsa = 1.0 / 6.0;
 		double nsb = 2.0 / 3.0;
 		double nc1, nc2, nc3, nc4;

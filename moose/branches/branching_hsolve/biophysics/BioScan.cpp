@@ -93,6 +93,29 @@ void BioScan::rates(
 	}
 }
 
+int BioScan::modes( Id gate, int& AMode, int& BMode )
+{
+	Id A;
+	Id B;
+	
+	bool success;
+	success = lookupGet< Id, string >( gate(), "lookupChild", A, "A" );
+	if ( ! success ) {
+		cerr << "Error: Interpol A not found as child of " << gate()->name();
+		return 0;
+	}
+	
+	success = lookupGet< Id, string >( gate(), "lookupChild", B, "B" );
+	if ( ! success ) {
+		cerr << "Error: Interpol B not found as child of " << gate()->name();
+		return 0;
+	}
+	
+	get< int >( A(), "mode", AMode );
+	get< int >( B(), "mode", BMode );
+	return 1;
+}
+
 ///////////////////////////////////////////////////
 // Utility functions
 ///////////////////////////////////////////////////
