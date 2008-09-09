@@ -289,6 +289,8 @@ void HSolveActive::createLookupTables( ) {
 	vector< double > A, B;
 	vector< double >::iterator ia, ib;
 	double a, b;
+	int AMode, BMode;
+	bool interpolate;
 	
 	// Calcium-dependent lookup tables
 	if ( caGate.size() ) {
@@ -300,6 +302,8 @@ void HSolveActive::createLookupTables( ) {
 	
 	for ( unsigned int ig = 0; ig < caGate.size(); ++ig ) {
 		BioScan::rates( caGate[ ig ], grid, A, B );
+		BioScan::modes( vGate[ ig ], AMode, BMode );
+		interpolate = ( AMode == 1 ) || ( BMode == 1 );
 		
 		ia = A.begin();
 		ib = B.begin();
@@ -314,7 +318,7 @@ void HSolveActive::createLookupTables( ) {
 			++ia, ++ib;
 		}
 		
-		caLookupGroup.addTable( ig, A, B );
+		caLookupGroup.addTable( ig, A, B, interpolate );
 	}
 	
 	// Voltage-dependent lookup tables
@@ -327,6 +331,8 @@ void HSolveActive::createLookupTables( ) {
 	
 	for ( unsigned int ig = 0; ig < vGate.size(); ++ig ) {
 		BioScan::rates( vGate[ ig ], grid, A, B );
+		BioScan::modes( vGate[ ig ], AMode, BMode );
+		interpolate = ( AMode == 1 ) || ( BMode == 1 );
 		
 		ia = A.begin();
 		ib = B.begin();
@@ -341,7 +347,7 @@ void HSolveActive::createLookupTables( ) {
 			++ia, ++ib;
 		}
 		
-		vLookupGroup.addTable( ig, A, B );
+		vLookupGroup.addTable( ig, A, B, interpolate );
 	}
 	
 	lookup_.reserve( gateId_.size() );

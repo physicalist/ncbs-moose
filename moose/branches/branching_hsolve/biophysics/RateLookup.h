@@ -22,11 +22,12 @@ struct LookupKey
 class RateLookup
 {
 public:
-	RateLookup( double* base, RateLookupGroup* group );
+	RateLookup( double* base, RateLookupGroup* group, bool interpolate );
 	void getKey( double x, LookupKey& key );
 	void rates( const LookupKey& key, double& C1, double& C2 );
 	
 private:
+	bool interpolate_;
 	double* base_;
 	RateLookupGroup* group_;
 };
@@ -40,11 +41,13 @@ public:
 	void addTable(
 		int species,
 		const vector< double >& C1,
-		const vector< double >& C2 );
+		const vector< double >& C2,
+		bool interpolate );
 	RateLookup slice( unsigned int species );
 	void getKey( double x, LookupKey& key );
 	
 private:
+	vector< bool > interpolate_;
 	vector< double > table_;
 	double min_;
 	double max_;

@@ -16,10 +16,11 @@ using namespace std;
  * RateLookup function definitions
  */
 
-RateLookup::RateLookup( double* base, RateLookupGroup* group )
+RateLookup::RateLookup( double* base, RateLookupGroup* group, bool interpolate )
 {
 	base_ = base;
 	group_ = group;
+	interpolate_ = interpolate;
 }
 
 void RateLookup::getKey( double x, LookupKey& key )
@@ -33,6 +34,14 @@ void RateLookup::rates( const LookupKey& key, double& C1, double& C2 )
 	double *ap, *bp;
 	
 	ap = base_ + key.offset1;
+	
+	if ( ! interpolate_ ) {
+		C1 = *ap;
+		C2 = *( ap + 1 );
+		
+		return;
+	}
+	
 	bp = base_ + key.offset2;
 	
 	a = *ap;
@@ -60,13 +69,15 @@ RateLookupGroup::RateLookupGroup(
 	// Every row has 2 entries for each type of gate
 	nColumns_ = 2 * nSpecies;
 	
+	interpolate_.resize( nSpecies );
 	table_.resize( nPts_ * nColumns_ );
 }
 
 void RateLookupGroup::addTable(
 	int species,
 	const vector< double >& C1,
-	const vector< double >& C2 )
+	const vector< double >& C2,
+	bool interpolate )
 {
 	vector< double >::const_iterator ic1 = C1.begin();
 	vector< double >::const_iterator ic2 = C2.begin();
@@ -86,7 +97,7 @@ void RateLookupGroup::addTable(
 
 RateLookup RateLookupGroup::slice( unsigned int species )
 {
-	return RateLookup( &table_[ 2 * species ], this );
+	return RateLookup( &table_[ 2 * species ], this, interpolate_[ species ] );
 }
 
 void RateLookupGroup::getKey( double x, LookupKey& key )

@@ -10,8 +10,6 @@
 #ifndef _BIO_SCAN_H
 #define _BIO_SCAN_H
 
-struct SynChanStruct;
-
 class BioScan
 {
 public:
@@ -29,7 +27,10 @@ public:
 		const vector< double >& grid,
 		vector< double >& A,
 		vector< double >& B );
-	static void synchanFields( Id synchan, SynChanStruct& scs );
+	static int modes(
+		Id gate,
+		int& AMode,
+		int& BMode );
 
 private:
 	static int targets(
