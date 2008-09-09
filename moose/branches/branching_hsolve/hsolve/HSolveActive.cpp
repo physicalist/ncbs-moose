@@ -9,16 +9,16 @@
 
 #include "moose.h"
 #include <set>
+#include "biophysics/SpikeGen.h"
+#include <queue>
+#include "biophysics/SynInfo.h"
+#include "biophysics/SynChan.h"
+#include "biophysics/BioScan.h"
 #include "HSolveStruct.h"
-#include "BioScan.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"
 #include "RateLookup.h"
 #include "HSolveActive.h"
-#include "SpikeGen.h"
-#include <queue>
-#include "SynInfo.h"
-#include "SynChan.h"
 
 extern ostream& operator <<( ostream& s, const HinesMatrix& m );
 
