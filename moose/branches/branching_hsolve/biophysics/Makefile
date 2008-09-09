@@ -23,10 +23,6 @@ OBJ = \
 	ParSpikeGen.o	\
 	SynChan.o	\
 	ParSynChan.o	\
-	HSolveStruct.o	\
-	HSolve.o \
-	HSolveHub.o \
-	Cell.o	\
 	TestBiophysics.o	\
 	BinSynchan.o	\
 	StochSynchan.o	\
@@ -49,16 +45,7 @@ OBJ = \
 	RandomSpike.o \
 	Cell.o		\
 	BioScan.o	\
-	RateLookup.o	\
-	HSolveStruct.o	\
- 	HinesMatrix.o \
- 	HSolvePassive.o	\
- 	HSolveActive.o	\
-	HSolveInterface.o \
- 	HSolve.o \
- 	HSolveHub.o \
 	TestBiophysics.o \
-	TestHSolve.o \
 	script_out.o
 endif
 
@@ -90,16 +77,8 @@ ifneq (,$(findstring -DCRL_MPI,$(CFLAGS)))
 ParSynChan.o:	SynChan.h SynInfo.h ParSynChan.h
 endif
 
-Cell.o:		Cell.h 
-BioScan.o:		BioScan.h SpikeGen.h SynChan.h
-RateLookup.o:	RateLookup.h
-HSolveStruct.o:	HSolveStruct.h
-HinesMatrix.o:	HinesMatrix.h TestHSolve.h
-HSolvePassive.o:	HinesMatrix.h HSolvePassive.h TestHSolve.h ../utility/utility.h
-HSolveActive.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h TestHSolve.h
-HSolveInterface.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h TestHSolve.h
-HSolve.o:	HinesMatrix.h HSolvePassive.h HSolveActive.h HSolve.h
-HSolveHub.o:	Compartment.h HHChannel.h SpikeGen.h SynChan.h HSolveHub.h
+Cell.o:	Cell.h ../element/Neutral.h
+BioScan.o:		BioScan.h
 StochSynchan.o:	StochSynchan.h StochSynInfo.h
 BinSynchan.o:	BinSynchan.h BinSynInfo.h ../utility/randnum/BinomialRng.h
 .cpp.o:

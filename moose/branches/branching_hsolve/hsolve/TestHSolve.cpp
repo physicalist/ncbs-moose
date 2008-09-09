@@ -15,13 +15,11 @@ using namespace std;
 
 #include "HinesMatrix.h"
 
-extern void testBioScan(); // Defined in BioScan.cpp
 extern void testHinesMatrix(); // Defined in HinesMatrix.cpp
 extern void testHSolvePassive(); // Defined in HSolvePassive.cpp
 
 void testHSolve()
 {
-	testBioScan();
 	testHinesMatrix();
 	testHSolvePassive();
 }

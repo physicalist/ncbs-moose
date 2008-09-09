@@ -9,8 +9,6 @@
 
 #include <cmath>
 #include "moose.h"
-#include <queue>
-#include "SynInfo.h"
 #include "RateLookup.h"
 #include "HSolveStruct.h"
 

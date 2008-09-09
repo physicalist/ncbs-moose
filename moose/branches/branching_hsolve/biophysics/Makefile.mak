@@ -20,13 +20,6 @@ LOCAL_SRCS := \
 	Nernst.cpp	\
 	SpikeGen.cpp	\
 	SynChan.cpp	\
-	HSolveStruct.cpp	\
-	HSolveBase.cpp	\
-	HSolve.cpp \
-	NeuroScanBase.cpp \
-	NeuroScan.cpp \
-	NeuroHub.cpp \
-	Cell.cpp	\
 	TestBiophysics.cpp	\
 	BinSynchan.cpp	\
 	StochSynchan.cpp	\
@@ -50,13 +43,6 @@ LOCAL_HEADERS := 	\
 	Nernst.h	\
 	SpikeGen.h	\
 	SynChan.h	\
-	HSolveStruct.h	\
-	HSolveBase.h	\
-	HSolve.h \
-	NeuroScanBase.h \
-	NeuroScan.h \
-	NeuroHub.h \
-	Cell.h	\
 	BinSynchan.h	\
 	StochSynchan.h	\
 	PulseGen.h	\

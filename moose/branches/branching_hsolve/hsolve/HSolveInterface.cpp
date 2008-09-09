@@ -8,9 +8,7 @@
 **********************************************************************/
 
 #include "moose.h"
-#include <queue>
 #include "HSolveStruct.h"
-#include "BioScan.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"
 #include "RateLookup.h"

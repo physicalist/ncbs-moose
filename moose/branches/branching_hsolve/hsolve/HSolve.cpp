@@ -8,7 +8,7 @@
 **********************************************************************/
 
 #include "moose.h"
-#include "../element/Neutral.h"
+#include "element/Neutral.h"
 #include "HSolveStruct.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"

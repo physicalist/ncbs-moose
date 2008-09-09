@@ -8,12 +8,11 @@
 **********************************************************************/
 
 #include "moose.h"
-#include "../element/Neutral.h"
-#include "Compartment.h"
-#include "HHChannel.h"
-#include "CaConc.h"
+#include "element/Neutral.h"
+#include "biophysics/Compartment.h"
+#include "biophysics/HHChannel.h"
+#include "biophysics/CaConc.h"
 #include "HSolveStruct.h"
-#include "BioScan.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"
 #include "RateLookup.h"
