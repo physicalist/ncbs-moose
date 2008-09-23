@@ -158,7 +158,7 @@ LIBS=-L/lib64 -L/usr/lib64 $(LIBS)
 endif
 endif
 
-# Here we automagically change compilers to deal with MPI.
+# Here we automatically change compilers to deal with MPI.
 ifneq (,$(findstring DUSE_MPI,$(CFLAGS)))
        CXX = mpicxx
        PARALLEL_DIR = parallel
@@ -169,7 +169,7 @@ endif
 
 LD = ld
 
-SUBDIR = genesis_parser basecode connections shell element maindir scheduling biophysics hsolve kinetics builtins $(PARALLEL_DIR) utility randnum robots
+SUBDIR = genesis_parser basecode connections shell element maindir scheduling biophysics hsolve kinetics builtins $(PARALLEL_DIR) utility randnum 
 
 
 OBJLIBS =	\
@@ -186,7 +186,7 @@ OBJLIBS =	\
 	hsolve/hsolve.o \
 	kinetics/kinetics.o \
 	builtins/builtins.o \
-	robots/robots.o \
+# robots/robots.o \
 
 # example/example.o 
 
