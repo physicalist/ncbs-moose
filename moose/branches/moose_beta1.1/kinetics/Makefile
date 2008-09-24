@@ -46,7 +46,7 @@ HEADERS = \
 ifdef USE_GSL
 GSL_OBJ = GslIntegrator.o
 GSL_LIBS = -lgsl -lgslcblas
-GSL_FLAGS = -DUSE_GSL
+#GSL_FLAGS = -DUSE_GSL
 endif
 
 # Smoldyn, written by Steven Andrews, provides a numerical engine for
