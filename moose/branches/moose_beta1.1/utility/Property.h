@@ -49,7 +49,7 @@ class Property
     
   private:
     Property();
-    static map <string, string> properties_;
+    static map <string, string>& properties_();
     static int readXml(string fileName);
     static int readProp(string fileName);
     static bool initialized_;
