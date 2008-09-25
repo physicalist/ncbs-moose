@@ -33,34 +33,39 @@ const string Property::HOME = "HOME";
 
 const int Property::XML_FORMAT = 1;
 const int Property::PROP_FORMAT = 0;
-map <string, string> Property::properties_;
+map <string, string>& Property::properties_()
+{
+    static map <string, string>* properties = new map <string, string>();
+    return *properties;
+}
+
 
 bool Property::initialized_ = false;
 
 void Property::initDefaults()
 {
     
-    properties_[AUTOSCHEDULE] = "true";
-    properties_[CREATESOLVER] = "true";
-    properties_[SIMPATH] = ".";    
-    properties_[SIMNOTES] = "notes";
-    properties_[DOCPATH] = "doc";
-    properties_[HOME] = "~";    
+    properties_()[AUTOSCHEDULE] = "true";
+    properties_()[CREATESOLVER] = "true";
+    properties_()[SIMPATH] = ".";    
+    properties_()[SIMNOTES] = "notes";
+    properties_()[DOCPATH] = "doc";
+    properties_()[HOME] = "~";    
     char * home = getenv(HOME.c_str());
     if (( home != NULL ) && (home[0] != '\0'))
     {
-        properties_[SIMPATH] = "." + PathUtility::PATH_SEPARATOR + string(home);
+        properties_()[SIMPATH] = "." + PathUtility::PATH_SEPARATOR + string(home);
     }
 }
 
 string Property::getProperty(string key)
 {
-    return properties_[key];
+    return properties_()[key];
 }
 
 void Property::setProperty(string key, string value)
 {
-    properties_[key] = value;
+    properties_()[key] = value;
 }
 
 /**
@@ -79,7 +84,7 @@ void Property::readEnvironment()
 {
     map <string, string>::iterator i;
     
-    for ( i = properties_.begin(); i != properties_.end(); ++i )
+    for ( i = properties_().begin(); i != properties_().end(); ++i )
     {
         string key = i->first;
         char * env;
@@ -95,7 +100,7 @@ void Property::readEnvironment()
                 string path = trim(string(env));
                 if (path.length() > 0 )
                 {
-                    properties_[SIMPATH] = properties_[SIMPATH] + PathUtility::PATH_SEPARATOR+ path;
+                    properties_()[SIMPATH] = properties_()[SIMPATH] + PathUtility::PATH_SEPARATOR+ path;
                 }                
             }            
             continue;
@@ -105,7 +110,7 @@ void Property::readEnvironment()
         if (( env != NULL ) && ( env[0] != '\0') ){
             // if environment variable exists, then it should override the defaults
             string value(env);            
-            properties_[key] = env;
+            properties_()[key] = env;
         }
     }    
 }
@@ -134,7 +139,7 @@ void Property::initialize(string fileName, int format)
 int Property::readProperties(string fileName, int format)
 {
     int returnValue;
-    string simpath = properties_[SIMPATH];
+    string simpath = properties_()[SIMPATH];
     
     if ( format == XML_FORMAT)
     {
@@ -145,10 +150,10 @@ int Property::readProperties(string fileName, int format)
         returnValue = readProp(fileName);
     }
     // append simpath from file to the existing simpath
-    if ((simpath != properties_[SIMPATH] )
-        && ( properties_[SIMPATH].length() > 0 ))
+    if ((simpath != properties_()[SIMPATH] )
+        && ( properties_()[SIMPATH].length() > 0 ))
     {
-        properties_[SIMPATH] = simpath+ PathUtility::PATH_SEPARATOR + properties_[SIMPATH];
+        properties_()[SIMPATH] = simpath+ PathUtility::PATH_SEPARATOR + properties_()[SIMPATH];
     }
     
     return returnValue;
@@ -276,7 +281,7 @@ int Property::readProp(string fileName)
             }
         }
         
-        properties_[key] = value;        
+        properties_()[key] = value;        
     }
     return 0;    
 }
@@ -290,7 +295,7 @@ vector <string>& Property::getKeys()
     static vector<string> result;
     
     map <string, string> :: iterator i;
-    for ( i = properties_.begin(); i != properties_.end(); ++i )
+    for ( i = properties_().begin(); i != properties_().end(); ++i )
     {
         bool found = false;
         
