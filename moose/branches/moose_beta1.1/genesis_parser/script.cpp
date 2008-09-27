@@ -327,7 +327,7 @@ FILE *SearchForScript(const char* name, const char* mode)
     
     if(name == NULL) return(NULL);
 
-    PathUtility pathHandler(Property::getProperty(Property::SIMPATH));
+    PathUtility pathHandler(Property::getProperty(Property::SIMPATH()));
     
     fp = NULL;
 

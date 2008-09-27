@@ -386,6 +386,25 @@ static const Slot tabopSlot =
 // Static constants
 //////////////////////////
 const string pymoose::PyMooseContext::separator = "/";
+// Unit tests
+#ifdef DO_UNIT_TESTS
+	extern void testBasecode();
+	extern void testNeutral();
+	extern void testSparseMatrix();
+	extern void testShell();
+	extern void testInterpol();
+	extern void testTable();
+	extern void testWildcard();
+	extern void testSched();
+	extern void testSchedProcess();
+	extern void testBiophysics();
+//	extern void testHSolve();
+	extern void testKinetics();
+//	extern void testAverage();
+#ifdef USE_MPI
+	extern void testPostMaster();
+#endif
+#endif
 
 // char* copyString( const string& s )
 // {
@@ -636,11 +655,36 @@ PyMooseContext* PyMooseContext::createPyMooseContext(string contextName, string 
     bool ret;
     // Call the global initialization function
     mooseInit();
+#ifdef DO_UNIT_TESTS
+	// if ( mynode == 0 )
+	if ( 1 )
+	{
+		testBasecode();
+		testNeutral();
+		testSparseMatrix();
+		testShell();
+		testWildcard();
+		testInterpol();
+		testTable();
+		testSched();
+		testSchedProcess();
+		testBiophysics();
+		//	testHSolve();
+		testKinetics();
+//		testAverage();
+	}
+#endif
+
+
     cout << "Trying to find shell with name " << shellName << endl;
+    // From maindir/main.cpp: parser requires to be created before the clock job
+    Element * genesisSli = makeGenesisParser();
+
     Id shellId = Id::shellId();
     Element* contextElement = Neutral::create( "PyMooseContext",contextName, shellId, Id::scratchId());
     context = static_cast<PyMooseContext*> (contextElement->data(0) );
     context->shell_ = shellId;    
+    context->genesisSli_ = genesisSli;
     context->myId_ = contextElement->id();
     context->setCwe(Element::root()->id() ); // set initial element = root
     lookupGet<Id, string > (Element::root(), "lookupChild", context->scheduler_, "sched" );
@@ -649,8 +693,6 @@ PyMooseContext* PyMooseContext::createPyMooseContext(string contextName, string 
         cerr << "Scheduler not found" << endl;
     }
     
-    // From maindir/main.cpp: parser requires to be created before the clock job
-    context->genesisSli_ = makeGenesisParser();
     
     ret = shellId.eref().dropAll("parser"); // disconnect genesis parser
     assert(ret);

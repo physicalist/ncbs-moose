@@ -70,9 +70,9 @@ int main(int argc, char** argv)
         
         Property::initialize(ArgParser::getConfigFile(),Property::PROP_FORMAT);
         PathUtility simpathHandler(ArgParser::getSimPath());
-        simpathHandler.addPath(Property::getProperty(Property::SIMPATH)); // merge the SIMPATH from command line and property file
-        Property::setProperty(Property::SIMPATH, simpathHandler.getAllPaths()); // put the updated path list in Property
-        cout << "SIMPATH = " << Property::getProperty(Property::SIMPATH) << endl;
+        simpathHandler.addPath(Property::getProperty(Property::SIMPATH())); // merge the SIMPATH from command line and property file
+        Property::setProperty(Property::SIMPATH(), simpathHandler.getAllPaths()); // put the updated path list in Property
+        cout << "SIMPATH = " << Property::getProperty(Property::SIMPATH()) << endl;
         
         mooseInit();
         

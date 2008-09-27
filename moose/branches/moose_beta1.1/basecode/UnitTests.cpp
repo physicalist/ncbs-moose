@@ -85,9 +85,9 @@ void connTest()
  */
 
 // Nasty ugly globals here for the test funcs to work on.
+vector < unsigned int >& targetIndex(){ static vector < unsigned int > ret; return ret; }
+vector < unsigned int >& funcNum(){ static vector < unsigned int > ret; return ret; }
 
-vector < unsigned int > targetIndex;
-vector < unsigned int > funcNum;
 unsigned int funcCounter = 0;
 const char* sourceName = "";
 const char* targetName = "";
@@ -96,8 +96,8 @@ void commonTestFunc( const Conn* c, unsigned int f )
 {
 	ASSERT( c->source().e->name() == sourceName, "commonTestFunc: sourceElement" );
 	ASSERT( c->target().e->name() == targetName, "commonTestFunc: targetElement" );
-	ASSERT( c->target().i == targetIndex[ funcCounter ], "commonTestFunc: targetIndex" );
-	ASSERT( f == funcNum[ funcCounter++ ], "commonTestFunc: funcNum" );
+	ASSERT( c->target().i == targetIndex()[ funcCounter ], "commonTestFunc: targetIndex" );
+	ASSERT( f == funcNum()[ funcCounter++ ], "commonTestFunc: funcNum" );
 }
 
 void msgSrcTestFunc1( const Conn* c ) {
@@ -210,12 +210,12 @@ void msgFinfoTest()
 	ASSERT( ( *e1.msg_[ 0 ].begin() )->size() == 1, "Finfo Msg" );
 	ASSERT( ( *e1.msg_[ 1 ].begin() )->size() == 1, "Finfo Msg" );
 
-	targetIndex.resize( 2 );
-	targetIndex[0] = 0;
-	targetIndex[1] = 0;
-	funcNum.resize( 2 );
-	funcNum[0] = 5;
-	funcNum[1] = 0;
+	targetIndex().resize( 2 );
+	targetIndex()[0] = 0;
+	targetIndex()[1] = 0;
+	funcNum().resize( 2 );
+	funcNum()[0] = 5;
+	funcNum()[1] = 0;
 	funcCounter = 0;
 	sourceName = "e1";
 	targetName = "e2";

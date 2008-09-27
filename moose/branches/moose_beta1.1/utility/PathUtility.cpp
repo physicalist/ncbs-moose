@@ -22,13 +22,13 @@
 #include <iostream>
 #if defined(unix) || defined(__unix__) || defined(__unix) || defined(__MACH__)
 
-const string PathUtility::PATH_SEPARATOR = ":";
-const string PathUtility::DIR_SEPARATOR = "/";
+const string& PathUtility::PATH_SEPARATOR(){ static const string ret = ":"; return ret; }
+const string& PathUtility::DIR_SEPARATOR(){ static const string ret = "/"; return ret; }
 
 #elif defined(_WIN32) //if defined WINDOWS
 
-const string PathUtility::PATH_SEPARATOR = ";";
-const string PathUtility::DIR_SEPARATOR = "\\";
+const string& PathUtility::PATH_SEPARATOR(){ static const string ret = ";"; return ret; }
+const string& PathUtility::DIR_SEPARATOR(){ static const string ret = "\\"; return ret; }
 #else
 #error System type is neither Unix nor Windows. Failing
 #endif // UNIX / WINDOWS
@@ -49,16 +49,16 @@ void PathUtility::addPath(string paths)
     
     string path;    
     size_t start = 0;
-    size_t pos = paths.find(PATH_SEPARATOR,start);        
+    size_t pos = paths.find(PATH_SEPARATOR(),start);        
         
     while ( ( pos != string::npos ) && (start < paths.length()))
     {
         path = trim(paths.substr(start, pos-start));
         if ( path.length() > 0 )
         {
-            size_t trailing_sep =  path.rfind(DIR_SEPARATOR);
+            size_t trailing_sep =  path.rfind(DIR_SEPARATOR());
             
-            if ( trailing_sep == path.length() - DIR_SEPARATOR.length() )
+            if ( trailing_sep == path.length() - DIR_SEPARATOR().length() )
             {
                 path = path.substr(0, trailing_sep);
             }
@@ -67,14 +67,14 @@ void PathUtility::addPath(string paths)
         }
         
         start = pos+1;
-        pos = paths.find(PATH_SEPARATOR, start);
+        pos = paths.find(PATH_SEPARATOR(), start);
     }
     path = trim(paths.substr(start));
     if ( path.length() > 0 )
     {
-         size_t trailing_sep =  path.rfind(DIR_SEPARATOR);
+         size_t trailing_sep =  path.rfind(DIR_SEPARATOR());
             
-         if ( trailing_sep == path.length() - DIR_SEPARATOR.length() )
+         if ( trailing_sep == path.length() - DIR_SEPARATOR().length() )
          {
              path = path.substr(0, trailing_sep);
          }
@@ -100,7 +100,7 @@ string PathUtility::getAllPaths()
     for ( unsigned int i = 0; i < path_.size(); ++i )
     {
         path.append(path_[i]);
-        path.append(PathUtility::PATH_SEPARATOR);        
+        path.append(PathUtility::PATH_SEPARATOR());        
     }
     if ( path.length() > 1)
     {
@@ -116,7 +116,8 @@ string PathUtility::getAllPaths()
 */
 string PathUtility::makeFilePath(string fileName, int index)
 {
-    return path_[index]+DIR_SEPARATOR+fileName;
+    string ret = "";
+    return ret.append(path_[index]).append(DIR_SEPARATOR()).append(fileName);
 }
 
 /**
