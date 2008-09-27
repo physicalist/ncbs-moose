@@ -179,8 +179,15 @@ default: $(TARGET)
 
 pymoose: _moose.so moose.py #testPyMoose 
 
+ifeq ($(OSTYPE),Darwin)
 _moose.so: moose_wrap.o $(OBJFILES) $(OBJ) 
 	$(CXX) $(LDFLAGS) -o $@  $(LIBS) $^ 
+endif
+
+ifneq ($(OSTYPE),Darwin)
+_moose.so: moose_wrap.o $(OBJ) $(OBJFILES)
+	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+endif
 
 moose_wrap.o: moose_wrap.cxx
 	$(CXX) $(CFLAGS) -c $^ -o $@
