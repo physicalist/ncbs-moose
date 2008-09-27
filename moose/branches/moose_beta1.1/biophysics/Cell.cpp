@@ -25,7 +25,7 @@
 #include "../element/Neutral.h"
 #include "Cell.h"
 
-map< string, MethodInfo > Cell::methodMap_;
+//map< string, MethodInfo > Cell::methodMap_;
 
 const Cinfo* initCellCinfo()
 {
@@ -139,7 +139,7 @@ void Cell::addMethod(
 	mi.description = description;
 	mi.isVariableDt = isVariableDt;
 	mi.isImplicit = isImplicit;
-	methodMap_[name] = mi;
+	methodMap_()[name] = mi;
 }
 
 ///////////////////////////////////////////////////
@@ -252,8 +252,8 @@ void Cell::setMethod( const Conn* c, string method )
 
 void Cell::innerSetMethod( string value )
 {
-	map< string, MethodInfo >::iterator i = methodMap_.find( value );
-	if ( i != methodMap_.end() ) {
+	map< string, MethodInfo >::iterator i = methodMap_().find( value );
+	if ( i != methodMap_().end() ) {
 		method_ = value;
 		variableDt_ = i->second.isVariableDt;
 		implicit_ = i->second.isImplicit;

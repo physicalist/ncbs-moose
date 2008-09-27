@@ -41,7 +41,7 @@ class Slot
 			return func_;
 		}
 
-		bool operator==( const Slot& other ) {
+		bool operator==( const Slot& other ) const {
 			return ( msg_ == other.msg_ && func_ == other.func_ );
 		}
 

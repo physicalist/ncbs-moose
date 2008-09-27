@@ -29,12 +29,12 @@ class Property
 {
   public:
     // property key constants
-    static const string SIMPATH; // key for path to be searched for script and prototypes
-    static const string SIMNOTES; // key for notes on MOOSE
-    static const string DOCPATH; // key for path to be searched for help
-    static const string AUTOSCHEDULE; // key for autoscheduling on or off
-    static const string CREATESOLVER; // key for automatic creation of solvers ( on or off )
-    static const string HOME;
+    static const string& SIMPATH(); // key for path to be searched for script and prototypes
+    static const string& SIMNOTES(); // key for notes on MOOSE
+    static const string& DOCPATH(); // key for path to be searched for help
+    static const string& AUTOSCHEDULE(); // key for autoscheduling on or off
+    static const string& CREATESOLVER(); // key for automatic creation of solvers ( on or off )
+    static const string& HOME();
     
     static const int XML_FORMAT;
     static const int PROP_FORMAT;

@@ -24,12 +24,12 @@
 #include <fstream>
 #include <cstdlib>
 
-const string Property::SIMPATH = "SIMPATH";
-const string Property::SIMNOTES = "SIMNOTES";
-const string Property::DOCPATH = "DOCPATH";
-const string Property::AUTOSCHEDULE = "AUTOSCHEDULE";
-const string Property::CREATESOLVER = "CREATESOLVER";
-const string Property::HOME = "HOME";
+const string& Property::SIMPATH(){ static const string value =  "SIMPATH"; return value; }
+const string& Property::SIMNOTES(){ static const string value = "SIMNOTES"; return value; }
+const string& Property::DOCPATH(){ static const string value = "DOCPATH"; return value; }
+const string& Property::AUTOSCHEDULE(){ static const string value = "AUTOSCHEDULE"; return value; }
+const string& Property::CREATESOLVER(){ static const string value = "CREATESOLVER"; return value; }
+const string& Property::HOME(){ static const string value = "HOME"; return value; }
 
 const int Property::XML_FORMAT = 1;
 const int Property::PROP_FORMAT = 0;
@@ -45,16 +45,19 @@ bool Property::initialized_ = false;
 void Property::initDefaults()
 {
     
-    properties_()[AUTOSCHEDULE] = "true";
-    properties_()[CREATESOLVER] = "true";
-    properties_()[SIMPATH] = ".";    
-    properties_()[SIMNOTES] = "notes";
-    properties_()[DOCPATH] = "doc";
-    properties_()[HOME] = "~";    
-    char * home = getenv(HOME.c_str());
+    properties_()[AUTOSCHEDULE()] = "true";
+    properties_()[CREATESOLVER()] = "true";
+    properties_()[SIMPATH()] = ".";    
+    properties_()[SIMNOTES()] = "notes";
+    properties_()[DOCPATH()] = "doc";
+    properties_()[HOME()] = "~";    
+    char * home = getenv(HOME().c_str());
     if (( home != NULL ) && (home[0] != '\0'))
     {
-        properties_()[SIMPATH] = "." + PathUtility::PATH_SEPARATOR + string(home);
+	string path = ".";
+	cout << "PATH_SEPARATOR = " << PathUtility::PATH_SEPARATOR() << endl;
+	path.append(PathUtility::PATH_SEPARATOR()).append(home);
+        properties_()[SIMPATH()] = path;
     }
 }
 
@@ -91,16 +94,16 @@ void Property::readEnvironment()
         
         // Special treatment for SIMPATH - it should be extended
         // rather than replaced
-        if ( key == SIMPATH )
+        if ( key == SIMPATH() )
         {
             
-            env = getenv(SIMPATH.c_str());            
+            env = getenv(SIMPATH().c_str());            
             if (( env != NULL ) && (env[0] != '\0'))
             {
                 string path = trim(string(env));
                 if (path.length() > 0 )
                 {
-                    properties_()[SIMPATH] = properties_()[SIMPATH] + PathUtility::PATH_SEPARATOR+ path;
+                    properties_()[SIMPATH()] = properties_()[SIMPATH()] + PathUtility::PATH_SEPARATOR() + path;
                 }                
             }            
             continue;
@@ -139,7 +142,7 @@ void Property::initialize(string fileName, int format)
 int Property::readProperties(string fileName, int format)
 {
     int returnValue;
-    string simpath = properties_()[SIMPATH];
+    string simpath = properties_()[SIMPATH()];
     
     if ( format == XML_FORMAT)
     {
@@ -150,10 +153,10 @@ int Property::readProperties(string fileName, int format)
         returnValue = readProp(fileName);
     }
     // append simpath from file to the existing simpath
-    if ((simpath != properties_()[SIMPATH] )
-        && ( properties_()[SIMPATH].length() > 0 ))
+    if ((simpath != properties_()[SIMPATH()] )
+        && ( properties_()[SIMPATH()].length() > 0 ))
     {
-        properties_()[SIMPATH] = simpath+ PathUtility::PATH_SEPARATOR + properties_()[SIMPATH];
+        properties_()[SIMPATH()] = simpath+ PathUtility::PATH_SEPARATOR() + properties_()[SIMPATH()];
     }
     
     return returnValue;

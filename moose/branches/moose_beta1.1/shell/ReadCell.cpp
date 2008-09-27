@@ -136,7 +136,7 @@ Element* ReadCell::start( const string& cellpath )
 
 void ReadCell::read( const string& filename, const string& cellpath )
 {
-	PathUtility pathUtil(Property::getProperty(Property::SIMPATH));
+	PathUtility pathUtil(Property::getProperty(Property::SIMPATH()));
 
 	ifstream fin( filename.c_str() );
 	for (unsigned int i = 0; i < pathUtil.size() && !fin.is_open(); ++i )
