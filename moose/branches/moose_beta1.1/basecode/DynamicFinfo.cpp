@@ -24,8 +24,10 @@
 #include "SimpleConn.h"
 // #include "LookupFtype.h"
 
-static DestFinfo trigFinfo( "trig", Ftype0::global(), &dummyFunc );
-
+DestFinfo& trigFinfo(){
+  static DestFinfo ret( "trig", Ftype0::global(), &dummyFunc );
+  return ret;
+}
 DynamicFinfo::~DynamicFinfo()
 {
 	if ( generalIndex_ != 0 ) {
@@ -100,7 +102,7 @@ bool DynamicFinfo::add(
 	// Here we make a SharedFtype on the fly for passing in the
 	// respondToAdd.
 	Finfo* shared[] = { 
-		&trigFinfo, const_cast< Finfo* >( origFinfo_ )
+		&trigFinfo(), const_cast< Finfo* >( origFinfo_ )
 	};
 	SharedFtype sf ( shared, 2 );
 	srcFuncId = FuncVec::getFuncVec( origFinfo_->funcId() )->trigId();
@@ -190,7 +192,7 @@ bool DynamicFinfo::respondToAdd(
 	// src Ftype is a SharedFtype that we will have to match.
 	// Here we make a SharedFtype on the fly for comparing with the
 	// incoming ftype.
-	Finfo* shared[] = { &trigFinfo, const_cast< Finfo* >( origFinfo_ ) };
+	Finfo* shared[] = { &trigFinfo(), const_cast< Finfo* >( origFinfo_ ) };
 	SharedFtype sf ( shared, 2 );
 	if ( fv->size() == 1  && trigId != 0 && sf.isSameType( srcType ) )
 	{
