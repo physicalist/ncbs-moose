@@ -4022,6 +4022,7 @@ Element* makeGenesisParser()
 #ifdef CRL_MPI
 	Element* sli = Neutral::create( "ParGenesisParser", "sli", shellId, Id::scratchId() );
 #else
+	const Cinfo *parserFinfo = initGenesisParserCinfo(); // to force static initilization - otherwise the create function fails as GenesisParser is unknown to the creator
 	Element* sli = Neutral::create( "GenesisParser", "sli", shellId, Id::scratchId() );
 #endif
 

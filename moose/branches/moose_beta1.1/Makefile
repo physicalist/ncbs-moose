@@ -87,8 +87,10 @@ endif
 ##########################################################################
 #
 # MAC OS X compilation, Debug mode:
-ifeq ($(PLATFORM),mac)
+ifeq ($(OSTYPE),Darwin)
 CFLAGS += -Wno-deprecated -force_cpusubtype_ALL -mmacosx-version-min=10.4
+pymoose: CFLAGS += -bundle -fno-common /usr/bin/python -flat_namespace -undefined suppress -I/Library/Frameworks/Python.framework/Versions/2.5/include/python2.5
+pymoose: LDFLAGS+= -bundle -fno-common -L/Library/Frameworks/Python.framework/Versions/2.5/lib/python2.5/config/
 endif
 # Use the options below for compiling on GCC4.1
 # GNU C++ 4.1 and newer might need -ffriend-injection

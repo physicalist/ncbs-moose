@@ -42,10 +42,14 @@ const double fc[] = {
 
 
 /// Insert first 100 elements in lookup table
-const vector <double> initializeLookupTable()
+const vector <double> lookupTable()
 {
     static vector <double> table;
-    
+    static bool initialized = false;
+
+    if ( initialized ){
+      return table;
+    }
     for ( int i = 0; i < 10; ++i )
     {
         table.push_back(fc[i]);
@@ -58,8 +62,6 @@ const vector <double> initializeLookupTable()
     }
     return table;    
 }
-static const vector <double> lookupTable = initializeLookupTable();    
-    
 
 
 /**
@@ -67,14 +69,14 @@ static const vector <double> lookupTable = initializeLookupTable();
 */
 inline double getFc(unsigned int k)
 {
-    if (lookupTable.size() <= k )
+    if (lookupTable().size() <= k )
     {
         double denom = 1.0/(k+1);
         return (0.083333333333333333 -  (0.002777777777777778 -  0.0007936508*denom*denom)*denom*denom)*denom;
     }
     else
     {
-        return lookupTable[k];
+        return lookupTable()[k];
     }    
 }
 
