@@ -1,0 +1,35 @@
+On linux, 
+tar -xzf moose_beta1.1.tar.gz
+cd moose_beta1.1
+make pymoose
+mkdir MOOSE_DIR
+cp pymoose/_moose.so MOOSE_DIR
+cp pymoose/moose.py MOOSE_DIR
+
+Now add the MOOSE_DIR in your PYTHONPATH variable: if your shell is bash, you can put this at the end of your ~/.bashrc file:
+export PYTHONPATH=$PYTHONPATH:MOOSE_DIR
+
+	If your shell is tcsh:
+	setenv PYTHONPATH $PYTHONPATH:MOOSE_DIR
+
+On Mac OS X 10.4 :
+tar xzf moose_beta1.1.tar.gz
+cd moose_beta1.1
+make pymoose OSTYPE=Darwin
+mkdir MOOSE_DIR
+cp pymoose/_moose.so MOOSE_DIR
+cp pymoose/moose.py MOOSE_DIR
+
+Do same as linux for bash shell.
+
+
+While you can run PyMOOSE without any GUI, we use the following libraries to develop GUI and do fast arithmetic in Python. The Squid demo GUI, too, is dependent on these libraries.
+
+Python - http://www.python.org/download
+PyQt4 - http://www.riverbankcomputing.co.uk/software/sip/download
+PyQwt5 for Qt4 - http://pyqwt.sourceforge.net/download.html
+sip - http://www.riverbankcomputing.co.uk/software/sip/download
+numpy - http://www.scipy.org/Download
+
+
+
