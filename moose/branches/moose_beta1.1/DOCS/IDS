@@ -4,6 +4,8 @@ Updated 01 June 2008.
 All objects (elements) in MOOSE are uniquely identified by an Id. This document
 explains how Ids are managed across nodes in a simulation.
 
+You probably do not need to worry about this for single-node simulations.
+
 ...................................................................
 Id ranges
 
