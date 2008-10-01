@@ -114,12 +114,25 @@ paths and Linker inputs and library directories.
 
 2.4. SOLARIS
 
-// TO BE FILLED IN BY SIJI
+The procedure to compile PyMOOSE on solaris is very similar to that 
+outlined for Linux. Install Python development libraries and GSL using
+your favourite package manager, or from source.
 
+It is perhaps easiest to use GNU tools to compile PyMOOSE. You will need
+to set the appropriate paths for GNU Make, g++, flex and bison with the
+following bash commands:
+	export PATH=/usr/sfw/bin:/usr/ccs/bin:/usr/local/bin:$PATH
+	alias make='/usr/sfw/bin/gmake'
+
+If you are going to use GSL, then set the linker path:
+	export LD_LIBRARY_PATH=/usr/local/lib
+
+Finally, update the Makefile for your system, and build pymoose as
+described above for Linux. 
 
 After a successful build, you can copy pymoose/_moose.so and
 pymoose/moose.py to a directory of your choice. You have to append
-this directory to your PYTHONPATh variable in order to import the
+this directory to your PYTHONPATH variable in order to import the
 module. Assuming you kept files in ~/moose directory, in bash shell
 you can update PYTHONPATH by executing the command
 
