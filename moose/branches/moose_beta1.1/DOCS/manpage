@@ -76,6 +76,21 @@ that as a GENESIS script file:
 This will start up the squid tutorial, and dump the output in a text file
 named
 .I squid.moose.plot
+.br
+.SS PyMOOSE 
+PyMOOSE is a python module for MOOSE. You can import moose in a python 
+script and the MOOSE classes will be available to you. Sample scripts
+are located in the DEMOS/pymoose directory.
+
+.B cd DEMOS/pymoose/squid
+.br
+.B python squid.py
+
+This will run the squid example and dump the output in
+testSquidXyz.plot in the same directory, where Xyz is the name of the
+parameter (GNa, GK, Vm, Ik, etc.).
+
+.br
 .SH FILES
 MOOSE does not need any additional files to run, unlike GENESIS. 
 Standard locations on a Linux system are:
