@@ -55,7 +55,7 @@ OBJFILES = ../basecode/basecode.o \
 	../connections/connections.o \
 	../genesis_parser/SLI.o	\
 	../kinetics/kinetics.o	\
-
+	../hsolve/hsolve.o
 
 OBJ = PyMooseBase.o \
 	PyMooseContext.o \
