@@ -230,22 +230,28 @@ bool IdManager::redefineScratchIds( unsigned int last,
 #ifdef USE_MPI
 unsigned int IdManager::findNode( unsigned int index ) const 
 {
+	if ( index == Id::badId().id() )
+		return BAD_NODE;
+	
+	assert( index < elementList_.size() );
 	const Enode& e = elementList_[ index ];
 	if ( e.node() == UNKNOWN_NODE )
 		return BAD_NODE;
-	return e.node();
 	
+	return e.node();
 }
 
 // Do not permit op if parent is not global
 void IdManager::setGlobal( unsigned int index )
 {
+	assert( index < elementList_.size() );
 	Enode& e = elementList_[ index ];
 	e.setGlobal();
 }
 
 bool IdManager::isGlobal( unsigned int index ) const 
 {
+	assert( index < elementList_.size() );
 	const Enode& e = elementList_[ index ];
 	return ( e.node() == Id::GlobalNode );
 }
@@ -253,6 +259,8 @@ bool IdManager::isGlobal( unsigned int index ) const
 void IdManager::setNode( unsigned int index, unsigned int node )
 {
 	assert( node < Shell::numNodes() || node == Id::GlobalNode );
+	assert( index < elementList_.size() );
+	
 	Enode& e = elementList_[ index ];
 	// cout << "Setting node for " << index << " to " << node << endl;
 	e.setNode( node );
