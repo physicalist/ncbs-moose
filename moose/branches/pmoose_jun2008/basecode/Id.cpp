@@ -36,9 +36,7 @@ Id::Id()
 Id::Id( Nid nid )
 	: id_( nid.id() ), index_( nid.index() )
 { 
-	if ( id_ == BAD_ID )
-		this->setNode( Shell::myNode() );
-	else
+	if ( id_ != BAD_ID )
 		this->setNode( nid.node() );
 }
 
