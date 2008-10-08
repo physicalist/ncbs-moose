@@ -176,6 +176,7 @@ void terminateMPI( unsigned int mynode )
 	set( music(), "finalize" );
 #else
 	MPI::Finalize();
+#endif // USE_MUSIC
 #endif // USE_MPI
 }
 

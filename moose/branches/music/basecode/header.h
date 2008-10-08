@@ -33,7 +33,7 @@ namespace MPI
 {
 	class Intracomm;
 };
-extern const MPI::Intracomm MPI_INTRA_COMM();	// Defined in maindir/mpiSetup.cpp
+extern const MPI::Intracomm MPI_INTRA_COMM;	// Defined in maindir/mpiSetup.cpp
 #endif // USE_MPI
 
 /// Here we set up an enhanced variant of assert, used in unit tests.
