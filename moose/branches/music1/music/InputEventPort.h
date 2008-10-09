@@ -1,15 +1,8 @@
 #ifndef _MUSIC_INPUT_EVENT_PORT_H
 #define _MUSIC_INPUT_EVENT_PORT_H
 
-class event_handler {
- public:
-  virtual void operator () (double t, int id) = 0;
-  
-};
 
-
-//class InputEventPort : public MUSIC::event_handler
-class InputEventPort : public event_handler
+class InputEventPort : public MUSIC::event_handler
 {
 
  public:
@@ -26,18 +19,34 @@ class InputEventPort : public event_handler
   
   static void reinitFunc( const Conn* c, ProcInfo p );
 
-  static void setWidth( const Conn* c, unsigned int width);
-  static unsigned int getWidth( const Conn* c);
+  static void initialiseFunc( const Conn* c,
+                              unsigned int width, 
+                              unsigned int offset,
+                              MUSIC::event_input_port* mPort);
 
+  static unsigned int getWidth( Eref e);
+
+  static double getAccLatency(Eref e);
+  static void setAccLatency(const Conn* c, double accLatency);
+  static int getMaxBuffered(Eref e);
+  static void setMaxBuffered(const Conn* c, int maxBuffered);
 
  protected:
 
  private:
 
+  MUSIC::event_input_port* mPort_;
   vector < Id > channels_;
 
-  void innerSetWidth( Eref e, unsigned int width);
+  unsigned int myOffset_, myWidth_;
+  double accLatency_;
+  int maxBuffered_;
 
+
+  void innerInitialiseFunc( Eref e, unsigned int width, unsigned int offset,
+                            MUSIC::event_input_port* mPort);
+
+  void innerReinitFunc();
 
 };
 
