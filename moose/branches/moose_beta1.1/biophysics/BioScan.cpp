@@ -14,6 +14,18 @@
 #include "HHChannel.h"
 #include "CaConc.h"
 
+void BioScan::initialize( Id object )
+{
+	ProcInfoBase p;
+	SetConn c( object(), 0 );
+	if ( isType( object, "Compartment" ) )
+		Compartment::reinitFunc( &c, &p );
+	else if ( isType( object, "HHChannel" ) )
+		HHChannel::reinitFunc( &c, &p );
+	else if ( isType( object, "CaConc" ) )
+		CaConc::reinitFunc( &c, &p );
+}
+
 int BioScan::adjacent( Id compartment, Id exclude, vector< Id >& ret )
 {
 	int size = ret.size();
@@ -28,14 +40,14 @@ int BioScan::adjacent( Id compartment, Id exclude, vector< Id >& ret )
 int BioScan::adjacent( Id compartment, vector< Id >& ret )
 {
 	int size = 0;
-	size += targets( compartment, "axial", ret );
-	size += targets( compartment, "raxial", ret );
+	size += targets( compartment, "axial", ret, "Compartment" );
+	size += targets( compartment, "raxial", ret, "Compartment" );
 	return size;
 }
 
 int BioScan::children( Id compartment, vector< Id >& ret )
 {
-	return targets( compartment, "axial", ret );
+	return targets( compartment, "axial", ret, "Compartment" );
 }
 
 int BioScan::channels( Id compartment, vector< Id >& ret )
@@ -48,16 +60,16 @@ int BioScan::channels( Id compartment, vector< Id >& ret )
 int BioScan::gates( Id channel, vector< Id >& ret )
 {
 	vector< Id > gate;
-	targets( channel, "xGate", gate );
-	targets( channel, "yGate", gate );
-	targets( channel, "zGate", gate );
+	targets( channel, "xGate", gate, "HHGate" );
+	targets( channel, "yGate", gate, "HHGate" );
+	targets( channel, "zGate", gate, "HHGate" );
 	ret.insert( ret.end(), gate.begin(), gate.end() );
 	return gate.size();
 }
 
 int BioScan::spikegen( Id compartment, vector< Id >& ret )
 {
-	return targets( compartment, "VmSrc", ret );
+	return targets( compartment, "VmSrc", ret, "SpikeGen" );
 }
 
 int BioScan::synchan( Id compartment, vector< Id >& ret )
@@ -69,12 +81,12 @@ int BioScan::synchan( Id compartment, vector< Id >& ret )
 
 int BioScan::caTarget( Id channel, vector< Id >& ret )
 {
-	return targets( channel, "IkSrc", ret );
+	return targets( channel, "IkSrc", ret, "CaConc" );
 }
 
 int BioScan::caDepend( Id channel, vector< Id >& ret )
 {
-	return targets( channel, "concen", ret );
+	return targets( channel, "concen", ret, "CaConc" );
 }
 
 void BioScan::rates(
