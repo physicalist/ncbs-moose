@@ -114,8 +114,8 @@ namespace pymoose
         void setupTau( const Id& gateId, vector <double> parms );
         void tweakAlpha( const Id& gateId );
         void tweakTau( const Id& gateId);
-        void readCell(string cellpath, string filename, double cm, double rm, double ra, double erestAct, double eleak);
-        void readCell(string cellpath, string filename, vector <double> params);        
+        void readCell(string filename, string cellpath, double cm, double rm, double ra, double erestAct, double eleak);
+        void readCell(string filename, string cellpath, vector <double> params);        
         void readCell(std::string cellPath, std::string fileName);    
         bool exists(const Id& id);
         bool exists(std::string path);
