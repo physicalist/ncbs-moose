@@ -11,7 +11,7 @@
 
 #include "moose.h"
 #include <mpi.h>
-#include "music.hh"
+#include <music.hh>
 #include "Music.h"
 #include "OutputEventPort.h"
 #include "OutputEventChannel.h"

@@ -10,7 +10,7 @@
 **********************************************************************/
 
 #include "moose.h"
-#include "music.hh"
+#include <music.hh>
 // #include "Music.h"
 #include "OutputEventChannel.h"
 
@@ -68,6 +68,7 @@ void OutputEventChannel::innerInsertEvent(double time)
 void OutputEventChannel::initialise(const Conn* c, unsigned int id, 
                                     MUSIC::event_output_port* mPort) 
 {
-  static_cast < OutputEventChannel* > (c->data())->localId_ = id;
+  static_cast < OutputEventChannel* > (c->data())->localId_ 
+    = MUSIC::local_index(id);
   static_cast < OutputEventChannel* > (c->data())->mPort_ = mPort;
 }

@@ -5,7 +5,7 @@ class OutputEventChannel
 {
 
  public:
-  OutputEventChannel() 
+ OutputEventChannel() : localId_(MUSIC::local_index(0))
     {
 
     }
@@ -23,7 +23,7 @@ class OutputEventChannel
 
  private:
 
-  unsigned int localId_;
+  MUSIC::local_index localId_;
   MUSIC::event_output_port* mPort_;
 
   void innerInsertEvent(double time);

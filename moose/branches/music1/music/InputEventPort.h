@@ -2,7 +2,7 @@
 #define _MUSIC_INPUT_EVENT_PORT_H
 
 
-class InputEventPort : public MUSIC::event_handler
+class InputEventPort : public MUSIC::event_handler_local_index
 {
 
  public:
@@ -11,7 +11,7 @@ class InputEventPort : public MUSIC::event_handler
       
     }
 
-  void operator () ( double t, int id );
+  void operator () ( double t, MUSIC::local_index id );
 
   //////////////////////////////////////////////////////////////////
   // Message dest functions.
