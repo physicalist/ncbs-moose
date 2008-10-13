@@ -11,7 +11,7 @@
 
 #include "moose.h"
 #include <mpi.h>
-#include "music.hh"
+#include <music.hh>
 #include "Music.h"
 #include "InputEventPort.h"
 #include "InputEventChannel.h"
@@ -102,9 +102,10 @@ void InputEventPort::innerReinitFunc()
 }
 
 // Event handler
-void InputEventPort::operator () ( double t, int id ) 
+void InputEventPort::operator () ( double t, MUSIC::local_index id ) 
 {
-  send1 < double > ( channels_[id](), eventSlot, t );
+  int localId = id;
+  send1 < double > ( channels_[localId](), eventSlot, t );
 
 }
 
