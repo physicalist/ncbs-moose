@@ -29,27 +29,34 @@ SourceForge page:
 .SS "Installation for Debian/Ubuntu systems"
 Download the .deb file. 
 Use 
-.B apt install moose.deb
+.B dpkg -i packagename.deb
 to install it.
 Later we will try to get it into the Debian 
 repositories so it will be seen by the regular system update tools.
 The default installation puts the binaries into 
 .I /usr/bin
-, the docs in
-.I /usr/share/doc
-, and the examples and scripts into the user's home directory.
-This last is because many of these scripts write out files, and are meant
+, the docs and examples scripts in
+.I /usr/share/doc/moose 
+A copy of the docs and example scripts is also created in the user's home
+directory. This is because many of these scripts write out files, and are meant
 to be edited by the user.
-On a single-user Ubuntu machine, this location should be in 
+On a single-user Ubuntu machine, this location is 
 .I /home/<user>/moose.
 On an administered workstation this may be in 
 .I /root/moose.
 The sysadmin will
 then have to copy the directory over for each of the users.
-.SS "Installation on Red Had/Fedora systems"
-Download the .rpm file. Use yum install filename.rpm.
-The default installation puts the binaries into /usr/bin, the docs in
-/usr/share/doc, and the examples and scripts into /usr/share/moose.
+.SS "Installation on Red Hat/Fedora systems"
+Download the .rpm file. Use rpm -i packagename.rpm.
+The default installation puts the binaries into /usr/bin, the docs and 
+example scripts in /usr/share/doc/moose.
+These files should be copied over to the users's home directory.
+This is because many of these scripts write out files, and are meant
+to be edited by the user.
+.SS "Installation on Macintosh systems"
+Download the .pkg file. Double click the file and follow the instructions.
+The default installation puts the binaries into /usr/local/bin, the docs and 
+example scripts in /usr/local/share/doc/moose.
 These files should be copied over to the users's home directory.
 This is because many of these scripts write out files, and are meant
 to be edited by the user.
@@ -66,7 +73,7 @@ up an interactive shell with the GENESIS interpreter:
 .br
 .B moose
 .P
-When MOOSE has a filename argument (typically with a .g prefix) it treats
+When MOOSE has a filename argument (typically with a .g suffix) it treats
 that as a GENESIS script file:
 .br
 .B cd DEMOS/squid-ee
