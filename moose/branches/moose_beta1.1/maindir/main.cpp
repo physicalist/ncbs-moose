@@ -119,10 +119,20 @@ int main(int argc, char** argv)
 #ifdef USE_GENESIS_PARSER
 	if ( mynode == 0 ) {
 		string line = "";
-                vector<string> scriptArgs = ArgParser::getScriptArgs();
-                
-                if ( scriptArgs.size() > 0 )
-                {
+				vector<string> scriptArgs = ArgParser::getScriptArgs();
+				
+				if ( scriptArgs.size() > 0 )
+				{
+					/*
+					 * The genesis parser does not like back-slashes in the path.
+					 * Luckily, forward-slashes seem to work on Windows (tested on XP).
+					 * Here we replace back-slashes with forward-slashes in the path.
+					 */
+					string& path = scriptArgs[ 0 ];
+					unsigned int pos;
+					while ( ( pos = path.find_first_of( "\\" ) ) != string::npos )
+						path.replace( pos, 1, "/" );
+					
                     line = "include";
                     for ( unsigned int i = 0; i < scriptArgs.size(); ++i )
                     {
