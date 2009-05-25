@@ -11,11 +11,7 @@
 #include "GenesisParserWrapper.h"
 #include "../element/Neutral.h"
 #include "func_externs.h"
-#include "../gnuplot/gnuplot_i.h"
-
 #include "ParGenesisParser.h"
-
-
 #include <mpi.h>
 #include "maindir/MuMPI.h"
 #include <pthread.h>

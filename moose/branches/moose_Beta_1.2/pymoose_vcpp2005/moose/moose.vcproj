@@ -232,7 +232,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\biophysics\PulseGen.cpp"
+					RelativePath="..\..\device\PulseGen.cpp"
 					>
 				</File>
 				<File
@@ -2412,7 +2412,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\biophysics\PulseGen.h"
+					RelativePath="..\..\device\PulseGen.h"
 					>
 				</File>
 				<File
