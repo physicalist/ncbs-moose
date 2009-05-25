@@ -115,7 +115,7 @@ map< string,Id > SbmlReader::createCompartment( Id location )
 		compt = model_->getCompartment(i);
 		std::string id;
 		if ( compt->isSetId() ){
-			id = compt->getId();
+ 			id = compt->getId();
 		}
 		std::string name;
 		if ( compt->isSetName() ){
