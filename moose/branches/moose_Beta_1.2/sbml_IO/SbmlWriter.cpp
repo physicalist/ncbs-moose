@@ -51,7 +51,7 @@ void SbmlWriter::write( string filename,Id location )
 
 SBMLDocument* SbmlWriter::createModel( string filename )
 {
-	SBMLDocument* sbmlDoc = new SBMLDocument( 2, 4 );
+	SBMLDocument* sbmlDoc = new SBMLDocument();
 	model_ = sbmlDoc->createModel();
   	model_->setId( filename );
 	model_->setMetaId( filename );
