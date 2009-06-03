@@ -64,7 +64,7 @@ echo
 
 /bin/rm -f test.plot
 echo -n "channels"
-$MOOSE moose_channels.g > /dev/null
+$MOOSE moose_channels.g >& /dev/null
 
 ######################################################################
 # These are all the channels.
