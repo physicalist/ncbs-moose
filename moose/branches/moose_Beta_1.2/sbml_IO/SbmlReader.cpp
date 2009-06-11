@@ -1,3 +1,9 @@
+/*******************************************************************
+ * File:            SbmlReader.cpp
+ * Description:      
+ * Author:          Siji P George
+ * E-mail:          siji.suresh@gmail.com
+ ********************************************************************/
 /**********************************************************************
 ** This program is part of 'MOOSE', the
 ** Messaging Object Oriented Simulation Environment,
@@ -213,7 +219,7 @@ map< string,Id > SbmlReader::createMolecule( map< string,Id > &idMap )
 		transvalue *= initvalue;
 		//cout << "transvalue: " << transvalue << endl;
 		unsigned int dimension;
-        get< unsigned int >( comptEl.eref(), dimensionFinfo,dimension );
+        	get< unsigned int >( comptEl.eref(), dimensionFinfo,dimension );
 		bool initconc = s->isSetInitialConcentration();
 		if ( dimension > 0 &&  initconc) { 
 			double size;

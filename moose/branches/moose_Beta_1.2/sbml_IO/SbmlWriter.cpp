@@ -1,8 +1,14 @@
+/*******************************************************************
+ * File:            SbmlWriter.cpp
+ * Description:      
+ * Author:          Siji P George
+ * E-mail:          siji.suresh@gmail.com
+ ********************************************************************/
 /**********************************************************************
 ** This program is part of 'MOOSE', the
 ** Messaging Object Oriented Simulation Environment,
 ** also known as GENESIS 3 base code.
-**           copyright (C) 2003-2007 Upinder S. Bhalla. and NCBS
+**  copyright (C) 2003-2007 Upinder S. Bhalla. and NCBS
 ** It is made available under the terms of the
 ** GNU Lesser General Public License version 2.1
 ** See the file COPYING.LIB for the full notice.
@@ -28,6 +34,8 @@
 
 void SbmlWriter::write( string filename,Id location )
 {
+	/* allows to write filename with extensions xml,zip,bz2 and gz. if no 
+	extension is given then .xml is the default one. */
 	string fName = filename;
 	vector< string > extensions;
 	extensions.push_back( ".xml" );
@@ -73,9 +81,12 @@ SBMLDocument* SbmlWriter::createModel( string filename )
 	SBMLDocument* sbmlDoc = new SBMLDocument();
  	model_ = sbmlDoc->createModel();
   	model_->setId( filename );
-	model_->setMetaId( filename );
-	model_->setName( filename );
-    /*ModelHistory * h = new ModelHistory();
+	//model_->setMetaId( filename );
+	//model_->setName( filename );
+
+	/* set model history */
+
+        /* ModelHistory * h = new ModelHistory();
 	ModelCreator *c = new ModelCreator();
 	c->setFamilyName( "Bhalla" );
 	c->setGivenName( "Upi" );
@@ -97,7 +108,7 @@ SBMLDocument* SbmlWriter::createModel( string filename )
 	//setDateAsString(date3);
 	h->setCreatedDate( date );
 	h->setModifiedDate( date2);
-	model_->setModelHistory( h );*/
+	model_->setModelHistory( h ); */
 
 	UnitDefinition* unitdef;
  	Unit* unit;
@@ -216,7 +227,8 @@ SBMLDocument* SbmlWriter::createModel( string filename )
 			double initamt = 0.0;
 			get< double >( moleEl,nInitFinfo,initamt ); 
 			initamt /= Molecule::NA * 1e-6;
-			sp->setInitialAmount( initamt );			
+			sp->setInitialAmount( initamt );	
+			/* sum Total */		
 			vector< Eref > sumtotal;
 			targets( moleEl,"sumTotal",sumtotal );
 			//cout<<" sumtotal size :"<<sumtotal.size()<<endl;
@@ -252,7 +264,7 @@ SBMLDocument* SbmlWriter::createModel( string filename )
 			printEnzymes( enzms );
 			
 		
-		} //molecule
+		} //end molecule
 		static const Cinfo* reactionCinfo = initReactionCinfo();
 		static const Finfo* kbFinfo = reactionCinfo->findFinfo( "kb" );	
 		static const Finfo* kfFinfo = reactionCinfo->findFinfo( "kf" );	
@@ -402,8 +414,8 @@ SBMLDocument* SbmlWriter::createModel( string filename )
 				para->setUnits( unit );
 				para->setValue( pvalue );
 			}
-		} //reaction
-	} //compartment
+		} //end reaction
+	} //end compartment
  	
 	return sbmlDoc;
 
@@ -906,7 +918,7 @@ string SbmlWriter::nameString( string str )
 				str.replace( i,1,str1 );
 				len += str1.length()-1;	
 				break;
-		}//switch 
+		}//end switch 
 	i++;
 	}while ( i < len );
 	return str;
