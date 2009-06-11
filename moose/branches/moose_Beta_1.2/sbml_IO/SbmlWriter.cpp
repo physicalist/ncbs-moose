@@ -28,10 +28,29 @@
 
 void SbmlWriter::write( string filename,Id location )
 {
-	string fName = filename;	
-	string::size_type loc = fName.find( ".xml" );
-     	int strlen = fName.length(); 
-	fName.erase( loc,strlen-loc );  	
+	string fName = filename;
+	vector< string > extensions;
+	extensions.push_back( ".xml" );
+	extensions.push_back( ".zip" );
+	extensions.push_back( ".bz2" );
+	extensions.push_back( ".gz" );
+	vector< string >::iterator i;
+	for( i = extensions.begin(); i != extensions.end(); i++ ) {
+		string::size_type loc = fName.find( *i );
+		if ( loc != string::npos ) {
+		     	int strlen = fName.length(); 
+			fName.erase( loc,strlen-loc );
+			break;
+		}
+	}
+	if ( i == extensions.end() && fName.find( "." ) != string::npos ) {
+		string::size_type loc;
+		while ( ( loc = fName.find( "." ) ) != string::npos ) {
+			fName.replace( loc, 1, "_" );
+		}
+	}
+	if ( i == extensions.end() )
+		filename += ".xml";
 	SBMLDocument* sbmlDoc = 0;
   	bool SBMLok = false;
 	sbmlDoc = createModel( fName ); 
