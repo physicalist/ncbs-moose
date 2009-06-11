@@ -308,41 +308,43 @@ string SbmlReader::getAnnotation( Reaction* reaction,map<string,EnzymeInfo> &enz
 	if( annotationNode != NULL )
 	{	
 		unsigned int num_children = annotationNode->getNumChildren();
-		//cout<<"num of children :"<< num_children << endl;
+		cout<<"num of children :"<< num_children << endl;
 		for( unsigned int child_no = 0; child_no < num_children; child_no++ )
 		{
 			XMLNode childNode = annotationNode->getChild( child_no );
 			unsigned int num_grand_children = childNode.getNumChildren();
-			//cout << "child no " << child_no << ": name:" << childNode.getName() << "has num_grand_children =" << num_grand_children << endl; 
+			cout << "child no " << child_no << ": name:" << childNode.getName() << "has num_grand_children =" << num_grand_children << endl; 
 			for( unsigned int gchild_no = 0; gchild_no < num_grand_children; gchild_no++ )
 			{
 				XMLNode &grandChildNode = childNode.getChild( gchild_no );
 				if ( grandChildNode.getPrefix() == "moose" && grandChildNode.getName() == "EnzymaticReaction" )
 				{	
 					unsigned int num_ggchildren = grandChildNode.getNumChildren();
-					//cout<<"num of grand children: "<<num_ggchildren<<endl; 
+					cout<<"num of grand children: "<<num_ggchildren<<endl; 
 					for( unsigned int ggchild_no = 0; ggchild_no < num_ggchildren; ggchild_no++ )
 					{
-						//cout<<"iteration at"<<ggchild_no<<endl;
+						cout<<"iteration at"<<ggchild_no<<endl;
 						XMLNode &greatGrandChildNode = grandChildNode.getChild( ggchild_no );
 						string nodeName = greatGrandChildNode.getName();
-						//cout << "nodename:" << nodeName << endl;
+						cout << "nodename:" << nodeName << endl;
 						string nodeValue;
 						if (greatGrandChildNode.getNumChildren() == 1 ){
+							nodeValue = greatGrandChildNode.getChild(0).toXMLString();
+							/*
 							XMLNode final = greatGrandChildNode.getChild(0);
 							if (final.isText()){
-								//cout << "is text: ";
-							nodeValue = final.getCharacters();
+								//cout << "is text: "; 
+							    nodeValue = final.getCharacters();
+								
 							}else {
 								cout << "Not a text node" << endl;
-							}
+							}*/
 						} 
 						else {
 							cout << "Error: expected exactly ONE child of " << nodeName << endl;
 						}
 						//cout << " nodeValue: " << nodeValue<< endl;
 						if ( nodeName == "enzyme" ){
-							//string nodeValue = greatGrandChildNode.getChild(0).toXMLString();
 							Eref elem = elmtMap_.find(nodeValue)->second; 
 							einfo.enzyme=elem.id();
 						}

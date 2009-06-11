@@ -11,7 +11,7 @@
 			<DebugSettings
 				Command="$(TargetPath)"
 				WorkingDirectory="D:\moose_Beta_1.2\moose_vcpp2005\debug"
-				CommandArguments="acc70.g"
+				CommandArguments="acc88.g"
 				Attach="false"
 				DebuggerType="3"
 				Remote="1"
@@ -39,7 +39,7 @@
 			<DebugSettings
 				Command="$(TargetPath)"
 				WorkingDirectory="D:\moose_Beta_1.2\moose_vcpp2005\release"
-				CommandArguments=""
+				CommandArguments="acc88.g"
 				Attach="false"
 				DebuggerType="3"
 				Remote="1"
