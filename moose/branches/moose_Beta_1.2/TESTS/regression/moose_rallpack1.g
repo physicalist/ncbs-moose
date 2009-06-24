@@ -53,17 +53,17 @@ echo "Rallpack 1 model set up."
 ////////////////////////////////////////////////////////////////////////////////
 // PLOTTING
 ////////////////////////////////////////////////////////////////////////////////
-create neutral /plots
+create neutral /data
 
-create table /plots/v1
-call /plots/v1 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/v1 step_mode 3
-addmsg /cable/c1 /plots/v1 INPUT Vm
+create table /data/v1
+call /data/v1 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/v1 step_mode 3
+addmsg /cable/c1 /data/v1 INPUT Vm
 
-create table /plots/vn
-call /plots/vn TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/vn step_mode 3
-addmsg /cable/c{N_COMPARTMENT} /plots/vn INPUT Vm
+create table /data/vn
+call /data/vn TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/vn step_mode 3
+addmsg /cable/c{N_COMPARTMENT} /data/vn INPUT Vm
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ setclock 0 {SIMDT}
 setclock 1 {SIMDT}
 setclock 2 {IODT}
 
-useclock /plots/#[TYPE=table] 2
+useclock /data/#[TYPE=table] 2
 
 //=====================================
 //  Stimulus
@@ -135,7 +135,7 @@ openfile {filename} a
 writefile {filename} "/newplot"
 writefile {filename} "/plotname Vm(0)"
 closefile {filename}
-tab2file {filename} /plots/v1 table
+tab2file {filename} /data/v1 table
 
 //filename = "cable-x" @ {extension}
 openfile {filename} a
@@ -143,7 +143,7 @@ writefile {filename} " "
 writefile {filename} "/newplot"
 writefile {filename} "/plotname Vm(x)"
 closefile {filename}
-tab2file {filename} /plots/vn table
+tab2file {filename} /data/vn table
 
 echo "
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

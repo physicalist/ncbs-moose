@@ -37,17 +37,17 @@ readcell myelin2.p /axon
 ////////////////////////////////////////////////////////////////////////////////
 // PLOTTING
 ////////////////////////////////////////////////////////////////////////////////
-create neutral /plots
+create neutral /data
 
-create table /plots/Vm0
-call /plots/Vm0 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Vm0 step_mode 3
-addmsg /axon/soma /plots/Vm0 INPUT Vm
+create table /data/Vm0
+call /data/Vm0 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Vm0 step_mode 3
+addmsg /axon/soma /data/Vm0 INPUT Vm
 
-create table /plots/Vm1
-call /plots/Vm1 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Vm1 step_mode 3
-addmsg /axon/n99/i20 /plots/Vm1 INPUT Vm
+create table /data/Vm1
+call /data/Vm1 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Vm1 step_mode 3
+addmsg /axon/n99/i20 /data/Vm1 INPUT Vm
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +61,7 @@ setclock 0 {SIMDT}
 setclock 1 {SIMDT}
 setclock 2 {IODT}
 
-useclock /plots/#[TYPE=table] 2
+useclock /data/#[TYPE=table] 2
 
 //=====================================
 //  Stimulus
@@ -112,16 +112,16 @@ end
 filename = "axon-0" @ {extension}
 openfile {filename} w
 writefile {filename} "/newplot"
-writefile {filename} "/plotsname Vm(0)"
+writefile {filename} "/dataname Vm(0)"
 closefile {filename}
-tab2file {filename} /plots/Vm0 table
+tab2file {filename} /data/Vm0 table
 
 filename = "axon-x" @ {extension}
 openfile {filename} w
 writefile {filename} "/newplot"
-writefile {filename} "/plotsname Vm(100)"
+writefile {filename} "/dataname Vm(100)"
 closefile {filename}
-tab2file {filename} /plots/Vm1 table
+tab2file {filename} /data/Vm1 table
 
 echo "
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

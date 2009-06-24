@@ -3,7 +3,7 @@ function init_plots( runtime, clock, iodt )
 	int clock
 	float iodt
 	
-	create neutral /plots
+	create neutral /data
 	
 	addfield ^ _count
 	setfield ^ _count 0
@@ -23,14 +23,14 @@ function add_plot( el, field, file )
 	int count, clock, ndivs
 	float runtime
 	
-	count = { getfield /plots _count }
-	clock = { getfield /plots _clock }
-	ndivs = { getfield /plots _ndivs }
-	runtime = { getfield /plots _runtime }
+	count = { getfield /data _count }
+	clock = { getfield /data _clock }
+	ndivs = { getfield /data _ndivs }
+	runtime = { getfield /data _runtime }
 	
-	setfield /plots _count { count + 1 }
+	setfield /data _count { count + 1 }
 	
-	create table /plots/p{count}
+	create table /data/p{count}
 	setfield ^ step_mode 3
 	call ^ TABCREATE { ndivs } 0 { runtime }
 	addmsg {el} ^ INPUT {field}
@@ -48,10 +48,10 @@ function save_plots
 	str file
 	str name
 	
-	count = { getfield /plots _count }
+	count = { getfield /data _count }
 	for ( i = 0; i < count; i = i + 1 )
-		file = { getfield /plots/p{i} _file }
-		name = { getfield /plots/p{i} _name }
+		file = { getfield /data/p{i} _file }
+		name = { getfield /data/p{i} _name }
 		
 		openfile {file} a
 		writefile {file} "/newplot"
@@ -59,7 +59,7 @@ function save_plots
 		writefile {file} "/plotname "{getpath {name} -tail} //  writes only object name
 		closefile {file}
 
-		setfield /plots/p{i} append {file}
+		setfield /data/p{i} append {file}
 
 		openfile {file} a
 		writefile {file} " "

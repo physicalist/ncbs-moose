@@ -92,11 +92,11 @@ end
 ////////////////////////////////////////////////////////////////////////////////
 // PLOTTING
 ////////////////////////////////////////////////////////////////////////////////
-createmap table /plots 1 {N_OUTPUT} -object
+createmap table /data 1 {N_OUTPUT} -object
 for ( i = 0; i < N_OUTPUT; i = i + 1 )
-	call /plots/table[{i}] TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-	setfield /plots/table[{i}] step_mode 3
-	addmsg /out_array/out_compt[{i}] /plots/table[{i}] INPUT Vm
+	call /data/table[{i}] TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+	setfield /data/table[{i}] step_mode 3
+	addmsg /out_array/out_compt[{i}] /data/table[{i}] INPUT Vm
 end
 
 
@@ -111,7 +111,7 @@ setclock 0 {SIMDT}
 setclock 1 {SIMDT}
 setclock 2 {IODT}
 
-useclock /plots/table[] 2
+useclock /data/table[] 2
 
 //=====================================
 //  Simulation
@@ -146,7 +146,7 @@ for (i = 0; i < N_OUTPUT; i = i + 1)
 	writefile {filename} "/newplot"
 	writefile {filename} "/plotname Vm["{i}"]"
 	flushfile {filename}
-	tab2file {filename} /plots/table[{i}] table	
+	tab2file {filename} /data/table[{i}] table	
 	writefile {filename} " "
 	
 	// Force tab2file output to be flushed
