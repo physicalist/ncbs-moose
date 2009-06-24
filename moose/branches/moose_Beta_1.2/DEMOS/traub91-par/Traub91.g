@@ -122,7 +122,7 @@ setclock 0 {SIMDT}
 setclock 1 {SIMDT}
 setclock 2 {IODT}
 
-useclock /plots/#[TYPE=table] 2
+useclock /data/#[TYPE=table] 2
 
 //=====================================
 //  Solvers

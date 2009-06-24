@@ -59,37 +59,37 @@ addmsg /axon/n99/i20/spike /cable/c1/syn SPIKE
 ////////////////////////////////////////////////////////////////////////////////
 // PLOTTING
 ////////////////////////////////////////////////////////////////////////////////
-create neutral /plots
+create neutral /data
 
-create table /plots/Vm
-call /plots/Vm TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Vm step_mode 3
+create table /data/Vm
+call /data/Vm TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Vm step_mode 3
 
-create table /plots/SynGk
-call /plots/SynGk TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/SynGk step_mode 3
+create table /data/SynGk
+call /data/SynGk TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/SynGk step_mode 3
 /*
-create table /plots/NaGk
-call /plots/NaGk TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/NaGk step_mode 3
+create table /data/NaGk
+call /data/NaGk TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/NaGk step_mode 3
 
-create table /plots/X
-call /plots/X TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/X step_mode 3
+create table /data/X
+call /data/X TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/X step_mode 3
 
-create table /plots/Y
-call /plots/Y TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Y step_mode 3
+create table /data/Y
+call /data/Y TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Y step_mode 3
 */
 //=====================================
 //  Record from compartment
 //=====================================
-addmsg /cable/c10 /plots/Vm INPUT Vm
-addmsg /cable/c1/syn /plots/SynGk INPUT Gk
+addmsg /cable/c10 /data/Vm INPUT Vm
+addmsg /cable/c1/syn /data/SynGk INPUT Gk
 /*
-addmsg /axon/n20/Na_mit_usb /plots/NaGk INPUT Gk
-addmsg /axon/n20/Na_mit_usb /plots/X INPUT X
-addmsg /axon/n20/Na_mit_usb /plots/Y INPUT Y
+addmsg /axon/n20/Na_mit_usb /data/NaGk INPUT Gk
+addmsg /axon/n20/Na_mit_usb /data/X INPUT X
+addmsg /axon/n20/Na_mit_usb /data/Y INPUT Y
 */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -103,7 +103,7 @@ setclock 0 {SIMDT}
 setclock 1 {SIMDT}
 setclock 2 {IODT}
 
-useclock /plots/#[TYPE=table] 2
+useclock /data/#[TYPE=table] 2
 
 //=====================================
 //  Stimulus
@@ -166,35 +166,35 @@ openfile {filename} w
 writefile {filename} "/newplot"
 writefile {filename} "/plotname Vm"
 closefile {filename}
-tab2file {filename} /plots/Vm table
+tab2file {filename} /data/Vm table
 
 openfile {filename} a
 writefile {filename} " "
 writefile {filename} "/newplot"
 writefile {filename} "/plotname SynGk"
 closefile {filename}
-tab2file {filename} /plots/SynGk table
+tab2file {filename} /data/SynGk table
 /*
 openfile {filename} a
 writefile {filename} " "
 writefile {filename} "/newplot"
 writefile {filename} "/plotname NaGk"
 closefile {filename}
-tab2file {filename} /plots/NaGk table
+tab2file {filename} /data/NaGk table
 
 openfile {filename} a
 writefile {filename} " "
 writefile {filename} "/newplot"
 writefile {filename} "/plotname X"
 closefile {filename}
-tab2file {filename} /plots/X table
+tab2file {filename} /data/X table
 
 openfile {filename} a
 writefile {filename} " "
 writefile {filename} "/newplot"
 writefile {filename} "/plotname Y"
 closefile {filename}
-tab2file {filename} /plots/Y table
+tab2file {filename} /data/Y table
 */
 
 echo "

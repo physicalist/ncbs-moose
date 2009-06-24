@@ -80,18 +80,18 @@ le /sig
 setfield /library/cell/soma inject {INJECT}
 setfield /sig build foo
 
-create neutral /plots
+create neutral /data
 function make_plot( name, path, field )
 	str name
 	str path
 	str field
 
-	create table /plots/{name}
-	setfield /plots/{name} xmin 0 xmax {RUNTIME} xdivs {RUNTIME / SIGDT}
-	setfield /plots/{name} dx {SIGDT}
-	setfield /plots/{name} step_mode 3
-	useclock /plots/{name} 3
-	addmsg {path}/{field} /plots/{name}/inputRequest
+	create table /data/{name}
+	setfield /data/{name} xmin 0 xmax {RUNTIME} xdivs {RUNTIME / SIGDT}
+	setfield /data/{name} dx {SIGDT}
+	setfield /data/{name} step_mode 3
+	useclock /data/{name} 3
+	addmsg {path}/{field} /data/{name}/inputRequest
 end
 
 make_plot Vm /sig/cell/soma Vm
@@ -106,7 +106,7 @@ showclocks
 
 function dump_plots
 	str plot
-	foreach plot ( {el /plots/#} )
+	foreach plot ( {el /data/#} )
 		echo {plot}
 		openfile "test.plot" a
 		writefile "test.plot" "/newplot"

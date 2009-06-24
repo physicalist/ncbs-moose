@@ -41,36 +41,36 @@ readcell axon/axon.p /axon
 ////////////////////////////////////////////////////////////////////////////////
 // PLOTTING
 ////////////////////////////////////////////////////////////////////////////////
-create neutral /plots
+create neutral /data
 
-create table /plots/Vm0
-call /plots/Vm0 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Vm0 step_mode 3
-addmsg /axon/soma /plots/Vm0 INPUT Vm
+create table /data/Vm0
+call /data/Vm0 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Vm0 step_mode 3
+addmsg /axon/soma /data/Vm0 INPUT Vm
 
-create table /plots/Vm100
-call /plots/Vm100 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Vm100 step_mode 3
-addmsg /axon/c100 /plots/Vm100 INPUT Vm
+create table /data/Vm100
+call /data/Vm100 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Vm100 step_mode 3
+addmsg /axon/c100 /data/Vm100 INPUT Vm
 
-create table /plots/Vm200
-call /plots/Vm200 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Vm200 step_mode 3
-addmsg /axon/c200 /plots/Vm200 INPUT Vm
+create table /data/Vm200
+call /data/Vm200 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Vm200 step_mode 3
+addmsg /axon/c200 /data/Vm200 INPUT Vm
 
-create table /plots/Vm300
-call /plots/Vm300 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Vm300 step_mode 3
-addmsg /axon/c300 /plots/Vm300 INPUT Vm
+create table /data/Vm300
+call /data/Vm300 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Vm300 step_mode 3
+addmsg /axon/c300 /data/Vm300 INPUT Vm
 
-create table /plots/Vm400
+create table /data/Vm400
 if ( GENESIS )
-	call /plots/Vm400 TABCREATE {SIMLENGTH / IODT + 10} 0 {SIMLENGTH}
+	call /data/Vm400 TABCREATE {SIMLENGTH / IODT + 10} 0 {SIMLENGTH}
 else
-	call /plots/Vm400 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+	call /data/Vm400 TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
 end
-setfield /plots/Vm400 step_mode 3
-addmsg /axon/c400 /plots/Vm400 INPUT Vm
+setfield /data/Vm400 step_mode 3
+addmsg /axon/c400 /data/Vm400 INPUT Vm
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,7 +107,7 @@ setclock 1 {SIMDT}
 setclock 2 {IODT}
 
 useclock /inject 0
-useclock /plots/#[TYPE=table] 2
+useclock /data/#[TYPE=table] 2
 
 //=====================================
 //  Solvers
@@ -158,7 +158,7 @@ openfile {filename} w
 writefile {filename} "/newplot"
 writefile {filename} "/plotname Vm(400)"
 closefile {filename}
-tab2file {filename} /plots/Vm400 table
+tab2file {filename} /data/Vm400 table
 
 echo "
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

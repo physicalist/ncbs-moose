@@ -46,21 +46,21 @@ readcell CA3.p /CA3
 ////////////////////////////////////////////////////////////////////////////////
 // PLOTTING
 ////////////////////////////////////////////////////////////////////////////////
-create neutral /plots
+create neutral /data
 
-create table /plots/Vm
-call /plots/Vm TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Vm step_mode 3
+create table /data/Vm
+call /data/Vm TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Vm step_mode 3
 
-create table /plots/Ca
-call /plots/Ca TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Ca step_mode 3
+create table /data/Ca
+call /data/Ca TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Ca step_mode 3
 
 //=====================================
 //  Record from compartment
 //=====================================
-addmsg /CA3/soma /plots/Vm INPUT Vm
-addmsg /CA3/soma/Ca_conc /plots/Ca INPUT Ca
+addmsg /CA3/soma /data/Vm INPUT Vm
+addmsg /CA3/soma/Ca_conc /data/Ca INPUT Ca
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ setclock 0 {SIMDT}
 setclock 1 {SIMDT}
 setclock 2 {IODT}
 
-useclock /plots/#[TYPE=table] 2
+useclock /data/#[TYPE=table] 2
 
 //=====================================
 //  Solvers
@@ -137,14 +137,14 @@ openfile {filename} w
 writefile {filename} "/newplot"
 writefile {filename} "/plotname Vm"
 closefile {filename}
-tab2file {filename} /plots/Vm table
+tab2file {filename} /data/Vm table
 
 filename = "Ca" @ {extension}
 openfile {filename} w
 writefile {filename} "/newplot"
 writefile {filename} "/plotname Ca"
 closefile {filename}
-tab2file {filename} /plots/Ca table
+tab2file {filename} /data/Ca table
 
 
 echo "

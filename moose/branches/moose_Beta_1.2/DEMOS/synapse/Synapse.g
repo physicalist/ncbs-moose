@@ -59,21 +59,21 @@ addmsg /axon/n99/i20/spike /cable/c1/syn SPIKE
 ////////////////////////////////////////////////////////////////////////////////
 // PLOTTING
 ////////////////////////////////////////////////////////////////////////////////
-create neutral /plots
+create neutral /data
 
-create table /plots/Vm
-call /plots/Vm TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Vm step_mode 3
+create table /data/Vm
+call /data/Vm TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Vm step_mode 3
 
-create table /plots/Gk
-call /plots/Gk TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
-setfield /plots/Gk step_mode 3
+create table /data/Gk
+call /data/Gk TABCREATE {SIMLENGTH / IODT} 0 {SIMLENGTH}
+setfield /data/Gk step_mode 3
 
 //=====================================
 //  Record from compartment
 //=====================================
-addmsg /cable/c10 /plots/Vm INPUT Vm
-addmsg /cable/c1/syn /plots/Gk INPUT Gk
+addmsg /cable/c10 /data/Vm INPUT Vm
+addmsg /cable/c1/syn /data/Gk INPUT Gk
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ setclock 0 {SIMDT}
 setclock 1 {SIMDT}
 setclock 2 {IODT}
 
-useclock /plots/#[TYPE=table] 2
+useclock /data/#[TYPE=table] 2
 
 //=====================================
 //  Stimulus
@@ -148,14 +148,14 @@ openfile {filename} w
 writefile {filename} "/newplot"
 writefile {filename} "/plotname Vm"
 closefile {filename}
-tab2file {filename} /plots/Vm table
+tab2file {filename} /data/Vm table
 
 filename = "Gk" @ {extension}
 openfile {filename} w
 writefile {filename} "/newplot"
 writefile {filename} "/plotname Gk"
 closefile {filename}
-tab2file {filename} /plots/Gk table
+tab2file {filename} /data/Gk table
 
 
 echo "
