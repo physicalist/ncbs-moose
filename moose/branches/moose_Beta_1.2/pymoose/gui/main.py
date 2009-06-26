@@ -1,14 +1,14 @@
-# PropertyWidget.py --- 
+# main.py --- 
 # 
-# Filename: PropertyWidget.py
+# Filename: main.py
 # Description: 
 # Author: subhasis ray
 # Maintainer: 
-# Created: Sun Apr 19 00:14:53 2009 (+0530)
+# Created: Tue Jun 16 11:12:18 2009 (+0530)
 # Version: 
-# Last-Updated: Sun Apr 19 00:22:34 2009 (+0530)
+# Last-Updated: Thu Jun 18 02:10:48 2009 (+0530)
 #           By: subhasis ray
-#     Update #: 11
+#     Update #: 58
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -17,7 +17,7 @@
 
 # Commentary: 
 # 
-# 
+# Simple GUI for loading models in MOOSE
 # 
 # 
 
@@ -45,28 +45,32 @@
 
 # Code:
 
-from PyQt4 import QtGui, QtCore
-
-from MOOSEPropertyModel import PropertyModel
-
-
-class PropertyWidget(QtGui.QTableView):
-    def __init__(self, *args):
-	QtGui.QTableView.__init__(self, *args)
-
-#     def setObject(self, mooseObject):
-# 	model = PropertyModel(mooseObject)
-# 	self.setModel(model)
-
 import sys
-sys.path.append("/home/subha/src/moose/pymoose")
-import moose
+from PyQt4.Qt import Qt
+from PyQt4 import QtCore, QtGui
 
-if __name__ == "__main__":
+from mainwin import MainWindow
+
+
+if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    c = moose.HHChannel("chan")
-    p = PropertyWidget()
-    p.setObject(c)
-    p.show()
+    QtCore.QObject.connect(app, QtCore.SIGNAL('lastWindowClosed()'), app, QtCore.SLOT('quit()'))
+    fileName = None
+    fileType = None
+    if len(sys.argv) == 3:
+        fileName = sys.argv[1]
+        fileType = sys.argv[2]
+    elif len(sys.argv) == 2:
+        errorDialog = QtGui.QErrorMessage()
+        errorDialog.setWindowFlags(Qt.WindowStaysOnTopHint)
+        errorDialog.showMessage('<p>If specifying a file to load, you must specify a model type as the final argument to this program</p>')
+        app.exec_()
+    mainwin = MainWindow(fileName, fileType)
+    
+    mainwin.show()
+    app.exec_()
+
+
+
 # 
-# PropertyWidget.py ends here
+# main.py ends here
