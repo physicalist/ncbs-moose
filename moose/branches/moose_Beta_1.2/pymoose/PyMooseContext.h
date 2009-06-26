@@ -119,7 +119,9 @@ enum FieldType { ALL, VALUE, LOOKUP, SOURCE, DEST, SHARED, SOLVE, THIS, GLOBAL, 
         void tweakTau( const Id& gateId);
         void readCell(std::string filename, std::string cellpath, double cm, double rm, double ra, double erestAct, double eleak);
         void readCell(std::string filename, std::string cellpath, std::vector <double> params);        
-        void readCell(std::string fileName, std::string cellPath);    
+        void readCell(std::string fileName, std::string cellPath);
+        void readSBML(std::string fileName, std::string modelPath);
+        double getCurrentTime();
         bool exists(const Id& id);
         bool exists(std::string path);
 
@@ -131,7 +133,7 @@ enum FieldType { ALL, VALUE, LOOKUP, SOURCE, DEST, SHARED, SOLVE, THIS, GLOBAL, 
         void planarWeight(std::string src, double weight);
         const std::string& className(const Id& objId) const;
         const std::string& doc(const std::string& className) const;
-        vector<Id> getNeighbours(Id object, const std::string& fieldName);
+        vector<Id> getNeighbours(Id object, const std::string& fieldName="*");
         vector<string> getFieldList(Id id, FieldType ftype=ALL);        
 #ifdef DO_UNIT_TESTS    
         static bool testPyMooseContext(int count, bool print);

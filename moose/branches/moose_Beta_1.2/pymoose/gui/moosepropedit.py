@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Apr 16 14:22:29 2009 (+0530)
 # Version: 
-# Last-Updated: Thu Apr 16 14:28:18 2009 (+0530)
+# Last-Updated: Wed Jun 24 21:33:19 2009 (+0530)
 #           By: subhasis ray
-#     Update #: 8
+#     Update #: 62
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -56,23 +56,14 @@ class PropertyModel(QtCore.QAbstractTableModel):
         self._header = ("Field", "Value")
         self.mooseObject = mooseObject
         self.fields = [] # This should hold key-value pairs of (fieldName, isEditable)
-        # This is a nasty hack - regret the lack of introspection in C++ and MOOSE
-        c_dict = mooseObject.__class__.__dict__
-        for item in c_dict.items():
-            if type(item[1]) is property:
-                try:
-                    setter = c_dict["_" + mooseObject.__class__.__name__ + "__set_" + item[0]]
-                    self.fields.append((item[0], True))
-                except KeyError:
-                    try:
-                        getter = c_dict["_" + mooseObject.__class__.__name__ + "__get_" + item[0]]
-                        self.fields.append((item[0], False))
-                    except KeyError:
-                        pass
+        classObj = eval('moose.' + self.mooseObject.className)
+        fieldList = self.mooseObject.getFieldList(moose.VALUE)
+        c_dict = classObj.__dict__        
+        for item in fieldList: 
+            self.fields.append((item, True))
             
         self.beginInsertRows(QtCore.QModelIndex(), 0, len(self.fields) - 1)
-        for row in range(len(self.fields)):
-            self.insertRows(row, 1)
+        self.insertRows(0, len(self.fields))
         self.endInsertRows()
             
 
@@ -83,7 +74,11 @@ class PropertyModel(QtCore.QAbstractTableModel):
         reset to default value. Old edit is lost."""
         if index.column() == 0 or not self.fields[index.row()][1]:
             return False
-        self.mooseObject.setField(self.fields[index.row()][0], fvalue)
+        value = str(value.toString())
+        field = self.fields[index.row()][0]
+        self.mooseObject.setField(field, value)
+        if field == 'name':
+            self.emit(QtCore.SIGNAL('objectNameChanged(const QString&)'), QtCore.QString(field)) 
         self.emit(QtCore.SIGNAL("dataChanged(const QModelIndex&, const QModelIndex&)"), index, index)
         return True
 

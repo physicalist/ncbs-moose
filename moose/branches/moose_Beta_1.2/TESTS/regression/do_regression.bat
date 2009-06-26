@@ -32,8 +32,7 @@ set NEARDIFF = ./neardiff
 # SBML section
 ################################################################################
 if ( $sbml ) then
-	echo
-	echo '===== SBML tests ====='
+	echo '\n===== SBML tests ====='
 	echo -n sbml_Read
 	$MOOSE moose_sbml_reader.g >>& regression.out
 	$NEARDIFF acc88_copasi.plot test.plot 3.0e-2 -f
@@ -58,8 +57,7 @@ endif
 # Kinetics section
 ################################################################################
 if ( $kinetics ) then
-	echo
-	echo '===== Kinetics tests ====='
+	echo '\n===== Kinetics tests ====='
 	echo -n kinetics
 	$MOOSE moose_kholodenko.g >>& regression.out
 	$NEARDIFF moose_kholodenko.plot test.plot 1.0e-5
@@ -71,8 +69,7 @@ endif
 # Neuronal section
 ################################################################################
 if ( $neuronal ) then
-	echo
-	echo '===== Neuronal tests ====='
+	echo '\n===== Neuronal tests ====='
 	echo -n squid
 	$MOOSE moose_squid.g >>& regression.out
 	$NEARDIFF moose_squid.plot test.plot 5.0e-6
@@ -173,8 +170,7 @@ endif
 # Miscellaneous section
 ################################################################################
 if ( $misc ) then
-	echo
-	echo '===== Misc. tests ====='
+	echo '\n===== Misc. tests ====='
 	echo -n "file2tab and tab2file"
 	$MOOSE moose_file2tab2file.g >>& regression.out
 	$NEARDIFF moose_file2tab.plot test.plot 1.0e-6
