@@ -176,13 +176,13 @@ endif
 
 # To use GSL, pass USE_GSL=1 in make command line
 ifeq ($(USE_GSL),1)
-LIBS+= -L/usr/lib -lgsl -lgslcblas
+LIBS+= -lgsl -lgslcblas
 CXXFLAGS+= -DUSE_GSL
 endif
 
 # To use SBML, pass USE_SBML=1 in make command line
 ifeq ($(USE_SBML),1)
-LIBS+=-lsbml -L/usr/local/lib
+LIBS+=-lsbml 
 CXXFLAGS+=-DUSE_SBML
 endif
 

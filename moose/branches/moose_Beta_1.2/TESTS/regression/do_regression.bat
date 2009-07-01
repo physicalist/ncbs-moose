@@ -1,9 +1,9 @@
 #!/bin/tcsh
 
 set mpi = 0
-set sbml = 0
+set sbml = 1
 set neuronal = 1
-set kinetics = 0
+set kinetics = 1
 set misc = 1
 
 if ( $mpi ) then
