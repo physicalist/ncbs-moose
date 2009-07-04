@@ -23,6 +23,7 @@ extern const Cinfo* initGeometryCinfo();
 extern const Cinfo* initGslIntegratorCinfo();
 extern const Cinfo* initGssaStoichCinfo();
 extern const Cinfo* initHHChannelCinfo();
+extern const Cinfo* initHHChannel2DCinfo();
 extern const Cinfo* initHHGateCinfo();
 extern const Cinfo* initHSolveCinfo();
 extern const Cinfo* initHSolveHubCinfo();
@@ -112,6 +113,7 @@ void initCinfos(){
 #endif
     static const Cinfo* GssaStoichCinfo = initGssaStoichCinfo();
     static const Cinfo* HHChannelCinfo = initHHChannelCinfo();
+    static const Cinfo* HHChannel2DCinfo = initHHChannel2DCinfo();
     static const Cinfo* HHGateCinfo = initHHGateCinfo();
     static const Cinfo* HSolveCinfo = initHSolveCinfo();
     static const Cinfo* HSolveHubCinfo = initHSolveHubCinfo();
