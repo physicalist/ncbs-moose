@@ -220,6 +220,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\biophysics\HHChannel2D.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\biophysics\HHGate.cpp"
 					>
 				</File>
@@ -2439,6 +2443,10 @@
 				</File>
 				<File
 					RelativePath="..\..\biophysics\HHChannel.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\biophysics\HHChannel2D.h"
 					>
 				</File>
 				<File
