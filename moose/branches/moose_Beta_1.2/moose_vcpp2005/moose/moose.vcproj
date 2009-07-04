@@ -1128,6 +1128,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\hsolve\HSolveActiveSetup.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\hsolve\HSolveHub.cpp"
 					>
 				</File>
