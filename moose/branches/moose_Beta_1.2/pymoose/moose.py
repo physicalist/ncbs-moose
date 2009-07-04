@@ -3541,6 +3541,58 @@ class HHChannel(PyMooseBase):
         """__set_useConcentration(self, int useConcentration)"""
         return _moose.HHChannel___set_useConcentration(*args)
 
+    def createTable(*args):
+        """createTable(self, string gate, unsigned int divs, double min, double max)"""
+        return _moose.HHChannel_createTable(*args)
+
+    def tweakAlpha(*args):
+        """tweakAlpha(self, string gate)"""
+        return _moose.HHChannel_tweakAlpha(*args)
+
+    def tweakTau(*args):
+        """tweakTau(self, string gate)"""
+        return _moose.HHChannel_tweakTau(*args)
+
+    def setupAlpha(*args):
+        """
+        setupAlpha(self, string gate, double_vector params)
+        setupAlpha(self, string gate, double AA, double AB, double AC, double AD, 
+            double AF, double BA, double BB, double BC, 
+            double BD, double BF, double size=3000, 
+            double min=-0.1, double max=0.05)
+        setupAlpha(self, string gate, double AA, double AB, double AC, double AD, 
+            double AF, double BA, double BB, double BC, 
+            double BD, double BF, double size=3000, 
+            double min=-0.1)
+        setupAlpha(self, string gate, double AA, double AB, double AC, double AD, 
+            double AF, double BA, double BB, double BC, 
+            double BD, double BF, double size=3000)
+        setupAlpha(self, string gate, double AA, double AB, double AC, double AD, 
+            double AF, double BA, double BB, double BC, 
+            double BD, double BF)
+        """
+        return _moose.HHChannel_setupAlpha(*args)
+
+    def setupTau(*args):
+        """
+        setupTau(self, string gate, double_vector params)
+        setupTau(self, string gate, double AA, double AB, double AC, double AD, 
+            double AF, double BA, double BB, double BC, 
+            double BD, double BF, double size=3000, 
+            double min=-0.1, double max=0.05)
+        setupTau(self, string gate, double AA, double AB, double AC, double AD, 
+            double AF, double BA, double BB, double BC, 
+            double BD, double BF, double size=3000, 
+            double min=-0.1)
+        setupTau(self, string gate, double AA, double AB, double AC, double AD, 
+            double AF, double BA, double BB, double BC, 
+            double BD, double BF, double size=3000)
+        setupTau(self, string gate, double AA, double AB, double AC, double AD, 
+            double AF, double BA, double BB, double BC, 
+            double BD, double BF)
+        """
+        return _moose.HHChannel_setupTau(*args)
+
     Gbar = _swig_property(_moose.HHChannel_Gbar_get, _moose.HHChannel_Gbar_set)
     Ek = _swig_property(_moose.HHChannel_Ek_get, _moose.HHChannel_Ek_set)
     Gk = _swig_property(_moose.HHChannel_Gk_get, _moose.HHChannel_Gk_set)
