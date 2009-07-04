@@ -2258,6 +2258,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\hsolve\HSolveActiveSetup.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\hsolve\HSolveHub.cpp"
 					>
 				</File>
@@ -3006,6 +3010,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\pymoose\DiffAmp.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\pymoose\DifShell.h"
 					>
 				</File>
@@ -3027,6 +3035,10 @@
 				</File>
 				<File
 					RelativePath="..\..\pymoose\Geometry.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\GHK.h"
 					>
 				</File>
 				<File
