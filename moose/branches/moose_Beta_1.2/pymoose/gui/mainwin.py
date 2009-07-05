@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Jun 16 11:38:46 2009 (+0530)
 # Version: 
-# Last-Updated: Sat Jul  4 01:33:17 2009 (+0530)
+# Last-Updated: Sun Jul  5 15:12:27 2009 (+0530)
 #           By: subhasis ray
-#     Update #: 610
+#     Update #: 692
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -60,6 +60,7 @@ import PyQt4.Qwt5.anynumpy as numpy
 
 
 from ui_mainwindow import Ui_MainWindow
+from settingsdialog import SettingsDialog
 from moosetree import MooseTreeWidget
 from moosepropedit import PropertyModel
 from moosehandler import MHandler
@@ -71,19 +72,19 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
     def __init__(self, loadFile=None, fileType=None):
 	QtGui.QMainWindow.__init__(self)
 	self.setupUi(self)
-        self.modelTreeWidget.headerItem().setHidden(True)
-        layout = self.modelTreeTab.layout()
-        if not layout:
-            layout = QtGui.QVBoxLayout(self.modelTreeTab)
-            self.modelTreeTab.setLayout(layout)
-        layout.addWidget(self.modelTreeWidget)
         self.setWindowIcon(QtGui.QIcon(':moose_thumbnail.png'))
+        self.settingsDialog = SettingsDialog()
+        self.settingsDialog.hide()
+        layout = QtGui.QVBoxLayout(self.modelTreeTab)
+        self.modelTreeTab.setLayout(layout)
+        layout.addWidget(self.modelTreeContainerWidget)
+        self.modelTreeWidget.headerItem().setHidden(True)
         self.modelTreeWidget.show()
+        self.mooseClassToolBox.show()
         self.plots = MoosePlots(self.plotsGroupBox)
         self.plotsLayout = QtGui.QHBoxLayout()
         self.plotsGroupBox.setLayout(self.plotsLayout)
         self.plotsLayout.addWidget(self.plots)
-        
         self.isModelLoaded = False
         self.stopFlag = False
 	self.mooseHandler = MHandler()
@@ -130,9 +131,9 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         self.connect(self.resetPushButton,
                      QtCore.SIGNAL('clicked()'),
                      self.reset)
-        self.connect(self.stopPushButton,
-                     QtCore.SIGNAL('clicked()'),
-                     self.mooseHandler.stop)
+#         self.connect(self.stopPushButton,
+#                      QtCore.SIGNAL('clicked()'),
+#                      self.mooseHandler.stop)
         self.connect(self.plotUpdateIntervalLineEdit,
                      QtCore.SIGNAL('editingFinished()'),
                      self.plotUpdateIntervalSlot)
@@ -145,10 +146,18 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         self.connect(self.runTimeLineEdit, 
                      QtCore.SIGNAL('editingFinished()'),
                      self.runTimeSlot)
-
         self.connect(self.rescalePlotsPushButton,
                      QtCore.SIGNAL('clicked()'),
                      self.plots.rescalePlots)
+
+        self.connect(self.actionSettings,
+                     QtCore.SIGNAL('triggered()'),
+                     self.popupSettings)
+        for listWidget in self.mooseClassToolBox.listWidgets:
+            self.connect(listWidget, 
+                         QtCore.SIGNAL('itemDoubleClicked(QListWidgetItem*)'), 
+                         self.insertMooseObjectSlot)
+        
 
     def popupPropertyEditor(self, item, column):
         """Pop-up a property editor to edit the Moose object in the item"""
@@ -229,6 +238,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         if self.plots is not None:
             self.plots.updatePlots(self.mooseHandler)
             self.update()
+        self.currentTimeLabel.setText(self.tr('Current time (seconds): %g' %  self.mooseHandler.currentTime()))
 
     def reset(self):
         if not self.isModelLoaded:
@@ -236,6 +246,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         else:
             self.mooseHandler.reset()
             self.plots.resetPlots()
+        self.currentTimeLabel.setText(self.tr('Current time (seconds): %g' % self.mooseHandler.currentTime()))
                 
     
     def load(self, fileName, fileType):
@@ -244,6 +255,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
             subprocess.call(['python', 'main.py', fileName, fileType])
         fileType = FileTypeChecker(str(fileName)).fileType()
         print 'File is of type:', fileType
+        self.mooseHandler.context.setCwe(self.modelTreeWidget.currentItem().getMooseObject().path)
         self.mooseHandler.load(fileName, fileType)
         self.isModelLoaded = True
         self.modelTreeWidget.recreateTree()
@@ -251,9 +263,20 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         for table, curve in self.plots.table_curve_map.items():
             print table, curve
         self.plots.show()
+        self.currentTimeLabel.setText(self.tr('Current time (seonds): %g' % self.mooseHandler.currentTime()))
 
     # Until MOOSE has a way of getting stop command from outside
     def stop(self):
         self.mooseHandler.stop()
+
+    def insertMooseObjectSlot(self, item):
+        self.modelTreeWidget.insertMooseObjectSlot(item.text())
+
+    def popupSettings(self):
+        self.settingsDialog.show()
+        result = self.settingsDialog.exec_()
+        if result == self.settingsDialog.Accepted:
+            self.mooseHandler.addSimPathList(self.settingsDialog.simPathList())
+        
 # 
 # mainwin.py ends here
