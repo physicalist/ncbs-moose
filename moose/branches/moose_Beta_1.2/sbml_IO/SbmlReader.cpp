@@ -188,7 +188,7 @@ map< string,Id > SbmlReader::createMolecule( map< string,Id > &idMap )
 			continue;
 		}
 		string id = s->getId();
-		cout<<"species is :"<<id<<endl;
+		//cout<<"species is :"<<id<<endl;
 		if (id.length() < 1){
 			continue;
 		}
@@ -204,7 +204,7 @@ map< string,Id > SbmlReader::createMolecule( map< string,Id > &idMap )
 		UnitDefinition * ud = s->getDerivedUnitDefinition();
 		assert(ud != NULL);
 		/*string udef = UnitDefinition::printUnits(ud);
-		cout << "species unit :" << udef << endl;*/
+		//cout << "species unit :" << udef << endl;*/
 		double initvalue =0.0;
 		if ( s->isSetInitialConcentration() )
 			initvalue = s->getInitialConcentration();
@@ -308,25 +308,25 @@ string SbmlReader::getAnnotation( Reaction* reaction,map<string,EnzymeInfo> &enz
 	if( annotationNode != NULL )
 	{	
 		unsigned int num_children = annotationNode->getNumChildren();
-		cout<<"num of children :"<< num_children << endl;
+		//cout<<"num of children :"<< num_children << endl;
 		for( unsigned int child_no = 0; child_no < num_children; child_no++ )
 		{
 			XMLNode childNode = annotationNode->getChild( child_no );
 			unsigned int num_grand_children = childNode.getNumChildren();
-			cout << "child no " << child_no << ": name:" << childNode.getName() << "has num_grand_children =" << num_grand_children << endl; 
+			//cout << "child no " << child_no << ": name:" << childNode.getName() << "has num_grand_children =" << num_grand_children << endl; 
 			for( unsigned int gchild_no = 0; gchild_no < num_grand_children; gchild_no++ )
 			{
 				XMLNode &grandChildNode = childNode.getChild( gchild_no );
 				if ( grandChildNode.getPrefix() == "moose" && grandChildNode.getName() == "EnzymaticReaction" )
 				{	
 					unsigned int num_ggchildren = grandChildNode.getNumChildren();
-					cout<<"num of grand children: "<<num_ggchildren<<endl; 
+					//cout<<"num of grand children: "<<num_ggchildren<<endl; 
 					for( unsigned int ggchild_no = 0; ggchild_no < num_ggchildren; ggchild_no++ )
 					{
-						cout<<"iteration at"<<ggchild_no<<endl;
+						//cout<<"iteration at"<<ggchild_no<<endl;
 						XMLNode &greatGrandChildNode = grandChildNode.getChild( ggchild_no );
 						string nodeName = greatGrandChildNode.getName();
-						cout << "nodename:" << nodeName << endl;
+						//cout << "nodename:" << nodeName << endl;
 						string nodeValue;
 						if (greatGrandChildNode.getNumChildren() == 1 ){
 							nodeValue = greatGrandChildNode.getChild(0).toXMLString();
@@ -337,7 +337,7 @@ string SbmlReader::getAnnotation( Reaction* reaction,map<string,EnzymeInfo> &enz
 							    nodeValue = final.getCharacters();
 								
 							}else {
-								cout << "Not a text node" << endl;
+								//cout << "Not a text node" << endl;
 							}*/
 						} 
 						else {
@@ -525,7 +525,7 @@ void SbmlReader::createReaction( map< string,Id > &molMap )
 	{	
 		reac = model_->getReaction( r ); 
 		const string id=reac->getId();
-		cout<<"reaction is "<<id<<endl;
+		//cout<<"reaction is "<<id<<endl;
 		std::string name;
 		if ( reac->isSetName() ){
 			name = reac->getName();
@@ -551,7 +551,7 @@ void SbmlReader::createReaction( map< string,Id > &molMap )
 					std::string spName = pdt->getSpecies();     
 					Id parent = molMap.find( spName )->second; //gives compartment of spName
 					string parentCompt = parent()->name();
-					cout<<"parent of reactant :"<<parentCompt<<endl;
+					//cout<<"parent of reactant :"<<parentCompt<<endl;
 					ostringstream spId;
 					spId <<id<<"_Src";
 					molecule_ = Neutral::create( "Molecule",spId.str(),parent,Id::scratchId() );//create Molecule
@@ -618,7 +618,7 @@ void SbmlReader::createReaction( map< string,Id > &molMap )
 					rctorder += rctMap_iter->second;
 					rsp=rctMap_iter->first;	//species of the reactant
 				}	
-				cout<<"rct order = "<<rctorder<<endl;
+				//cout<<"rct order = "<<rctorder<<endl;
 				//order of products
 				pdtorder = 0.0;
 				for ( pdtMap_iter=pdtMap.begin();pdtMap_iter!=pdtMap.end();pdtMap_iter++ )
@@ -626,7 +626,7 @@ void SbmlReader::createReaction( map< string,Id > &molMap )
 					pdtorder += pdtMap_iter->second;
 					psp=pdtMap_iter->first;	//species of the product	
 				}
-				cout<<"pdt order = "<<pdtorder<<endl;
+				//cout<<"pdt order = "<<pdtorder<<endl;
 				if ( reac->isSetKineticLaw() )
 				{	KineticLaw * klaw=reac->getKineticLaw();
 					//vector< double > rate = getKLaw( klaw,rev );
@@ -673,7 +673,7 @@ void SbmlReader::getKLaw( KineticLaw * klaw,bool rev,vector< double > & rate )
 	vector< string > parameters;
 	parameters.clear();	
 	const ASTNode* astnode=klaw->getMath();
-	cout << "kinetic law is :" << SBML_formulaToString(astnode) << endl;	
+	//cout << "kinetic law is :" << SBML_formulaToString(astnode) << endl;	
 	getParameters( astnode,parameters );
 	if ( errorFlag_ )
 		return;
@@ -703,8 +703,8 @@ void SbmlReader::getKLaw( KineticLaw * klaw,bool rev,vector< double > & rate )
 			kfud = kfp->getDerivedUnitDefinition();
 			//cout << "parameter unit :" << UnitDefinition::printUnits(kfp->getDerivedUnitDefinition())<< endl;
 			double transkf = transformUnits( 1,kfud );	
-			cout<<"parm kf trans value : "<<transkf<<endl;
-			cout<<"kfvalue :"<<kfvalue<<endl;
+			//cout<<"parm kf trans value : "<<transkf<<endl;
+			//cout<<"kfvalue :"<<kfvalue<<endl;
 			kf = kfvalue * transkf;
 			kb = 0.0;
 		}
@@ -716,8 +716,8 @@ void SbmlReader::getKLaw( KineticLaw * klaw,bool rev,vector< double > & rate )
 			kbud = kbp->getDerivedUnitDefinition();	
 			//cout << "parameter unit :" << UnitDefinition::printUnits(kbp->getDerivedUnitDefinition()) << endl;
 			double transkb = transformUnits( 1,kbud );
-			cout<<"parm kb trans value : "<<transkb<<endl;
-			cout<<"kbvalue :"<<kbvalue<<endl;
+			//cout<<"parm kb trans value : "<<transkb<<endl;
+			//cout<<"kbvalue :"<<kbvalue<<endl;
 			kb = kbvalue * transkb;	
 		}			
 		if ( (! kbp->isSetUnits() ) && ( rev ) ){
@@ -786,7 +786,7 @@ void SbmlReader::pushParmstoVector(const ASTNode* p,vector <string> & parameters
 void SbmlReader::printMembers( const ASTNode* p,vector <string> & ruleMembers )
 {
 	if ( p->getType() == AST_NAME ){
-	   	cout << "_NAME" << " = " << p->getName() << endl;
+	   	//cout << "_NAME" << " = " << p->getName() << endl;
 	   	ruleMembers.push_back( p->getName() );
 	}
 	int num = p->getNumChildren();
