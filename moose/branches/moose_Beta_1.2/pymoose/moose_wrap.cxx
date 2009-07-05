@@ -2521,65 +2521,67 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 #define SWIGTYPE_p_pymoose__Geometry swig_types[37]
 #define SWIGTYPE_p_pymoose__GssaStoich swig_types[38]
 #define SWIGTYPE_p_pymoose__HHChannel swig_types[39]
-#define SWIGTYPE_p_pymoose__HHGate swig_types[40]
-#define SWIGTYPE_p_pymoose__HSolve swig_types[41]
-#define SWIGTYPE_p_pymoose__HemispherePanel swig_types[42]
-#define SWIGTYPE_p_pymoose__IntFire swig_types[43]
-#define SWIGTYPE_p_pymoose__Interpol swig_types[44]
-#define SWIGTYPE_p_pymoose__IzhikevichNrn swig_types[45]
-#define SWIGTYPE_p_pymoose__KinCompt swig_types[46]
-#define SWIGTYPE_p_pymoose__KineticHub swig_types[47]
-#define SWIGTYPE_p_pymoose__KineticManager swig_types[48]
-#define SWIGTYPE_p_pymoose__Kintegrator swig_types[49]
-#define SWIGTYPE_p_pymoose__MathFunc swig_types[50]
-#define SWIGTYPE_p_pymoose__Mg_block swig_types[51]
-#define SWIGTYPE_p_pymoose__Molecule swig_types[52]
-#define SWIGTYPE_p_pymoose__Nernst swig_types[53]
-#define SWIGTYPE_p_pymoose__NeuroScan swig_types[54]
-#define SWIGTYPE_p_pymoose__Neutral swig_types[55]
-#define SWIGTYPE_p_pymoose__NormalRng swig_types[56]
-#define SWIGTYPE_p_pymoose__PIDController swig_types[57]
-#define SWIGTYPE_p_pymoose__Panel swig_types[58]
-#define SWIGTYPE_p_pymoose__PoissonRng swig_types[59]
-#define SWIGTYPE_p_pymoose__PulseGen swig_types[60]
-#define SWIGTYPE_p_pymoose__PyMooseBase swig_types[61]
-#define SWIGTYPE_p_pymoose__PyMooseContext swig_types[62]
-#define SWIGTYPE_p_pymoose__RC swig_types[63]
-#define SWIGTYPE_p_pymoose__RandGenerator swig_types[64]
-#define SWIGTYPE_p_pymoose__RandomSpike swig_types[65]
-#define SWIGTYPE_p_pymoose__Reaction swig_types[66]
-#define SWIGTYPE_p_pymoose__RectPanel swig_types[67]
-#define SWIGTYPE_p_pymoose__SpherePanel swig_types[68]
-#define SWIGTYPE_p_pymoose__SpikeGen swig_types[69]
-#define SWIGTYPE_p_pymoose__StochSynchan swig_types[70]
-#define SWIGTYPE_p_pymoose__Stoich swig_types[71]
-#define SWIGTYPE_p_pymoose__Surface swig_types[72]
-#define SWIGTYPE_p_pymoose__SynChan swig_types[73]
-#define SWIGTYPE_p_pymoose__Table swig_types[74]
-#define SWIGTYPE_p_pymoose__TableIterator swig_types[75]
-#define SWIGTYPE_p_pymoose__TauPump swig_types[76]
-#define SWIGTYPE_p_pymoose__Tick swig_types[77]
-#define SWIGTYPE_p_pymoose__TimeTable swig_types[78]
-#define SWIGTYPE_p_pymoose__TriPanel swig_types[79]
-#define SWIGTYPE_p_pymoose__UniformRng swig_types[80]
-#define SWIGTYPE_p_size_type swig_types[81]
-#define SWIGTYPE_p_std__invalid_argument swig_types[82]
-#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t swig_types[83]
-#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t__allocator_type swig_types[84]
-#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t__value_type swig_types[85]
-#define SWIGTYPE_p_std__vectorTdouble_std__allocatorTdouble_t_t swig_types[86]
-#define SWIGTYPE_p_std__vectorTdouble_std__allocatorTdouble_t_t__allocator_type swig_types[87]
-#define SWIGTYPE_p_std__vectorTint_std__allocatorTint_t_t swig_types[88]
-#define SWIGTYPE_p_std__vectorTint_std__allocatorTint_t_t__allocator_type swig_types[89]
-#define SWIGTYPE_p_std__vectorTstd__string_std__allocatorTstd__string_t_t swig_types[90]
-#define SWIGTYPE_p_std__vectorTstd__string_std__allocatorTstd__string_t_t__allocator_type swig_types[91]
-#define SWIGTYPE_p_std__vectorTunsigned_int_std__allocatorTunsigned_int_t_t swig_types[92]
-#define SWIGTYPE_p_std__vectorTunsigned_int_std__allocatorTunsigned_int_t_t__allocator_type swig_types[93]
-#define SWIGTYPE_p_swig__PySwigIterator swig_types[94]
-#define SWIGTYPE_p_value_type swig_types[95]
-#define SWIGTYPE_p_void swig_types[96]
-static swig_type_info *swig_types[98];
-static swig_module_info swig_module = {swig_types, 97, 0, 0, 0, 0};
+#define SWIGTYPE_p_pymoose__HHChannel2D swig_types[40]
+#define SWIGTYPE_p_pymoose__HHGate swig_types[41]
+#define SWIGTYPE_p_pymoose__HHGate2D swig_types[42]
+#define SWIGTYPE_p_pymoose__HSolve swig_types[43]
+#define SWIGTYPE_p_pymoose__HemispherePanel swig_types[44]
+#define SWIGTYPE_p_pymoose__IntFire swig_types[45]
+#define SWIGTYPE_p_pymoose__Interpol swig_types[46]
+#define SWIGTYPE_p_pymoose__IzhikevichNrn swig_types[47]
+#define SWIGTYPE_p_pymoose__KinCompt swig_types[48]
+#define SWIGTYPE_p_pymoose__KineticHub swig_types[49]
+#define SWIGTYPE_p_pymoose__KineticManager swig_types[50]
+#define SWIGTYPE_p_pymoose__Kintegrator swig_types[51]
+#define SWIGTYPE_p_pymoose__MathFunc swig_types[52]
+#define SWIGTYPE_p_pymoose__Mg_block swig_types[53]
+#define SWIGTYPE_p_pymoose__Molecule swig_types[54]
+#define SWIGTYPE_p_pymoose__Nernst swig_types[55]
+#define SWIGTYPE_p_pymoose__NeuroScan swig_types[56]
+#define SWIGTYPE_p_pymoose__Neutral swig_types[57]
+#define SWIGTYPE_p_pymoose__NormalRng swig_types[58]
+#define SWIGTYPE_p_pymoose__PIDController swig_types[59]
+#define SWIGTYPE_p_pymoose__Panel swig_types[60]
+#define SWIGTYPE_p_pymoose__PoissonRng swig_types[61]
+#define SWIGTYPE_p_pymoose__PulseGen swig_types[62]
+#define SWIGTYPE_p_pymoose__PyMooseBase swig_types[63]
+#define SWIGTYPE_p_pymoose__PyMooseContext swig_types[64]
+#define SWIGTYPE_p_pymoose__RC swig_types[65]
+#define SWIGTYPE_p_pymoose__RandGenerator swig_types[66]
+#define SWIGTYPE_p_pymoose__RandomSpike swig_types[67]
+#define SWIGTYPE_p_pymoose__Reaction swig_types[68]
+#define SWIGTYPE_p_pymoose__RectPanel swig_types[69]
+#define SWIGTYPE_p_pymoose__SpherePanel swig_types[70]
+#define SWIGTYPE_p_pymoose__SpikeGen swig_types[71]
+#define SWIGTYPE_p_pymoose__StochSynchan swig_types[72]
+#define SWIGTYPE_p_pymoose__Stoich swig_types[73]
+#define SWIGTYPE_p_pymoose__Surface swig_types[74]
+#define SWIGTYPE_p_pymoose__SynChan swig_types[75]
+#define SWIGTYPE_p_pymoose__Table swig_types[76]
+#define SWIGTYPE_p_pymoose__TableIterator swig_types[77]
+#define SWIGTYPE_p_pymoose__TauPump swig_types[78]
+#define SWIGTYPE_p_pymoose__Tick swig_types[79]
+#define SWIGTYPE_p_pymoose__TimeTable swig_types[80]
+#define SWIGTYPE_p_pymoose__TriPanel swig_types[81]
+#define SWIGTYPE_p_pymoose__UniformRng swig_types[82]
+#define SWIGTYPE_p_size_type swig_types[83]
+#define SWIGTYPE_p_std__invalid_argument swig_types[84]
+#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t swig_types[85]
+#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t__allocator_type swig_types[86]
+#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t__value_type swig_types[87]
+#define SWIGTYPE_p_std__vectorTdouble_std__allocatorTdouble_t_t swig_types[88]
+#define SWIGTYPE_p_std__vectorTdouble_std__allocatorTdouble_t_t__allocator_type swig_types[89]
+#define SWIGTYPE_p_std__vectorTint_std__allocatorTint_t_t swig_types[90]
+#define SWIGTYPE_p_std__vectorTint_std__allocatorTint_t_t__allocator_type swig_types[91]
+#define SWIGTYPE_p_std__vectorTstd__string_std__allocatorTstd__string_t_t swig_types[92]
+#define SWIGTYPE_p_std__vectorTstd__string_std__allocatorTstd__string_t_t__allocator_type swig_types[93]
+#define SWIGTYPE_p_std__vectorTunsigned_int_std__allocatorTunsigned_int_t_t swig_types[94]
+#define SWIGTYPE_p_std__vectorTunsigned_int_std__allocatorTunsigned_int_t_t__allocator_type swig_types[95]
+#define SWIGTYPE_p_swig__PySwigIterator swig_types[96]
+#define SWIGTYPE_p_value_type swig_types[97]
+#define SWIGTYPE_p_void swig_types[98]
+static swig_type_info *swig_types[100];
+static swig_module_info swig_module = {swig_types, 99, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3099,6 +3101,9 @@ SWIG_AsVal_ptrdiff_t (PyObject * obj, ptrdiff_t *val)
 	#include "PoissonRng.h"
 	#include "ExponentialRng.h"
 	#include "UniformRng.h"
+	#include "HHGate2D.h"
+	#include "HHChannel2D.h"
+
 #ifdef USE_NUMPY
 #include <algorithm>
 #ifndef PY_ARRAY_UNIQUE_SYMBOL
@@ -5780,6 +5785,18 @@ SWIG_AsVal_bool (PyObject *obj, bool *val)
 
 #define pymoose_GHK_valency_get(self_) self_->__get_valency()
 #define pymoose_GHK_valency_set(self_, val_) self_->__set_valency(val_)
+  
+
+#define pymoose_HHChannel2D_Xindex_get(self_) self_->__get_Xindex()
+#define pymoose_HHChannel2D_Xindex_set(self_, val_) self_->__set_Xindex(val_)
+  
+
+#define pymoose_HHChannel2D_Yindex_get(self_) self_->__get_Yindex()
+#define pymoose_HHChannel2D_Yindex_set(self_, val_) self_->__set_Yindex(val_)
+  
+
+#define pymoose_HHChannel2D_Zindex_get(self_) self_->__get_Zindex()
+#define pymoose_HHChannel2D_Zindex_set(self_, val_) self_->__set_Zindex(val_)
   
 #ifdef __cplusplus
 extern "C" {
@@ -105399,6 +105416,1601 @@ SWIGINTERN PyObject *GHK_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *
   return SWIG_Py_Void();
 }
 
+SWIGINTERN int Swig_var_HHChannel2D_className__set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable HHChannel2D_className_ is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_HHChannel2D_className__get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_From_std_string(static_cast< std::string >(pymoose::HHChannel2D::className_));
+  return pyobj;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHChannel2D__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  Id arg1 ;
+  pymoose::HHChannel2D *result = 0 ;
+  void *argp1 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHChannel2D",1,1,&obj0)) SWIG_fail;
+  {
+    res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_Id,  0  | 0);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "Id""'"); 
+    }  
+    if (!argp1) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "Id""'");
+    } else {
+      Id * temp = reinterpret_cast< Id * >(argp1);
+      arg1 = *temp;
+      if (SWIG_IsNewObj(res1)) delete temp;
+    }
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHChannel2D *)new pymoose::HHChannel2D(arg1);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHChannel2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHChannel2D__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  pymoose::HHChannel2D *result = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHChannel2D",1,1,&obj0)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHChannel2D *)new pymoose::HHChannel2D(arg1);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHChannel2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHChannel2D__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  Id arg2 ;
+  pymoose::HHChannel2D *result = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHChannel2D",2,2,&obj0,&obj1)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_Id,  0  | 0);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_HHChannel2D" "', argument " "2"" of type '" "Id""'"); 
+    }  
+    if (!argp2) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHChannel2D" "', argument " "2"" of type '" "Id""'");
+    } else {
+      Id * temp = reinterpret_cast< Id * >(argp2);
+      arg2 = *temp;
+      if (SWIG_IsNewObj(res2)) delete temp;
+    }
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHChannel2D *)new pymoose::HHChannel2D(arg1,arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHChannel2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHChannel2D__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  pymoose::PyMooseBase *arg2 = 0 ;
+  pymoose::HHChannel2D *result = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHChannel2D",2,2,&obj0,&obj1)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_pymoose__PyMooseBase,  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_HHChannel2D" "', argument " "2"" of type '" "pymoose::PyMooseBase &""'"); 
+  }
+  if (!argp2) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHChannel2D" "', argument " "2"" of type '" "pymoose::PyMooseBase &""'"); 
+  }
+  arg2 = reinterpret_cast< pymoose::PyMooseBase * >(argp2);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHChannel2D *)new pymoose::HHChannel2D(arg1,*arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHChannel2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHChannel2D__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = 0 ;
+  std::string arg2 ;
+  pymoose::PyMooseBase *arg3 = 0 ;
+  pymoose::HHChannel2D *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHChannel2D",3,3,&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_pymoose__HHChannel2D,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "pymoose::HHChannel2D const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "pymoose::HHChannel2D const &""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHChannel2D" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  res3 = SWIG_ConvertPtr(obj2, &argp3, SWIGTYPE_p_pymoose__PyMooseBase,  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_HHChannel2D" "', argument " "3"" of type '" "pymoose::PyMooseBase &""'"); 
+  }
+  if (!argp3) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHChannel2D" "', argument " "3"" of type '" "pymoose::PyMooseBase &""'"); 
+  }
+  arg3 = reinterpret_cast< pymoose::PyMooseBase * >(argp3);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHChannel2D *)new pymoose::HHChannel2D((pymoose::HHChannel2D const &)*arg1,arg2,*arg3);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHChannel2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHChannel2D__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = 0 ;
+  std::string arg2 ;
+  Id *arg3 = 0 ;
+  pymoose::HHChannel2D *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHChannel2D",3,3,&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_pymoose__HHChannel2D,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "pymoose::HHChannel2D const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "pymoose::HHChannel2D const &""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHChannel2D" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  res3 = SWIG_ConvertPtr(obj2, &argp3, SWIGTYPE_p_Id,  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_HHChannel2D" "', argument " "3"" of type '" "Id &""'"); 
+  }
+  if (!argp3) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHChannel2D" "', argument " "3"" of type '" "Id &""'"); 
+  }
+  arg3 = reinterpret_cast< Id * >(argp3);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHChannel2D *)new pymoose::HHChannel2D((pymoose::HHChannel2D const &)*arg1,arg2,*arg3);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHChannel2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHChannel2D__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = 0 ;
+  std::string arg2 ;
+  pymoose::HHChannel2D *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHChannel2D",2,2,&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_pymoose__HHChannel2D,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "pymoose::HHChannel2D const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "pymoose::HHChannel2D const &""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHChannel2D" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHChannel2D *)new pymoose::HHChannel2D((pymoose::HHChannel2D const &)*arg1,arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHChannel2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHChannel2D__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  Id *arg1 = 0 ;
+  std::string arg2 ;
+  Id *arg3 = 0 ;
+  pymoose::HHChannel2D *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHChannel2D",3,3,&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_Id,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "Id const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHChannel2D" "', argument " "1"" of type '" "Id const &""'"); 
+  }
+  arg1 = reinterpret_cast< Id * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHChannel2D" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  res3 = SWIG_ConvertPtr(obj2, &argp3, SWIGTYPE_p_Id,  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_HHChannel2D" "', argument " "3"" of type '" "Id &""'"); 
+  }
+  if (!argp3) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHChannel2D" "', argument " "3"" of type '" "Id &""'"); 
+  }
+  arg3 = reinterpret_cast< Id * >(argp3);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHChannel2D *)new pymoose::HHChannel2D((Id const &)*arg1,arg2,*arg3);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHChannel2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHChannel2D(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[4];
+  int ii;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 3); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 1) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_Id, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      SWIG_PYTHON_THREAD_END_BLOCK;
+      return _wrap_new_HHChannel2D__SWIG_0(self, args);
+    }
+  }
+  if (argc == 1) {
+    int _v;
+    int res = SWIG_AsPtr_std_string(argv[0], (std::string**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      SWIG_PYTHON_THREAD_END_BLOCK;
+      return _wrap_new_HHChannel2D__SWIG_1(self, args);
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_pymoose__HHChannel2D, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        SWIG_PYTHON_THREAD_END_BLOCK;
+        return _wrap_new_HHChannel2D__SWIG_6(self, args);
+      }
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    int res = SWIG_AsPtr_std_string(argv[0], (std::string**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      void *vptr = 0;
+      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_pymoose__PyMooseBase, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        SWIG_PYTHON_THREAD_END_BLOCK;
+        return _wrap_new_HHChannel2D__SWIG_3(self, args);
+      }
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    int res = SWIG_AsPtr_std_string(argv[0], (std::string**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_Id, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        SWIG_PYTHON_THREAD_END_BLOCK;
+        return _wrap_new_HHChannel2D__SWIG_2(self, args);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_pymoose__HHChannel2D, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[2], &vptr, SWIGTYPE_p_Id, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          SWIG_PYTHON_THREAD_END_BLOCK;
+          return _wrap_new_HHChannel2D__SWIG_5(self, args);
+        }
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_pymoose__HHChannel2D, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[2], &vptr, SWIGTYPE_p_pymoose__PyMooseBase, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          SWIG_PYTHON_THREAD_END_BLOCK;
+          return _wrap_new_HHChannel2D__SWIG_4(self, args);
+        }
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_Id, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[2], &vptr, SWIGTYPE_p_Id, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          SWIG_PYTHON_THREAD_END_BLOCK;
+          return _wrap_new_HHChannel2D__SWIG_7(self, args);
+        }
+      }
+    }
+  }
+  
+  SWIG_PYTHON_THREAD_END_BLOCK;
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'new_HHChannel2D'.\n  Possible C/C++ prototypes are:\n""    pymoose::HHChannel2D(Id)\n""    pymoose::HHChannel2D(std::string)\n""    pymoose::HHChannel2D(std::string,Id)\n""    pymoose::HHChannel2D(std::string,pymoose::PyMooseBase &)\n""    pymoose::HHChannel2D(pymoose::HHChannel2D const &,std::string,pymoose::PyMooseBase &)\n""    pymoose::HHChannel2D(pymoose::HHChannel2D const &,std::string,Id &)\n""    pymoose::HHChannel2D(pymoose::HHChannel2D const &,std::string)\n""    pymoose::HHChannel2D(Id const &,std::string,Id &)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_HHChannel2D(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"delete_HHChannel2D",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_HHChannel2D" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    delete arg1;
+    
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D_getType(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D_getType",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D_getType" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    {
+      std::string const &_result_ref = (arg1)->getType();
+      result = (std::string *) &_result_ref;
+    }
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D___get_Xindex(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D___get_Xindex",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D___get_Xindex" "', argument " "1"" of type '" "pymoose::HHChannel2D const *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = ((pymoose::HHChannel2D const *)arg1)->__get_Xindex();
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D___set_Xindex(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D___set_Xindex",2,2,&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D___set_Xindex" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "HHChannel2D___set_Xindex" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    (arg1)->__set_Xindex(arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D___get_Yindex(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D___get_Yindex",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D___get_Yindex" "', argument " "1"" of type '" "pymoose::HHChannel2D const *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = ((pymoose::HHChannel2D const *)arg1)->__get_Yindex();
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D___set_Yindex(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D___set_Yindex",2,2,&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D___set_Yindex" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "HHChannel2D___set_Yindex" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    (arg1)->__set_Yindex(arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D___get_Zindex(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D___get_Zindex",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D___get_Zindex" "', argument " "1"" of type '" "pymoose::HHChannel2D const *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = ((pymoose::HHChannel2D const *)arg1)->__get_Zindex();
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D___set_Zindex(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D___set_Zindex",2,2,&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D___set_Zindex" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "HHChannel2D___set_Zindex" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    (arg1)->__set_Zindex(arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D_Xindex_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D_Xindex_set",2,2,&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D_Xindex_set" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "HHChannel2D_Xindex_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "HHChannel2D_Xindex_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    pymoose_HHChannel2D_Xindex_set(arg1,(std::string const &)*arg2);
+    
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D_Xindex_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D_Xindex_get",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D_Xindex_get" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    {
+      std::string const &_result_ref = pymoose_HHChannel2D_Xindex_get(arg1);
+      result = (std::string *) &_result_ref;
+    }
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D_Yindex_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D_Yindex_set",2,2,&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D_Yindex_set" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "HHChannel2D_Yindex_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "HHChannel2D_Yindex_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    pymoose_HHChannel2D_Yindex_set(arg1,(std::string const &)*arg2);
+    
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D_Yindex_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D_Yindex_get",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D_Yindex_get" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    {
+      std::string const &_result_ref = pymoose_HHChannel2D_Yindex_get(arg1);
+      result = (std::string *) &_result_ref;
+    }
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D_Zindex_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D_Zindex_set",2,2,&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D_Zindex_set" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "HHChannel2D_Zindex_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "HHChannel2D_Zindex_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    pymoose_HHChannel2D_Zindex_set(arg1,(std::string const &)*arg2);
+    
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHChannel2D_Zindex_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHChannel2D *arg1 = (pymoose::HHChannel2D *) 0 ;
+  std::string *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHChannel2D_Zindex_get",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHChannel2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHChannel2D_Zindex_get" "', argument " "1"" of type '" "pymoose::HHChannel2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHChannel2D * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    {
+      std::string const &_result_ref = pymoose_HHChannel2D_Zindex_get(arg1);
+      result = (std::string *) &_result_ref;
+    }
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *HHChannel2D_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_UnpackTuple(args,(char*)"swigregister", 1, 1,&obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_pymoose__HHChannel2D, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN int Swig_var_HHGate2D_className__set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable HHGate2D_className_ is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_HHGate2D_className__get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_From_std_string(static_cast< std::string >(pymoose::HHGate2D::className_));
+  return pyobj;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHGate2D__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  Id arg1 ;
+  pymoose::HHGate2D *result = 0 ;
+  void *argp1 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHGate2D",1,1,&obj0)) SWIG_fail;
+  {
+    res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_Id,  0  | 0);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_HHGate2D" "', argument " "1"" of type '" "Id""'"); 
+    }  
+    if (!argp1) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHGate2D" "', argument " "1"" of type '" "Id""'");
+    } else {
+      Id * temp = reinterpret_cast< Id * >(argp1);
+      arg1 = *temp;
+      if (SWIG_IsNewObj(res1)) delete temp;
+    }
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHGate2D *)new pymoose::HHGate2D(arg1);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHGate2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHGate2D__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  pymoose::HHGate2D *result = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHGate2D",1,1,&obj0)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHGate2D" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHGate2D *)new pymoose::HHGate2D(arg1);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHGate2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHGate2D__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  Id arg2 ;
+  pymoose::HHGate2D *result = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHGate2D",2,2,&obj0,&obj1)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHGate2D" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_Id,  0  | 0);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_HHGate2D" "', argument " "2"" of type '" "Id""'"); 
+    }  
+    if (!argp2) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHGate2D" "', argument " "2"" of type '" "Id""'");
+    } else {
+      Id * temp = reinterpret_cast< Id * >(argp2);
+      arg2 = *temp;
+      if (SWIG_IsNewObj(res2)) delete temp;
+    }
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHGate2D *)new pymoose::HHGate2D(arg1,arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHGate2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHGate2D__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  pymoose::PyMooseBase *arg2 = 0 ;
+  pymoose::HHGate2D *result = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHGate2D",2,2,&obj0,&obj1)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHGate2D" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_pymoose__PyMooseBase,  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_HHGate2D" "', argument " "2"" of type '" "pymoose::PyMooseBase &""'"); 
+  }
+  if (!argp2) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHGate2D" "', argument " "2"" of type '" "pymoose::PyMooseBase &""'"); 
+  }
+  arg2 = reinterpret_cast< pymoose::PyMooseBase * >(argp2);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHGate2D *)new pymoose::HHGate2D(arg1,*arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHGate2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHGate2D__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHGate2D *arg1 = 0 ;
+  std::string arg2 ;
+  pymoose::PyMooseBase *arg3 = 0 ;
+  pymoose::HHGate2D *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHGate2D",3,3,&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_pymoose__HHGate2D,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_HHGate2D" "', argument " "1"" of type '" "pymoose::HHGate2D const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHGate2D" "', argument " "1"" of type '" "pymoose::HHGate2D const &""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHGate2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHGate2D" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  res3 = SWIG_ConvertPtr(obj2, &argp3, SWIGTYPE_p_pymoose__PyMooseBase,  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_HHGate2D" "', argument " "3"" of type '" "pymoose::PyMooseBase &""'"); 
+  }
+  if (!argp3) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHGate2D" "', argument " "3"" of type '" "pymoose::PyMooseBase &""'"); 
+  }
+  arg3 = reinterpret_cast< pymoose::PyMooseBase * >(argp3);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHGate2D *)new pymoose::HHGate2D((pymoose::HHGate2D const &)*arg1,arg2,*arg3);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHGate2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHGate2D__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHGate2D *arg1 = 0 ;
+  std::string arg2 ;
+  Id *arg3 = 0 ;
+  pymoose::HHGate2D *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHGate2D",3,3,&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_pymoose__HHGate2D,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_HHGate2D" "', argument " "1"" of type '" "pymoose::HHGate2D const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHGate2D" "', argument " "1"" of type '" "pymoose::HHGate2D const &""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHGate2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHGate2D" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  res3 = SWIG_ConvertPtr(obj2, &argp3, SWIGTYPE_p_Id,  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_HHGate2D" "', argument " "3"" of type '" "Id &""'"); 
+  }
+  if (!argp3) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHGate2D" "', argument " "3"" of type '" "Id &""'"); 
+  }
+  arg3 = reinterpret_cast< Id * >(argp3);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHGate2D *)new pymoose::HHGate2D((pymoose::HHGate2D const &)*arg1,arg2,*arg3);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHGate2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHGate2D__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHGate2D *arg1 = 0 ;
+  std::string arg2 ;
+  pymoose::HHGate2D *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHGate2D",2,2,&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_pymoose__HHGate2D,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_HHGate2D" "', argument " "1"" of type '" "pymoose::HHGate2D const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHGate2D" "', argument " "1"" of type '" "pymoose::HHGate2D const &""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHGate2D * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHGate2D" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHGate2D *)new pymoose::HHGate2D((pymoose::HHGate2D const &)*arg1,arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHGate2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHGate2D__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  Id *arg1 = 0 ;
+  std::string arg2 ;
+  Id *arg3 = 0 ;
+  pymoose::HHGate2D *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_HHGate2D",3,3,&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_Id,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_HHGate2D" "', argument " "1"" of type '" "Id const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHGate2D" "', argument " "1"" of type '" "Id const &""'"); 
+  }
+  arg1 = reinterpret_cast< Id * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_HHGate2D" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  res3 = SWIG_ConvertPtr(obj2, &argp3, SWIGTYPE_p_Id,  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_HHGate2D" "', argument " "3"" of type '" "Id &""'"); 
+  }
+  if (!argp3) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_HHGate2D" "', argument " "3"" of type '" "Id &""'"); 
+  }
+  arg3 = reinterpret_cast< Id * >(argp3);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (pymoose::HHGate2D *)new pymoose::HHGate2D((Id const &)*arg1,arg2,*arg3);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_pymoose__HHGate2D, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_HHGate2D(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[4];
+  int ii;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 3); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 1) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_Id, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      SWIG_PYTHON_THREAD_END_BLOCK;
+      return _wrap_new_HHGate2D__SWIG_0(self, args);
+    }
+  }
+  if (argc == 1) {
+    int _v;
+    int res = SWIG_AsPtr_std_string(argv[0], (std::string**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      SWIG_PYTHON_THREAD_END_BLOCK;
+      return _wrap_new_HHGate2D__SWIG_1(self, args);
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_pymoose__HHGate2D, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        SWIG_PYTHON_THREAD_END_BLOCK;
+        return _wrap_new_HHGate2D__SWIG_6(self, args);
+      }
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    int res = SWIG_AsPtr_std_string(argv[0], (std::string**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      void *vptr = 0;
+      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_pymoose__PyMooseBase, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        SWIG_PYTHON_THREAD_END_BLOCK;
+        return _wrap_new_HHGate2D__SWIG_3(self, args);
+      }
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    int res = SWIG_AsPtr_std_string(argv[0], (std::string**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_ConvertPtr(argv[1], 0, SWIGTYPE_p_Id, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        SWIG_PYTHON_THREAD_END_BLOCK;
+        return _wrap_new_HHGate2D__SWIG_2(self, args);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_pymoose__HHGate2D, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[2], &vptr, SWIGTYPE_p_Id, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          SWIG_PYTHON_THREAD_END_BLOCK;
+          return _wrap_new_HHGate2D__SWIG_5(self, args);
+        }
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_pymoose__HHGate2D, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[2], &vptr, SWIGTYPE_p_pymoose__PyMooseBase, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          SWIG_PYTHON_THREAD_END_BLOCK;
+          return _wrap_new_HHGate2D__SWIG_4(self, args);
+        }
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_Id, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsPtr_std_string(argv[1], (std::string**)(0));
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[2], &vptr, SWIGTYPE_p_Id, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          SWIG_PYTHON_THREAD_END_BLOCK;
+          return _wrap_new_HHGate2D__SWIG_7(self, args);
+        }
+      }
+    }
+  }
+  
+  SWIG_PYTHON_THREAD_END_BLOCK;
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'new_HHGate2D'.\n  Possible C/C++ prototypes are:\n""    pymoose::HHGate2D(Id)\n""    pymoose::HHGate2D(std::string)\n""    pymoose::HHGate2D(std::string,Id)\n""    pymoose::HHGate2D(std::string,pymoose::PyMooseBase &)\n""    pymoose::HHGate2D(pymoose::HHGate2D const &,std::string,pymoose::PyMooseBase &)\n""    pymoose::HHGate2D(pymoose::HHGate2D const &,std::string,Id &)\n""    pymoose::HHGate2D(pymoose::HHGate2D const &,std::string)\n""    pymoose::HHGate2D(Id const &,std::string,Id &)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_HHGate2D(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHGate2D *arg1 = (pymoose::HHGate2D *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"delete_HHGate2D",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHGate2D, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_HHGate2D" "', argument " "1"" of type '" "pymoose::HHGate2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHGate2D * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    delete arg1;
+    
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_HHGate2D_getType(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::HHGate2D *arg1 = (pymoose::HHGate2D *) 0 ;
+  std::string *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"HHGate2D_getType",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__HHGate2D, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "HHGate2D_getType" "', argument " "1"" of type '" "pymoose::HHGate2D *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::HHGate2D * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    {
+      std::string const &_result_ref = (arg1)->getType();
+      result = (std::string *) &_result_ref;
+    }
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *HHGate2D_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_UnpackTuple(args,(char*)"swigregister", 1, 1,&obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_pymoose__HHGate2D, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"delete_PySwigIterator", _wrap_delete_PySwigIterator, METH_VARARGS, NULL},
 	 { (char *)"PySwigIterator_value", _wrap_PySwigIterator_value, METH_VARARGS, NULL},
@@ -108052,6 +109664,44 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"GHK_valency_set", _wrap_GHK_valency_set, METH_VARARGS, (char *)"GHK_valency_set(GHK self, double valency)"},
 	 { (char *)"GHK_valency_get", _wrap_GHK_valency_get, METH_VARARGS, (char *)"GHK_valency_get(GHK self) -> double"},
 	 { (char *)"GHK_swigregister", GHK_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_HHChannel2D", _wrap_new_HHChannel2D, METH_VARARGS, (char *)"\n"
+		"HHChannel2D(Id id)\n"
+		"HHChannel2D(string path)\n"
+		"HHChannel2D(string name, Id parentId)\n"
+		"HHChannel2D(string name, PyMooseBase parent)\n"
+		"HHChannel2D(HHChannel2D src, string name, PyMooseBase parent)\n"
+		"HHChannel2D(HHChannel2D src, string name, Id parent)\n"
+		"HHChannel2D(HHChannel2D src, string path)\n"
+		"new_HHChannel2D(Id src, string name, Id parent) -> HHChannel2D\n"
+		""},
+	 { (char *)"delete_HHChannel2D", _wrap_delete_HHChannel2D, METH_VARARGS, (char *)"delete_HHChannel2D(HHChannel2D self)"},
+	 { (char *)"HHChannel2D_getType", _wrap_HHChannel2D_getType, METH_VARARGS, (char *)"HHChannel2D_getType(HHChannel2D self) -> string"},
+	 { (char *)"HHChannel2D___get_Xindex", _wrap_HHChannel2D___get_Xindex, METH_VARARGS, (char *)"HHChannel2D___get_Xindex(HHChannel2D self) -> string"},
+	 { (char *)"HHChannel2D___set_Xindex", _wrap_HHChannel2D___set_Xindex, METH_VARARGS, (char *)"HHChannel2D___set_Xindex(HHChannel2D self, string Xindex)"},
+	 { (char *)"HHChannel2D___get_Yindex", _wrap_HHChannel2D___get_Yindex, METH_VARARGS, (char *)"HHChannel2D___get_Yindex(HHChannel2D self) -> string"},
+	 { (char *)"HHChannel2D___set_Yindex", _wrap_HHChannel2D___set_Yindex, METH_VARARGS, (char *)"HHChannel2D___set_Yindex(HHChannel2D self, string Yindex)"},
+	 { (char *)"HHChannel2D___get_Zindex", _wrap_HHChannel2D___get_Zindex, METH_VARARGS, (char *)"HHChannel2D___get_Zindex(HHChannel2D self) -> string"},
+	 { (char *)"HHChannel2D___set_Zindex", _wrap_HHChannel2D___set_Zindex, METH_VARARGS, (char *)"HHChannel2D___set_Zindex(HHChannel2D self, string Zindex)"},
+	 { (char *)"HHChannel2D_Xindex_set", _wrap_HHChannel2D_Xindex_set, METH_VARARGS, (char *)"HHChannel2D_Xindex_set(HHChannel2D self, string Xindex)"},
+	 { (char *)"HHChannel2D_Xindex_get", _wrap_HHChannel2D_Xindex_get, METH_VARARGS, (char *)"HHChannel2D_Xindex_get(HHChannel2D self) -> string"},
+	 { (char *)"HHChannel2D_Yindex_set", _wrap_HHChannel2D_Yindex_set, METH_VARARGS, (char *)"HHChannel2D_Yindex_set(HHChannel2D self, string Yindex)"},
+	 { (char *)"HHChannel2D_Yindex_get", _wrap_HHChannel2D_Yindex_get, METH_VARARGS, (char *)"HHChannel2D_Yindex_get(HHChannel2D self) -> string"},
+	 { (char *)"HHChannel2D_Zindex_set", _wrap_HHChannel2D_Zindex_set, METH_VARARGS, (char *)"HHChannel2D_Zindex_set(HHChannel2D self, string Zindex)"},
+	 { (char *)"HHChannel2D_Zindex_get", _wrap_HHChannel2D_Zindex_get, METH_VARARGS, (char *)"HHChannel2D_Zindex_get(HHChannel2D self) -> string"},
+	 { (char *)"HHChannel2D_swigregister", HHChannel2D_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_HHGate2D", _wrap_new_HHGate2D, METH_VARARGS, (char *)"\n"
+		"HHGate2D(Id id)\n"
+		"HHGate2D(string path)\n"
+		"HHGate2D(string name, Id parentId)\n"
+		"HHGate2D(string name, PyMooseBase parent)\n"
+		"HHGate2D(HHGate2D src, string name, PyMooseBase parent)\n"
+		"HHGate2D(HHGate2D src, string name, Id parent)\n"
+		"HHGate2D(HHGate2D src, string path)\n"
+		"new_HHGate2D(Id src, string name, Id parent) -> HHGate2D\n"
+		""},
+	 { (char *)"delete_HHGate2D", _wrap_delete_HHGate2D, METH_VARARGS, (char *)"delete_HHGate2D(HHGate2D self)"},
+	 { (char *)"HHGate2D_getType", _wrap_HHGate2D_getType, METH_VARARGS, (char *)"HHGate2D_getType(HHGate2D self) -> string"},
+	 { (char *)"HHGate2D_swigregister", HHGate2D_swigregister, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 
@@ -108208,6 +109858,9 @@ static void *_p_pymoose__DifShellTo_p_pymoose__PyMooseBase(void *x) {
 static void *_p_pymoose__Mg_blockTo_p_pymoose__PyMooseBase(void *x) {
     return (void *)((pymoose::PyMooseBase *)  ((pymoose::Mg_block *) x));
 }
+static void *_p_pymoose__HHChannel2DTo_p_pymoose__PyMooseBase(void *x) {
+    return (void *)((pymoose::PyMooseBase *)  ((pymoose::HHChannel2D *) x));
+}
 static void *_p_pymoose__PIDControllerTo_p_pymoose__PyMooseBase(void *x) {
     return (void *)((pymoose::PyMooseBase *)  ((pymoose::PIDController *) x));
 }
@@ -108225,6 +109878,9 @@ static void *_p_pymoose__SpikeGenTo_p_pymoose__PyMooseBase(void *x) {
 }
 static void *_p_pymoose__CylPanelTo_p_pymoose__PyMooseBase(void *x) {
     return (void *)((pymoose::PyMooseBase *) (pymoose::Panel *) ((pymoose::CylPanel *) x));
+}
+static void *_p_pymoose__HHGate2DTo_p_pymoose__PyMooseBase(void *x) {
+    return (void *)((pymoose::PyMooseBase *)  ((pymoose::HHGate2D *) x));
 }
 static void *_p_pymoose__DiffAmpTo_p_pymoose__PyMooseBase(void *x) {
     return (void *)((pymoose::PyMooseBase *)  ((pymoose::DiffAmp *) x));
@@ -108326,7 +109982,9 @@ static swig_type_info _swigt__p_pymoose__GammaRng = {"_p_pymoose__GammaRng", "py
 static swig_type_info _swigt__p_pymoose__Geometry = {"_p_pymoose__Geometry", "pymoose::Geometry *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_pymoose__GssaStoich = {"_p_pymoose__GssaStoich", "pymoose::GssaStoich *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_pymoose__HHChannel = {"_p_pymoose__HHChannel", "pymoose::HHChannel *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_pymoose__HHChannel2D = {"_p_pymoose__HHChannel2D", "pymoose::HHChannel2D *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_pymoose__HHGate = {"_p_pymoose__HHGate", "pymoose::HHGate *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_pymoose__HHGate2D = {"_p_pymoose__HHGate2D", "pymoose::HHGate2D *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_pymoose__HSolve = {"_p_pymoose__HSolve", "pymoose::HSolve *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_pymoose__HemispherePanel = {"_p_pymoose__HemispherePanel", "pymoose::HemispherePanel *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_pymoose__IntFire = {"_p_pymoose__IntFire", "pymoose::IntFire *", 0, 0, (void*)0, 0};
@@ -108425,7 +110083,9 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_pymoose__Geometry,
   &_swigt__p_pymoose__GssaStoich,
   &_swigt__p_pymoose__HHChannel,
+  &_swigt__p_pymoose__HHChannel2D,
   &_swigt__p_pymoose__HHGate,
+  &_swigt__p_pymoose__HHGate2D,
   &_swigt__p_pymoose__HSolve,
   &_swigt__p_pymoose__HemispherePanel,
   &_swigt__p_pymoose__IntFire,
@@ -108524,7 +110184,9 @@ static swig_cast_info _swigc__p_pymoose__GammaRng[] = {  {&_swigt__p_pymoose__Ga
 static swig_cast_info _swigc__p_pymoose__Geometry[] = {  {&_swigt__p_pymoose__Geometry, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__GssaStoich[] = {  {&_swigt__p_pymoose__GssaStoich, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__HHChannel[] = {  {&_swigt__p_pymoose__HHChannel, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_pymoose__HHChannel2D[] = {  {&_swigt__p_pymoose__HHChannel2D, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__HHGate[] = {  {&_swigt__p_pymoose__HHGate, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_pymoose__HHGate2D[] = {  {&_swigt__p_pymoose__HHGate2D, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__HSolve[] = {  {&_swigt__p_pymoose__HSolve, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__HemispherePanel[] = {  {&_swigt__p_pymoose__HemispherePanel, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__IntFire[] = {  {&_swigt__p_pymoose__IntFire, 0, 0, 0},{0, 0, 0, 0}};
@@ -108545,7 +110207,7 @@ static swig_cast_info _swigc__p_pymoose__PIDController[] = {  {&_swigt__p_pymoos
 static swig_cast_info _swigc__p_pymoose__Panel[] = {  {&_swigt__p_pymoose__DiskPanel, _p_pymoose__DiskPanelTo_p_pymoose__Panel, 0, 0},  {&_swigt__p_pymoose__CylPanel, _p_pymoose__CylPanelTo_p_pymoose__Panel, 0, 0},  {&_swigt__p_pymoose__HemispherePanel, _p_pymoose__HemispherePanelTo_p_pymoose__Panel, 0, 0},  {&_swigt__p_pymoose__SpherePanel, _p_pymoose__SpherePanelTo_p_pymoose__Panel, 0, 0},  {&_swigt__p_pymoose__Panel, 0, 0, 0},  {&_swigt__p_pymoose__TriPanel, _p_pymoose__TriPanelTo_p_pymoose__Panel, 0, 0},  {&_swigt__p_pymoose__RectPanel, _p_pymoose__RectPanelTo_p_pymoose__Panel, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__PoissonRng[] = {  {&_swigt__p_pymoose__PoissonRng, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__PulseGen[] = {  {&_swigt__p_pymoose__PulseGen, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_pymoose__PyMooseBase[] = {  {&_swigt__p_pymoose__Table, _p_pymoose__TableTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__RectPanel, _p_pymoose__RectPanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__NeuroScan, _p_pymoose__NeuroScanTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__PyMooseBase, 0, 0, 0},  {&_swigt__p_pymoose__ExponentialRng, _p_pymoose__ExponentialRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__PulseGen, _p_pymoose__PulseGenTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__UniformRng, _p_pymoose__UniformRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__AscFile, _p_pymoose__AscFileTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__DiskPanel, _p_pymoose__DiskPanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Kintegrator, _p_pymoose__KintegratorTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__HemispherePanel, _p_pymoose__HemispherePanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__SpherePanel, _p_pymoose__SpherePanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__TauPump, _p_pymoose__TauPumpTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__TimeTable, _p_pymoose__TimeTableTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Molecule, _p_pymoose__MoleculeTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Neutral, _p_pymoose__NeutralTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__BinSynchan, _p_pymoose__BinSynchanTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__StochSynchan, _p_pymoose__StochSynchanTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__NormalRng, _p_pymoose__NormalRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Surface, _p_pymoose__SurfaceTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__RC, _p_pymoose__RCTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Geometry, _p_pymoose__GeometryTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__IzhikevichNrn, _p_pymoose__IzhikevichNrnTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__TriPanel, _p_pymoose__TriPanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__SynChan, _p_pymoose__SynChanTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Cell, _p_pymoose__CellTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Stoich, _p_pymoose__StoichTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__GssaStoich, _p_pymoose__GssaStoichTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__HSolve, _p_pymoose__HSolveTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__RandGenerator, _p_pymoose__RandGeneratorTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Compartment, _p_pymoose__CompartmentTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Class, _p_pymoose__ClassTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__KineticHub, _p_pymoose__KineticHubTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__DifShell, _p_pymoose__DifShellTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Mg_block, _p_pymoose__Mg_blockTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__HHGate, _p_pymoose__HHGateTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__PIDController, _p_pymoose__PIDControllerTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Interpol, _p_pymoose__InterpolTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__SpikeGen, _p_pymoose__SpikeGenTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Enzyme, _p_pymoose__EnzymeTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Panel, _p_pymoose__PanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__CylPanel, _p_pymoose__CylPanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Nernst, _p_pymoose__NernstTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__DiffAmp, _p_pymoose__DiffAmpTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__GHK, _p_pymoose__GHKTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__HHChannel, _p_pymoose__HHChannelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__IntFire, _p_pymoose__IntFireTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__BinomialRng, _p_pymoose__BinomialRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__GammaRng, _p_pymoose__GammaRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Tick, _p_pymoose__TickTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Reaction, _p_pymoose__ReactionTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__ClockJob, _p_pymoose__ClockJobTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__CaConc, _p_pymoose__CaConcTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__RandomSpike, _p_pymoose__RandomSpikeTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__MathFunc, _p_pymoose__MathFuncTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__PoissonRng, _p_pymoose__PoissonRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__KineticManager, _p_pymoose__KineticManagerTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__KinCompt, _p_pymoose__KinComptTo_p_pymoose__PyMooseBase, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_pymoose__PyMooseBase[] = {  {&_swigt__p_pymoose__Table, _p_pymoose__TableTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__RectPanel, _p_pymoose__RectPanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__NeuroScan, _p_pymoose__NeuroScanTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__PyMooseBase, 0, 0, 0},  {&_swigt__p_pymoose__ExponentialRng, _p_pymoose__ExponentialRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__PulseGen, _p_pymoose__PulseGenTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__UniformRng, _p_pymoose__UniformRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__AscFile, _p_pymoose__AscFileTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__DiskPanel, _p_pymoose__DiskPanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Kintegrator, _p_pymoose__KintegratorTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__HemispherePanel, _p_pymoose__HemispherePanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__SpherePanel, _p_pymoose__SpherePanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__TauPump, _p_pymoose__TauPumpTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__TimeTable, _p_pymoose__TimeTableTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Molecule, _p_pymoose__MoleculeTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Neutral, _p_pymoose__NeutralTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__BinSynchan, _p_pymoose__BinSynchanTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__StochSynchan, _p_pymoose__StochSynchanTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__NormalRng, _p_pymoose__NormalRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Surface, _p_pymoose__SurfaceTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__RC, _p_pymoose__RCTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Geometry, _p_pymoose__GeometryTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__IzhikevichNrn, _p_pymoose__IzhikevichNrnTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__TriPanel, _p_pymoose__TriPanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__SynChan, _p_pymoose__SynChanTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Cell, _p_pymoose__CellTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Stoich, _p_pymoose__StoichTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__GssaStoich, _p_pymoose__GssaStoichTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__HSolve, _p_pymoose__HSolveTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__RandGenerator, _p_pymoose__RandGeneratorTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Compartment, _p_pymoose__CompartmentTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Class, _p_pymoose__ClassTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__KineticHub, _p_pymoose__KineticHubTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__DifShell, _p_pymoose__DifShellTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Mg_block, _p_pymoose__Mg_blockTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__HHChannel2D, _p_pymoose__HHChannel2DTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__HHGate, _p_pymoose__HHGateTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__PIDController, _p_pymoose__PIDControllerTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Interpol, _p_pymoose__InterpolTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__SpikeGen, _p_pymoose__SpikeGenTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Enzyme, _p_pymoose__EnzymeTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Panel, _p_pymoose__PanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__CylPanel, _p_pymoose__CylPanelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Nernst, _p_pymoose__NernstTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__HHGate2D, _p_pymoose__HHGate2DTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__DiffAmp, _p_pymoose__DiffAmpTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__GHK, _p_pymoose__GHKTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__HHChannel, _p_pymoose__HHChannelTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__IntFire, _p_pymoose__IntFireTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__BinomialRng, _p_pymoose__BinomialRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__GammaRng, _p_pymoose__GammaRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Tick, _p_pymoose__TickTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__Reaction, _p_pymoose__ReactionTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__ClockJob, _p_pymoose__ClockJobTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__CaConc, _p_pymoose__CaConcTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__RandomSpike, _p_pymoose__RandomSpikeTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__MathFunc, _p_pymoose__MathFuncTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__PoissonRng, _p_pymoose__PoissonRngTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__KineticManager, _p_pymoose__KineticManagerTo_p_pymoose__PyMooseBase, 0, 0},  {&_swigt__p_pymoose__KinCompt, _p_pymoose__KinComptTo_p_pymoose__PyMooseBase, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__PyMooseContext[] = {  {&_swigt__p_pymoose__PyMooseContext, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__RC[] = {  {&_swigt__p_pymoose__RC, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_pymoose__RandGenerator[] = {  {&_swigt__p_pymoose__UniformRng, _p_pymoose__UniformRngTo_p_pymoose__RandGenerator, 0, 0},  {&_swigt__p_pymoose__RandGenerator, 0, 0, 0},  {&_swigt__p_pymoose__BinomialRng, _p_pymoose__BinomialRngTo_p_pymoose__RandGenerator, 0, 0},  {&_swigt__p_pymoose__ExponentialRng, _p_pymoose__ExponentialRngTo_p_pymoose__RandGenerator, 0, 0},  {&_swigt__p_pymoose__PoissonRng, _p_pymoose__PoissonRngTo_p_pymoose__RandGenerator, 0, 0},  {&_swigt__p_pymoose__NormalRng, _p_pymoose__NormalRngTo_p_pymoose__RandGenerator, 0, 0},  {&_swigt__p_pymoose__GammaRng, _p_pymoose__GammaRngTo_p_pymoose__RandGenerator, 0, 0},{0, 0, 0, 0}};
@@ -108623,7 +110285,9 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_pymoose__Geometry,
   _swigc__p_pymoose__GssaStoich,
   _swigc__p_pymoose__HHChannel,
+  _swigc__p_pymoose__HHChannel2D,
   _swigc__p_pymoose__HHGate,
+  _swigc__p_pymoose__HHGate2D,
   _swigc__p_pymoose__HSolve,
   _swigc__p_pymoose__HemispherePanel,
   _swigc__p_pymoose__IntFire,
@@ -109284,6 +110948,8 @@ SWIGEXPORT void SWIG_init(void) {
   SWIG_addvarlink(SWIG_globals(),(char*)"IntFire_className_",Swig_var_IntFire_className__get, Swig_var_IntFire_className__set);
   SWIG_addvarlink(SWIG_globals(),(char*)"IzhikevichNrn_className_",Swig_var_IzhikevichNrn_className__get, Swig_var_IzhikevichNrn_className__set);
   SWIG_addvarlink(SWIG_globals(),(char*)"GHK_className_",Swig_var_GHK_className__get, Swig_var_GHK_className__set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"HHChannel2D_className_",Swig_var_HHChannel2D_className__get, Swig_var_HHChannel2D_className__set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"HHGate2D_className_",Swig_var_HHGate2D_className__get, Swig_var_HHGate2D_className__set);
   
   /* Initialize threading */
   SWIG_PYTHON_INITIALIZE_THREADS;
