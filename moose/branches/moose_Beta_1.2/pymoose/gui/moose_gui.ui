@@ -263,6 +263,7 @@
      <string>File</string>
     </property>
     <addaction name="actionLoad" />
+    <addaction name="actionSettings" />
     <addaction name="actionQuit" />
    </widget>
    <widget class="QMenu" name="menuTutorials" >
@@ -366,6 +367,11 @@
   <action name="actionIzhikevich_Neurons" >
    <property name="text" >
     <string>Izhikevich Neurons</string>
+   </property>
+  </action>
+  <action name="actionSettings" >
+   <property name="text" >
+    <string>Settings</string>
    </property>
   </action>
  </widget>
