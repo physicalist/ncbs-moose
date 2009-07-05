@@ -6522,5 +6522,88 @@ GHK_swigregister = _moose.GHK_swigregister
 GHK_swigregister(GHK)
 GHK.className_ = _moose.cvar.GHK_className_
 
+class HHChannel2D(PyMooseBase):
+    """Proxy of C++ HHChannel2D class"""
+    thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self, Id id) -> HHChannel2D
+        __init__(self, string path) -> HHChannel2D
+        __init__(self, string name, Id parentId) -> HHChannel2D
+        __init__(self, string name, PyMooseBase parent) -> HHChannel2D
+        __init__(self, HHChannel2D src, string name, PyMooseBase parent) -> HHChannel2D
+        __init__(self, HHChannel2D src, string name, Id parent) -> HHChannel2D
+        __init__(self, HHChannel2D src, string path) -> HHChannel2D
+        __init__(self, Id src, string name, Id parent) -> HHChannel2D
+        """
+        this = _moose.new_HHChannel2D(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _moose.delete_HHChannel2D
+    __del__ = lambda self : None;
+    def getType(*args):
+        """getType(self) -> string"""
+        return _moose.HHChannel2D_getType(*args)
+
+    def __get_Xindex(*args):
+        """__get_Xindex(self) -> string"""
+        return _moose.HHChannel2D___get_Xindex(*args)
+
+    def __set_Xindex(*args):
+        """__set_Xindex(self, string Xindex)"""
+        return _moose.HHChannel2D___set_Xindex(*args)
+
+    def __get_Yindex(*args):
+        """__get_Yindex(self) -> string"""
+        return _moose.HHChannel2D___get_Yindex(*args)
+
+    def __set_Yindex(*args):
+        """__set_Yindex(self, string Yindex)"""
+        return _moose.HHChannel2D___set_Yindex(*args)
+
+    def __get_Zindex(*args):
+        """__get_Zindex(self) -> string"""
+        return _moose.HHChannel2D___get_Zindex(*args)
+
+    def __set_Zindex(*args):
+        """__set_Zindex(self, string Zindex)"""
+        return _moose.HHChannel2D___set_Zindex(*args)
+
+    Xindex = _swig_property(_moose.HHChannel2D_Xindex_get, _moose.HHChannel2D_Xindex_set)
+    Yindex = _swig_property(_moose.HHChannel2D_Yindex_get, _moose.HHChannel2D_Yindex_set)
+    Zindex = _swig_property(_moose.HHChannel2D_Zindex_get, _moose.HHChannel2D_Zindex_set)
+HHChannel2D_swigregister = _moose.HHChannel2D_swigregister
+HHChannel2D_swigregister(HHChannel2D)
+HHChannel2D.className_ = _moose.cvar.HHChannel2D_className_
+
+class HHGate2D(PyMooseBase):
+    """Proxy of C++ HHGate2D class"""
+    thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        __init__(self, Id id) -> HHGate2D
+        __init__(self, string path) -> HHGate2D
+        __init__(self, string name, Id parentId) -> HHGate2D
+        __init__(self, string name, PyMooseBase parent) -> HHGate2D
+        __init__(self, HHGate2D src, string name, PyMooseBase parent) -> HHGate2D
+        __init__(self, HHGate2D src, string name, Id parent) -> HHGate2D
+        __init__(self, HHGate2D src, string path) -> HHGate2D
+        __init__(self, Id src, string name, Id parent) -> HHGate2D
+        """
+        this = _moose.new_HHGate2D(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _moose.delete_HHGate2D
+    __del__ = lambda self : None;
+    def getType(*args):
+        """getType(self) -> string"""
+        return _moose.HHGate2D_getType(*args)
+
+HHGate2D_swigregister = _moose.HHGate2D_swigregister
+HHGate2D_swigregister(HHGate2D)
+HHGate2D.className_ = _moose.cvar.HHGate2D_className_
+
 
 
