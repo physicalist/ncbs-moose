@@ -88,7 +88,6 @@ extern const Cinfo* initTauPumpCinfo();
 extern const Cinfo* initTimeTableCinfo();
 extern const Cinfo* initTriPanelCinfo();
 extern const Cinfo* initUniformRngCinfo();
-extern const Cinfo* initSteadyStateCinfo();
 extern const Cinfo* initscript_outCinfo();
 
 void initCinfos(){
@@ -182,7 +181,6 @@ void initCinfos(){
     static const Cinfo* TriPanelCinfo = initTriPanelCinfo();
     static const Cinfo* UniformRngCinfo = initUniformRngCinfo();
     static const Cinfo* script_outCinfo = initscript_outCinfo();
-    static const Cinfo* SteadyStateCinfo = initSteadyStateCinfo();
-    
+       
     
 }
