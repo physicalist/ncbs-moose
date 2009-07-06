@@ -45,10 +45,11 @@
 
 # Code:
 
+import moose
 import sys
 from PyQt4 import QtCore, QtGui
 sys.path.append('/home/subha/src/moose/pymoose')
-import moose
+
 
 class MooseTreeItem(QtGui.QTreeWidgetItem):
     def __init__(self, *args):

@@ -1507,6 +1507,14 @@ class PyMooseContext(object):
         """className(self, Id objId) -> string"""
         return _moose.PyMooseContext_className(*args)
 
+    def description(*args):
+        """description(self, string className) -> string"""
+        return _moose.PyMooseContext_description(*args)
+
+    def author(*args):
+        """author(self, string className) -> string"""
+        return _moose.PyMooseContext_author(*args)
+
     def doc(*args):
         """doc(self, string className) -> string"""
         return _moose.PyMooseContext_doc(*args)
@@ -1577,6 +1585,18 @@ class PyMooseBase(object):
     __repr__ = _swig_repr
     __swig_destroy__ = _moose.delete_PyMooseBase
     __del__ = lambda self : None;
+    def __get_className(*args):
+        """__get_className(self) -> string"""
+        return _moose.PyMooseBase___get_className(*args)
+
+    def __get_author(*args):
+        """__get_author(self) -> string"""
+        return _moose.PyMooseBase___get_author(*args)
+
+    def __get_description(*args):
+        """__get_description(self) -> string"""
+        return _moose.PyMooseBase___get_description(*args)
+
     def destroy(*args):
         """destroy(Id id) -> bool"""
         return _moose.PyMooseBase_destroy(*args)
@@ -1600,10 +1620,6 @@ class PyMooseBase(object):
         return _moose.PyMooseBase_getContext(*args)
 
     getContext = staticmethod(getContext)
-    def getFieldList(*args):
-        """getFieldList(self) -> string_vector"""
-        return _moose.PyMooseBase_getFieldList(*args)
-
     def getField(*args):
         """getField(self, string name) -> string"""
         return _moose.PyMooseBase_getField(*args)
@@ -1612,9 +1628,20 @@ class PyMooseBase(object):
         """setField(self, string name, string value)"""
         return _moose.PyMooseBase_setField(*args)
 
-    def __get_className(*args):
-        """__get_className(self) -> string"""
-        return _moose.PyMooseBase___get_className(*args)
+    def getFieldList(*args):
+        """
+        getFieldList(self) -> string_vector
+        getFieldList(self, FieldType ftype=ALL) -> string_vector
+        getFieldList(self) -> string_vector
+        """
+        return _moose.PyMooseBase_getFieldList(*args)
+
+    def neighbours(*args):
+        """
+        neighbours(self, string msgName="*") -> Id_vector
+        neighbours(self) -> Id_vector
+        """
+        return _moose.PyMooseBase_neighbours(*args)
 
     def children(*args):
         """children(self) -> Id_vector"""
