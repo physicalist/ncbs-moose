@@ -18,8 +18,10 @@
 const int TAB_SIZE = 1000;
 
 using namespace std;
-
+class Plot;
+istream& operator>>(istream& s, Plot& p);
 class Plot {
+		friend istream& operator>>(istream& s, Plot& p);
 		public:
 				Plot()
 				{
