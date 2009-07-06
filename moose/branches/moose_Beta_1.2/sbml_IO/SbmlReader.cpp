@@ -113,7 +113,7 @@ map< string,Id > SbmlReader::createCompartment( Id location )
 	double msize = 0.0,size=0.0;	
 	::Compartment* compt;
 	unsigned int num_compts = model_->getNumCompartments();
-	cout << "num of compartments :" << num_compts <<endl;
+	//cout << "num of compartments :" << num_compts <<endl;
 	for ( unsigned int i = 0; i < num_compts; i++ )
 	{
 		compt = model_->getCompartment(i);
