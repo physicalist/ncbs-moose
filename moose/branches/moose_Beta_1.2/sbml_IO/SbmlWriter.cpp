@@ -34,6 +34,11 @@
 
 void SbmlWriter::write( string filepath,Id location )
 {
+	string::size_type loc;
+	while ( ( loc = filepath.find( "\\" ) ) != string::npos ) {
+		filepath.replace( loc, 1, "/" );
+	}
+
 	/* allows to write filename with extensions xml,zip,bz2 and gz. if no 
 	extension is given then .xml is the default one. */
 	string fName = filepath;
