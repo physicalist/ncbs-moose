@@ -46,10 +46,10 @@
 # Code:
 
 import sys
+from mainwin import MainWindow
 from PyQt4.Qt import Qt
 from PyQt4 import QtCore, QtGui
 
-from mainwin import MainWindow
 
 
 if __name__ == '__main__':
