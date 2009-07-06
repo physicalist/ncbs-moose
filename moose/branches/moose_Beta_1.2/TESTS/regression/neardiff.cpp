@@ -30,7 +30,7 @@ class Plot {
 						parmname = "";
 				}
 
-				friend istream& operator>>(istream& s, Plot& p);
+				//friend istream& operator>>(istream& s, Plot& p);
 
 				bool operator< (const Plot& other) const ;
 
