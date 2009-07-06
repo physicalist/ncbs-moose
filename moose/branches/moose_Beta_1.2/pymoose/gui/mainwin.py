@@ -65,7 +65,7 @@ from moosetree import MooseTreeWidget
 from moosepropedit import PropertyModel
 from moosehandler import MHandler
 from filetypeutil import FileTypeChecker
-from mooseplot import MoosePlots
+from mooseplots import MoosePlots
 
 class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
     """Main Window for MOOSE GUI"""
