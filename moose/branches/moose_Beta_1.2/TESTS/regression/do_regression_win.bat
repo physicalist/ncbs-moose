@@ -1,6 +1,6 @@
 @echo off
 
-set MOOSE=..\..\moose_vcpp2005\Debug\moose
+set MOOSE=..\..\moose_vcpp2005\Release\moose
 
 REM nearDiff is a function to see if two data files are within epsilon of each other. It assumes the files are in xplot format.If it succeeds, it prints out a period without a newline.If it fails, it prints out the first argument and indicates where it failed.
 
@@ -9,11 +9,7 @@ set NEARDIFF=.\neardiff
 REM ############### SBML SECTION ################
 IF EXIST test.plot ERASE test.plot
 
-<<<<<<< .working
 %MOOSE% moose_sbml_reader.g >> NUL 2>& 1
-=======
-%MOOSE% moose_sbml_reader.g > NUL
->>>>>>> .merge-right.r1222
 %NEARDIFF% acc88_copasi.plot test.plot 3.0e-2 -f
 ECHO sbml_Read
 
@@ -23,10 +19,7 @@ IF EXIST test.plot ERASE test.plot
 %NEARDIFF% moose.plot test.plot 1.0e-16 
 ECHO sbml_Read_Write
 
-<<<<<<< .working
 REM ############## Kinetics SECTION #################
-=======
->>>>>>> .merge-right.r1222
 IF EXIST test.plot ERASE test.plot
 
 %MOOSE% moose_kholodenko.g >> NUL 2>& 1
@@ -35,25 +28,13 @@ ECHO  kinetics
 
 REM ############## Neuronal SECTION #################
 IF EXIST test.plot ERASE test.plot
-<<<<<<< .working
 %MOOSE% moose_squid.g >> NUL 2>& 1
 %NEARDIFF% moose_squid.plot test.plot 1.0e-5
 ECHO squid
-=======
-%MOOSE% moose_squid.g > NUL
-%NEARDIFF% moose_squid.plot test.plot 1.0e-5
-ECHO squid
->>>>>>> .merge-right.r1222
 
-<<<<<<< .working
 IF EXIST test.plot ERASE test.plot
 
 %MOOSE% moose_readcell_global_parms.g >> NUL 2>& 1
-=======
-IF EXIST test.plot ERASE test.plot
-
-%MOOSE% moose_readcell_global_parms.g >NUL 
->>>>>>> .merge-right.r1222
 %NEARDIFF% moose_readcell_global_parms.plot test.plot 1.0e-5 -fractional
 ECHO readcell1
 

@@ -1128,6 +1128,28 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\..\pymoose\HHChannel2D.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\..\pymoose\HHGate.cpp"
 					>
 					<FileConfiguration
@@ -1148,6 +1170,10 @@
 							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 						/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\HHGate2D.cpp"
+					>
 				</File>
 				<File
 					RelativePath="..\..\pymoose\HSolve.cpp"
@@ -3062,7 +3088,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\pymoose\HHChannel2D.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\pymoose\HHGate.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\HHGate2D.h"
 					>
 				</File>
 				<File
