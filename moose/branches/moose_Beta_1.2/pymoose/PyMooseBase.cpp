@@ -305,6 +305,18 @@ PyMooseBase::~PyMooseBase()
     id_ = Id();    
 }
 
+const std::string PyMooseBase::__get_author() const
+{
+    const Cinfo * cinfo = this->id_()->cinfo();
+    return cinfo->author();
+}
+
+const std::string PyMooseBase::__get_description() const
+{
+    const Cinfo * cinfo = this->id_()->cinfo();
+    return cinfo->description();
+}
+
 const std::vector<std::string> PyMooseBase::getFieldList() const
 {
     std::string fields = PyMooseBase::getContext()->getField(this->id_, "fieldList");
@@ -352,6 +364,22 @@ const vector <Id> PyMooseBase::children() const
     return context_->getChildren(id_);
 }
 
+
+
+const vector <std::string> PyMooseBase::getFieldList(FieldType ftype)
+{
+    return context_->getFieldList(id_, ftype);
+}
+const vector <Id> PyMooseBase::neighbours(const std::string& msgName)
+{
+    return context_->getNeighbours(id_, msgName);
+}
+/*
+const map<Id, std::string> PyMooseBase::neighbourFields(const string& field)
+{
+    
+}
+*/
 const std::string PyMooseBase::__get_name() const
 {
     return context_->getName(id_);

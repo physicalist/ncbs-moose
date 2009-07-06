@@ -25,7 +25,10 @@ namespace pymoose
         PyMooseBase(const Id& src, string name, Id& parent);
         
         virtual ~PyMooseBase();
-        
+
+        const std::string __get_className() const;
+        const std::string __get_author() const;
+        const std::string __get_description() const;
         static bool destroy(Id id);    
         static void endSimulation();    
         virtual const std::string& getType() = 0;
@@ -34,7 +37,12 @@ namespace pymoose
         const std::vector<std::string> getFieldList() const;
         const std::string getField(std::string name) const;
         void setField(std::string name, std::string value);
-        const std::string __get_className() const;
+        const std::vector<std::string> getFieldList(FieldType ftype=ALL);
+        const std::vector<Id> neighbours(const std::string& msgName="*");
+        // TODO: need a way to find the field name of the other end of
+        // a message. It will be good to have the source object Id and
+        // the field name.
+        //        const std::map<Id, string> neighbourFields(std::string& field);
         const vector< Id > children() const;
         const Id* __get_parent() const;
         const std::string __get_path() const;   
@@ -58,7 +66,8 @@ namespace pymoose
         static Id pathToId(std::string path, bool echo = true);
         static const std::string idToPath(Id id);
         static Id getParent(Id id);
-        static std::vector < Id > getChildren(Id id);    
+        static std::vector < Id > getChildren(Id id);
+        
         static void initSimulation();
         
 // Think about this - are we going to allow people to access objects by their ID?
