@@ -345,6 +345,7 @@ void doneInit()
 	if ( Shell::myNode() == 0 )
 		cout << "\nInitialized " << Shell::numNodes() << " nodes" << endl;
 
+#ifndef NDEBUG
 	for ( unsigned int i = 0; i < Shell::numNodes(); i++ ) {
 		if ( i == Shell::myNode() ) {
 			cout << "Node " << i << ":\n";
@@ -352,6 +353,7 @@ void doneInit()
 		}
 		MuMPI::INTRA_COMM().Barrier();
 	}
+#endif // NDEBUG
 #endif // USE_MPI
 }
 

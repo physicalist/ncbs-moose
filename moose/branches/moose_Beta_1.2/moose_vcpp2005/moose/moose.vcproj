@@ -126,7 +126,7 @@
 				Optimization="3"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="..\..\signeur;..\..\robots;..\..\randnum;..\..\utility;..\..\shell;..\..\scheduling;..\..\parallel;..\..\sbml_IO;..\..\device;..\..\maindir;..\..\ksolve;..\..\kinetics;..\..\hsolve;..\..\genesis_parser;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..;&quot;D:\Program Files\MPICH2\include&quot;;&quot;C:\Program Files\GnuWin32\include&quot;;&quot;D:\sbml\libsbml-3.3.2\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;USE_GENESIS_PARSER;USE_GSL;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_WIN32;USE_MPI;USE_SBML"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;USE_GENESIS_PARSER;USE_GSL;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_WIN32;USE_SBML"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -149,7 +149,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="false"
-				AdditionalDependencies="libgsl.a libgslcblas.a mpi.lib Ws2_32.lib cxx.lib zlib.lib bzip2.lib libsbml.lib libexpat.lib"
+				AdditionalDependencies="libgsl.a libgslcblas.a zlib.lib bzip2.lib libsbml.lib libexpat.lib"
 				AdditionalLibraryDirectories="&quot;D:\sbml\libsbml-3.3.2\win32\bin&quot;;&quot;D:\Program Files\MPICH2\lib&quot;;&quot;C:\Program Files\GnuWin32\lib&quot;"
 			/>
 			<Tool
