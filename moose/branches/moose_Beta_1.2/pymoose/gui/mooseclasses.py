@@ -46,7 +46,7 @@
 
 # Code:
 import sys
-sys.path.append('..')
+
 import moose
 from PyQt4 import QtCore, QtGui
 

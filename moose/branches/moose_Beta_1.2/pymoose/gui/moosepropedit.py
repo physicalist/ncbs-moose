@@ -116,11 +116,11 @@ class PropertyModel(QtCore.QAbstractTableModel):
 
     
 
-import sys
-sys.path.append("/home/subha/src/moose/pymoose")
-import moose
+
 
 if __name__ == "__main__":
+    import sys
+    import moose
     app =  QtGui.QApplication([])
     mainWin = QtGui.QMainWindow()
     view = QtGui.QTableView()
