@@ -13,11 +13,11 @@
 ; used here to include the moose binary in the execution path.
 !include "EnvVarUpdate.nsh"
 
-; The name of the installer
-Name "Moose Beta 1.1 Installer"
+; Name of program
+Name "Moose Beta 1.2"
 
 ; The file to write
-OutFile "moose-beta-1.1.0.exe"
+OutFile "moose-beta-1.2.0.exe"
 
 ; The default installation directory
 InstallDir $PROGRAMFILES\MOOSE
@@ -115,6 +115,20 @@ section
  
 # default section end
 sectionEnd
+
+;--------------------------------
+; Uninstall old versions of MOOSE
+; Checks if HKLM\Software\MOOSE\Install_Dir contains a string. This is the location where the Install_Dir for 
+Function UninstallOld
+	Push $0
+	ReadRegStr $0 HKLM Software\MOOSE "Install_Dir"
+	${If} $0 != ""
+		MessageBox MB_YESNO|MB_ICONQUESTION "MOOSE is already installed at '$0'. Do you wish to uninstall it?" /SD IDYES IDNO nouninstall
+			ExecWait '"$0\uninstall.exe"'
+	${EndIf}
+	nouninstall:
+	Pop $0
+FunctionEnd
 
 ; The stuff to install
 Section "moose" 
