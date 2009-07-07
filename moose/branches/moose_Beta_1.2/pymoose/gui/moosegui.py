@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # moosegui.py --- 
 # 
 # Filename: moosegui.py
