@@ -123,8 +123,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="..\..\device;..\..\scheduling;..\..\maindir;..\..\hsolve;..\..\utility;..\..\kinetics;..\..\ksolve;..\..\genesis_parser;..\..\shell;..\..\randnum;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..\pymoose;..\..;&quot;C:\Program Files\GnuWin32\include&quot;;C:\Python25\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;USE_GENESIS_PARSER;USE_GSL;snprintf=_snprintf_s;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0"
+				AdditionalIncludeDirectories="..\..\device;..\..\scheduling;..\..\maindir;..\..\hsolve;..\..\utility;..\..\kinetics;..\..\ksolve;..\..\genesis_parser;..\..\shell;..\..\randnum;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..\pymoose;..\..\sbml_IO;..\..;&quot;C:\Program Files\GnuWin32\include&quot;;&quot;D:\sbml\libsbml-3.3.2\include&quot;;C:\Python25\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;USE_GENESIS_PARSER;USE_GSL;snprintf=_snprintf_s;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;USE_SBML"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -143,10 +143,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libgsl.a libgslcblas.a python25.lib"
+				AdditionalDependencies="libgsl.a libgslcblas.a zlib.lib bzip2.lib libsbml.lib libexpat.lib python25.lib"
 				OutputFile="_moose.pyd"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;C:\Python25\libs&quot;;&quot;C:\Program Files\GnuWin32\lib&quot;"
+				AdditionalLibraryDirectories="&quot;D:\sbml\libsbml-3.3.2\win32\bin&quot;;C:\Python25\libs;&quot;C:\Program Files\GnuWin32\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -2456,6 +2456,18 @@
 					</FileConfiguration>
 				</File>
 			</Filter>
+			<Filter
+				Name="sbml_IO"
+				>
+				<File
+					RelativePath="..\..\sbml_IO\SbmlReader.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sbml_IO\SbmlWriter.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -3471,6 +3483,18 @@
 				</File>
 				<File
 					RelativePath="..\..\device\RC.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="sbml_IO"
+				>
+				<File
+					RelativePath="..\..\sbml_IO\SbmlReader.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sbml_IO\SbmlWriter.h"
 					>
 				</File>
 			</Filter>
