@@ -205,11 +205,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 
     def loadIzhikevich_Neurons_Tutorial(self):
-	self.mooseHandler.load('../examples/izhikevich/Izhikevich.py', 'MOOSE')
+	self.mooseHandler.load('/usr/share/doc/moose1.2/DEMOS/pymoose/izhikevich/Izhikevich.py', 'MOOSE')
 
 
     def loadSquid_Axon_Tutorial(self):
-	self.mooseHandler.load('../examples/squid/qtSquid.py', 'MOOSE')
+	self.mooseHandler.load('/usr/share/doc/moose1.2/DEMOS/pymoose/squid/qtSquid.py', 'MOOSE')
 
 
     def showAbout_MOOSE(self):

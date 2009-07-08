@@ -2,14 +2,14 @@
 #
 # This is the GUI and controls for the squid demo
 import sys
-
+from squidModel import *
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 from PyQt4 import Qwt5 as Qwt
 import PyQt4.Qwt5.qplt as qplt
 import PyQt4.Qwt5.anynumpy as numpy
 
-from squidModel import *
+
 
 STATEPLOT_COLORMAP = { "V-h": QtCore.Qt.red, "h-V": QtCore.Qt.darkRed, "m-n": QtCore.Qt.green, "n-m": QtCore.Qt.darkGreen, "n-V":QtCore.Qt.blue, "V-n":QtCore.Qt.darkBlue, "h-n": QtCore.Qt.cyan, "n-h": QtCore.Qt.darkCyan, "m-h": QtCore.Qt.magenta, "h-m": QtCore.Qt.darkMagenta, "V-m": QtCore.Qt.lightGray, "m-V": QtCore.Qt.gray, "V-V": QtCore.Qt.black, "h-h":QtCore.Qt.black, "m-m": QtCore.Qt.black, "n-n": QtCore.Qt.black }
 
