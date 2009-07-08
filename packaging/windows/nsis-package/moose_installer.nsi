@@ -1,8 +1,5 @@
-; moose.nsi
-
-; It will install moose into a directory that the user selects.
-
-;--------------------------------
+; Allows use of logical operations like ${If} $0 != ""
+!include "LogicLib.nsh"
 
 ; This extension allows us to create file-associations in the registry.
 ; In other words, the user can click a *.g file, and MOOSE will execute
@@ -13,32 +10,30 @@
 ; used here to include the moose binary in the execution path.
 !include "EnvVarUpdate.nsh"
 
+; Check for Admin priveleges
+!include "isUserAdmin.nsh"
+
 ; Name of program
 Name "Moose Beta 1.2"
 
 ; The file to write
 OutFile "moose-beta-1.2.0.exe"
 
+; Choose if PyMOOSE/GUI should be packaged
+;!define PyMOOSE
+
 ; The default installation directory
 InstallDir $PROGRAMFILES\MOOSE
-;InstallDir $DOCUMENTS\MOOSE
 
 ; Registry key to check for directory (so if you install again, it will 
 ; overwrite the old one automatically)
 InstallDirRegKey HKLM "Software\MOOSE" "Install_Dir"
 
-; Request application privileges for Windows Vista
+; Request application privileges for Windows Vista and Windows 7
 RequestExecutionLevel admin
 
-
 ; Compression
-
-!ifdef NSIS_LZMA_COMPRESS_WHOLE
-  SetCompressor lzma
-!else
-  SetCompressor /SOLID lzma
-!endif
-
+; SetCompressor /SOLID lzma
 
 ;--------------------------------
 ; text file to open in notepad after installation
@@ -66,183 +61,188 @@ UninstPage instfiles
 Icon "${icon}"
 !endif
 
-
 !ifdef licensefile
 LicenseText "License"
 LicenseData "${licensefile}"
-!endif
-!ifdef licensefile
 Page license
 !endif
 
-;--------------------------------
 ; Show MOOSE Logo
 Function .onInit
-  SetOutPath $TEMP
-  File /oname=spltmp.bmp "beta-1.1.0.bmp"
-
-; optional
-; File /oname=spltmp.wav "my_splash.wav"
-
-  advsplash::show 1000 600 400 -1 $TEMP\spltmp
-
-  Pop $0 ; $0 has '1' if the user closed the splash screen early,
-         ; '0' if everything closed normally, and '-1' if some error occurred.
-
-  Delete $TEMP\spltmp.bmp
-;  Delete $TEMP\spltmp.wav
-FunctionEnd
-;--------------------------------
-
-# default section start
-section
- 
-    # call userInfo plugin to get user info.  The plugin puts the result in the stack
-    userInfo::getAccountType
-   
-    # pop the result from the stack into $0
-    pop $0
- 
-    # compare the result with the string "Admin" to see if the user is admin. If match, jump 3 lines down.
-    strCmp $0 "Admin" +3
- 
-    # if there is not a match, print message and return
-    messageBox MB_OK "Error! You need to be Administrator to run this installer."
-    return
-	
-    # otherwise, confirm and return
-    ;messageBox MB_OK "is admin"
- 
-# default section end
-sectionEnd
-
-;--------------------------------
-; Uninstall old versions of MOOSE
-; Checks if HKLM\Software\MOOSE\Install_Dir contains a string. This is the location where the Install_Dir for 
-Function UninstallOld
 	Push $0
-	ReadRegStr $0 HKLM Software\MOOSE "Install_Dir"
-	${If} $0 != ""
-		MessageBox MB_YESNO|MB_ICONQUESTION "MOOSE is already installed at '$0'. Do you wish to uninstall it?" /SD IDYES IDNO nouninstall
-			ExecWait '"$0\uninstall.exe"'
-	${EndIf}
-	nouninstall:
+	Push $R0
+	
+	ReadRegStr $R0 HKLM \
+	"Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" \
+	"UninstallString"
+	StrCmp $R0 "" done
+	
+	MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+	"MOOSE is already installed. $\n$\nClick `OK` to remove the \
+	previous version or `Cancel` to cancel this upgrade." \
+	IDOK uninst
+	Abort
+	
+	;Run the uninstaller
+	uninst:
+	ClearErrors
+	ExecWait '$R0 _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
+	
+	IfErrors no_remove_uninstaller done
+	;You can either use Delete /REBOOTOK in the uninstaller or add some code
+	;here to remove the uninstaller. Use a registry key to check
+	;whether the user has chosen to uninstall. If you are using an uninstaller
+	;components page, make sure all sections are uninstalled.
+	no_remove_uninstaller:
+	done:
+	
+	SetOutPath $TEMP
+	File /oname=spltmp.bmp "beta-1.1.0.bmp"
+;	File /oname=spltmp.wav "splash.wav"
+	
+	advsplash::show 1000 600 400 -1 $TEMP\spltmp
+	
+	Pop $0	; $0 has '1' if the user closed the splash screen early,
+			; '0' if everything closed normally, and '-1' if some error occurred.
+	
+	Delete $TEMP\spltmp.bmp
+;	Delete $TEMP\spltmp.wav
+	
+	Pop $R0
 	Pop $0
 FunctionEnd
 
+# default section start
+Section
+	Push $0
+	
+    ; # call userInfo plugin to get user info.  The plugin puts the result in the stack
+    ; UserInfo::getAccountType
+    ; # pop the result from the stack into $0
+    ; Pop $0
+    ; # compare the result with the string "Admin" to see if the user is admin. If match, jump 3 lines down.
+    ; StrCmp $0 "Admin" +3
+	
+	Call IsUserAdmin
+	Pop $0
+	StrCmp $0 "true" +3
+	
+    # if there is not a match, print message and return
+    MessageBox MB_OK "Error! You need to be Administrator to run this installer."
+	
+	Pop $0
+SectionEnd
+
 ; The stuff to install
 Section "moose" 
+	SectionIn RO
+	
+	; Set output path to the installation directory.
+	SetOutPath $INSTDIR
+	
+	; Put files there
+	File "moose.exe"
+	File "COPYING.LIB.txt"
+	File "copyleft.txt"
+	File "launcher.bat"
+	File "launch.lnk"
+	CreateDirectory "$INSTDIR\Docs"
+	File /r "Docs"
+	CreateDirectory "$INSTDIR\Demos"
+	File /r "Demos"
+	CreateDirectory "$INSTDIR\RegressionTests"
+	File /r "RegressionTests"
+	
+	!ifdef licensefile
+	File /a "${licensefile}"
+	!endif
 
-  SectionIn RO
-  
-  ; Set output path to the installation directory.
-  SetOutPath $INSTDIR
-  
-  ; Put files there
-  File "moose.exe"
-  File "moose.py"
-  File "_moose.pyd"
-  File "COPYING.LIB.txt"
-  File "copyleft.txt"
-  File "launcher.bat"
-  File "launch.lnk"
-  CreateDirectory "$INSTDIR\Docs"
-  File /r "Docs"
-  CreateDirectory "$INSTDIR\Demos"
-  File /r "Demos"
-  CreateDirectory "$INSTDIR\RegressionTests"
-  File /r "RegressionTests"
-
-!ifdef licensefile
-  File /a "${licensefile}"
-!endif
- 
-;!ifdef notefile
-;  File /a "${notefile}"
-;!endif
- 
-!ifdef icon
-  File /a "${icon}"
-!endif
-
-  ; Write the installation path into the registry
-  WriteRegStr HKLM SOFTWARE\MOOSE "Install_Dir" "$INSTDIR"
-  
-  ; Write the uninstall keys for Windows
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" "DisplayName" "MOOSE"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" "NoModify" 1
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" "NoRepair" 1
-  WriteUninstaller "uninstall.exe"
-
-  ; Link .g files to MOOSE
-  ${registerExtension} "$INSTDIR\launcher.bat" ".g" "MOOSE Script"
-  
-  ; Include MOOSE binary's path in the execution path.
-  ; This is done by updating the PATH environment variable in the
-  ; registry.
-  ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR"  
-  
-!ifdef introfile
-  ExecShell "open" "$INSTDIR\${introfile}"
-!endif
- 
+	!ifdef notefile
+	File /a "${notefile}"
+	!endif
+	
+	!ifdef icon
+	File /a "${icon}"
+	!endif
+	
+	!ifdef PyMOOSE
+	File "moose.py"
+	File "_moose.pyd"
+	!endif
+	
+	; Write the installation path into the registry
+	WriteRegStr HKLM SOFTWARE\MOOSE "Install_Dir" "$INSTDIR"
+	
+	; Write the uninstall keys for Windows
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" "DisplayName" "MOOSE"
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" "UninstallString" '"$INSTDIR\uninstall.exe"'
+	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" "NoModify" 1
+	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" "NoRepair" 1
+	WriteUninstaller "uninstall.exe"
+	
+	; Link .g files to MOOSE
+	${registerExtension} "$INSTDIR\launcher.bat" ".g" "MOOSE Script"
+	
+	; Include MOOSE binary's path in the execution path.
+	; This is done by updating the PATH environment variable in the
+	; registry.
+	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR"  
+	
+	!ifdef introfile
+	ExecShell "open" "$INSTDIR\${introfile}"
+	!endif
 SectionEnd
 
 ; Optional section (can be disabled by the user)
 Section "Start Menu Shortcuts"
-  SetShellVarContext all
-  CreateDirectory "$SMPROGRAMS\MOOSE"
-  CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moose.exe" 0
-  CreateDirectory "$SMPROGRAMS\MOOSE\Examples"
-  CreateShortCut "$SMPROGRAMS\MOOSE\Examples\Demos.lnk" "$INSTDIR\Demos" "" "$INSTDIR\Demos" 0
-  CreateShortCut "$SMPROGRAMS\MOOSE\Examples\Regression Tests.lnk" "$INSTDIR\RegressionTests" "" "$INSTDIR\RegressionTests" 0
-  CreateShortCut "$SMPROGRAMS\MOOSE\Documentation.lnk" "$INSTDIR\Docs" "" "$INSTDIR\Docs" 0
-  CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE Website.lnk" "$INSTDIR\Docs\MOOSE Website.url" "" "$INSTDIR\Docs\MOOSE Website.url" 0
-  CreateShortCut "$SMPROGRAMS\MOOSE\Report Bugs.lnk" "$INSTDIR\Docs\Report Bugs.url" "" "$INSTDIR\Docs\Report Bugs.url" 0
-  CreateShortCut "$SMPROGRAMS\MOOSE\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
+	SetShellVarContext all
+	CreateDirectory "$SMPROGRAMS\MOOSE"
+	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moose.exe" 0
+	CreateDirectory "$SMPROGRAMS\MOOSE\Examples"
+	CreateShortCut "$SMPROGRAMS\MOOSE\Examples\Demos.lnk" "$INSTDIR\Demos" "" "$INSTDIR\Demos" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\Examples\Regression Tests.lnk" "$INSTDIR\RegressionTests" "" "$INSTDIR\RegressionTests" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\Documentation.lnk" "$INSTDIR\Docs" "" "$INSTDIR\Docs" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE Website.lnk" "$INSTDIR\Docs\MOOSE Website.url" "" "$INSTDIR\Docs\MOOSE Website.url" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\Report Bugs.lnk" "$INSTDIR\Docs\Report Bugs.url" "" "$INSTDIR\Docs\Report Bugs.url" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 SectionEnd
 
-;--------------------------------
-
 ; Uninstaller
-
 Section "Uninstall"
-  SetShellVarContext all
-  
-  ; Remove registry keys
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE"
-  DeleteRegKey HKLM SOFTWARE\MOOSE
-  
-  ; Unlink .g files with MOOSE
-  ${unregisterExtension} ".g" "MOOSE Script"
-  
-  ; Exclude MOOSE binary's path from the execution path.
-  ; This is done by updating the PATH environment variable in the
-  ; registry.
-  ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR"   
-  
-  ; Remove files and uninstaller
-  Delete $INSTDIR\moose.exe
-  Delete $INSTDIR\uninstall.exe
-  
-!ifdef licensefile
-  Delete "$INSTDIR\${licensefile}"
-!endif
- 
-!ifdef notefile
-  Delete "$INSTDIR\${notefile}"
-!endif
- 
-!ifdef icon
-  Delete "$INSTDIR\${icon}"
-!endif
-  
-  ; Remove shortcuts, if any
-  Delete "$SMPROGRAMS\MOOSE\*.*"
+	SetShellVarContext all
 
-  ; Remove directories used
-  RMDir /r "$SMPROGRAMS\MOOSE"
-  RMDir /r "$INSTDIR"
-  
+	; Remove registry keys
+	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE"
+	DeleteRegKey HKLM SOFTWARE\MOOSE
+
+	; Unlink .g files with MOOSE
+	${unregisterExtension} ".g" "MOOSE Script"
+
+	; Exclude MOOSE binary's path from the execution path.
+	; This is done by updating the PATH environment variable in the
+	; registry.
+	${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR"   
+
+	; Remove files and uninstaller
+	; Delete $INSTDIR\moose.exe
+	; Delete $INSTDIR\uninstall.exe
+
+	; !ifdef licensefile
+	; Delete "$INSTDIR\${licensefile}"
+	; !endif
+
+	; !ifdef notefile
+	; Delete "$INSTDIR\${notefile}"
+	; !endif
+
+	; !ifdef icon
+	; Delete "$INSTDIR\${icon}"
+	; !endif
+
+	; ; Remove shortcuts, if any
+	; Delete "$SMPROGRAMS\MOOSE\*.*"
+	
+	; Remove directories used
+	RMDir /r "$SMPROGRAMS\MOOSE"
+	RMDir /r "$INSTDIR"
 SectionEnd
