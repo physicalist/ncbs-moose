@@ -1,6 +1,10 @@
 ; Choose if extras (installers for python etc.) should be
 ; bundled inside the installer.
+
 ;!define IncludeExtras
+
+; Compression - Keep this at top. Can lead to errors otherwise.
+SetCompressor /SOLID lzma
 
 ; Allows use of logical operations like ${If} $0 != ""
 !include "LogicLib.nsh"
@@ -18,7 +22,7 @@
 !include "ConfirmAdmin.nsh"
 
 ; Name of program
-Name "Moose Beta 1.2"
+Name "Moose Beta 1.2.0"
 
 ; The file to write
 OutFile "moose-beta-1.2.0.exe"
@@ -33,27 +37,41 @@ InstallDirRegKey HKLM "Software\MOOSE" "Install_Dir"
 ; Request application privileges for Windows Vista and Windows 7
 RequestExecutionLevel admin
 
-; Compression
-; SetCompressor /SOLID lzma
+LicenseText "GNU LESSER GENERAL PUBLIC LICENSE"
+LicenseData "Payload\Docs\COPYING.LIB.txt"
 
-; text file to open in notepad after installation
-;!define notefile "Payload\Docs\RELEASE_NOTES.TXT"
- 
-; license text file
-!define licensefile "Payload\Docs\COPYING.LIB.txt"
- 
-; icons must be Microsoft .ICO files
-!define icon "Payload\moose.ico"
+; MUI 1.67 compatible
+!include "MUI.nsh"
 
-; Pages
-;Page components
-Page directory
-Page instfiles
+; MUI Settings
+!define MUI_ABORTWARNING
 
-UninstPage uninstConfirm
-UninstPage instfiles
- 
-; Show MOOSE Logo
+; MUI Settings / Icons
+;!define MUI_ICON "moose.ico"
+!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\orange-install.ico"
+!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico"
+
+; MUI Settings / Header
+!define MUI_HEADERIMAGE
+!define MUI_HEADERIMAGE_RIGHT
+!define MUI_HEADERIMAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Header\orange-r.bmp"
+!define MUI_HEADERIMAGE_UNBITMAP "${NSISDIR}\Contrib\Graphics\Header\orange-uninstall-r.bmp"
+
+; MUI Settings / Wizard
+!define MUI_WELCOMEFINISHPAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Wizard\orange.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Wizard\orange-uninstall.bmp"
+
+; Welcome page
+!insertmacro MUI_PAGE_WELCOME
+; Components page
+!insertmacro MUI_PAGE_COMPONENTS
+; Instfiles page
+!insertmacro MUI_PAGE_INSTFILES
+; Finish page
+!insertmacro MUI_PAGE_FINISH
+; Language files
+!insertmacro MUI_LANGUAGE "English"
+
 Function .onInit
 	Push $0
 	Push $R0
@@ -85,8 +103,8 @@ Function .onInit
 	done:
 	
 	SetOutPath $TEMP
-	File /oname=spltmp.bmp "Payload\beta-1.2.0.bmp"
-;	File /oname=spltmp.wav "Payload\splash.wav"
+	File /oname=spltmp.bmp "beta-1.2.0.bmp"
+;	File /oname=spltmp.wav "splash.wav"
 	
 	advsplash::show 1000 600 400 -1 $TEMP\spltmp
 	
@@ -99,6 +117,52 @@ Function .onInit
 	Pop $R0
 	Pop $0
 FunctionEnd
+
+!ifndef IncludeExtras
+Section
+	
+SectionEnd
+!else
+Section "Prerequisites"
+	Push $0
+	
+	StrCpy $0 "$TEMP\moose-prereq"
+	CreateDirectory $0
+	SetOutPath $0
+	
+	MessageBox MB_YESNO|MB_ICONQUESTION "Install prerequisites?" /SD IDYES IDNO endPrereq
+	
+	; PYTHON
+	!define installer "python-2.5.2.msi"
+	File "Extra\${installer}"
+	ExecWait '"msiexec" /i "$0\${installer}"'
+	!undef installer
+	
+	; NUMPY
+	!define installer "numpy-1.2.0-win32-superpack-python2.5.exe"
+	File "Extra\${installer}"
+	ExecWait "$0\${installer}"
+	!undef installer
+	
+	; PYQT
+	!define installer "PyQt-Py2.5-gpl-4.4.3-1.exe"
+	File "Extra\${installer}"
+	ExecWait "$0\${installer}"
+	!undef installer
+	
+	; PYQWT
+	!define installer "PyQwt5.1.0-Python2.5-PyQt4.4.3-NumPy1.2.0-1.exe"
+	File "Extra\${installer}"
+	ExecWait "$0\${installer}"
+	!undef installer
+	
+	endPrereq:
+	SetOutPath $TEMP	; Needed because we cannot delete the directory otherwise.
+	RMDir /r $0
+	
+	Pop $0
+SectionEnd
+!endif	; IncludeExtras
 
 ; The stuff to install
 Section "moose" 
@@ -125,7 +189,7 @@ Section "moose"
 	; registry.
 	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR"  
 	
-	ExecShell "open" "$INSTDIR\Docs\Introduction.html"
+	; ExecShell "open" "$INSTDIR\Docs\Introduction.html"
 SectionEnd
 
 ; Optional section (can be disabled by the user)
