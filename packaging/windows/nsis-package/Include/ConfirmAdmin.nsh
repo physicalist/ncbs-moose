@@ -1,9 +1,6 @@
 !ifndef CONFIRMADMIN_FUNCTION
 !define CONFIRMADMIN_FUNCTION
 
-; Find admin status
-!include "isUserAdmin.nsh"
-
 !macro ConfirmAdmin UN
 
 Function ${UN}ConfirmAdmin
