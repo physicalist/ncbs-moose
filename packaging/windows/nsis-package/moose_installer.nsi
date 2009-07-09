@@ -72,6 +72,14 @@ Function .onInit
 	Push $0
 	Push $R0
 	
+	Call IsUserAdmin
+	Pop $0
+	StrCmp $0 "true" +4
+	
+    # if there is not a match, print message and return
+    MessageBox MB_OK "Error! You need to be Administrator to run this installer."
+	Abort
+	
 	ReadRegStr $R0 HKLM \
 	"Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" \
 	"UninstallString"
@@ -111,27 +119,6 @@ Function .onInit
 	Pop $R0
 	Pop $0
 FunctionEnd
-
-# default section start
-Section
-	Push $0
-	
-    ; # call userInfo plugin to get user info.  The plugin puts the result in the stack
-    ; UserInfo::getAccountType
-    ; # pop the result from the stack into $0
-    ; Pop $0
-    ; # compare the result with the string "Admin" to see if the user is admin. If match, jump 3 lines down.
-    ; StrCmp $0 "Admin" +3
-	
-	Call IsUserAdmin
-	Pop $0
-	StrCmp $0 "true" +3
-	
-    # if there is not a match, print message and return
-    MessageBox MB_OK "Error! You need to be Administrator to run this installer."
-	
-	Pop $0
-SectionEnd
 
 ; The stuff to install
 Section "moose" 
@@ -198,9 +185,8 @@ Section "Start Menu Shortcuts"
 	SetShellVarContext all
 	CreateDirectory "$SMPROGRAMS\MOOSE"
 	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moose.exe" 0
-	CreateDirectory "$SMPROGRAMS\MOOSE\Examples"
-	CreateShortCut "$SMPROGRAMS\MOOSE\Examples\Demos.lnk" "$INSTDIR\Demos" "" "$INSTDIR\Demos" 0
-	CreateShortCut "$SMPROGRAMS\MOOSE\Examples\Regression Tests.lnk" "$INSTDIR\RegressionTests" "" "$INSTDIR\RegressionTests" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\Demos.lnk" "$INSTDIR\Demos" "" "$INSTDIR\Demos" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\Regression Tests.lnk" "$INSTDIR\RegressionTests" "" "$INSTDIR\RegressionTests" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Documentation.lnk" "$INSTDIR\Docs" "" "$INSTDIR\Docs" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE Website.lnk" "$INSTDIR\Docs\MOOSE Website.url" "" "$INSTDIR\Docs\MOOSE Website.url" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Report Bugs.lnk" "$INSTDIR\Docs\Report Bugs.url" "" "$INSTDIR\Docs\Report Bugs.url" 0
