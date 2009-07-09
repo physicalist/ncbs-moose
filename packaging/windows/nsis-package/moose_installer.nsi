@@ -12,14 +12,17 @@ SetCompressor /SOLID lzma
 ; This extension allows us to create file-associations in the registry.
 ; In other words, the user can click a *.g file, and MOOSE will execute
 ; the script.
-!include "RegExtension.nsh"
+!include "Include\RegExtension.nsh"
 
 ; This extension allows us to modify environment variables. This is
 ; used here to include the moose binary in the execution path.
-!include "EnvVarUpdate.nsh"
+!include "Include\EnvVarUpdate.nsh"
+
+; Find admin status: required for next header
+!include "Include\isUserAdmin.nsh"
 
 ; Check for Admin priveleges
-!include "ConfirmAdmin.nsh"
+!include "Include\ConfirmAdmin.nsh"
 
 ; Name of program
 Name "Moose Beta 1.2.0"
@@ -47,7 +50,7 @@ LicenseData "Payload\Docs\COPYING.LIB.txt"
 !define MUI_ABORTWARNING
 
 ; MUI Settings / Icons
-;!define MUI_ICON "moose.ico"
+;!define MUI_ICON "Graphics\moose.ico"
 !define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\orange-install.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico"
 
@@ -64,7 +67,7 @@ LicenseData "Payload\Docs\COPYING.LIB.txt"
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
 ; Components page
-!insertmacro MUI_PAGE_COMPONENTS
+; !insertmacro MUI_PAGE_COMPONENTS
 ; Instfiles page
 !insertmacro MUI_PAGE_INSTFILES
 ; Finish page
@@ -79,13 +82,13 @@ Function .onInit
 	Call ConfirmAdmin
 	
 	ReadRegStr $R0 HKLM \
-	"Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" \
-	"UninstallString"
+		"Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" \
+		"UninstallString"
 	StrCmp $R0 "" done
 	
 	MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
-	"MOOSE is already installed. $\n$\nClick `OK` to remove the \
-	previous version or `Cancel` to cancel this upgrade." \
+		"MOOSE is already installed. $\n$\nClick `OK` to remove the \
+		previous version or `Cancel` to cancel this upgrade." \
 	IDOK uninst
 	Abort
 	
@@ -103,8 +106,7 @@ Function .onInit
 	done:
 	
 	SetOutPath $TEMP
-	File /oname=spltmp.bmp "beta-1.2.0.bmp"
-;	File /oname=spltmp.wav "splash.wav"
+	File /oname=spltmp.bmp "Graphics\beta-1.2.0.bmp"
 	
 	advsplash::show 1000 600 400 -1 $TEMP\spltmp
 	
@@ -112,7 +114,6 @@ Function .onInit
 			; '0' if everything closed normally, and '-1' if some error occurred.
 	
 	Delete $TEMP\spltmp.bmp
-;	Delete $TEMP\spltmp.wav
 	
 	Pop $R0
 	Pop $0
@@ -120,17 +121,46 @@ FunctionEnd
 
 !ifndef IncludeExtras
 Section
+	Push $1
 	
+	StrCpy $1 \
+		"This installer will work if you have the following software installed: $\n \
+			$\n \
+			$\t - Python 2.5 $\n \
+			$\t - Numpy 1.2.0 $\n \
+			$\t - PyQt 4.4 $\n \
+			$\t - PyQwt 5.1 $\n \
+			$\n \
+		You can install the above manually, or download the MOOSE installer which will $\n \
+		install these for you. $\n \
+		$\n \
+		Click 'OK' to continue installing or 'Cancel' to abort."
+	MessageBox MB_OKCANCEL|MB_ICONQUESTION $1 /SD IDOK IDOK continueAnyway
+	
+	Abort
+	continueAnyway:
+	
+	Pop $1
 SectionEnd
 !else
 Section "Prerequisites"
 	Push $0
+	Push $1
 	
 	StrCpy $0 "$TEMP\moose-prereq"
 	CreateDirectory $0
 	SetOutPath $0
 	
-	MessageBox MB_YESNO|MB_ICONQUESTION "Install prerequisites?" /SD IDYES IDNO endPrereq
+	StrCpy $1 \
+		"MOOSE needs the following software to be installed: $\n \
+			$\n \
+			$\t - Python 2.5 $\n \
+			$\t - Numpy 1.2.0 $\n \
+			$\t - PyQt 4.4 $\n \
+			$\t - PyQwt 5.1 $\n \
+			$\n \
+		Do you wish to install these before installing MOOSE?"
+	MessageBox MB_YESNO|MB_ICONQUESTION $1 /SD IDYES IDNO endPrereq
 	
 	; PYTHON
 	!define installer "python-2.5.2.msi"
@@ -160,6 +190,7 @@ Section "Prerequisites"
 	SetOutPath $TEMP	; Needed because we cannot delete the directory otherwise.
 	RMDir /r $0
 	
+	Pop $1
 	Pop $0
 SectionEnd
 !endif	; IncludeExtras
