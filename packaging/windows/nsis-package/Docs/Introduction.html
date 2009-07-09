@@ -1,38 +1,41 @@
 <html>
 <head>
-<title>MOOSE Beta 1.1.0</title>
+<title>MOOSE Beta 1.2.0</title>
 </head>
 <body>
-<img src='beta-1.1.0.png' alt='MOOSE Beta 1.1.0' />
-<H1>Welcome to the MOOSE Beta 1.1.0 release</H1>
+<img src='beta-1.2.0.png' alt='MOOSE Beta 1.2.0' />
+<H1>Welcome to the MOOSE Beta 1.2.0 release</H1>
 <br>
 <table width='50%'>
     <tr>
         <td>
 		<H2>Excerpt from Release Notes</H2>
-		These are the release notes for the Beta 1.1.0 release of MOOSE, the
+		These are the release notes for the Beta 1.2.0 release of MOOSE, the
 		Multiscale Object-Oriented Simulation environment.
 		<br><br>
 		<strong>Introduction.</strong><br>
-		This release has three major functional changes from the previous Beta 1.0.0:<br>
-		- The development of PyMOOSE as a full-fledged user environment.<br>
-		- The implementation of a much more functional single-neuron modeling engine<br>
-		- The implementation of array objects and messages.<br>
+		This release has four major functional changes from the previous Beta 1.1.0:
+		- A PyQt-based graphical interface for running basic simulations and tutorials.
+			This is now the default 'face' of MOOSE.
+		- Gillespie solver for chemical kinetic simulations.
+		- SBML support for writing kinetic models, partial support for reading.
+		- MPI support for parallel neuronal simulations, and interface to MUSIC.
+		
+		The default release now is PyMOOSE. For users who need to run non-graphical
+		and batch-mode simulations, there is a separate GUI-free MOOSE release.
+		The two are compatible. You can use PyMOOSE on a master node and have it
+		talk to GUI-free MOOSE instances on the slave nodes of a cluster.
 		<br><br>
-		The release also has a major overhaul to the release management, which has been
-		coordinated by a new member of the MOOSE team, Ms. Siji George. The current
-		release has binaries for Linux, Solaris, Mac and Windows. The Linux release
-		includes a .deb package for simplifying the installation. There are several
-		permutations for Python support and for 32/64 bits.
-		We expect that the source compilation should also go more smoothly for those
-		who wish to compile it themselves.
-		<br><br>
-		<a href=RELEASE_NOTES.txt>(more...)</a>
+		<a href=RELEASE_NOTES_BETA_1.2.0.txt>(more...)</a>
 		<br><br>
 		<H2>Getting started</H2>
-		Links to example scripts, and to documentation are placed in the
-		Start Menu's MOOSE directory. Take a look at the Readme provided
-		with the example scripts.
+		Navigate to the <a href=../Demos/>DEMOS directory</a>, and the
+		<a href=../Docs/>Documentation directory</a> to get started.
+		Take a look at the <a href=../Demos/README.txt>Readme for demos</a>
+		provided with the example scripts.
+		<br><br>
+		Don't worry, you can find these links again in the Start Menu's
+		MOOSE directory.
 		<br><br>
 		Here is a <a href=README.txt>Readme file</a> giving a general
 		introduction about MOOSE.
@@ -58,6 +61,6 @@
 		</td>
     </tr>
 </table>
-<center>Copyright (C) NCBS/TIFR 2008</center>
+<center>Copyright (C) NCBS/TIFR 2009</center>
 </body>
 </html>
