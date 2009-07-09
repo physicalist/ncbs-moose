@@ -36,26 +36,73 @@ There are 2 ways to run the simulation scripts:
    script file.
 
 
-Directory	Command		Output file(s)		NOTES
-axon		moose Axon.g	axon*.moose.plot	Another axon model.
-channels	moose Channels.g  *.moose.plot		Tests channel properties
-kholodenko	moose Kholodenko.g test.plot		Kinetic simuation test
-							Output not compatible
-							with gnuplot.
-							Ignore warnings about 
-							simundumpfunc and setfield
-mitral-ee	moose Mitral.g	mitral.moose.plot	Large mitral cell model
-myelin		moose Myelin.g	*.moose.plot		Myelinated axon
-network-ee	moose Network.g				Models a small network
-pymoose		python squid.py				Needs moose.py
-rallpack1	moose Rallpack1.g cable-*.moose.plot	Passive cable test
-rallpack2	moose Rallpack2.g branch*.moose.plot	Branched passive cable
-rallpack3	moose Rallpack3.g axon_*.moose.plot	Hodkin-Huxley axon 
-squid-ee	moose Squid.g	squid.moose.plot	Hodkin-Huxley Squid model
-synapse		moose Synapse.g	*.moose.plot		Synaptic transmission
-traub91		moose Traub91.g	*.moose.plot		Traub CA3 cell model
+Directory       Command              Output file(s)          NOTES
+axon            moose Axon.g         axon*.moose.plot        Another axon model.
+channels        moose Channels.g     *.moose.plot            Tests channel properties
+kholodenko      moose Kholodenko.g   test.plot               Kinetic simuation test
+                                                             Output not compatible
+                                                             with gnuplot.
+                                                             Ignore warnings about 
+                                                             simundumpfunc and setfield
+intfire.g       moose intfire.g      vm.plot, events.plot    Integrate and Fire neurons
+mitral-ee       moose Mitral.g       mitral.moose.plot       Large mitral cell model
+myelin          moose Myelin.g       *.moose.plot            Myelinated axon
+network-ee      moose Network.g                              Models a small network
+pymoose         (SEE BELOW)
+rallpack1       moose Rallpack1.g    cable-*.moose.plot      Passive cable test
+rallpack2       moose Rallpack2.g    branch*.moose.plot      Branched passive cable
+rallpack3       moose Rallpack3.g    axon_*.moose.plot       Hodkin-Huxley axon 
+sbml_Reader     moose Reader.g       moose.plot              Reads SBML model
+sbml_rountrip   moose RountTrip.g    moose*.plot             SBML -> MOOSE -> SBML -> MOOSE
+sbml_Writer     moose Writer.g       moose.plot              Kinetikit (*.g) model -> SBML
+squid-ee        moose Squid.g        squid.moose.plot        Hodkin-Huxley Squid model
+synapse         moose Synapse.g      *.moose.plot            Synaptic transmission
+traub91         moose Traub91.g      *.moose.plot            Traub CA3 cell model
 
 In most subdirectories you can then use gnuplot to look at the output using
 the command:
 
 gnuplot plot.gnuplot
+
+
+PyMoose Demos: 
+
+There are some demos written in Python in the pymoose directory. You
+should cd into the directory and enter python <scriptfile> as listed
+below. Some of them will pop-up a gui and some will just create data
+files with the extension '.plot'.
+
+Directory      Command			Output file(s)		NOTES
+channels       python test_bulbchan.py	KMitralUSB_Vm.plot  	The bulbchan.py 
+	       	      			NaMitralUSB_Vm.plot     implements K channel
+                                                       		and Na channel of 
+								mitral cells in the 
+								olfactory bulb. The 
+								two classes defined 
+								here can be used in 
+								other models.
+izhikevich     python Izhikevich.py	<neuron-name>_vm.plot   This gives a gui with
+	       	      			<neuron-name>_i.plot	buttons for different
+                                                                types of neurons and	
+								you can click any of 
+								them to see the plot
+								of membrane potential
+								of the same. Two data
+								files - one of the Vm
+								and the other of the
+								injection current 
+								applied is created for
+								each run.
+squid		python qtSquid.py				This is the PyMoose
+		       						avatar of the GENESIS
+								squid demo. This pops
+								up two windows - one 
+								for the plots and one 
+								for simulation control.
+								To run the simulation
+								first click the reset 
+								button, then the run
+								button.
+-		python pulsegen.py	pulse*.plot		This shows various 
+					gate.plot		modes of the pulse
+					trig.plot		generator in MOOSE.				

@@ -97,7 +97,7 @@ Function .onInit
 	done:
 	
 	SetOutPath $TEMP
-	File /oname=spltmp.bmp "beta-1.1.0.bmp"
+	File /oname=spltmp.bmp "beta-1.2.0.bmp"
 ;	File /oname=spltmp.wav "splash.wav"
 	
 	advsplash::show 1000 600 400 -1 $TEMP\spltmp
