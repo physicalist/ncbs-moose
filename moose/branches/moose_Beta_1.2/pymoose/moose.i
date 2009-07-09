@@ -6,6 +6,7 @@
 	#define SWIG_FILE_WITH_INIT
 	#include "../basecode/header.h"
 	#include "../basecode/moose.h"
+	#include "../utility/utility.h"
 	#include "PyMooseContext.h"
 	#include "PyMooseBase.h"
 	#include "Neutral.h"
@@ -122,12 +123,16 @@
 %ignore Id::eref;   
 
 %include "../basecode/Id.h"
+%include "../utility/Property.h"
+%include "../utility/PathUtility.h"
 
 %include "PyMooseContext.h"
 %include "PyMooseBase.h"
 %attribute(pymoose::PyMooseBase, Id*, id, __get_id)
 %attribute(pymoose::PyMooseBase, Id*, parent, __get_parent)
 %attribute(pymoose::PyMooseBase, const std::string, className, __get_className)
+%attribute(pymoose::PyMooseBase, const std::string, author, __get_author)
+%attribute(pymoose::PyMooseBase, const std::string, description, __get_description)
 
 %pythoncode %{
 from inspect import isclass

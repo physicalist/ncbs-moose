@@ -119,7 +119,6 @@ SimDump::SimDump()
 	sid.push_back( new SimDumpInfo( "xcoredraw", "Neutral", "", "" ) );
 	sid.push_back( new SimDumpInfo( "xtree", "Neutral", "", "" ) );
 	sid.push_back( new SimDumpInfo( "xtext", "Neutral", "", "" ) );
-
 	sid.push_back( new SimDumpInfo( "kchan", "ConcChan",
 		"perm Vm",
 		"permeability Vm" ) );
