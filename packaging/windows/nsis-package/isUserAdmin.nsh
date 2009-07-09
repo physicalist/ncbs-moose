@@ -7,7 +7,13 @@
 ;   Call IsUserAdmin
 ;   Pop $R0   ; at this point $R0 is "true" or "false"
 ;
-Function IsUserAdmin
+
+!ifndef ISUSERADMIN_FUNCTION
+!define ISUSERADMIN_FUNCTION
+
+!macro IsUserAdmin UN
+
+Function ${UN}IsUserAdmin
 Push $R0
 Push $R1
 Push $R2
@@ -50,3 +56,9 @@ Pop $R2
 Pop $R1
 Exch $R0
 FunctionEnd
+
+!macroend   ; IsUserAdmin UN
+!insertmacro IsUserAdmin ""
+!insertmacro IsUserAdmin "un."
+
+!endif

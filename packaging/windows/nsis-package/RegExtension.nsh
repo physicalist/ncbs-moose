@@ -1,15 +1,15 @@
-!define registerExtension "!insertmacro registerExtension"
-!define unregisterExtension "!insertmacro unregisterExtension"
+!define RegisterExtension "!insertmacro RegisterExtension"
+!define UnregisterExtension "!insertmacro UnregisterExtension"
  
-!macro registerExtension executable extension description
+!macro RegisterExtension executable extension description
        Push "${executable}"  ; "full path to my.exe"
        Push "${extension}"   ;  ".mkv"
        Push "${description}" ;  "MKV File"
-       Call registerExtension
+       Call RegisterExtension
 !macroend
  
 ; back up old value of .opt
-Function registerExtension
+Function RegisterExtension
 !define Index "Line${__LINE__}"
   pop $R0 ; ext name
   pop $R1
@@ -36,13 +36,13 @@ Function registerExtension
 !undef Index
 FunctionEnd
  
-!macro unregisterExtension extension description
+!macro UnregisterExtension extension description
        Push "${extension}"   ;  ".mkv"
        Push "${description}"   ;  "MKV File"
-       Call un.unregisterExtension
+       Call un.UnregisterExtension
 !macroend
  
-Function un.unregisterExtension
+Function un.UnregisterExtension
   pop $R1 ; description
   pop $R0 ; extension
 !define Index "Line${__LINE__}"
