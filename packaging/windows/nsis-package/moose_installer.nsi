@@ -11,7 +11,7 @@
 !include "EnvVarUpdate.nsh"
 
 ; Check for Admin priveleges
-!include "isUserAdmin.nsh"
+!include "ConfirmAdmin.nsh"
 
 ; Name of program
 Name "Moose Beta 1.2"
@@ -19,8 +19,9 @@ Name "Moose Beta 1.2"
 ; The file to write
 OutFile "moose-beta-1.2.0.exe"
 
-; Choose if PyMOOSE/GUI should be packaged
-;!define PyMOOSE
+; Choose if extras (installers for python etc.) should be
+; bundled inside the installer.
+;!define IncludeExtras
 
 ; The default installation directory
 InstallDir $PROGRAMFILES\MOOSE
@@ -35,7 +36,6 @@ RequestExecutionLevel admin
 ; Compression
 ; SetCompressor /SOLID lzma
 
-;--------------------------------
 ; text file to open in notepad after installation
 ;!define notefile "Docs\RELEASE_NOTES.TXT"
  
@@ -50,7 +50,7 @@ RequestExecutionLevel admin
 ;-------------------------------
 ; Pages
 
-Page components
+;Page components
 Page directory
 Page instfiles
 
@@ -72,13 +72,7 @@ Function .onInit
 	Push $0
 	Push $R0
 	
-	Call IsUserAdmin
-	Pop $0
-	StrCmp $0 "true" +4
-	
-    # if there is not a match, print message and return
-    MessageBox MB_OK "Error! You need to be Administrator to run this installer."
-	Abort
+	Call ConfirmAdmin
 	
 	ReadRegStr $R0 HKLM \
 	"Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE" \
@@ -168,7 +162,7 @@ Section "moose"
 	WriteUninstaller "uninstall.exe"
 	
 	; Link .g files to MOOSE
-	${registerExtension} "$INSTDIR\launcher.bat" ".g" "MOOSE Script"
+	${RegisterExtension} "$INSTDIR\launcher.bat" ".g" "MOOSE Script"
 	
 	; Include MOOSE binary's path in the execution path.
 	; This is done by updating the PATH environment variable in the
@@ -193,40 +187,25 @@ Section "Start Menu Shortcuts"
 	CreateShortCut "$SMPROGRAMS\MOOSE\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 SectionEnd
 
+Function un.onInit
+	Call un.ConfirmAdmin
+FunctionEnd
+
 ; Uninstaller
 Section "Uninstall"
 	SetShellVarContext all
-
+	
 	; Remove registry keys
 	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MOOSE"
 	DeleteRegKey HKLM SOFTWARE\MOOSE
-
+	
 	; Unlink .g files with MOOSE
-	${unregisterExtension} ".g" "MOOSE Script"
-
+	${UnregisterExtension} ".g" "MOOSE Script"
+	
 	; Exclude MOOSE binary's path from the execution path.
 	; This is done by updating the PATH environment variable in the
 	; registry.
 	${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR"   
-
-	; Remove files and uninstaller
-	; Delete $INSTDIR\moose.exe
-	; Delete $INSTDIR\uninstall.exe
-
-	; !ifdef licensefile
-	; Delete "$INSTDIR\${licensefile}"
-	; !endif
-
-	; !ifdef notefile
-	; Delete "$INSTDIR\${notefile}"
-	; !endif
-
-	; !ifdef icon
-	; Delete "$INSTDIR\${icon}"
-	; !endif
-
-	; ; Remove shortcuts, if any
-	; Delete "$SMPROGRAMS\MOOSE\*.*"
 	
 	; Remove directories used
 	RMDir /r "$SMPROGRAMS\MOOSE"
