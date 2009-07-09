@@ -2494,94 +2494,96 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 #define SWIGTYPE_p_InnerPyMooseIterableTpymoose__StochSynchan_unsigned_int_double_t swig_types[10]
 #define SWIGTYPE_p_Nid swig_types[11]
 #define SWIGTYPE_p_Normal swig_types[12]
-#define SWIGTYPE_p_Poisson swig_types[13]
-#define SWIGTYPE_p_Probability swig_types[14]
-#define SWIGTYPE_p_allocator_type swig_types[15]
-#define SWIGTYPE_p_char swig_types[16]
-#define SWIGTYPE_p_difference_type swig_types[17]
-#define SWIGTYPE_p_m_Poisson__f___double swig_types[18]
-#define SWIGTYPE_p_ostream swig_types[19]
-#define SWIGTYPE_p_p_PyObject swig_types[20]
-#define SWIGTYPE_p_pymoose__AscFile swig_types[21]
-#define SWIGTYPE_p_pymoose__BinSynchan swig_types[22]
-#define SWIGTYPE_p_pymoose__BinomialRng swig_types[23]
-#define SWIGTYPE_p_pymoose__CaConc swig_types[24]
-#define SWIGTYPE_p_pymoose__Cell swig_types[25]
-#define SWIGTYPE_p_pymoose__Class swig_types[26]
-#define SWIGTYPE_p_pymoose__ClockJob swig_types[27]
-#define SWIGTYPE_p_pymoose__Compartment swig_types[28]
-#define SWIGTYPE_p_pymoose__CylPanel swig_types[29]
-#define SWIGTYPE_p_pymoose__DifShell swig_types[30]
-#define SWIGTYPE_p_pymoose__DiffAmp swig_types[31]
-#define SWIGTYPE_p_pymoose__DiskPanel swig_types[32]
-#define SWIGTYPE_p_pymoose__Enzyme swig_types[33]
-#define SWIGTYPE_p_pymoose__ExponentialRng swig_types[34]
-#define SWIGTYPE_p_pymoose__GHK swig_types[35]
-#define SWIGTYPE_p_pymoose__GammaRng swig_types[36]
-#define SWIGTYPE_p_pymoose__Geometry swig_types[37]
-#define SWIGTYPE_p_pymoose__GssaStoich swig_types[38]
-#define SWIGTYPE_p_pymoose__HHChannel swig_types[39]
-#define SWIGTYPE_p_pymoose__HHChannel2D swig_types[40]
-#define SWIGTYPE_p_pymoose__HHGate swig_types[41]
-#define SWIGTYPE_p_pymoose__HHGate2D swig_types[42]
-#define SWIGTYPE_p_pymoose__HSolve swig_types[43]
-#define SWIGTYPE_p_pymoose__HemispherePanel swig_types[44]
-#define SWIGTYPE_p_pymoose__IntFire swig_types[45]
-#define SWIGTYPE_p_pymoose__Interpol swig_types[46]
-#define SWIGTYPE_p_pymoose__IzhikevichNrn swig_types[47]
-#define SWIGTYPE_p_pymoose__KinCompt swig_types[48]
-#define SWIGTYPE_p_pymoose__KineticHub swig_types[49]
-#define SWIGTYPE_p_pymoose__KineticManager swig_types[50]
-#define SWIGTYPE_p_pymoose__Kintegrator swig_types[51]
-#define SWIGTYPE_p_pymoose__MathFunc swig_types[52]
-#define SWIGTYPE_p_pymoose__Mg_block swig_types[53]
-#define SWIGTYPE_p_pymoose__Molecule swig_types[54]
-#define SWIGTYPE_p_pymoose__Nernst swig_types[55]
-#define SWIGTYPE_p_pymoose__NeuroScan swig_types[56]
-#define SWIGTYPE_p_pymoose__Neutral swig_types[57]
-#define SWIGTYPE_p_pymoose__NormalRng swig_types[58]
-#define SWIGTYPE_p_pymoose__PIDController swig_types[59]
-#define SWIGTYPE_p_pymoose__Panel swig_types[60]
-#define SWIGTYPE_p_pymoose__PoissonRng swig_types[61]
-#define SWIGTYPE_p_pymoose__PulseGen swig_types[62]
-#define SWIGTYPE_p_pymoose__PyMooseBase swig_types[63]
-#define SWIGTYPE_p_pymoose__PyMooseContext swig_types[64]
-#define SWIGTYPE_p_pymoose__RC swig_types[65]
-#define SWIGTYPE_p_pymoose__RandGenerator swig_types[66]
-#define SWIGTYPE_p_pymoose__RandomSpike swig_types[67]
-#define SWIGTYPE_p_pymoose__Reaction swig_types[68]
-#define SWIGTYPE_p_pymoose__RectPanel swig_types[69]
-#define SWIGTYPE_p_pymoose__SpherePanel swig_types[70]
-#define SWIGTYPE_p_pymoose__SpikeGen swig_types[71]
-#define SWIGTYPE_p_pymoose__StochSynchan swig_types[72]
-#define SWIGTYPE_p_pymoose__Stoich swig_types[73]
-#define SWIGTYPE_p_pymoose__Surface swig_types[74]
-#define SWIGTYPE_p_pymoose__SynChan swig_types[75]
-#define SWIGTYPE_p_pymoose__Table swig_types[76]
-#define SWIGTYPE_p_pymoose__TableIterator swig_types[77]
-#define SWIGTYPE_p_pymoose__TauPump swig_types[78]
-#define SWIGTYPE_p_pymoose__Tick swig_types[79]
-#define SWIGTYPE_p_pymoose__TimeTable swig_types[80]
-#define SWIGTYPE_p_pymoose__TriPanel swig_types[81]
-#define SWIGTYPE_p_pymoose__UniformRng swig_types[82]
-#define SWIGTYPE_p_size_type swig_types[83]
-#define SWIGTYPE_p_std__invalid_argument swig_types[84]
-#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t swig_types[85]
-#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t__allocator_type swig_types[86]
-#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t__value_type swig_types[87]
-#define SWIGTYPE_p_std__vectorTdouble_std__allocatorTdouble_t_t swig_types[88]
-#define SWIGTYPE_p_std__vectorTdouble_std__allocatorTdouble_t_t__allocator_type swig_types[89]
-#define SWIGTYPE_p_std__vectorTint_std__allocatorTint_t_t swig_types[90]
-#define SWIGTYPE_p_std__vectorTint_std__allocatorTint_t_t__allocator_type swig_types[91]
-#define SWIGTYPE_p_std__vectorTstd__string_std__allocatorTstd__string_t_t swig_types[92]
-#define SWIGTYPE_p_std__vectorTstd__string_std__allocatorTstd__string_t_t__allocator_type swig_types[93]
-#define SWIGTYPE_p_std__vectorTunsigned_int_std__allocatorTunsigned_int_t_t swig_types[94]
-#define SWIGTYPE_p_std__vectorTunsigned_int_std__allocatorTunsigned_int_t_t__allocator_type swig_types[95]
-#define SWIGTYPE_p_swig__PySwigIterator swig_types[96]
-#define SWIGTYPE_p_value_type swig_types[97]
-#define SWIGTYPE_p_void swig_types[98]
-static swig_type_info *swig_types[100];
-static swig_module_info swig_module = {swig_types, 99, 0, 0, 0, 0};
+#define SWIGTYPE_p_PathUtility swig_types[13]
+#define SWIGTYPE_p_Poisson swig_types[14]
+#define SWIGTYPE_p_Probability swig_types[15]
+#define SWIGTYPE_p_Property swig_types[16]
+#define SWIGTYPE_p_allocator_type swig_types[17]
+#define SWIGTYPE_p_char swig_types[18]
+#define SWIGTYPE_p_difference_type swig_types[19]
+#define SWIGTYPE_p_m_Poisson__f___double swig_types[20]
+#define SWIGTYPE_p_ostream swig_types[21]
+#define SWIGTYPE_p_p_PyObject swig_types[22]
+#define SWIGTYPE_p_pymoose__AscFile swig_types[23]
+#define SWIGTYPE_p_pymoose__BinSynchan swig_types[24]
+#define SWIGTYPE_p_pymoose__BinomialRng swig_types[25]
+#define SWIGTYPE_p_pymoose__CaConc swig_types[26]
+#define SWIGTYPE_p_pymoose__Cell swig_types[27]
+#define SWIGTYPE_p_pymoose__Class swig_types[28]
+#define SWIGTYPE_p_pymoose__ClockJob swig_types[29]
+#define SWIGTYPE_p_pymoose__Compartment swig_types[30]
+#define SWIGTYPE_p_pymoose__CylPanel swig_types[31]
+#define SWIGTYPE_p_pymoose__DifShell swig_types[32]
+#define SWIGTYPE_p_pymoose__DiffAmp swig_types[33]
+#define SWIGTYPE_p_pymoose__DiskPanel swig_types[34]
+#define SWIGTYPE_p_pymoose__Enzyme swig_types[35]
+#define SWIGTYPE_p_pymoose__ExponentialRng swig_types[36]
+#define SWIGTYPE_p_pymoose__GHK swig_types[37]
+#define SWIGTYPE_p_pymoose__GammaRng swig_types[38]
+#define SWIGTYPE_p_pymoose__Geometry swig_types[39]
+#define SWIGTYPE_p_pymoose__GssaStoich swig_types[40]
+#define SWIGTYPE_p_pymoose__HHChannel swig_types[41]
+#define SWIGTYPE_p_pymoose__HHChannel2D swig_types[42]
+#define SWIGTYPE_p_pymoose__HHGate swig_types[43]
+#define SWIGTYPE_p_pymoose__HHGate2D swig_types[44]
+#define SWIGTYPE_p_pymoose__HSolve swig_types[45]
+#define SWIGTYPE_p_pymoose__HemispherePanel swig_types[46]
+#define SWIGTYPE_p_pymoose__IntFire swig_types[47]
+#define SWIGTYPE_p_pymoose__Interpol swig_types[48]
+#define SWIGTYPE_p_pymoose__IzhikevichNrn swig_types[49]
+#define SWIGTYPE_p_pymoose__KinCompt swig_types[50]
+#define SWIGTYPE_p_pymoose__KineticHub swig_types[51]
+#define SWIGTYPE_p_pymoose__KineticManager swig_types[52]
+#define SWIGTYPE_p_pymoose__Kintegrator swig_types[53]
+#define SWIGTYPE_p_pymoose__MathFunc swig_types[54]
+#define SWIGTYPE_p_pymoose__Mg_block swig_types[55]
+#define SWIGTYPE_p_pymoose__Molecule swig_types[56]
+#define SWIGTYPE_p_pymoose__Nernst swig_types[57]
+#define SWIGTYPE_p_pymoose__NeuroScan swig_types[58]
+#define SWIGTYPE_p_pymoose__Neutral swig_types[59]
+#define SWIGTYPE_p_pymoose__NormalRng swig_types[60]
+#define SWIGTYPE_p_pymoose__PIDController swig_types[61]
+#define SWIGTYPE_p_pymoose__Panel swig_types[62]
+#define SWIGTYPE_p_pymoose__PoissonRng swig_types[63]
+#define SWIGTYPE_p_pymoose__PulseGen swig_types[64]
+#define SWIGTYPE_p_pymoose__PyMooseBase swig_types[65]
+#define SWIGTYPE_p_pymoose__PyMooseContext swig_types[66]
+#define SWIGTYPE_p_pymoose__RC swig_types[67]
+#define SWIGTYPE_p_pymoose__RandGenerator swig_types[68]
+#define SWIGTYPE_p_pymoose__RandomSpike swig_types[69]
+#define SWIGTYPE_p_pymoose__Reaction swig_types[70]
+#define SWIGTYPE_p_pymoose__RectPanel swig_types[71]
+#define SWIGTYPE_p_pymoose__SpherePanel swig_types[72]
+#define SWIGTYPE_p_pymoose__SpikeGen swig_types[73]
+#define SWIGTYPE_p_pymoose__StochSynchan swig_types[74]
+#define SWIGTYPE_p_pymoose__Stoich swig_types[75]
+#define SWIGTYPE_p_pymoose__Surface swig_types[76]
+#define SWIGTYPE_p_pymoose__SynChan swig_types[77]
+#define SWIGTYPE_p_pymoose__Table swig_types[78]
+#define SWIGTYPE_p_pymoose__TableIterator swig_types[79]
+#define SWIGTYPE_p_pymoose__TauPump swig_types[80]
+#define SWIGTYPE_p_pymoose__Tick swig_types[81]
+#define SWIGTYPE_p_pymoose__TimeTable swig_types[82]
+#define SWIGTYPE_p_pymoose__TriPanel swig_types[83]
+#define SWIGTYPE_p_pymoose__UniformRng swig_types[84]
+#define SWIGTYPE_p_size_type swig_types[85]
+#define SWIGTYPE_p_std__invalid_argument swig_types[86]
+#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t swig_types[87]
+#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t__allocator_type swig_types[88]
+#define SWIGTYPE_p_std__vectorTId_std__allocatorTId_t_t__value_type swig_types[89]
+#define SWIGTYPE_p_std__vectorTdouble_std__allocatorTdouble_t_t swig_types[90]
+#define SWIGTYPE_p_std__vectorTdouble_std__allocatorTdouble_t_t__allocator_type swig_types[91]
+#define SWIGTYPE_p_std__vectorTint_std__allocatorTint_t_t swig_types[92]
+#define SWIGTYPE_p_std__vectorTint_std__allocatorTint_t_t__allocator_type swig_types[93]
+#define SWIGTYPE_p_std__vectorTstd__string_std__allocatorTstd__string_t_t swig_types[94]
+#define SWIGTYPE_p_std__vectorTstd__string_std__allocatorTstd__string_t_t__allocator_type swig_types[95]
+#define SWIGTYPE_p_std__vectorTunsigned_int_std__allocatorTunsigned_int_t_t swig_types[96]
+#define SWIGTYPE_p_std__vectorTunsigned_int_std__allocatorTunsigned_int_t_t__allocator_type swig_types[97]
+#define SWIGTYPE_p_swig__PySwigIterator swig_types[98]
+#define SWIGTYPE_p_value_type swig_types[99]
+#define SWIGTYPE_p_void swig_types[100]
+static swig_type_info *swig_types[102];
+static swig_module_info swig_module = {swig_types, 101, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3026,6 +3028,7 @@ SWIG_AsVal_ptrdiff_t (PyObject * obj, ptrdiff_t *val)
 	#define SWIG_FILE_WITH_INIT
 	#include "../basecode/header.h"
 	#include "../basecode/moose.h"
+	#include "../utility/utility.h"
 	#include "PyMooseContext.h"
 	#include "PyMooseBase.h"
 	#include "Neutral.h"
@@ -4635,6 +4638,13 @@ SWIGINTERN void std_vector_Sl_Id_Sg__append(std::vector<Id > *self,std::vector<I
 
 
 
+SWIGINTERNINLINE PyObject * 
+SWIG_FromCharPtr(const char *cptr)
+{ 
+  return SWIG_FromCharPtrAndSize(cptr, (cptr ? strlen(cptr) : 0));
+}
+
+
 SWIGINTERN int
 SWIG_AsVal_bool (PyObject *obj, bool *val)
 {
@@ -4653,6 +4663,12 @@ SWIG_AsVal_bool (PyObject *obj, bool *val)
   
 
 #define pymoose_PyMooseBase_className_get(self_) self_->__get_className()
+  
+
+#define pymoose_PyMooseBase_author_get(self_) self_->__get_author()
+  
+
+#define pymoose_PyMooseBase_description_get(self_) self_->__get_description()
   
 
 #define pymoose_PyMooseBase_name_get(self_) self_->__get_name()
@@ -18720,6 +18736,725 @@ SWIGINTERN PyObject *Nid_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *
   return SWIG_Py_Void();
 }
 
+SWIGINTERN int Swig_var_Property_SIMPATH_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable Property_SIMPATH is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_Property_SIMPATH_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_FromCharPtr(Property::SIMPATH);
+  return pyobj;
+}
+
+
+SWIGINTERN int Swig_var_Property_SIMNOTES_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable Property_SIMNOTES is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_Property_SIMNOTES_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_FromCharPtr(Property::SIMNOTES);
+  return pyobj;
+}
+
+
+SWIGINTERN int Swig_var_Property_DOCPATH_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable Property_DOCPATH is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_Property_DOCPATH_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_FromCharPtr(Property::DOCPATH);
+  return pyobj;
+}
+
+
+SWIGINTERN int Swig_var_Property_AUTOSCHEDULE_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable Property_AUTOSCHEDULE is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_Property_AUTOSCHEDULE_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_FromCharPtr(Property::AUTOSCHEDULE);
+  return pyobj;
+}
+
+
+SWIGINTERN int Swig_var_Property_CREATESOLVER_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable Property_CREATESOLVER is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_Property_CREATESOLVER_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_FromCharPtr(Property::CREATESOLVER);
+  return pyobj;
+}
+
+
+SWIGINTERN int Swig_var_Property_HOME_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable Property_HOME is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_Property_HOME_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_FromCharPtr(Property::HOME);
+  return pyobj;
+}
+
+
+SWIGINTERN int Swig_var_Property_XML_FORMAT_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable Property_XML_FORMAT is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_Property_XML_FORMAT_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_From_int(static_cast< int >(Property::XML_FORMAT));
+  return pyobj;
+}
+
+
+SWIGINTERN int Swig_var_Property_PROP_FORMAT_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable Property_PROP_FORMAT is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_Property_PROP_FORMAT_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_From_int(static_cast< int >(Property::PROP_FORMAT));
+  return pyobj;
+}
+
+
+SWIGINTERN PyObject *_wrap_Property_initialize(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  int arg2 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"Property_initialize",2,2,&obj0,&obj1)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "Property_initialize" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Property_initialize" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    Property::initialize(arg1,arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Property_initDefaults(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"Property_initDefaults",0,0)) SWIG_fail;
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    Property::initDefaults();
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Property_getProperty(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  std::string result;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"Property_getProperty",1,1,&obj0)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "Property_getProperty" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = Property::getProperty(arg1);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Property_setProperty(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  std::string arg2 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"Property_setProperty",2,2,&obj0,&obj1)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "Property_setProperty" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "Property_setProperty" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    Property::setProperty(arg1,arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Property_readProperties(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  int arg2 ;
+  int result;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"Property_readProperties",2,2,&obj0,&obj1)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "Property_readProperties" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Property_readProperties" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (int)Property::readProperties(arg1,arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Property_readEnvironment(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"Property_readEnvironment",0,0)) SWIG_fail;
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    Property::readEnvironment();
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Property_getKeys(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector<std::string > *result = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"Property_getKeys",0,0)) SWIG_fail;
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    {
+      std::vector<std::string > &_result_ref = Property::getKeys();
+      result = (std::vector<std::string > *) &_result_ref;
+    }
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorTstd__string_std__allocatorTstd__string_t_t, 0 |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Property_addSimPath(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"Property_addSimPath",1,1,&obj0)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "Property_addSimPath" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    Property::addSimPath(arg1);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Property_setSimPath(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"Property_setSimPath",1,1,&obj0)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "Property_setSimPath" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    Property::setSimPath(arg1);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Property_getSimPath(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string result;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"Property_getSimPath",0,0)) SWIG_fail;
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = Property::getSimPath();
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_Property(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  Property *arg1 = (Property *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"delete_Property",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_Property, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_Property" "', argument " "1"" of type '" "Property *""'"); 
+  }
+  arg1 = reinterpret_cast< Property * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    delete arg1;
+    
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *Property_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_UnpackTuple(args,(char*)"swigregister", 1, 1,&obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_Property, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN int Swig_var_PathUtility_PATH_SEPARATOR_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable PathUtility_PATH_SEPARATOR is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_PathUtility_PATH_SEPARATOR_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_FromCharPtr(PathUtility::PATH_SEPARATOR);
+  return pyobj;
+}
+
+
+SWIGINTERN int Swig_var_PathUtility_DIR_SEPARATOR_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable PathUtility_DIR_SEPARATOR is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_PathUtility_DIR_SEPARATOR_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_FromCharPtr(PathUtility::DIR_SEPARATOR);
+  return pyobj;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_PathUtility(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  PathUtility *result = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"new_PathUtility",1,1,&obj0)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj0, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_PathUtility" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (PathUtility *)new PathUtility(arg1);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PathUtility, SWIG_POINTER_NEW |  0 );
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_PathUtility_addPath(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PathUtility *arg1 = (PathUtility *) 0 ;
+  std::string arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"PathUtility_addPath",2,2,&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PathUtility, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PathUtility_addPath" "', argument " "1"" of type '" "PathUtility *""'"); 
+  }
+  arg1 = reinterpret_cast< PathUtility * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "PathUtility_addPath" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    (arg1)->addPath(arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_PathUtility_getPath(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PathUtility *arg1 = (PathUtility *) 0 ;
+  int arg2 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"PathUtility_getPath",2,2,&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PathUtility, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PathUtility_getPath" "', argument " "1"" of type '" "PathUtility *""'"); 
+  }
+  arg1 = reinterpret_cast< PathUtility * >(argp1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "PathUtility_getPath" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (arg1)->getPath(arg2);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_PathUtility_getAllPaths(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PathUtility *arg1 = (PathUtility *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"PathUtility_getAllPaths",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PathUtility, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PathUtility_getAllPaths" "', argument " "1"" of type '" "PathUtility *""'"); 
+  }
+  arg1 = reinterpret_cast< PathUtility * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (arg1)->getAllPaths();
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_PathUtility_makeFilePath(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PathUtility *arg1 = (PathUtility *) 0 ;
+  std::string arg2 ;
+  int arg3 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"PathUtility_makeFilePath",3,3,&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PathUtility, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PathUtility_makeFilePath" "', argument " "1"" of type '" "PathUtility *""'"); 
+  }
+  arg1 = reinterpret_cast< PathUtility * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(obj1, &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "PathUtility_makeFilePath" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "PathUtility_makeFilePath" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (arg1)->makeFilePath(arg2,arg3);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_PathUtility_size(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PathUtility *arg1 = (PathUtility *) 0 ;
+  size_t result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"PathUtility_size",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PathUtility, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PathUtility_size" "', argument " "1"" of type '" "PathUtility *""'"); 
+  }
+  arg1 = reinterpret_cast< PathUtility * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (arg1)->size();
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_size_t(static_cast< size_t >(result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_PathUtility(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  PathUtility *arg1 = (PathUtility *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"delete_PathUtility",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_PathUtility, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_PathUtility" "', argument " "1"" of type '" "PathUtility *""'"); 
+  }
+  arg1 = reinterpret_cast< PathUtility * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    delete arg1;
+    
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_Py_Void();
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *PathUtility_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_UnpackTuple(args,(char*)"swigregister", 1, 1,&obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_PathUtility, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
 SWIGINTERN PyObject *_wrap_new_PyMooseContext(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   pymoose::PyMooseContext *result = 0 ;
@@ -27783,6 +28518,70 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_PyMooseBase_author_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::PyMooseBase *arg1 = (pymoose::PyMooseBase *) 0 ;
+  std::string *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"PyMooseBase_author_get",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__PyMooseBase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PyMooseBase_author_get" "', argument " "1"" of type '" "pymoose::PyMooseBase *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::PyMooseBase * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    {
+      std::string const &_result_ref = pymoose_PyMooseBase_author_get(arg1);
+      result = (std::string *) &_result_ref;
+    }
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_PyMooseBase_description_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  pymoose::PyMooseBase *arg1 = (pymoose::PyMooseBase *) 0 ;
+  std::string *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if(!PyArg_UnpackTuple(args,(char *)"PyMooseBase_description_get",1,1,&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__PyMooseBase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PyMooseBase_description_get" "', argument " "1"" of type '" "pymoose::PyMooseBase *""'"); 
+  }
+  arg1 = reinterpret_cast< pymoose::PyMooseBase * >(argp1);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    {
+      std::string const &_result_ref = pymoose_PyMooseBase_description_get(arg1);
+      result = (std::string *) &_result_ref;
+    }
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_PyMooseBase_name_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   pymoose::PyMooseBase *arg1 = (pymoose::PyMooseBase *) 0 ;
@@ -29315,64 +30114,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_Class___get_author(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  pymoose::Class *arg1 = (pymoose::Class *) 0 ;
-  std::string result;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  
-  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
-  if(!PyArg_UnpackTuple(args,(char *)"Class___get_author",1,1,&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__Class, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Class___get_author" "', argument " "1"" of type '" "pymoose::Class *""'"); 
-  }
-  arg1 = reinterpret_cast< pymoose::Class * >(argp1);
-  {
-    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (arg1)->__get_author();
-    SWIG_PYTHON_THREAD_END_ALLOW;
-  }
-  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
-  SWIG_PYTHON_THREAD_END_BLOCK;
-  return resultobj;
-fail:
-  SWIG_PYTHON_THREAD_END_BLOCK;
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Class___get_description(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  pymoose::Class *arg1 = (pymoose::Class *) 0 ;
-  std::string result;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  
-  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
-  if(!PyArg_UnpackTuple(args,(char *)"Class___get_description",1,1,&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__Class, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Class___get_description" "', argument " "1"" of type '" "pymoose::Class *""'"); 
-  }
-  arg1 = reinterpret_cast< pymoose::Class * >(argp1);
-  {
-    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (arg1)->__get_description();
-    SWIG_PYTHON_THREAD_END_ALLOW;
-  }
-  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
-  SWIG_PYTHON_THREAD_END_BLOCK;
-  return resultobj;
-fail:
-  SWIG_PYTHON_THREAD_END_BLOCK;
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_Class___get_tick(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   pymoose::Class *arg1 = (pymoose::Class *) 0 ;
@@ -30512,35 +31253,6 @@ SWIGINTERN PyObject *_wrap_Cell___get_implicit(PyObject *SWIGUNUSEDPARM(self), P
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_From_bool(static_cast< bool >(result));
-  SWIG_PYTHON_THREAD_END_BLOCK;
-  return resultobj;
-fail:
-  SWIG_PYTHON_THREAD_END_BLOCK;
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Cell___get_description(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  pymoose::Cell *arg1 = (pymoose::Cell *) 0 ;
-  std::string result;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  
-  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
-  if(!PyArg_UnpackTuple(args,(char *)"Cell___get_description",1,1,&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__Cell, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Cell___get_description" "', argument " "1"" of type '" "pymoose::Cell const *""'"); 
-  }
-  arg1 = reinterpret_cast< pymoose::Cell * >(argp1);
-  {
-    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = ((pymoose::Cell const *)arg1)->__get_description();
-    SWIG_PYTHON_THREAD_END_ALLOW;
-  }
-  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
   SWIG_PYTHON_THREAD_END_BLOCK;
   return resultobj;
 fail:
@@ -82751,35 +83463,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_KineticManager___get_description(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  pymoose::KineticManager *arg1 = (pymoose::KineticManager *) 0 ;
-  std::string result;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  
-  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
-  if(!PyArg_UnpackTuple(args,(char *)"KineticManager___get_description",1,1,&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_pymoose__KineticManager, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "KineticManager___get_description" "', argument " "1"" of type '" "pymoose::KineticManager const *""'"); 
-  }
-  arg1 = reinterpret_cast< pymoose::KineticManager * >(argp1);
-  {
-    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = ((pymoose::KineticManager const *)arg1)->__get_description();
-    SWIG_PYTHON_THREAD_END_ALLOW;
-  }
-  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
-  SWIG_PYTHON_THREAD_END_BLOCK;
-  return resultobj;
-fail:
-  SWIG_PYTHON_THREAD_END_BLOCK;
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_KineticManager___get_recommendedDt(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   pymoose::KineticManager *arg1 = (pymoose::KineticManager *) 0 ;
@@ -107779,6 +108462,26 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"Nid_setNode", _wrap_Nid_setNode, METH_VARARGS, (char *)"Nid_setNode(Nid self, unsigned int node)"},
 	 { (char *)"delete_Nid", _wrap_delete_Nid, METH_VARARGS, (char *)"delete_Nid(Nid self)"},
 	 { (char *)"Nid_swigregister", Nid_swigregister, METH_VARARGS, NULL},
+	 { (char *)"Property_initialize", _wrap_Property_initialize, METH_VARARGS, (char *)"Property_initialize(string fileName, int format)"},
+	 { (char *)"Property_initDefaults", _wrap_Property_initDefaults, METH_VARARGS, (char *)"Property_initDefaults()"},
+	 { (char *)"Property_getProperty", _wrap_Property_getProperty, METH_VARARGS, (char *)"Property_getProperty(string key) -> string"},
+	 { (char *)"Property_setProperty", _wrap_Property_setProperty, METH_VARARGS, (char *)"Property_setProperty(string key, string value)"},
+	 { (char *)"Property_readProperties", _wrap_Property_readProperties, METH_VARARGS, (char *)"Property_readProperties(string fileName, int format) -> int"},
+	 { (char *)"Property_readEnvironment", _wrap_Property_readEnvironment, METH_VARARGS, (char *)"Property_readEnvironment()"},
+	 { (char *)"Property_getKeys", _wrap_Property_getKeys, METH_VARARGS, (char *)"Property_getKeys() -> string_vector"},
+	 { (char *)"Property_addSimPath", _wrap_Property_addSimPath, METH_VARARGS, (char *)"Property_addSimPath(string path)"},
+	 { (char *)"Property_setSimPath", _wrap_Property_setSimPath, METH_VARARGS, (char *)"Property_setSimPath(string paths)"},
+	 { (char *)"Property_getSimPath", _wrap_Property_getSimPath, METH_VARARGS, (char *)"Property_getSimPath() -> string"},
+	 { (char *)"delete_Property", _wrap_delete_Property, METH_VARARGS, (char *)"delete_Property(Property self)"},
+	 { (char *)"Property_swigregister", Property_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_PathUtility", _wrap_new_PathUtility, METH_VARARGS, (char *)"new_PathUtility(string paths) -> PathUtility"},
+	 { (char *)"PathUtility_addPath", _wrap_PathUtility_addPath, METH_VARARGS, (char *)"PathUtility_addPath(PathUtility self, string paths)"},
+	 { (char *)"PathUtility_getPath", _wrap_PathUtility_getPath, METH_VARARGS, (char *)"PathUtility_getPath(PathUtility self, int index) -> string"},
+	 { (char *)"PathUtility_getAllPaths", _wrap_PathUtility_getAllPaths, METH_VARARGS, (char *)"PathUtility_getAllPaths(PathUtility self) -> string"},
+	 { (char *)"PathUtility_makeFilePath", _wrap_PathUtility_makeFilePath, METH_VARARGS, (char *)"PathUtility_makeFilePath(PathUtility self, string fileName, int index) -> string"},
+	 { (char *)"PathUtility_size", _wrap_PathUtility_size, METH_VARARGS, (char *)"PathUtility_size(PathUtility self) -> size_t"},
+	 { (char *)"delete_PathUtility", _wrap_delete_PathUtility, METH_VARARGS, (char *)"delete_PathUtility(PathUtility self)"},
+	 { (char *)"PathUtility_swigregister", PathUtility_swigregister, METH_VARARGS, NULL},
 	 { (char *)"new_PyMooseContext", _wrap_new_PyMooseContext, METH_VARARGS, (char *)"new_PyMooseContext() -> PyMooseContext"},
 	 { (char *)"delete_PyMooseContext", _wrap_delete_PyMooseContext, METH_VARARGS, (char *)"delete_PyMooseContext(PyMooseContext self)"},
 	 { (char *)"PyMooseContext_getCwe", _wrap_PyMooseContext_getCwe, METH_VARARGS, (char *)"PyMooseContext_getCwe(PyMooseContext self) -> Id"},
@@ -107994,6 +108697,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"PyMooseBase_id_get", _wrap_PyMooseBase_id_get, METH_VARARGS, (char *)"PyMooseBase_id_get(PyMooseBase self) -> Id"},
 	 { (char *)"PyMooseBase_parent_get", _wrap_PyMooseBase_parent_get, METH_VARARGS, (char *)"PyMooseBase_parent_get(PyMooseBase self) -> Id"},
 	 { (char *)"PyMooseBase_className_get", _wrap_PyMooseBase_className_get, METH_VARARGS, (char *)"PyMooseBase_className_get(PyMooseBase self) -> string"},
+	 { (char *)"PyMooseBase_author_get", _wrap_PyMooseBase_author_get, METH_VARARGS, (char *)"PyMooseBase_author_get(PyMooseBase self) -> string"},
+	 { (char *)"PyMooseBase_description_get", _wrap_PyMooseBase_description_get, METH_VARARGS, (char *)"PyMooseBase_description_get(PyMooseBase self) -> string"},
 	 { (char *)"PyMooseBase_name_get", _wrap_PyMooseBase_name_get, METH_VARARGS, (char *)"PyMooseBase_name_get(PyMooseBase self) -> string"},
 	 { (char *)"PyMooseBase_path_get", _wrap_PyMooseBase_path_get, METH_VARARGS, (char *)"PyMooseBase_path_get(PyMooseBase self) -> string"},
 	 { (char *)"PyMooseBase_swigregister", PyMooseBase_swigregister, METH_VARARGS, NULL},
@@ -108030,8 +108735,6 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"delete_Class", _wrap_delete_Class, METH_VARARGS, (char *)"delete_Class(Class self)"},
 	 { (char *)"Class_getType", _wrap_Class_getType, METH_VARARGS, (char *)"Class_getType(Class self) -> string"},
 	 { (char *)"Class___set_name", _wrap_Class___set_name, METH_VARARGS, (char *)"Class___set_name(Class self, string name)"},
-	 { (char *)"Class___get_author", _wrap_Class___get_author, METH_VARARGS, (char *)"Class___get_author(Class self) -> string"},
-	 { (char *)"Class___get_description", _wrap_Class___get_description, METH_VARARGS, (char *)"Class___get_description(Class self) -> string"},
 	 { (char *)"Class___get_tick", _wrap_Class___get_tick, METH_VARARGS, (char *)"Class___get_tick(Class self) -> unsigned int"},
 	 { (char *)"Class___set_tick", _wrap_Class___set_tick, METH_VARARGS, (char *)"Class___set_tick(Class self, unsigned int ?)"},
 	 { (char *)"Class___get_stage", _wrap_Class___get_stage, METH_VARARGS, (char *)"Class___get_stage(Class self) -> unsigned int"},
@@ -108062,7 +108765,6 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"Cell___get_method", _wrap_Cell___get_method, METH_VARARGS, (char *)"Cell___get_method(Cell self) -> string"},
 	 { (char *)"Cell___get_variableDt", _wrap_Cell___get_variableDt, METH_VARARGS, (char *)"Cell___get_variableDt(Cell self) -> bool"},
 	 { (char *)"Cell___get_implicit", _wrap_Cell___get_implicit, METH_VARARGS, (char *)"Cell___get_implicit(Cell self) -> bool"},
-	 { (char *)"Cell___get_description", _wrap_Cell___get_description, METH_VARARGS, (char *)"Cell___get_description(Cell self) -> string"},
 	 { (char *)"Cell_method_set", _wrap_Cell_method_set, METH_VARARGS, (char *)"Cell_method_set(Cell self, string method)"},
 	 { (char *)"Cell_method_get", _wrap_Cell_method_get, METH_VARARGS, (char *)"Cell_method_get(Cell self) -> string"},
 	 { (char *)"Cell_variableDt_get", _wrap_Cell_variableDt_get, METH_VARARGS, (char *)"Cell_variableDt_get(Cell self) -> bool"},
@@ -109451,7 +110153,6 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"KineticManager___get_singleParticle", _wrap_KineticManager___get_singleParticle, METH_VARARGS, (char *)"KineticManager___get_singleParticle(KineticManager self) -> bool"},
 	 { (char *)"KineticManager___get_multiscale", _wrap_KineticManager___get_multiscale, METH_VARARGS, (char *)"KineticManager___get_multiscale(KineticManager self) -> bool"},
 	 { (char *)"KineticManager___get_implicit", _wrap_KineticManager___get_implicit, METH_VARARGS, (char *)"KineticManager___get_implicit(KineticManager self) -> bool"},
-	 { (char *)"KineticManager___get_description", _wrap_KineticManager___get_description, METH_VARARGS, (char *)"KineticManager___get_description(KineticManager self) -> string"},
 	 { (char *)"KineticManager___get_recommendedDt", _wrap_KineticManager___get_recommendedDt, METH_VARARGS, (char *)"KineticManager___get_recommendedDt(KineticManager self) -> double"},
 	 { (char *)"KineticManager___get_eulerError", _wrap_KineticManager___get_eulerError, METH_VARARGS, (char *)"KineticManager___get_eulerError(KineticManager self) -> double"},
 	 { (char *)"KineticManager___set_eulerError", _wrap_KineticManager___set_eulerError, METH_VARARGS, (char *)"KineticManager___set_eulerError(KineticManager self, double eulerError)"},
@@ -110344,8 +111045,10 @@ static swig_type_info _swigt__p_InnerPyMooseIterableTpymoose__BinSynchan_unsigne
 static swig_type_info _swigt__p_InnerPyMooseIterableTpymoose__StochSynchan_unsigned_int_double_t = {"_p_InnerPyMooseIterableTpymoose__StochSynchan_unsigned_int_double_t", "pymoose::StochSynchanDoubleArray *|InnerPyMooseIterable<pymoose::StochSynchan,unsigned int,double > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Nid = {"_p_Nid", "Nid *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Normal = {"_p_Normal", "Normal *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_PathUtility = {"_p_PathUtility", "PathUtility *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Poisson = {"_p_Poisson", "Poisson *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Probability = {"_p_Probability", "Probability *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_Property = {"_p_Property", "Property *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_allocator_type = {"_p_allocator_type", "allocator_type *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_difference_type = {"_p_difference_type", "difference_type *", 0, 0, (void*)0, 0};
@@ -110445,8 +111148,10 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_InnerPyMooseIterableTpymoose__StochSynchan_unsigned_int_double_t,
   &_swigt__p_Nid,
   &_swigt__p_Normal,
+  &_swigt__p_PathUtility,
   &_swigt__p_Poisson,
   &_swigt__p_Probability,
+  &_swigt__p_Property,
   &_swigt__p_allocator_type,
   &_swigt__p_char,
   &_swigt__p_difference_type,
@@ -110546,8 +111251,10 @@ static swig_cast_info _swigc__p_InnerPyMooseIterableTpymoose__BinSynchan_unsigne
 static swig_cast_info _swigc__p_InnerPyMooseIterableTpymoose__StochSynchan_unsigned_int_double_t[] = {  {&_swigt__p_InnerPyMooseIterableTpymoose__StochSynchan_unsigned_int_double_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Nid[] = {  {&_swigt__p_Nid, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Normal[] = {  {&_swigt__p_Normal, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_PathUtility[] = {  {&_swigt__p_PathUtility, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Poisson[] = {  {&_swigt__p_Poisson, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Probability[] = {  {&_swigt__p_Probability, 0, 0, 0},  {&_swigt__p_Gamma, _p_GammaTo_p_Probability, 0, 0},  {&_swigt__p_Normal, _p_NormalTo_p_Probability, 0, 0},  {&_swigt__p_Binomial, _p_BinomialTo_p_Probability, 0, 0},  {&_swigt__p_Poisson, _p_PoissonTo_p_Probability, 0, 0},  {&_swigt__p_Exponential, _p_ExponentialTo_p_Probability, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_Property[] = {  {&_swigt__p_Property, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_allocator_type[] = {  {&_swigt__p_allocator_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_difference_type[] = {  {&_swigt__p_difference_type, 0, 0, 0},{0, 0, 0, 0}};
@@ -110647,8 +111354,10 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_InnerPyMooseIterableTpymoose__StochSynchan_unsigned_int_double_t,
   _swigc__p_Nid,
   _swigc__p_Normal,
+  _swigc__p_PathUtility,
   _swigc__p_Poisson,
   _swigc__p_Probability,
+  _swigc__p_Property,
   _swigc__p_allocator_type,
   _swigc__p_char,
   _swigc__p_difference_type,
@@ -111264,6 +111973,17 @@ SWIGEXPORT void SWIG_init(void) {
   SWIG_addvarlink(SWIG_globals(),(char*)"Id_BadNode",Swig_var_Id_BadNode_get, Swig_var_Id_BadNode_set);
   SWIG_addvarlink(SWIG_globals(),(char*)"Id_UnknownNode",Swig_var_Id_UnknownNode_get, Swig_var_Id_UnknownNode_set);
   SWIG_addvarlink(SWIG_globals(),(char*)"Id_GlobalNode",Swig_var_Id_GlobalNode_get, Swig_var_Id_GlobalNode_set);
+  SWIG_Python_SetConstant(d, "BUF_SIZE",SWIG_From_int(static_cast< int >(300)));
+  SWIG_addvarlink(SWIG_globals(),(char*)"Property_SIMPATH",Swig_var_Property_SIMPATH_get, Swig_var_Property_SIMPATH_set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"Property_SIMNOTES",Swig_var_Property_SIMNOTES_get, Swig_var_Property_SIMNOTES_set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"Property_DOCPATH",Swig_var_Property_DOCPATH_get, Swig_var_Property_DOCPATH_set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"Property_AUTOSCHEDULE",Swig_var_Property_AUTOSCHEDULE_get, Swig_var_Property_AUTOSCHEDULE_set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"Property_CREATESOLVER",Swig_var_Property_CREATESOLVER_get, Swig_var_Property_CREATESOLVER_set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"Property_HOME",Swig_var_Property_HOME_get, Swig_var_Property_HOME_set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"Property_XML_FORMAT",Swig_var_Property_XML_FORMAT_get, Swig_var_Property_XML_FORMAT_set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"Property_PROP_FORMAT",Swig_var_Property_PROP_FORMAT_get, Swig_var_Property_PROP_FORMAT_set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"PathUtility_PATH_SEPARATOR",Swig_var_PathUtility_PATH_SEPARATOR_get, Swig_var_PathUtility_PATH_SEPARATOR_set);
+  SWIG_addvarlink(SWIG_globals(),(char*)"PathUtility_DIR_SEPARATOR",Swig_var_PathUtility_DIR_SEPARATOR_get, Swig_var_PathUtility_DIR_SEPARATOR_set);
   SWIG_Python_SetConstant(d, "ALL",SWIG_From_int(static_cast< int >(pymoose::ALL)));
   SWIG_Python_SetConstant(d, "VALUE",SWIG_From_int(static_cast< int >(pymoose::VALUE)));
   SWIG_Python_SetConstant(d, "LOOKUP",SWIG_From_int(static_cast< int >(pymoose::LOOKUP)));

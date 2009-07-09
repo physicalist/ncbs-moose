@@ -120,6 +120,7 @@ class PropertyModel(QtCore.QAbstractTableModel):
 
 if __name__ == "__main__":
     import sys
+    #sys.path.append("..")
     import moose
     app =  QtGui.QApplication([])
     mainWin = QtGui.QMainWindow()

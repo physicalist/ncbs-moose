@@ -32,7 +32,7 @@
 #endif //USE_READLINE
 
 // Defined in init.cpp
-extern void init( int& argc, char**& argv );
+extern unsigned int init( int& argc, char**& argv );
 extern void terminateMPI( unsigned int myNode );
 extern void pollPostmaster();
 extern void setupDefaultSchedule(Element* t0, Element* t1, Element* cj);

@@ -57,7 +57,6 @@ class MHandler(QtCore.QThread):
     file_types = {
         'Genesis Script(*.g)':'GENESIS',
         'SBML(*.xml *.bz2 *.zip *.gz)':'SBML',
-        'MOOSE(*.py)':'MOOSE'
         }
     def __init__(self, *args):
         QtCore.QObject.__init__(self, *args)
