@@ -1,3 +1,7 @@
+; Choose if extras (installers for python etc.) should be
+; bundled inside the installer.
+;!define IncludeExtras
+
 ; Allows use of logical operations like ${If} $0 != ""
 !include "LogicLib.nsh"
 
@@ -19,10 +23,6 @@ Name "Moose Beta 1.2"
 ; The file to write
 OutFile "moose-beta-1.2.0.exe"
 
-; Choose if extras (installers for python etc.) should be
-; bundled inside the installer.
-;!define IncludeExtras
-
 ; The default installation directory
 InstallDir $PROGRAMFILES\MOOSE
 
@@ -37,19 +37,15 @@ RequestExecutionLevel admin
 ; SetCompressor /SOLID lzma
 
 ; text file to open in notepad after installation
-;!define notefile "Docs\RELEASE_NOTES.TXT"
+;!define notefile "Payload\Docs\RELEASE_NOTES.TXT"
  
-; introductory html page with links to interesting stuff
-!define introfile "Docs\Introduction.html"
-
 ; license text file
-!define licensefile "Docs\COPYING.LIB.txt"
+!define licensefile "Payload\Docs\COPYING.LIB.txt"
  
 ; icons must be Microsoft .ICO files
-!define icon "moose.ico"
-;-------------------------------
-; Pages
+!define icon "Payload\moose.ico"
 
+; Pages
 ;Page components
 Page directory
 Page instfiles
@@ -57,16 +53,6 @@ Page instfiles
 UninstPage uninstConfirm
 UninstPage instfiles
  
-!ifdef icon
-Icon "${icon}"
-!endif
-
-!ifdef licensefile
-LicenseText "License"
-LicenseData "${licensefile}"
-Page license
-!endif
-
 ; Show MOOSE Logo
 Function .onInit
 	Push $0
@@ -99,8 +85,8 @@ Function .onInit
 	done:
 	
 	SetOutPath $TEMP
-	File /oname=spltmp.bmp "beta-1.2.0.bmp"
-;	File /oname=spltmp.wav "splash.wav"
+	File /oname=spltmp.bmp "Payload\beta-1.2.0.bmp"
+;	File /oname=spltmp.wav "Payload\splash.wav"
 	
 	advsplash::show 1000 600 400 -1 $TEMP\spltmp
 	
@@ -118,38 +104,8 @@ FunctionEnd
 Section "moose" 
 	SectionIn RO
 	
-	; Set output path to the installation directory.
 	SetOutPath $INSTDIR
-	
-	; Put files there
-	File "moose.exe"
-	File "COPYING.LIB.txt"
-	File "copyleft.txt"
-	File "launcher.bat"
-	File "launch.lnk"
-	CreateDirectory "$INSTDIR\Docs"
-	File /r "Docs"
-	CreateDirectory "$INSTDIR\Demos"
-	File /r "Demos"
-	CreateDirectory "$INSTDIR\RegressionTests"
-	File /r "RegressionTests"
-	
-	!ifdef licensefile
-	File /a "${licensefile}"
-	!endif
-
-	!ifdef notefile
-	File /a "${notefile}"
-	!endif
-	
-	!ifdef icon
-	File /a "${icon}"
-	!endif
-	
-	!ifdef PyMOOSE
-	File "moose.py"
-	File "_moose.pyd"
-	!endif
+	File /r "Payload\*"
 	
 	; Write the installation path into the registry
 	WriteRegStr HKLM SOFTWARE\MOOSE "Install_Dir" "$INSTDIR"
@@ -169,9 +125,7 @@ Section "moose"
 	; registry.
 	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR"  
 	
-	!ifdef introfile
-	ExecShell "open" "$INSTDIR\${introfile}"
-	!endif
+	ExecShell "open" "$INSTDIR\Docs\Introduction.html"
 SectionEnd
 
 ; Optional section (can be disabled by the user)
