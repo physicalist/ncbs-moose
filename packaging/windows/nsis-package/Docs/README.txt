@@ -1,24 +1,45 @@
-This is the MOOSE Beta 1.1.0 release
+This is the MOOSE Beta 1.2.0 release
 
 MOOSE is the base and numerical core for large, detailed simulations including
-Computational Neuroscience and Systems Biology. MOOSE spans the range from
-single molecules to subcellular networks, from single cells to neuronal
-networks, and to still larger systems. It is backwards-compatible with
+Computational Neuroscience and Systems Biology. 
+
+
+New in this release:
+A PyQt-based graphical interface for running basic simulations and tutorials.
+	This is now the default 'face' of MOOSE.
+Gillespie solver for chemical kinetic simulations.
+SBML support for writing kinetic models, partial support for reading.
+MPI support for parallel neuronal simulations, and interface to MUSIC.
+Upgrades to neuronal solver.
+
+About MOOSE:
+MOOSE is the Multiscale Object-Oriented Simulation Environment. It spans the 
+range from single molecules to subcellular networks, from single cells to 
+neuronal networks, and to still larger systems. It is backwards-compatible with
 GENESIS, and forward compatible with Python. A key goal of MOOSE is to
 embrace many simulation and numerical engines that span a range of levels of 
 simulation, and to provide the infrastructure to enable these to interoperate
-seamlessly. This release of MOOSE supports 2 main solvers: for neuronal 
-biophysics using custom code and for deterministic reaction-diffusion 
-simulations using the GNU Scientific Library routines.
+seamlessly.
+
+Numerical engines:
+Crank-Nicolson solver for compartmental neuronal models and networks
+Adaptive timestep Runge-Kutta solver for chemical kinetic systems
+Gillespie Stochastic Systems Algorithm for chemical kinetics
+Prototype Multiscale solver to interface electrical and signaling models.
+Prototype Steady State solver to obtain steady states for chemical kinetics.
+	Several of these solvers utilize the GNU Scientific Library.
 
 Technical data:
 Authors: Upinder S. Bhalla, Niraj Dudani, Subhasis Ray, Raamesh Deshpande
 Programming and Release support: Siji George.
+Web page: Harsha Rani.
 All authors are at the National Centre for Biological Sciences, Bangalore, 
 India.
 
-Language: C++
-Source available at SourceForge. Licence: LGPL
+Language: C++, Python.
+Source available at SourceForge. Licence: LGPL. However, due to the
+	terms of the GPL-licensed GSL, the effective license of the
+	package as a whole is GPL.
 Binaries available: Linux (32 and 64-bit), Solaris, Windows (32 bit), 
 There is also a tarball for those who wish to compile
 
@@ -26,14 +47,6 @@ Please refer to the mirrored MOOSE websites for current information and
 for a subversion code repository:
 http://moose.ncbs.res.in
 http://moose.sourceforge.net
-
-We acknowledge input from the CRL team led by Parag Chandragupta who
-did initial parallelization work, and Johannes Hjorth, who contributed
-some objects and is helping with the MUSIC port.
-
-Support is from many sources, including NCBS, the DAE and DBT (India), the
-NIH and a long-standing collaboration with Ravi Iyengar at Mount Sinai,
-and the EU-India grid project.
 
 Please look at the RELEASE_NOTES for updates and changes compared to the first
 release. The earlier release notes are in the DOCS directory.
