@@ -1,4 +1,5 @@
 find . -name '*.txt' -execdir todos {} +
+find . -name '*.bat' -execdir todos {} +
 find . -name '*.plot' -execdir todos {} +
 find . -name '*.gnuplot' -execdir todos {} +
 find . -name '*.g' -execdir todos {} +
