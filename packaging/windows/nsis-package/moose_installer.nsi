@@ -107,25 +107,34 @@ Function .onInit
 	
 	Push $0
 	Push $1
+	Push $2
 	
 	StrCpy $1 \
 		"Existing installations of MOOSE must be removed before this \
 		installer can continue."
 	
 	/*
-	Parameters to UninstallIfExists:
+	Parameters:
 		name:     Name of software
 		key:      Name of registry key containing uninstall information
-		isnsis:   Is the uninstaller NSIS based? ("0" or "1")
+		instdir:  Installation directory for the software. Needed for NSIS
+		          based installers. Can be left empty otherwise.
 		prompt:   Should the user be prompted? ("0" or "1")
 		message:  Message to display to user
 	
 	Returns:
 		"0" if the user did not uninstall
 		"1" if the user let uninstallation continue
+	
+	Retrieve returned value by popping stack:
+		Pop $my_var
 	*/
 	
-	${UninstallIfExists} "MOOSE" "MOOSE" "1" "1" $1
+	ReadRegStr $2 \
+		HKLM \
+		"SOFTWARE\MOOSE" \
+		"Install_Dir"
+	${UninstallIfExists} "MOOSE" "MOOSE" $2 "1" $1
 	
 	Pop $0
 	${If} $0 == "0"
@@ -182,12 +191,12 @@ Section "Prerequisites"
 		Do you wish to install these before installing MOOSE?"
 	MessageBox MB_YESNO|MB_ICONQUESTION $0 /SD IDYES IDNO endPrereq
 	
-	; Extract, execute and delete immediately (to reduce working space requirement).
-	
+	; Temp directory
 	StrCpy $1 "$TEMP\moose-prereq"
 	CreateDirectory $1
 	SetOutPath $1
 	
+	; Extract, execute and delete immediately (to reduce working space requirement).
 	; PYTHON
 	!define installer "python-2.5.2.msi"
 	File "Extra\${installer}"
@@ -254,10 +263,12 @@ Section "moose"
 	; registry.
 	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR"  
 	
-	ExecShell "open" "$INSTDIR\Docs\Introduction.html"
-	
 	Pop $0
 SectionEnd
+
+Function .onInstSuccess
+	ExecShell "open" "$INSTDIR\Docs\Introduction.html"
+FunctionEnd
 
 ; Optional section (can be disabled by the user)
 Section "Start Menu Shortcuts"
@@ -282,6 +293,7 @@ Section "Uninstall"
 	Push $0
 	Push $1
 	Push $2
+	Push $3
 	
 	; Find original installation location from registry
 	ReadRegStr \
@@ -296,36 +308,60 @@ Section "Uninstall"
 	;-----------------------------------------------------------------
 	
 	/*
-	Parameters to UninstallIfExists:
+	Parameters:
 		name:     Name of software
 		key:      Name of registry key containing uninstall information
-		isnsis:   Is the uninstaller NSIS based? ("0" or "1")
+		instdir:  Installation directory for the software. Needed for NSIS
+		          based installers. Can be left empty otherwise.
 		prompt:   Should the user be prompted? ("0" or "1")
 		message:  Message to display to user
 	
 	Returns:
 		"0" if the user did not uninstall
 		"1" if the user let uninstallation continue
+	
+	Retrieve returned value by popping stack:
+		Pop $my_var
 	*/
 	
 	StrCpy $1 \
 		"PyQwt was installed along with MOOSE during the MOOSE installation."
-	${un.UninstallIfExists} "PyQwt 5.1" "PyQwt5" "1" "1" $1
+	ReadRegStr $2 \
+		HKLM \
+		"SOFTWARE\PyQwt5" \
+		""
+	${un.UninstallIfExists} "PyQwt 5.1" "PyQwt5" $2 "1" $1
 	Pop $1
 	
 	StrCpy $1 \
 		"PyQt was installed along with MOOSE during the MOOSE installation."
-	${un.UninstallIfExists} "PyQt 4.4" "PyQt GPL v4.4.3 for Python v2.5" "1" "1" $1
+	ReadRegStr $2 \
+		HKLM \
+		"SOFTWARE\PyQt4\Py2.5\InstallPath" \
+		""
+	${un.UninstallIfExists} "PyQt 4.4" "PyQt GPL v4.4.3 for Python v2.5" $2 "1" $1
+	; This directory was actually created by the PyQwt (not PyQt) installer and not
+	; cleaned up properly, so deleting it here:
+	RMDir /r "$2\PyQt4"
+	; This directory also gets left over. This is because the actual installation
+	; directory for PyQt is:
+	;	C:\Python2.5\Lib\site-packages\PyQt4
+	; but we pass it C:\Python2.5, as read from the registry. Here we delete this
+	; dir, but another possiblity is to append the extra part to the inst-dir
+	; parameter passed to the uninstallation function above.
+	RMDir /r "$2\Lib\site-packages\PyQt4"
 	Pop $1
 	
 	StrCpy $1 \
 		"Numpy was installed along with MOOSE during the MOOSE installation."
-	${un.UninstallIfExists} "Numpy 1.2.0" "numpy-py2.5" "0" "1" $1
+	StrCpy $2 ""
+	${un.UninstallIfExists} "Numpy 1.2.0" "numpy-py2.5" $2 "1" $1
 	Pop $1
 	
 	StrCpy $1 \
 		"Python was installed along with MOOSE during the MOOSE installation."
-	${un.UninstallIfExists} "Python 2.5" "{6B976ADF-8AE8-434E-B282-A06C7F624D2F}" "0" "1" $1
+	StrCpy $2 ""
+	${un.UninstallIfExists} "Python 2.5" "{6B976ADF-8AE8-434E-B282-A06C7F624D2F}" $2 "1" $1
 	Pop $1	
 !endif	; IncludeExtras
 	
@@ -342,7 +378,7 @@ Section "Uninstall"
 	; Exclude MOOSE binary's path from the execution path.
 	; This is done by updating the PATH environment variable in the
 	; registry.
-	${un.EnvVarUpdate} $2 "PATH" "R" "HKLM" "$INSTDIR"   
+	${un.EnvVarUpdate} $3 "PATH" "R" "HKLM" "$INSTDIR"   
 	
 	; Remove directories used
 	RMDir /r "$SMPROGRAMS\MOOSE"
@@ -358,6 +394,7 @@ Section "Uninstall"
 	
 	RMDir /r "$0"
 	
+	Pop $3
 	Pop $2
 	Pop $1
 	Pop $0

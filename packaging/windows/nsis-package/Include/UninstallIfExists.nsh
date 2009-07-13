@@ -18,28 +18,28 @@
 !define NumParams "5"      ; This is the number of parameters this function takes.
 !define /math NumParamsPlusOne ${NumParams} + 1
 
-!macro UninstallIfExists name key isnsis prompt message
+!macro UninstallIfExists name key instdir prompt message
 	!ifdef FuncReturns
 		Push "return"	; Reserving place for the return value
 	!endif
 	
 	Push "${message}"
 	Push "${prompt}"
-	Push "${isnsis}"
+	Push "${instdir}"
 	Push "${key}"
 	Push "${name}"
 	
 	Call UninstallIfExists
 !macroend
 
-!macro un.UninstallIfExists name key isnsis prompt message
+!macro un.UninstallIfExists name key instdir prompt message
 	!ifdef FuncReturns
 		Push "return"	; Reserving place for the return value
 	!endif
 	
 	Push "${message}"
 	Push "${prompt}"
-	Push "${isnsis}"
+	Push "${instdir}"
 	Push "${key}"
 	Push "${name}"
 	
@@ -50,7 +50,8 @@
 	Parameters:
 		name:     Name of software
 		key:      Name of registry key containing uninstall information
-		isnsis:   Is the uninstaller NSIS based? ("0" or "1")
+		instdir:  Installation directory for the software. Needed for NSIS
+		          based installers. Can be left empty otherwise.
 		prompt:   Should the user be prompted? ("0" or "1")
 		message:  Message to display to user
 	
@@ -85,14 +86,15 @@ Function ${UN}UninstallIfExists
 	; Retrieve argument values
 	Pop $R0	; name
 	Pop $R1	; key
-	Pop $R2	; isnsis
+	Pop $R2	; instdir
 	Pop $R3	; prompt
 	Pop $R4	; message
 	
 	; Remember variable values to make room for local variables
 	Push $1
 	
-	ReadRegStr $1 HKLM \
+	ReadRegStr $1 \
+		HKLM \
 		"Software\Microsoft\Windows\CurrentVersion\Uninstall\$R1" \
 		"UninstallString"
 	StrCmp $1 "" done
@@ -115,10 +117,10 @@ Function ${UN}UninstallIfExists
 	uninst:
 	; Run the uninstaller
 	ClearErrors
-	${If} $R2 == "0"
+	${If} $R2 == ""
 		ExecWait "$1"
 	${Else}
-		ExecWait "$1 _?=$INSTDIR" ; Do not copy the uninstaller to a temp file
+		ExecWait "$1 _?=$R2" ; Do not copy the uninstaller to a temp file
 	${Endif}
 	StrCpy $0 "1"
 	
