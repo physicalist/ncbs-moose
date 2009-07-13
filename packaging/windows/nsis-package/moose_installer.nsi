@@ -43,8 +43,8 @@ InstallDirRegKey HKLM "Software\MOOSE" "Install_Dir"
 ; Request application privileges for Windows Vista and Windows 7
 RequestExecutionLevel admin
 
-LicenseText "GNU LESSER GENERAL PUBLIC LICENSE"
-LicenseData "Payload\Docs\COPYING.LIB.txt"
+; LicenseText "GNU LESSER GENERAL PUBLIC LICENSE"
+; LicenseData "Payload\Docs\COPYING.LIB.txt"
 
 ; MUI 1.67 compatible
 !include "MUI.nsh"
@@ -68,15 +68,21 @@ LicenseData "Payload\Docs\COPYING.LIB.txt"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Wizard\arrow.bmp"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Wizard\orange-uninstall.bmp"
 
-; Welcome page
+; Installer pages
 !insertmacro MUI_PAGE_WELCOME
-; Components page
+!insertmacro MUI_PAGE_LICENSE "Payload\Docs\COPYING.LIB.txt"
+!insertmacro MUI_PAGE_DIRECTORY
 ; !insertmacro MUI_PAGE_COMPONENTS
-; Instfiles page
 !insertmacro MUI_PAGE_INSTFILES
-; Finish page
 !insertmacro MUI_PAGE_FINISH
-; Language files
+
+; Uninstaller pages
+!insertmacro MUI_UNPAGE_WELCOME
+!insertmacro MUI_UNPAGE_CONFIRM
+; !insertmacro MUI_UNPAGE_COMPONENTS
+!insertmacro MUI_UNPAGE_INSTFILES
+!insertmacro MUI_UNPAGE_FINISH
+
 !insertmacro MUI_LANGUAGE "English"
 
 Function Splash
@@ -141,16 +147,16 @@ Section
 	Push $1
 	
 	StrCpy $1 \
-		"This installer will work if you have the following software installed: $\n \
-			$\n \
-			$\t - Python 2.5 (preferably not any other) $\n \
-			$\t - Numpy 1.0 or higher $\n \
-			$\t - PyQt 4 or higher $\n \
-			$\t - PyQwt5 $\n \
-			$\n \
-		You can install the above manually, or download the MOOSE installer which will $\n \
-		install these for you. $\n \
-		$\n \
+		"This installer will work if you have the following software installed: $\n\
+			$\n\
+			    - Python 2.5 (preferably not any other) $\n\
+			    - Numpy 1.0 or higher $\n\
+			    - PyQt 4 or higher $\n\
+			    - PyQwt5 $\n\
+			$\n\
+		You can install the above manually, or download the MOOSE installer which will $\n\
+		install these for you. $\n\
+		$\n\
 		Click 'OK' to continue installing or 'Cancel' to abort."
 	MessageBox MB_OKCANCEL|MB_ICONQUESTION $1 /SD IDOK IDOK continueAnyway
 	
@@ -161,61 +167,63 @@ Section
 SectionEnd
 !else
 Section "Prerequisites"
-	Push $0
-	Push $1
+	; Push $0
+	; Push $1
 	
-	StrCpy $0 "$TEMP\moose-prereq"
-	CreateDirectory $0
-	SetOutPath $0
+	; StrCpy $0 \
+		; "MOOSE needs the following software to be installed: $\n\
+			; $\n\
+			    ; - Python 2.5 $\n\
+			    ; - Numpy 1.2.0 $\n\
+			    ; - PyQt 4.4 $\n\
+			    ; - PyQwt 5.1 $\n\
+			; $\n\
+		; The full installation will take around 220 MB of space on your disk. $\n\
+		; Do you wish to install these before installing MOOSE?"
+	; MessageBox MB_YESNO|MB_ICONQUESTION $0 /SD IDYES IDNO endPrereq
 	
-	StrCpy $1 \
-		"MOOSE needs the following software to be installed: $\n \
-			$\n \
-			$\t - Python 2.5 $\n \
-			$\t - Numpy 1.2.0 $\n \
-			$\t - PyQt 4.4 $\n \
-			$\t - PyQwt 5.1 $\n \
-			$\n \
-		Do you wish to install these before installing MOOSE?"
-	MessageBox MB_YESNO|MB_ICONQUESTION $1 /SD IDYES IDNO endPrereq
+	; ; Extract, execute and delete immediately (to reduce working space requirement).
 	
-	; Extract, execute and delete immediately (to reduce working space requirement).
+	; StrCpy $1 "$TEMP\moose-prereq"
+	; CreateDirectory $1
+	; SetOutPath $1
 	
-	; PYTHON
-	!define installer "python-2.5.2.msi"
-	File "Extra\${installer}"
-	ExecWait '"msiexec" /i "$0\${installer}"'
-	Delete "$0\${installer}"
-	!undef installer
-	; C:\WINDOWS\system32\msiexec.exe /x{6b976adf-8ae8-434e-b282-a06c7f62
-	; NUMPY
-	!define installer "numpy-1.2.0-win32-superpack-python2.5.exe"
-	File "Extra\${installer}"
-	ExecWait "$0\${installer}"
-	Delete "$0\${installer}"
-	Delete "$TEMP\numpy*.exe"	; Numpy installer creates a temp file but does not delete it.
-	!undef installer
+	; ; PYTHON
+	; !define installer "python-2.5.2.msi"
+	; File "Extra\${installer}"
+	; ExecWait '"msiexec" /i "$1\${installer}"'
+	; Delete "$1\${installer}"
+	; !undef installer
 	
-	; PYQT
-	!define installer "PyQt-Py2.5-gpl-4.4.3-1.exe"
-	File "Extra\${installer}"
-	ExecWait "$0\${installer}"
-	Delete "$0\${installer}"
-	!undef installer
+	; ; NUMPY
+	; !define installer "numpy-1.2.0-win32-superpack-python2.5.exe"
+	; File "Extra\${installer}"
+	; ExecWait "$1\${installer}"
+	; Delete "$1\${installer}"
+	; Delete "$TEMP\numpy*.exe"	; Numpy installer creates a temp file but does not delete it.
+	; !undef installer
 	
-	; PYQWT
-	!define installer "PyQwt5.1.0-Python2.5-PyQt4.4.3-NumPy1.2.0-1.exe"
-	File "Extra\${installer}"
-	ExecWait "$0\${installer}"
-	Delete "$0\${installer}"
-	!undef installer
+	; ; PYQT
+	; !define installer "PyQt-Py2.5-gpl-4.4.3-1.exe"
+	; File "Extra\${installer}"
+	; ExecWait "$1\${installer}"
+	; Delete "$1\${installer}"
+	; !undef installer
 	
-	endPrereq:
-	SetOutPath $TEMP	; Needed because we cannot delete the directory otherwise.
-	RMDir /r $0
+	; ; PYQWT
+	; !define installer "PyQwt5.1.0-Python2.5-PyQt4.4.3-NumPy1.2.0-1.exe"
+	; File "Extra\${installer}"
+	; ExecWait "$1\${installer}"
+	; Delete "$1\${installer}"
+	; !undef installer
 	
-	Pop $1
-	Pop $0
+	; SetOutPath $TEMP	; Needed because we cannot delete the directory otherwise.
+	; RMDir /r $1
+	
+	; endPrereq:
+	
+	; Pop $1
+	; Pop $0
 SectionEnd
 !endif	; IncludeExtras
 
@@ -272,6 +280,15 @@ FunctionEnd
 Section "Uninstall"
 	SetShellVarContext all
 	Push $0
+	Push $1
+	Push $2
+	
+	; Find original installation location from registry
+	ReadRegStr \
+		$0 \
+		HKLM \
+		"Software\MOOSE" \
+		"Install_Dir"
 	
 !ifdef IncludeExtras
 	;-----------------------------------------------------------------
@@ -291,17 +308,25 @@ Section "Uninstall"
 		"1" if the user let uninstallation continue
 	*/
 	
-	${un.UninstallIfExists} "PyQwt" "PyQwt5" "1" "1" ""
-	Pop $0
+	StrCpy $1 \
+		"PyQwt was installed along with MOOSE during the MOOSE installation."
+	${un.UninstallIfExists} "PyQwt 5.1" "PyQwt5" "1" "1" $1
+	Pop $1
 	
-	${un.UninstallIfExists} "PyQt" "PyQt GPL v4.4.3 for Python v2.5" "1" "1" ""
-	Pop $0
+	StrCpy $1 \
+		"PyQt was installed along with MOOSE during the MOOSE installation."
+	${un.UninstallIfExists} "PyQt 4.4" "PyQt GPL v4.4.3 for Python v2.5" "1" "1" $1
+	Pop $1
 	
-	${un.UninstallIfExists} "Numpy" "numpy-py2.5" "0" "1" ""
-	Pop $0
+	StrCpy $1 \
+		"Numpy was installed along with MOOSE during the MOOSE installation."
+	${un.UninstallIfExists} "Numpy 1.2.0" "numpy-py2.5" "0" "1" $1
+	Pop $1
 	
-	${un.UninstallIfExists} "Python 2.5" "{6B976ADF-8AE8-434E-B282-A06C7F624D2F}" "0" "1" ""
-	Pop $0	
+	StrCpy $1 \
+		"Python was installed along with MOOSE during the MOOSE installation."
+	${un.UninstallIfExists} "Python 2.5" "{6B976ADF-8AE8-434E-B282-A06C7F624D2F}" "0" "1" $1
+	Pop $1	
 !endif	; IncludeExtras
 	
 	;-----------------------------------------------------------------
@@ -317,11 +342,23 @@ Section "Uninstall"
 	; Exclude MOOSE binary's path from the execution path.
 	; This is done by updating the PATH environment variable in the
 	; registry.
-	${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR"   
+	${un.EnvVarUpdate} $2 "PATH" "R" "HKLM" "$INSTDIR"   
 	
 	; Remove directories used
 	RMDir /r "$SMPROGRAMS\MOOSE"
-	RMDir /r "$INSTDIR"
 	
+	; The installation directory can be deleted like this:
+	
+	; RMDir /r "$INSTDIR"
+	
+	; ..but this method is risky. If the user moves the uninstaller to
+	; some other location for some reason, then that directory will get deleted.
+	; Instead we use the original installation directory as found out from the
+	; registry:
+	
+	RMDir /r "$0"
+	
+	Pop $2
+	Pop $1
 	Pop $0
 SectionEnd
