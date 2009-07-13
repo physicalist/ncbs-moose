@@ -3,7 +3,7 @@ exercise some aspect of MOOSE function by running a specific model.
 The idea is that all these tests should be run automatically with a single
 command.
 
-To run the regression tests, type 'source do_regression.bat'
+To run the regression tests, double-click on 'do_regression_win.bat'
 
 To add a new test to the ones here, you will need to do the following:
 
@@ -12,7 +12,7 @@ To add a new test to the ones here, you will need to do the following:
 	file called 'test.plot', and then quits.
 3. Generate a plot of your reference output. This should have the same name
 	as your script file, but with the suffix .plot instead of the .g
-4. Append three lines to the script 'do_regression.bat' in the format you see
+4. Append three lines to the script 'do_regression_win.bat' in the format you see
 	for earlier scripts.
 
 
