@@ -167,63 +167,63 @@ Section
 SectionEnd
 !else
 Section "Prerequisites"
-	; Push $0
-	; Push $1
+	Push $0
+	Push $1
 	
-	; StrCpy $0 \
-		; "MOOSE needs the following software to be installed: $\n\
-			; $\n\
-			    ; - Python 2.5 $\n\
-			    ; - Numpy 1.2.0 $\n\
-			    ; - PyQt 4.4 $\n\
-			    ; - PyQwt 5.1 $\n\
-			; $\n\
-		; The full installation will take around 220 MB of space on your disk. $\n\
-		; Do you wish to install these before installing MOOSE?"
-	; MessageBox MB_YESNO|MB_ICONQUESTION $0 /SD IDYES IDNO endPrereq
+	StrCpy $0 \
+		"MOOSE needs the following software to be installed: $\n\
+			$\n\
+			    - Python 2.5 $\n\
+			    - Numpy 1.2.0 $\n\
+			    - PyQt 4.4 $\n\
+			    - PyQwt 5.1 $\n\
+			$\n\
+		The full installation will take around 220 MB of space on your disk. $\n\
+		Do you wish to install these before installing MOOSE?"
+	MessageBox MB_YESNO|MB_ICONQUESTION $0 /SD IDYES IDNO endPrereq
 	
-	; ; Extract, execute and delete immediately (to reduce working space requirement).
+	; Extract, execute and delete immediately (to reduce working space requirement).
 	
-	; StrCpy $1 "$TEMP\moose-prereq"
-	; CreateDirectory $1
-	; SetOutPath $1
+	StrCpy $1 "$TEMP\moose-prereq"
+	CreateDirectory $1
+	SetOutPath $1
 	
-	; ; PYTHON
-	; !define installer "python-2.5.2.msi"
-	; File "Extra\${installer}"
-	; ExecWait '"msiexec" /i "$1\${installer}"'
-	; Delete "$1\${installer}"
-	; !undef installer
+	; PYTHON
+	!define installer "python-2.5.2.msi"
+	File "Extra\${installer}"
+	ExecWait '"msiexec" /i "$1\${installer}"'
+	Delete "$1\${installer}"
+	!undef installer
 	
-	; ; NUMPY
-	; !define installer "numpy-1.2.0-win32-superpack-python2.5.exe"
-	; File "Extra\${installer}"
-	; ExecWait "$1\${installer}"
-	; Delete "$1\${installer}"
-	; Delete "$TEMP\numpy*.exe"	; Numpy installer creates a temp file but does not delete it.
-	; !undef installer
+	; NUMPY
+	!define installer "numpy-1.2.0-win32-superpack-python2.5.exe"
+	File "Extra\${installer}"
+	ExecWait "$1\${installer}"
+	Delete "$1\${installer}"
+	Delete "$TEMP\numpy*.exe"	; Numpy installer creates a temp file but does not delete it.
+	!undef installer
 	
-	; ; PYQT
-	; !define installer "PyQt-Py2.5-gpl-4.4.3-1.exe"
-	; File "Extra\${installer}"
-	; ExecWait "$1\${installer}"
-	; Delete "$1\${installer}"
-	; !undef installer
+	; PYQT
+	!define installer "PyQt-Py2.5-gpl-4.4.3-1.exe"
+	File "Extra\${installer}"
+	ExecWait "$1\${installer}"
+	Delete "$1\${installer}"
+	!undef installer
 	
-	; ; PYQWT
-	; !define installer "PyQwt5.1.0-Python2.5-PyQt4.4.3-NumPy1.2.0-1.exe"
-	; File "Extra\${installer}"
-	; ExecWait "$1\${installer}"
-	; Delete "$1\${installer}"
-	; !undef installer
+	; PYQWT
+	!define installer "PyQwt5.1.0-Python2.5-PyQt4.4.3-NumPy1.2.0-1.exe"
+	File "Extra\${installer}"
+	ExecWait "$1\${installer}"
+	Delete "$1\${installer}"
+	!undef installer
 	
-	; SetOutPath $TEMP	; Needed because we cannot delete the directory otherwise.
-	; RMDir /r $1
+	SetOutPath $TEMP	; Needed because we cannot delete the directory otherwise.
+	RMDir /r $1
 	
-	; endPrereq:
+	endPrereq:
 	
-	; Pop $1
-	; Pop $0
+	Pop $1
+	Pop $0
 SectionEnd
 !endif	; IncludeExtras
 
