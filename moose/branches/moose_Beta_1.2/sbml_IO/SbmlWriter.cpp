@@ -34,6 +34,7 @@
 
 void SbmlWriter::write( string filepath,Id location )
 {
+#ifdef USE_SBML
 	string::size_type loc;
 	while ( ( loc = filepath.find( "\\" ) ) != string::npos ) {
 		filepath.replace( loc, 1, "/" );
@@ -84,8 +85,12 @@ void SbmlWriter::write( string filepath,Id location )
 		cerr << "Errors encountered " << endl;
 		return ;
 	}
+#else
+	cout << "This version does not have SBML support." << endl;
+#endif
 }
 
+#ifdef USE_SBML
 /**
  * Create an SBML model in the SBML Level 2 Version 4 Specification.
  */
@@ -1092,5 +1097,5 @@ bool SbmlWriter::validateModel( SBMLDocument* sbmlDoc )
 		    return ( numConsistencyErrors == 0 && numValidationErrors == 0 );
 	  }
 }
-
+#endif // USE_SBML
 
