@@ -64,6 +64,9 @@
 # USE_CURSES (default value: 0) - To compile with curses support (terminal aware
 # 		printing)
 # 
+# USE_OSG (default value: 0) - To compile with OpenSceneGraph support to enable the MOOSE
+# 		elements 'GLcell', 'GLview' and 'MCSim'.
+#
 # GENERATE_WRAPPERS (default value: 0) - useful for python interface developers.
 # 		The binary created with this option looks for a directory named
 # 		'generated' in the working directory and creates a wrapper class
@@ -83,6 +86,7 @@ USE_READLINE?=1
 USE_MPI?=0
 USE_MUSIC?=0
 USE_CURSES?=0
+USE_OSG?=0
 GENERATE_WRAPPERS?=0
 
 export BUILD
@@ -92,6 +96,7 @@ export USE_READLINE
 export USE_MPI
 export USE_MUSIC
 export USE_CURSES
+export USE_OSG
 export GENERATE_WRAPPERS
 
 # PLATFORM (= Linux, win32, Darwin)
@@ -197,6 +202,15 @@ ifeq ($(USE_CURSES),1)
 LIBS += -lcurses
 CXXFLAGS+= -DUSE_CURSES
 endif
+
+# To compile with OpenSceneGraph support and enable 'GLcell', 'GLview' and 'MCSim' pass USE_OSG=1 in make command line
+ifeq ($(USE_OSG),1)
+	LIBS += -losg -losgDB -lOpenThreads
+	CXXFLAGS += -DUSE_OSG
+	OSG_DIR = glcell
+	OSG_LIB = glcell/GLcell.o
+endif
+
 # For 64 bit Linux systems add paths to 64 bit libraries 
 ifeq ($(OSTYPE),Linux)
 ifeq ($(MACHINE),x86_64)
@@ -250,6 +264,7 @@ OBJLIBS =	\
 	builtins/builtins.o \
 	signeur/signeur.o \
 	device/device.o \
+	$(OSG_LIB) \
 	$(SBML_LIB) \
 	$(PARALLEL_LIB) \
 	$(MUSIC_LIB)
@@ -281,6 +296,7 @@ libs:
 	@echo "	USE_MPI:" $(USE_MPI)
 	@echo "	USE_MUSIC:" $(USE_MUSIC)
 	@echo "	USE_CURSES:" $(USE_CURSES)
+	@echo "	USE_OSG:" $(USE_OSG)
 	@(for i in $(SUBDIR); do $(MAKE) -C $$i; done)
 	@echo "All Libs compiled"
 
