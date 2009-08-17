@@ -8,11 +8,30 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#include <iostream>
 #include "moose.h"
-#include "GLcell.h"
 #include "../shell/Shell.h"
-#include <osg/ref_ptr>
+#include "GLcell.h"
+
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
+
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
+#include "GLcellCompartment.h"
+
+/*#include <osg/ref_ptr>
 #include <osgDB/Registry>
 #include <osgDB/WriteFile>
 #include <osg/Notify>
@@ -20,8 +39,13 @@
 #include <osg/Geometry>
 #include <osg/ShapeDrawable>
 #include <osg/Quat>
+#include <osgViewer/Viewer>
+#include <osgGA/TrackballManipulator>
 
 const double GLcell::EPSILON = 1e-9;
+*/ // karan
+
+const int GLcell::HEADERLENGTH = 8;
 
 const Cinfo* initGLcellCinfo()
 {
@@ -59,9 +83,19 @@ const Cinfo* initGLcellCinfo()
 	// Field definitions
 	///////////////////////////////////////////////////////
 		new ValueFinfo( "path",
-			ValueFtype1< string >::global(),
-			GFCAST( &GLcell::getPath ),
-			RFCAST( &GLcell::setPath )
+				ValueFtype1< string >::global(),
+				GFCAST( &GLcell::getPath ),
+				RFCAST( &GLcell::setPath )
+				),
+		new ValueFinfo( "clientHost",
+				ValueFtype1< string >::global(),
+				GFCAST( &GLcell::getClientHost ),
+				RFCAST( &GLcell::setClientHost )
+				),
+		new ValueFinfo( "clientPort",
+				ValueFtype1< string >::global(),
+				GFCAST( &GLcell::getClientPort ),
+				RFCAST( &GLcell::setClientPort )
 				),
 	///////////////////////////////////////////////////////
 	// Shared definitions
@@ -103,7 +137,11 @@ static const Cinfo* glcellCinfo = initGLcellCinfo();
 
 GLcell::GLcell()
 	:
-	strPath_("")
+	strPath_( "" ),
+	strClientHost_( "127.0.0.1" ),
+	strClientPort_( "" ),
+	connectionUp_(false)
+	//karan	viewer_(NULL)
 {
 	;
 }
@@ -127,6 +165,36 @@ string GLcell::getPath( Eref e )
 	return static_cast< const GLcell* >( e.data() )->strPath_;
 }
 
+void GLcell::setClientHost( const Conn* c, string strClientHost )
+{
+	static_cast< GLcell * >( c->data() )->innerSetClientHost( strClientHost );
+}
+
+void GLcell::innerSetClientHost( const string& strClientHost )
+{
+	strClientHost_ = strClientHost;
+}
+
+string GLcell::getClientHost( Eref e )
+{
+	return static_cast< const GLcell* >( e.data() )->strClientHost_;
+}
+
+void GLcell::setClientPort( const Conn* c, string strClientPort )
+{
+	static_cast< GLcell * >( c->data() )->innerSetClientPort( strClientPort );
+}
+
+void GLcell::innerSetClientPort( const string& strClientPort )
+{
+	strClientPort_ = strClientPort;
+}
+
+string GLcell::getClientPort( Eref e )
+{
+	return static_cast< const GLcell* >( e.data() )->strClientPort_;
+}
+
 ///////////////////////////////////////////////////
 // Dest function definitions
 ///////////////////////////////////////////////////
@@ -140,14 +208,10 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 {
 	// Update colors from Vm values per compartment.
 
-	for ( int i = 0; i < renderList_.size(); ++i )
+	/*if ( viewer_ != NULL && !viewer_->done() )
 	{
-		// process only if element is of type "Compartment":
-		if ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) )
-			std::cout << renderList_[i] << " ";
-		// TODO will this work in parallel cases? is it permitted to look up cinfo() directly?
-	}
-	std::cout << std::endl;
+		viewer_->frame();
+		}*/ // karan
 }
 
 void GLcell::reinitFunc( const Conn* c, ProcInfo info )
@@ -157,32 +221,34 @@ void GLcell::reinitFunc( const Conn* c, ProcInfo info )
 
 void GLcell::reinitFuncLocal( const Conn* c )
 {
-	// Reload model geometry.
 	double diameter, length, x0, y0, z0, x, y, z, Vm;
 
-	// strPath_ must be set explicitly.
+	/// Reload model geometry.
+	// strPath_ should have been set.
 	if ( !strPath_.empty() )
 	{
 		// renderList_ holds the flattened tree of elements to render.
 		// renderListShapes_ holds a corresponding list of osg::ShapeDrawables.
 		renderList_.clear();
-		renderListShapes_.clear();
+		renderListGLcellCompartments_.clear();
+
+		// karan renderListShapes_.clear();
 	
 		// Start populating renderList_ with the node in strPath_ 
 		// and its children, recursively.
 		add2RenderList( Shell::path2eid( strPath_, "/", 1 ) );
-		
+			
 		for ( int i = 0; i < renderList_.size(); ++i )
 		{
 	
 	 	 // written to access field values before I was aware of get<class T>(...), the
 		 // following is now disabled.
-			/*send2< Id, string >( c->target(), requestFieldSlot, renderList_[i], "dia" );
-			  std::cout << "sent " ;
-			  if ( fieldValue_.length() > 0 )
-			    std::cout << fieldValue_ << std::endl;
-			  else
-			    std::cout << "but got nothing" << std::endl;*/
+// 			send2< Id, string >( c->target(), requestFieldSlot, renderList_[i], "dia" );
+// 			  std::cout << "sent " ;
+// 			  if ( fieldValue_.length() > 0 )
+// 			    std::cout << fieldValue_ << std::endl;
+// 			  else
+// 			    std::cout << "but got nothing" << std::endl;
 			
 			if ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) )
 				&& get< double >( renderList_[i].eref(), "diameter", diameter )
@@ -196,8 +262,24 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				&& get< double >( renderList_[i].eref(), "Vm", Vm )
 				)
 			{
+				GLcellCompartment glcellcomp;
+				glcellcomp.diameter = diameter;
+				glcellcomp.length = length;
+				glcellcomp.x0 = x0;
+				glcellcomp.y0 = y0;
+				glcellcomp.z0 = z0;
+				glcellcomp.x = x;
+				glcellcomp.y = y;
+				glcellcomp.z = z;
+				glcellcomp.Vm = Vm;
+				
+				renderListGLcellCompartments_.push_back( glcellcomp );
+
+				/*
+				
 				if (length < GLcell::EPSILON) // i.e., length == 0	
 				{ // the compartment is spherical
+					
 					osg::ref_ptr< osg::Sphere > sphere = new osg::Sphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ), diameter/2 );
 					osg::ref_ptr< osg::ShapeDrawable > drawable = new osg::ShapeDrawable( sphere.get() );
 					
@@ -205,6 +287,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				}
 				else
 				{ // the compartment is cylindrical
+					  
 					osg::ref_ptr< osg::Cylinder > cylinder = new osg::Cylinder( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ), diameter/2, length );
 
 					/// OSG Cylinders are initially oriented along (0,0,1). To orient them
@@ -233,14 +316,65 @@ void GLcell::reinitFuncLocal( const Conn* c )
 
 					renderListShapes_.push_back( drawable.get() );
 				}
+				*/ // karan
 			
 			}
 
 		}
 	}
 
-	// TODO this will be removed
-	renderRenderList();
+	//karan renderRenderList();
+
+	if ( !strClientPort_.empty() ) // strClientPort_ should have been set.
+	{
+		int sockFd;
+		sockFd = getSocket( strClientHost_.c_str(), strClientPort_.c_str() );
+
+		if ( sockFd == -1 ) 
+		{
+			connectionUp_ = false;
+			std::cerr << "Couldn't connect to client!" << std::endl;
+		}
+		else
+		{
+			connectionUp_ = true;
+
+			std::ostringstream archiveStream;
+			boost::archive::text_oarchive archive(archiveStream);
+
+			archive << renderListGLcellCompartments_;
+
+			std::ostringstream headerStream;
+			headerStream << std::setw(HEADERLENGTH)
+				     << std::hex << archiveStream.str().size();
+
+			int headerLen = headerStream.str().size() + 1;
+			char* headerData = (char *) malloc( headerLen * sizeof( char ) );
+			strcpy( headerData, headerStream.str().c_str() );
+	
+			if (sendAll( sockFd, headerData, &headerLen ) == -1 )
+			{
+				connectionUp_ = false;
+				std::cerr << "Couldn't transmit header to client!" << std::endl;
+			}
+			else
+			{
+				int archiveLen = archiveStream.str().size() + 1;
+				char* archiveData = (char *) malloc( archiveLen * sizeof( char ) );
+				strcpy( archiveData, archiveStream.str().c_str() );
+				
+				if ( sendAll( sockFd, archiveData, &archiveLen ) == -1 )
+				{
+					connectionUp_ = false;
+					std::cerr << "Couldn't transmit data to client!" << std::endl;	
+				}
+				free( archiveData );
+			}
+			free( headerData );
+					
+		}
+		close( sockFd );
+	}
 }
 
 /*
@@ -281,25 +415,124 @@ void GLcell::add2RenderList( Id id )
 	}
 }
 
+/*
 void GLcell::renderRenderList()
 {
 	osg::ref_ptr< osg::Geode > root = new osg::Geode;
 	
 	for (int i = 0; i < renderListShapes_.size(); ++i)
 		root->addDrawable( renderListShapes_[i].get() );
+		
+	viewer_ = new osgViewer::Viewer;
+	viewer_->setSceneData( root.get() );
+		
+	osg::ref_ptr< osg::GraphicsContext::Traits > traits = new osg::GraphicsContext::Traits;
+	traits->x = 50; // window x offset in window manager
+	traits->y = 50; // likewise, y offset ...
+	traits->width = 600;
+	traits->height = 600;
+	traits->windowDecoration = true;
+	traits->doubleBuffer = true;
+	traits->sharedContext = 0;
+		
+	osg::ref_ptr< osg::GraphicsContext > gc = osg::GraphicsContext::createGraphicsContext( traits.get() );
+		
+	viewer_->getCamera()->setClearColor( osg::Vec4( 0., 0., 0., 1. ) ); // black background
+	viewer_->getCamera()->setGraphicsContext( gc.get() );
+	viewer_->getCamera()->setViewport( new osg::Viewport( 0, 0, traits->width, traits->height ) );
+		
+	GLenum buffer = traits->doubleBuffer ? GL_BACK : GL_FRONT;
+	viewer_->getCamera()->setDrawBuffer( buffer );
+	viewer_->getCamera()->setReadBuffer( buffer );
 
-	if ( !root.valid() )
-	{
-		osg::notify( osg::FATAL ) << "Failed in createSceneGraph()." << std::endl;
-		return;
-	}
+	viewer_->realize();
+	viewer_->setCameraManipulator(new osgGA::TrackballManipulator());
 
-	std::string out( "test.osg" );
-	if ( !( osgDB::writeNodeFile( *( root.get() ), out ) ) )
-	{
-		osg::notify( osg::FATAL ) << "Failed in osgDB::writeNodeFile()." << std::endl;
-		return;
-	}
-
-	osg::notify( osg::ALWAYS ) << "Success! Use osgviewer to view " << out << std::endl;
+		
+	// TODO reset should return, so this should launch a new thread!
+	// TODO if previously running (and realized?). stop and reuse thread AND viewer for new root.
 }
+*/ // karan
+
+///////////////////////////////////////////////////
+// networking helper function definitions
+///////////////////////////////////////////////////
+
+void* GLcell::getInAddress( struct sockaddr *sa )
+{
+	if ( sa->sa_family == AF_INET ) {
+		return &( ( ( struct sockaddr_in* )sa )->sin_addr );
+	}
+
+	return &( ( ( struct sockaddr_in6* )sa )->sin6_addr );
+}
+
+int GLcell::getSocket( const char* hostname, const char* service )
+{
+	int sockfd;
+	struct addrinfo hints, *servinfo, *p;
+	int rv;
+	char s[INET6_ADDRSTRLEN];
+	
+	memset( &hints, 0, sizeof hints );
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+
+	if ( ( rv = getaddrinfo( hostname, service, &hints, &servinfo ) ) != 0 ) {
+		std::cerr << "GLcell error: getaddrinfo: " << gai_strerror( rv ) << std::endl;
+		return -1;
+	}
+	// loop through all the results and connect to the first we can
+	for( p = servinfo; p != NULL; p = p->ai_next ) {
+		if ( ( sockfd = socket( p->ai_family, p->ai_socktype,
+				     p->ai_protocol ) ) == -1 ) {
+			std::cerr << "GLcell error: socket" << std::endl;
+			continue;
+		}
+		
+		if ( connect( sockfd, p->ai_addr, p->ai_addrlen ) == -1 ) {
+			close( sockfd );
+			std::cerr << "GLcell error: connect" << std::endl;
+			continue;
+		}
+		
+		break;
+	}
+
+	if ( p == NULL ) {
+		std::cerr << "GLcell error: failed to connect" << std::endl;
+		return -1;
+	}
+	
+	inet_ntop( p->ai_family, getInAddress( ( struct sockaddr * )p->ai_addr ),
+		   s, sizeof s );
+	// std::cout << "Connecting to " << s << std::endl;
+	
+	freeaddrinfo( servinfo );
+	
+	return sockfd;
+}
+
+int GLcell::sendAll( int s, char* buf, int* len )
+{
+	int total = 0;        // how many bytes we've sent
+	int bytesleft = *len; // how many we have left to send
+	int n;
+
+	while( total < *len )
+	{
+		n = send( s, buf+total, bytesleft, 0 );
+		if ( n == -1 )
+		{
+			std::cerr << "send error; errno: " << errno << " " << strerror( errno ) << std::endl;    
+			break;
+		}
+		total += n;
+		bytesleft -= n;
+	}
+
+	*len = total; // return number actually sent here
+
+	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
+}
+

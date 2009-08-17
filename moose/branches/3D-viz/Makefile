@@ -101,7 +101,7 @@ export GENERATE_WRAPPERS
 
 # PLATFORM (= Linux, win32, Darwin)
 #If using mac uncomment the following lines
-# PLATFORM=mac
+PLATFORM=mac
 #export PLATFORM
 
 # Get the processor architecture - i686 or x86_64
@@ -205,7 +205,7 @@ endif
 
 # To compile with OpenSceneGraph support and enable 'GLcell', 'GLview' and 'MCSim' pass USE_OSG=1 in make command line
 ifeq ($(USE_OSG),1)
-	LIBS += -losg -losgDB -lOpenThreads
+	LIBS += -losg -losgDB -lOpenThreads -L/lib -lboost_serialization-xgcc40-mt
 	CXXFLAGS += -DUSE_OSG
 	OSG_DIR = glcell
 	OSG_LIB = glcell/GLcell.o
