@@ -12,6 +12,8 @@ TARGET = glcell.o
 OBJ = \
 	GLcell.o	\
 
+TARGETCLIENT = glcellclient
+
 HEADERS = \
 	../basecode/header.h \
 	../connections/Conn.h \
@@ -20,16 +22,29 @@ HEADERS = \
 OSG_INCLUDE = \
 	/usr/local/include/osg/include \
 
-default: $(TARGET)
+OSG_LIBS = \
+	-L/usr/local/lib -losg -losgDB -losgGA -losgViewer -lOpenThreads \
+
+BOOST_INCLUDE = \
+	/usr/local/include/boost-1_39 \
+
+BOOST_LIBS = \
+	-L/lib -lboost_serialization-xgcc40-mt \
+
+default: $(TARGET) $(TARGETCLIENT) 
 
 $(OBJ)	: $(HEADERS)
 GLcell.o:	GLcell.h
+GLcellCompartment.o:	GLcellCompartment.h
 
 .cpp.o:
-	$(CXX) $(CXXFLAGS) $(GSL_FLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) $< -c
+	$(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -I$(BOOST_INCLUDE) GLcell.cpp -c
 
-$(TARGET):		$(OBJ) $(GSL_OBJ) $(HEADERS) 
-	$(LD) -r -o $(TARGET) $(OBJ) $(GSL_OBJ)  $(GSL_LIBS)
+$(TARGETCLIENT):
+	$(CXX) $(CXXFLAGS) -I$(BOOST_INCLUDE) -o glcellclient GLcellClient.cpp $(BOOST_LIBS) $(OSG_LIBS)
+
+$(TARGET): $(OBJ) $(HEADERS)
+	$(LD) -r -o $(TARGET) $(OBJ)
 
 clean:
-	-rm -f *.o $(TARGET) core core.*
+	rm -f *.o $(TARGET) $(TARGETCLIENT) core core.*
