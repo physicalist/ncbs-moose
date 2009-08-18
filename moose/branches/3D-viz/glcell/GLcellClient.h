@@ -8,33 +8,22 @@
 **********************************************************************/
 
 #include <osg/ref_ptr>
-#include <osg/ShapeDrawable>
-#include <osgViewer/Viewer>
 
 #include "GLcellCompartment.h"
 
-class GLcellClient
-{
- public:
-	GLcellClient( const char * port );
-	void process();
-	
-	static const double EPSILON; // epsilon for floating-point comparison
-	static const int HEADERLENGTH;
-	static const int BACKLOG; // how many pending connections will be queued
+void receiveData();
+void* getInAddr( struct sockaddr* sa );
+int recvAll( int s, char* buf, int* len);
+void updateGeometry( const std::vector< GLcellCompartment >& );
 
- private:
-	void* getInAddr( struct sockaddr* sa );
-	int recvAll( int s, char* buf, int* len);
+// the parent of the entire scene
+osg::ref_ptr< osg::Geode > root_;
+bool isGeometryDirty_;
+char * port_;
 
-	const char * port_;
+const double EPSILON = 1e-8; // epsilon for floating-point comparison
+const int HEADERLENGTH = 8;
+const int BACKLOG = 10; // how many pending connections will be queued
 
-	/// The data received from the MOOSE element GLcell.
-	std::vector< GLcellCompartment > renderListGLcellCompartments_;
-	
-	std::vector< osg::ref_ptr< osg::ShapeDrawable > > renderListShapes_;
-	void renderRenderList();
-
-	osg::ref_ptr< osgViewer::Viewer > viewer_;
-
-};
+// The data received from the MOOSE element GLcell
+std::vector< GLcellCompartment > renderListGLcellCompartments_;		

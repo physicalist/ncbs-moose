@@ -29,7 +29,7 @@ BOOST_INCLUDE = \
 	/usr/local/include/boost-1_39 \
 
 BOOST_LIBS = \
-	-L/lib -lboost_serialization-xgcc40-mt \
+	-L/lib -lboost_serialization-xgcc40-mt-1_39 -lboost_thread-xgcc40-mt-1_39 \
 
 default: $(TARGET) $(TARGETCLIENT) 
 

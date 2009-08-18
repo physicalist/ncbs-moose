@@ -101,7 +101,7 @@ export GENERATE_WRAPPERS
 
 # PLATFORM (= Linux, win32, Darwin)
 #If using mac uncomment the following lines
-PLATFORM=mac
+# PLATFORM=mac
 #export PLATFORM
 
 # Get the processor architecture - i686 or x86_64
