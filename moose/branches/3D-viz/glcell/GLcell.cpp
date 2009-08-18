@@ -35,7 +35,8 @@
 
 #include "GLcellCompartment.h"
 
-const int GLcell::HEADERLENGTH = 8;
+const int GLcell::MSGTYPE_HEADERLENGTH = 1;
+const int GLcell::MSGSIZE_HEADERLENGTH = 8;
 
 const Cinfo* initGLcellCinfo()
 {
@@ -110,10 +111,8 @@ GLcell::GLcell()
 	:
 	strPath_( "" ),
 	strClientHost_( "127.0.0.1" ),
-	strClientPort_( "" ),
-	connectionUp_(false)
+	strClientPort_( "" )
 {
-	;
 }
 
 ///////////////////////////////////////////////////
@@ -190,6 +189,8 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 				renderListVms_.push_back( Vm );
 			}
 		}
+
+		transmit( renderListVms_, PROCESS );
 	}
 }
 
@@ -245,56 +246,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 			}
 		}
 
-		if ( !strClientPort_.empty() ) // strClientPort_ should have been set.
-		{
-			int sockFd;
-			sockFd = getSocket( strClientHost_.c_str(), strClientPort_.c_str() );
-
-			if ( sockFd == -1 ) 
-			{
-				connectionUp_ = false;
-				std::cerr << "Couldn't connect to client!" << std::endl;
-			}
-			else
-			{
-				connectionUp_ = true;
-
-				std::ostringstream archiveStream;
-				boost::archive::text_oarchive archive(archiveStream);
-
-				archive << renderListGLcellCompartments_;
-
-				std::ostringstream headerStream;
-				headerStream << std::setw( HEADERLENGTH )
-					     << std::hex << archiveStream.str().size();
-
-				int headerLen = headerStream.str().size() + 1;
-				char* headerData = (char *) malloc( headerLen * sizeof( char ) );
-				strcpy( headerData, headerStream.str().c_str() );
-	
-				if (sendAll( sockFd, headerData, &headerLen ) == -1 )
-				{
-					connectionUp_ = false;
-					std::cerr << "Couldn't transmit header to client!" << std::endl;
-				}
-				else
-				{
-					int archiveLen = archiveStream.str().size() + 1;
-					char* archiveData = (char *) malloc( archiveLen * sizeof( char ) );
-					strcpy( archiveData, archiveStream.str().c_str() );
-				
-					if ( sendAll( sockFd, archiveData, &archiveLen ) == -1 )
-					{
-						connectionUp_ = false;
-						std::cerr << "Couldn't transmit data to client!" << std::endl;	
-					}
-					free( archiveData );
-				}
-				free( headerData );
-					
-			}
-			close( sockFd );
-		}
+		transmit( renderListGLcellCompartments_, RESET );
 	}
 }
 
@@ -408,3 +360,55 @@ int GLcell::sendAll( int s, char* buf, int* len )
 	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
 }
 
+template< class T >
+void GLcell::transmit( T& data, MSGTYPE messageType)
+{
+	if ( !strClientPort_.empty() ) // strClientPort_ should have been set.
+	{
+		int sockFd;
+		sockFd = getSocket( strClientHost_.c_str(), strClientPort_.c_str() );
+
+		if ( sockFd == -1 ) 
+		{
+			std::cerr << "Couldn't connect to client!" << std::endl;
+		}
+		else
+		{
+			std::ostringstream archiveStream;
+			boost::archive::text_oarchive archive(archiveStream);
+
+			archive << data;
+
+			std::ostringstream headerStream;
+			headerStream << std::setw( MSGSIZE_HEADERLENGTH )
+				     << std::hex << archiveStream.str().size();
+
+			headerStream << std::setw( MSGTYPE_HEADERLENGTH )
+				     << messageType;
+
+			int headerLen = headerStream.str().size() + 1;
+			char* headerData = (char *) malloc( headerLen * sizeof( char ) );
+			strcpy( headerData, headerStream.str().c_str() );
+	
+			if (sendAll( sockFd, headerData, &headerLen ) == -1 )
+			{
+				std::cerr << "Couldn't transmit header to client!" << std::endl;
+			}
+			else
+			{
+				int archiveLen = archiveStream.str().size() + 1;
+				char* archiveData = (char *) malloc( archiveLen * sizeof( char ) );
+				strcpy( archiveData, archiveStream.str().c_str() );
+				
+				if ( sendAll( sockFd, archiveData, &archiveLen ) == -1 )
+				{
+					std::cerr << "Couldn't transmit data to client!" << std::endl;	
+				}
+				free( archiveData );
+			}
+			free( headerData );
+					
+		}
+		close( sockFd );
+	}
+}

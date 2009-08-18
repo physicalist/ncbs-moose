@@ -87,7 +87,8 @@ void receiveData()
 	char s[INET6_ADDRSTRLEN];
 	int rv;
 	int numBytes, inboundDataSize;
-	char header[HEADERLENGTH+1];
+	char header[MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1];
+	int messageType;
 	char *buf;
 	
 	memset( &hints, 0, sizeof( hints ) );
@@ -147,19 +148,25 @@ void receiveData()
 		inet_ntop( theirAddr.ss_family, getInAddr( ( struct sockaddr * ) &theirAddr ), s, sizeof( s ) );
 		std::cout << "GLcellClient: receiving data from " << s << std::endl;
 		
-		numBytes = HEADERLENGTH+1;
+		numBytes = MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1;
 		if ( recvAll( newFd, header, &numBytes ) == -1 ) {
 			std::cerr << "GLcellClient error: recv" << std::endl;
 			exit( 1 );
 		}
 				
-		if ( numBytes < HEADERLENGTH+1 ) {
+		if ( numBytes < MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1 ) {
 			std::cerr << "GLcellClient error: incomplete header received!" << std::endl;
 			exit( 1 );
 		}
 		else {
-			std::istringstream headerstream( std::string( header, HEADERLENGTH ) );
-			headerstream >> std::hex >> inboundDataSize;
+			std::istringstream msgsizeHeaderstream( std::string( header, 
+									     MSGSIZE_HEADERLENGTH ) );
+			msgsizeHeaderstream >> std::hex >> inboundDataSize;
+			
+			std::istringstream msgtypeHeaderstream( std::string( header,
+									     MSGSIZE_HEADERLENGTH,
+									     MSGTYPE_HEADERLENGTH ) );
+			msgtypeHeaderstream >> messageType;
 		}
 		
 		numBytes = inboundDataSize + 1;
@@ -179,10 +186,19 @@ void receiveData()
 			std::istringstream archive_stream_i( std::string( buf, inboundDataSize ) );
 			boost::archive::text_iarchive archive_i( archive_stream_i );
 			
-			renderListGLcellCompartments_.clear();
-			archive_i >> renderListGLcellCompartments_;
+			if ( messageType == RESET) 
+			{
+				renderListGLcellCompartments_.clear();
+				archive_i >> renderListGLcellCompartments_;
 
-			updateGeometry(renderListGLcellCompartments_);
+				updateGeometry(renderListGLcellCompartments_);
+			}
+			else if (messageType == PROCESS)
+			{
+				std::cout << "PROCESS message placeholder" << std::endl; // karan
+			}
+
+
 		}
 		
 		free( buf );
