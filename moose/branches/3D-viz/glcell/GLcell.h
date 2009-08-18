@@ -17,6 +17,12 @@
 
 #include "GLcellCompartment.h"
 
+enum MSGTYPE
+{
+	RESET,
+	PROCESS
+};
+
 class GLcell
 {
  public:
@@ -42,7 +48,8 @@ class GLcell
 	void innerSetClientPort( const string& strClientPort );
 	static string getClientPort( Eref e );
 
-	static const int HEADERLENGTH;
+	static const int MSGTYPE_HEADERLENGTH;
+	static const int MSGSIZE_HEADERLENGTH;
 
  private:
 	string strPath_;
@@ -56,11 +63,12 @@ class GLcell
 
 	void add2RenderList( Id id );
 
-	bool connectionUp_; // connection to running viewer client
-
 	/// networking helper functions
 	void* getInAddress( struct sockaddr *sa );
 	int getSocket( const char* hostname, const char* service );
-	int sendAll( int s, char* buf, int* len );	
+	int sendAll( int s, char* buf, int* len );
+	
+	template< class T >
+	  void transmit( T& data, MSGTYPE messageType);	
 };
 

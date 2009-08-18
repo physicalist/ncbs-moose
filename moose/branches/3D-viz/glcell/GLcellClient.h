@@ -11,6 +11,12 @@
 
 #include "GLcellCompartment.h"
 
+enum MSGTYPE
+{
+	RESET,
+	PROCESS
+};
+
 void receiveData();
 void* getInAddr( struct sockaddr* sa );
 int recvAll( int s, char* buf, int* len);
@@ -22,7 +28,8 @@ bool isGeometryDirty_;
 char * port_;
 
 const double EPSILON = 1e-8; // epsilon for floating-point comparison
-const int HEADERLENGTH = 8;
+const int MSGTYPE_HEADERLENGTH = 1;
+const int MSGSIZE_HEADERLENGTH = 8;
 const int BACKLOG = 10; // how many pending connections will be queued
 
 // The data received from the MOOSE element GLcell
