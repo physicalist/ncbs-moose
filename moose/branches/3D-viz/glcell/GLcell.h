@@ -42,9 +42,6 @@ class GLcell
 	void innerSetClientPort( const string& strClientPort );
 	static string getClientPort( Eref e );
 
-	//	static void recvField( const Conn* c, string value );
-
-	// static const double EPSILON; // karan
 	static const int HEADERLENGTH;
 
  private:
@@ -62,12 +59,6 @@ class GLcell
 	void* getInAddress( struct sockaddr *sa );
 	int getSocket( const char* hostname, const char* service );
 	int sendAll( int s, char* buf, int* len );
-
-	/* vector< osg::ref_ptr< osg::ShapeDrawable > > renderListShapes_;
-	void renderRenderList();
-
-	osgViewer::Viewer* viewer_; // TODO make this a ref_ptr
-	*/ // karan
 
 	vector< GLcellCompartment > renderListGLcellCompartments_;
 	

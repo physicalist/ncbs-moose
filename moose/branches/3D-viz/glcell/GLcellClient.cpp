@@ -23,7 +23,6 @@
 #include <vector>
 #include <string>
 #include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/thread/thread.hpp>
 
@@ -38,6 +37,9 @@
 
 #include "GLcellCompartment.h"
 #include "GLcellClient.h"
+
+// The socket code is mostly taken from Beej's Guide to Network Programming
+// at http://beej.us/guide/bgnet/. It is in the public domain.
 
 // get sockaddr, IPv4 or IPv6:
 void* getInAddr( struct sockaddr* sa )
@@ -141,7 +143,7 @@ void receiveData()
 		}
 		
 		inet_ntop( theirAddr.ss_family, getInAddr( ( struct sockaddr * ) &theirAddr ), s, sizeof( s ) );
-		std::cout << "GLcellClient: connected to " << s << std::endl;
+		std::cout << "GLcellClient: receiving data from " << s << std::endl;
 		
 		numBytes = HEADERLENGTH+1;
 		if ( recvAll( newFd, header, &numBytes ) == -1 ) {
@@ -158,6 +160,7 @@ void receiveData()
 			headerstream >> std::hex >> inboundDataSize;
 		}
 		
+		std::cout << "bytes: " << inboundDataSize << std::endl; // karan
 		numBytes = inboundDataSize + 1;
 		buf = ( char * ) malloc( ( numBytes ) * sizeof( char ) );
 		
@@ -194,8 +197,7 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 
 	root_ = new osg::Geode;
 
-	for (int i = 0; i < compartments.size(); ++i)
-	{
+	for (int i = 0; i < compartments.size(); ++i) {
 		const double& diameter = compartments[i].diameter;
 		const double& length = compartments[i].length;
 		const double& x0 = compartments[i].x0;
@@ -206,15 +208,13 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 		const double& z = compartments[i].z;
 		const double& Vm = compartments[i].Vm;
 			
-		if ( length < EPSILON ) // i.e., length is zero so the compartment is spherical
-		{
+		if ( length < EPSILON ) { // i.e., length is zero so the compartment is spherical
 			osg::Sphere* sphere = new osg::Sphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
 							       diameter/2 );
 			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( sphere );
 			root_->addDrawable( drawable ); // addDrawable increments ref count of drawable
 		}
-		else // the compartment is cylindrical
-		{
+		else { // the compartment is cylindrical
 			osg::Cylinder* cylinder = new osg::Cylinder( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ), 
 								     diameter/2, length );
 
@@ -247,6 +247,12 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 	}
 
 	isGeometryDirty_ = true;
+	// Note: we don't bother with locks for sharing isGeometryDirty_ between updateGeometry()
+	// and draw(), because of the vastly different timescales. RESETs are sent manually and it
+	// is very unlikely that two RESETs will arrive consecutively quickly enough to interrupt
+	// an update in draw(), and acquiring a lock to check isGeometryDirty_ on every frame will
+	// be expensive.
+
 }
 
 void draw()
@@ -277,10 +283,8 @@ void draw()
 	viewer->realize();
 	viewer->setCameraManipulator(new osgGA::TrackballManipulator());
 
-	while ( !viewer->done() )
-	{
-		if ( isGeometryDirty_ )
-		{
+	while ( !viewer->done() ) {
+		if ( isGeometryDirty_ ) {
 			isGeometryDirty_ = false;
 			viewer->setSceneData( root_.get() );
 		}
@@ -291,8 +295,7 @@ void draw()
 int main( int argc, char* argv[] )
 {
 	/// Check command line arguments.
-	if ( argc != 2 )
-	{
+	if ( argc != 2 ) {
 		std::cerr << "Usage: glcellclient <port>" << std::endl;
 		return 1;
 	}

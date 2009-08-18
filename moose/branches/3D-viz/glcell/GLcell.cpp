@@ -16,7 +16,6 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 
@@ -193,8 +192,6 @@ void GLcell::reinitFuncLocal( const Conn* c )
 		renderList_.clear();
 		renderListGLcellCompartments_.clear();
 
-		// karan renderListShapes_.clear();
-	
 		// Start populating renderList_ with the node in strPath_ 
 		// and its children, recursively.
 		add2RenderList( Shell::path2eid( strPath_, "/", 1 ) );
@@ -251,7 +248,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 			archive << renderListGLcellCompartments_;
 
 			std::ostringstream headerStream;
-			headerStream << std::setw(HEADERLENGTH)
+			headerStream << std::setw( HEADERLENGTH )
 				     << std::hex << archiveStream.str().size();
 
 			int headerLen = headerStream.str().size() + 1;
@@ -314,6 +311,9 @@ void GLcell::add2RenderList( Id id )
 ///////////////////////////////////////////////////
 // networking helper function definitions
 ///////////////////////////////////////////////////
+
+// The socket code is mostly taken from Beej's Guide to Network Programming
+// at http://beej.us/guide/bgnet/. It is in the public domain.
 
 void* GLcell::getInAddress( struct sockaddr *sa )
 {
