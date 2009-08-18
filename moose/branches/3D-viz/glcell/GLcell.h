@@ -51,6 +51,9 @@ class GLcell
 	string fieldValue_;
 
 	vector< Id > renderList_;
+	vector< GLcellCompartment > renderListGLcellCompartments_;
+	vector< double > renderListVms_;
+
 	void add2RenderList( Id id );
 
 	bool connectionUp_; // connection to running viewer client
@@ -58,9 +61,6 @@ class GLcell
 	/// networking helper functions
 	void* getInAddress( struct sockaddr *sa );
 	int getSocket( const char* hostname, const char* service );
-	int sendAll( int s, char* buf, int* len );
-
-	vector< GLcellCompartment > renderListGLcellCompartments_;
-	
+	int sendAll( int s, char* buf, int* len );	
 };
 

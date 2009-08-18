@@ -8,6 +8,11 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+////////////////////////////////////////////////////////////////////////////////
+// The socket code is mostly taken from Beej's Guide to Network Programming   //
+// at http://beej.us/guide/bgnet/. The original code is in the public domain. //
+////////////////////////////////////////////////////////////////////////////////
+
 #include "moose.h"
 #include "../shell/Shell.h"
 #include "GLcell.h"
@@ -171,7 +176,21 @@ void GLcell::processFunc( const Conn* c, ProcInfo info )
 
 void GLcell::processFuncLocal( Eref e, ProcInfo info )
 {
-
+	double Vm;
+       
+	if ( !renderList_.empty() )
+	{
+		renderListVms_.clear();
+		
+		for ( int i = 0; i < renderList_.size(); ++i )
+		{
+			if ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
+			     && get< double >( renderList_[i].eref(), "Vm", Vm) )
+			{
+				renderListVms_.push_back( Vm );
+			}
+		}
+	}
 }
 
 void GLcell::reinitFunc( const Conn* c, ProcInfo info )
@@ -208,8 +227,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				&& get< double >( renderList_[i].eref(), "x", x )
 				&& get< double >( renderList_[i].eref(), "y", y )
 				&& get< double >( renderList_[i].eref(), "z", z )
-				&& get< double >( renderList_[i].eref(), "Vm", Vm )
-				)
+				&& get< double >( renderList_[i].eref(), "Vm", Vm ) )
 			{
 				GLcellCompartment glcellcomp;
 				glcellcomp.diameter = diameter;
@@ -226,57 +244,57 @@ void GLcell::reinitFuncLocal( const Conn* c )
 			
 			}
 		}
-	}
 
-	if ( !strClientPort_.empty() ) // strClientPort_ should have been set.
-	{
-		int sockFd;
-		sockFd = getSocket( strClientHost_.c_str(), strClientPort_.c_str() );
-
-		if ( sockFd == -1 ) 
+		if ( !strClientPort_.empty() ) // strClientPort_ should have been set.
 		{
-			connectionUp_ = false;
-			std::cerr << "Couldn't connect to client!" << std::endl;
-		}
-		else
-		{
-			connectionUp_ = true;
+			int sockFd;
+			sockFd = getSocket( strClientHost_.c_str(), strClientPort_.c_str() );
 
-			std::ostringstream archiveStream;
-			boost::archive::text_oarchive archive(archiveStream);
-
-			archive << renderListGLcellCompartments_;
-
-			std::ostringstream headerStream;
-			headerStream << std::setw( HEADERLENGTH )
-				     << std::hex << archiveStream.str().size();
-
-			int headerLen = headerStream.str().size() + 1;
-			char* headerData = (char *) malloc( headerLen * sizeof( char ) );
-			strcpy( headerData, headerStream.str().c_str() );
-	
-			if (sendAll( sockFd, headerData, &headerLen ) == -1 )
+			if ( sockFd == -1 ) 
 			{
 				connectionUp_ = false;
-				std::cerr << "Couldn't transmit header to client!" << std::endl;
+				std::cerr << "Couldn't connect to client!" << std::endl;
 			}
 			else
 			{
-				int archiveLen = archiveStream.str().size() + 1;
-				char* archiveData = (char *) malloc( archiveLen * sizeof( char ) );
-				strcpy( archiveData, archiveStream.str().c_str() );
-				
-				if ( sendAll( sockFd, archiveData, &archiveLen ) == -1 )
+				connectionUp_ = true;
+
+				std::ostringstream archiveStream;
+				boost::archive::text_oarchive archive(archiveStream);
+
+				archive << renderListGLcellCompartments_;
+
+				std::ostringstream headerStream;
+				headerStream << std::setw( HEADERLENGTH )
+					     << std::hex << archiveStream.str().size();
+
+				int headerLen = headerStream.str().size() + 1;
+				char* headerData = (char *) malloc( headerLen * sizeof( char ) );
+				strcpy( headerData, headerStream.str().c_str() );
+	
+				if (sendAll( sockFd, headerData, &headerLen ) == -1 )
 				{
 					connectionUp_ = false;
-					std::cerr << "Couldn't transmit data to client!" << std::endl;	
+					std::cerr << "Couldn't transmit header to client!" << std::endl;
 				}
-				free( archiveData );
-			}
-			free( headerData );
+				else
+				{
+					int archiveLen = archiveStream.str().size() + 1;
+					char* archiveData = (char *) malloc( archiveLen * sizeof( char ) );
+					strcpy( archiveData, archiveStream.str().c_str() );
+				
+					if ( sendAll( sockFd, archiveData, &archiveLen ) == -1 )
+					{
+						connectionUp_ = false;
+						std::cerr << "Couldn't transmit data to client!" << std::endl;	
+					}
+					free( archiveData );
+				}
+				free( headerData );
 					
+			}
+			close( sockFd );
 		}
-		close( sockFd );
 	}
 }
 
@@ -311,9 +329,6 @@ void GLcell::add2RenderList( Id id )
 ///////////////////////////////////////////////////
 // networking helper function definitions
 ///////////////////////////////////////////////////
-
-// The socket code is mostly taken from Beej's Guide to Network Programming
-// at http://beej.us/guide/bgnet/. It is in the public domain.
 
 void* GLcell::getInAddress( struct sockaddr *sa )
 {
