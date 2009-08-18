@@ -7,6 +7,11 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+////////////////////////////////////////////////////////////////////////////////
+// The socket code is mostly taken from Beej's Guide to Network Programming   //
+// at http://beej.us/guide/bgnet/. The original code is in the public domain. //
+////////////////////////////////////////////////////////////////////////////////
+
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -37,9 +42,6 @@
 
 #include "GLcellCompartment.h"
 #include "GLcellClient.h"
-
-// The socket code is mostly taken from Beej's Guide to Network Programming
-// at http://beej.us/guide/bgnet/. It is in the public domain.
 
 // get sockaddr, IPv4 or IPv6:
 void* getInAddr( struct sockaddr* sa )
@@ -160,7 +162,6 @@ void receiveData()
 			headerstream >> std::hex >> inboundDataSize;
 		}
 		
-		std::cout << "bytes: " << inboundDataSize << std::endl; // karan
 		numBytes = inboundDataSize + 1;
 		buf = ( char * ) malloc( ( numBytes ) * sizeof( char ) );
 		
