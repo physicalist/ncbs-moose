@@ -25,7 +25,7 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
-//#include <boost/lexical_cast.hpp> // karan
+#include <boost/thread/thread.hpp>
 
 #include <osg/ref_ptr>
 #include <osg/Notify>
@@ -39,19 +39,8 @@
 #include "GLcellCompartment.h"
 #include "GLcellClient.h"
 
-const double GLcellClient::EPSILON = 1e-9;
-const int GLcellClient::HEADERLENGTH = 8;
-const int GLcellClient::BACKLOG = 10;
-
-/// Constructor opens the acceptor and starts waiting for the first incoming connection.
-GLcellClient::GLcellClient( const char * port )
-	:
-	port_(port)
-{
-}
-
 // get sockaddr, IPv4 or IPv6:
-void* GLcellClient::getInAddr( struct sockaddr* sa )
+void* getInAddr( struct sockaddr* sa )
 {
 	if ( sa->sa_family == AF_INET ) {
 		return &( ( ( struct sockaddr_in* )sa )->sin_addr );
@@ -60,7 +49,7 @@ void* GLcellClient::getInAddr( struct sockaddr* sa )
 	return &( ( ( struct sockaddr_in6* )sa )->sin6_addr );
 }
 
-int GLcellClient::recvAll( int s, char *buf, int *len )
+int recvAll( int s, char *buf, int *len )
 {
 	int total = 0;        // how many bytes we've received
 	int bytesleft = *len; // how many we have left to receive
@@ -83,7 +72,7 @@ int GLcellClient::recvAll( int s, char *buf, int *len )
 	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
 }
 
-void GLcellClient::process()
+void receiveData()
 {
 	int sockFd, newFd;  // listen on sock_fd, new connection on new_fd
 	struct addrinfo hints, *servinfo, *p;
@@ -152,7 +141,7 @@ void GLcellClient::process()
 		}
 		
 		inet_ntop( theirAddr.ss_family, getInAddr( ( struct sockaddr * ) &theirAddr ), s, sizeof( s ) );
-		std::cout << "GLcellClient error: connected to " << s << std::endl;
+		std::cout << "GLcellClient: connected to " << s << std::endl;
 		
 		numBytes = HEADERLENGTH+1;
 		if ( recvAll( newFd, header, &numBytes ) == -1 ) {
@@ -186,13 +175,116 @@ void GLcellClient::process()
 			std::istringstream archive_stream_i( std::string( buf, inboundDataSize ) );
 			boost::archive::text_iarchive archive_i( archive_stream_i );
 			
+			renderListGLcellCompartments_.clear();
 			archive_i >> renderListGLcellCompartments_;
-		
-			std::cout << renderListGLcellCompartments_.size() << std::endl;
+
+			updateGeometry(renderListGLcellCompartments_);
 		}
 		
 		free( buf );
 		close( newFd );  // parent doesn't need this
+	}
+}
+
+void updateGeometry( const std::vector< GLcellCompartment >& compartments )
+{
+	/*unsigned int numDrawables = root_->getNumDrawables();
+	if ( numDrawables > 0 )
+	root_->removeDrawables( 0, numDrawables );*/
+
+	root_ = new osg::Geode;
+
+	for (int i = 0; i < compartments.size(); ++i)
+	{
+		const double& diameter = compartments[i].diameter;
+		const double& length = compartments[i].length;
+		const double& x0 = compartments[i].x0;
+		const double& y0 = compartments[i].y0;
+		const double& z0 = compartments[i].z0;
+		const double& x = compartments[i].x;
+		const double& y = compartments[i].y;
+		const double& z = compartments[i].z;
+		const double& Vm = compartments[i].Vm;
+			
+		if ( length < EPSILON ) // i.e., length is zero so the compartment is spherical
+		{
+			osg::Sphere* sphere = new osg::Sphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
+							       diameter/2 );
+			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( sphere );
+			root_->addDrawable( drawable ); // addDrawable increments ref count of drawable
+		}
+		else // the compartment is cylindrical
+		{
+			osg::Cylinder* cylinder = new osg::Cylinder( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ), 
+								     diameter/2, length );
+
+			/// OSG Cylinders are initially oriented along (0,0,1). To orient them
+			/// according to readcell's specification of (the line joining) the
+			/// centers of their circular faces, they must be rotated around 
+			/// an axis given by the cross-product of the initial and final
+			/// vectors, by an angle given by the dot-product of the same.
+					
+			/// Also note that although readcell's conventions for the x,y,z directions
+			/// differ from OSG's, (in OSG z is down to up and y is perpendicular 
+			/// to the display, pointing inward), OSG's viewer chooses
+			/// a suitable viewpoint by default.
+
+			osg::Vec3f initial( 0.0f, 0.0f, 1.0f);
+			initial.normalize();
+
+			osg::Vec3f final( x-x0, y-y0, z-z0 );
+			final.normalize();
+
+			osg::Quat::value_type angle = acos( initial * final );
+			osg::Vec3f axis = initial ^ final;
+			axis.normalize();
+
+			cylinder->setRotation( osg::Quat( angle, axis ) ) ;
+
+			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( cylinder );
+			root_->addDrawable( drawable );
+		}
+	}
+
+	isGeometryDirty_ = true;
+}
+
+void draw()
+{
+	osg::ref_ptr< osgViewer::Viewer > viewer = new osgViewer::Viewer;
+	
+	viewer->setSceneData( new osg::Geode ); // placeholder Geode to be reclaimed during first update
+	
+	osg::ref_ptr< osg::GraphicsContext::Traits > traits = new osg::GraphicsContext::Traits;
+	traits->x = 50; // window x offset in window manager
+	traits->y = 50; // likewise, y offset ...
+	traits->width = 600;
+	traits->height = 600;
+	traits->windowDecoration = true;
+	traits->doubleBuffer = true;
+	traits->sharedContext = 0;
+
+	osg::ref_ptr< osg::GraphicsContext > gc = osg::GraphicsContext::createGraphicsContext( traits.get() );
+	
+	viewer->getCamera()->setClearColor( osg::Vec4( 0., 0., 0., 1. ) ); // black background
+	viewer->getCamera()->setGraphicsContext( gc.get() );
+	viewer->getCamera()->setViewport( new osg::Viewport( 0, 0, traits->width, traits->height ) );
+		
+	GLenum buffer = traits->doubleBuffer ? GL_BACK : GL_FRONT;
+	viewer->getCamera()->setDrawBuffer( buffer );
+	viewer->getCamera()->setReadBuffer( buffer );
+
+	viewer->realize();
+	viewer->setCameraManipulator(new osgGA::TrackballManipulator());
+
+	while ( !viewer->done() )
+	{
+		if ( isGeometryDirty_ )
+		{
+			isGeometryDirty_ = false;
+			viewer->setSceneData( root_.get() );
+		}
+		viewer->frame();
 	}
 }
 
@@ -204,15 +296,12 @@ int main( int argc, char* argv[] )
 		std::cerr << "Usage: glcellclient <port>" << std::endl;
 		return 1;
 	}
-	
-	//unsigned short port = boost::lexical_cast< unsigned short >( argv[ 1 ] );
+
+	isGeometryDirty_ = false;
+	port_ = argv[ 1 ];
 		
-	GLcellClient::GLcellClient glcellclient( argv[ 1 ] );
-	glcellclient.process();
+	boost::thread threadProcess( receiveData );
+	draw();
 
 	return 0;
 }
-
-
-    
-
