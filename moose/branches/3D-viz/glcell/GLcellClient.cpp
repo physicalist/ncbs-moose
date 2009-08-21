@@ -12,6 +12,7 @@
 // at http://beej.us/guide/bgnet/. The original code is in the public domain. //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -24,12 +25,15 @@
 #include <signal.h>
 
 #include <iostream>
+#include <string>
+#include <fstream>
 #include <sstream>
 #include <vector>
-#include <string>
+
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include <osg/ref_ptr>
 #include <osg/Notify>
@@ -191,14 +195,17 @@ void receiveData()
 				renderListGLcellCompartments_.clear();
 				archive_i >> renderListGLcellCompartments_;
 
-				updateGeometry(renderListGLcellCompartments_);
+				updateGeometry( renderListGLcellCompartments_ );
 			}
-			else if (messageType == PROCESS)
+			else if ( messageType == PROCESS )
 			{
-				std::cout << "PROCESS message placeholder" << std::endl; // karan
+				boost::mutex::scoped_lock lock( mutexColorSet_ );
+
+				renderListVms_.clear();
+				archive_i >> renderListVms_;
+
+				updateColorSet();
 			}
-
-
 		}
 		
 		free( buf );
@@ -265,11 +272,15 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 
 	isGeometryDirty_ = true;
 	// Note: we don't bother with locks for sharing isGeometryDirty_ between updateGeometry()
-	// and draw(), because of the vastly different timescales. RESETs are sent manually and it
-	// is very unlikely that two RESETs will arrive consecutively quickly enough to interrupt
-	// an update in draw(), and acquiring a lock to check isGeometryDirty_ on every frame will
-	// be expensive.
+	// and draw(). RESETs are sent manually and it is very unlikely that two RESETs will arrive
+	// consecutively quickly enough to interrupt an update in draw(), and acquiring a lock
+	// to check isGeometryDirty_ on every frame will be expensive.
 
+}
+
+void updateColorSet()
+{
+	isColorSetDirty_ = true;
 }
 
 void draw()
@@ -303,23 +314,131 @@ void draw()
 	while ( !viewer->done() ) {
 		if ( isGeometryDirty_ ) {
 			isGeometryDirty_ = false;
+			
 			viewer->setSceneData( root_.get() );
 		}
+		if ( isColorSetDirty_ ) {
+			boost::mutex::scoped_lock lock( mutexColorSet_ );
+			isColorSetDirty_ = false;
+			
+			for ( int i = 0; i < root_->getNumDrawables(); ++i ) {
+				double& Vm = renderListVms_[i];
+				osg::ShapeDrawable* drawable = static_cast<osg::ShapeDrawable*>( root_->getDrawable(i) );
+				double red, green, blue;
+				
+				if ( Vm > highVoltage_ )
+				{
+					red   = colormap_[ colormap_.size()-1 ][ 0 ];
+					green = colormap_[ colormap_.size()-1 ][ 1 ];
+					blue  =  colormap_[ colormap_.size()-1 ][ 2 ];
+
+					drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );
+				}
+				else if ( Vm < lowVoltage_ )
+				{
+					red   = colormap_[ 0 ][ 0 ];
+					green = colormap_[ 0 ][ 1 ];
+					blue  = colormap_[ 0 ][ 2 ];
+
+					drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );
+				}
+				else
+				{
+					double intervalSize = ( highVoltage_ - lowVoltage_ ) / colormap_.size();
+					int ix = static_cast< int >( floor( ( Vm - lowVoltage_ ) / intervalSize ) );
+
+					red   = colormap_[ ix ][ 0 ];
+					green = colormap_[ ix ][ 1 ];
+					blue  = colormap_[ ix ][ 2 ];
+
+					drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );					
+				}
+			}
+		}
 		viewer->frame();
+
+		// acquire lock and check isColorSetDirty_, if so, update colors
 	}
 }
 
 int main( int argc, char* argv[] )
 {
-	/// Check command line arguments.
-	if ( argc != 2 ) {
-		std::cerr << "Usage: glcellclient <port>" << std::endl;
+	int c;
+	char* strHelp = "Usage: glcellclient\n\t-p <number>: port number\n\t-c <string>: filename of colormap file\n\t[-u <number>: voltage represented by colour on last line of colormap file (default is 0.05V)]\n\t[-l <number>: voltage represented by colour on first line of colormap file (default if -0.1V)]\n";
+	
+	// Check command line arguments.
+	while ( ( c = getopt( argc, argv, "hp:c:u:l:" ) ) != -1 )
+		switch( c )
+		{
+		case 'h':
+			std::cout << strHelp << std::endl;
+			return 1;
+		case 'p':
+			port_ = optarg;
+			break;
+		case 'c':
+			fileColormap_ = optarg;
+			break;
+		case 'u':
+			highVoltage_ = strtod( optarg, NULL );
+			break;
+		case 'l':
+			lowVoltage_ = strtod( optarg, NULL );
+			break;
+		case '?':
+			if ( optopt == 'p' || optopt == 'c' || optopt == 'h' || optopt == 'l' )
+				printf( "Option -%c requires an argument.\n", optopt );
+			else
+				printf( "Unknown option -%c.\n", optopt );
+			return 1;
+		default:
+			return 1;
+		}
+	
+	if ( port_ == NULL || fileColormap_ == NULL )
+	{
+		std::cerr << "Port number and colormap filename are required arguments." << std::endl;
+		std::cerr << strHelp << std::endl;
+		return 1;
+	}
+	if ( highVoltage_ <= lowVoltage_ )
+	{
+		std::cerr << "-u argument must be greater than -l argument." << std::endl;
+		std::cerr << strHelp << std::endl;
 		return 1;
 	}
 
-	isGeometryDirty_ = false;
-	port_ = argv[ 1 ];
-		
+	// parse colormap file
+	std::ifstream fColormap;
+	std::string lineToSplit;
+	char* pEnd;
+	std::vector< double > color;
+
+	fColormap.open( fileColormap_ );
+	if ( !fColormap.is_open() )
+	{
+		std::cerr << "Couldn't find colormap file: " << fileColormap_ << "!" << std::endl;
+		return 2;
+	}
+	else
+	{
+		while ( !fColormap.eof() )
+		{
+			getline( fColormap, lineToSplit );
+			if ( lineToSplit.length() > 0 )  // not a blank line (typically the last line)
+			{
+				color.clear();
+				color.push_back( strtod( lineToSplit.c_str(), &pEnd ) / 65535. );
+				color.push_back( strtod( pEnd, &pEnd ) / 65535. );
+				color.push_back( strtod( pEnd, NULL ) / 65535. );
+				
+				colormap_.push_back( color );
+			}
+		}
+	}
+	fColormap.close();
+	
+	// launch network thread and run the GUI in the main loop
 	boost::thread threadProcess( receiveData );
 	draw();
 

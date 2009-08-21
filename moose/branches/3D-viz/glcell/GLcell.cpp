@@ -307,7 +307,7 @@ int GLcell::getSocket( const char* hostname, const char* service )
 		return -1;
 	}
 	// loop through all the results and connect to the first we can
-	for( p = servinfo; p != NULL; p = p->ai_next ) {
+	for ( p = servinfo; p != NULL; p = p->ai_next ) {
 		if ( ( sockfd = socket( p->ai_family, p->ai_socktype,
 				     p->ai_protocol ) ) == -1 ) {
 			std::cerr << "GLcell error: socket" << std::endl;
