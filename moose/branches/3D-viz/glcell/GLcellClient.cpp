@@ -82,7 +82,23 @@ int recvAll( int s, char *buf, int *len )
 	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
 }
 
-void receiveData()
+void networkLoop()
+{
+	int newFd;
+
+	while ( true )
+	{
+		if ( (newFd = acceptNewConnection( port_ )) != -1 )
+			receiveData( newFd );
+		else
+		{
+			std::cerr << "Error in network loop... exiting." << std::endl;
+			break;
+		}
+	}
+}
+
+int acceptNewConnection( char * port )
 {
 	int sockFd, newFd;  // listen on sock_fd, new connection on new_fd
 	struct addrinfo hints, *servinfo, *p;
@@ -92,19 +108,15 @@ void receiveData()
 	int yes=1;
 	char s[INET6_ADDRSTRLEN];
 	int rv;
-	int numBytes, inboundDataSize;
-	char header[MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1];
-	int messageType;
-	char *buf;
 	
 	memset( &hints, 0, sizeof( hints ) );
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE; // use my IP
 	
-	if ( ( rv = getaddrinfo( NULL, port_, &hints, &servinfo ) ) != 0 ) {
+	if ( ( rv = getaddrinfo( NULL, port, &hints, &servinfo ) ) != 0 ) {
 		std::cerr << "getaddrinfo: " << gai_strerror( rv ) << std::endl;
-		//return 1;
+		return -1;
 	}
 	
 	// loop through all the results and bind to the first we can
@@ -116,7 +128,7 @@ void receiveData()
 		
 		if ( setsockopt( sockFd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof( int ) ) == -1 ) {
 			std::cerr << "GLcellClient error: setsockopt" << std::endl;
-			exit( 1 );
+			return -1;
 		}
 		
 		if ( bind( sockFd, p->ai_addr, p->ai_addrlen ) == -1 ) {
@@ -130,39 +142,51 @@ void receiveData()
 	
 	if ( p == NULL )  {
 		std::cerr << "GLcellClient error: failed to bind" << std::endl;
-		exit( 2 );
+		return -1;
 	}
   
 	freeaddrinfo( servinfo ); // all done with this structure
   
 	if ( listen( sockFd, BACKLOG ) == -1 ) {
 		std::cerr << "GLcellClient error: listen" << std::endl;
-		exit( 1 );
+		return -1;
 	}
 
 	std::cout << "server: waiting for connections..." << std::endl;
 
-	while ( 1 )            // main accept() loop
+	sinSize = sizeof( theirAddr );
+	newFd = accept( sockFd, ( struct sockaddr * ) &theirAddr, &sinSize );
+	if ( newFd == -1 ) {
+		std::cerr << "GLcellClient error: accept" << std::endl;
+		return -1;
+	}
+		
+	inet_ntop( theirAddr.ss_family, getInAddr( ( struct sockaddr * ) &theirAddr ), s, sizeof( s ) );
+
+	//std::cout << "GLcellClient: receiving data from " << s << std::endl;
+
+	close( sockFd );
+	return newFd;
+}
+
+void receiveData( int newFd )
+{
+	int numBytes, inboundDataSize;
+	char header[MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1];
+	int messageType;
+	char *buf;
+
+	while ( true )
 	{
-		sinSize = sizeof( theirAddr );
-		newFd = accept( sockFd, ( struct sockaddr * ) &theirAddr, &sinSize );
-		if ( newFd == -1 ) {
-			std::cerr << "GLcellClient error: accept" << std::endl;
-			continue;
-		}
-		
-		inet_ntop( theirAddr.ss_family, getInAddr( ( struct sockaddr * ) &theirAddr ), s, sizeof( s ) );
-		std::cout << "GLcellClient: receiving data from " << s << std::endl;
-		
 		numBytes = MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1;
 		if ( recvAll( newFd, header, &numBytes ) == -1 ) {
 			std::cerr << "GLcellClient error: recv" << std::endl;
-			exit( 1 );
+			break;
 		}
 				
 		if ( numBytes < MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1 ) {
 			std::cerr << "GLcellClient error: incomplete header received!" << std::endl;
-			exit( 1 );
+			break;
 		}
 		else {
 			std::istringstream msgsizeHeaderstream( std::string( header, 
@@ -173,6 +197,12 @@ void receiveData()
 									     MSGSIZE_HEADERLENGTH,
 									     MSGTYPE_HEADERLENGTH ) );
 			msgtypeHeaderstream >> messageType;
+
+			if ( messageType == DISCONNECT )
+			{
+				std::cout << "MOOSE element disconnected." << std::endl;
+				break;
+			}
 		}
 		
 		numBytes = inboundDataSize + 1;
@@ -180,13 +210,13 @@ void receiveData()
 		
 		if ( recvAll( newFd, buf, &numBytes ) == -1 ) {
 			std::cerr << "GLcellClient error: recv" << std::endl;
-			exit( 1 );
+			break;
 		}
 
 		if ( numBytes < inboundDataSize+1 ) {
 			std::cerr << "GLcellClient error: incomplete data received!" << std::endl;
 			std::cerr << "numBytes: " << numBytes << " inboundDataSize: " << inboundDataSize << std::endl;
-			exit( 1 );
+			break;
 		}
 		else {
 			std::istringstream archive_stream_i( std::string( buf, inboundDataSize ) );
@@ -209,10 +239,10 @@ void receiveData()
 				updateColorSet();
 			}
 		}
-		
 		free( buf );
-		close( newFd );
 	}
+
+	close( newFd );	
 }
 
 void updateGeometry( const std::vector< GLcellCompartment >& compartments )
@@ -452,7 +482,7 @@ int main( int argc, char* argv[] )
 	fColormap.close();
 	
 	// launch network thread and run the GUI in the main loop
-	boost::thread threadProcess( receiveData );
+	boost::thread threadProcess( networkLoop );
 	draw();
 
 	return 0;

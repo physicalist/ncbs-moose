@@ -20,13 +20,15 @@
 enum MSGTYPE
 {
 	RESET,
-	PROCESS
+	PROCESS,
+	DISCONNECT
 };
 
 class GLcell
 {
  public:
 	GLcell();
+	~GLcell();
 
 	static void process( const Conn* c, ProcInfo p );
 	
@@ -57,6 +59,9 @@ class GLcell
 	string strClientPort_;
 	string fieldValue_;
 
+	int sockFd_;
+	bool isConnectionUp_;
+
 	vector< Id > renderList_;
 	vector< GLcellCompartment > renderListGLcellCompartments_;
 	vector< double > renderListVms_;
@@ -66,9 +71,11 @@ class GLcell
 	/// networking helper functions
 	void* getInAddress( struct sockaddr *sa );
 	int getSocket( const char* hostname, const char* service );
-	int sendAll( int s, char* buf, int* len );
+	int sendAll( char* buf, int* len );
 	
 	template< class T >
-	  void transmit( T& data, MSGTYPE messageType);	
+	  void transmit( T& data, MSGTYPE messageType);
+
+	void disconnect();
 };
 
