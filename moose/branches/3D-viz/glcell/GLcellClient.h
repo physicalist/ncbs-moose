@@ -16,10 +16,15 @@
 enum MSGTYPE
 {
 	RESET,
-	PROCESS
+	PROCESS,
+	DISCONNECT
 };
 
-void receiveData();
+
+void networkLoop();
+int acceptNewConnection( char * port );
+void receiveData( int newFd );
+
 void* getInAddr( struct sockaddr* sa );
 int recvAll( int s, char* buf, int* len);
 void updateGeometry( const std::vector< GLcellCompartment >& );
@@ -31,6 +36,7 @@ bool isGeometryDirty_ = false;
 bool isColorSetDirty_ = false;
 
 char * port_ = NULL;
+
 char * fileColormap_ = NULL;
 double highVoltage_ = 0.05;
 double lowVoltage_ = -0.1;
