@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <math.h>
 
 #include <iostream>
 #include <string>
@@ -43,6 +44,7 @@
 #include <osg/Quat>
 #include <osgViewer/Viewer>
 #include <osgGA/TrackballManipulator>
+#include <osg/Vec3d>
 
 #include "GLcellCompartment.h"
 #include "GLcellClient.h"
@@ -209,7 +211,7 @@ void receiveData()
 		}
 		
 		free( buf );
-		close( newFd );  // parent doesn't need this
+		close( newFd );
 	}
 }
 
@@ -218,6 +220,8 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 	/*unsigned int numDrawables = root_->getNumDrawables();
 	if ( numDrawables > 0 )
 	root_->removeDrawables( 0, numDrawables );*/
+
+	oldColorsPerDrawable_.clear();
 
 	root_ = new osg::Geode;
 
@@ -232,7 +236,7 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 		const double& z = compartments[i].z;
 		const double& Vm = compartments[i].Vm;
 			
-		if ( length < EPSILON ) { // i.e., length is zero so the compartment is spherical
+		if ( length < SIZE_EPSILON ) { // i.e., length is zero so the compartment is spherical
 			osg::Sphere* sphere = new osg::Sphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
 							       diameter/2 );
 			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( sphere );
@@ -268,6 +272,8 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( cylinder );
 			root_->addDrawable( drawable );
 		}
+
+		oldColorsPerDrawable_.push_back( osg::Vec3d( -1, -1 ,-1 ) ); // initialize color 
 	}
 
 	isGeometryDirty_ = true;
@@ -280,6 +286,9 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 
 void updateColorSet()
 {
+	if ( isColorSetDirty_ == true )
+		std::cerr << "skipping one color frame" << std::endl; // karan
+
 	isColorSetDirty_ = true;
 }
 
@@ -331,16 +340,12 @@ void draw()
 					red   = colormap_[ colormap_.size()-1 ][ 0 ];
 					green = colormap_[ colormap_.size()-1 ][ 1 ];
 					blue  =  colormap_[ colormap_.size()-1 ][ 2 ];
-
-					drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );
 				}
 				else if ( Vm < lowVoltage_ )
 				{
 					red   = colormap_[ 0 ][ 0 ];
 					green = colormap_[ 0 ][ 1 ];
 					blue  = colormap_[ 0 ][ 2 ];
-
-					drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );
 				}
 				else
 				{
@@ -350,9 +355,18 @@ void draw()
 					red   = colormap_[ ix ][ 0 ];
 					green = colormap_[ ix ][ 1 ];
 					blue  = colormap_[ ix ][ 2 ];
-
-					drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );					
 				}
+
+				if ( ! ( fabs(red-oldColorsPerDrawable_[i][0]) < FP_EPSILON &&
+					 fabs(green-oldColorsPerDrawable_[i][1]) < FP_EPSILON &&
+					 fabs(blue-oldColorsPerDrawable_[i][2]) < FP_EPSILON ) )
+				{
+					drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );
+					oldColorsPerDrawable_[i][0] = red;
+					oldColorsPerDrawable_[i][1] = green;
+					oldColorsPerDrawable_[i][2] = blue;
+				}
+
 			}
 		}
 		viewer->frame();
@@ -412,7 +426,6 @@ int main( int argc, char* argv[] )
 	std::ifstream fColormap;
 	std::string lineToSplit;
 	char* pEnd;
-	std::vector< double > color;
 
 	fColormap.open( fileColormap_ );
 	if ( !fColormap.is_open() )
@@ -427,10 +440,10 @@ int main( int argc, char* argv[] )
 			getline( fColormap, lineToSplit );
 			if ( lineToSplit.length() > 0 )  // not a blank line (typically the last line)
 			{
-				color.clear();
-				color.push_back( strtod( lineToSplit.c_str(), &pEnd ) / 65535. );
-				color.push_back( strtod( pEnd, &pEnd ) / 65535. );
-				color.push_back( strtod( pEnd, NULL ) / 65535. );
+				osg::Vec3d color;
+				color[0] = strtod( lineToSplit.c_str(), &pEnd ) / 65535.;
+				color[1] = strtod( pEnd, &pEnd ) / 65535.;
+				color[2] = strtod( pEnd, NULL ) / 65535.;
 				
 				colormap_.push_back( color );
 			}
