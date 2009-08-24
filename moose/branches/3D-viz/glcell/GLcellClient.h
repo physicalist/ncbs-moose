@@ -8,6 +8,7 @@
 **********************************************************************/
 
 #include <osg/ref_ptr>
+#include <osg/Vec3d>
 
 #include "GLcellCompartment.h"
 #include "boost/thread/mutex.hpp"
@@ -34,15 +35,19 @@ char * fileColormap_ = NULL;
 double highVoltage_ = 0.05;
 double lowVoltage_ = -0.1;
 
-const double EPSILON = 1e-8; // epsilon for floating-point comparison
+const double SIZE_EPSILON = 1e-8; // epsilon for minimum compartent size
+const double FP_EPSILON = 1e-8; // epsilon for floating-point comparison
 const int MSGTYPE_HEADERLENGTH = 1;
 const int MSGSIZE_HEADERLENGTH = 8;
 const int BACKLOG = 10; // how many pending connections will be queued
 
 // Data received from the MOOSE element GLcell:
-//   Geometry:
+//   Geometry, received in RESET step:
 std::vector< GLcellCompartment > renderListGLcellCompartments_;	
-//   Color:
+//   Potential, received in PROCESS step:
 std::vector< double > renderListVms_;
+
 boost::mutex mutexColorSet_;
-std::vector< std::vector< double > > colormap_;
+std::vector< osg::Vec3d > colormap_;
+
+std::vector< osg::Vec3d > oldColorsPerDrawable_;

@@ -61,12 +61,12 @@ const Cinfo* initGLcellCinfo()
 				GFCAST( &GLcell::getPath ),
 				RFCAST( &GLcell::setPath )
 				),
-		new ValueFinfo( "clientHost",
+		new ValueFinfo( "host",
 				ValueFtype1< string >::global(),
 				GFCAST( &GLcell::getClientHost ),
 				RFCAST( &GLcell::setClientHost )
 				),
-		new ValueFinfo( "clientPort",
+		new ValueFinfo( "port",
 				ValueFtype1< string >::global(),
 				GFCAST( &GLcell::getClientPort ),
 				RFCAST( &GLcell::setClientPort )
@@ -407,8 +407,13 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 				free( archiveData );
 			}
 			free( headerData );
-					
+			
 		}
 		close( sockFd );
 	}
+	else
+	{
+		std::cerr << "GLcell error: Client port not specified." << std::endl;
+	}
+
 }
