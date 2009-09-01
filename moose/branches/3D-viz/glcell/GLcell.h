@@ -7,14 +7,6 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-/*#include <osg/ref_ptr>
-#include <osg/ShapeDrawable>
-#include <osgViewer/Viewer>
-
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/lexical_cast.hpp> */ // karan
-
 #include "GLcellCompartment.h"
 
 enum MSGTYPE
@@ -49,7 +41,15 @@ class GLcell
 	static void setClientPort( const Conn* c, string strClientPort );
 	void innerSetClientPort( const string& strClientPort );
 	static string getClientPort( Eref e );
+	
+	static void setAttributeName( const Conn* c, string strAttributeName );
+	void innerSetAttributeName( const string& strAttributeName );
+	static string getAttributeName( Eref e );
 
+	static void setChangeThreshold( const Conn* c, double changeThreshold );
+	void innerSetChangeThreshold( const double changeThreshold );
+	static double getChangeThreshold( Eref e );
+	
 	static const int MSGTYPE_HEADERLENGTH;
 	static const int MSGSIZE_HEADERLENGTH;
 
@@ -57,14 +57,18 @@ class GLcell
 	string strPath_;
 	string strClientHost_;
 	string strClientPort_;
-	string fieldValue_;
+	string strAttributeName_;
+	double changeThreshold_; // any change in attribute below this value is not updated visually (in non-sync mode)
 
 	int sockFd_;
 	bool isConnectionUp_;
 
 	vector< Id > renderList_;
 	vector< GLcellCompartment > renderListGLcellCompartments_;
-	vector< double > renderListVms_;
+
+	vector< double > renderListAttrs_;
+	vector< double > renderListAttrsOld_;
+	map< int, double > renderMapAttrsTransmitted_;
 
 	void add2RenderList( Id id );
 

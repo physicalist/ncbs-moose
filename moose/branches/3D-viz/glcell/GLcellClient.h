@@ -41,8 +41,10 @@ char * fileColormap_ = NULL;
 double highVoltage_ = 0.05;
 double lowVoltage_ = -0.1;
 
-const double SIZE_EPSILON = 1e-8; // epsilon for minimum compartent size
-const double FP_EPSILON = 1e-8; // epsilon for floating-point comparison
+const double SIZE_EPSILON = 1e-8; // floating-point (FP) epsilon for 
+                                  // ... minimum compartment size
+const double FP_EPSILON = 1e-8;   // FP epsilon for comparison
+
 const int MSGTYPE_HEADERLENGTH = 1;
 const int MSGSIZE_HEADERLENGTH = 8;
 const int BACKLOG = 10; // how many pending connections will be queued
@@ -50,10 +52,10 @@ const int BACKLOG = 10; // how many pending connections will be queued
 // Data received from the MOOSE element GLcell:
 //   Geometry, received in RESET step:
 std::vector< GLcellCompartment > renderListGLcellCompartments_;	
-//   Potential, received in PROCESS step:
-std::vector< double > renderListVms_;
+
+// Attribute values mapped to colors, received in PROCESS step:
+std::map< int, double > renderMapAttrs_;
 
 boost::mutex mutexColorSet_;
 std::vector< osg::Vec3d > colormap_;
 
-std::vector< osg::Vec3d > oldColorsPerDrawable_;

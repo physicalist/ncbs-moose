@@ -30,12 +30,15 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <map>
 
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include <osg/Vec3d>
 #include <osg/ref_ptr>
 #include <osg/Notify>
 #include <osg/Geode>
@@ -43,8 +46,8 @@
 #include <osg/ShapeDrawable>
 #include <osg/Quat>
 #include <osgViewer/Viewer>
+#include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
-#include <osg/Vec3d>
 
 #include "GLcellCompartment.h"
 #include "GLcellClient.h"
@@ -152,7 +155,7 @@ int acceptNewConnection( char * port )
 		return -1;
 	}
 
-	std::cout << "server: waiting for connections..." << std::endl;
+	std::cout << "GLcellClient: waiting for connections..." << std::endl;
 
 	sinSize = sizeof( theirAddr );
 	newFd = accept( sockFd, ( struct sockaddr * ) &theirAddr, &sinSize );
@@ -163,7 +166,7 @@ int acceptNewConnection( char * port )
 		
 	inet_ntop( theirAddr.ss_family, getInAddr( ( struct sockaddr * ) &theirAddr ), s, sizeof( s ) );
 
-	//std::cout << "GLcellClient: receiving data from " << s << std::endl;
+	std::cout << "GLcellClient: connected to " << s << std::endl;
 
 	close( sockFd );
 	return newFd;
@@ -200,7 +203,7 @@ void receiveData( int newFd )
 
 			if ( messageType == DISCONNECT )
 			{
-				std::cout << "MOOSE element disconnected." << std::endl;
+				std::cout << "GLcellClient: MOOSE element disconnected." << std::endl;
 				break;
 			}
 		}
@@ -233,8 +236,8 @@ void receiveData( int newFd )
 			{
 				boost::mutex::scoped_lock lock( mutexColorSet_ );
 
-				renderListVms_.clear();
-				archive_i >> renderListVms_;
+				renderMapAttrs_.clear();
+				archive_i >> renderMapAttrs_;
 
 				updateColorSet();
 			}
@@ -251,8 +254,6 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 	if ( numDrawables > 0 )
 	root_->removeDrawables( 0, numDrawables );*/
 
-	oldColorsPerDrawable_.clear();
-
 	root_ = new osg::Geode;
 
 	for (int i = 0; i < compartments.size(); ++i) {
@@ -264,7 +265,6 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 		const double& x = compartments[i].x;
 		const double& y = compartments[i].y;
 		const double& z = compartments[i].z;
-		const double& Vm = compartments[i].Vm;
 			
 		if ( length < SIZE_EPSILON ) { // i.e., length is zero so the compartment is spherical
 			osg::Sphere* sphere = new osg::Sphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
@@ -302,8 +302,6 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( cylinder );
 			root_->addDrawable( drawable );
 		}
-
-		oldColorsPerDrawable_.push_back( osg::Vec3d( -1, -1 ,-1 ) ); // initialize color 
 	}
 
 	isGeometryDirty_ = true;
@@ -316,8 +314,11 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 
 void updateColorSet()
 {
-	if ( isColorSetDirty_ == true )
-		std::cerr << "skipping one color frame" << std::endl; // karan
+	if ( isColorSetDirty_ == true ) // We meant to set colorset dirty but it is already dirty
+		// ... which means the rendering thread has not picked it up yet.
+	{
+		std::cerr << "skipping frame..." << std::endl;
+	}
 
 	isColorSetDirty_ = true;
 }
@@ -348,7 +349,10 @@ void draw()
 	viewer->getCamera()->setReadBuffer( buffer );
 
 	viewer->realize();
-	viewer->setCameraManipulator(new osgGA::TrackballManipulator());
+	viewer->setCameraManipulator( new osgGA::TrackballManipulator() );
+	viewer->addEventHandler( new osgViewer::StatsHandler );
+
+	std::map<int, double>::iterator renderMapAttrsIterator;
 
 	while ( !viewer->done() ) {
 		if ( isGeometryDirty_ ) {
@@ -360,18 +364,23 @@ void draw()
 			boost::mutex::scoped_lock lock( mutexColorSet_ );
 			isColorSetDirty_ = false;
 			
-			for ( int i = 0; i < root_->getNumDrawables(); ++i ) {
-				double& Vm = renderListVms_[i];
+			for ( renderMapAttrsIterator = renderMapAttrs_.begin();
+			      renderMapAttrsIterator != renderMapAttrs_.end();
+			      renderMapAttrsIterator++ )
+			{
+				int i = renderMapAttrsIterator->first;
+				double attr = renderMapAttrsIterator->second;
+
 				osg::ShapeDrawable* drawable = static_cast<osg::ShapeDrawable*>( root_->getDrawable(i) );
 				double red, green, blue;
 				
-				if ( Vm > highVoltage_ )
+				if ( attr > highVoltage_ )
 				{
 					red   = colormap_[ colormap_.size()-1 ][ 0 ];
 					green = colormap_[ colormap_.size()-1 ][ 1 ];
 					blue  =  colormap_[ colormap_.size()-1 ][ 2 ];
 				}
-				else if ( Vm < lowVoltage_ )
+				else if ( attr < lowVoltage_ )
 				{
 					red   = colormap_[ 0 ][ 0 ];
 					green = colormap_[ 0 ][ 1 ];
@@ -380,35 +389,28 @@ void draw()
 				else
 				{
 					double intervalSize = ( highVoltage_ - lowVoltage_ ) / colormap_.size();
-					int ix = static_cast< int >( floor( ( Vm - lowVoltage_ ) / intervalSize ) );
+					int ix = static_cast< int >( floor( ( attr - lowVoltage_ ) / intervalSize ) );
 
 					red   = colormap_[ ix ][ 0 ];
 					green = colormap_[ ix ][ 1 ];
 					blue  = colormap_[ ix ][ 2 ];
 				}
 
-				if ( ! ( fabs(red-oldColorsPerDrawable_[i][0]) < FP_EPSILON &&
-					 fabs(green-oldColorsPerDrawable_[i][1]) < FP_EPSILON &&
-					 fabs(blue-oldColorsPerDrawable_[i][2]) < FP_EPSILON ) )
-				{
-					drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );
-					oldColorsPerDrawable_[i][0] = red;
-					oldColorsPerDrawable_[i][1] = green;
-					oldColorsPerDrawable_[i][2] = blue;
-				}
-
+				drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );
 			}
 		}
 		viewer->frame();
-
-		// acquire lock and check isColorSetDirty_, if so, update colors
 	}
 }
 
 int main( int argc, char* argv[] )
 {
 	int c;
-	char* strHelp = "Usage: glcellclient\n\t-p <number>: port number\n\t-c <string>: filename of colormap file\n\t[-u <number>: voltage represented by colour on last line of colormap file (default is 0.05V)]\n\t[-l <number>: voltage represented by colour on first line of colormap file (default if -0.1V)]\n";
+	char* strHelp = "Usage: glcellclient\n"
+		"\t-p <number>: port number\n"
+		"\t-c <string>: filename of colormap file\n"
+		"\t[-u <number>: voltage represented by colour on last line of colormap file (default is 0.05V)]\n"
+		"\t[-l <number>: voltage represented by colour on first line of colormap file (default if -0.1V)]\n";
 	
 	// Check command line arguments.
 	while ( ( c = getopt( argc, argv, "hp:c:u:l:" ) ) != -1 )
