@@ -20,9 +20,11 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <map>
 #include <string>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
 
 #include <unistd.h>
 #include <errno.h>
@@ -71,6 +73,16 @@ const Cinfo* initGLcellCinfo()
 				GFCAST( &GLcell::getClientPort ),
 				RFCAST( &GLcell::setClientPort )
 				),
+		new ValueFinfo( "attribute",
+				ValueFtype1< string >::global(),
+				GFCAST( &GLcell::getAttributeName ),
+				RFCAST( &GLcell::setAttributeName )
+				),
+		new ValueFinfo( "threshold",
+				ValueFtype1< double >::global(),
+				GFCAST( &GLcell::getChangeThreshold ),
+				RFCAST( &GLcell::setChangeThreshold )
+				),
 	///////////////////////////////////////////////////////
 	// Shared definitions
 	///////////////////////////////////////////////////////
@@ -113,7 +125,9 @@ GLcell::GLcell()
 	strClientHost_( "127.0.0.1" ),
 	strClientPort_( "" ),
 	isConnectionUp_( false ),
-	sockFd_( -1 )
+	strAttributeName_( "Vm" ),
+	sockFd_( -1 ),
+	changeThreshold_( 1e-8 )
 {
 }
 GLcell::~GLcell()
@@ -170,35 +184,39 @@ string GLcell::getClientPort( Eref e )
 	return static_cast< const GLcell* >( e.data() )->strClientPort_;
 }
 
+void GLcell::setAttributeName( const Conn* c, string strAttributeName )
+{
+	static_cast< GLcell * >( c->data() )->innerSetAttributeName( strAttributeName );
+}
+
+void GLcell::innerSetAttributeName( const string& strAttributeName )
+{
+	strAttributeName_ = strAttributeName;
+}
+
+string GLcell::getAttributeName( Eref e )
+{
+	return static_cast< const GLcell* >( e.data() )->strAttributeName_;
+}
+
+void GLcell::setChangeThreshold( const Conn* c, double changeThreshold )
+{
+	static_cast< GLcell * >( c->data() )->innerSetChangeThreshold( changeThreshold );
+}
+
+void GLcell::innerSetChangeThreshold( const double changeThreshold )
+{
+	changeThreshold_ = changeThreshold;
+}
+
+double GLcell::getChangeThreshold( Eref e )
+{
+	return static_cast< const GLcell* >( e.data() )->changeThreshold_;
+}
+
 ///////////////////////////////////////////////////
 // Dest function definitions
 ///////////////////////////////////////////////////
-
-void GLcell::processFunc( const Conn* c, ProcInfo info )
-{
-	static_cast< GLcell * >( c->data() )->processFuncLocal( c->target(), info );
-}
-
-void GLcell::processFuncLocal( Eref e, ProcInfo info )
-{
-	double Vm;
-       
-	if ( !renderList_.empty() )
-	{
-		renderListVms_.clear();
-		
-		for ( int i = 0; i < renderList_.size(); ++i )
-		{
-			if ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
-			     && get< double >( renderList_[i].eref(), "Vm", Vm) )
-			{
-				renderListVms_.push_back( Vm );
-			}
-		}
-
-		transmit( renderListVms_, PROCESS );
-	}
-}
 
 void GLcell::reinitFunc( const Conn* c, ProcInfo info )
 {
@@ -207,7 +225,7 @@ void GLcell::reinitFunc( const Conn* c, ProcInfo info )
 
 void GLcell::reinitFuncLocal( const Conn* c )
 {
-	double diameter, length, x0, y0, z0, x, y, z, Vm;
+	double diameter, length, x0, y0, z0, x, y, z;
 
 	/// Reload model geometry.
 	// strPath_ should have been set.
@@ -233,8 +251,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				&& get< double >( renderList_[i].eref(), "z0", z0 )
 				&& get< double >( renderList_[i].eref(), "x", x )
 				&& get< double >( renderList_[i].eref(), "y", y )
-				&& get< double >( renderList_[i].eref(), "z", z )
-				&& get< double >( renderList_[i].eref(), "Vm", Vm ) )
+				&& get< double >( renderList_[i].eref(), "z", z ) )
 			{
 				GLcellCompartment glcellcomp;
 				glcellcomp.diameter = diameter;
@@ -245,7 +262,6 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				glcellcomp.x = x;
 				glcellcomp.y = y;
 				glcellcomp.z = z;
-				glcellcomp.Vm = Vm;
 				
 				renderListGLcellCompartments_.push_back( glcellcomp );
 			
@@ -258,6 +274,41 @@ void GLcell::reinitFuncLocal( const Conn* c )
 			std::cerr << "GLcell error: Client hostname not specified." << std::endl;
 		else
 			transmit( renderListGLcellCompartments_, RESET );
+	}
+}
+
+void GLcell::processFunc( const Conn* c, ProcInfo info )
+{
+	static_cast< GLcell * >( c->data() )->processFuncLocal( c->target(), info );
+}
+
+void GLcell::processFuncLocal( Eref e, ProcInfo info )
+{
+	double attr;
+       
+	if ( !renderList_.empty() )
+	{
+		renderListAttrsOld_ = renderListAttrs_;
+		renderListAttrs_.clear();
+		renderMapAttrsTransmitted_.clear();
+		
+		for ( int i = 0; i < renderList_.size(); ++i )
+		{
+			if ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
+			     && get< double >( renderList_[i].eref(), strAttributeName_.c_str(), attr ) )
+			{
+				renderListAttrs_.push_back( attr );
+			}
+		}
+
+		for ( int j = 0; j < renderListAttrs_.size(); ++j )
+		{
+			if ( ( renderListAttrsOld_.size() == 0 )  || // on the first PROCESS after a RESET
+			     ( fabs(renderListAttrs_[j] - renderListAttrsOld_[j]) > changeThreshold_ ) )
+				renderMapAttrsTransmitted_[j] = attr;
+		}
+
+		transmit( renderMapAttrsTransmitted_, PROCESS );
 	}
 }
 

@@ -11,7 +11,6 @@ struct GLcellCompartment
 	double x;
 	double y;
 	double z;
-	double Vm; // potential
 	
 	template< typename Archive > 
 	void serialize( Archive& ar, const unsigned int version )
@@ -24,7 +23,6 @@ struct GLcellCompartment
 		ar & x;
 		ar & y;
 		ar & z;
-		ar & Vm;
 	}
 };
 
