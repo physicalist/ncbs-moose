@@ -37,6 +37,7 @@
 #include <boost/serialization/map.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
 
 #include <osg/Vec3d>
 #include <osg/ref_ptr>
@@ -107,7 +108,6 @@ int acceptNewConnection( char * port )
 	struct addrinfo hints, *servinfo, *p;
 	struct sockaddr_storage theirAddr; // connector's address information
 	socklen_t sinSize;
-	struct sigaction sa;
 	int yes=1;
 	char s[INET6_ADDRSTRLEN];
 	int rv;
@@ -234,12 +234,49 @@ void receiveData( int newFd )
 			}
 			else if ( messageType == PROCESS )
 			{
-				boost::mutex::scoped_lock lock( mutexColorSet_ );
+				{  // additional scope to wrap scoped_lock
+					boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 
-				renderMapAttrs_.clear();
-				archive_i >> renderMapAttrs_;
+					renderMapAttrs_.clear();
+					archive_i >> renderMapAttrs_;
+				}
 
-				updateColorSet();
+				if ( isColorSetDirty_ == true ) // We meant to set colorset dirty but it is already dirty which means the rendering thread has not picked it up yet.
+				{
+					std::cerr << "skipping frame..." << std::endl;
+				}
+				
+				isColorSetDirty_ = true;
+			}
+			else if ( messageType == PROCESSSYNC )
+			{
+				{
+					boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
+					
+					renderMapAttrs_.clear();
+					archive_i >> renderMapAttrs_;
+				}
+
+				if ( isColorSetDirty_ == true ) 
+				{
+					std::cerr << "skipping frame... in SYNC mode!" << std::endl;
+				}
+
+				isColorSetDirty_ = true;
+				
+				// wait for the updated color set to render to display
+				{
+					boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
+					while ( isColorSetDirty_ )
+					{
+						condColorSetUpdated_.wait( lock );
+					}
+				}
+
+				// send back a one-byte ack
+				char ackBuf[0];
+				ackBuf[0] = SYNCMODE_ACKCHAR;
+				send( newFd, ackBuf, 1, 0 );
 			}
 		}
 		free( buf );
@@ -256,7 +293,7 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 
 	root_ = new osg::Geode;
 
-	for (int i = 0; i < compartments.size(); ++i) {
+	for ( unsigned int i = 0; i < compartments.size(); ++i ) {
 		const double& diameter = compartments[i].diameter;
 		const double& length = compartments[i].length;
 		const double& x0 = compartments[i].x0;
@@ -312,17 +349,6 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 
 }
 
-void updateColorSet()
-{
-	if ( isColorSetDirty_ == true ) // We meant to set colorset dirty but it is already dirty
-		// ... which means the rendering thread has not picked it up yet.
-	{
-		std::cerr << "skipping frame..." << std::endl;
-	}
-
-	isColorSetDirty_ = true;
-}
-
 void draw()
 {
 	osg::ref_ptr< osgViewer::Viewer > viewer = new osgViewer::Viewer;
@@ -361,8 +387,7 @@ void draw()
 			viewer->setSceneData( root_.get() );
 		}
 		if ( isColorSetDirty_ ) {
-			boost::mutex::scoped_lock lock( mutexColorSet_ );
-			isColorSetDirty_ = false;
+			boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 			
 			for ( renderMapAttrsIterator = renderMapAttrs_.begin();
 			      renderMapAttrsIterator != renderMapAttrs_.end();
@@ -374,13 +399,13 @@ void draw()
 				osg::ShapeDrawable* drawable = static_cast<osg::ShapeDrawable*>( root_->getDrawable(i) );
 				double red, green, blue;
 				
-				if ( attr > highVoltage_ )
+				if ( attr > highValue_ )
 				{
 					red   = colormap_[ colormap_.size()-1 ][ 0 ];
 					green = colormap_[ colormap_.size()-1 ][ 1 ];
 					blue  =  colormap_[ colormap_.size()-1 ][ 2 ];
 				}
-				else if ( attr < lowVoltage_ )
+				else if ( attr < lowValue_ )
 				{
 					red   = colormap_[ 0 ][ 0 ];
 					green = colormap_[ 0 ][ 1 ];
@@ -388,8 +413,8 @@ void draw()
 				}
 				else
 				{
-					double intervalSize = ( highVoltage_ - lowVoltage_ ) / colormap_.size();
-					int ix = static_cast< int >( floor( ( attr - lowVoltage_ ) / intervalSize ) );
+					double intervalSize = ( highValue_ - lowValue_ ) / colormap_.size();
+					int ix = static_cast< int >( floor( ( attr - lowValue_ ) / intervalSize ) );
 
 					red   = colormap_[ ix ][ 0 ];
 					green = colormap_[ ix ][ 1 ];
@@ -397,6 +422,13 @@ void draw()
 				}
 
 				drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );
+			}
+
+			{
+				boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
+				isColorSetDirty_ = false;
+				
+				condColorSetUpdated_.notify_one(); // no-op except when responding to PROCESSSYNC
 			}
 		}
 		viewer->frame();
@@ -426,10 +458,10 @@ int main( int argc, char* argv[] )
 			fileColormap_ = optarg;
 			break;
 		case 'u':
-			highVoltage_ = strtod( optarg, NULL );
+			highValue_ = strtod( optarg, NULL );
 			break;
 		case 'l':
-			lowVoltage_ = strtod( optarg, NULL );
+			lowValue_ = strtod( optarg, NULL );
 			break;
 		case '?':
 			if ( optopt == 'p' || optopt == 'c' || optopt == 'h' || optopt == 'l' )
@@ -447,7 +479,7 @@ int main( int argc, char* argv[] )
 		std::cerr << strHelp << std::endl;
 		return 1;
 	}
-	if ( highVoltage_ <= lowVoltage_ )
+	if ( highValue_ <= lowValue_ )
 	{
 		std::cerr << "-u argument must be greater than -l argument." << std::endl;
 		std::cerr << strHelp << std::endl;
