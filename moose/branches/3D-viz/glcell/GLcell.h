@@ -13,6 +13,7 @@ enum MSGTYPE
 {
 	RESET,
 	PROCESS,
+	PROCESSSYNC,
 	DISCONNECT
 };
 
@@ -49,15 +50,21 @@ class GLcell
 	static void setChangeThreshold( const Conn* c, double changeThreshold );
 	void innerSetChangeThreshold( const double changeThreshold );
 	static double getChangeThreshold( Eref e );
+
+	static void setSyncMode( const Conn* c, string syncMode );
+	void innerSetSyncMode( const bool syncMode );
+	static string getSyncMode( Eref e );
 	
 	static const int MSGTYPE_HEADERLENGTH;
 	static const int MSGSIZE_HEADERLENGTH;
+	static const char SYNCMODE_ACKCHAR;
 
  private:
 	string strPath_;
 	string strClientHost_;
 	string strClientPort_;
 	string strAttributeName_;
+	bool syncMode_;
 	double changeThreshold_; // any change in attribute below this value is not updated visually (in non-sync mode)
 
 	int sockFd_;
@@ -76,6 +83,7 @@ class GLcell
 	void* getInAddress( struct sockaddr *sa );
 	int getSocket( const char* hostname, const char* service );
 	int sendAll( char* buf, int* len );
+	int receiveAckSyncMode();
 	
 	template< class T >
 	  void transmit( T& data, MSGTYPE messageType);

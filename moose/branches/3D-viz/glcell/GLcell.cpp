@@ -39,6 +39,7 @@
 
 const int GLcell::MSGTYPE_HEADERLENGTH = 1;
 const int GLcell::MSGSIZE_HEADERLENGTH = 8;
+const char GLcell::SYNCMODE_ACKCHAR = '*';
 
 const Cinfo* initGLcellCinfo()
 {
@@ -82,6 +83,11 @@ const Cinfo* initGLcellCinfo()
 				ValueFtype1< double >::global(),
 				GFCAST( &GLcell::getChangeThreshold ),
 				RFCAST( &GLcell::setChangeThreshold )
+				),
+		new ValueFinfo( "sync",
+				ValueFtype1< string >::global(),
+				GFCAST( &GLcell::getSyncMode ),
+				RFCAST( &GLcell::setSyncMode )
 				),
 	///////////////////////////////////////////////////////
 	// Shared definitions
@@ -127,7 +133,8 @@ GLcell::GLcell()
 	isConnectionUp_( false ),
 	strAttributeName_( "Vm" ),
 	sockFd_( -1 ),
-	changeThreshold_( 1e-8 )
+	changeThreshold_( 1e-8 ),
+	syncMode_( false )
 {
 }
 GLcell::~GLcell()
@@ -214,6 +221,31 @@ double GLcell::getChangeThreshold( Eref e )
 	return static_cast< const GLcell* >( e.data() )->changeThreshold_;
 }
 
+void GLcell::setSyncMode( const Conn* c, string syncMode )
+{
+	if ( syncMode == string( "on" ) )
+		static_cast< GLcell * >( c->data() )->innerSetSyncMode( true );
+	else if ( syncMode == string( "off" ) )
+		static_cast< GLcell * >( c->data() )->innerSetSyncMode( false );
+	else
+		std::cerr << "Cannot set sync mode; argument must be either 'on' or 'off'." << std::endl;
+}
+
+void GLcell::innerSetSyncMode( const bool syncMode )
+{
+	syncMode_ = syncMode;
+}
+
+string GLcell::getSyncMode( Eref e )
+{
+	bool currentSyncMode = static_cast< const GLcell* >( e.data() )->syncMode_;
+
+	if ( currentSyncMode )
+		return string( "on" );
+	else
+		return string( "off" );
+}
+
 ///////////////////////////////////////////////////
 // Dest function definitions
 ///////////////////////////////////////////////////
@@ -240,7 +272,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 		// and its children, recursively.
 		add2RenderList( Shell::path2eid( strPath_, "/", 1 ) );
 			
-		for ( int i = 0; i < renderList_.size(); ++i )
+		for ( unsigned int i = 0; i < renderList_.size(); ++i )
 		{
 
 			if ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) )
@@ -264,7 +296,6 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				glcellcomp.z = z;
 				
 				renderListGLcellCompartments_.push_back( glcellcomp );
-			
 			}
 		}
 
@@ -292,7 +323,7 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 		renderListAttrs_.clear();
 		renderMapAttrsTransmitted_.clear();
 		
-		for ( int i = 0; i < renderList_.size(); ++i )
+		for ( unsigned int i = 0; i < renderList_.size(); ++i )
 		{
 			if ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
 			     && get< double >( renderList_[i].eref(), strAttributeName_.c_str(), attr ) )
@@ -301,14 +332,21 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 			}
 		}
 
-		for ( int j = 0; j < renderListAttrs_.size(); ++j )
+		for ( unsigned int j = 0; j < renderListAttrs_.size(); ++j )
 		{
 			if ( ( renderListAttrsOld_.size() == 0 )  || // on the first PROCESS after a RESET
+			     syncMode_ ||                            // or we're in sync mode
 			     ( fabs(renderListAttrs_[j] - renderListAttrsOld_[j]) > changeThreshold_ ) )
-				renderMapAttrsTransmitted_[j] = attr;
+				renderMapAttrsTransmitted_[j] = renderListAttrs_[j];
 		}
 
-		transmit( renderMapAttrsTransmitted_, PROCESS );
+		if ( syncMode_ )
+		{
+			transmit( renderMapAttrsTransmitted_, PROCESSSYNC );
+			receiveAckSyncMode(); // blocking call
+		}
+		else
+			transmit( renderMapAttrsTransmitted_, PROCESS );
 	}
 }
 
@@ -334,7 +372,7 @@ void GLcell::add2RenderList( Id id )
 	}
 
 	// If there are any children, call add2RenderList on each of them.
-	for ( int j = 0; j < children.size(); ++j )
+	for ( unsigned int j = 0; j < children.size(); ++j )
 	{
 		add2RenderList( children[j] );
 	}
@@ -420,6 +458,28 @@ int GLcell::sendAll( char* buf, int* len )
 	*len = total; // return number actually sent here
 
 	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
+}
+
+int GLcell::receiveAckSyncMode()
+{
+	if ( ! isConnectionUp_ )
+	{
+		std::cerr << "Could not receive ACK in sync mode because the connection is down." << std::endl;
+		return -1;
+	}
+
+	char ackBuf[1];
+	int n;
+
+	if ( ( n = recv( sockFd_, ackBuf, 1, 0) ) == 1 )
+	{
+		if ( *ackBuf == SYNCMODE_ACKCHAR )
+		{
+			return 1;
+		}
+	}
+       
+	return -2;
 }
 
 template< class T >
