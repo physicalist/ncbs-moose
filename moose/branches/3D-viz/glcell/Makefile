@@ -23,13 +23,13 @@ OSG_INCLUDE = \
 	/usr/local/include/osg/include \
 
 OSG_LIBS = \
-	-L/usr/local/lib -losg -losgDB -losgGA -losgViewer -lOpenThreads \
+	-L/usr/local/lib -losg -losgDB -losgGA -losgViewer -losgText -lOpenThreads \
 
 BOOST_INCLUDE = \
 	/usr/local/include/boost-1_39 \
 
 BOOST_LIBS = \
-	-L/lib -lboost_serialization-xgcc40-mt-1_39 -lboost_thread-xgcc40-mt-1_39 \
+	-L/lib -lboost_filesystem-xgcc40-mt-1_39 -lboost_system-xgcc40-mt-1_39 -lboost_serialization-xgcc40-mt-1_39 -lboost_thread-xgcc40-mt-1_39 \
 
 default: $(TARGET) $(TARGETCLIENT) 
 
