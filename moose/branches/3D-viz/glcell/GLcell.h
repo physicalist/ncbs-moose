@@ -8,6 +8,7 @@
 **********************************************************************/
 
 #include "GLcellCompartment.h"
+#include "GeometryData.h"
 
 enum MSGTYPE
 {
@@ -71,7 +72,7 @@ class GLcell
 	bool isConnectionUp_;
 
 	vector< Id > renderList_;
-	vector< GLcellCompartment > renderListGLcellCompartments_;
+	GeometryData geometryData_;
 
 	vector< double > renderListAttrs_;
 	vector< double > renderListAttrsOld_;

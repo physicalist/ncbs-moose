@@ -24,6 +24,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <math.h>
+#include <time.h>
 
 #include <iostream>
 #include <string>
@@ -38,6 +39,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
+#include <boost/filesystem.hpp>
 
 #include <osg/Vec3d>
 #include <osg/ref_ptr>
@@ -46,11 +48,16 @@
 #include <osg/Geometry>
 #include <osg/ShapeDrawable>
 #include <osg/Quat>
+#include <osg/Projection>
+#include <osg/MatrixTransform>
+#include <osg/Transform>
+#include <osgText/Text>
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
 
 #include "GLcellCompartment.h"
+#include "GeometryData.h"
 #include "GLcellClient.h"
 
 // get sockaddr, IPv4 or IPv6:
@@ -86,7 +93,7 @@ int recvAll( int s, char *buf, int *len )
 	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
 }
 
-void networkLoop()
+void networkLoop( void )
 {
 	int newFd;
 
@@ -227,10 +234,10 @@ void receiveData( int newFd )
 			
 			if ( messageType == RESET) 
 			{
-				renderListGLcellCompartments_.clear();
-				archive_i >> renderListGLcellCompartments_;
+				geometryData_.renderListGLcellCompartments.clear();
+				archive_i >> geometryData_;
 
-				updateGeometry( renderListGLcellCompartments_ );
+				updateGeometry( geometryData_ );
 			}
 			else if ( messageType == PROCESS )
 			{
@@ -285,15 +292,26 @@ void receiveData( int newFd )
 	close( newFd );	
 }
 
-void updateGeometry( const std::vector< GLcellCompartment >& compartments )
+void updateGeometry( GeometryData geometryData )
 {
 	/*unsigned int numDrawables = root_->getNumDrawables();
 	if ( numDrawables > 0 )
 	root_->removeDrawables( 0, numDrawables );*/
+	
+	const std::vector< GLcellCompartment >& compartments = geometryData.renderListGLcellCompartments;
 
-	root_ = new osg::Geode;
+	root_ = new osg::Group;
+	geomParent_ = new osg::Geode;
+	geomParent_->setDataVariance( osg::Object::DYNAMIC );
+	root_->addChild( geomParent_ );
 
-	for ( unsigned int i = 0; i < compartments.size(); ++i ) {
+	textParent_ = new TextBox();
+	textParent_->setPosition( osg::Vec3d( 10, 10, 0 ) );
+	textParent_->setText( geometryData.pathName );
+	root_->addChild( &textParent_->getGroup() );
+
+	for ( unsigned int i = 0; i < compartments.size(); ++i )
+	{
 		const double& diameter = compartments[i].diameter;
 		const double& length = compartments[i].length;
 		const double& x0 = compartments[i].x0;
@@ -303,11 +321,12 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 		const double& y = compartments[i].y;
 		const double& z = compartments[i].z;
 			
-		if ( length < SIZE_EPSILON ) { // i.e., length is zero so the compartment is spherical
+		if ( length < SIZE_EPSILON )
+		{ // i.e., length is zero so the compartment is spherical
 			osg::Sphere* sphere = new osg::Sphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
 							       diameter/2 );
 			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( sphere );
-			root_->addDrawable( drawable ); // addDrawable increments ref count of drawable
+			geomParent_->addDrawable( drawable ); // addDrawable increments ref count of drawable
 		}
 		else { // the compartment is cylindrical
 			osg::Cylinder* cylinder = new osg::Cylinder( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ), 
@@ -337,7 +356,7 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 			cylinder->setRotation( osg::Quat( angle, axis ) ) ;
 
 			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( cylinder );
-			root_->addDrawable( drawable );
+			geomParent_->addDrawable( drawable );
 		}
 	}
 
@@ -351,40 +370,44 @@ void updateGeometry( const std::vector< GLcellCompartment >& compartments )
 
 void draw()
 {
-	osg::ref_ptr< osgViewer::Viewer > viewer = new osgViewer::Viewer;
-	
-	viewer->setSceneData( new osg::Geode ); // placeholder Geode to be reclaimed during first update
+	viewer_ = new osgViewer::Viewer;
+
+	viewer_->setSceneData( new osg::Geode ); // placeholder Geode to be reclaimed during first update
 	
 	osg::ref_ptr< osg::GraphicsContext::Traits > traits = new osg::GraphicsContext::Traits;
-	traits->x = 50; // window x offset in window manager
-	traits->y = 50; // likewise, y offset ...
-	traits->width = 600;
-	traits->height = 600;
+	traits->x = WINDOW_OFFSET_X; // window x offset in window manager
+	traits->y = WINDOW_OFFSET_Y; // likewise, y offset ...
+	traits->width = WINDOW_WIDTH;
+	traits->height = WINDOW_HEIGHT;
 	traits->windowDecoration = true;
 	traits->doubleBuffer = true;
 	traits->sharedContext = 0;
 
 	osg::ref_ptr< osg::GraphicsContext > gc = osg::GraphicsContext::createGraphicsContext( traits.get() );
 	
-	viewer->getCamera()->setClearColor( osg::Vec4( 0., 0., 0., 1. ) ); // black background
-	viewer->getCamera()->setGraphicsContext( gc.get() );
-	viewer->getCamera()->setViewport( new osg::Viewport( 0, 0, traits->width, traits->height ) );
+	viewer_->getCamera()->setClearColor( osg::Vec4( 0., 0., 0., 1. ) ); // black background
+	viewer_->getCamera()->setGraphicsContext( gc.get() );
+	viewer_->getCamera()->setViewport( new osg::Viewport( 0, 0, traits->width, traits->height ) );
 		
 	GLenum buffer = traits->doubleBuffer ? GL_BACK : GL_FRONT;
-	viewer->getCamera()->setDrawBuffer( buffer );
-	viewer->getCamera()->setReadBuffer( buffer );
+	viewer_->getCamera()->setDrawBuffer( buffer );
+	viewer_->getCamera()->setReadBuffer( buffer );
 
-	viewer->realize();
-	viewer->setCameraManipulator( new osgGA::TrackballManipulator() );
-	viewer->addEventHandler( new osgViewer::StatsHandler );
+	viewer_->realize();
+	viewer_->setCameraManipulator( new osgGA::TrackballManipulator );
+	viewer_->addEventHandler( new osgViewer::StatsHandler );
+	viewer_->addEventHandler( new KeystrokeHandler );
+
+	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile::WriteToFile( getSaveFilename(), "jpg", osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
+	viewer_->addEventHandler( screenCaptureHandler_ );
 
 	std::map<int, double>::iterator renderMapAttrsIterator;
 
-	while ( !viewer->done() ) {
+	while ( !viewer_->done() ) {
 		if ( isGeometryDirty_ ) {
 			isGeometryDirty_ = false;
 			
-			viewer->setSceneData( root_.get() );
+			viewer_->setSceneData( root_ );
 		}
 		if ( isColorSetDirty_ ) {
 			boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
@@ -396,7 +419,7 @@ void draw()
 				int i = renderMapAttrsIterator->first;
 				double attr = renderMapAttrsIterator->second;
 
-				osg::ShapeDrawable* drawable = static_cast<osg::ShapeDrawable*>( root_->getDrawable(i) );
+				osg::ShapeDrawable* drawable = static_cast<osg::ShapeDrawable*>( geomParent_->getDrawable(i) );
 				double red, green, blue;
 				
 				if ( attr > highValue_ )
@@ -431,8 +454,94 @@ void draw()
 				condColorSetUpdated_.notify_one(); // no-op except when responding to PROCESSSYNC
 			}
 		}
-		viewer->frame();
+		if ( isSavingMovie_ )
+			screenCaptureHandler_->captureNextFrame( *viewer_ );
+
+		viewer_->frame();
 	}
+}
+
+/*std::string getSaveFilename( bool nonSequentialName )
+{
+	static long oldTime;
+	static int i;
+
+	long currentTime = static_cast<long>( time( NULL ) ); // current time in seconds since epoch
+	std::stringstream filename;
+
+	if ( nonSequentialName )
+		filename << "Screenshot ";
+	else
+		filename << "Frame ";
+
+	if ( currentTime == oldTime )
+	{
+		i += 1;
+	}
+	else
+	{
+		i = 0;
+		oldTime = currentTime;
+	}
+
+	filename << currentTime << " " << i;
+
+	boost::filesystem::path fullPath( saveDirectory_ / filename.str() );
+
+	return fullPath.string();
+	}*/ // karan
+
+std::string getSaveFilename( void )
+{
+	std::stringstream filename;
+	filename << "Screenshot_";
+
+	/*char strTime[26];
+	time_t t;
+	time( &t );
+	strcpy( strTime, ctime( &t ) );
+	strTime[24] = '\0'; // strip '\n'
+
+	filename << strTime;*/
+
+	filename << static_cast<long>( time( NULL ) );
+	
+	boost::filesystem::path fullPath( saveDirectory_ / filename.str() );
+	return fullPath.string();
+}
+
+bool KeystrokeHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter&, osg::Object*, osg::NodeVisitor* )
+{
+	switch( ea.getEventType() )
+	{
+	case( osgGA::GUIEventAdapter::KEYDOWN):
+		if ( ea.getKey() == 'c' || ea.getKey() == 'C' )
+		{
+			screenCaptureHandler_->captureNextFrame( *viewer_ );
+
+			std::cout << "Saving screenshot. " << std::endl;
+			return true;
+		}
+		else if ( ea.getKey() == 'm' || ea.getKey() == 'M' )
+		{
+			if ( isSavingMovie_ == true )
+			{
+				isSavingMovie_ = false;
+				std::cout << "Stopping movie recording. " << std::endl;
+			}
+			else
+			{			
+				isSavingMovie_ = true;
+				std::cout << "Starting movie recording... " << std::endl;
+			}			
+			return true;
+		}
+		else
+			return false;
+	default:
+		break;
+	}
+	return false;
 }
 
 int main( int argc, char* argv[] )
@@ -442,10 +551,11 @@ int main( int argc, char* argv[] )
 		"\t-p <number>: port number\n"
 		"\t-c <string>: filename of colormap file\n"
 		"\t[-u <number>: voltage represented by colour on last line of colormap file (default is 0.05V)]\n"
-		"\t[-l <number>: voltage represented by colour on first line of colormap file (default if -0.1V)]\n";
+		"\t[-l <number>: voltage represented by colour on first line of colormap file (default if -0.1V)]\n"
+		"\t[-d <string>: pathname in which to save screenshots and sequential image files (default is ./)]\n";
 	
 	// Check command line arguments.
-	while ( ( c = getopt( argc, argv, "hp:c:u:l:" ) ) != -1 )
+	while ( ( c = getopt( argc, argv, "hp:c:u:l:d:" ) ) != -1 )
 		switch( c )
 		{
 		case 'h':
@@ -463,8 +573,17 @@ int main( int argc, char* argv[] )
 		case 'l':
 			lowValue_ = strtod( optarg, NULL );
 			break;
+		case 'd':
+			saveDirectory_ = optarg;
+			bool isValid = boost::filesystem::is_directory(saveDirectory_);
+			if ( !isValid )
+			{
+				printf( "Argument to option -d must be a valid directory name.\n" );
+				return 1;
+			}
+			break;
 		case '?':
-			if ( optopt == 'p' || optopt == 'c' || optopt == 'h' || optopt == 'l' )
+			if ( optopt == 'p' || optopt == 'c' || optopt == 'u' || optopt == 'l' || optopt == 'd' )
 				printf( "Option -%c requires an argument.\n", optopt );
 			else
 				printf( "Unknown option -%c.\n", optopt );
@@ -520,4 +639,59 @@ int main( int argc, char* argv[] )
 	draw();
 
 	return 0;
+}
+
+TextBox::TextBox()
+	:
+	matrixTransform_( new osg::MatrixTransform ),
+	projection_( new osg::Projection ),
+	textGeode_( new osg::Geode ),
+	text_( new osgText::Text )
+{
+	matrixTransform_->setReferenceFrame( osg::Transform::ABSOLUTE_RF );
+	matrixTransform_->addChild( projection_ );
+	
+	projection_->setMatrix( osg::Matrix::ortho2D( 0, WINDOW_WIDTH, 0, WINDOW_HEIGHT ) );
+	projection_->addChild( textGeode_ );
+
+	textGeode_->addDrawable( text_ );
+	textGeode_->setDataVariance( osg::Object::STATIC );
+	
+	text_->setAxisAlignment( osgText::Text::SCREEN );
+	text_->setText( "... " );
+}
+
+void TextBox::setText( const std::string& text )
+{
+	text_->setText( text );
+}
+
+void TextBox::setFont( const std::string& font )
+{
+	text_->setFont( font );
+}
+
+void TextBox::setColor( osg::Vec4d color )
+{
+	text_->setColor( color );
+}
+
+void TextBox::setPosition( osg::Vec3d position )
+{
+	text_->setPosition( position );
+}
+
+void TextBox::setTextSize( unsigned int size )
+{
+	text_->setCharacterSize( size );
+}
+
+osg::Group& TextBox::getGroup() const
+{
+	return *matrixTransform_;
+}
+
+std::string TextBox::getText() const
+{
+	return text_->getText().createUTF8EncodedString();
 }

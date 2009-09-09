@@ -264,14 +264,15 @@ void GLcell::reinitFuncLocal( const Conn* c )
 	if ( !strPath_.empty() )
 	{
 		// renderList_ holds the flattened tree of elements to render.
-		// renderListShapes_ holds a corresponding list of osg::ShapeDrawables.
 		renderList_.clear();
-		renderListGLcellCompartments_.clear();
+
+		geometryData_.pathName = strPath_;
+		geometryData_.renderListGLcellCompartments.clear();
 
 		// Start populating renderList_ with the node in strPath_ 
 		// and its children, recursively.
 		add2RenderList( Shell::path2eid( strPath_, "/", 1 ) );
-			
+
 		for ( unsigned int i = 0; i < renderList_.size(); ++i )
 		{
 
@@ -295,7 +296,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				glcellcomp.y = y;
 				glcellcomp.z = z;
 				
-				renderListGLcellCompartments_.push_back( glcellcomp );
+				geometryData_.renderListGLcellCompartments.push_back( glcellcomp );
 			}
 		}
 
@@ -304,7 +305,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 		else if ( strClientHost_.empty() )
 			std::cerr << "GLcell error: Client hostname not specified." << std::endl;
 		else
-			transmit( renderListGLcellCompartments_, RESET );
+			transmit( geometryData_, RESET );
 	}
 }
 
