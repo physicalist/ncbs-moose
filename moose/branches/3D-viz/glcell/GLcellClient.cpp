@@ -264,11 +264,6 @@ void receiveData( int newFd )
 					archive_i >> renderMapAttrs_;
 				}
 
-				if ( isColorSetDirty_ == true ) 
-				{
-					std::cerr << "skipping frame... in SYNC mode!" << std::endl;
-				}
-
 				isColorSetDirty_ = true;
 				
 				// wait for the updated color set to render to display
@@ -293,17 +288,14 @@ void receiveData( int newFd )
 }
 
 void updateGeometry( GeometryData geometryData )
-{
-	/*unsigned int numDrawables = root_->getNumDrawables();
-	if ( numDrawables > 0 )
-	root_->removeDrawables( 0, numDrawables );*/
-	
+{	
 	const std::vector< GLcellCompartment >& compartments = geometryData.renderListGLcellCompartments;
 
 	root_ = new osg::Group;
+	root_->setDataVariance( osg::Object::STATIC );
 	geomParent_ = new osg::Geode;
 	geomParent_->setDataVariance( osg::Object::DYNAMIC );
-	root_->addChild( geomParent_ );
+	root_->addChild( geomParent_.get() );
 
 	textParent_ = new TextBox();
 	textParent_->setPosition( osg::Vec3d( 10, 10, 0 ) );
@@ -361,18 +353,15 @@ void updateGeometry( GeometryData geometryData )
 	}
 
 	isGeometryDirty_ = true;
-	// Note: we don't bother with locks for sharing isGeometryDirty_ between updateGeometry()
-	// and draw(). RESETs are sent manually and it is very unlikely that two RESETs will arrive
-	// consecutively quickly enough to interrupt an update in draw(), and acquiring a lock
-	// to check isGeometryDirty_ on every frame will be expensive.
 
 }
 
 void draw()
 {
 	viewer_ = new osgViewer::Viewer;
+	viewer_->setThreadingModel( osgViewer::Viewer::SingleThreaded );
 
-	viewer_->setSceneData( new osg::Geode ); // placeholder Geode to be reclaimed during first update
+	viewer_->setSceneData( new osg::Geode );
 	
 	osg::ref_ptr< osg::GraphicsContext::Traits > traits = new osg::GraphicsContext::Traits;
 	traits->x = WINDOW_OFFSET_X; // window x offset in window manager
@@ -404,11 +393,13 @@ void draw()
 	std::map<int, double>::iterator renderMapAttrsIterator;
 
 	while ( !viewer_->done() ) {
+
 		if ( isGeometryDirty_ ) {
 			isGeometryDirty_ = false;
 			
 			viewer_->setSceneData( root_ );
 		}
+
 		if ( isColorSetDirty_ ) {
 			boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 			
@@ -454,42 +445,13 @@ void draw()
 				condColorSetUpdated_.notify_one(); // no-op except when responding to PROCESSSYNC
 			}
 		}
+
 		if ( isSavingMovie_ )
 			screenCaptureHandler_->captureNextFrame( *viewer_ );
 
 		viewer_->frame();
 	}
 }
-
-/*std::string getSaveFilename( bool nonSequentialName )
-{
-	static long oldTime;
-	static int i;
-
-	long currentTime = static_cast<long>( time( NULL ) ); // current time in seconds since epoch
-	std::stringstream filename;
-
-	if ( nonSequentialName )
-		filename << "Screenshot ";
-	else
-		filename << "Frame ";
-
-	if ( currentTime == oldTime )
-	{
-		i += 1;
-	}
-	else
-	{
-		i = 0;
-		oldTime = currentTime;
-	}
-
-	filename << currentTime << " " << i;
-
-	boost::filesystem::path fullPath( saveDirectory_ / filename.str() );
-
-	return fullPath.string();
-	}*/ // karan
 
 std::string getSaveFilename( void )
 {
