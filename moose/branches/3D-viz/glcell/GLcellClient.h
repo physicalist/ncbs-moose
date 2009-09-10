@@ -59,15 +59,14 @@ void* getInAddr( struct sockaddr* sa );
 int recvAll( int s, char* buf, int* len);
 void updateGeometry( GeometryData geometry );
 
-// karan std::string getSaveFilename( bool );
 std::string getSaveFilename( void );
 
 osg::ref_ptr< osg::Group > root_;
 osg::ref_ptr< osg::Geode > geomParent_;
 TextBox::TextBox* textParent_ = NULL;
 
-bool isGeometryDirty_ = false;
-bool isColorSetDirty_ = false;
+volatile bool isGeometryDirty_ = false;
+volatile bool isColorSetDirty_ = false;
 
 char * port_ = NULL;
 
