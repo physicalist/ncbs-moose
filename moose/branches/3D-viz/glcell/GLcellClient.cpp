@@ -276,7 +276,7 @@ void receiveData( int newFd )
 				}
 
 				// send back a one-byte ack
-				char ackBuf[0];
+				char ackBuf[1];
 				ackBuf[0] = SYNCMODE_ACKCHAR;
 				send( newFd, ackBuf, 1, 0 );
 			}
