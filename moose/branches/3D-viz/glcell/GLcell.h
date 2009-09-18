@@ -7,7 +7,7 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#include "GLcellCompartment.h"
+#include "CompartmentData.h"
 #include "GeometryData.h"
 
 enum MSGTYPE
@@ -79,6 +79,8 @@ class GLcell
 	map< int, double > renderMapAttrsTransmitted_;
 
 	void add2RenderList( Id id );
+	void findNeighbours( Id id, std::vector< unsigned int>& vecResult );
+	void findNeighboursOfType( Id id, const string& messageType, const string& targetType, std::vector< unsigned int >& vecResult );
 
 	/// networking helper functions
 	void* getInAddress( struct sockaddr *sa );

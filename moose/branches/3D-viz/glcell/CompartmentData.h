@@ -1,8 +1,11 @@
-#ifndef GLCELLCOMPARTMENT_H
-#define GLCELLCOMPARTMENT_H
+#ifndef COMPARTMENTDATA_H
+#define COMPARTMENTDATA_H
 
-struct GLcellCompartment
+struct CompartmentData
 {
+	unsigned int id;
+	std::vector<unsigned int> vNeighbourIds;
+
 	double diameter;
 	double length;
 	double x0;
@@ -15,6 +18,9 @@ struct GLcellCompartment
 	template< typename Archive > 
 	void serialize( Archive& ar, const unsigned int version )
 	{
+		ar & id;
+		ar & vNeighbourIds;
+		
 		ar & diameter;
 		ar & length;
 		ar & x0;
@@ -26,5 +32,5 @@ struct GLcellCompartment
 	}
 };
 
-#endif // GLCELLCOMPARTMENT_H
+#endif // COMPARTMENTDATA_H
 
