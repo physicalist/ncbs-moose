@@ -7,20 +7,18 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#ifndef GEOMETRYDATA_H
-#define GEOMETRYDATA_H
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
 
-struct GeometryData
-{
-	std::string pathName;
-	std::vector< CompartmentData > renderListCompartmentData;
+const double SIZE_EPSILON = 1e-8; // floating-point (FP) epsilon for 
+                                  // ... minimum compartment size
+const double FP_EPSILON = 1e-8;   // FP epsilon for comparison
 
-	template< typename Archive > 
-	void serialize( Archive& ar, const unsigned int version )
-	{
-		ar & pathName;
-		ar & renderListCompartmentData;
-	}
-};
+const int WINDOW_OFFSET_X = 50;
+const int WINDOW_OFFSET_Y = 50;
+const int WINDOW_WIDTH = 600;
+const int WINDOW_HEIGHT = 600;
 
-#endif // GEOMETRYDATA_H
+const char SYNCMODE_ACKCHAR = '*';
+
+#endif // CONSTANTS_H

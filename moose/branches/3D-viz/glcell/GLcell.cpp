@@ -35,7 +35,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include "GLcellCompartment.h"
+#include "CompartmentData.h"
 
 const int GLcell::MSGTYPE_HEADERLENGTH = 1;
 const int GLcell::MSGSIZE_HEADERLENGTH = 8;
@@ -267,7 +267,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 		renderList_.clear();
 
 		geometryData_.pathName = strPath_;
-		geometryData_.renderListGLcellCompartments.clear();
+		geometryData_.renderListCompartmentData.clear();
 
 		// Start populating renderList_ with the node in strPath_ 
 		// and its children, recursively.
@@ -276,7 +276,8 @@ void GLcell::reinitFuncLocal( const Conn* c )
 		for ( unsigned int i = 0; i < renderList_.size(); ++i )
 		{
 
-			if ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) )
+			if ( ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
+			       || renderList_[i]()->cinfo()->isA( Cinfo::find( "SymCompartment" ) ) )
 				&& get< double >( renderList_[i].eref(), "diameter", diameter )
 				&& get< double >( renderList_[i].eref(), "length", length )
 				&& get< double >( renderList_[i].eref(), "x0", x0 )
@@ -286,17 +287,24 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				&& get< double >( renderList_[i].eref(), "y", y )
 				&& get< double >( renderList_[i].eref(), "z", z ) )
 			{
-				GLcellCompartment glcellcomp;
-				glcellcomp.diameter = diameter;
-				glcellcomp.length = length;
-				glcellcomp.x0 = x0;
-				glcellcomp.y0 = y0;
-				glcellcomp.z0 = z0;
-				glcellcomp.x = x;
-				glcellcomp.y = y;
-				glcellcomp.z = z;
+				CompartmentData compartmentData;
 				
-				geometryData_.renderListGLcellCompartments.push_back( glcellcomp );
+				compartmentData.id = renderList_[i].id();
+
+				std::vector< unsigned int > vNeighbourIds;			     
+				findNeighbours( renderList_[i], vNeighbourIds );
+				compartmentData.vNeighbourIds = vNeighbourIds;
+				
+				compartmentData.diameter = diameter;
+				compartmentData.length = length;
+				compartmentData.x0 = x0;
+				compartmentData.y0 = y0;
+				compartmentData.z0 = z0;
+				compartmentData.x = x;
+				compartmentData.y = y;
+				compartmentData.z = z;
+				
+				geometryData_.renderListCompartmentData.push_back( compartmentData );
 			}
 		}
 
@@ -307,6 +315,44 @@ void GLcell::reinitFuncLocal( const Conn* c )
 		else
 			transmit( geometryData_, RESET );
 	}
+}
+
+void GLcell::findNeighbours( Id id, vector< unsigned int >& vecResult )
+{
+	// result is appended to vecResult
+	
+	findNeighboursOfType( id, "axial", "Compartment", vecResult );
+	findNeighboursOfType( id, "raxial", "Compartment", vecResult );
+	findNeighboursOfType( id, "axial", "SymCompartment", vecResult );
+	findNeighboursOfType( id, "raxial", "SymCompartment", vecResult );
+	findNeighboursOfType( id, "raxial1", "SymCompartment", vecResult );
+	findNeighboursOfType( id, "raxial2", "SymCompartment", vecResult );
+}
+
+void GLcell::findNeighboursOfType( Id id, const string& messageType, const string& targetType, std::vector< unsigned int >& vecResult )
+{
+	// This function is derived largely from BioScan::targets()
+
+	// result is appended to vecResult
+
+	Id found;
+
+	if ( messageType == "" )
+	{
+		std::cerr << "findNeighboursOfType() called with blank messageType" << std::endl;
+		return;
+	}
+
+	Conn* i = id()->targets( messageType, 0 );
+	for ( ; i->good(); i->increment() )
+	{
+		found = i->target()->id();
+
+		if ( targetType != "" &&
+		     found()->cinfo()->isA( Cinfo::find( targetType ) ) )
+			vecResult.push_back( found.id() );
+	}
+	delete i;
 }
 
 void GLcell::processFunc( const Conn* c, ProcInfo info )
@@ -368,9 +414,13 @@ void GLcell::add2RenderList( Id id )
 	for ( ; i->good(); i->increment() )
 	{
 		found = i->target()->id();
+		// Although we only display Compartment and SymCompartment types later, we don't
+		// filter by those types here because our targets might be found to be children
+		// of non-Compartments and non-SymCompartments.
 
 		children.push_back( found );
 	}
+	delete i;
 
 	// If there are any children, call add2RenderList on each of them.
 	for ( unsigned int j = 0; j < children.size(); ++j )

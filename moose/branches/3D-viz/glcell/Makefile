@@ -35,13 +35,13 @@ default: $(TARGET) $(TARGETCLIENT)
 
 $(OBJ)	: $(HEADERS)
 GLcell.o:	GLcell.h
-GLcellCompartment.o:	GLcellCompartment.h
+CompartmentData.o:	CompartmentData.h
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -I$(BOOST_INCLUDE) GLcell.cpp -c
 
 $(TARGETCLIENT):
-	$(CXX) $(CXXFLAGS) -I$(BOOST_INCLUDE) -o glcellclient GLcellClient.cpp $(BOOST_LIBS) $(OSG_LIBS)
+	$(CXX) $(CXXFLAGS) -I$(BOOST_INCLUDE) -o glcellclient GLcellClient.cpp TextBox.cpp $(BOOST_LIBS) $(OSG_LIBS)
 
 $(TARGET): $(OBJ) $(HEADERS)
 	$(LD) -r -o $(TARGET) $(OBJ)

@@ -51,13 +51,13 @@
 #include <osg/Projection>
 #include <osg/MatrixTransform>
 #include <osg/Transform>
-#include <osgText/Text>
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
 
-#include "GLcellCompartment.h"
+#include "CompartmentData.h"
 #include "GeometryData.h"
+#include "TextBox.h"
 #include "GLcellClient.h"
 
 // get sockaddr, IPv4 or IPv6:
@@ -234,7 +234,7 @@ void receiveData( int newFd )
 			
 			if ( messageType == RESET) 
 			{
-				geometryData_.renderListGLcellCompartments.clear();
+				geometryData_.renderListCompartmentData.clear();
 				archive_i >> geometryData_;
 
 				updateGeometry( geometryData_ );
@@ -289,18 +289,20 @@ void receiveData( int newFd )
 
 void updateGeometry( GeometryData geometryData )
 {	
-	const std::vector< GLcellCompartment >& compartments = geometryData.renderListGLcellCompartments;
+	const std::vector< CompartmentData >& compartments = geometryData.renderListCompartmentData;
 
-	root_ = new osg::Group;
+	root_ = new osg::Group; // root_ is an osg::ref_ptr
 	root_->setDataVariance( osg::Object::STATIC );
-	geomParent_ = new osg::Geode;
+	geomParent_ = new osg::Geode; // geomParent_ is an osg::ref_ptr
 	geomParent_->setDataVariance( osg::Object::DYNAMIC );
 	root_->addChild( geomParent_.get() );
 
+	if ( textParent_ != NULL)
+		delete textParent_;
 	textParent_ = new TextBox();
 	textParent_->setPosition( osg::Vec3d( 10, 10, 0 ) );
 	textParent_->setText( geometryData.pathName );
-	root_->addChild( &textParent_->getGroup() );
+	root_->addChild( textParent_->getGroup() );
 
 	for ( unsigned int i = 0; i < compartments.size(); ++i )
 	{
@@ -314,13 +316,16 @@ void updateGeometry( GeometryData geometryData )
 		const double& z = compartments[i].z;
 			
 		if ( length < SIZE_EPSILON )
-		{ // i.e., length is zero so the compartment is spherical
+		{ 
+			// i.e., length is zero so the compartment is spherical
 			osg::Sphere* sphere = new osg::Sphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
 							       diameter/2 );
 			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( sphere );
 			geomParent_->addDrawable( drawable ); // addDrawable increments ref count of drawable
 		}
-		else { // the compartment is cylindrical
+		else
+		{ 
+			// the compartment is cylindrical
 			osg::Cylinder* cylinder = new osg::Cylinder( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ), 
 								     diameter/2, length );
 
@@ -506,6 +511,7 @@ bool KeystrokeHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActio
 	return false;
 }
 
+
 int main( int argc, char* argv[] )
 {
 	int c;
@@ -601,59 +607,4 @@ int main( int argc, char* argv[] )
 	draw();
 
 	return 0;
-}
-
-TextBox::TextBox()
-	:
-	matrixTransform_( new osg::MatrixTransform ),
-	projection_( new osg::Projection ),
-	textGeode_( new osg::Geode ),
-	text_( new osgText::Text )
-{
-	matrixTransform_->setReferenceFrame( osg::Transform::ABSOLUTE_RF );
-	matrixTransform_->addChild( projection_ );
-	
-	projection_->setMatrix( osg::Matrix::ortho2D( 0, WINDOW_WIDTH, 0, WINDOW_HEIGHT ) );
-	projection_->addChild( textGeode_ );
-
-	textGeode_->addDrawable( text_ );
-	textGeode_->setDataVariance( osg::Object::STATIC );
-	
-	text_->setAxisAlignment( osgText::Text::SCREEN );
-	text_->setText( "... " );
-}
-
-void TextBox::setText( const std::string& text )
-{
-	text_->setText( text );
-}
-
-void TextBox::setFont( const std::string& font )
-{
-	text_->setFont( font );
-}
-
-void TextBox::setColor( osg::Vec4d color )
-{
-	text_->setColor( color );
-}
-
-void TextBox::setPosition( osg::Vec3d position )
-{
-	text_->setPosition( position );
-}
-
-void TextBox::setTextSize( unsigned int size )
-{
-	text_->setCharacterSize( size );
-}
-
-osg::Group& TextBox::getGroup() const
-{
-	return *matrixTransform_;
-}
-
-std::string TextBox::getText() const
-{
-	return text_->getText().createUTF8EncodedString();
 }
