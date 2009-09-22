@@ -4,7 +4,7 @@
 struct CompartmentData
 {
 	unsigned int id;
-	std::vector<unsigned int> vNeighbourIds;
+	std::vector< unsigned int > vNeighbourIds;
 
 	double diameter;
 	double length;

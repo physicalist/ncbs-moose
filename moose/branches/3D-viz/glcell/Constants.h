@@ -21,4 +21,6 @@ const int WINDOW_HEIGHT = 600;
 
 const char SYNCMODE_ACKCHAR = '*';
 
+const double DEFAULT_INCREMENT_ANGLE = 10;
+
 #endif // CONSTANTS_H

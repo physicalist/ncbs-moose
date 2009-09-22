@@ -362,29 +362,34 @@ void GLcell::processFunc( const Conn* c, ProcInfo info )
 
 void GLcell::processFuncLocal( Eref e, ProcInfo info )
 {
-	double attr;
+	unsigned int id;
+	double attrValue;
        
 	if ( !renderList_.empty() )
 	{
-		renderListAttrsOld_ = renderListAttrs_;
-		renderListAttrs_.clear();
 		renderMapAttrsTransmitted_.clear();
 		
 		for ( unsigned int i = 0; i < renderList_.size(); ++i )
 		{
-			if ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
-			     && get< double >( renderList_[i].eref(), strAttributeName_.c_str(), attr ) )
+			if ( ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
+			       || renderList_[i]()->cinfo()->isA( Cinfo::find( "SymCompartment" ) ) )
+			     && get< double >( renderList_[i].eref(), strAttributeName_.c_str(), attrValue ) )
 			{
-				renderListAttrs_.push_back( attr );
-			}
-		}
+				id = renderList_[i].id();
 
-		for ( unsigned int j = 0; j < renderListAttrs_.size(); ++j )
-		{
-			if ( ( renderListAttrsOld_.size() == 0 )  || // on the first PROCESS after a RESET
-			     syncMode_ ||                            // or we're in sync mode
-			     ( fabs(renderListAttrs_[j] - renderListAttrsOld_[j]) > changeThreshold_ ) )
-				renderMapAttrsTransmitted_[j] = renderListAttrs_[j];
+				if ( ( renderMapAttrsLastTransmitted_.size() == 0 )  ||
+				     // on the first PROCESS after a RESET
+
+				     syncMode_ ||
+				     // or we're in sync mode
+
+				     ( fabs( attrValue - renderMapAttrsLastTransmitted_[id] ) > changeThreshold_ ) )
+				     // or the current change differs significantly from
+				     // that last transmitted for this compartment
+				{
+					renderMapAttrsLastTransmitted_[id] = renderMapAttrsTransmitted_[id] = attrValue;
+				}
+			}
 		}
 
 		if ( syncMode_ )
