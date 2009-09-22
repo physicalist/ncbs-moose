@@ -74,9 +74,8 @@ class GLcell
 	vector< Id > renderList_;
 	GeometryData geometryData_;
 
-	vector< double > renderListAttrs_;
-	vector< double > renderListAttrsOld_;
-	map< int, double > renderMapAttrsTransmitted_;
+	map< unsigned int, double > renderMapAttrsLastTransmitted_;
+	map< unsigned int, double > renderMapAttrsTransmitted_;
 
 	void add2RenderList( Id id );
 	void findNeighbours( Id id, std::vector< unsigned int>& vecResult );

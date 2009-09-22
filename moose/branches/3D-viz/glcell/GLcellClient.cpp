@@ -58,6 +58,10 @@
 #include "CompartmentData.h"
 #include "GeometryData.h"
 #include "TextBox.h"
+#include "GLCompartmentCylinder.h"
+#include "GLCompartmentSphere.h"
+#include "GLCompartment.h"
+
 #include "GLcellClient.h"
 
 // get sockaddr, IPv4 or IPv6:
@@ -290,6 +294,20 @@ void receiveData( int newFd )
 void updateGeometry( GeometryData geometryData )
 {	
 	const std::vector< CompartmentData >& compartments = geometryData.renderListCompartmentData;
+	
+	if ( mapId2GLCompartment_.size() > 0 )
+	{
+		std::map< unsigned int, GLCompartment *>::iterator id2glcompIterator;
+
+		for ( id2glcompIterator = mapId2GLCompartment_.begin();
+		      id2glcompIterator != mapId2GLCompartment_.end();
+		      id2glcompIterator++ )
+		{
+			delete id2glcompIterator->second;
+		}
+
+		mapId2GLCompartment_.clear();
+	}
 
 	root_ = new osg::Group; // root_ is an osg::ref_ptr
 	root_->setDataVariance( osg::Object::STATIC );
@@ -304,8 +322,10 @@ void updateGeometry( GeometryData geometryData )
 	textParent_->setText( geometryData.pathName );
 	root_->addChild( textParent_->getGroup() );
 
-	for ( unsigned int i = 0; i < compartments.size(); ++i )
+	// First pass: create the basic hollow cylinders with no end-caps
+	for ( int i = 0; i < compartments.size(); ++i )
 	{
+		const unsigned int& id = compartments[i].id;
 		const double& diameter = compartments[i].diameter;
 		const double& length = compartments[i].length;
 		const double& x0 = compartments[i].x0;
@@ -315,32 +335,33 @@ void updateGeometry( GeometryData geometryData )
 		const double& y = compartments[i].y;
 		const double& z = compartments[i].z;
 			
-		if ( length < SIZE_EPSILON )
-		{ 
+		if ( length < SIZE_EPSILON ) 
 			// i.e., length is zero so the compartment is spherical
-			osg::Sphere* sphere = new osg::Sphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
-							       diameter/2 );
-			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( sphere );
-			geomParent_->addDrawable( drawable ); // addDrawable increments ref count of drawable
-		}
-		else
 		{ 
+			GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
+									       diameter/2,
+									       DEFAULT_INCREMENT_ANGLE );
+			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( sphere ); // to call the polymorphic function setColor() later
+
+			osg::Geometry* sphereGeom = sphere->getGeometry();
+			geomParent_->addDrawable( sphereGeom ); // addDrawable increments ref count of drawable
+		}
+		else 
 			// the compartment is cylindrical
-			osg::Cylinder* cylinder = new osg::Cylinder( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ), 
-								     diameter/2, length );
-
-			/// OSG Cylinders are initially oriented along (0,0,1). To orient them
-			/// according to readcell's specification of (the line joining) the
-			/// centers of their circular faces, they must be rotated around 
-			/// an axis given by the cross-product of the initial and final
-			/// vectors, by an angle given by the dot-product of the same.
+		{ 
+			// GLCompartmentCylinders (like OSG::Cylinders) are oriented
+			// by default along (0,0,1). To orient them
+			// according to readcell's specification of (the line joining) the
+			// centers of their circular faces, they must be rotated around 
+			// an axis given by the cross-product of the initial and final
+			// vectors, by an angle given by the dot-product of the same.
 					
-			/// Also note that although readcell's conventions for the x,y,z directions
-			/// differ from OSG's, (in OSG z is down to up and y is perpendicular 
-			/// to the display, pointing inward), OSG's viewer chooses
-			/// a suitable viewpoint by default.
+			// Also note that although readcell's conventions for 
+			// the x,y,z directions differ from OSG's, (in OSG z is down to up
+			// and y is perpendicular to the display, pointing inward),
+			// OSG's viewer chooses a suitable viewpoint by default.
 
-			osg::Vec3f initial( 0.0f, 0.0f, 1.0f);
+			osg::Vec3f initial( 0.0f, 0.0f, 1.0f );
 			initial.normalize();
 
 			osg::Vec3f final( x-x0, y-y0, z-z0 );
@@ -350,12 +371,37 @@ void updateGeometry( GeometryData geometryData )
 			osg::Vec3f axis = initial ^ final;
 			axis.normalize();
 
-			cylinder->setRotation( osg::Quat( angle, axis ) ) ;
+			GLCompartmentCylinder* cylinder = new GLCompartmentCylinder( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
+										     osg::Quat( angle, axis ),
+										     length,
+										     diameter / 2,
+										     DEFAULT_INCREMENT_ANGLE );
+			
+			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( cylinder ); // to call the polymorphic function setColor() later
 
-			osg::ShapeDrawable* drawable = new osg::ShapeDrawable( cylinder );
-			geomParent_->addDrawable( drawable );
+			osg::Geometry* cylinderGeom = cylinder->getGeometry();
+			geomParent_->addDrawable( cylinderGeom );
 		}
 	}
+
+	// TODO karan Second pass: for cylinders only (look at length) find neighbours and create interpolated joints
+	/*for ( int i = 0; i < compartments.size(); ++i )
+	{
+		const unsigned int& id = compartments[i].id;
+		const std::vector< unsigned int > vNeighbourIds = compartments[i].vNeighbourIds;
+
+		for ( int j = 0; j < vNeighbourIds.size(); ++j )
+		{
+			if ( mapId2GLCompartment_[id]->getCompartmentType() == CYLINDER &&
+			     mapId2GLCompartment_[vNeighbourIds[j]]->getCompartmentType() == CYLINDER )
+			{
+				dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[id] )->
+					addHalfJointToNeighbour( dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[vNeighbourIds[j]] ) );
+			}
+		} 
+	 }*/
+
+	// TODO Third pass: for cylinders only (look at length) form hemispherical end-caps on any joints not yet attached to neighbours.
 
 	isGeometryDirty_ = true;
 
@@ -395,7 +441,7 @@ void draw()
 	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile::WriteToFile( getSaveFilename(), "jpg", osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
 	viewer_->addEventHandler( screenCaptureHandler_ );
 
-	std::map<int, double>::iterator renderMapAttrsIterator;
+	std::map< unsigned int, double >::iterator renderMapAttrsIterator;
 
 	while ( !viewer_->done() ) {
 
@@ -412,10 +458,10 @@ void draw()
 			      renderMapAttrsIterator != renderMapAttrs_.end();
 			      renderMapAttrsIterator++ )
 			{
-				int i = renderMapAttrsIterator->first;
+				unsigned int id = renderMapAttrsIterator->first;
 				double attr = renderMapAttrsIterator->second;
 
-				osg::ShapeDrawable* drawable = static_cast<osg::ShapeDrawable*>( geomParent_->getDrawable(i) );
+				GLCompartment* glcompartment = mapId2GLCompartment_[id];
 				double red, green, blue;
 				
 				if ( attr > highValue_ )
@@ -440,7 +486,7 @@ void draw()
 					blue  = colormap_[ ix ][ 2 ];
 				}
 
-				drawable->setColor( osg::Vec4( red, green, blue, 1.0f ) );
+				glcompartment->setColor( osg::Vec4( red, green, blue, 1.0f ) );
 			}
 
 			{

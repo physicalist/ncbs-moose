@@ -41,6 +41,8 @@ osg::ref_ptr< osg::Group > root_;
 osg::ref_ptr< osg::Geode > geomParent_;
 TextBox::TextBox* textParent_ = NULL;
 
+std::map< unsigned int, GLCompartment* > mapId2GLCompartment_;
+
 volatile bool isGeometryDirty_ = false;
 volatile bool isColorSetDirty_ = false;
 
@@ -62,7 +64,7 @@ boost::filesystem::path saveDirectory_(".");
 GeometryData geometryData_;
 
 // Attribute values mapped to colors, received in PROCESS step:
-std::map< int, double > renderMapAttrs_;
+std::map< unsigned int, double > renderMapAttrs_;
 
 boost::mutex mutexColorSetSaved_;
 boost::mutex mutexColorSetUpdated_;
