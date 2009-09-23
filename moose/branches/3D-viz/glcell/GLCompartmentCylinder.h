@@ -18,27 +18,28 @@ public:
 
 	osg::ref_ptr< osg::Geometry > getGeometry();
 
-	void addHemisphericalCap( bool leftEndP );
-	bool addHalfJointToNeighbour( GLCompartmentCylinder* neighbour );
+	void addHalfJointToNeighbour( GLCompartmentCylinder* neighbour );
+	void closeOpenEnds();
 
 	void setColor( osg::Vec4 color );
-
+	
 	int getCompartmentType();
 
-	bool isLeftEndClosed;
-	bool isRightEndClosed;
+	bool isPointInsideCylinder( osg::Vec3& testPoint );
 
 	osg::ref_ptr< osg::Vec3Array > ringRight;
 	osg::ref_ptr< osg::Vec3Array > ringLeft;
 
 private:
-	osg::Vec3 makeNormal( const osg::Vec3& P1, const osg::Vec3& P2, const osg::Vec3& P3 );
-  
 	osg::Vec3 position_;
 	osg::Quat quatRotation_;
 	double height_;
 	double radius_;
 	double incrementAngle_;
+	bool isLeftEndClosed_;
+	bool isRightEndClosed_;
+
+	void addHemisphericalCap( bool leftEndP );
 
 	osg::ref_ptr< osg::Geometry > cylGeometry_;
 	osg::ref_ptr< osg::Vec3Array > cylVertices_;

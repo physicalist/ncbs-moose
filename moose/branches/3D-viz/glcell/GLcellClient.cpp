@@ -384,8 +384,8 @@ void updateGeometry( GeometryData geometryData )
 		}
 	}
 
-	// TODO karan Second pass: for cylinders only (look at length) find neighbours and create interpolated joints
-	/*for ( int i = 0; i < compartments.size(); ++i )
+	// Second pass: for cylinders only, find neighbours and create interpolated joints
+	for ( int i = 0; i < compartments.size(); ++i )
 	{
 		const unsigned int& id = compartments[i].id;
 		const std::vector< unsigned int > vNeighbourIds = compartments[i].vNeighbourIds;
@@ -399,13 +399,69 @@ void updateGeometry( GeometryData geometryData )
 					addHalfJointToNeighbour( dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[vNeighbourIds[j]] ) );
 			}
 		} 
-	 }*/
+	 }
 
-	// TODO Third pass: for cylinders only (look at length) form hemispherical end-caps on any joints not yet attached to neighbours.
+	// Third pass: for cylinders only, form hemispherical end-caps on any joints not yet attached to neighbours.
+	for ( int i = 0; i < compartments.size(); ++i )
+	{
+		const unsigned int& id = compartments[i].id;
+
+		if ( mapId2GLCompartment_[id]->getCompartmentType() == CYLINDER)
+		{
+			dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[id] )->closeOpenEnds();
+		}
+	}
+
 
 	isGeometryDirty_ = true;
 
 }
+
+/* DEBUGGING UTILITY FUNCTIONS INTENDED TO BE INVOKED FROM GDB
+GLCompartment* mapres(std::map<unsigned int, GLCompartment*> const& m, int key) // karan TODO remove this
+{
+	for(std::map<unsigned int, GLCompartment*>::const_iterator i(m.begin()), j(m.end()); i != j; ++i)
+	{
+		if (i->first == key)
+			return i->second;
+	}
+}
+
+void dumpdist(std::map< unsigned int, GLCompartment* > mapId2Comp, std::vector< CompartmentData >& compartments) // karan TODO remove this
+{
+	for (int i = 0; i < compartments.size(); i++)
+	{
+		const unsigned int& id = compartments[i].id;
+		const std::vector< unsigned int > vNeighbourIds = compartments[i].vNeighbourIds;
+
+		for ( int j = 0; j < vNeighbourIds.size(); ++j )
+		{
+			if ( mapId2GLCompartment_[id]->getCompartmentType() == CYLINDER &&
+			     mapId2GLCompartment_[vNeighbourIds[j]]->getCompartmentType() == CYLINDER )
+			{
+				double x = (compartments[i].x+compartments[i].x0)/2;
+				double y = (compartments[i].y+compartments[i].y0)/2;
+				double z = (compartments[i].z+compartments[i].z0)/2;
+
+				GLCompartmentCylinder* neighbour = dynamic_cast<GLCompartmentCylinder*>(mapId2Comp[vNeighbourIds[j]]);
+				
+				double nx = neighbour->position_[0];
+				double ny = neighbour->position_[1];
+				double nz = neighbour->position_[2];
+				
+			        double dist = sqrt( pow(x-nx,2) + pow(y-ny,2) + pow(z-nz,2) );
+				if (dist > 0.0001)
+				{
+					std::cout << id << " @ " << x << ", " << y << ", " << z << "        and "; 
+					std::cout << vNeighbourIds[j] << "@" << nx << ", " << ny << ", " << nz << "     ";
+					std::cout << compartments[i].x << " " << compartments[i].y << " " << compartments[i].z << " " ;
+					std::cout << compartments[i].x0 << " " << compartments[i].y0 << " " << compartments[i].z0 << std::endl;
+				}
+			}
+		}
+	}
+}
+*/
 
 void draw()
 {

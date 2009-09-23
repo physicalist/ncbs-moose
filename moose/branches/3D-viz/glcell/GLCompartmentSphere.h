@@ -22,7 +22,6 @@ public:
 	int getCompartmentType();
 
 private:
-	osg::Vec3 makeNormal( const osg::Vec3& P1, const osg::Vec3& P2, const osg::Vec3& P3 );
 	void addHemisphericalCap( bool leftEndP );
   
 	osg::Vec3 position_;

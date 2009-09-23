@@ -26,8 +26,8 @@ GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 position, osg::Quat quat
 	height_( height ),
 	radius_( radius ),
 	incrementAngle_( incrementAngle ),
-	isLeftEndClosed( false ),
-	isRightEndClosed( false ),
+	isLeftEndClosed_( false ),
+	isRightEndClosed_( false ),
 	ringRight( new osg::Vec3Array ),
 	ringLeft( new osg::Vec3Array )
 { 
@@ -100,7 +100,7 @@ osg::ref_ptr< osg::Geometry > GLCompartmentCylinder::getGeometry()
 {
 	return cylGeometry_;
 }
- 
+
 int GLCompartmentCylinder::getCompartmentType()
 {
 	return CYLINDER;
@@ -115,24 +115,60 @@ void GLCompartmentCylinder::setColor( osg::Vec4 color )
 	cylGeometry_->setColorBinding( osg::Geometry::BIND_OVERALL );
 }
 
-osg::Vec3 GLCompartmentCylinder::makeNormal( const osg::Vec3& P1, const osg::Vec3& P2, const osg::Vec3& P3 )
+////////////////////////////////////////////////////////////////////////
+// The following function, isPointInsideCylinder, is derived from     //
+// http://www.flipcode.com/archives/Fast_Point-In-Cylinder_Test.shtml //
+// The original code is in the public domain.			      //
+////////////////////////////////////////////////////////////////////////
+bool GLCompartmentCylinder::isPointInsideCylinder( osg::Vec3& testPoint )
 {
-	osg::Vec3 U = osg::Vec3( P2[0]-P1[0], P2[1]-P1[1], P2[2]-P1[2] );
-	osg::Vec3 V = osg::Vec3( P3[0]-P1[0], P3[1]-P1[1], P3[2]-P1[2] );
+	// p1 is the point at the center of the base-face of the cylinder.
+	osg::Vec3 p1 = rotateTranslatePoint( osg::Vec3( 0, 0, -height_/2 ),
+					     quatRotation_,
+					     position_);
 
-	osg::Vec3 Normal;
+	// p2 is the point at the center of the top-face of the cylinder.
+	osg::Vec3 p2 = rotateTranslatePoint( osg::Vec3( 0, 0, height_/2 ),
+					     quatRotation_,
+					     position_);
+	
+	// vector d goes from p1 to p2
+	osg::Vec3 d = p2 - p1;
+	
+	// vector pd goes from p1 to testPoint
+	osg::Vec3 pd = testPoint - p1;
 
-	Normal[0] = U[1]*V[2] - U[2]*V[1];
-	Normal[1] = U[2]*V[0] - U[0]*V[2];
-	Normal[2] = U[0]*V[1] - U[1]*V[0];
+	// Dot the d and pd vectors to see if point lies behind the 
+	// cylinder cap at pt1.x, pt1.y, pt1.z
 
-	double mag = sqrt( Normal[0]*Normal[0] + Normal[1]*Normal[1] + Normal[2]*Normal[2] );
+	double dot = pd * d;
 
-	Normal[0] /= mag;
-	Normal[1] /= mag;
-	Normal[2] /= mag;
+	if ( dot < 0 || dot > pow( height_, 2 ) )
+	{
+		return false; // testPoint is not between base and top faces
+	}
+	else
+	{
+		// Distance squared to the cylinder axis
+		double dsq = ( pd * pd ) - ( dot * dot ) / pow( height_, 2 );
 
-	return Normal;
+		if ( dsq > pow (radius_, 2 ) )
+		{
+			return false; // testPoint is outside the radius
+		}
+	}
+
+	return true;
+}
+
+
+void GLCompartmentCylinder::closeOpenEnds()
+{
+	if ( !isLeftEndClosed_ )
+		addHemisphericalCap( true );
+
+	if ( !isRightEndClosed_)
+		addHemisphericalCap( false );
 }
 
 void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
@@ -230,7 +266,14 @@ void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
 	}
 }
 
-bool GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neighbour )
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// The following function adds half a joint between self and neighbour; a corresponding call on the neighbour object    //
+// will add the other half thus completing the joint. Thus all joints are composed of two half-joints, with each half   //
+// belonging to the geometry of its closer compartment. This is useful in the case where the two compartments have      //
+// different values for the attribute under observation and are colored differently; joints will then carry both colors //
+// in equal parts.												        //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neighbour )
 {
 	// Helper function classes
 	class distance_
@@ -262,34 +305,36 @@ bool GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 	// The choice of constraining the y-ordinate as opposed to choosing the closest points is arbitrary, but it simplifies
 	// our task and the differences between ring distances are expected to be large enough that this shouldn't matter.
 
-	std::vector< double > vecY; // temporary
 	osg::Vec3Array* selfRing;      // this will be made to point to self's ring closest to the neighbour
 	std::vector< double >::size_type iMaxYSelfRing;
 	osg::Vec3Array* neighbourRing; // this will be made to point to the neighbour's ring closest to self
 	std::vector< double >::size_type iMaxYNeighbourRing;
+
+	class getIMaxY_
+	{
+	public:
+		std::vector< double >::size_type operator() ( osg::Vec3Array * vec )
+		{
+			for ( int i = 0; i < vec->size(); ++i )
+			{
+				vecY.push_back( ( *vec )[i][1] );
+			}
+			return std::max_element(vecY.begin(), vecY.end()) - vecY.begin();
+		}
+	private:
+		std::vector< double > vecY;		
+	} getIMaxY;
 	
+
 	osg::Vec3Array* selfRingRight = ringRight;
-	for ( int i = 0; i < selfRingRight->size(); ++i )
-		vecY.push_back( ( *selfRingRight )[i][1] );
-	std::vector< double >::size_type iMaxYSelfRingRight = std::max_element(vecY.begin(), vecY.end()) - vecY.begin();
-
-	vecY.clear();
 	osg::Vec3Array* selfRingLeft = ringLeft;
-	for ( int i = 0; i < selfRingLeft->size(); ++i )
-		vecY.push_back( ( *selfRingLeft )[i][1] );
-	std::vector< double >::size_type iMaxYSelfRingLeft = std::max_element(vecY.begin(), vecY.end()) - vecY.begin();
-
-	vecY.clear();
 	osg::Vec3Array* neighbourRingRight = neighbour->ringRight;
-	for ( int i = 0; i < neighbourRingRight->size(); ++i )
-		vecY.push_back( ( *neighbourRingRight )[i][1] );
-	std::vector< double >::size_type iMaxYNeighbourRingRight = std::max_element(vecY.begin(), vecY.end()) - vecY.begin();
-    
-	vecY.clear();
 	osg::Vec3Array* neighbourRingLeft = neighbour->ringLeft;
-	for ( int i = 0; i < neighbourRingLeft->size(); ++i )
-		vecY.push_back( ( *neighbourRingLeft )[i][1] );
-	std::vector< double >::size_type iMaxYNeighbourRingLeft = std::max_element(vecY.begin(), vecY.end()) - vecY.begin();
+
+	std::vector< double >::size_type iMaxYSelfRingRight = getIMaxY( selfRingRight );
+	std::vector< double >::size_type iMaxYSelfRingLeft = getIMaxY( selfRingLeft );
+	std::vector< double >::size_type iMaxYNeighbourRingRight = getIMaxY( neighbourRingRight );
+	std::vector< double >::size_type iMaxYNeighbourRingLeft = getIMaxY( neighbourRingLeft );
 
 	// leftLeft == left ring of self against left ring of neighbour, and so on...
 	double leftLeftDistance = distance( ( *selfRingLeft )[iMaxYSelfRingLeft], ( *neighbourRingLeft )[iMaxYNeighbourRingLeft] );
@@ -341,8 +386,47 @@ bool GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 		}
 	}
 
-	// Now that the neighbour's nearest ring has been found, we add new vertices (and faces)
-	// at the midpoints between corresponding points of selfRing and the neighbour's ring.
+	
+	if (isLeftSelfRingCloser)
+	{
+		isLeftEndClosed_ = true;
+	}
+	else
+	{
+		isRightEndClosed_ = true;
+	}
+
+	/*// Now that the neighbour's nearest ring has been found, we check if our closest ring lies
+	// completely within the body of the neighbour or if the neighbour's lies completely within ours.
+	// In either case, no half-joint is constructed.
+
+	bool notAllPointsInside = false;
+
+	for ( int i = 0; i < selfRing->size(); ++i )
+	{
+		if ( ! ( neighbour->isPointInsideCylinder( ( *selfRing )[i] ) ) )
+		{
+			notAllPointsInside = true;
+		}
+	}
+
+	for ( int i = 0; i < neighbourRing->size(); ++i )
+	{
+		if ( ! ( isPointInsideCylinder( ( *neighbourRing )[i] ) ) )
+		{
+			notAllPointsInside = true;
+		}
+	}
+
+	if ( ! notAllPointsInside )
+	{
+		return;
+	 }*/
+
+	// Now that we have verified that the half-joint will not be created completely within our own
+	// body or within the neighbour's body, we can proceed with constructing it. 
+	// We add new vertices (and faces) at the midpoints between corresponding points of selfRing
+	// and the neighbour's ring.
 
 	int iDiff = iMaxYNeighbourRing - iMaxYSelfRing;
 	int oldSizeCylVertices = cylVertices_->size();
@@ -393,6 +477,5 @@ bool GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 							    ( *cylVertices_ )[ oldSizeCylVertices + j*4 + 1 ],
 							    ( *cylVertices_ )[ oldSizeCylVertices + j*4 + 2 ] ) );
 		}
-	}
-	return isLeftSelfRingCloser;
+	}       
 }
