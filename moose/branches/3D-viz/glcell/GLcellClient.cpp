@@ -620,8 +620,8 @@ int main( int argc, char* argv[] )
 	char* strHelp = "Usage: glcellclient\n"
 		"\t-p <number>: port number\n"
 		"\t-c <string>: filename of colormap file\n"
-		"\t[-u <number>: voltage represented by colour on last line of colormap file (default is 0.05V)]\n"
-		"\t[-l <number>: voltage represented by colour on first line of colormap file (default if -0.1V)]\n"
+		"\t[-u <number>: value represented by colour on last line of colormap file (default is 0.05V)]\n"
+		"\t[-l <number>: value represented by colour on first line of colormap file (default if -0.1V)]\n"
 		"\t[-d <string>: pathname in which to save screenshots and sequential image files (default is ./)]\n";
 	
 	// Check command line arguments.
