@@ -315,6 +315,8 @@ void GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 	public:
 		std::vector< double >::size_type operator() ( osg::Vec3Array * vec )
 		{
+			vecY.clear();
+		  
 			for ( int i = 0; i < vec->size(); ++i )
 			{
 				vecY.push_back( ( *vec )[i][1] );
