@@ -56,6 +56,7 @@
 #include <osgGA/TrackballManipulator>
 
 #include "CompartmentData.h"
+#include "AckPickData.h"
 #include "GeometryData.h"
 #include "TextBox.h"
 #include "GLCompartmentCylinder.h"
@@ -63,6 +64,67 @@
 #include "GLCompartment.h"
 
 #include "GLcellClient.h"
+
+
+bool KeystrokeHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa, osg::Object*, osg::NodeVisitor* )
+{
+	osgViewer::Viewer *viewer = dynamic_cast< osgViewer::Viewer* >( &aa );
+	if ( ! viewer )
+		return false;
+
+	switch( ea.getEventType() )
+	{
+	case ( osgGA::GUIEventAdapter::PUSH ) :
+	case ( osgGA::GUIEventAdapter::MOVE ) :
+		x_ = ea.getX(); // record mouse location
+		y_ = ea.getY();
+		return false;
+	case ( osgGA::GUIEventAdapter::RELEASE ) :
+		// if the mouse hasn't moved since the last PUSH or MOVE,
+		// perform a pick. otherwise let TrackBallManipulator handle this.
+		if ( x_ == ea.getX() && y_ == ea.getY() )
+		{
+			if ( pick( ea.getXnormalized(), ea.getYnormalized(), viewer ) )
+				return true;
+		}
+		return false;
+	case ( osgGA::GUIEventAdapter::KEYDOWN ) :
+		if ( ea.getKey() == 'c' || ea.getKey() == 'C' )
+		{
+			screenCaptureHandler_->captureNextFrame( *viewer_ );
+
+			std::cout << "Saving screenshot. " << std::endl;
+			return true;
+		}
+		else if ( ea.getKey() == 'm' || ea.getKey() == 'M' )
+		{
+			if ( isSavingMovie_ == true )
+			{
+				isSavingMovie_ = false;
+				std::cout << "Stopping movie recording. " << std::endl;
+			}
+			else
+			{			
+				isSavingMovie_ = true;
+				std::cout << "Starting movie recording... " << std::endl;
+			}			
+			return true;
+		}
+		else
+			return false;
+	default:
+		break;
+	}
+	return false;
+}
+
+bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* viewer )
+{
+	if ( ! viewer->getSceneData() )
+		return false;
+
+	// TODO karan
+}
 
 // get sockaddr, IPv4 or IPv6:
 void* getInAddr( struct sockaddr* sa )
@@ -104,7 +166,9 @@ void networkLoop( void )
 	while ( true )
 	{
 		if ( (newFd = acceptNewConnection( port_ )) != -1 )
+		{
 			receiveData( newFd );
+		}		
 		else
 		{
 			std::cerr << "Error in network loop... exiting." << std::endl;
@@ -578,41 +642,6 @@ std::string getSaveFilename( void )
 	boost::filesystem::path fullPath( saveDirectory_ / filename.str() );
 	return fullPath.string();
 }
-
-bool KeystrokeHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter&, osg::Object*, osg::NodeVisitor* )
-{
-	switch( ea.getEventType() )
-	{
-	case( osgGA::GUIEventAdapter::KEYDOWN):
-		if ( ea.getKey() == 'c' || ea.getKey() == 'C' )
-		{
-			screenCaptureHandler_->captureNextFrame( *viewer_ );
-
-			std::cout << "Saving screenshot. " << std::endl;
-			return true;
-		}
-		else if ( ea.getKey() == 'm' || ea.getKey() == 'M' )
-		{
-			if ( isSavingMovie_ == true )
-			{
-				isSavingMovie_ = false;
-				std::cout << "Stopping movie recording. " << std::endl;
-			}
-			else
-			{			
-				isSavingMovie_ = true;
-				std::cout << "Starting movie recording... " << std::endl;
-			}			
-			return true;
-		}
-		else
-			return false;
-	default:
-		break;
-	}
-	return false;
-}
-
 
 int main( int argc, char* argv[] )
 {

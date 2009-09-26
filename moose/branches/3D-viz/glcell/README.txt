@@ -111,8 +111,8 @@ simulation will proceed faster than when 'sync' is 'on'.
 > setfield gl0 sync on
 
 
-A complete version of DEMOS/gbar/myelin.g, modified to include GLcell,
-is included in the source directory MOOSE/glcell/ as cMyelin.g. Part 4
+A version of DEMOS/gbar/myelin.g, modified to include GLcell,
+is included in the directory DEMOS/gbar/ as cMyelin.g. Part 4
 of this document contains general operating instructions to launch
 such a script, coupled with an instance of 'glcellclient', as a
 complete example.
@@ -190,8 +190,8 @@ a. Launching the 'glcellclient' client instance:
 
 b. Starting a MOOSE simulation from a script which includes the
 creation and initialization of a GLcell element: such a script is
-included in the source directory for the GLcell element as
-cMyelin.g. This script should be placed in the directory DEMOS/gbar/
-in the MOOSE distribution.
+included in the directory DEMOS/gbar/ in the MOOSE distribution,
+and is named cMyelin.g.
 
+>cd DEMOS/gbar
 >../../moose cMyelin.g

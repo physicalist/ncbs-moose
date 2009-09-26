@@ -12,11 +12,16 @@
 class KeystrokeHandler : public osgGA::GUIEventHandler
 {
  public:
-	KeystrokeHandler() {}
-
+        KeystrokeHandler() {}
+	
 	virtual bool handle( const osgGA::GUIEventAdapter&, osgGA::GUIActionAdapter&, osg::Object*, osg::NodeVisitor* );
+
  private:
 	~KeystrokeHandler() {}
+	bool pick( const double x, const double y, osgViewer::Viewer* viewer );
+
+	double x_;
+	double y_;
 };
 
 enum MSGTYPE
