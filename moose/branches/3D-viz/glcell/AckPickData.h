@@ -10,15 +10,14 @@
 #ifndef ACKPICKDATA_H
 #define ACKPICKDATA_H
 
-// An instance of this structure is sent back by the glcellclient process to the
-// MOOSE GLcell element after every color-data packet reception during sync-mode
-// and on every pick (of an object in the glcellclient viewer window by the
-// user with the mouse) during non-sync mode.
-// During sync-mode, if there has been no picking event, the first value stores
-// false and the second stores zero; if there has been a picking event, the first
-// stores true and the second stores the (unsigned int) id of the compartment
-// that was picked. During non-sync mode, the first value is always true and
-// the second always stores a valid id.
+// This structure is so named because it acts both as the acknowledgement message
+// from glcellclient to GLcell (in response to the latter's PROCESS or PROCESSSYNC
+// message to the former) and as a container for the id of any compartment that the
+// user may have picked with the mouse in glcellclient's display window.
+//
+// If there has been a picking event, the first element stores true and the second
+// stores the id of the compartment that was picked. If there has been no picking
+// event, the first element stores false and the second stores zero.
 
 struct AckPickData
 {
