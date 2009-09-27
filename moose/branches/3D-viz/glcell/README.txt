@@ -98,18 +98,22 @@ instance.
 
 > setfield gl0 threshold 0.0015
 
-f. 'sync': default value is 'off'. If 'sync' is 'on', the GLcell
-element will await an acknowledgement message from the client after
-every data transmission to it, before it can return and transmit new
-data on the next clock pulse. This ensures that the client instance
-can display every frame during the simulation, and can be useful while
-recording sequential images to be stitched into a movie of the
-simulation. If 'sync' is 'off', the client instance will always
-display the latest frame; it may skip intermediate frames so that the
-simulation will proceed faster than when 'sync' is 'on'.
+f. 'sync': default value is 'off'. If the time taken by the client
+instance to render one frame of color information (over all
+compartments) exceeds the time taken by the MOOSE simulation to
+simulate one time-step, the simulation may overtake the 3D display and
+the 3D display will skip intermediate frames in order to keep up with
+the state of the simulation.
+
+This flag forces the two to operate in lockstep, which may be useful
+for debugging or while recording movies for publication (so that no
+frames are skipped) but will slow down the MOOSE simulation.
+
+A longer explanation is provided in Appendix A of this document.
 
 > setfield gl0 sync on
-
+OR
+> setfield gl0 sync off
 
 A version of DEMOS/gbar/myelin.g, modified to include GLcell,
 is included in the directory DEMOS/gbar/ as cMyelin.g. Part 4
@@ -195,3 +199,43 @@ and is named cMyelin.g.
 
 >cd DEMOS/gbar
 >../../moose cMyelin.g
+
+
+
+
+Appendix A (explanation of network flow between GLcell and glcellclient) :
+-----------------------------------------------------------
+
+Note that the GLcell MOOSE element is single-threaded whereas
+glcellclient runs in two separate threads. The first thread is
+responsible for network communication with the GLcell MOOSE element
+and the second to render graphics, process incoming color updates from
+GLcell and handle picking events invoked by the user which are
+transmitted back to GLcell via the first thread.
+
+An overview of the flow of network communication in the two modes
+(given by the two states of the 'sync' flag) is provided in the two
+figures accompanying this document:
+
+a. When 'sync' is 'on':
+
+Please refer to the sequence diagram in fig_sync_on.png.
+
+  In this mode, the GLcell element will await an acknowledgement
+message from the client after every transmission of updated color data
+to it, before any new color data (if updated) is transmitted on the
+next clock pulse. The client instance in turn will only send this
+acknowledgement after the latest colors have been updated in the
+display. This ensures that the client instance displays every color
+change sent to it during the simulation. This is intended to be useful
+while recording sequential images to be stitched into a movie of the
+simulation.
+
+b. When 'sync' is 'off':
+
+Please refer to the sequence diagram in fig_sync_off.png.
+
+  In this mode, the client instance will always display the last set
+of colors transmitted to it by the GLcell element. Intermediate frames
+may be skipped. The simulation in this mode will proceed faster than
+when 'sync' is 'on'.

@@ -710,14 +710,14 @@ int main( int argc, char* argv[] )
 	char* pEnd;
 
 	fColormap.open( fileColormap_ );
-	if ( !fColormap.is_open() )
+	if ( ! fColormap.is_open() )
 	{
 		std::cerr << "Couldn't find colormap file: " << fileColormap_ << "!" << std::endl;
 		return 2;
 	}
 	else
 	{
-		while ( !fColormap.eof() )
+		while ( ! fColormap.eof() )
 		{
 			getline( fColormap, lineToSplit );
 			if ( lineToSplit.length() > 0 )  // not a blank line (typically the last line)
