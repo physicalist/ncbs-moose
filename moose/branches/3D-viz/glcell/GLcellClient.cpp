@@ -34,6 +34,7 @@
 #include <map>
 
 #include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/thread/thread.hpp>
@@ -123,7 +124,7 @@ bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* 
 	if ( ! viewer->getSceneData() )
 		return false;
 
-	// TODO karan
+	
 }
 
 // get sockaddr, IPv4 or IPv6:
@@ -136,7 +137,30 @@ void* getInAddr( struct sockaddr* sa )
 	return &( ( ( struct sockaddr_in6* )sa )->sin6_addr );
 }
 
-int recvAll( int s, char *buf, int *len )
+int sendAll( int socket, char* buf, int* len )
+{
+	int total = 0;        // how many bytes we've sent
+	int bytesleft = *len; // how many we have left to send
+	int n;
+
+	while ( total < *len )
+	{
+		n = send( socket, buf+total, bytesleft, 0 );
+		if ( n == -1 )
+		{
+			std::cerr << "send error; errno: " << errno << " " << strerror( errno ) << std::endl;    
+			break;
+		}
+		total += n;
+		bytesleft -= n;
+	}
+
+	*len = total; // return number actually sent here
+
+	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
+}
+
+int recvAll( int socket, char *buf, int *len )
 {
 	int total = 0;        // how many bytes we've received
 	int bytesleft = *len; // how many we have left to receive
@@ -144,7 +168,7 @@ int recvAll( int s, char *buf, int *len )
 	
 	while ( total < *len )
 	{
-		n = recv( s, buf+total, bytesleft, 0 );
+		n = recv( socket, buf+total, bytesleft, 0 );
 		if ( n == -1 )
 		{
 			std::cerr << "recv error; errno: " << errno << " " << strerror( errno ) << std::endl;
@@ -257,13 +281,15 @@ void receiveData( int newFd )
 	while ( true )
 	{
 		numBytes = MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1;
-		if ( recvAll( newFd, header, &numBytes ) == -1 ) {
-			std::cerr << "GLcellClient error: recv" << std::endl;
+		if ( recvAll( newFd, header, &numBytes ) == -1 ) 
+		{
+			std::cerr << "GLcellClient error: could not receive message header!" << std::endl;
 			break;
 		}
 				
-		if ( numBytes < MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1 ) {
-			std::cerr << "GLcellClient error: incomplete header received!" << std::endl;
+		if ( numBytes < MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1 ) 
+		{
+			std::cerr << "GLcellClient error: incomplete message header received!" << std::endl;
 			break;
 		}
 		else {
@@ -284,14 +310,16 @@ void receiveData( int newFd )
 		}
 		
 		numBytes = inboundDataSize + 1;
-		buf = ( char * ) malloc( ( numBytes ) * sizeof( char ) );
+		buf = ( char * ) malloc( numBytes * sizeof( char ) );
 		
-		if ( recvAll( newFd, buf, &numBytes ) == -1 ) {
+		if ( recvAll( newFd, buf, &numBytes ) == -1 )
+		{
 			std::cerr << "GLcellClient error: recv" << std::endl;
 			break;
 		}
 
-		if ( numBytes < inboundDataSize+1 ) {
+		if ( numBytes < inboundDataSize + 1 )
+		{
 			std::cerr << "GLcellClient error: incomplete data received!" << std::endl;
 			std::cerr << "numBytes: " << numBytes << " inboundDataSize: " << inboundDataSize << std::endl;
 			break;
@@ -307,52 +335,93 @@ void receiveData( int newFd )
 
 				updateGeometry( geometryData_ );
 			}
-			else if ( messageType == PROCESS )
+			else if ( messageType == PROCESS || messageType == PROCESSSYNC )
 			{
+
 				{  // additional scope to wrap scoped_lock
-					boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
-
-					renderMapAttrs_.clear();
-					archive_i >> renderMapAttrs_;
-				}
-
-				if ( isColorSetDirty_ == true ) // We meant to set colorset dirty but it is already dirty which means the rendering thread has not picked it up yet.
-				{
-					std::cerr << "skipping frame..." << std::endl;
-				}
-				
-				isColorSetDirty_ = true;
-			}
-			else if ( messageType == PROCESSSYNC )
-			{
-				{
 					boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 					
 					renderMapAttrs_.clear();
 					archive_i >> renderMapAttrs_;
 				}
-
-				isColorSetDirty_ = true;
 				
-				// wait for the updated color set to render to display
+
+
+				// wait for display to update if in sync mode
+				if ( messageType == PROCESS )
 				{
-					boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
-					while ( isColorSetDirty_ )
+					if ( isColorSetDirty_ == true ) // We meant to set colorset dirty but
+						// it is already dirty which means the rendering thread has not picked it up yet.
 					{
-						condColorSetUpdated_.wait( lock );
+						std::cerr << "skipping frame..." << std::endl;
+					}
+	
+					isColorSetDirty_ = true;
+
+				}
+				else // messageType == PROCESSSYNC
+				{
+					isColorSetDirty_ = true;
+				
+					// wait for the updated color set to render to display
+					{
+						boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
+						while ( isColorSetDirty_ )
+						{
+							condColorSetUpdated_.wait( lock );
+						}
 					}
 				}
-
-				// send back a one-byte ack
-				char ackBuf[1];
-				ackBuf[0] = SYNCMODE_ACKCHAR;
-				send( newFd, ackBuf, 1, 0 );
+				
+				sendAck( newFd );
 			}
 		}
+
 		free( buf );
 	}
 
 	close( newFd );	
+}
+
+void sendAck( int socket )
+{
+	// send back AckPickData structure
+	std::ostringstream archiveStream;
+	boost::archive::text_oarchive archive( archiveStream );
+				
+	AckPickData noPicks;
+	noPicks.wasSomethingPicked = false;
+	noPicks.idPicked = 0;
+				
+	archive << noPicks;
+
+	std::ostringstream headerStream;
+	headerStream << std::setw( MSGSIZE_HEADERLENGTH )
+		     << std::hex << archiveStream.str().size();
+
+	int headerLen = headerStream.str().size() + 1;
+	char *headerData = ( char * ) malloc( headerLen * sizeof( char ) );
+	strcpy( headerData, headerStream.str().c_str() );
+
+	if ( sendAll( socket, headerData, &headerLen ) == -1 ) // TODO karan need to check modified headerLen? also fix all other instances
+	{
+		std::cerr << "glcellclient error: couldn't transmit Ack header to GLcell!" << std::endl;
+		close( socket );
+	}
+	else
+	{		
+		int archiveLen = archiveStream.str().size() + 1;
+		char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
+		strcpy( archiveData, archiveStream.str().c_str() );
+
+		if ( sendAll( socket, archiveData, &archiveLen ) == -1 )
+		{
+			std::cerr << "glcellclient error: couldn't transmit Ack to GLcell!" << std::endl;
+		}
+
+		free( archiveData );
+	}
+	free( headerData );
 }
 
 void updateGeometry( GeometryData geometryData )

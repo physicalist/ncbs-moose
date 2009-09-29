@@ -37,7 +37,9 @@ int acceptNewConnection( char * port );
 void receiveData( int newFd );
 
 void* getInAddr( struct sockaddr* sa );
-int recvAll( int s, char* buf, int* len);
+int sendAll( int socket, char* buf, int* len );
+int recvAll( int socket, char* buf, int* len);
+void sendAck( int socket );
 void updateGeometry( GeometryData geometry );
 
 std::string getSaveFilename( void );
