@@ -22,6 +22,8 @@
 #include <vector>
 #include <map>
 #include <string>
+
+#include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/map.hpp>
@@ -35,6 +37,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include "AckPickData.h"
 #include "CompartmentData.h"
 
 const int GLcell::MSGTYPE_HEADERLENGTH = 1;
@@ -395,10 +398,14 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 		if ( syncMode_ )
 		{
 			transmit( renderMapAttrsTransmitted_, PROCESSSYNC );
-			receiveAckSyncMode(); // blocking call
+			receiveAck(); // the client will wait for the display to be updated before
+			              // sending this ack in response to a PROCESSSYNC message
 		}
 		else
+		  {
 			transmit( renderMapAttrsTransmitted_, PROCESS );
+			receiveAck();
+		  }
 	}
 }
 
@@ -493,7 +500,7 @@ int GLcell::getSocket( const char* hostname, const char* service )
 	return sockFd_;
 }
 
-int GLcell::sendAll( char* buf, int* len )
+int GLcell::sendAll( int socket, char* buf, int* len )
 {
 	int total = 0;        // how many bytes we've sent
 	int bytesleft = *len; // how many we have left to send
@@ -501,7 +508,7 @@ int GLcell::sendAll( char* buf, int* len )
 
 	while ( total < *len )
 	{
-		n = send( sockFd_, buf+total, bytesleft, 0 );
+		n = send( socket, buf+total, bytesleft, 0 );
 		if ( n == -1 )
 		{
 			std::cerr << "send error; errno: " << errno << " " << strerror( errno ) << std::endl;    
@@ -516,26 +523,101 @@ int GLcell::sendAll( char* buf, int* len )
 	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
 }
 
-int GLcell::receiveAckSyncMode()
+int GLcell::recvAll( int socket, char *buf, int *len )
+{
+	int total = 0;        // how many bytes we've received
+	int bytesleft = *len; // how many we have left to receive
+	int n;
+	
+	while ( total < *len )
+	{
+		n = recv( socket, buf+total, bytesleft, 0 );
+		if ( n == -1 )
+		{
+			std::cerr << "recv error; errno: " << errno << " " << strerror( errno ) << std::endl;
+			break;
+		}
+		total += n;
+		bytesleft -= n;
+	}
+	
+	*len = total; /// return number actually received here
+	
+	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
+}
+
+int GLcell::receiveAck()
 {
 	if ( ! isConnectionUp_ )
 	{
-		std::cerr << "Could not receive ACK in sync mode because the connection is down." << std::endl;
+		std::cerr << "Could not receive ACK because the connection is down." << std::endl;
 		return -1;
 	}
 
-	char ackBuf[1];
-	int n;
+	int numBytes, inboundDataSize;
+	char header[MSGSIZE_HEADERLENGTH + 1];
+	char *buf;
 
-	if ( ( n = recv( sockFd_, ackBuf, 1, 0) ) == 1 )
+	numBytes = sizeof( AckPickData ) + 1;
+	buf = ( char * ) malloc( numBytes );
+
+	numBytes = MSGSIZE_HEADERLENGTH + 1;
+	if ( recvAll( sockFd_, header, &numBytes) == -1 ) // modifies numBytes
 	{
-		if ( *ackBuf == SYNCMODE_ACKCHAR )
+		std::cerr << "GLcell error: could not receive Ack header!" << std::endl;
+		return -1;
+	}
+
+	if ( numBytes < MSGSIZE_HEADERLENGTH + 1 )
+	{
+		std::cerr << "GLcell error: incomplete Ack header received!" << std::endl;
+		return -2;
+	}
+	else
+	{
+		std::istringstream ackHeaderStream( std::string( header,
+								 MSGSIZE_HEADERLENGTH ) );
+		ackHeaderStream >> std::hex >> inboundDataSize;
+	}
+
+	numBytes = inboundDataSize + 1;
+	buf = ( char * ) malloc( numBytes * sizeof( char ) );
+
+	if ( recvAll( sockFd_, buf, &numBytes ) == -1 ) // modifies numBytes
+	{
+		std::cerr << "GLcell error: could not receive Ack!" << std::endl;
+		return -3; // TODO karan, handle this
+	}
+	
+	if ( numBytes < inboundDataSize + 1 )
+	{
+		std::cerr << "GLcell error: received incomplete Ack!" << std::endl;
+		return -4;
+	}
+	else
+	{
+		std::istringstream archiveStream( std::string( buf, inboundDataSize ) );
+		boost::archive::text_iarchive archive( archiveStream );
+		
+		AckPickData ackPickData;
+		
+		archive >> ackPickData;
+
+		if ( ackPickData.wasSomethingPicked )
 		{
-			return 1;
+			handlePick( ackPickData.idPicked );
 		}
 	}
-       
-	return -2;
+
+	free(buf);
+
+	return 1;
+}
+
+void GLcell::handlePick( unsigned int idPicked )
+{
+	std::cout << "Compartment with id " << idPicked << " was picked!" << std::endl;
+	// TODO karan send outgoing message too
 }
 
 template< class T >
@@ -555,7 +637,7 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 	}
 
 	std::ostringstream archiveStream;
-	boost::archive::text_oarchive archive(archiveStream);
+	boost::archive::text_oarchive archive( archiveStream );
 
 	archive << data;
 
@@ -567,12 +649,12 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 		     << messageType;
 
 	int headerLen = headerStream.str().size() + 1;
-	char* headerData = (char *) malloc( headerLen * sizeof( char ) );
+	char* headerData = ( char * ) malloc( headerLen * sizeof( char ) );
 	strcpy( headerData, headerStream.str().c_str() );
 	
-	if ( sendAll( headerData, &headerLen ) == -1 )
+	if ( sendAll( sockFd_, headerData, &headerLen ) == -1 )
 	{
-		std::cerr << "Couldn't transmit header to client!" << std::endl;
+		std::cerr << "GLcell error: couldn't transmit header to client!" << std::endl;
 
 		isConnectionUp_ = false;
 		close( sockFd_ );
@@ -580,12 +662,12 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 	else
 	{
 		int archiveLen = archiveStream.str().size() + 1;
-		char* archiveData = (char *) malloc( archiveLen * sizeof( char ) );
+		char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
 		strcpy( archiveData, archiveStream.str().c_str() );
 				
-		if ( sendAll( archiveData, &archiveLen ) == -1 )
+		if ( sendAll( sockFd_, archiveData, &archiveLen ) == -1 )
 		{
-			std::cerr << "Couldn't transmit data to client!" << std::endl;	
+			std::cerr << "GLcell error: couldn't transmit data to client!" << std::endl;	
 		}
 		free( archiveData );
 	}
@@ -613,7 +695,7 @@ void GLcell::disconnect()
 	strcpy( headerData, headerStream.str().c_str() );
 
 
-	if ( sendAll( headerData, &headerLen ) == -1 )
+	if ( sendAll( sockFd_, headerData, &headerLen ) == -1 )
 	{
 		std::cerr << "Couldn't transmit DISCONNECT message to client!" << std::endl;
 	}

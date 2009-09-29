@@ -84,8 +84,11 @@ class GLcell
 	/// networking helper functions
 	void* getInAddress( struct sockaddr *sa );
 	int getSocket( const char* hostname, const char* service );
-	int sendAll( char* buf, int* len );
-	int receiveAckSyncMode();
+	int sendAll( int socket, char* buf, int* len );
+	int recvAll( int socket, char* buf, int* len);
+	
+	int receiveAck();
+	void handlePick( unsigned int idPicked );
 	
 	template< class T >
 	  void transmit( T& data, MSGTYPE messageType);
