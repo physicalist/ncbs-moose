@@ -23,7 +23,7 @@ OSG_INCLUDE = \
 	/usr/local/include/osg/include \
 
 OSG_LIBS = \
-	-L/usr/local/lib -losg -losgDB -losgGA -losgViewer -losgText -lOpenThreads \
+	-L/usr/local/lib -losg -losgUtil -losgDB -losgGA -losgViewer -losgText -lOpenThreads \
 
 BOOST_INCLUDE = \
 	/usr/local/include/boost-1_39 \

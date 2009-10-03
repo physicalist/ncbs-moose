@@ -124,7 +124,20 @@ bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* 
 	if ( ! viewer->getSceneData() )
 		return false;
 
-	
+	double w = .05;
+	double h = .05;
+
+	osgUtil::PolytopeIntersector* picker = new osgUtil::PolytopeIntersector( osgUtil::Intersector::PROJECTION, x-w, y-h, x+w, y+h );
+	osgUtil::IntersectionVisitor iv( picker );
+	viewer->getCamera()->accept( iv );
+
+	if ( picker->containsIntersections() )
+	{
+		const osg::NodePath& nodePath = picker->getFirstIntersection().nodePath;
+		
+		osg::Geode* geode = dynamic_cast< osg::Geode* >( nodePath[nodePath.size()-1] );
+	        std::cout << mapGeode2Id_[geode] << " picked." << std::endl;
+	}
 }
 
 // get sockaddr, IPv4 or IPv6:
@@ -440,13 +453,11 @@ void updateGeometry( GeometryData geometryData )
 		}
 
 		mapId2GLCompartment_.clear();
+		mapGeode2Id_.clear();
 	}
 
 	root_ = new osg::Group; // root_ is an osg::ref_ptr
 	root_->setDataVariance( osg::Object::STATIC );
-	geomParent_ = new osg::Geode; // geomParent_ is an osg::ref_ptr
-	geomParent_->setDataVariance( osg::Object::DYNAMIC );
-	root_->addChild( geomParent_.get() );
 
 	if ( textParent_ != NULL)
 		delete textParent_;
@@ -477,7 +488,12 @@ void updateGeometry( GeometryData geometryData )
 			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( sphere ); // to call the polymorphic function setColor() later
 
 			osg::Geometry* sphereGeom = sphere->getGeometry();
-			geomParent_->addDrawable( sphereGeom ); // addDrawable increments ref count of drawable
+			
+			osg::Geode* geode = new osg::Geode;
+			geode->addDrawable( sphereGeom );
+			root_->addChild( geode );
+			
+			mapGeode2Id_[geode] = id;
 		}
 		else 
 			// the compartment is cylindrical
@@ -513,7 +529,12 @@ void updateGeometry( GeometryData geometryData )
 			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( cylinder ); // to call the polymorphic function setColor() later
 
 			osg::Geometry* cylinderGeom = cylinder->getGeometry();
-			geomParent_->addDrawable( cylinderGeom );
+
+			osg::Geode* geode = new osg::Geode;
+			geode->addDrawable( cylinderGeom );
+			root_->addChild( geode );
+			
+			mapGeode2Id_[geode] = id;
 		}
 	}
 
