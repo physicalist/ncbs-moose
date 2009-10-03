@@ -127,7 +127,8 @@ bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* 
 	double w = .05;
 	double h = .05;
 
-	osgUtil::PolytopeIntersector* picker = new osgUtil::PolytopeIntersector( osgUtil::Intersector::PROJECTION, x-w, y-h, x+w, y+h );
+	osgUtil::PolytopeIntersector* picker = new osgUtil::PolytopeIntersector( osgUtil::Intersector::PROJECTION, 
+										 x-w, y-h, x+w, y+h );
 	osgUtil::IntersectionVisitor iv( picker );
 	viewer->getCamera()->accept( iv );
 
@@ -136,7 +137,13 @@ bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* 
 		const osg::NodePath& nodePath = picker->getFirstIntersection().nodePath;
 		
 		osg::Geode* geode = dynamic_cast< osg::Geode* >( nodePath[nodePath.size()-1] );
-	        std::cout << mapGeode2Id_[geode] << " picked." << std::endl;
+	        std::cout << mapGeode2Id_[geode] << " was picked." << std::endl;
+
+		{
+			boost::mutex::scoped_lock lock( mutexPickingDataUpdated_ );
+			pickedId_ = mapGeode2Id_[geode];
+		}
+		isPickingDataUpdated_ = true;
 	}
 }
 
@@ -402,11 +409,26 @@ void sendAck( int socket )
 	std::ostringstream archiveStream;
 	boost::archive::text_oarchive archive( archiveStream );
 				
-	AckPickData noPicks;
-	noPicks.wasSomethingPicked = false;
-	noPicks.idPicked = 0;
-				
-	archive << noPicks;
+
+	if ( isPickingDataUpdated_ )
+	{
+		AckPickData newPick;
+		newPick.wasSomethingPicked = true;
+		{
+			boost::mutex::scoped_lock lock( mutexPickingDataUpdated_ );
+			newPick.idPicked = pickedId_;
+		}
+		archive << newPick;
+		isPickingDataUpdated_ = false;
+	}
+	else
+	{
+		AckPickData noPicks;
+		noPicks.wasSomethingPicked = false;
+		noPicks.idPicked = 0;
+
+		archive << noPicks;
+	}
 
 	std::ostringstream headerStream;
 	headerStream << std::setw( MSGSIZE_HEADERLENGTH )

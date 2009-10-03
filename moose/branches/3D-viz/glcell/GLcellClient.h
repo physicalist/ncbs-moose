@@ -54,6 +54,11 @@ std::map< osg::Geode*, unsigned int > mapGeode2Id_; // this is used to obtain th
 volatile bool isGeometryDirty_ = false;
 volatile bool isColorSetDirty_ = false;
 
+
+volatile bool isPickingDataUpdated_ = false;
+boost::mutex mutexPickingDataUpdated_;
+unsigned int pickedId_;
+
 char * port_ = NULL;
 
 char * fileColormap_ = NULL;
