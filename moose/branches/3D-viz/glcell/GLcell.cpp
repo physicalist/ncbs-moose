@@ -631,7 +631,7 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 		sockFd_ = getSocket( strClientHost_.c_str(), strClientPort_.c_str() );
 		if ( sockFd_ == -1 ) 
 		{
-			std::cerr << "Couldn't connect to client!" << std::endl;
+			std::cerr << "GLcell error: Couldn't connect to client!" << std::endl;
 			return;
 		}
 	}

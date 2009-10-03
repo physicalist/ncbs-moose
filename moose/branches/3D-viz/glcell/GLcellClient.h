@@ -8,6 +8,7 @@
 **********************************************************************/
 
 #include "Constants.h"
+#include "AckPickData.h"
 
 class KeystrokeHandler : public osgGA::GUIEventHandler
 {
@@ -45,10 +46,10 @@ void updateGeometry( GeometryData geometry );
 std::string getSaveFilename( void );
 
 osg::ref_ptr< osg::Group > root_;
-osg::ref_ptr< osg::Geode > geomParent_;
 TextBox::TextBox* textParent_ = NULL;
 
-std::map< unsigned int, GLCompartment* > mapId2GLCompartment_;
+std::map< unsigned int, GLCompartment* > mapId2GLCompartment_; // this is used to call the polymorphic function setColor()
+std::map< osg::Geode*, unsigned int > mapGeode2Id_; // this is used to obtain the id of a compartment that the user has picked with the mouse
 
 volatile bool isGeometryDirty_ = false;
 volatile bool isColorSetDirty_ = false;
