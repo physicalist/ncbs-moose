@@ -205,7 +205,8 @@ endif
 
 # To compile with OpenSceneGraph support and enable 'GLcell', 'GLview' and 'MCSim' pass USE_OSG=1 in make command line
 ifeq ($(USE_OSG),1)
-	LIBS += -losg -losgDB -lOpenThreads -L/lib -lboost_serialization-xgcc40-mt
+	#~ LIBS += -losg -losgDB -lOpenThreads -L/lib -lboost_serialization-xgcc40-mt
+	LIBS += -losg -losgDB -lOpenThreads -L/usr/local/lib -lboost_serialization
 	CXXFLAGS += -DUSE_OSG
 	OSG_DIR = glcell
 	OSG_LIB = glcell/GLcell.o

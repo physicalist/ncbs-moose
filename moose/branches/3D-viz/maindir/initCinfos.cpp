@@ -121,6 +121,7 @@ void initCinfos(){
 
 #ifdef USE_GSL
     static const Cinfo* GslIntegratorCinfo = initGslIntegratorCinfo();
+    static const Cinfo* SteadyStateCinfo = initSteadyStateCinfo();
 #endif
     static const Cinfo* GssaStoichCinfo = initGssaStoichCinfo();
     static const Cinfo* InterpolCinfo = initInterpolCinfo();
@@ -191,7 +192,6 @@ void initCinfos(){
     static const Cinfo* TriPanelCinfo = initTriPanelCinfo();
     static const Cinfo* UniformRngCinfo = initUniformRngCinfo();
     static const Cinfo* script_outCinfo = initscript_outCinfo();
-    static const Cinfo* SteadyStateCinfo = initSteadyStateCinfo();
     
     
 }
