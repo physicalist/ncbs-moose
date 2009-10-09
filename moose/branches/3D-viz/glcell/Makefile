@@ -25,11 +25,14 @@ OSG_INCLUDE = \
 OSG_LIBS = \
 	-L/usr/local/lib -losg -losgUtil -losgDB -losgGA -losgViewer -losgText -lOpenThreads \
 
-BOOST_INCLUDE = \
-	/usr/local/include/boost-1_39 \
+#~ BOOST_INCLUDE = \
+	#~ /usr/local/include/boost-1_39 \
+
+#~ BOOST_LIBS = \
+	#~ -L/lib -lboost_filesystem-xgcc40-mt-1_39 -lboost_system-xgcc40-mt-1_39 -lboost_serialization-xgcc40-mt-1_39 -lboost_thread-xgcc40-mt-1_39 \
 
 BOOST_LIBS = \
-	-L/lib -lboost_filesystem-xgcc40-mt-1_39 -lboost_system-xgcc40-mt-1_39 -lboost_serialization-xgcc40-mt-1_39 -lboost_thread-xgcc40-mt-1_39 \
+	-L/lib -lboost_filesystem -lboost_system -lboost_serialization -lboost_thread \
 
 default: $(TARGET) $(TARGETCLIENT) 
 
@@ -38,10 +41,11 @@ GLcell.o:	GLcell.h
 CompartmentData.o:	CompartmentData.h
 
 .cpp.o:
-	$(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -I$(BOOST_INCLUDE) GLcell.cpp -c
+	$(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -c GLcell.cpp
+	#~ $(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -I$(BOOST_INCLUDE) GLcell.cpp -c
 
 $(TARGETCLIENT):
-	$(CXX) $(CXXFLAGS) -I$(BOOST_INCLUDE) -o glcellclient GLcellClient.cpp TextBox.cpp GLCompartment.cpp GLCompartmentCylinder.cpp GLCompartmentSphere.cpp $(BOOST_LIBS) $(OSG_LIBS)
+	$(CXX) $(CXXFLAGS) -o glcellclient GLcellClient.cpp TextBox.cpp GLCompartment.cpp GLCompartmentCylinder.cpp GLCompartmentSphere.cpp $(BOOST_LIBS) $(OSG_LIBS)
 
 $(TARGET): $(OBJ) $(HEADERS)
 	$(LD) -r -o $(TARGET) $(OBJ)

@@ -765,6 +765,7 @@ int main( int argc, char* argv[] )
 		"\t[-l <number>: value represented by colour on first line of colormap file (default if -0.1V)]\n"
 		"\t[-d <string>: pathname in which to save screenshots and sequential image files (default is ./)]\n";
 	
+	bool isValid;
 	// Check command line arguments.
 	while ( ( c = getopt( argc, argv, "hp:c:u:l:d:" ) ) != -1 )
 		switch( c )
@@ -786,7 +787,7 @@ int main( int argc, char* argv[] )
 			break;
 		case 'd':
 			saveDirectory_ = optarg;
-			bool isValid = boost::filesystem::is_directory(saveDirectory_);
+			isValid = boost::filesystem::is_directory(saveDirectory_);
 			if ( !isValid )
 			{
 				printf( "Argument to option -d must be a valid directory name.\n" );
