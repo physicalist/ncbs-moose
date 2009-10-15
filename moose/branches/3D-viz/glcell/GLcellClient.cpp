@@ -301,15 +301,10 @@ void receiveData( int newFd )
 	while ( true )
 	{
 		numBytes = MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1;
-		if ( recvAll( newFd, header, &numBytes ) == -1 ) 
+		if ( recvAll( newFd, header, &numBytes ) == -1
+             || numBytes < MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1 ) 
 		{
-			std::cerr << "GLcellClient error: could not receive message header!" << std::endl;
-			break;
-		}
-				
-		if ( numBytes < MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1 ) 
-		{
-			std::cerr << "GLcellClient error: incomplete message header received!" << std::endl;
+			std::cerr << "GLcellClient error:  could not receive message header!" << std::endl;
 			break;
 		}
 		else {
@@ -332,13 +327,8 @@ void receiveData( int newFd )
 		numBytes = inboundDataSize + 1;
 		buf = ( char * ) malloc( numBytes * sizeof( char ) );
 		
-		if ( recvAll( newFd, buf, &numBytes ) == -1 )
-		{
-			std::cerr << "GLcellClient error: recv" << std::endl;
-			break;
-		}
-
-		if ( numBytes < inboundDataSize + 1 )
+		if ( recvAll( newFd, buf, &numBytes ) == -1 
+            || numBytes < inboundDataSize + 1 )
 		{
 			std::cerr << "GLcellClient error: incomplete data received!" << std::endl;
 			std::cerr << "numBytes: " << numBytes << " inboundDataSize: " << inboundDataSize << std::endl;
@@ -438,7 +428,8 @@ void sendAck( int socket )
 	char *headerData = ( char * ) malloc( headerLen * sizeof( char ) );
 	strcpy( headerData, headerStream.str().c_str() );
 
-	if ( sendAll( socket, headerData, &headerLen ) == -1 ) // TODO karan need to check modified headerLen? also fix all other instances
+	if ( sendAll( socket, headerData, &headerLen ) == -1
+         || headerLen < headerStream.str().size() + 1 )
 	{
 		std::cerr << "glcellclient error: couldn't transmit Ack header to GLcell!" << std::endl;
 		close( socket );
@@ -449,7 +440,8 @@ void sendAck( int socket )
 		char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
 		strcpy( archiveData, archiveStream.str().c_str() );
 
-		if ( sendAll( socket, archiveData, &archiveLen ) == -1 )
+		if ( sendAll( socket, archiveData, &archiveLen ) == -1
+             || archiveLen < archiveStream.str().size() + 1 )
 		{
 			std::cerr << "glcellclient error: couldn't transmit Ack to GLcell!" << std::endl;
 		}
@@ -592,52 +584,6 @@ void updateGeometry( GeometryData geometryData )
 	isGeometryDirty_ = true;
 
 }
-
-/* DEBUGGING UTILITY FUNCTIONS INTENDED TO BE INVOKED FROM GDB
-GLCompartment* mapres(std::map<unsigned int, GLCompartment*> const& m, int key) // karan TODO remove this
-{
-	for(std::map<unsigned int, GLCompartment*>::const_iterator i(m.begin()), j(m.end()); i != j; ++i)
-	{
-		if (i->first == key)
-			return i->second;
-	}
-}
-
-void dumpdist(std::map< unsigned int, GLCompartment* > mapId2Comp, std::vector< CompartmentData >& compartments) // karan TODO remove this
-{
-	for (int i = 0; i < compartments.size(); i++)
-	{
-		const unsigned int& id = compartments[i].id;
-		const std::vector< unsigned int > vNeighbourIds = compartments[i].vNeighbourIds;
-
-		for ( int j = 0; j < vNeighbourIds.size(); ++j )
-		{
-			if ( mapId2GLCompartment_[id]->getCompartmentType() == CYLINDER &&
-			     mapId2GLCompartment_[vNeighbourIds[j]]->getCompartmentType() == CYLINDER )
-			{
-				double x = (compartments[i].x+compartments[i].x0)/2;
-				double y = (compartments[i].y+compartments[i].y0)/2;
-				double z = (compartments[i].z+compartments[i].z0)/2;
-
-				GLCompartmentCylinder* neighbour = dynamic_cast<GLCompartmentCylinder*>(mapId2Comp[vNeighbourIds[j]]);
-				
-				double nx = neighbour->position_[0];
-				double ny = neighbour->position_[1];
-				double nz = neighbour->position_[2];
-				
-			        double dist = sqrt( pow(x-nx,2) + pow(y-ny,2) + pow(z-nz,2) );
-				if (dist > 0.0001)
-				{
-					std::cout << id << " @ " << x << ", " << y << ", " << z << "        and "; 
-					std::cout << vNeighbourIds[j] << "@" << nx << ", " << ny << ", " << nz << "     ";
-					std::cout << compartments[i].x << " " << compartments[i].y << " " << compartments[i].z << " " ;
-					std::cout << compartments[i].x0 << " " << compartments[i].y0 << " " << compartments[i].z0 << std::endl;
-				}
-			}
-		}
-	}
-}
-*/
 
 void draw()
 {
@@ -825,7 +771,7 @@ int main( int argc, char* argv[] )
 	fColormap.open( fileColormap_ );
 	if ( ! fColormap.is_open() )
 	{
-		std::cerr << "Couldn't find colormap file: " << fileColormap_ << "!" << std::endl;
+		std::cerr << "Couldn't open colormap file: " << fileColormap_ << "!" << std::endl;
 		return 2;
 	}
 	else
