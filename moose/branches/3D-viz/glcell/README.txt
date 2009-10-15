@@ -162,6 +162,13 @@ The remaining command-line parameters are optional:
  directory. This is the full pathname of the path to which any
  screenshots, single or sequential, will be saved.
 
+-a angle: with a default value of 10 degrees, where angle is the
+angular increment in the drawing of the sides of curved
+bodies. Smaller numbers give bodies that are smoother in appearance
+but more expensive to render. This value is required to be between 1
+and 60 degrees. Any value not between 1 and 60 will be capped to the
+closer limit.
+
 
 Keyboard commands accepted in the viewer window include:
 

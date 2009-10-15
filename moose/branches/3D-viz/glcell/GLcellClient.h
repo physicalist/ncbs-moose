@@ -60,10 +60,10 @@ boost::mutex mutexPickingDataUpdated_;
 unsigned int pickedId_;
 
 char * port_ = NULL;
-
 char * fileColormap_ = NULL;
 double highValue_ = 0.05;
 double lowValue_ = -0.1;
+double incrementAngle_ = DEFAULT_INCREMENT_ANGLE;
 
 const int MSGTYPE_HEADERLENGTH = 1;
 const int MSGSIZE_HEADERLENGTH = 8;

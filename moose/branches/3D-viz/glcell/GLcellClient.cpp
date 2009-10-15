@@ -498,7 +498,7 @@ void updateGeometry( GeometryData geometryData )
 		{ 
 			GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
 									       diameter/2,
-									       DEFAULT_INCREMENT_ANGLE );
+									       incrementAngle_ );
 			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( sphere ); // to call the polymorphic function setColor() later
 
 			osg::Geometry* sphereGeom = sphere->getGeometry();
@@ -538,7 +538,7 @@ void updateGeometry( GeometryData geometryData )
 										     osg::Quat( angle, axis ),
 										     length,
 										     diameter / 2,
-										     DEFAULT_INCREMENT_ANGLE );
+										     incrementAngle_ );
 			
 			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( cylinder ); // to call the polymorphic function setColor() later
 
@@ -709,11 +709,12 @@ int main( int argc, char* argv[] )
 		"\t-c <string>: filename of colormap file\n"
 		"\t[-u <number>: value represented by colour on last line of colormap file (default is 0.05V)]\n"
 		"\t[-l <number>: value represented by colour on first line of colormap file (default if -0.1V)]\n"
-		"\t[-d <string>: pathname in which to save screenshots and sequential image files (default is ./)]\n";
+		"\t[-d <string>: pathname in which to save screenshots and sequential image files (default is ./)]\n"
+		"\t[-a <number>: required to be between 1 and 60 degrees; this value represents angular increments in drawing the sides of curved bodies; smaller numbers give smoother bodies]\n";
 	
 	bool isValid;
 	// Check command line arguments.
-	while ( ( c = getopt( argc, argv, "hp:c:u:l:d:" ) ) != -1 )
+	while ( ( c = getopt( argc, argv, "hp:c:u:l:d:a:" ) ) != -1 )
 		switch( c )
 		{
 		case 'h':
@@ -739,6 +740,15 @@ int main( int argc, char* argv[] )
 				printf( "Argument to option -d must be a valid directory name.\n" );
 				return 1;
 			}
+			break;
+		case 'a':
+			double value = strtod( optarg, NULL );
+			if ( value < 1 )
+				incrementAngle_ = 1;
+			else if ( value > 60 )
+				incrementAngle_ = 60;
+			else
+				incrementAngle_ = value;
 			break;
 		case '?':
 			if ( optopt == 'p' || optopt == 'c' || optopt == 'u' || optopt == 'l' || optopt == 'd' )
