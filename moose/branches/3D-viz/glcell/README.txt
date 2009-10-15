@@ -128,6 +128,9 @@ complete example.
 3. Using 'glcellclient':
 -----------------
 
+Command-line parameters:
+----------------------
+
 The executable 'glcellclient' can be launched with the following
 command-line parameters, the first of two of which are required:
 
@@ -185,8 +188,30 @@ consume disk-space at a high rate.
 
 
 
+Keyboard and mouse bindings:
+-------------------------
 
+SPACE key:				Reset camera position and
+      					        model position and zoom
 
+LEFT mouse button: 		Rotate camera around model
+
+MIDDLE mouse button or
+LEFT and RIGHT mouse
+buttons together:			Pan model
+
+RIGHT mouse button:		Zoom model or dolly camera
+      	    			     	      	(if minimum zoom reached)
+
+p or P key:				Switch between
+						perspective (default) and
+						orthographic views
+
+c or C key:				Capture single frame to
+       						image file
+
+m or M key:				Toggle sequential auto-capture
+       					        of frames to image files
 
 4. Operating instructions:
 ---------------------

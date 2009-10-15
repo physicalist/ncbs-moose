@@ -111,12 +111,53 @@ bool KeystrokeHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActio
 			}			
 			return true;
 		}
+		else if ( ea.getKey() == 'p' || ea.getKey() == 'P' )
+		{
+			switchProjection( viewer );
+		}
 		else
 			return false;
 	default:
 		break;
 	}
 	return false;
+}
+
+void KeystrokeHandler::switchProjection( osgViewer::Viewer* viewer )
+{
+	static double oleft, oright, obottom, otop, oznear, ozfar;
+	static double fleft, fright, fbottom, ftop, fznear, fzfar;
+
+	if ( isCurrentProjectionOrtho_ )
+	{
+		viewer->getCamera()->getProjectionMatrixAsOrtho( oleft, oright,
+								 obottom, otop,
+								 oznear, ozfar );
+		viewer->getCamera()->setProjectionMatrixAsFrustum( fleft, fright,
+								   fbottom, ftop,
+								   fznear, fzfar );
+
+		isCurrentProjectionOrtho_ = false;
+	}
+	else // always true on the first call to this function
+	{
+		viewer->getCamera()->getProjectionMatrixAsFrustum( fleft, fright,
+								   fbottom, ftop,
+								   fznear, fzfar );
+
+		oleft = fleft;
+		oright = fright;
+		obottom = fbottom;
+		otop = ftop;
+		oznear = fznear;
+		ozfar = fzfar;
+		
+		viewer->getCamera()->setProjectionMatrixAsOrtho( oleft, oright,
+								 obottom, otop,
+								 oznear, ozfar );
+
+		isCurrentProjectionOrtho_ = true;
+	}
 }
 
 bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* viewer )
@@ -710,7 +751,7 @@ int main( int argc, char* argv[] )
 		"\t[-u <number>: value represented by colour on last line of colormap file (default is 0.05V)]\n"
 		"\t[-l <number>: value represented by colour on first line of colormap file (default if -0.1V)]\n"
 		"\t[-d <string>: pathname in which to save screenshots and sequential image files (default is ./)]\n"
-		"\t[-a <number>: required to be between 1 and 60 degrees; this value represents angular increments in drawing the sides of curved bodies; smaller numbers give smoother bodies]\n";
+		"\t[-a <number>: required to be between 1 and 60 degrees; \n this value represents angular increments in drawing the sides of curved bodies; smaller numbers give smoother bodies (default is 10)]\n";
 	
 	bool isValid;
 	// Check command line arguments.
