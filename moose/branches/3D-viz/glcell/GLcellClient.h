@@ -13,16 +13,21 @@
 class KeystrokeHandler : public osgGA::GUIEventHandler
 {
  public:
-        KeystrokeHandler() {}
+ KeystrokeHandler() :
+	isCurrentProjectionOrtho_(false)
+	{}
 	
 	virtual bool handle( const osgGA::GUIEventAdapter&, osgGA::GUIActionAdapter&, osg::Object*, osg::NodeVisitor* );
 
  private:
 	~KeystrokeHandler() {}
 	bool pick( const double x, const double y, osgViewer::Viewer* viewer );
+	void switchProjection( osgViewer::Viewer* viewer );
 
 	double x_;
 	double y_;
+
+	double isCurrentProjectionOrtho_;
 };
 
 enum MSGTYPE
