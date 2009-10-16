@@ -3,6 +3,7 @@
 
 struct CompartmentData
 {
+	std::string name;
 	unsigned int id;
 	std::vector< unsigned int > vNeighbourIds;
 
@@ -18,6 +19,7 @@ struct CompartmentData
 	template< typename Archive > 
 	void serialize( Archive& ar, const unsigned int version )
 	{
+		ar & name;
 		ar & id;
 		ar & vNeighbourIds;
 		
