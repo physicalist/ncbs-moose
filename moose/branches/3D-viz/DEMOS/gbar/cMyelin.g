@@ -108,6 +108,7 @@ setfield gl0 host localhost
 setfield gl0 attribute Vm
 setfield gl0 threshold 0.0015
 setfield gl0 sync off
+setfield gl0 vscale 10
 reset
 
 //=====================================

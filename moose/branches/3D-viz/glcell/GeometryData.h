@@ -13,12 +13,14 @@
 struct GeometryData
 {
 	std::string pathName;
+	double vScale;
 	std::vector< CompartmentData > renderListCompartmentData;
 
 	template< typename Archive > 
 	void serialize( Archive& ar, const unsigned int version )
 	{
 		ar & pathName;
+		ar & vScale;
 		ar & renderListCompartmentData;
 	}
 };

@@ -87,6 +87,11 @@ const Cinfo* initGLcellCinfo()
 				GFCAST( &GLcell::getChangeThreshold ),
 				RFCAST( &GLcell::setChangeThreshold )
 				),
+		new ValueFinfo( "vscale",
+				ValueFtype1< double >::global(),
+				GFCAST( &GLcell::getVScale ),
+				RFCAST( &GLcell::setVScale )
+				),
 		new ValueFinfo( "sync",
 				ValueFtype1< string >::global(),
 				GFCAST( &GLcell::getSyncMode ),
@@ -137,6 +142,7 @@ GLcell::GLcell()
 	strAttributeName_( "Vm" ),
 	sockFd_( -1 ),
 	changeThreshold_( 1e-8 ),
+	vScale_( 1.0 ),
 	syncMode_( false )
 {
 }
@@ -224,6 +230,21 @@ double GLcell::getChangeThreshold( Eref e )
 	return static_cast< const GLcell* >( e.data() )->changeThreshold_;
 }
 
+void GLcell::setVScale( const Conn* c, double vScale )
+{
+	static_cast< GLcell * >( c->data() )->innerSetVScale( vScale );
+}
+
+void GLcell::innerSetVScale( const double vScale )
+{
+	vScale_ = vScale;
+}
+
+double GLcell::getVScale( Eref e )
+{
+	return static_cast< const GLcell* >( e.data() )->vScale_;
+}
+
 void GLcell::setSyncMode( const Conn* c, string syncMode )
 {
 	if ( syncMode == string( "on" ) )
@@ -270,6 +291,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 		renderList_.clear();
 
 		geometryData_.pathName = strPath_;
+		geometryData_.vScale = vScale_;
 		geometryData_.renderListCompartmentData.clear();
 
 		// Start populating renderList_ with the node in strPath_ 
