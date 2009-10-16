@@ -494,6 +494,7 @@ void sendAck( int socket )
 
 void updateGeometry( GeometryData geometryData )
 {	
+	double vScale = geometryData.vScale;
 	const std::vector< CompartmentData >& compartments = geometryData.renderListCompartmentData;
 	
 	if ( mapId2GLCompartment_.size() > 0 )
@@ -537,7 +538,7 @@ void updateGeometry( GeometryData geometryData )
 		if ( length < SIZE_EPSILON ) 
 			// i.e., length is zero so the compartment is spherical
 		{ 
-			GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
+			GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( x, y, z ),
 									       diameter/2,
 									       incrementAngle_ );
 			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( sphere ); // to call the polymorphic function setColor() later
@@ -578,7 +579,7 @@ void updateGeometry( GeometryData geometryData )
 			GLCompartmentCylinder* cylinder = new GLCompartmentCylinder( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
 										     osg::Quat( angle, axis ),
 										     length,
-										     diameter / 2,
+										     vScale * diameter/2,
 										     incrementAngle_ );
 			
 			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( cylinder ); // to call the polymorphic function setColor() later

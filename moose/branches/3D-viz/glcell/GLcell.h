@@ -52,6 +52,10 @@ class GLcell
 	void innerSetChangeThreshold( const double changeThreshold );
 	static double getChangeThreshold( Eref e );
 
+	static void setVScale( const Conn* c, double vScale );
+	void innerSetVScale( const double vScale );
+	static double getVScale( Eref e );
+
 	static void setSyncMode( const Conn* c, string syncMode );
 	void innerSetSyncMode( const bool syncMode );
 	static string getSyncMode( Eref e );
@@ -67,6 +71,7 @@ class GLcell
 	string strAttributeName_;
 	bool syncMode_;
 	double changeThreshold_; // any change in attribute below this value is not updated visually (in non-sync mode)
+	double vScale_; // factor by which the diameter of cylindrical compartments will be scaled up (only in visual appearance, not numerically)
 
 	int sockFd_;
 	bool isConnectionUp_;

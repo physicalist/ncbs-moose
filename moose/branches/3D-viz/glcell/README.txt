@@ -115,6 +115,14 @@ A longer explanation is provided in Appendix A of this document.
 OR
 > setfield gl0 sync off
 
+g. 'vscale': default value is 1.0. Cylindrical compartments when drawn
+in a physiologically accurate ratio between their diameters and
+lengths can be too thin to render well visually. They can be scaled up
+in thickness, only in terms of visual appearance and not numerically,
+by specificying this value as greater than 1.0.
+
+> setfield gl0 vscale 4
+
 A version of DEMOS/gbar/myelin.g, modified to include GLcell,
 is included in the directory DEMOS/gbar/ as cMyelin.g. Part 4
 of this document contains general operating instructions to launch
@@ -200,7 +208,7 @@ MIDDLE mouse button or
 LEFT and RIGHT mouse
 buttons together:			Pan model
 
-RIGHT mouse button:		Zoom model or dolly camera
+RIGHT mouse button:		Zoom model or truck-in camera
       	    			     	      	(if minimum zoom reached)
 
 p or P key:				Switch between
