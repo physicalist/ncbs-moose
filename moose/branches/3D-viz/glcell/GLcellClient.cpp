@@ -525,6 +525,7 @@ void updateGeometry( GeometryData geometryData )
 	// First pass: create the basic hollow cylinders with no end-caps
 	for ( int i = 0; i < compartments.size(); ++i )
 	{
+		const std::string& name = compartments[i].name;
 		const unsigned int& id = compartments[i].id;
 		const double& diameter = compartments[i].diameter;
 		const double& length = compartments[i].length;
@@ -535,8 +536,9 @@ void updateGeometry( GeometryData geometryData )
 		const double& y = compartments[i].y;
 		const double& z = compartments[i].z;
 			
-		if ( length < SIZE_EPSILON ) 
-			// i.e., length is zero so the compartment is spherical
+		if ( length < SIZE_EPSILON
+		     || name.compare("soma") == 0 ) 
+			// the compartment is spherical
 		{ 
 			GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( x, y, z ),
 									       diameter/2,

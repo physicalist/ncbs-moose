@@ -315,6 +315,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				CompartmentData compartmentData;
 				
 				compartmentData.id = renderList_[i].id();
+				compartmentData.name = renderList_[i].eref().name();
 
 				std::vector< unsigned int > vNeighbourIds;			     
 				findNeighbours( renderList_[i], vNeighbourIds );
