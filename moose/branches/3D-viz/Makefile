@@ -207,9 +207,9 @@ endif
 ifeq ($(USE_GL),1)
 	LIBS += -losg -losgDB -lOpenThreads -L/usr/local/lib -lboost_serialization
 	CXXFLAGS += -DUSE_GL
-	GL_DIR = glcell
-	GLCELL_LIB = glcell/GLcell.o
-	GLVIEW_LIB = glcell/GLview.o
+	GL_DIR = gl/glcell
+	GLCELL_LIB = gl/glcell/GLcell.o
+	GLVIEW_LIB = gl/glcell/GLview.o
 endif
 
 # For 64 bit Linux systems add paths to 64 bit libraries 
