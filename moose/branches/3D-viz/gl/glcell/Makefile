@@ -12,9 +12,9 @@ OSG_LIBS = -L/usr/local/lib -losg -losgUtil -losgDB -losgGA -losgViewer -losgTex
 BOOST_LIBS = -L/lib -lboost_filesystem -lboost_system -lboost_serialization -lboost_thread
 
 MOOSE_HEADERS = \
-	../basecode/header.h \
-	../connections/Conn.h \
-	../basecode/Element.h
+	../../basecode/header.h \
+	../../connections/Conn.h \
+	../../basecode/Element.h
 
 DATA_STRUCTURE_HEADERS = AckPickData.h GeometryData.h CompartmentData.h
 
@@ -29,13 +29,13 @@ clean:
 
 OBJ_CELL = GLcell.o
 $(OBJ_CELL) : GLcell.cpp GLcell.h $(DATA_STRUCTURE_HEADERS) $(MOOSE_HEADERS)
-	$(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -c GLcell.cpp
+	$(CXX) $(CXXFLAGS) -I../../ -I../../basecode -I$(OSG_INCLUDE) -c GLcell.cpp
 $(TARGET_CELL) : $(OBJ_CELL) $(MOOSE_HEADERS)
 	$(LD) -r -o $(TARGET_CELL) $(OBJ_CELL)
 
 OBJ_VIEW = GLview.o
 $(OBJ_VIEW) : GLview.cpp GLview.h $(MOOSE_HEADERS)
-	$(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -c GLview.cpp
+	$(CXX) $(CXXFLAGS) -I../../ -I../../basecode -I$(OSG_INCLUDE) -c GLview.cpp
 $(TARGET_VIEW) : $(OBJ_VIEW) $(MOOSE_HEADERS)
 	$(LD) -r -o $(TARGET_VIEW) $(OBJ_VIEW)
 
