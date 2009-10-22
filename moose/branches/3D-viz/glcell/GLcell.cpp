@@ -343,43 +343,6 @@ void GLcell::reinitFuncLocal( const Conn* c )
 	}
 }
 
-void GLcell::findNeighbours( Id id, vector< unsigned int >& vecResult )
-{
-	// result is appended to vecResult
-	
-	findNeighboursOfType( id, "axial", "Compartment", vecResult );
-	findNeighboursOfType( id, "raxial", "Compartment", vecResult );
-	findNeighboursOfType( id, "axial", "SymCompartment", vecResult );
-	findNeighboursOfType( id, "raxial", "SymCompartment", vecResult );
-	findNeighboursOfType( id, "raxial1", "SymCompartment", vecResult );
-	findNeighboursOfType( id, "raxial2", "SymCompartment", vecResult );
-}
-
-void GLcell::findNeighboursOfType( Id id, const string& messageType, const string& targetType, std::vector< unsigned int >& vecResult )
-{
-	// This function is derived largely from BioScan::targets()
-
-	// result is appended to vecResult
-
-	Id found;
-
-	if ( messageType == "" )
-	{
-		std::cerr << "findNeighboursOfType() called with blank messageType" << std::endl;
-		return;
-	}
-
-	Conn* i = id()->targets( messageType, 0 );
-	for ( ; i->good(); i->increment() )
-	{
-		found = i->target()->id();
-
-		if ( targetType != "" &&
-		     found()->cinfo()->isA( Cinfo::find( targetType ) ) )
-			vecResult.push_back( found.id() );
-	}
-	delete i;
-}
 
 void GLcell::processFunc( const Conn* c, ProcInfo info )
 {
@@ -442,6 +405,44 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 ///////////////////////////////////////////////////
 // private function definitions
 ///////////////////////////////////////////////////
+
+void GLcell::findNeighbours( Id id, vector< unsigned int >& vecResult )
+{
+	// result is appended to vecResult
+	
+	findNeighboursOfType( id, "axial", "Compartment", vecResult );
+	findNeighboursOfType( id, "raxial", "Compartment", vecResult );
+	findNeighboursOfType( id, "axial", "SymCompartment", vecResult );
+	findNeighboursOfType( id, "raxial", "SymCompartment", vecResult );
+	findNeighboursOfType( id, "raxial1", "SymCompartment", vecResult );
+	findNeighboursOfType( id, "raxial2", "SymCompartment", vecResult );
+}
+
+void GLcell::findNeighboursOfType( Id id, const string& messageType, const string& targetType, std::vector< unsigned int >& vecResult )
+{
+	// This function is derived largely from BioScan::targets()
+
+	// result is appended to vecResult
+
+	Id found;
+
+	if ( messageType == "" )
+	{
+		std::cerr << "findNeighboursOfType() called with blank messageType" << std::endl;
+		return;
+	}
+
+	Conn* i = id()->targets( messageType, 0 );
+	for ( ; i->good(); i->increment() )
+	{
+		found = i->target()->id();
+
+		if ( targetType != "" &&
+		     found()->cinfo()->isA( Cinfo::find( targetType ) ) )
+			vecResult.push_back( found.id() );
+	}
+	delete i;
+}
 
 void GLcell::add2RenderList( Id id )
 {

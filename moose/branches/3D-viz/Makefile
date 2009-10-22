@@ -64,8 +64,8 @@
 # USE_CURSES (default value: 0) - To compile with curses support (terminal aware
 # 		printing)
 # 
-# USE_OSG (default value: 0) - To compile with OpenSceneGraph support to enable the MOOSE
-# 		elements 'GLcell', 'GLview' and 'MCSim'.
+# USE_GL (default value: 0) - To compile with OpenSceneGraph support to enable the MOOSE
+# 		elements 'GLcell', 'GLview'.
 #
 # GENERATE_WRAPPERS (default value: 0) - useful for python interface developers.
 # 		The binary created with this option looks for a directory named
@@ -86,7 +86,7 @@ USE_READLINE?=1
 USE_MPI?=0
 USE_MUSIC?=0
 USE_CURSES?=0
-USE_OSG?=0
+USE_GL?=0
 GENERATE_WRAPPERS?=0
 
 export BUILD
@@ -96,7 +96,7 @@ export USE_READLINE
 export USE_MPI
 export USE_MUSIC
 export USE_CURSES
-export USE_OSG
+export USE_GL
 export GENERATE_WRAPPERS
 
 # PLATFORM (= Linux, win32, Darwin)
@@ -203,13 +203,13 @@ LIBS += -lcurses
 CXXFLAGS+= -DUSE_CURSES
 endif
 
-# To compile with OpenSceneGraph support and enable 'GLcell', 'GLview' and 'MCSim' pass USE_OSG=1 in make command line
-ifeq ($(USE_OSG),1)
-	#~ LIBS += -losg -losgDB -lOpenThreads -L/lib -lboost_serialization-xgcc40-mt
+# To compile with OpenSceneGraph support and enable 'GLcell', 'GLview' pass USE_GL=1 in make command line
+ifeq ($(USE_GL),1)
 	LIBS += -losg -losgDB -lOpenThreads -L/usr/local/lib -lboost_serialization
-	CXXFLAGS += -DUSE_OSG
-	OSG_DIR = glcell
-	OSG_LIB = glcell/GLcell.o
+	CXXFLAGS += -DUSE_GL
+	GL_DIR = glcell
+	GLCELL_LIB = glcell/GLcell.o
+	GLVIEW_LIB = glcell/GLview.o
 endif
 
 # For 64 bit Linux systems add paths to 64 bit libraries 
@@ -243,7 +243,7 @@ LD = ld
 
 SUBDIR = basecode connections maindir genesis_parser shell element scheduling \
 	biophysics hsolve kinetics ksolve builtins utility \
-	randnum signeur device $(OSG_DIR) $(SBML_DIR) $(PARALLEL_DIR) $(MUSIC_DIR) 
+	randnum signeur device $(GL_DIR) $(SBML_DIR) $(PARALLEL_DIR) $(MUSIC_DIR) 
 
 # Used for 'make clean'
 CLEANSUBDIR = $(SUBDIR) parallel music pymoose sbml_IO
@@ -265,7 +265,8 @@ OBJLIBS =	\
 	builtins/builtins.o \
 	signeur/signeur.o \
 	device/device.o \
-	$(OSG_LIB) \
+	$(GLCELL_LIB) \
+	$(GLVIEW_LIB) \
 	$(SBML_LIB) \
 	$(PARALLEL_LIB) \
 	$(MUSIC_LIB)
@@ -297,7 +298,7 @@ libs:
 	@echo "	USE_MPI:" $(USE_MPI)
 	@echo "	USE_MUSIC:" $(USE_MUSIC)
 	@echo "	USE_CURSES:" $(USE_CURSES)
-	@echo "	USE_OSG:" $(USE_OSG)
+	@echo "	USE_GL:" $(USE_GL)
 	@(for i in $(SUBDIR); do $(MAKE) -C $$i; done)
 	@echo "All Libs compiled"
 
