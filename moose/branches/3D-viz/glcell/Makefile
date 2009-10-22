@@ -7,48 +7,39 @@
 #** See the file COPYING.LIB for the full notice.
 #**********************************************************************/
 
-TARGET = glcell.o
+OSG_INCLUDE = /usr/local/include/osg/include
+OSG_LIBS = -L/usr/local/lib -losg -losgUtil -losgDB -losgGA -losgViewer -losgText -lOpenThreads
+BOOST_LIBS = -L/lib -lboost_filesystem -lboost_system -lboost_serialization -lboost_thread
 
-OBJ = \
-	GLcell.o	\
-
-TARGETCLIENT = glcellclient
-
-HEADERS = \
+MOOSE_HEADERS = \
 	../basecode/header.h \
 	../connections/Conn.h \
-	../basecode/Element.h \
+	../basecode/Element.h
 
-OSG_INCLUDE = \
-	/usr/local/include/osg/include \
+DATA_STRUCTURE_HEADERS = AckPickData.h GeometryData.h CompartmentData.h
 
-OSG_LIBS = \
-	-L/usr/local/lib -losg -losgUtil -losgDB -losgGA -losgViewer -losgText -lOpenThreads \
+TARGET_CELL = glcell.o
+TARGET_VIEW = glview.o
+TARGET_CLIENT = glcellclient
 
-#~ BOOST_INCLUDE = \
-	#~ /usr/local/include/boost-1_39 \
-
-#~ BOOST_LIBS = \
-	#~ -L/lib -lboost_filesystem-xgcc40-mt-1_39 -lboost_system-xgcc40-mt-1_39 -lboost_serialization-xgcc40-mt-1_39 -lboost_thread-xgcc40-mt-1_39 \
-
-BOOST_LIBS = \
-	-L/lib -lboost_filesystem -lboost_system -lboost_serialization -lboost_thread \
-
-default: $(TARGET) $(TARGETCLIENT) 
-
-$(OBJ)	: $(HEADERS)
-GLcell.o:	GLcell.h
-CompartmentData.o:	CompartmentData.h
-
-.cpp.o:
-	$(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -c GLcell.cpp
-	#~ $(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -I$(BOOST_INCLUDE) GLcell.cpp -c
-
-$(TARGETCLIENT):
-	$(CXX) $(CXXFLAGS) -o glcellclient GLcellClient.cpp TextBox.cpp GLCompartment.cpp GLCompartmentCylinder.cpp GLCompartmentSphere.cpp $(BOOST_LIBS) $(OSG_LIBS)
-
-$(TARGET): $(OBJ) $(HEADERS)
-	$(LD) -r -o $(TARGET) $(OBJ)
+default: $(TARGET_CELL) $(TARGET_VIEW) $(TARGET_CLIENT) 
 
 clean:
-	rm -f *.o $(TARGET) $(TARGETCLIENT) core core.*
+	rm -f *.o $(TARGET_CELL) $(TARGET_VIEW) $(TARGET_CLIENT) core core.*
+
+OBJ_CELL = GLcell.o
+$(OBJ_CELL) : GLcell.cpp GLcell.h $(DATA_STRUCTURE_HEADERS) $(MOOSE_HEADERS)
+	$(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -c GLcell.cpp
+$(TARGET_CELL) : $(OBJ_CELL) $(MOOSE_HEADERS)
+	$(LD) -r -o $(TARGET_CELL) $(OBJ_CELL)
+
+OBJ_VIEW = GLview.o
+$(OBJ_VIEW) : GLview.cpp GLview.h $(MOOSE_HEADERS)
+	$(CXX) $(CXXFLAGS) -I../ -I../basecode -I$(OSG_INCLUDE) -c GLview.cpp
+$(TARGET_VIEW) : $(OBJ_VIEW) $(MOOSE_HEADERS)
+	$(LD) -r -o $(TARGET_VIEW) $(OBJ_VIEW)
+
+TARGET_CLIENT_SOURCES = GLcellClient.cpp TextBox.cpp GLCompartment.cpp GLCompartmentCylinder.cpp GLCompartmentSphere.cpp
+TARGET_CLIENT_HEADERS = GLcellClient.h TextBox.h GLCompartment.h GLCompartmentCylinder.h GLCompartmentSphere.h
+$(TARGET_CLIENT) : $(TARGET_CLIENT_SOURCES) $(TARGET_CLIENT_HEADERS) $(DATA_STRUCTURE_HEADERS)
+	$(CXX) $(CXXFLAGS) -o glcellclient $(TARGET_CLIENT_SOURCES) $(BOOST_LIBS) $(OSG_LIBS)
