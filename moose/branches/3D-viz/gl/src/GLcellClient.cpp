@@ -374,62 +374,66 @@ void receiveData( int newFd )
 		buf = ( char * ) malloc( numBytes * sizeof( char ) );
 		
 		if ( recvAll( newFd, buf, &numBytes ) == -1 
-            || numBytes < inboundDataSize + 1 )
+		     || numBytes < inboundDataSize + 1 )
 		{
 			std::cerr << "GLcellClient error: incomplete data received!" << std::endl;
 			std::cerr << "numBytes: " << numBytes << " inboundDataSize: " << inboundDataSize << std::endl;
 			break;
 		}
-		else {
+		else
+		{
 			std::istringstream archive_stream_i( std::string( buf, inboundDataSize ) );
-			boost::archive::text_iarchive archive_i( archive_stream_i );
+			// starting new scope so that the archive's stream's destructor is called after the archive's
+			{
+				boost::archive::text_iarchive archive_i( archive_stream_i );
 			
-			if ( messageType == RESET) 
-			{
-				geometryData_.renderListCompartmentData.clear();
-				archive_i >> geometryData_;
+				if ( messageType == RESET) 
+				{
+					geometryData_.renderListCompartmentData.clear();
+					archive_i >> geometryData_;
 
-				updateGeometry( geometryData_ );
-			}
-			else if ( messageType == PROCESS || messageType == PROCESSSYNC )
-			{
+					updateGeometry( geometryData_ );
+				}
+				else if ( messageType == PROCESS || messageType == PROCESSSYNC )
+				{
 
-				{  // additional scope to wrap scoped_lock
-					boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
+					{  // additional scope to wrap scoped_lock
+						boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 					
-					renderMapAttrs_.clear();
-					archive_i >> renderMapAttrs_;
-				}
-				
-
-
-				// wait for display to update if in sync mode
-				if ( messageType == PROCESS )
-				{
-					if ( isColorSetDirty_ == true ) // We meant to set colorset dirty but
-						// it is already dirty which means the rendering thread has not picked it up yet.
-					{
-						std::cerr << "skipping frame..." << std::endl;
+						renderMapAttrs_.clear();
+						archive_i >> renderMapAttrs_;
 					}
-	
-					isColorSetDirty_ = true;
-
-				}
-				else // messageType == PROCESSSYNC
-				{
-					isColorSetDirty_ = true;
 				
-					// wait for the updated color set to render to display
+
+
+					// wait for display to update if in sync mode
+					if ( messageType == PROCESS )
 					{
-						boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
-						while ( isColorSetDirty_ )
+						if ( isColorSetDirty_ == true ) // We meant to set colorset dirty but
+							// it is already dirty which means the rendering thread has not picked it up yet.
 						{
-							condColorSetUpdated_.wait( lock );
+							std::cerr << "skipping frame..." << std::endl;
+						}
+	
+						isColorSetDirty_ = true;
+
+					}
+					else // messageType == PROCESSSYNC
+					{
+						isColorSetDirty_ = true;
+				
+						// wait for the updated color set to render to display
+						{
+							boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
+							while ( isColorSetDirty_ )
+							{
+								condColorSetUpdated_.wait( lock );
+							}
 						}
 					}
-				}
 				
-				sendAck( newFd );
+					sendAck( newFd );
+				}
 			}
 		}
 
@@ -443,58 +447,62 @@ void sendAck( int socket )
 {
 	// send back AckPickData structure
 	std::ostringstream archiveStream;
-	boost::archive::text_oarchive archive( archiveStream );
+
+	// starting new scope so that the archive's stream's destructor is called after the archive's
+	{
+		boost::archive::text_oarchive archive( archiveStream );
 				
 
-	if ( isPickingDataUpdated_ )
-	{
-		AckPickData newPick;
-		newPick.wasSomethingPicked = true;
+		if ( isPickingDataUpdated_ )
 		{
-			boost::mutex::scoped_lock lock( mutexPickingDataUpdated_ );
-			newPick.idPicked = pickedId_;
+			AckPickData newPick;
+			newPick.wasSomethingPicked = true;
+			{
+				boost::mutex::scoped_lock lock( mutexPickingDataUpdated_ );
+				newPick.idPicked = pickedId_;
+			}
+			archive << newPick;
+			isPickingDataUpdated_ = false;
 		}
-		archive << newPick;
-		isPickingDataUpdated_ = false;
-	}
-	else
-	{
-		AckPickData noPicks;
-		noPicks.wasSomethingPicked = false;
-		noPicks.idPicked = 0;
-
-		archive << noPicks;
-	}
-
-	std::ostringstream headerStream;
-	headerStream << std::setw( MSGSIZE_HEADERLENGTH )
-		     << std::hex << archiveStream.str().size();
-
-	int headerLen = headerStream.str().size() + 1;
-	char *headerData = ( char * ) malloc( headerLen * sizeof( char ) );
-	strcpy( headerData, headerStream.str().c_str() );
-
-	if ( sendAll( socket, headerData, &headerLen ) == -1
-         || headerLen < headerStream.str().size() + 1 )
-	{
-		std::cerr << "glcellclient error: couldn't transmit Ack header to GLcell!" << std::endl;
-		close( socket );
-	}
-	else
-	{		
-		int archiveLen = archiveStream.str().size() + 1;
-		char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
-		strcpy( archiveData, archiveStream.str().c_str() );
-
-		if ( sendAll( socket, archiveData, &archiveLen ) == -1
-             || archiveLen < archiveStream.str().size() + 1 )
+		else
 		{
-			std::cerr << "glcellclient error: couldn't transmit Ack to GLcell!" << std::endl;
+			AckPickData noPicks;
+			noPicks.wasSomethingPicked = false;
+			noPicks.idPicked = 0;
+
+			archive << noPicks;
 		}
 
-		free( archiveData );
+		std::ostringstream headerStream;
+		headerStream << std::setw( MSGSIZE_HEADERLENGTH )
+			     << std::hex << archiveStream.str().size();
+
+		int headerLen = headerStream.str().size() + 1;
+		char *headerData = ( char * ) malloc( headerLen * sizeof( char ) );
+		strcpy( headerData, headerStream.str().c_str() );
+
+		if ( sendAll( socket, headerData, &headerLen ) == -1
+		     || headerLen < headerStream.str().size() + 1 )
+		{
+			std::cerr << "glcellclient error: couldn't transmit Ack header to GLcell!" << std::endl;
+			close( socket );
+		}
+		else
+		{		
+			int archiveLen = archiveStream.str().size() + 1;
+			char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
+			strcpy( archiveData, archiveStream.str().c_str() );
+
+			if ( sendAll( socket, archiveData, &archiveLen ) == -1
+			     || archiveLen < archiveStream.str().size() + 1 )
+			{
+				std::cerr << "glcellclient error: couldn't transmit Ack to GLcell!" << std::endl;
+			}
+
+			free( archiveData );
+		}
+		free( headerData );
 	}
-	free( headerData );
 }
 
 void updateGeometry( GeometryData geometryData )
