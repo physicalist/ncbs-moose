@@ -65,16 +65,16 @@ class GLcell
 	static const char SYNCMODE_ACKCHAR;
 
  private:
+	double vScale_; // factor by which the diameter of cylindrical compartments will be scaled up (only in visual appearance, not numerically)
+
+	int sockFd_;
+	bool isConnectionUp_;
 	string strPath_;
 	string strClientHost_;
 	string strClientPort_;
 	string strAttributeName_;
 	bool syncMode_;
 	double changeThreshold_; // any change in attribute below this value is not updated visually (in non-sync mode)
-	double vScale_; // factor by which the diameter of cylindrical compartments will be scaled up (only in visual appearance, not numerically)
-
-	int sockFd_;
-	bool isConnectionUp_;
 
 	vector< Id > renderList_;
 	GeometryData geometryData_;

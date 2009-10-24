@@ -392,12 +392,12 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 			// sending this ack in response to a PROCESSSYNC message
 		}
 		else
-		  {
+		{
 			transmit( renderMapAttrsTransmitted_, PROCESS );
 			if ( receiveAck() < 0 )
-            {
-                isConnectionUp_ = false;
-            }
+			{
+				isConnectionUp_ = false;
+			}
 		  }
 	}
 }
