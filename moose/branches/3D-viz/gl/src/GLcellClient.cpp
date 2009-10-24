@@ -185,6 +185,11 @@ bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* 
 			pickedId_ = mapGeode2Id_[geode];
 		}
 		isPickingDataUpdated_ = true;
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 
@@ -748,7 +753,7 @@ std::string getSaveFilename( void )
 int main( int argc, char* argv[] )
 {
 	int c;
-	char* strHelp = "Usage: glcellclient\n"
+	std::string strHelp = "Usage: glcellclient\n"
 		"\t-p <number>: port number\n"
 		"\t-c <string>: filename of colormap file\n"
 		"\t[-u <number>: value represented by colour on last line of colormap file (default is 0.05V)]\n"
@@ -757,6 +762,8 @@ int main( int argc, char* argv[] )
 		"\t[-a <number>: required to be between 1 and 60 degrees; \n this value represents angular increments in drawing the sides of curved bodies; smaller numbers give smoother bodies (default is 10)]\n";
 	
 	bool isValid;
+	double value;
+
 	// Check command line arguments.
 	while ( ( c = getopt( argc, argv, "hp:c:u:l:d:a:" ) ) != -1 )
 		switch( c )
@@ -786,7 +793,7 @@ int main( int argc, char* argv[] )
 			}
 			break;
 		case 'a':
-			double value = strtod( optarg, NULL );
+			value = strtod( optarg, NULL );
 			if ( value < 1 )
 				incrementAngle_ = 1;
 			else if ( value > 60 )
