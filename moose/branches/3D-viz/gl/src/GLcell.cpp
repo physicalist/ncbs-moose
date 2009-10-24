@@ -618,15 +618,19 @@ int GLcell::receiveAck()
 	else
 	{
 		std::istringstream archiveStream( std::string( buf, inboundDataSize ) );
-		boost::archive::text_iarchive archive( archiveStream );
-		
-		AckPickData ackPickData;
-		
-		archive >> ackPickData;
 
-		if ( ackPickData.wasSomethingPicked )
+		// starting new scope so that the archive's stream's destructor is called after the archive's
 		{
-			handlePick( ackPickData.idPicked );
+			boost::archive::text_iarchive archive( archiveStream );
+		
+			AckPickData ackPickData;
+		
+			archive >> ackPickData;
+
+			if ( ackPickData.wasSomethingPicked )
+			{
+				handlePick( ackPickData.idPicked );
+			}
 		}
 	}
 
@@ -657,43 +661,47 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 	}
 
 	std::ostringstream archiveStream;
-	boost::archive::text_oarchive archive( archiveStream );
 
-	archive << data;
+	// starting new scope so that the archive's stream's destructor is called after the archive's
+	{
+		boost::archive::text_oarchive archive( archiveStream );
 
-	std::ostringstream headerStream;
-	headerStream << std::setw( MSGSIZE_HEADERLENGTH )
-		     << std::hex << archiveStream.str().size();
+		archive << data;
 
-	headerStream << std::setw( MSGTYPE_HEADERLENGTH )
-		     << messageType;
+		std::ostringstream headerStream;
+		headerStream << std::setw( MSGSIZE_HEADERLENGTH )
+			     << std::hex << archiveStream.str().size();
 
-	int headerLen = headerStream.str().size() + 1;
-	char* headerData = ( char * ) malloc( headerLen * sizeof( char ) );
-	strcpy( headerData, headerStream.str().c_str() );
+		headerStream << std::setw( MSGTYPE_HEADERLENGTH )
+			     << messageType;
+
+		int headerLen = headerStream.str().size() + 1;
+		char* headerData = ( char * ) malloc( headerLen * sizeof( char ) );
+		strcpy( headerData, headerStream.str().c_str() );
 	
-	if ( sendAll( sockFd_, headerData, &headerLen ) == -1
-         || headerLen < headerStream.str().size() + 1 )
-	{
-		std::cerr << "GLcell error: couldn't transmit header to client!" << std::endl;
-
-		isConnectionUp_ = false;
-		close( sockFd_ );
-	}
-	else
-	{
-		int archiveLen = archiveStream.str().size() + 1;
-		char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
-		strcpy( archiveData, archiveStream.str().c_str() );
-				
-		if ( sendAll( sockFd_, archiveData, &archiveLen ) == -1
-             || archiveLen < archiveStream.str().size() + 1 )
+		if ( sendAll( sockFd_, headerData, &headerLen ) == -1
+		     || headerLen < headerStream.str().size() + 1 )
 		{
-			std::cerr << "GLcell error: couldn't transmit data to client!" << std::endl;	
+			std::cerr << "GLcell error: couldn't transmit header to client!" << std::endl;
+
+			isConnectionUp_ = false;
+			close( sockFd_ );
 		}
-		free( archiveData );
+		else
+		{
+			int archiveLen = archiveStream.str().size() + 1;
+			char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
+			strcpy( archiveData, archiveStream.str().c_str() );
+				
+			if ( sendAll( sockFd_, archiveData, &archiveLen ) == -1
+			     || archiveLen < archiveStream.str().size() + 1 )
+			{
+				std::cerr << "GLcell error: couldn't transmit data to client!" << std::endl;	
+			}
+			free( archiveData );
+		}
+		free( headerData );
 	}
-	free( headerData );
 }
 
 void GLcell::disconnect()
