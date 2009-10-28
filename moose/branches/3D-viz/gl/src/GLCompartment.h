@@ -25,6 +25,8 @@ class GLCompartment
 
   virtual int getCompartmentType() = 0;
 
+  virtual ~GLCompartment() {}
+
  protected:
   virtual osg::Vec3 rotateTranslatePoint( osg::Vec3 position, osg::Quat& quatRotation, osg::Vec3& translation );
   virtual osg::Vec3 makeNormal( const osg::Vec3& P1, const osg::Vec3& P2, const osg::Vec3& P3 );

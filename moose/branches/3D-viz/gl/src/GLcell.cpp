@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "moose.h"
-#include "../shell/Shell.h"
+#include "shell/Shell.h"
 #include "GLcell.h"
 
 #include <iostream>
@@ -503,13 +503,13 @@ int GLcell::getSocket( const char* hostname, const char* service )
 	for ( p = servinfo; p != NULL; p = p->ai_next ) {
 		if ( ( sockFd_ = socket( p->ai_family, p->ai_socktype,
 				     p->ai_protocol ) ) == -1 ) {
-			std::cerr << "GLcell error: socket" << std::endl;
+		    //std::cerr << "GLcell error: socket" << std::endl;
 			continue;
 		}
 		
 		if ( connect( sockFd_, p->ai_addr, p->ai_addrlen ) == -1 ) {
 			close( sockFd_ );
-			std::cerr << "GLcell error: connect" << std::endl;
+			//std::cerr << "GLcell error: connect" << std::endl;
 			continue;
 		}
 		
