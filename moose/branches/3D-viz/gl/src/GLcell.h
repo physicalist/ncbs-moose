@@ -96,7 +96,7 @@ class GLcell
 	void handlePick( unsigned int idPicked );
 	
 	template< class T >
-	  void transmit( T& data, MSGTYPE messageType);
+	  void transmit( T& data, MSGTYPE messageType );
 
 	void disconnect();
 };

@@ -206,7 +206,7 @@ endif
 # To compile with OpenSceneGraph support and enable 'GLcell', 'GLview' pass USE_GL=1 in make command line
 ifeq ($(USE_GL),1)
 	LIBS += -losg -losgDB -lOpenThreads -L/usr/local/lib -lboost_serialization
-	CXXFLAGS += -DUSE_GL
+	CXXFLAGS += -DUSE_GL -I. -Ibasecode
 	GL_DIR = gl/src
 	GLCELL_LIB = gl/src/GLcell.o
 	GLVIEW_LIB = gl/src/GLview.o
