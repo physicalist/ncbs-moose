@@ -347,8 +347,8 @@ void receiveData( int newFd )
 	while ( true )
 	{
 		numBytes = MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1;
-		if ( recvAll( newFd, header, &numBytes ) == -1
-             || numBytes < MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1 ) 
+		if ( recvAll( newFd, header, &numBytes ) == -1 ||
+		     numBytes < MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1 ) 
 		{
 			std::cerr << "GLcellClient error:  could not receive message header!" << std::endl;
 			break;
@@ -373,8 +373,8 @@ void receiveData( int newFd )
 		numBytes = inboundDataSize + 1;
 		buf = ( char * ) malloc( numBytes * sizeof( char ) );
 		
-		if ( recvAll( newFd, buf, &numBytes ) == -1 
-		     || numBytes < inboundDataSize + 1 )
+		if ( recvAll( newFd, buf, &numBytes ) == -1 ||
+		     numBytes < inboundDataSize + 1 )
 		{
 			std::cerr << "GLcellClient error: incomplete data received!" << std::endl;
 			std::cerr << "numBytes: " << numBytes << " inboundDataSize: " << inboundDataSize << std::endl;
@@ -481,8 +481,8 @@ void sendAck( int socket )
 		char *headerData = ( char * ) malloc( headerLen * sizeof( char ) );
 		strcpy( headerData, headerStream.str().c_str() );
 
-		if ( sendAll( socket, headerData, &headerLen ) == -1
-		     || headerLen < headerStream.str().size() + 1 )
+		if ( sendAll( socket, headerData, &headerLen ) == -1 ||
+		     headerLen < headerStream.str().size() + 1 )
 		{
 			std::cerr << "glcellclient error: couldn't transmit Ack header to GLcell!" << std::endl;
 			close( socket );
@@ -493,8 +493,8 @@ void sendAck( int socket )
 			char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
 			strcpy( archiveData, archiveStream.str().c_str() );
 
-			if ( sendAll( socket, archiveData, &archiveLen ) == -1
-			     || archiveLen < archiveStream.str().size() + 1 )
+			if ( sendAll( socket, archiveData, &archiveLen ) == -1 ||
+			     archiveLen < archiveStream.str().size() + 1 )
 			{
 				std::cerr << "glcellclient error: couldn't transmit Ack to GLcell!" << std::endl;
 			}
@@ -549,8 +549,8 @@ void updateGeometry( GeometryData geometryData )
 		const double& y = compartments[i].y;
 		const double& z = compartments[i].z;
 			
-		if ( length < SIZE_EPSILON
-		     || name.compare("soma") == 0 ) 
+		if ( length < SIZE_EPSILON ||
+		     name.compare("soma") == 0 ) 
 			// the compartment is spherical
 		{ 
 			GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( x, y, z ),

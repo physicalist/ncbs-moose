@@ -593,8 +593,8 @@ int GLcell::receiveAck()
 	buf = ( char * ) malloc( numBytes );
 
 	numBytes = MSGSIZE_HEADERLENGTH + 1;
-	if ( recvAll( sockFd_, header, &numBytes) == -1
-         || numBytes < MSGSIZE_HEADERLENGTH + 1 )
+	if ( recvAll( sockFd_, header, &numBytes) == -1 ||
+	     numBytes < MSGSIZE_HEADERLENGTH + 1 )
 	{
 		std::cerr << "GLcell error: could not receive Ack header!" << std::endl;
 		return -1;
@@ -609,8 +609,8 @@ int GLcell::receiveAck()
 	numBytes = inboundDataSize + 1;
 	buf = ( char * ) malloc( numBytes * sizeof( char ) );
 
-	if ( recvAll( sockFd_, buf, &numBytes ) == -1
-        || numBytes < inboundDataSize + 1 )
+	if ( recvAll( sockFd_, buf, &numBytes ) == -1 ||
+	     numBytes < inboundDataSize + 1 )
 	{
 		std::cerr << "GLcell error: could not receive Ack!" << std::endl;
 		return -2;
@@ -679,8 +679,8 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 		char* headerData = ( char * ) malloc( headerLen * sizeof( char ) );
 		strcpy( headerData, headerStream.str().c_str() );
 	
-		if ( sendAll( sockFd_, headerData, &headerLen ) == -1
-		     || headerLen < headerStream.str().size() + 1 )
+		if ( sendAll( sockFd_, headerData, &headerLen ) == -1 ||
+		     headerLen < headerStream.str().size() + 1 )
 		{
 			std::cerr << "GLcell error: couldn't transmit header to client!" << std::endl;
 
@@ -693,8 +693,8 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 			char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
 			strcpy( archiveData, archiveStream.str().c_str() );
 				
-			if ( sendAll( sockFd_, archiveData, &archiveLen ) == -1
-			     || archiveLen < archiveStream.str().size() + 1 )
+			if ( sendAll( sockFd_, archiveData, &archiveLen ) == -1 ||
+			     archiveLen < archiveStream.str().size() + 1 )
 			{
 				std::cerr << "GLcell error: couldn't transmit data to client!" << std::endl;	
 			}
@@ -725,8 +725,8 @@ void GLcell::disconnect()
 	strcpy( headerData, headerStream.str().c_str() );
 
 
-	if ( sendAll( sockFd_, headerData, &headerLen ) == -1
-         || headerLen < headerStream.str().size() + 1 )
+	if ( sendAll( sockFd_, headerData, &headerLen ) == -1 ||
+	     headerLen < headerStream.str().size() + 1 )
 	{
 		std::cerr << "Couldn't transmit DISCONNECT message to client!" << std::endl;
 	}

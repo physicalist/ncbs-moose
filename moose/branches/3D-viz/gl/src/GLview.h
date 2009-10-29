@@ -84,6 +84,12 @@ class GLview
 	double *y_;
 	double *z_;
 
-	int populateValues( int valueNum, double * values, string strValueField );
+	int populateValues( int valueNum, double ** pValues, string strValueField );
+	
+	void populateXYZ();
+	string boxXYZ( const double& x, const double& y, const double& z );
+	string inttostring( int i );
+
+	int getXYZ( Id id, double& x, double& y, double& z ); // gets x, y, z co-ordinates for the element represented by id, or (if not found) such co-ordinates of its parent or its parent's parent and so on, unless root is reached
   
 };

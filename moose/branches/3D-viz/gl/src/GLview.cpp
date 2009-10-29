@@ -10,11 +10,18 @@
 #include "moose.h"
 #include "shell/Shell.h"
 #include "element/Wildcard.h"
+#include "element/Neutral.h"
 
 #include "GLview.h"
 
+#include <vector>
+#include <map>
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <limits>
+
+#include <math.h>
 
 const int GLview::MSGTYPE_HEADERLENGTH = 1;
 const int GLview::MSGSIZE_HEADERLENGTH = 8;
@@ -133,16 +140,15 @@ GLview::~GLview()
 {
 	// disconnect(); // TODO karan
 	
-	if ( values1_ != NULL )
-		free( values1_ );
-	if ( values2_ != NULL )
-		free( values2_ );
-	if ( values3_ != NULL )
-		free( values3_ );
-	if ( values4_ != NULL )
-		free( values4_ );
-	if ( values5_ != NULL )
-		free( values5_ );
+	free ( values1_ );
+	free ( values2_ );
+	free ( values3_ );
+	free ( values4_ );
+	free ( values5_ );
+	
+	free ( x_ );
+	free ( y_ );
+	free ( z_ );
 }
 
 ///////////////////////////////////////////////////
@@ -271,17 +277,17 @@ void GLview::reinitFuncLocal( const Conn* c )
 	std::cout << "GLview: " << elements_.size() << " elements found." << std::endl; // TODO comment this out by default
 
 	if ( ! strValue1Field_.empty() )
-		populateValues( 1, values1_, strValue1Field_ ); 
+		populateValues( 1, &values1_, strValue1Field_ ); 
 	if ( ! strValue2Field_.empty() )
-		populateValues( 2, values2_, strValue2Field_ ); 
+		populateValues( 2, &values2_, strValue2Field_ ); 
 	if ( ! strValue3Field_.empty() )
-		populateValues( 3, values3_, strValue3Field_ ); 
+		populateValues( 3, &values3_, strValue3Field_ ); 
 	if ( ! strValue4Field_.empty() )
-		populateValues( 4, values4_, strValue4Field_ ); 
+		populateValues( 4, &values4_, strValue4Field_ ); 
 	if ( ! strValue5Field_.empty() )
-		populateValues( 5, values5_, strValue5Field_ ); 
+		populateValues( 5, &values5_, strValue5Field_ ); 
 	
-	// TODO must get x,y,z in reinitFuncLocal
+	populateXYZ();
 }
 
 void GLview::processFunc( const Conn* c, ProcInfo info )
@@ -298,20 +304,22 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 // private function definitions
 ///////////////////////////////////////////////////
 
-int GLview::populateValues( int valueNum, double * values, string strValueField )
+int GLview::populateValues( int valueNum, double ** pValues, string strValueField )
 {
 	int status = 0;
 
-	if ( values == NULL)
-		values = ( double * ) malloc( sizeof( double ) * elements_.size() );
-
-	if ( values == NULL )
+	if ( *pValues == NULL )
+		*pValues = ( double * ) malloc( sizeof( double ) * elements_.size() );
+	
+	if ( *pValues == NULL )
 	{
 		std::cerr << "GLview error: could not allocate memory to set field values" << std::endl;
 		status = -1;
 	}
 	else
 	{
+		double * values = *pValues;
+
 		for ( unsigned int i = 0; i < elements_.size(); ++i)
 		{
 			Id id = elements_[i];
@@ -345,9 +353,134 @@ int GLview::populateValues( int valueNum, double * values, string strValueField 
 	}
 
 	if ( status == -2 || status == -3 )
-		free( values );
+		free( *pValues );
 
 	return status;
+}
+
+int GLview::getXYZ( Id id, double& x, double& y, double& z )
+{
+	if ( id() == Element::root() )
+		return -1;
+
+	if ( ! id.eref().e->findFinfo( "x" ) ||
+	     ! id.eref().e->findFinfo( "y" ) ||
+	     ! id.eref().e->findFinfo( "z" ) )
+	{
+		Id parent = Shell::parent( id );
+		if ( parent == Id::badId() )
+			return -1;
+		else
+			return getXYZ( parent, x, y, z ); // recurses
+	}
+
+	return 0;
+}
+
+void GLview::populateXYZ()
+{
+	if ( x_ == NULL )
+		x_ = ( double * ) malloc( sizeof( double ) * elements_.size() );
+	if ( y_ == NULL )
+		y_ = ( double * ) malloc( sizeof( double ) * elements_.size() );
+	if ( z_ == NULL )
+		z_ = ( double * ) malloc( sizeof( double ) * elements_.size() );
+
+	double x, y, z;
+
+	// There are three passes for determining collision-free x,y,z
+	// co-ordinates (to 6 decimal places):
+
+	// 1. We get x,y,z from elements or their first non-root
+	// ancestor that have valid x,y,z values. We check these into
+	// a map, intending to separate elements specified with
+	// duplicate x,y,z co-ordinates.
+	map< string, unsigned int > mapXYZ;
+
+	for ( unsigned int i = 0; i < elements_.size(); ++i )
+	{
+		if ( getXYZ( elements_[i], x, y, z ) == 0 )
+		{
+			string key = boxXYZ( x, y, z );
+			if ( mapXYZ.count( key ) == 0 )
+				mapXYZ[ key ] = 1;
+			else
+				mapXYZ[ key ] += 1;
+		}
+	}
+
+	// 2. We finalize non-duplicate x,y,z co-ordinates and place
+	// the rest on a list that will be automatically assigned sane
+	// co-ordinates just outside the bounding box of the first
+	// group. We also determine a corner of this bounding box to
+	// act as the starting location of the second group.
+	double bbx = 0;
+	double bby = 0;
+	double bbz = 0;
+	vector< unsigned int > unassignedElements;
+
+	for ( unsigned int i = 0; i < elements_.size(); ++i )
+	{
+		if ( getXYZ( elements_[i], x, y, z ) == 0 )
+		{
+			string key = boxXYZ( x, y, z );
+			if ( mapXYZ[key] > 1 )
+			{
+				unassignedElements.push_back( i );
+			}
+			else
+			{
+				x_[i] = x;
+				y_[i] = y;
+				z_[i] = z;
+				
+				if ( bbx < x )
+					bbx = x + 1; // TODO change this to max x which is defined by the macro MAX X or reassigned by a setfield
+				if ( bby < y )
+					bby = y + 1; // TODO see above
+				if ( bbz < z )
+					bbz = z + 1; // TODO see above
+			}
+		}
+		else
+		{
+			unassignedElements.push_back( i );
+		}
+	}
+	
+	// 3. We take the starting location calculated in the last
+	// step and assign co-ordinates to all elements on the
+	// (collision/unassigned) list as described in the last
+	// step. These co-ordinates will be assigned to lay out all
+	// elements in a planar grid, approximating a square in shape.
+	int n = int( sqrt( unassignedElements.size() ) );
+
+	// TODO change 1s below to max_x, etc.
+	for ( unsigned int j = 0; j < unassignedElements.size(); ++j )
+	{
+		unsigned int i = unassignedElements[j];
+		
+		x_[i] = bbx + (j % n) * 1;
+		y_[i] = bby + (j / n) * 1;
+		z_[i] = bbz;
+	}
+} 
+
+string GLview::boxXYZ( const double& x, const double& y, const double& z )
+{
+	string key( inttostring( int( x * 1e6 ) ) );
+	key.append( inttostring( int( y * 1e6 ) ) );
+	key.append( inttostring( int( z * 1e6 ) ) );
+
+	return key;
+}
+
+string GLview::inttostring( int i )
+{
+	std::string s;
+	std::stringstream out;
+	out << i;
+	return out.str();
 }
 
 ///////////////////////////////////////////////////
