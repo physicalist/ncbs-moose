@@ -59,6 +59,10 @@ class GLcell
 	static void setSyncMode( const Conn* c, string syncMode );
 	void innerSetSyncMode( const bool syncMode );
 	static string getSyncMode( Eref e );
+
+	static void setBgColor( const Conn* c, string strBgColor );
+	void innerSetBgColor( const double red, const double green, const double blue );
+	static string getBgColor( Eref e );
 	
 	static const int MSGTYPE_HEADERLENGTH;
 	static const int MSGSIZE_HEADERLENGTH;
@@ -75,6 +79,9 @@ class GLcell
 	string strAttributeName_;
 	bool syncMode_;
 	double changeThreshold_; // any change in attribute below this value is not updated visually (in non-sync mode)
+	double bgcolorRed_;
+	double bgcolorBlue_;
+	double bgcolorGreen_;
 
 	vector< Id > renderList_;
 	GeometryData geometryData_;
@@ -91,13 +98,10 @@ class GLcell
 	int getSocket( const char* hostname, const char* service );
 	int sendAll( int socket, char* buf, int* len );
 	int recvAll( int socket, char* buf, int* len);
-	
 	int receiveAck();
 	void handlePick( unsigned int idPicked );
-	
+	void disconnect();
 	template< class T >
 	  void transmit( T& data, MSGTYPE messageType );
-
-	void disconnect();
 };
 

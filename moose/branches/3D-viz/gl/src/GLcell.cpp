@@ -97,6 +97,11 @@ const Cinfo* initGLcellCinfo()
 				GFCAST( &GLcell::getSyncMode ),
 				RFCAST( &GLcell::setSyncMode )
 				),
+		new ValueFinfo( "bgcolor",
+				ValueFtype1< string >::global(),
+				GFCAST( &GLcell::getBgColor ),
+				RFCAST( &GLcell::setBgColor )
+				),
 	///////////////////////////////////////////////////////
 	// Shared definitions
 	///////////////////////////////////////////////////////
@@ -143,7 +148,10 @@ GLcell::GLcell()
 	sockFd_( -1 ),
 	changeThreshold_( 1e-8 ),
 	vScale_( 1.0 ),
-	syncMode_( false )
+	syncMode_( false ),
+	bgcolorRed_( 0.0 ),
+	bgcolorGreen_( 0.0 ),
+	bgcolorBlue_( 0.0 )
 {
 }
 GLcell::~GLcell()
@@ -270,6 +278,61 @@ string GLcell::getSyncMode( Eref e )
 		return string( "off" );
 }
 
+void GLcell::setBgColor( const Conn* c, string strBgColor )
+{
+	double red, green, blue;
+
+	bool error = false;
+	int bgcolor;
+	std::istringstream intstream( strBgColor );
+	if ( intstream >> bgcolor )
+	{
+		blue = ( bgcolor % 1000 ) / 255.;
+		green = ( ( bgcolor/1000 ) % 1000 ) / 255.;
+		red = ( ( bgcolor/1000000 ) % 1000 ) / 255.;
+
+		if ( red > 1.0 || blue > 1.0 || green > 1.0 )
+		{
+			error = true;
+		}
+		else
+		{
+			static_cast< GLcell * >( c->data() )->innerSetBgColor( red, green, blue );
+		}
+	}
+	else
+	{
+		error = true;
+	}	
+
+	if ( error ) // report error; default is (0,0,0) (black)
+	{
+		std::cerr << "GLcell error: the field 'bgcolor' is not in the expected format, defaulting to black" << std::endl;
+	}
+
+}
+
+void GLcell::innerSetBgColor( const double red, const double green, const double blue )
+{
+	bgcolorRed_ = red;
+	bgcolorGreen_ = green;
+	bgcolorBlue_ = blue;
+}
+
+string GLcell::getBgColor( Eref e )
+{
+	double red = static_cast< const GLcell* >( e.data() )->bgcolorRed_;
+	double green = static_cast< const GLcell* >( e.data() )->bgcolorGreen_;
+	double blue = static_cast< const GLcell* >( e.data() )->bgcolorBlue_;
+	
+	int bgcolor = (red * 255.) * 1000000 + (green * 255.) * 1000 + (blue * 255.);
+
+	std::string s;
+	std::stringstream out;
+	out << bgcolor;
+	return out.str();
+}
+
 ///////////////////////////////////////////////////
 // Dest function definitions
 ///////////////////////////////////////////////////
@@ -292,6 +355,9 @@ void GLcell::reinitFuncLocal( const Conn* c )
 
 		geometryData_.pathName = strPath_;
 		geometryData_.vScale = vScale_;
+		geometryData_.bgcolorRed = bgcolorRed_;
+		geometryData_.bgcolorGreen = bgcolorGreen_;
+		geometryData_.bgcolorBlue = bgcolorBlue_;
 		geometryData_.renderListCompartmentData.clear();
 
 		// Start populating renderList_ with the node in strPath_ 
@@ -542,7 +608,7 @@ int GLcell::sendAll( int socket, char* buf, int* len )
 		n = send( socket, buf+total, bytesleft, 0 );
 		if ( n == -1 )
 		{
-			std::cerr << "send error; errno: " << errno << " " << strerror( errno ) << std::endl;    
+			std::cerr << "GLcell error: send error; errno: " << errno << " " << strerror( errno ) << std::endl;    
 			break;
 		}
 		total += n;
@@ -565,7 +631,7 @@ int GLcell::recvAll( int socket, char *buf, int *len )
 		n = recv( socket, buf+total, bytesleft, 0 );
 		if ( n == -1 )
 		{
-			std::cerr << "recv error; errno: " << errno << " " << strerror( errno ) << std::endl;
+			std::cerr << "GLcell error: recv error; errno: " << errno << " " << strerror( errno ) << std::endl;
 			break;
 		}
 		total += n;
@@ -711,7 +777,7 @@ void GLcell::disconnect()
 		sockFd_ = getSocket( strClientHost_.c_str(), strClientPort_.c_str() );
 		if ( sockFd_ == -1 ) 
 		{
-			std::cerr << "Couldn't connect to client!" << std::endl;
+			std::cerr << "GLcell error: couldn't connect to client!" << std::endl;
 			return;
 		}
 	}
@@ -728,7 +794,7 @@ void GLcell::disconnect()
 	if ( sendAll( sockFd_, headerData, &headerLen ) == -1 ||
 	     headerLen < headerStream.str().size() + 1 )
 	{
-		std::cerr << "Couldn't transmit DISCONNECT message to client!" << std::endl;
+		std::cerr << "GLview error: couldn't transmit DISCONNECT message to client!" << std::endl;
 	}
 
 	free( headerData );

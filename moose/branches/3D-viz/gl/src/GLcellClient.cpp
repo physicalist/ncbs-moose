@@ -344,6 +344,10 @@ void receiveData( int newFd )
 	int messageType;
 	char *buf;
 
+	// Data received from the MOOSE element GLcell:
+	//   Info and geometry, received in RESET step:
+	GeometryData geometryData_;
+
 	while ( true )
 	{
 		numBytes = MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1;
@@ -508,6 +512,7 @@ void sendAck( int socket )
 void updateGeometry( GeometryData geometryData )
 {	
 	double vScale = geometryData.vScale;
+	bgcolor_ = osg::Vec4( geometryData.bgcolorRed, geometryData.bgcolorGreen, geometryData.bgcolorBlue, 1.0 ); 
 	const std::vector< CompartmentData >& compartments = geometryData.renderListCompartmentData;
 	
 	if ( mapId2GLCompartment_.size() > 0 )
@@ -660,7 +665,6 @@ void draw()
 
 	osg::ref_ptr< osg::GraphicsContext > gc = osg::GraphicsContext::createGraphicsContext( traits.get() );
 	
-	viewer_->getCamera()->setClearColor( osg::Vec4( 0., 0., 0., 1. ) ); // black background
 	viewer_->getCamera()->setGraphicsContext( gc.get() );
 	viewer_->getCamera()->setViewport( new osg::Viewport( 0, 0, traits->width, traits->height ) );
 		
@@ -684,6 +688,7 @@ void draw()
 			isGeometryDirty_ = false;
 			
 			viewer_->setSceneData( root_ );
+			viewer_->getCamera()->setClearColor( bgcolor_ );
 		}
 
 		if ( isColorSetDirty_ ) {
