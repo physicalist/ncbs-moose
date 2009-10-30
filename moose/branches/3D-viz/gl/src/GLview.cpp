@@ -21,7 +21,22 @@
 #include <sstream>
 #include <limits>
 
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
+
 #include <math.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
+#include "AckPickData.h"
 
 const int GLview::MSGTYPE_HEADERLENGTH = 1;
 const int GLview::MSGSIZE_HEADERLENGTH = 8;
@@ -118,6 +133,11 @@ static const Cinfo* glviewCinfo = initGLviewCinfo();
 
 GLview::GLview()
 	:
+	sockFd_( -1 ),
+	isConnectionUp_( false ),
+	strClientHost_( "127.0.0.1" ),
+	strClientPort_( "" ),
+	syncMode_( false ),
 	strPath_( "" ),
 	strRelPath_( "" ),
 	values1_( NULL ),
@@ -287,7 +307,12 @@ void GLview::reinitFuncLocal( const Conn* c )
 	if ( ! strValue5Field_.empty() )
 		populateValues( 5, &values5_, strValue5Field_ ); 
 	
-	populateXYZ();
+	double maxsize = populateXYZ(); // this will be the maximum size (absolute value) of
+					// our elements along any dimension
+
+	
+
+
 }
 
 void GLview::processFunc( const Conn* c, ProcInfo info )
@@ -358,7 +383,7 @@ int GLview::populateValues( int valueNum, double ** pValues, string strValueFiel
 	return status;
 }
 
-int GLview::getXYZ( Id id, double& x, double& y, double& z )
+int GLview::getXYZ( Id id, double& x, double& y, double& z, double &maxsize )
 {
 	if ( id() == Element::root() )
 		return -1;
@@ -371,13 +396,33 @@ int GLview::getXYZ( Id id, double& x, double& y, double& z )
 		if ( parent == Id::badId() )
 			return -1;
 		else
-			return getXYZ( parent, x, y, z ); // recurses
+			return getXYZ( parent, x, y, z, maxsize ); // recurses
 	}
+	
+	// success
+	get< double >( id.eref(), "x", x );
+	get< double >( id.eref(), "y", y );
+	get< double >( id.eref(), "z", z );
+	
+	double maxsize_ = 0, temp;
+	if ( id.eref().e->findFinfo( "diameter") &&
+	     get< double >( id.eref(), "diameter", temp ) &&
+	     temp > maxsize_)
+	{
+		maxsize_ = temp;
+	}
+	if ( id.eref().e->findFinfo( "length") &&
+	     get< double >( id.eref(), "length", temp ) &&
+	     temp > maxsize_)
+	{
+		maxsize_ = temp;
+	}
+	maxsize = maxsize_;
 
 	return 0;
 }
 
-void GLview::populateXYZ()
+double GLview::populateXYZ()
 {
 	if ( x_ == NULL )
 		x_ = ( double * ) malloc( sizeof( double ) * elements_.size() );
@@ -386,10 +431,18 @@ void GLview::populateXYZ()
 	if ( z_ == NULL )
 		z_ = ( double * ) malloc( sizeof( double ) * elements_.size() );
 
-	double x, y, z;
+	double x, y, z, size, maxsize = 0;
 
 	// There are three passes for determining collision-free x,y,z
-	// co-ordinates (to 6 decimal places):
+	// co-ordinates (to 6 decimal places). This procedure also
+	// determines the maximum length in any dimension of elements
+	// with given geometries so that the remaining elements (with
+	// no geometrical basis) can be assigned sizes on the same
+	// scale of size; this is based on the assumption that most
+	// geometrical elements in the simulation will be laid out to
+	// be non-overlapping and therefore the maximum length
+	// provides an approximation of the typical distance between
+	// elements.
 
 	// 1. We get x,y,z from elements or their first non-root
 	// ancestor that have valid x,y,z values. We check these into
@@ -399,13 +452,16 @@ void GLview::populateXYZ()
 
 	for ( unsigned int i = 0; i < elements_.size(); ++i )
 	{
-		if ( getXYZ( elements_[i], x, y, z ) == 0 )
+		if ( getXYZ( elements_[i], x, y, z, size ) == 0 )
 		{
 			string key = boxXYZ( x, y, z );
 			if ( mapXYZ.count( key ) == 0 )
 				mapXYZ[ key ] = 1;
 			else
 				mapXYZ[ key ] += 1;
+
+			if ( size > maxsize )
+				maxsize = size;
 		}
 	}
 
@@ -421,10 +477,10 @@ void GLview::populateXYZ()
 
 	for ( unsigned int i = 0; i < elements_.size(); ++i )
 	{
-		if ( getXYZ( elements_[i], x, y, z ) == 0 )
+		if ( getXYZ( elements_[i], x, y, z, size ) == 0 )
 		{
 			string key = boxXYZ( x, y, z );
-			if ( mapXYZ[key] > 1 )
+			if ( mapXYZ[key] > 1 ) // collision
 			{
 				unassignedElements.push_back( i );
 			}
@@ -435,11 +491,11 @@ void GLview::populateXYZ()
 				z_[i] = z;
 				
 				if ( bbx < x )
-					bbx = x + 1; // TODO change this to max x which is defined by the macro MAX X or reassigned by a setfield
+					bbx = x + maxsize;
 				if ( bby < y )
-					bby = y + 1; // TODO see above
+					bby = y + maxsize;
 				if ( bbz < z )
-					bbz = z + 1; // TODO see above
+					bbz = z + maxsize;
 			}
 		}
 		else
@@ -455,15 +511,23 @@ void GLview::populateXYZ()
 	// elements in a planar grid, approximating a square in shape.
 	int n = int( sqrt( unassignedElements.size() ) );
 
-	// TODO change 1s below to max_x, etc.
+	// Another heuristic: if maxsize is still zero, i.e., no
+	// non-root ancestors with valid geometries were found, we
+	// must still set the size to an arbitrary non-zero value, so
+	// we use 1.
+	if ( maxsize < 1e-6 )
+		maxsize = 1;
+
 	for ( unsigned int j = 0; j < unassignedElements.size(); ++j )
 	{
 		unsigned int i = unassignedElements[j];
 		
-		x_[i] = bbx + (j % n) * 1;
-		y_[i] = bby + (j / n) * 1;
+		x_[i] = bbx + (j % n) * maxsize;
+		y_[i] = bby + (j / n) * maxsize;
 		z_[i] = bbz;
 	}
+
+	return maxsize;
 } 
 
 string GLview::boxXYZ( const double& x, const double& y, const double& z )
@@ -487,3 +551,261 @@ string GLview::inttostring( int i )
 // networking helper function definitions
 ///////////////////////////////////////////////////
 
+void* GLview::getInAddress( struct sockaddr *sa )
+{
+	if ( sa->sa_family == AF_INET ) {
+		return &( ( ( struct sockaddr_in* )sa )->sin_addr );
+	}
+
+	return &( ( ( struct sockaddr_in6* )sa )->sin6_addr );
+}
+
+int GLview::getSocket( const char* hostname, const char* service )
+{
+	struct addrinfo hints, *servinfo, *p;
+	int rv;
+	char s[INET6_ADDRSTRLEN];
+	
+	memset( &hints, 0, sizeof hints );
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+
+	if ( ( rv = getaddrinfo( hostname, service, &hints, &servinfo ) ) != 0 ) {
+		std::cerr << "GLview error: getaddrinfo: " << gai_strerror( rv ) << std::endl;
+		return -1;
+	}
+	// loop through all the results and connect to the first we can
+	for ( p = servinfo; p != NULL; p = p->ai_next ) {
+		if ( ( sockFd_ = socket( p->ai_family, p->ai_socktype,
+				     p->ai_protocol ) ) == -1 ) {
+		    //std::cerr << "GLview error: socket" << std::endl;
+			continue;
+		}
+		
+		if ( connect( sockFd_, p->ai_addr, p->ai_addrlen ) == -1 ) {
+			close( sockFd_ );
+			//std::cerr << "GLview error: connect" << std::endl;
+			continue;
+		}
+		
+		break;
+	}
+
+	if ( p == NULL ) {
+		std::cerr << "GLcell error: failed to connect" << std::endl;
+		return -1;
+	}
+	
+	inet_ntop( p->ai_family, getInAddress( ( struct sockaddr * )p->ai_addr ),
+		   s, sizeof s );
+	// std::cout << "Connecting to " << s << std::endl;
+	
+	freeaddrinfo( servinfo );
+	
+	isConnectionUp_ = true;
+	return sockFd_;
+}
+
+int GLview::sendAll( int socket, char* buf, int* len )
+{
+	int total = 0;        // how many bytes we've sent
+	int bytesleft = *len; // how many we have left to send
+	int n;
+
+	while ( total < *len )
+	{
+		n = send( socket, buf+total, bytesleft, 0 );
+		if ( n == -1 )
+		{
+			std::cerr << "GLview error: send error; errno: " << errno << " " << strerror( errno ) << std::endl;    
+			break;
+		}
+		total += n;
+		bytesleft -= n;
+	}
+
+	*len = total; // return number actually sent here
+
+	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
+}
+
+int GLview::recvAll( int socket, char* buf, int* len)
+{
+	int total = 0;        // how many bytes we've received
+	int bytesleft = *len; // how many we have left to receive
+	int n;
+	
+	while ( total < *len )
+	{
+		n = recv( socket, buf+total, bytesleft, 0 );
+		if ( n == -1 )
+		{
+			std::cerr << "GLview error: recv error; errno: " << errno << " " << strerror( errno ) << std::endl;
+			break;
+		}
+		total += n;
+		bytesleft -= n;
+	}
+	
+	*len = total; /// return number actually received here
+	
+	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
+}
+
+int GLview::receiveAck()
+{
+	if ( ! isConnectionUp_ )
+	{
+		std::cerr << "Could not receive ACK because the connection is down." << std::endl;
+		return -1;
+	}
+
+	int numBytes, inboundDataSize;
+	char header[MSGSIZE_HEADERLENGTH + 1];
+	char *buf;
+
+	numBytes = sizeof( AckPickData ) + 1;
+	buf = ( char * ) malloc( numBytes );
+
+	numBytes = MSGSIZE_HEADERLENGTH + 1;
+	if ( recvAll( sockFd_, header, &numBytes) == -1 ||
+	     numBytes < MSGSIZE_HEADERLENGTH + 1 )
+	{
+		std::cerr << "GLview error: could not receive Ack header!" << std::endl;
+		return -1;
+	}
+	else
+	{
+		std::istringstream ackHeaderStream( std::string( header,
+								 MSGSIZE_HEADERLENGTH ) );
+		ackHeaderStream >> std::hex >> inboundDataSize;
+	}
+
+	numBytes = inboundDataSize + 1;
+	buf = ( char * ) malloc( numBytes * sizeof( char ) );
+
+	if ( recvAll( sockFd_, buf, &numBytes ) == -1 ||
+	     numBytes < inboundDataSize + 1 )
+	{
+		std::cerr << "GLview error: could not receive Ack!" << std::endl;
+		return -2;
+	}
+	else
+	{
+		std::istringstream archiveStream( std::string( buf, inboundDataSize ) );
+
+		// starting new scope so that the archive's stream's destructor is called after the archive's
+		{
+			boost::archive::text_iarchive archive( archiveStream );
+		
+			AckPickData ackPickData;
+		
+			archive >> ackPickData;
+
+			if ( ackPickData.wasSomethingPicked )
+			{
+				handlePick( ackPickData.idPicked );
+			}
+		}
+	}
+
+	free(buf);
+
+	return 1;
+}
+
+void GLview::handlePick( unsigned int idPicked )
+{
+	std::cout << "Compartment with id " << idPicked << " was picked!" << std::endl;
+}
+
+void GLview::disconnect()
+{
+	if ( ! isConnectionUp_ )
+	{
+		sockFd_ = getSocket( strClientHost_.c_str(), strClientPort_.c_str() );
+		if ( sockFd_ == -1 ) 
+		{
+			std::cerr << "GLview error: couldn't connect to client!" << std::endl;
+			return;
+		}
+	}
+
+	std::ostringstream headerStream;
+	headerStream << std::setw( MSGSIZE_HEADERLENGTH ) << 0;
+	headerStream << std::setw( MSGTYPE_HEADERLENGTH ) << DISCONNECT;
+
+	int headerLen = headerStream.str().size() + 1;
+	char* headerData = (char *) malloc( headerLen * sizeof( char ) );
+	strcpy( headerData, headerStream.str().c_str() );
+
+
+	if ( sendAll( sockFd_, headerData, &headerLen ) == -1 ||
+	     headerLen < headerStream.str().size() + 1 )
+	{
+		std::cerr << "GLview error: couldn't transmit DISCONNECT message to client!" << std::endl;
+	}
+
+	free( headerData );
+	close( sockFd_ );
+}
+
+template< class T >
+void GLview::transmit( T& data, MSGTYPE messageType )
+{
+	if ( strClientHost_.empty() || strClientPort_.empty() ) // these should have been set.
+		return;
+
+	if ( ! isConnectionUp_ )
+	{
+		sockFd_ = getSocket( strClientHost_.c_str(), strClientPort_.c_str() );
+		if ( sockFd_ == -1 ) 
+		{
+			std::cerr << "GLcell error: Couldn't connect to client!" << std::endl;
+			return;
+		}
+	}
+
+	std::ostringstream archiveStream;
+
+	// starting new scope so that the archive's stream's destructor is called after the archive's
+	{
+		boost::archive::text_oarchive archive( archiveStream );
+
+		archive << data;
+
+		std::ostringstream headerStream;
+		headerStream << std::setw( MSGSIZE_HEADERLENGTH )
+			     << std::hex << archiveStream.str().size();
+
+		headerStream << std::setw( MSGTYPE_HEADERLENGTH )
+			     << messageType;
+
+		int headerLen = headerStream.str().size() + 1;
+		char* headerData = ( char * ) malloc( headerLen * sizeof( char ) );
+		strcpy( headerData, headerStream.str().c_str() );
+	
+		if ( sendAll( sockFd_, headerData, &headerLen ) == -1 ||
+		     headerLen < headerStream.str().size() + 1 )
+		{
+			std::cerr << "GLcell error: couldn't transmit header to client!" << std::endl;
+
+			isConnectionUp_ = false;
+			close( sockFd_ );
+		}
+		else
+		{
+			int archiveLen = archiveStream.str().size() + 1;
+			char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
+			strcpy( archiveData, archiveStream.str().c_str() );
+				
+			if ( sendAll( sockFd_, archiveData, &archiveLen ) == -1 ||
+			     archiveLen < archiveStream.str().size() + 1 )
+			{
+				std::cerr << "GLcell error: couldn't transmit data to client!" << std::endl;	
+			}
+			free( archiveData );
+		}
+		free( headerData );
+	}
+}

@@ -123,14 +123,18 @@ by specificying this value as greater than 1.0.
 
 > setfield gl0 vscale 4
 
+h. 'bgcolor': default value is 000000000. This represents the
+background color of the viewer window, encoded as a string in the
+format RRRGGGBBB, where 000000000 is black (the default) and 255255255
+is white.
+
+> setfield gl0 bgcolor 100100100
+
 A version of DEMOS/gbar/myelin.g, modified to include GLcell,
 is included in the directory DEMOS/gbar/ as cMyelin.g. Part 4
 of this document contains general operating instructions to launch
 such a script, coupled with an instance of 'glcellclient', as a
 complete example.
-
-
-
 
 
 3. Using 'glcellclient':

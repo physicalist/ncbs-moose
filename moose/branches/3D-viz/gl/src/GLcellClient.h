@@ -77,9 +77,7 @@ const int BACKLOG = 10; // how many pending connections will be queued
 bool isSavingMovie_ = false;
 boost::filesystem::path saveDirectory_(".");
 
-// Data received from the MOOSE element GLcell:
-//   Info and geometry, received in RESET step:
-GeometryData geometryData_;
+osg::Vec4 bgcolor_ = osg::Vec4( 0.0, 0.0, 0.0, 1.0 );
 
 // Attribute values mapped to colors, received in PROCESS step:
 std::map< unsigned int, double > renderMapAttrs_;

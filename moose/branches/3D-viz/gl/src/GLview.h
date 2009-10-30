@@ -64,6 +64,24 @@ class GLview
 	static const char SYNCMODE_ACKCHAR;
 
  private:
+	int sockFd_;
+	bool isConnectionUp_;
+	string strClientHost_;
+	string strClientPort_;
+	bool syncMode_;
+
+	/// networking helper functions
+	void* getInAddress( struct sockaddr *sa );
+	int getSocket( const char* hostname, const char* service );
+	int sendAll( int socket, char* buf, int* len );
+	int recvAll( int socket, char* buf, int* len);
+	int receiveAck();
+	void handlePick( unsigned int idPicked );
+	void disconnect();
+	template< class T >
+	  void transmit( T& data, MSGTYPE messageType );
+
+
 	string strPath_;
 	string strRelPath_;
 
@@ -86,10 +104,10 @@ class GLview
 
 	int populateValues( int valueNum, double ** pValues, string strValueField );
 	
-	void populateXYZ();
+	double populateXYZ();
 	string boxXYZ( const double& x, const double& y, const double& z );
 	string inttostring( int i );
 
-	int getXYZ( Id id, double& x, double& y, double& z ); // gets x, y, z co-ordinates for the element represented by id, or (if not found) such co-ordinates of its parent or its parent's parent and so on, unless root is reached
+	int getXYZ( Id id, double& x, double& y, double& z, double &maxsize ); // gets x, y, z co-ordinates for the element represented by id, or (if not found) such co-ordinates of its parent or its parent's parent and so on, unless root is reached
   
 };

@@ -14,6 +14,9 @@ struct GeometryData
 {
 	std::string pathName;
 	double vScale;
+	double bgcolorRed;
+	double bgcolorGreen;
+	double bgcolorBlue;
 	std::vector< CompartmentData > renderListCompartmentData;
 
 	template< typename Archive > 
@@ -21,6 +24,9 @@ struct GeometryData
 	{
 		ar & pathName;
 		ar & vScale;
+		ar & bgcolorRed;
+		ar & bgcolorGreen;
+		ar & bgcolorBlue;
 		ar & renderListCompartmentData;
 	}
 };
