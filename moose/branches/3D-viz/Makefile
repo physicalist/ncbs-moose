@@ -99,9 +99,9 @@ export USE_CURSES
 export USE_GL
 export GENERATE_WRAPPERS
 
-# PLATFORM (= Linux, win32, Darwin)
+# PLATFORM (= Linux, win32, mac)
 #If using mac uncomment the following lines
-# PLATFORM=mac
+PLATFORM=mac
 #export PLATFORM
 
 # Get the processor architecture - i686 or x86_64
@@ -212,6 +212,13 @@ ifeq ($(USE_GL),1)
 	GLVIEW_LIB = gl/src/GLview.o
 endif
 
+# For mac with USE_GL, force 32-bit architecture because OSG doesn't fully build in 64-bit yet
+ifeq ($(PLATFORM),mac)
+ifeq ($(USE_GL),1)
+CXXFLAGS += -arch i386
+endif
+endif
+
 # For 64 bit Linux systems add paths to 64 bit libraries 
 ifeq ($(OSTYPE),Linux)
 ifeq ($(MACHINE),x86_64)
@@ -277,7 +284,7 @@ export LD
 export LIBS
 
 moose: libs $(OBJLIBS) 
-	$(CXX) $(OBJLIBS) $(LIBS) -o moose 
+	$(CXX) $(CXXFLAGS) $(OBJLIBS) $(LIBS) -o moose 
 	@echo "Moose compilation finished"
 
 libmoose.so: libs
