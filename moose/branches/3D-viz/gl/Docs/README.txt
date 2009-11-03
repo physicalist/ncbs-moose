@@ -130,6 +130,25 @@ is white.
 
 > setfield gl0 bgcolor 100100100
 
+i. 'highvalue': default value is 0.05 (to be interpreted as 0.05V,
+where the attribute is Vm). This is the value represented by the color
+specified on the last line of the colormap file. This represents the
+highest value that the attribute is assumed to be able to attain. Any
+values greater than this, should they occur, will be mapped to the
+color which corresponds to this value.
+
+> setfield gl0 highvalue 0.1
+
+j. 'lowvalue': default value is -0.1 (to be interpreted as -0.1V,
+where the attribute is Vm). This is the value represented by the color
+specified on the first line of the colormap file. This represents the
+lowest value that the attribute is assumed to be able to attain. Any
+values lower than this, should they occur, will be mapped to the color
+which corresponds to this value.
+
+> setfield gl0 lowvalue -0.08
+
+
 A version of DEMOS/gbar/myelin.g, modified to include GLcell,
 is included in the directory DEMOS/gbar/ as cMyelin.g. Part 4
 of this document contains general operating instructions to launch
@@ -158,20 +177,7 @@ command-line parameters, the first of two of which are required:
  source directory, viz. 'rainbow2','redhot','grey' and 'hot'.
 
 
-The remaining command-line parameters are optional:
-
--u upper: with a default value of 0.05V, where upper is the value
- represented by the color specified on the last line of the colormap
- file. This represents the highest value that the attribute is assumed
- to be able to attain. Any values greater than this, should they
- occur, will be mapped to the same color which corresponds to this
- value.
-
--l lower: with a default value of -0.1V, where lower is the value
- represented by the color specified on the first line of the colormap
- file. This represents the lowest value that the attribute is assumed
- to be able to attain. Any values lower than this, should they occur,
- will be mapped to the color which corresponds to this value.
+The following, remaining, command-line parameters are optional:
 
 -d directory: with a default value of './', the current
  directory. This is the full pathname of the path to which any

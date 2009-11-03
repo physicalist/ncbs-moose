@@ -66,8 +66,6 @@ unsigned int pickedId_;
 
 char * port_ = NULL;
 char * fileColormap_ = NULL;
-double highValue_ = 0.05;
-double lowValue_ = -0.1;
 double incrementAngle_ = DEFAULT_INCREMENT_ANGLE;
 
 const int MSGTYPE_HEADERLENGTH = 1;
@@ -80,7 +78,7 @@ boost::filesystem::path saveDirectory_(".");
 osg::Vec4 bgcolor_ = osg::Vec4( 0.0, 0.0, 0.0, 1.0 );
 
 // Attribute values mapped to colors, received in PROCESS step:
-std::map< unsigned int, double > renderMapAttrs_;
+std::map< unsigned int, double > renderMapColors_;
 
 boost::mutex mutexColorSetSaved_;
 boost::mutex mutexColorSetUpdated_;

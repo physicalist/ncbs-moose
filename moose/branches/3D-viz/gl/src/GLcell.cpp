@@ -39,6 +39,7 @@
 
 #include "AckPickData.h"
 #include "CompartmentData.h"
+#include "Constants.h"
 
 const int GLcell::MSGTYPE_HEADERLENGTH = 1;
 const int GLcell::MSGSIZE_HEADERLENGTH = 8;
@@ -102,6 +103,16 @@ const Cinfo* initGLcellCinfo()
 				GFCAST( &GLcell::getBgColor ),
 				RFCAST( &GLcell::setBgColor )
 				),
+		new ValueFinfo( "highvalue",
+				ValueFtype1< double >::global(),
+				GFCAST( &GLcell::getHighValue ),
+				RFCAST( &GLcell::setHighValue )
+				),
+		new ValueFinfo( "lowvalue",
+				ValueFtype1< double >::global(),
+				GFCAST( &GLcell::getLowValue ),
+				RFCAST( &GLcell::setLowValue )
+				),
 	///////////////////////////////////////////////////////
 	// Shared definitions
 	///////////////////////////////////////////////////////
@@ -146,12 +157,14 @@ GLcell::GLcell()
 	isConnectionUp_( false ),
 	strAttributeName_( "Vm" ),
 	sockFd_( -1 ),
-	changeThreshold_( 1e-8 ),
+	changeThreshold_( SIZE_EPSILON ),
 	vScale_( 1.0 ),
 	syncMode_( false ),
 	bgcolorRed_( 0.0 ),
 	bgcolorGreen_( 0.0 ),
-	bgcolorBlue_( 0.0 )
+	bgcolorBlue_( 0.0 ),
+	highValue_( 0.05 ),
+	lowValue_( -0.1 )
 {
 }
 GLcell::~GLcell()
@@ -333,6 +346,46 @@ string GLcell::getBgColor( Eref e )
 	return out.str();
 }
 
+void GLcell::setHighValue( const Conn* c, double highValue )
+{
+	static_cast< GLcell * >( c->data() )->innerSetHighValue( highValue );
+}
+
+void GLcell::innerSetHighValue( const double highValue )
+{
+	if ( highValue_ <= lowValue_ )
+	{
+		std::cerr << "GLcell warning: highvalue must be set to be greather than 'lowvalue'." << std::endl;
+	}
+
+	highValue_ = highValue;
+}
+
+double GLcell::getHighValue( Eref e )
+{
+	return static_cast< const GLcell* >( e.data() )->highValue_;
+}
+
+void GLcell::setLowValue( const Conn* c, double lowValue )
+{	
+	static_cast< GLcell * >( c->data() )->innerSetLowValue( lowValue );
+}
+
+void GLcell::innerSetLowValue( const double lowValue )
+{
+	if ( highValue_ <= lowValue_ )
+	{
+		std::cerr << "GLcell warning: highvalue must be set to be greather than 'lowvalue'." << std::endl;
+	}
+
+	lowValue_ = lowValue;
+}
+
+double GLcell::getLowValue( Eref e )
+{
+	return static_cast< const GLcell* >( e.data() )->lowValue_;
+}	
+
 ///////////////////////////////////////////////////
 // Dest function definitions
 ///////////////////////////////////////////////////
@@ -419,6 +472,7 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 {
 	unsigned int id;
 	double attrValue;
+	std::map< unsigned int, double> mapColors;
        
 	if ( !renderList_.empty() )
 	{
@@ -447,19 +501,21 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 			}
 		}
 
+		mapColors = mapAttrs2Colors( renderMapAttrsTransmitted_ );
+
 		if ( syncMode_ )
 		{
-			transmit( renderMapAttrsTransmitted_, PROCESSSYNC );
+			transmit( mapColors, PROCESSSYNC );
 			if ( receiveAck() < 0 )
-            {
-                isConnectionUp_ = false;
-            }
-            // the client will wait for the display to be updated before
+			{
+				isConnectionUp_ = false;
+			}
+			// the client will wait for the display to be updated before
 			// sending this ack in response to a PROCESSSYNC message
 		}
 		else
 		{
-			transmit( renderMapAttrsTransmitted_, PROCESS );
+			transmit( mapColors, PROCESS );
 			if ( receiveAck() < 0 )
 			{
 				isConnectionUp_ = false;
@@ -471,6 +527,35 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 ///////////////////////////////////////////////////
 // private function definitions
 ///////////////////////////////////////////////////
+
+std::map< unsigned int, double> GLcell::mapAttrs2Colors( std::map< unsigned int, double > renderMapAttrs )
+{
+	std::map< unsigned int, double> mapColors;
+	std::map< unsigned int, double>::iterator renderMapAttrsIterator;
+
+	for ( renderMapAttrsIterator = renderMapAttrs.begin();
+	      renderMapAttrsIterator != renderMapAttrs.end();
+	      renderMapAttrsIterator++ )
+	{
+		unsigned int id = renderMapAttrsIterator->first;
+		double attr = renderMapAttrsIterator->second;
+
+		if ( attr > highValue_ )
+		{
+			mapColors[id] = 1;
+		}
+		else if ( attr < lowValue_ )
+		{
+			mapColors[id] = 0;
+		}
+		else
+		{
+			mapColors[id] = ( attr - lowValue_ ) / ( highValue_ - lowValue_ );
+		}
+	}
+	
+	return mapColors;
+}
 
 void GLcell::findNeighbours( Id id, vector< unsigned int >& vecResult )
 {
