@@ -21,7 +21,6 @@ DATA_STRUCTURE_HEADERS = AckPickData.h GeometryData.h CompartmentData.h
 TARGET_CELL = glcell.o
 TARGET_VIEW = glview.o
 TARGET_CLIENT = glcellclient
-CXXFLAGS = -Wall -Wno-long-long -pedantic
 
 default: $(TARGET_CELL) $(TARGET_VIEW) $(TARGET_CLIENT) 
 
