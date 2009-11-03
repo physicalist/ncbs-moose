@@ -404,8 +404,8 @@ void receiveData( int newFd )
 					{  // additional scope to wrap scoped_lock
 						boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 					
-						renderMapAttrs_.clear();
-						archive_i >> renderMapAttrs_;
+						renderMapColors_.clear();
+						archive_i >> renderMapColors_;
 					}
 				
 
@@ -680,7 +680,7 @@ void draw()
 	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile::WriteToFile( getSaveFilename(), "jpg", osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
 	viewer_->addEventHandler( screenCaptureHandler_ );
 
-	std::map< unsigned int, double >::iterator renderMapAttrsIterator;
+	std::map< unsigned int, double >::iterator renderMapColorsIterator;
 
 	while ( !viewer_->done() ) {
 
@@ -694,37 +694,32 @@ void draw()
 		if ( isColorSetDirty_ ) {
 			boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 			
-			for ( renderMapAttrsIterator = renderMapAttrs_.begin();
-			      renderMapAttrsIterator != renderMapAttrs_.end();
-			      renderMapAttrsIterator++ )
+			for ( renderMapColorsIterator = renderMapColors_.begin();
+			      renderMapColorsIterator != renderMapColors_.end();
+			      renderMapColorsIterator++ )
 			{
-				unsigned int id = renderMapAttrsIterator->first;
-				double attr = renderMapAttrsIterator->second;
+				unsigned int id = renderMapColorsIterator->first;
+				double color = renderMapColorsIterator->second;
 
 				GLCompartment* glcompartment = mapId2GLCompartment_[id];
-				double red, green, blue;
+				int ix;
 				
-				if ( attr > highValue_ )
+				if ( fabs( color - 0 ) < FP_EPSILON ) // color == 0
 				{
-					red   = colormap_[ colormap_.size()-1 ][ 0 ];
-					green = colormap_[ colormap_.size()-1 ][ 1 ];
-					blue  =  colormap_[ colormap_.size()-1 ][ 2 ];
+					ix = 0;
 				}
-				else if ( attr < lowValue_ )
+				else if ( fabs( color - 1 ) < FP_EPSILON ) // color = 1
 				{
-					red   = colormap_[ 0 ][ 0 ];
-					green = colormap_[ 0 ][ 1 ];
-					blue  = colormap_[ 0 ][ 2 ];
+					ix = colormap_.size()-1;
 				}
 				else
 				{
-					double intervalSize = ( highValue_ - lowValue_ ) / colormap_.size();
-					int ix = static_cast< int >( floor( ( attr - lowValue_ ) / intervalSize ) );
-
-					red   = colormap_[ ix ][ 0 ];
-					green = colormap_[ ix ][ 1 ];
-					blue  = colormap_[ ix ][ 2 ];
+					ix = static_cast< int >( floor( color * colormap_.size() ) );
 				}
+
+				double red = colormap_[ ix ][ 0 ];
+				double green = colormap_[ ix ][ 1 ];
+				double blue = colormap_[ ix ][ 2 ];
 
 				glcompartment->setColor( osg::Vec4( red, green, blue, 1.0f ) );
 			}
@@ -769,8 +764,6 @@ int main( int argc, char* argv[] )
 	std::string strHelp = "Usage: glcellclient\n"
 		"\t-p <number>: port number\n"
 		"\t-c <string>: filename of colormap file\n"
-		"\t[-u <number>: value represented by colour on last line of colormap file (default is 0.05V)]\n"
-		"\t[-l <number>: value represented by colour on first line of colormap file (default if -0.1V)]\n"
 		"\t[-d <string>: pathname in which to save screenshots and sequential image files (default is ./)]\n"
 		"\t[-a <number>: required to be between 1 and 60 degrees; \n this value represents angular increments in drawing the sides of curved bodies; smaller numbers give smoother bodies (default is 10)]\n";
 	
@@ -778,7 +771,7 @@ int main( int argc, char* argv[] )
 	double value;
 
 	// Check command line arguments.
-	while ( ( c = getopt( argc, argv, "hp:c:u:l:d:a:" ) ) != -1 )
+	while ( ( c = getopt( argc, argv, "hp:c:d:a:" ) ) != -1 )
 		switch( c )
 		{
 		case 'h':
@@ -789,12 +782,6 @@ int main( int argc, char* argv[] )
 			break;
 		case 'c':
 			fileColormap_ = optarg;
-			break;
-		case 'u':
-			highValue_ = strtod( optarg, NULL );
-			break;
-		case 'l':
-			lowValue_ = strtod( optarg, NULL );
 			break;
 		case 'd':
 			saveDirectory_ = optarg;
@@ -827,12 +814,6 @@ int main( int argc, char* argv[] )
 	if ( port_ == NULL || fileColormap_ == NULL )
 	{
 		std::cerr << "Port number and colormap filename are required arguments." << std::endl;
-		std::cerr << strHelp << std::endl;
-		return 1;
-	}
-	if ( highValue_ <= lowValue_ )
-	{
-		std::cerr << "-u argument must be greater than -l argument." << std::endl;
 		std::cerr << strHelp << std::endl;
 		return 1;
 	}

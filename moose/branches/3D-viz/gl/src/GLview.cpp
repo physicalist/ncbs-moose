@@ -36,6 +36,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include "Constants.h"
 #include "AckPickData.h"
 
 const int GLview::MSGTYPE_HEADERLENGTH = 1;
@@ -515,7 +516,7 @@ double GLview::populateXYZ()
 	// non-root ancestors with valid geometries were found, we
 	// must still set the size to an arbitrary non-zero value, so
 	// we use 1.
-	if ( maxsize < 1e-6 )
+	if ( maxsize < FP_EPSILON )
 		maxsize = 1;
 
 	for ( unsigned int j = 0; j < unassignedElements.size(); ++j )

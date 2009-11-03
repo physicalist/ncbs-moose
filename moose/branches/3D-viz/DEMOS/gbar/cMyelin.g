@@ -20,7 +20,7 @@ include compatibility.g
 ////////////////////////////////////////////////////////////////////////////////
 float SIMDT = 10e-5
 float IODT = 100e-6
-float SIMLENGTH = 0.25
+float SIMLENGTH = 0.50
 float INJECT = 1e-10
 float EREST_ACT = -0.065
 
@@ -107,9 +107,11 @@ setfield gl0 port 9999
 setfield gl0 host localhost
 setfield gl0 attribute Vm
 setfield gl0 threshold 0.0015
-setfield gl0 sync off
+setfield gl0 sync on
 setfield gl0 vscale 10
 setfield gl0 bgcolor 050050050
+setfield gl0 highvalue 0.05
+setfield gl0 lowvalue -0.1
 reset
 
 //=====================================

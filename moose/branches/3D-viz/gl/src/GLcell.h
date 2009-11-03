@@ -63,6 +63,14 @@ class GLcell
 	static void setBgColor( const Conn* c, string strBgColor );
 	void innerSetBgColor( const double red, const double green, const double blue );
 	static string getBgColor( Eref e );
+
+	static void setHighValue( const Conn* c, double highValue );
+	void innerSetHighValue( const double highValue );
+	static double getHighValue( Eref e );
+
+	static void setLowValue( const Conn* c, double lowValue );
+	void innerSetLowValue( const double lowValue );
+	static double getLowValue( Eref e );
 	
 	static const int MSGTYPE_HEADERLENGTH;
 	static const int MSGSIZE_HEADERLENGTH;
@@ -82,12 +90,16 @@ class GLcell
 	double bgcolorRed_;
 	double bgcolorBlue_;
 	double bgcolorGreen_;
+	double highValue_;
+	double lowValue_;
 
 	vector< Id > renderList_;
 	GeometryData geometryData_;
 
 	map< unsigned int, double > renderMapAttrsLastTransmitted_;
 	map< unsigned int, double > renderMapAttrsTransmitted_;
+
+	map< unsigned int, double> mapAttrs2Colors( map< unsigned int, double > renderMapAttrs );
 
 	void add2RenderList( Id id );
 	void findNeighbours( Id id, std::vector< unsigned int>& vecResult );
