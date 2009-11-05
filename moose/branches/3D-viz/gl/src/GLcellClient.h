@@ -46,7 +46,8 @@ void* getInAddr( struct sockaddr* sa );
 int sendAll( int socket, char* buf, int* len );
 int recvAll( int socket, char* buf, int* len);
 void sendAck( int socket );
-void updateGeometry( GeometryData geometry );
+void updateGeometryGLcell( const GeometryData& geometry );
+void updateGeometryGLview( const GLviewResetData& data );
 
 std::string getSaveFilename( void );
 
@@ -59,7 +60,6 @@ std::map< osg::Geode*, unsigned int > mapGeode2Id_; // this is used to obtain th
 volatile bool isGeometryDirty_ = false;
 volatile bool isColorSetDirty_ = false;
 
-
 volatile bool isPickingDataUpdated_ = false;
 boost::mutex mutexPickingDataUpdated_;
 unsigned int pickedId_;
@@ -71,6 +71,15 @@ double incrementAngle_ = DEFAULT_INCREMENT_ANGLE;
 const int MSGTYPE_HEADERLENGTH = 1;
 const int MSGSIZE_HEADERLENGTH = 8;
 const int BACKLOG = 10; // how many pending connections will be queued
+
+enum MODETYPE
+{
+	NONE,
+	GLCELL,
+	GLVIEW
+};
+
+int mode_ = NONE;
 
 bool isSavingMovie_ = false;
 boost::filesystem::path saveDirectory_(".");

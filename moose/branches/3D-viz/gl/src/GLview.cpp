@@ -37,6 +37,7 @@
 #include <arpa/inet.h>
 
 #include "Constants.h"
+#include "GLviewResetData.h"
 #include "AckPickData.h"
 
 const int GLview::MSGTYPE_HEADERLENGTH = 1;
@@ -61,6 +62,16 @@ const Cinfo* initGLviewCinfo()
 	///////////////////////////////////////////////////////
 	// Field definitions
 	///////////////////////////////////////////////////////
+		new ValueFinfo( "host",
+				ValueFtype1< string >::global(),
+				GFCAST( &GLview::getClientHost ),
+				RFCAST( &GLview::setClientHost )
+				),
+		new ValueFinfo( "port",
+				ValueFtype1< string >::global(),
+				GFCAST( &GLview::getClientPort ),
+				RFCAST( &GLview::setClientPort )
+				),
 		new ValueFinfo( "path",
 				ValueFtype1< string >::global(),
 				GFCAST( &GLview::getPath ),
@@ -95,6 +106,11 @@ const Cinfo* initGLviewCinfo()
 				ValueFtype1< string >::global(),
 				GFCAST( &GLview::getValue5Field ),
 				RFCAST( &GLview::setValue5Field )
+				),
+		new ValueFinfo( "bgcolor",
+				ValueFtype1< string >::global(),
+				GFCAST( &GLview::getBgColor ),
+				RFCAST( &GLview::setBgColor )
 				),
 	///////////////////////////////////////////////////////
 	// Shared definitions
@@ -139,6 +155,9 @@ GLview::GLview()
 	strClientHost_( "127.0.0.1" ),
 	strClientPort_( "" ),
 	syncMode_( false ),
+	bgcolorRed_( 0.0 ),
+	bgcolorGreen_( 0.0 ),
+	bgcolorBlue_( 0.0 ),
 	strPath_( "" ),
 	strRelPath_( "" ),
 	values1_( NULL ),
@@ -175,6 +194,36 @@ GLview::~GLview()
 ///////////////////////////////////////////////////
 // Field function definitions
 ///////////////////////////////////////////////////
+
+void GLview::setClientHost( const Conn* c, string strClientHost )
+{
+	static_cast< GLview * >( c->data() )->innerSetClientHost( strClientHost );
+}
+
+void GLview::innerSetClientHost( const string& strClientHost )
+{
+	strClientHost_ = strClientHost;
+}
+
+string GLview::getClientHost( Eref e )
+{
+	return static_cast< const GLview* >( e.data() )->strClientHost_;
+}
+
+void GLview::setClientPort( const Conn* c, string strClientPort )
+{
+	static_cast< GLview * >( c->data() )->innerSetClientPort( strClientPort );
+}
+
+void GLview::innerSetClientPort( const string& strClientPort )
+{
+	strClientPort_ = strClientPort;
+}
+
+string GLview::getClientPort( Eref e )
+{
+	return static_cast< const GLview* >( e.data() )->strClientPort_;
+}
 
 void GLview::setPath( const Conn* c, string strPath )
 {
@@ -281,6 +330,61 @@ string GLview::getValue5Field( Eref e )
 	return static_cast< GLview * >( e.data() )->strValue5Field_;
 }
 
+void GLview::setBgColor( const Conn* c, string strBgColor )
+{
+	double red, green, blue;
+
+	bool error = false;
+	int bgcolor;
+	std::istringstream intstream( strBgColor );
+	if ( intstream >> bgcolor )
+	{
+		blue = ( bgcolor % 1000 ) / 255.;
+		green = ( ( bgcolor/1000 ) % 1000 ) / 255.;
+		red = ( ( bgcolor/1000000 ) % 1000 ) / 255.;
+
+		if ( red > 1.0 || blue > 1.0 || green > 1.0 )
+		{
+			error = true;
+		}
+		else
+		{
+			static_cast< GLview * >( c->data() )->innerSetBgColor( red, green, blue );
+		}
+	}
+	else
+	{
+		error = true;
+	}	
+
+	if ( error ) // report error; default is (0,0,0) (black)
+	{
+		std::cerr << "GLview error: the field 'bgcolor' is not in the expected format, defaulting to black" << std::endl;
+	}
+
+}
+
+void GLview::innerSetBgColor( const double red, const double green, const double blue )
+{
+	bgcolorRed_ = red;
+	bgcolorGreen_ = green;
+	bgcolorBlue_ = blue;
+}
+
+string GLview::getBgColor( Eref e )
+{
+	double red = static_cast< const GLview* >( e.data() )->bgcolorRed_;
+	double green = static_cast< const GLview* >( e.data() )->bgcolorGreen_;
+	double blue = static_cast< const GLview* >( e.data() )->bgcolorBlue_;
+	
+	int bgcolor = (red * 255.) * 1000000 + (green * 255.) * 1000 + (blue * 255.);
+
+	std::string s;
+	std::stringstream out;
+	out << bgcolor;
+	return out.str();
+}
+
 ///////////////////////////////////////////////////
 // Dest function definitions
 ///////////////////////////////////////////////////
@@ -294,26 +398,54 @@ void GLview::reinitFuncLocal( const Conn* c )
 {
 	elements_.clear();
 
-	wildcardFind( strPath_, elements_ );
-	std::cout << "GLview: " << elements_.size() << " elements found." << std::endl; // TODO comment this out by default
+	if ( ! strPath_.empty() )  
+	{
+		wildcardFind( strPath_, elements_ );
+		std::cout << "GLview: " << elements_.size() << " elements found." << std::endl; // TODO comment this out by default
 
-	if ( ! strValue1Field_.empty() )
-		populateValues( 1, &values1_, strValue1Field_ ); 
-	if ( ! strValue2Field_.empty() )
-		populateValues( 2, &values2_, strValue2Field_ ); 
-	if ( ! strValue3Field_.empty() )
-		populateValues( 3, &values3_, strValue3Field_ ); 
-	if ( ! strValue4Field_.empty() )
-		populateValues( 4, &values4_, strValue4Field_ ); 
-	if ( ! strValue5Field_.empty() )
-		populateValues( 5, &values5_, strValue5Field_ ); 
+		if ( ! strValue1Field_.empty() )
+			populateValues( 1, &values1_, strValue1Field_ ); 
+		if ( ! strValue2Field_.empty() )
+			populateValues( 2, &values2_, strValue2Field_ ); 
+		if ( ! strValue3Field_.empty() )
+			populateValues( 3, &values3_, strValue3Field_ ); 
+		if ( ! strValue4Field_.empty() )
+			populateValues( 4, &values4_, strValue4Field_ ); 
+		if ( ! strValue5Field_.empty() )
+			populateValues( 5, &values5_, strValue5Field_ ); 
+
+		double maxsize = populateXYZ();
+
+		GLviewResetData resetData;
+		resetData.bgcolorRed = bgcolorRed_;
+		resetData.bgcolorGreen = bgcolorGreen_;
+		resetData.bgcolorBlue = bgcolorBlue_;
+		resetData.pathName = strPath_;
+		resetData.maxsize = maxsize;
+		
+		for ( unsigned int i = 0; i < elements_.size(); ++i )
+		{
+			GLviewShapeResetData shape;
+
+			shape.id = elements_[i].id();
+			shape.pathName = elements_[i].path();
+
+			shape.x = x_[i];
+			shape.y = y_[i];
+			shape.z = z_[i];
+
+			resetData.shapes.push_back( shape );
+		}
+
+		if ( strClientPort_.empty() )
+			std::cerr << "GLview error: Client port not specified." << std::endl;
+		else if ( strClientHost_.empty() )
+			std::cerr << "GLview error: Client hostname not specified." << std::endl;
+		else
+			transmit( resetData, RESET ); // TODO the handler doesn't have to display anything in response to RESET, but do it the first time for debugging the connection, etc.
+		// TODO the next thing is to add modes to glcellclient
 	
-	double maxsize = populateXYZ(); // this will be the maximum size (absolute value) of
-					// our elements along any dimension
-
-	
-
-
+	}
 }
 
 void GLview::processFunc( const Conn* c, ProcInfo info )
@@ -349,7 +481,7 @@ int GLview::populateValues( int valueNum, double ** pValues, string strValueFiel
 		for ( unsigned int i = 0; i < elements_.size(); ++i)
 		{
 			Id id = elements_[i];
-			string path;
+			std::string path;
 
 			if ( ! strRelPath_.empty() ) 
 			{
@@ -517,7 +649,9 @@ double GLview::populateXYZ()
 	// must still set the size to an arbitrary non-zero value, so
 	// we use 1.
 	if ( maxsize < FP_EPSILON )
+	{
 		maxsize = 1;
+	}
 
 	for ( unsigned int j = 0; j < unassignedElements.size(); ++j )
 	{
@@ -607,11 +741,11 @@ int GLview::getSocket( const char* hostname, const char* service )
 	return sockFd_;
 }
 
-int GLview::sendAll( int socket, char* buf, int* len )
+int GLview::sendAll( int socket, char* buf, unsigned int* len )
 {
-	int total = 0;        // how many bytes we've sent
+	unsigned int total = 0;        // how many bytes we've sent
 	int bytesleft = *len; // how many we have left to send
-	int n;
+	int n = 0;
 
 	while ( total < *len )
 	{
@@ -630,11 +764,11 @@ int GLview::sendAll( int socket, char* buf, int* len )
 	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
 }
 
-int GLview::recvAll( int socket, char* buf, int* len)
+int GLview::recvAll( int socket, char* buf, unsigned int* len)
 {
-	int total = 0;        // how many bytes we've received
+	unsigned int total = 0;        // how many bytes we've received
 	int bytesleft = *len; // how many we have left to receive
-	int n;
+	int n = 0;
 	
 	while ( total < *len )
 	{
@@ -661,7 +795,7 @@ int GLview::receiveAck()
 		return -1;
 	}
 
-	int numBytes, inboundDataSize;
+	unsigned int numBytes, inboundDataSize;
 	char header[MSGSIZE_HEADERLENGTH + 1];
 	char *buf;
 
@@ -736,7 +870,7 @@ void GLview::disconnect()
 	headerStream << std::setw( MSGSIZE_HEADERLENGTH ) << 0;
 	headerStream << std::setw( MSGTYPE_HEADERLENGTH ) << DISCONNECT;
 
-	int headerLen = headerStream.str().size() + 1;
+	unsigned int headerLen = headerStream.str().size() + 1;
 	char* headerData = (char *) malloc( headerLen * sizeof( char ) );
 	strcpy( headerData, headerStream.str().c_str() );
 
@@ -782,7 +916,7 @@ void GLview::transmit( T& data, MSGTYPE messageType )
 		headerStream << std::setw( MSGTYPE_HEADERLENGTH )
 			     << messageType;
 
-		int headerLen = headerStream.str().size() + 1;
+		unsigned int headerLen = headerStream.str().size() + 1;
 		char* headerData = ( char * ) malloc( headerLen * sizeof( char ) );
 		strcpy( headerData, headerStream.str().c_str() );
 	
@@ -796,7 +930,7 @@ void GLview::transmit( T& data, MSGTYPE messageType )
 		}
 		else
 		{
-			int archiveLen = archiveStream.str().size() + 1;
+			unsigned int archiveLen = archiveStream.str().size() + 1;
 			char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
 			strcpy( archiveData, archiveStream.str().c_str() );
 				

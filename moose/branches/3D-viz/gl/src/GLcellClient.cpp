@@ -59,6 +59,9 @@
 #include "CompartmentData.h"
 #include "AckPickData.h"
 #include "GeometryData.h"
+#include "GLviewResetData.h"
+#include "GLviewShape.h"
+
 #include "TextBox.h"
 #include "GLCompartmentCylinder.h"
 #include "GLCompartmentSphere.h"
@@ -203,11 +206,11 @@ void* getInAddr( struct sockaddr* sa )
 	return &( ( ( struct sockaddr_in6* )sa )->sin6_addr );
 }
 
-int sendAll( int socket, char* buf, int* len )
+int sendAll( int socket, char* buf, unsigned int* len )
 {
-	int total = 0;        // how many bytes we've sent
+	unsigned int total = 0;        // how many bytes we've sent
 	int bytesleft = *len; // how many we have left to send
-	int n;
+	int n = 0;
 
 	while ( total < *len )
 	{
@@ -226,11 +229,11 @@ int sendAll( int socket, char* buf, int* len )
 	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
 }
 
-int recvAll( int socket, char *buf, int *len )
+int recvAll( int socket, char *buf, unsigned int *len )
 {
-	int total = 0;        // how many bytes we've received
+	unsigned int total = 0;        // how many bytes we've received
 	int bytesleft = *len; // how many we have left to receive
-	int n;
+	int n = 0;
 	
 	while ( total < *len )
 	{
@@ -339,14 +342,10 @@ int acceptNewConnection( char * port )
 
 void receiveData( int newFd )
 {
-	int numBytes, inboundDataSize;
+	unsigned int numBytes, inboundDataSize;
 	char header[MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1];
 	int messageType;
 	char *buf;
-
-	// Data received from the MOOSE element GLcell:
-	//   Info and geometry, received in RESET step:
-	GeometryData geometryData_;
 
 	while ( true )
 	{
@@ -357,7 +356,8 @@ void receiveData( int newFd )
 			std::cerr << "GLcellClient error:  could not receive message header!" << std::endl;
 			break;
 		}
-		else {
+		else
+		{
 			std::istringstream msgsizeHeaderstream( std::string( header, 
 									     MSGSIZE_HEADERLENGTH ) );
 			msgsizeHeaderstream >> std::hex >> inboundDataSize;
@@ -369,7 +369,7 @@ void receiveData( int newFd )
 
 			if ( messageType == DISCONNECT )
 			{
-				std::cout << "GLcellClient: MOOSE element disconnected." << std::endl;
+				std::cout << "GLcellClient: MOOSE element disconnected normally." << std::endl;
 				break;
 			}
 		}
@@ -391,52 +391,66 @@ void receiveData( int newFd )
 			{
 				boost::archive::text_iarchive archive_i( archive_stream_i );
 			
-				if ( messageType == RESET) 
+				if ( mode_ == GLCELL )
 				{
-					geometryData_.renderListCompartmentData.clear();
-					archive_i >> geometryData_;
+					if ( messageType == RESET) 
+					{
+						GeometryData geometryData;
+						archive_i >> geometryData;
 
-					updateGeometry( geometryData_ );
-				}
-				else if ( messageType == PROCESS || messageType == PROCESSSYNC )
-				{
-
-					{  // additional scope to wrap scoped_lock
-						boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
+						updateGeometryGLcell( geometryData );
+					}
+					else if ( messageType == PROCESS || messageType == PROCESSSYNC )
+					{
+						{  // additional scope to wrap scoped_lock
+							boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 					
-						renderMapColors_.clear();
-						archive_i >> renderMapColors_;
-					}
-				
-
-
-					// wait for display to update if in sync mode
-					if ( messageType == PROCESS )
-					{
-						if ( isColorSetDirty_ == true ) // We meant to set colorset dirty but
-							// it is already dirty which means the rendering thread has not picked it up yet.
-						{
-							std::cerr << "skipping frame..." << std::endl;
+							renderMapColors_.clear();
+							archive_i >> renderMapColors_;
 						}
-	
-						isColorSetDirty_ = true;
-
-					}
-					else // messageType == PROCESSSYNC
-					{
-						isColorSetDirty_ = true;
 				
-						// wait for the updated color set to render to display
+						// wait for display to update if in sync mode
+						if ( messageType == PROCESS )
 						{
-							boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
-							while ( isColorSetDirty_ )
+							if ( isColorSetDirty_ == true ) // We meant to set colorset dirty but
+								// it is already dirty which means the rendering thread has not picked it up yet.
 							{
-								condColorSetUpdated_.wait( lock );
+								std::cerr << "skipping frame..." << std::endl;
+							}
+	
+							isColorSetDirty_ = true;
+						}
+						else // messageType == PROCESSSYNC
+						{
+							isColorSetDirty_ = true;
+				
+							// wait for the updated color set to render to display
+							{
+								boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
+								while ( isColorSetDirty_ )
+								{
+									condColorSetUpdated_.wait( lock );
+								}
 							}
 						}
+						sendAck( newFd );
 					}
-				
-					sendAck( newFd );
+				}
+				else if ( mode_ == GLVIEW )
+				{
+					if ( messageType == RESET) 
+					{
+						GLviewResetData data;
+						archive_i >> data;
+
+						updateGeometryGLview( data );
+					}
+					else if ( messageType == PROCESS || messageType == PROCESSSYNC )
+					{
+						std::cout << " Handling GLVIEW PROCESS" << std::endl; // TODO
+						
+						sendAck( newFd );
+					}	
 				}
 			}
 		}
@@ -481,7 +495,7 @@ void sendAck( int socket )
 		headerStream << std::setw( MSGSIZE_HEADERLENGTH )
 			     << std::hex << archiveStream.str().size();
 
-		int headerLen = headerStream.str().size() + 1;
+		unsigned int headerLen = headerStream.str().size() + 1;
 		char *headerData = ( char * ) malloc( headerLen * sizeof( char ) );
 		strcpy( headerData, headerStream.str().c_str() );
 
@@ -493,7 +507,7 @@ void sendAck( int socket )
 		}
 		else
 		{		
-			int archiveLen = archiveStream.str().size() + 1;
+			unsigned int archiveLen = archiveStream.str().size() + 1;
 			char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
 			strcpy( archiveData, archiveStream.str().c_str() );
 
@@ -509,7 +523,7 @@ void sendAck( int socket )
 	}
 }
 
-void updateGeometry( GeometryData geometryData )
+void updateGeometryGLcell( const GeometryData& geometryData )
 {	
 	double vScale = geometryData.vScale;
 	bgcolor_ = osg::Vec4( geometryData.bgcolorRed, geometryData.bgcolorGreen, geometryData.bgcolorBlue, 1.0 ); 
@@ -541,7 +555,7 @@ void updateGeometry( GeometryData geometryData )
 	root_->addChild( textParent_->getGroup() );
 
 	// First pass: create the basic hollow cylinders with no end-caps
-	for ( int i = 0; i < compartments.size(); ++i )
+	for ( unsigned int i = 0; i < compartments.size(); ++i )
 	{
 		const std::string& name = compartments[i].name;
 		const unsigned int& id = compartments[i].id;
@@ -561,7 +575,7 @@ void updateGeometry( GeometryData geometryData )
 			GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( x, y, z ),
 									       diameter/2,
 									       incrementAngle_ );
-			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( sphere ); // to call the polymorphic function setColor() later
+			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( sphere );
 
 			osg::Geometry* sphereGeom = sphere->getGeometry();
 			
@@ -602,7 +616,7 @@ void updateGeometry( GeometryData geometryData )
 										     vScale * diameter/2,
 										     incrementAngle_ );
 			
-			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( cylinder ); // to call the polymorphic function setColor() later
+			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( cylinder );
 
 			osg::Geometry* cylinderGeom = cylinder->getGeometry();
 
@@ -615,12 +629,12 @@ void updateGeometry( GeometryData geometryData )
 	}
 
 	// Second pass: for cylinders only, find neighbours and create interpolated joints
-	for ( int i = 0; i < compartments.size(); ++i )
+	for ( unsigned int i = 0; i < compartments.size(); ++i )
 	{
 		const unsigned int& id = compartments[i].id;
 		const std::vector< unsigned int > vNeighbourIds = compartments[i].vNeighbourIds;
 
-		for ( int j = 0; j < vNeighbourIds.size(); ++j )
+		for ( unsigned int j = 0; j < vNeighbourIds.size(); ++j )
 		{
 			if ( mapId2GLCompartment_[id]->getCompartmentType() == CYLINDER &&
 			     mapId2GLCompartment_[vNeighbourIds[j]]->getCompartmentType() == CYLINDER )
@@ -632,7 +646,7 @@ void updateGeometry( GeometryData geometryData )
 	 }
 
 	// Third pass: for cylinders only, form hemispherical end-caps on any joints not yet attached to neighbours.
-	for ( int i = 0; i < compartments.size(); ++i )
+	for ( unsigned int i = 0; i < compartments.size(); ++i )
 	{
 		const unsigned int& id = compartments[i].id;
 
@@ -642,9 +656,42 @@ void updateGeometry( GeometryData geometryData )
 		}
 	}
 
-
 	isGeometryDirty_ = true;
+}
 
+void updateGeometryGLview( const GLviewResetData& data )
+{
+	bgcolor_ = osg::Vec4( data.bgcolorRed, data.bgcolorGreen, data.bgcolorBlue, 1.0 );
+	const std::string& globalPathName = data.pathName;
+	const double& maxsize = data.maxsize;
+	const std::vector< GLviewShapeResetData >& shapes = data.shapes;
+	
+	root_ = new osg::Group; // root_ is an osg::ref_ptr
+	root_->setDataVariance( osg::Object::STATIC );
+
+	if ( textParent_ != NULL)
+		delete textParent_;
+	textParent_ = new TextBox();
+	textParent_->setPosition( osg::Vec3d( 10, 10, 0 ) );
+	textParent_->setText( globalPathName );
+	root_->addChild( textParent_->getGroup() );
+
+	for ( unsigned int i = 0; i < shapes.size(); ++i )
+	{
+		const unsigned int& id = shapes[i].id;
+		const std::string& pathName = shapes[i].pathName;
+		const double& x = shapes[i].x;
+		const double& y = shapes[i].y;
+		const double& z = shapes[i].z;
+
+		GLviewShape * shape = new GLviewShape( id, pathName,
+						       x, y, z,
+						       maxsize/2, maxsize/2, maxsize/2 );
+		shape->setColor( osg::Vec4( 0.5, 0.5, 0.5, 1.0 ) );
+		root_->addChild( shape->getGeode() );
+	}
+	
+	isGeometryDirty_ = true;
 }
 
 void draw()
@@ -677,7 +724,8 @@ void draw()
 	viewer_->addEventHandler( new osgViewer::StatsHandler );
 	viewer_->addEventHandler( new KeystrokeHandler );
 
-	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile::WriteToFile( getSaveFilename(), "jpg", osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
+	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile::WriteToFile( getSaveFilename(),
+																    "jpg",															    osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
 	viewer_->addEventHandler( screenCaptureHandler_ );
 
 	std::map< unsigned int, double >::iterator renderMapColorsIterator;
@@ -764,14 +812,15 @@ int main( int argc, char* argv[] )
 	std::string strHelp = "Usage: glcellclient\n"
 		"\t-p <number>: port number\n"
 		"\t-c <string>: filename of colormap file\n"
+		"\t-m <string>: 'c' or 'v', for connection with MOOSE element of type GLcell or GLview respectively\n"
 		"\t[-d <string>: pathname in which to save screenshots and sequential image files (default is ./)]\n"
-		"\t[-a <number>: required to be between 1 and 60 degrees; \n this value represents angular increments in drawing the sides of curved bodies; smaller numbers give smoother bodies (default is 10)]\n";
+		"\t[-a <number>: required to be between 1 and 60 degrees; this value represents angular increments in drawing the sides of curved bodies; smaller numbers give smoother bodies (default is 10)]\n";
 	
 	bool isValid;
 	double value;
 
 	// Check command line arguments.
-	while ( ( c = getopt( argc, argv, "hp:c:d:a:" ) ) != -1 )
+	while ( ( c = getopt( argc, argv, "hp:c:m:d:a:" ) ) != -1 )
 		switch( c )
 		{
 		case 'h':
@@ -782,6 +831,21 @@ int main( int argc, char* argv[] )
 			break;
 		case 'c':
 			fileColormap_ = optarg;
+			break;
+		case 'm':
+			if ( optarg[0] == 'c' )
+			{
+				mode_ = GLCELL;
+			}
+			else if ( optarg[0] == 'v' )
+			{
+				mode_ = GLVIEW;
+			}
+			else
+			{
+				std::cerr << "Unknown mode specifier argument to -m!" << std::endl;
+				return -1;
+			}
 			break;
 		case 'd':
 			saveDirectory_ = optarg;
@@ -802,7 +866,7 @@ int main( int argc, char* argv[] )
 				incrementAngle_ = value;
 			break;
 		case '?':
-			if ( optopt == 'p' || optopt == 'c' || optopt == 'u' || optopt == 'l' || optopt == 'd' )
+			if ( optopt == 'm' || optopt == 'p' || optopt == 'c' || optopt == 'u' || optopt == 'l' || optopt == 'd' )
 				printf( "Option -%c requires an argument.\n", optopt );
 			else
 				printf( "Unknown option -%c.\n", optopt );
@@ -811,9 +875,9 @@ int main( int argc, char* argv[] )
 			return 1;
 		}
 	
-	if ( port_ == NULL || fileColormap_ == NULL )
+	if ( port_ == NULL || fileColormap_ == NULL || mode_ == NONE )
 	{
-		std::cerr << "Port number and colormap filename are required arguments." << std::endl;
+		std::cerr << "-p, -c and -m are required.\n\n";
 		std::cerr << strHelp << std::endl;
 		return 1;
 	}

@@ -163,7 +163,7 @@ Command-line parameters:
 ----------------------
 
 The executable 'glcellclient' can be launched with the following
-command-line parameters, the first of two of which are required:
+command-line parameters, of which these are required:
 
 -p port-number: where port-number is the numerically specified network
  port over which the corresponding GLcell element will talk to this
@@ -176,8 +176,12 @@ command-line parameters, the first of two of which are required:
  from the GENESIS environment and four are included in the GLcell
  source directory, viz. 'rainbow2','redhot','grey' and 'hot'.
 
+-m mode: where mode specifies whether the current instance of
+glcellclient is to connect to an instance of GLcell or one of
+GLview. Possible values are 'c' and 'v'; 'c' is for use with GLcell
+and 'v' is for use with GLview.
 
-The following, remaining, command-line parameters are optional:
+The remaining command-line parameters are optional:
 
 -d directory: with a default value of './', the current
  directory. This is the full pathname of the path to which any
@@ -218,8 +222,8 @@ MIDDLE mouse button or
 LEFT and RIGHT mouse
 buttons together:			Pan model
 
-RIGHT mouse button:		Zoom model or truck-in camera
-      	    			     	      	(if minimum zoom reached)
+RIGHT mouse button or		Zoom model or truck-in camera
+mousewheel up/down:  	      	(if minimum zoom reached)
 
 p or P key:				Switch between
 						perspective (default) and

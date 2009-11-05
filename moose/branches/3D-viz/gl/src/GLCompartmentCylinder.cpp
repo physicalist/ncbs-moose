@@ -21,22 +21,22 @@
 GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 position, osg::Quat quatRotation, 
 					      double height, double radius, double incrementAngle )
 	:
+	ringRight( new osg::Vec3Array ),
+	ringLeft( new osg::Vec3Array ),
 	position_( position ),
 	quatRotation_( quatRotation ),
 	height_( height ),
 	radius_( radius ),
 	incrementAngle_( incrementAngle ),
 	isLeftEndClosed_( false ),
-	isRightEndClosed_( false ),
-	ringRight( new osg::Vec3Array ),
-	ringLeft( new osg::Vec3Array )
+	isRightEndClosed_( false )
 { 
 	std::vector< double > angles;
 	for ( double i = 0; i <= 360 - incrementAngle_; i += incrementAngle_ )
 		angles.push_back( 2*M_PI*i / 360 );
 	angles.push_back( 0 );
     
-	for ( int i = 0; i < angles.size(); ++i )
+	for ( unsigned int i = 0; i < angles.size(); ++i )
 	{
 		ringRight->push_back( rotateTranslatePoint( osg::Vec3( radius_*cos(angles[i]),
 								       radius_*sin(angles[i]),
@@ -45,7 +45,7 @@ GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 position, osg::Quat quat
 							    position_) );
 	}
 
-	for (int i = 0; i < angles.size(); ++i)
+	for ( unsigned int i = 0; i < angles.size(); ++i)
 	{
 		ringLeft->push_back( rotateTranslatePoint( osg::Vec3( radius_*cos(angles[i]),
 								      radius_*sin(angles[i]),
@@ -58,7 +58,7 @@ GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 position, osg::Quat quat
 	cylVertices_ = new osg::Vec3Array;
 	cylNormals_ = new osg::Vec3Array;
 
-	for ( int j = 0; j < angles.size() - 1; ++j )
+	for ( unsigned int j = 0; j < angles.size() - 1; ++j )
 	{
 		cylVertices_->push_back( ( *ringRight )[j+1] );
 		cylVertices_->push_back( ( *ringRight )[j]   );
@@ -67,7 +67,7 @@ GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 position, osg::Quat quat
 	}
 	cylGeometry_->setVertexArray( cylVertices_ );
 
-	for ( int j = 0; j < angles.size() - 1; ++j )
+	for ( unsigned int j = 0; j < angles.size() - 1; ++j )
 	{
 		osg::DrawElementsUInt* cylFaces = new osg::DrawElementsUInt( osg::PrimitiveSet::QUADS, 0 );
 
@@ -108,10 +108,11 @@ int GLCompartmentCylinder::getCompartmentType()
 
 void GLCompartmentCylinder::setColor( osg::Vec4 color )
 {
-	osg::Vec4Array* colors = new osg::Vec4Array;
-	colors->push_back( color );
+	osg::Vec4Array* colors_ = new osg::Vec4Array;
 
-	cylGeometry_->setColorArray( colors );
+	colors_->push_back( color );
+
+	cylGeometry_->setColorArray( colors_ );
 	cylGeometry_->setColorBinding( osg::Geometry::BIND_OVERALL );
 }
 
@@ -195,7 +196,7 @@ void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
 	cylVertices_->push_back( rotateTranslatePoint( osg::Vec3(0, 0, neighbourSign * (radius_ + height_/2) ),
 						       quatRotation_,
 						       position_ ) );
-	for (int i = 0; i < angles.size()-1; ++i)
+	for ( unsigned int i = 0; i < angles.size()-1; ++i)
 	{
 		osg::DrawElementsUInt* cylFaces = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
 
@@ -210,8 +211,7 @@ void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
 									  neighbourSign * height_/2  ),
 							       quatRotation_,
 							       position_ ) );
-
-		int j;
+		unsigned int j;
 		for ( j = 1; j <= 9; ++j )
 		{
 	  
@@ -317,7 +317,7 @@ void GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 		{
 			vecY.clear();
 		  
-			for ( int i = 0; i < vec->size(); ++i )
+			for ( unsigned int i = 0; i < vec->size(); ++i )
 			{
 				vecY.push_back( ( *vec )[i][1] );
 			}
@@ -404,7 +404,7 @@ void GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 
 	bool notAllPointsInside = false;
 
-	for ( int i = 0; i < selfRing->size(); ++i )
+	for ( unsigned int i = 0; i < selfRing->size(); ++i )
 	{
 		if ( ! ( neighbour->isPointInsideCylinder( ( *selfRing )[i] ) ) )
 		{
@@ -412,7 +412,7 @@ void GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 		}
 	}
 
-	for ( int i = 0; i < neighbourRing->size(); ++i )
+	for ( unsigned int i = 0; i < neighbourRing->size(); ++i )
 	{
 		if ( ! ( isPointInsideCylinder( ( *neighbourRing )[i] ) ) )
 		{
@@ -433,7 +433,7 @@ void GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 	int iDiff = iMaxYNeighbourRing - iMaxYSelfRing;
 	int oldSizeCylVertices = cylVertices_->size();
 
-	for ( int i = 0; i < selfRing->size()-1; ++i )
+	for ( unsigned int i = 0; i < selfRing->size()-1; ++i )
 	{
 		// NOTE: Because selfRing's vertices already exist, we will be adding some duplicate vertices.
      
@@ -445,7 +445,7 @@ void GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 						   ( *selfRing )[i] ) );
 	}
 
-	for ( int j = 0; j < selfRing->size()-1; ++j )
+	for ( unsigned int j = 0; j < selfRing->size()-1; ++j )
 	{
 		osg::DrawElementsUInt* cylFaces = new osg::DrawElementsUInt( osg::PrimitiveSet::QUADS, 0 );
 
