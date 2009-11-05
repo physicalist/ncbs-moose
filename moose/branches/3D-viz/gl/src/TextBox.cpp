@@ -33,7 +33,7 @@ TextBox::TextBox()
 	textGeode_->setDataVariance( osg::Object::STATIC );
 	
 	text_->setAxisAlignment( osgText::Text::SCREEN );
-	text_->setText( "... " );
+	text_->setText( "..." );
 }
 
 TextBox::~TextBox()

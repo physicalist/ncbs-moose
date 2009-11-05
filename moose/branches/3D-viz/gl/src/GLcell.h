@@ -77,24 +77,23 @@ class GLcell
 	static const char SYNCMODE_ACKCHAR;
 
  private:
-	double vScale_; // factor by which the diameter of cylindrical compartments will be scaled up (only in visual appearance, not numerically)
 
-	int sockFd_;
-	bool isConnectionUp_;
 	string strPath_;
 	string strClientHost_;
 	string strClientPort_;
+	bool isConnectionUp_;
 	string strAttributeName_;
-	bool syncMode_;
+	int sockFd_;
 	double changeThreshold_; // any change in attribute below this value is not updated visually (in non-sync mode)
+	double vScale_; // factor by which the diameter of cylindrical compartments will be scaled up (only in visual appearance, not numerically)
+	bool syncMode_;
 	double bgcolorRed_;
-	double bgcolorBlue_;
 	double bgcolorGreen_;
+	double bgcolorBlue_;
 	double highValue_;
 	double lowValue_;
 
 	vector< Id > renderList_;
-	GeometryData geometryData_;
 
 	map< unsigned int, double > renderMapAttrsLastTransmitted_;
 	map< unsigned int, double > renderMapAttrsTransmitted_;
@@ -108,8 +107,8 @@ class GLcell
 	/// networking helper functions
 	void* getInAddress( struct sockaddr *sa );
 	int getSocket( const char* hostname, const char* service );
-	int sendAll( int socket, char* buf, int* len );
-	int recvAll( int socket, char* buf, int* len);
+	int sendAll( int socket, char* buf, unsigned int* len );
+	int recvAll( int socket, char* buf, unsigned int* len);
 	int receiveAck();
 	void handlePick( unsigned int idPicked );
 	void disconnect();

@@ -31,6 +31,14 @@ class GLview
 	static void reinitFunc( const Conn* c, ProcInfo info );
 	void reinitFuncLocal( const Conn* c );
 
+	static void setClientHost( const Conn* c, string strClientHost );
+	void innerSetClientHost( const string& strClientHost );
+	static string getClientHost( Eref e );
+
+	static void setClientPort( const Conn* c, string strClientPort );
+	void innerSetClientPort( const string& strClientPort );
+	static string getClientPort( Eref e );
+
 	static void setPath( const Conn* c, string strPath );
 	void innerSetPath( const string& strPath );
 	static string getPath( Eref e );
@@ -58,6 +66,10 @@ class GLview
 	static void setValue5Field( const Conn* c, string strValue5Field );
 	void innerSetValue5Field( const string& strValue5Field );
 	static string getValue5Field( Eref e );
+
+	static void setBgColor( const Conn* c, string strBgColor );
+	void innerSetBgColor( const double red, const double green, const double blue );
+	static string getBgColor( Eref e );
 	
 	static const int MSGTYPE_HEADERLENGTH;
      	static const int MSGSIZE_HEADERLENGTH;
@@ -69,18 +81,20 @@ class GLview
 	string strClientHost_;
 	string strClientPort_;
 	bool syncMode_;
+	double bgcolorRed_;
+	double bgcolorGreen_;
+	double bgcolorBlue_;
 
 	/// networking helper functions
 	void* getInAddress( struct sockaddr *sa );
 	int getSocket( const char* hostname, const char* service );
-	int sendAll( int socket, char* buf, int* len );
-	int recvAll( int socket, char* buf, int* len);
+	int sendAll( int socket, char* buf, unsigned int* len );
+	int recvAll( int socket, char* buf, unsigned int* len);
 	int receiveAck();
 	void handlePick( unsigned int idPicked );
 	void disconnect();
 	template< class T >
 	  void transmit( T& data, MSGTYPE messageType );
-
 
 	string strPath_;
 	string strRelPath_;
@@ -108,6 +122,8 @@ class GLview
 	string boxXYZ( const double& x, const double& y, const double& z );
 	string inttostring( int i );
 
-	int getXYZ( Id id, double& x, double& y, double& z, double &maxsize ); // gets x, y, z co-ordinates for the element represented by id, or (if not found) such co-ordinates of its parent or its parent's parent and so on, unless root is reached
-  
+	// gets x, y, z co-ordinates for the element represented by id, or if not found
+	// such co-ordinates of its parent or its parent's parent and so on, unless root is reached
+	int getXYZ( Id id, double& x, double& y, double& z, double &maxsize ); 
+	
 };

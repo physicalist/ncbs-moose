@@ -55,10 +55,11 @@ int GLCompartmentSphere::getCompartmentType()
 
 void GLCompartmentSphere::setColor( osg::Vec4 color )
 {
-	osg::Vec4Array* colors = new osg::Vec4Array;
-	colors->push_back( color );
+	osg::Vec4Array* colors_ = new osg::Vec4Array;
 
-	cylGeometry_->setColorArray( colors );
+	colors_->push_back( color );
+
+	cylGeometry_->setColorArray( colors_ );
 	cylGeometry_->setColorBinding( osg::Geometry::BIND_OVERALL );
 }
 
@@ -86,7 +87,7 @@ void GLCompartmentSphere::addHemisphericalCap( bool leftEndP )
 					    position_[1],
 					    position_[2] + neighbourSign * radius_ ) );
 	
-	for (int i = 0; i < angles.size()-1; ++i)
+	for ( unsigned int i = 0; i < angles.size()-1; ++i)
 	{
 		osg::DrawElementsUInt* cylFaces = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
 
@@ -97,7 +98,7 @@ void GLCompartmentSphere::addHemisphericalCap( bool leftEndP )
 						    position_[1] + radius_ * sin( angles[i+1] ),
 						    position_[2] ) );
 
-		int j;
+		unsigned int j;
 		for ( j = 1; j <= 9; ++j )
 		{
 	  

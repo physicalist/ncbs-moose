@@ -397,21 +397,22 @@ void GLcell::reinitFunc( const Conn* c, ProcInfo info )
 
 void GLcell::reinitFuncLocal( const Conn* c )
 {
+	GeometryData geometryData;
 	double diameter, length, x0, y0, z0, x, y, z;
 
 	/// Reload model geometry.
 	// strPath_ should have been set.
-	if ( !strPath_.empty() )
+	if ( ! strPath_.empty() )
 	{
 		// renderList_ holds the flattened tree of elements to render.
 		renderList_.clear();
 
-		geometryData_.pathName = strPath_;
-		geometryData_.vScale = vScale_;
-		geometryData_.bgcolorRed = bgcolorRed_;
-		geometryData_.bgcolorGreen = bgcolorGreen_;
-		geometryData_.bgcolorBlue = bgcolorBlue_;
-		geometryData_.renderListCompartmentData.clear();
+		geometryData.pathName = strPath_;
+		geometryData.vScale = vScale_;
+		geometryData.bgcolorRed = bgcolorRed_;
+		geometryData.bgcolorGreen = bgcolorGreen_;
+		geometryData.bgcolorBlue = bgcolorBlue_;
+		geometryData.renderListCompartmentData.clear();
 
 		// Start populating renderList_ with the node in strPath_ 
 		// and its children, recursively.
@@ -449,7 +450,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				compartmentData.y = y;
 				compartmentData.z = z;
 				
-				geometryData_.renderListCompartmentData.push_back( compartmentData );
+				geometryData.renderListCompartmentData.push_back( compartmentData );
 			}
 		}
 
@@ -458,7 +459,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 		else if ( strClientHost_.empty() )
 			std::cerr << "GLcell error: Client hostname not specified." << std::endl;
 		else
-			transmit( geometryData_, RESET );
+			transmit( geometryData, RESET );
 	}
 }
 
@@ -682,11 +683,11 @@ int GLcell::getSocket( const char* hostname, const char* service )
 	return sockFd_;
 }
 
-int GLcell::sendAll( int socket, char* buf, int* len )
+int GLcell::sendAll( int socket, char* buf, unsigned int* len )
 {
-	int total = 0;        // how many bytes we've sent
+	unsigned int total = 0;        // how many bytes we've sent
 	int bytesleft = *len; // how many we have left to send
-	int n;
+	int n = 0;
 
 	while ( total < *len )
 	{
@@ -705,11 +706,11 @@ int GLcell::sendAll( int socket, char* buf, int* len )
 	return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
 }
 
-int GLcell::recvAll( int socket, char *buf, int *len )
+int GLcell::recvAll( int socket, char *buf, unsigned int *len )
 {
-	int total = 0;        // how many bytes we've received
+	unsigned int total = 0;        // how many bytes we've received
 	int bytesleft = *len; // how many we have left to receive
-	int n;
+	int n = 0;
 	
 	while ( total < *len )
 	{
@@ -736,7 +737,7 @@ int GLcell::receiveAck()
 		return -1;
 	}
 
-	int numBytes, inboundDataSize;
+	unsigned int numBytes, inboundDataSize;
 	char header[MSGSIZE_HEADERLENGTH + 1];
 	char *buf;
 
@@ -826,7 +827,7 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 		headerStream << std::setw( MSGTYPE_HEADERLENGTH )
 			     << messageType;
 
-		int headerLen = headerStream.str().size() + 1;
+		unsigned int headerLen = headerStream.str().size() + 1;
 		char* headerData = ( char * ) malloc( headerLen * sizeof( char ) );
 		strcpy( headerData, headerStream.str().c_str() );
 	
@@ -840,7 +841,7 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 		}
 		else
 		{
-			int archiveLen = archiveStream.str().size() + 1;
+			unsigned int archiveLen = archiveStream.str().size() + 1;
 			char* archiveData = ( char * ) malloc( archiveLen * sizeof( char ) );
 			strcpy( archiveData, archiveStream.str().c_str() );
 				
@@ -871,7 +872,7 @@ void GLcell::disconnect()
 	headerStream << std::setw( MSGSIZE_HEADERLENGTH ) << 0;
 	headerStream << std::setw( MSGTYPE_HEADERLENGTH ) << DISCONNECT;
 
-	int headerLen = headerStream.str().size() + 1;
+	unsigned int headerLen = headerStream.str().size() + 1;
 	char* headerData = (char *) malloc( headerLen * sizeof( char ) );
 	strcpy( headerData, headerStream.str().c_str() );
 

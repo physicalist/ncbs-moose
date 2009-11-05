@@ -20,16 +20,16 @@ enum COMPARTMENT_TYPE
 class GLCompartment
 {
  public:
-  virtual osg::ref_ptr< osg::Geometry > getGeometry() = 0;
-  virtual void setColor( osg::Vec4 color ) = 0;
-
-  virtual int getCompartmentType() = 0;
-
-  virtual ~GLCompartment() {}
+	virtual osg::ref_ptr< osg::Geometry > getGeometry() = 0;
+	virtual void setColor( osg::Vec4 color ) = 0;
+	
+	virtual int getCompartmentType() = 0;
+	
+	virtual ~GLCompartment() {}
 
  protected:
-  virtual osg::Vec3 rotateTranslatePoint( osg::Vec3 position, osg::Quat& quatRotation, osg::Vec3& translation );
-  virtual osg::Vec3 makeNormal( const osg::Vec3& P1, const osg::Vec3& P2, const osg::Vec3& P3 );
+	virtual osg::Vec3 rotateTranslatePoint( osg::Vec3 position, osg::Quat& quatRotation, osg::Vec3& translation );
+	virtual osg::Vec3 makeNormal( const osg::Vec3& P1, const osg::Vec3& P2, const osg::Vec3& P3 );
 };
 
 #endif // GLCOMPARTMENT_H
