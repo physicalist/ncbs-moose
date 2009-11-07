@@ -20,12 +20,13 @@ DATA_STRUCTURE_HEADERS = AckPickData.h GeometryData.h CompartmentData.h GLviewRe
 
 TARGET_CELL = glcell.o
 TARGET_VIEW = glview.o
+TARGET_SHAPE = glshape.o
 TARGET_CLIENT = glcellclient
 
-default: $(TARGET_CELL) $(TARGET_VIEW) $(TARGET_CLIENT) 
+default: $(TARGET_CELL) $(TARGET_VIEW) $(TARGET_SHAPE) $(TARGET_CLIENT) 
 
 clean:
-	rm -f *.o $(TARGET_CELL) $(TARGET_VIEW) $(TARGET_CLIENT) core core.*
+	rm -f *.o $(TARGET_CELL) $(TARGET_VIEW) $(TARGET_SHAPE) $(TARGET_CLIENT) core core.*
 
 OBJ_CELL = GLcell.o
 $(OBJ_CELL) : GLcell.cpp GLcell.h $(DATA_STRUCTURE_HEADERS) $(MOOSE_HEADERS)
@@ -33,8 +34,14 @@ $(OBJ_CELL) : GLcell.cpp GLcell.h $(DATA_STRUCTURE_HEADERS) $(MOOSE_HEADERS)
 $(TARGET_CELL) : $(OBJ_CELL) $(MOOSE_HEADERS)
 	$(LD) -r -o $(TARGET_CELL) $(OBJ_CELL)
 
+OBJ_SHAPE = GLshape.o
+$(OBJ_SHAPE) : GLshape.cpp GLshape.h $(MOOSE_HEADERS)
+	$(CXX) $(CXXFLAGS) -I../../ -I../../basecode -I$(OSG_INCLUDE) -c GLshape.cpp
+$(TARGET_SHAPE) : $(OBJ_SHAPE) $(MOOSE_HEADERS)
+	$(LD) -r -o $(TARGET_SHAPE) $(OBJ_SHAPE)
+
 OBJ_VIEW = GLview.o
-$(OBJ_VIEW) : GLview.cpp GLview.h $(MOOSE_HEADERS)
+$(OBJ_VIEW) : GLview.cpp GLview.h GLshapeData.h $(MOOSE_HEADERS)
 	$(CXX) $(CXXFLAGS) -I../../ -I../../basecode -I$(OSG_INCLUDE) -c GLview.cpp
 $(TARGET_VIEW) : $(OBJ_VIEW) $(MOOSE_HEADERS)
 	$(LD) -r -o $(TARGET_VIEW) $(OBJ_VIEW)

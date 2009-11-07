@@ -18,7 +18,7 @@
 
 GLviewShape::GLviewShape( unsigned int id, std::string pathName, 
 			  double x, double y, double z,
-			  double xlen, double ylen, double zlen )
+			  double len, int shapetype )
 	:
 	xoffset_( 0.0 ),
 	yoffset_( 0.0 ),
@@ -30,15 +30,26 @@ GLviewShape::GLviewShape( unsigned int id, std::string pathName,
 	x_ = x; 
 	y_ = y;
 	z_ = z;
-	xlen_ = xlen;
-	ylen_ = ylen;
-	zlen_ = zlen;
+	len_ = len;
+	shapetype_ = shapetype;
+	
+	if ( shapetype_ == CUBE )
+	{
+		box_ = new osg::Box( osg::Vec3( x_ + len_/2,
+						y_ + len_/2,
+						z_ + len_/2 ),
+				     len_ );
+		drawable_ = new osg::ShapeDrawable( box_ );
+	}
+	else
+	{
+		sphere_ = new osg::Sphere( osg::Vec3( x_ + len_/2,
+						      y_ + len_/2,
+						      z_ + len_/2 ),
+					   len_/2 );
+		drawable_ = new osg::ShapeDrawable( sphere_ );
+	}
 
-	box_ = new osg::Box( osg::Vec3( x_ + xlen_/2,
-					y_ + ylen_/2,
-					z_ + zlen_/2 ),
-			     xlen_, ylen_, zlen_ );
-	drawable_ = new osg::ShapeDrawable( box_ );
 	geode_ = new osg::Geode();	
 	geode_->addDrawable( drawable_ );
 }
@@ -59,17 +70,31 @@ void GLviewShape::move( double xoffset, double yoffset, double zoffset )
 	yoffset_ = yoffset;
 	zoffset_ = zoffset;
 
-	box_->setCenter( osg::Vec3( x_ + xlen_/2 + xoffset_,
-				   y_ + ylen_/2 + yoffset_,
-				   z_ + zlen_/2 + zoffset_ ) );
+	if ( shapetype_ == CUBE )
+	{
+		box_->setCenter( osg::Vec3( x_ + len_/2 + xoffset_,
+					    y_ + len_/2 + yoffset_,
+					    z_ + len_/2 + zoffset_ ) );
+	}
+	else
+	{
+		sphere_->setCenter( osg::Vec3( x_ + len_/2 + xoffset_,
+					       y_ + len_/2 + yoffset_,
+					       z_ + len_/2 + zoffset_ ) );
+	}
 }
 
-void GLviewShape::resize( double xlen, double ylen, double zlen )
+void GLviewShape::resize( double len )
 {
-	xlen_ = xlen;
-	ylen_ = ylen;
-	zlen_ = zlen;
-	
-	box_->setHalfLengths( osg::Vec3( xlen_/2, ylen_/2, zlen_/2 ) );
+	len_ = len;
+
+	if ( shapetype_ == CUBE )
+		box_->setHalfLengths( osg::Vec3( len_/2, len_/2, len_/2 ) );
+	else
+		sphere_->setRadius( len_/2 );
 }
 
+void GLviewShape::setShapeType( int shapetype )
+{
+	shapetype_ = shapetype;
+}

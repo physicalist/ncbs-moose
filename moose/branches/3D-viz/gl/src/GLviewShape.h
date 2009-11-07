@@ -11,30 +11,39 @@
 #ifndef GLVIEWSHAPE_H
 #define GLVIEWSHAPE_H
 
+enum SHAPETYPE
+{
+	CUBE,
+	SPHERE
+};
+
 class GLviewShape
 {
  public:
 	GLviewShape( unsigned int id, std::string pathName, 
 		     double x, double y, double z,
-		     double xlen, double ylen, double zlen );
+		     double len, int shapetype );
 	osg::ref_ptr< osg::Geode > getGeode();
 	void setColor( osg::Vec4 color );
 	void move( double xoffset, double yoffset, double zoffset );
-	void resize( double xlen, double ylen, double zlen );
+	void resize( double len );
+	void setShapeType( int shapetype );
 	// void setIcon( std::string iconFileName ); // TODO
 
  private:
 	unsigned int id_;
 	std::string pathName_;
 	double x_, y_, z_;
-	double xlen_, ylen_, zlen_;
 	double xoffset_, yoffset_, zoffset_;
+	double len_;
+	int shapetype_;
 	
 	std::string iconFileName_;
 
 	osg::ref_ptr< osg::Geode > geode_;
 	osg::ref_ptr< osg::ShapeDrawable > drawable_;
 	osg::ref_ptr< osg::Box > box_;
+	osg::ref_ptr< osg::Sphere > sphere_;
 };
 
 #endif // GLVIEWSHAPE_H

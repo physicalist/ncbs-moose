@@ -49,19 +49,19 @@ const Cinfo* initGLviewCinfo()
 	static Finfo* processShared[] = 
 	{
 		new DestFinfo( "process", Ftype1< ProcInfo >::global(),
-			RFCAST( &GLview::processFunc ) ),
+			       RFCAST( &GLview::processFunc ) ),
 		new DestFinfo( "reinit", Ftype1< ProcInfo >::global(),
-			RFCAST( &GLview::reinitFunc ) ),
+			       RFCAST( &GLview::reinitFunc ) ),
 	};
 	static Finfo* process = new SharedFinfo( "process", processShared,
-		sizeof( processShared ) / sizeof( Finfo* ),
-		"shared message to receive Process messages from scheduler objects" );
+						 sizeof( processShared ) / sizeof( Finfo* ),
+						 "shared message to receive Process messages from scheduler objects" );
 
 	static Finfo* GLviewFinfos[] = 
 	{
-	///////////////////////////////////////////////////////
-	// Field definitions
-	///////////////////////////////////////////////////////
+		///////////////////////////////////////////////////////
+		// Field definitions
+		///////////////////////////////////////////////////////
 		new ValueFinfo( "host",
 				ValueFtype1< string >::global(),
 				GFCAST( &GLview::getClientHost ),
@@ -112,9 +112,42 @@ const Cinfo* initGLviewCinfo()
 				GFCAST( &GLview::getBgColor ),
 				RFCAST( &GLview::setBgColor )
 				),
-	///////////////////////////////////////////////////////
-	// Shared definitions
-	///////////////////////////////////////////////////////
+		new ValueFinfo( "color_val",
+				ValueFtype1< unsigned int >::global(),
+				GFCAST( &GLview::getColorVal ),
+				RFCAST( &GLview::setColorVal )
+				),
+		new ValueFinfo( "morph_val",
+				ValueFtype1< unsigned int >::global(),
+				GFCAST( &GLview::getMorphVal ),
+				RFCAST( &GLview::setMorphVal )
+				),
+		new ValueFinfo( "xoffset_val",
+				ValueFtype1< unsigned int >::global(),
+				GFCAST( &GLview::getXOffsetVal ),
+				RFCAST( &GLview::setXOffsetVal )
+				),
+		new ValueFinfo( "yoffset_val",
+				ValueFtype1< unsigned int >::global(),
+				GFCAST( &GLview::getYOffsetVal ),
+				RFCAST( &GLview::setYOffsetVal )
+				),
+		new ValueFinfo( "zoffset_val",
+				ValueFtype1< unsigned int >::global(),
+				GFCAST( &GLview::getZOffsetVal ),
+				RFCAST( &GLview::setZOffsetVal )
+				),
+		new DestFinfo( "set_valuemin",
+			       Ftype2< unsigned int, double >::global(),
+			       RFCAST( &GLview::setValueMin )
+			       ),
+		new DestFinfo( "set_valuemax",
+			       Ftype2< unsigned int, double >::global(),
+			       RFCAST( &GLview::setValueMax )
+			       ),
+		///////////////////////////////////////////////////////
+		// Shared definitions
+		///////////////////////////////////////////////////////
 		//		parser,
 		process,
 	};
@@ -160,31 +193,28 @@ GLview::GLview()
 	bgcolorBlue_( 0.0 ),
 	strPath_( "" ),
 	strRelPath_( "" ),
-	values1_( NULL ),
-	values2_( NULL ),
-	values3_( NULL ),
-	values4_( NULL ),
-	values5_( NULL ),
-	strValue1Field_( "" ),
-	strValue2Field_( "" ),
-	strValue3Field_( "" ),
-	strValue4Field_( "" ),
-	strValue5Field_( "" ),
 	x_( NULL ),
 	y_( NULL ),
 	z_( NULL )
 {
+	for ( unsigned int i = 0; i < 5; ++i )
+	{
+		values_[i] = NULL;
+		value_min_[i] = VALUE_MIN_DEFAULT;
+		value_max_[i] = VALUE_MAX_DEFAULT;
+		strValueField_[i] = "";
+	}
 }
 
 GLview::~GLview()
 {
-	// disconnect(); // TODO karan
+	disconnect();
 	
-	free ( values1_ );
-	free ( values2_ );
-	free ( values3_ );
-	free ( values4_ );
-	free ( values5_ );
+	free ( values_[0] );
+	free ( values_[1] );
+	free ( values_[2] );
+	free ( values_[3] );
+	free ( values_[4] );
 	
 	free ( x_ );
 	free ( y_ );
@@ -262,12 +292,12 @@ void GLview::setValue1Field( const Conn* c, string strValue1Field )
 
 void GLview::innerSetValue1Field( const string& strValue1Field )
 {
-	strValue1Field_ = strValue1Field;
+	strValueField_[0] = strValue1Field;
 }
 
 string GLview::getValue1Field( Eref e )
 {
-	return static_cast< GLview * >( e.data() )->strValue1Field_;
+	return static_cast< GLview * >( e.data() )->strValueField_[0];
 }
 
 void GLview::setValue2Field( const Conn* c, string strValue2Field )
@@ -277,12 +307,12 @@ void GLview::setValue2Field( const Conn* c, string strValue2Field )
 
 void GLview::innerSetValue2Field( const string& strValue2Field )
 {
-	strValue2Field_ = strValue2Field;
+	strValueField_[1] = strValue2Field;
 }
 
 string GLview::getValue2Field( Eref e )
 {
-	return static_cast< GLview * >( e.data() )->strValue2Field_;
+	return static_cast< GLview * >( e.data() )->strValueField_[1];
 }
 
 void GLview::setValue3Field( const Conn* c, string strValue3Field )
@@ -292,12 +322,12 @@ void GLview::setValue3Field( const Conn* c, string strValue3Field )
 
 void GLview::innerSetValue3Field( const string& strValue3Field )
 {
-	strValue3Field_ = strValue3Field;
+	strValueField_[2] = strValue3Field;
 }
 
 string GLview::getValue3Field( Eref e )
 {
-	return static_cast< GLview * >( e.data() )->strValue3Field_;
+	return static_cast< GLview * >( e.data() )->strValueField_[2];
 }
 
 void GLview::setValue4Field( const Conn* c, string strValue4Field )
@@ -307,12 +337,12 @@ void GLview::setValue4Field( const Conn* c, string strValue4Field )
 
 void GLview::innerSetValue4Field( const string& strValue4Field )
 {
-	strValue4Field_ = strValue4Field;
+	strValueField_[3] = strValue4Field;
 }
 
 string GLview::getValue4Field( Eref e )
 {
-	return static_cast< GLview * >( e.data() )->strValue4Field_;
+	return static_cast< GLview * >( e.data() )->strValueField_[3];
 }
 
 void GLview::setValue5Field( const Conn* c, string strValue5Field )
@@ -322,12 +352,12 @@ void GLview::setValue5Field( const Conn* c, string strValue5Field )
 
 void GLview::innerSetValue5Field( const string& strValue5Field )
 {
-	strValue5Field_ = strValue5Field;
+	strValueField_[4] = strValue5Field;
 }
 
 string GLview::getValue5Field( Eref e )
 {
-	return static_cast< GLview * >( e.data() )->strValue5Field_;
+	return static_cast< GLview * >( e.data() )->strValueField_[4];
 }
 
 void GLview::setBgColor( const Conn* c, string strBgColor )
@@ -361,7 +391,6 @@ void GLview::setBgColor( const Conn* c, string strBgColor )
 	{
 		std::cerr << "GLview error: the field 'bgcolor' is not in the expected format, defaulting to black" << std::endl;
 	}
-
 }
 
 void GLview::innerSetBgColor( const double red, const double green, const double blue )
@@ -385,6 +414,117 @@ string GLview::getBgColor( Eref e )
 	return out.str();
 }
 
+void GLview::setColorVal( const Conn* c, unsigned int colorVal )
+{
+	static_cast< GLview * >( c->data() )->innerSetColorVal( colorVal );
+}
+
+void GLview::innerSetColorVal( unsigned int colorVal )
+{
+	color_val_ = colorVal;
+}
+
+unsigned int GLview::getColorVal( Eref e )
+{
+	return static_cast< const GLview* >( e.data() )->color_val_;
+}
+
+void GLview::setMorphVal( const Conn* c, unsigned int morphVal )
+{
+	static_cast< GLview * >( c->data() )->innerSetMorphVal( morphVal );
+}
+
+void GLview::innerSetMorphVal( unsigned int morphVal )
+{
+	morph_val_ = morphVal;
+}
+
+unsigned int GLview::getMorphVal( Eref e )
+{
+	return static_cast< const GLview* >( e.data() )->morph_val_;
+}
+
+void GLview::setXOffsetVal( const Conn* c, unsigned int xoffsetVal )
+{
+	static_cast< GLview * >( c->data() )->innerSetXOffsetVal( xoffsetVal );
+}
+
+void GLview::innerSetXOffsetVal( unsigned int xoffsetVal )
+{
+	xoffset_val_ = xoffsetVal;
+}
+
+unsigned int GLview::getXOffsetVal( Eref e )
+{
+	return static_cast< const GLview* >( e.data() )->xoffset_val_;
+}
+
+void GLview::setYOffsetVal( const Conn* c, unsigned int yoffsetVal )
+{
+	static_cast< GLview * >( c->data() )->innerSetYOffsetVal( yoffsetVal );
+}
+
+void GLview::innerSetYOffsetVal( unsigned int yoffsetVal )
+{
+	yoffset_val_ = yoffsetVal;
+}
+
+unsigned int GLview::getYOffsetVal( Eref e )
+{
+	return static_cast< const GLview* >( e.data() )->yoffset_val_;
+}
+
+void GLview::setZOffsetVal( const Conn* c, unsigned int zoffsetVal )
+{
+	static_cast< GLview * >( c->data() )->innerSetZOffsetVal( zoffsetVal );
+}
+
+void GLview::innerSetZOffsetVal( unsigned int zoffsetVal )
+{
+	zoffset_val_ = zoffsetVal;
+}
+
+unsigned int GLview::getZOffsetVal( Eref e )
+{
+	return static_cast< const GLview* >( e.data() )->zoffset_val_;
+}
+
+void GLview::setValueMin( const Conn* c, unsigned int index, double value )
+{
+	static_cast< GLview * >( c->data() )->innerSetValueMin( index, value );
+}
+
+void GLview::innerSetValueMin( unsigned int index, double value )
+{
+	if ( index >= 1 && index <= 5 )
+	{
+		if ( value >= value_max_[index-1] )
+			std::cerr << "Value being set to be >= of value_max[" << index-1 << "] == " << value_max_[index-1] << std::endl;
+		
+		value_min_[index-1] = value;
+	}
+	else
+		std::cerr << "Index must be between 1 and 5." << std::endl;
+}
+
+void GLview::setValueMax( const Conn* c, unsigned int index, double value )
+{
+	static_cast< GLview * >( c->data() )->innerSetValueMax( index, value );
+}
+
+void GLview::innerSetValueMax( unsigned int index, double value )
+{
+	if ( index >= 1 && index <= 5 )
+	{
+		if ( value <= value_min_[index-1] )
+			std::cerr << "Value being set to be <= of value_min[" << index-1 << "] == " << value_min_[index-1] << std::endl;
+
+		value_max_[index-1] = value;
+	}
+	else
+		std::cerr << "Index must be between 1 and 5." << std::endl;
+}
+
 ///////////////////////////////////////////////////
 // Dest function definitions
 ///////////////////////////////////////////////////
@@ -398,21 +538,28 @@ void GLview::reinitFuncLocal( const Conn* c )
 {
 	elements_.clear();
 
+	// If this element has no children yet, create default shape templates
+	Id id = c->target().id();
+	Conn* i = id()->targets( "childSrc", 0 );
+	if ( ! i->good() )
+	{
+		Neutral::createArray( "GLshape", "shape", id, Id::scratchId(), 2 );
+		
+		// setting default values for each shape
+		Conn* j = id()->targets( "childSrc", 0 );
+		Eref e = j->target();
+		set< double >( e, "color", 0.0 );
+		set< double >( e, "len", 0.1 );
+		j->increment();
+		e = j->target();
+		set< double >( e, "color", 1.0 );
+		set< double >( e, "len", 1.0 );
+	}
+
 	if ( ! strPath_.empty() )  
 	{
 		wildcardFind( strPath_, elements_ );
-		std::cout << "GLview: " << elements_.size() << " elements found." << std::endl; // TODO comment this out by default
-
-		if ( ! strValue1Field_.empty() )
-			populateValues( 1, &values1_, strValue1Field_ ); 
-		if ( ! strValue2Field_.empty() )
-			populateValues( 2, &values2_, strValue2Field_ ); 
-		if ( ! strValue3Field_.empty() )
-			populateValues( 3, &values3_, strValue3Field_ ); 
-		if ( ! strValue4Field_.empty() )
-			populateValues( 4, &values4_, strValue4Field_ ); 
-		if ( ! strValue5Field_.empty() )
-			populateValues( 5, &values5_, strValue5Field_ ); 
+		std::cout << "GLview: " << elements_.size() << " elements found." << std::endl; // TODO comment this out by default 
 
 		double maxsize = populateXYZ();
 
@@ -442,8 +589,7 @@ void GLview::reinitFuncLocal( const Conn* c )
 		else if ( strClientHost_.empty() )
 			std::cerr << "GLview error: Client hostname not specified." << std::endl;
 		else
-			transmit( resetData, RESET ); // TODO the handler doesn't have to display anything in response to RESET, but do it the first time for debugging the connection, etc.
-		// TODO the next thing is to add modes to glcellclient
+			transmit( resetData, RESET );
 	
 	}
 }
@@ -455,14 +601,39 @@ void GLview::processFunc( const Conn* c, ProcInfo info )
 
 void GLview::processFuncLocal( Eref e, ProcInfo info )
 {
-	std::cout << "in GLview process" << std::endl;
+	if ( ! strValueField_[0].empty() )
+		populateValues( 1, &values_[0], strValueField_[0] ); 
+	if ( ! strValueField_[1].empty() )
+		populateValues( 2, &values_[1], strValueField_[1] ); 
+	if ( ! strValueField_[2].empty() )
+		populateValues( 3, &values_[2], strValueField_[2] ); 
+	if ( ! strValueField_[3].empty() )
+		populateValues( 4, &values_[3], strValueField_[3] ); 
+	if ( ! strValueField_[4].empty() )
+		populateValues( 5, &values_[4], strValueField_[4] );
+
+	if ( color_val_ > 0 && color_val_ <= 5 )
+	{	
+	}
+	if ( morph_val_ > 0 && morph_val_ <= 5 )
+	{
+	}
+	if ( xoffset_val_ > 0 && xoffset_val_ <= 5 )
+	{
+	}
+	if ( yoffset_val_ > 0 && yoffset_val_ <= 5 )
+	{
+	}
+	if ( zoffset_val_ > 0 && zoffset_val_ <= 5 )
+	{
+	}	
 }
 
 ///////////////////////////////////////////////////
 // private function definitions
 ///////////////////////////////////////////////////
 
-int GLview::populateValues( int valueNum, double ** pValues, string strValueField )
+int GLview::populateValues( int valueNum, double ** pValues, const string& strValueField )
 {
 	int status = 0;
 
