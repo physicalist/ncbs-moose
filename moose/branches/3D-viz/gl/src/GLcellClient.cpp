@@ -531,7 +531,7 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 	
 	if ( mapId2GLCompartment_.size() > 0 )
 	{
-		std::map< unsigned int, GLCompartment *>::iterator id2glcompIterator;
+		std::map< unsigned int, GLCompartment* >::iterator id2glcompIterator;
 
 		for ( id2glcompIterator = mapId2GLCompartment_.begin();
 		      id2glcompIterator != mapId2GLCompartment_.end();
@@ -636,8 +636,8 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 
 		for ( unsigned int j = 0; j < vNeighbourIds.size(); ++j )
 		{
-			if ( mapId2GLCompartment_[id]->getCompartmentType() == CYLINDER &&
-			     mapId2GLCompartment_[vNeighbourIds[j]]->getCompartmentType() == CYLINDER )
+			if ( mapId2GLCompartment_[id]->getCompartmentType() == COMP_CYLINDER &&
+			     mapId2GLCompartment_[vNeighbourIds[j]]->getCompartmentType() == COMP_CYLINDER )
 			{
 				dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[id] )->
 					addHalfJointToNeighbour( dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[vNeighbourIds[j]] ) );
@@ -650,7 +650,7 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 	{
 		const unsigned int& id = compartments[i].id;
 
-		if ( mapId2GLCompartment_[id]->getCompartmentType() == CYLINDER)
+		if ( mapId2GLCompartment_[id]->getCompartmentType() == COMP_CYLINDER)
 		{
 			dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[id] )->closeOpenEnds();
 		}
@@ -663,9 +663,24 @@ void updateGeometryGLview( const GLviewResetData& data )
 {
 	bgcolor_ = osg::Vec4( data.bgcolorRed, data.bgcolorGreen, data.bgcolorBlue, 1.0 );
 	const std::string& globalPathName = data.pathName;
-	const double& maxsize = data.maxsize;
+	maxsizeGLviewShape_ = data.maxsize;
 	const std::vector< GLviewShapeResetData >& shapes = data.shapes;
-	
+
+	if ( mapId2GLviewShape_.size() > 0 )
+	{
+		std::map< unsigned int, GLviewShape* >::iterator id2glcompIterator;
+
+		for ( id2glcompIterator = mapId2GLviewShape_.begin();
+		      id2glcompIterator != mapId2GLviewShape_.end();
+		      id2glcompIterator++ )
+		{
+			delete id2glcompIterator->second;
+		}
+
+		mapId2GLviewShape_.clear();
+		mapGeode2Id_.clear();
+	}
+
 	root_ = new osg::Group; // root_ is an osg::ref_ptr
 	root_->setDataVariance( osg::Object::STATIC );
 
@@ -686,9 +701,11 @@ void updateGeometryGLview( const GLviewResetData& data )
 
 		GLviewShape * shape = new GLviewShape( id, pathName,
 						       x, y, z,
-						       maxsize/2, maxsize/2, maxsize/2 );
-		shape->setColor( osg::Vec4( 0.5, 0.5, 0.5, 1.0 ) );
+						       0.5 * maxsizeGLviewShape_, CUBE );
+		mapId2GLviewShape_[id] = shape;
+
 		root_->addChild( shape->getGeode() );
+		mapGeode2Id_[ shape->getGeode() ] = id;
 	}
 	
 	isGeometryDirty_ = true;

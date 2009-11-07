@@ -209,7 +209,7 @@ ifeq ($(USE_GL),1)
 	CXXFLAGS += -DUSE_GL -I. -Ibasecode
 	GL_DIR = gl/src
 	GLCELL_LIB = gl/src/GLcell.o
-	GLVIEW_LIB = gl/src/GLview.o
+	GLVIEW_LIB = gl/src/GLview.o gl/src/GLshape.o
 endif
 
 # For mac with USE_GL, force 32-bit architecture because OSG doesn't fully build in 64-bit yet

@@ -103,7 +103,7 @@ osg::ref_ptr< osg::Geometry > GLCompartmentCylinder::getGeometry()
 
 int GLCompartmentCylinder::getCompartmentType()
 {
-	return CYLINDER;
+	return COMP_CYLINDER;
 }
 
 void GLCompartmentCylinder::setColor( osg::Vec4 color )

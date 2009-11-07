@@ -50,7 +50,7 @@ osg::ref_ptr< osg::Geometry > GLCompartmentSphere::getGeometry()
 
 int GLCompartmentSphere::getCompartmentType()
 {
-	return SPHERE;
+	return COMP_SPHERE;
 }
 
 void GLCompartmentSphere::setColor( osg::Vec4 color )

@@ -13,8 +13,8 @@
 
 enum COMPARTMENT_TYPE
 {
-	CYLINDER,
-	SPHERE
+	COMP_CYLINDER,
+	COMP_SPHERE
 };
 
 class GLCompartment

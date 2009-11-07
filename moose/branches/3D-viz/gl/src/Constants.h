@@ -23,4 +23,7 @@ const char SYNCMODE_ACKCHAR = '*';
 
 const double DEFAULT_INCREMENT_ANGLE = 10;
 
+const double VALUE_MIN_DEFAULT = 0.0;
+const double VALUE_MAX_DEFAULT = 1.0;
+
 #endif // CONSTANTS_H

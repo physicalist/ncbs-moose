@@ -17,15 +17,21 @@ enum MSGTYPE
 	DISCONNECT
 };
 
+enum SHAPETYPE
+{
+	CUBE,
+	SPHERE
+};
+
 class GLview
 {
  public:
 	GLview();
 	~GLview();
 
-	static void process( const Conn* c, ProcInfo p );
+	static void process( const Conn* c, ProcInfo info );
 
-	static void processFunc( const Conn* c, ProcInfo p );
+	static void processFunc( const Conn* c, ProcInfo info );
 	void processFuncLocal( Eref e, ProcInfo info );
 
 	static void reinitFunc( const Conn* c, ProcInfo info );
@@ -70,7 +76,33 @@ class GLview
 	static void setBgColor( const Conn* c, string strBgColor );
 	void innerSetBgColor( const double red, const double green, const double blue );
 	static string getBgColor( Eref e );
+
+	static void setColorVal( const Conn* c, unsigned int colorVal );
+	void innerSetColorVal( unsigned int colorVal );
+	static unsigned int getColorVal( Eref e );
+
+	static void setMorphVal( const Conn* c, unsigned int morphVal );
+	void innerSetMorphVal( unsigned int morphVal );
+	static unsigned int getMorphVal( Eref e );
+
+	static void setXOffsetVal( const Conn* c, unsigned int xoffsetVal );
+	void innerSetXOffsetVal( unsigned int xoffsetVal );
+	static unsigned int getXOffsetVal( Eref e );
+
+	static void setYOffsetVal( const Conn* c, unsigned int yoffsetVal );
+	void innerSetYOffsetVal( unsigned int yoffsetVal );
+	static unsigned int getYOffsetVal( Eref e );
+
+	static void setZOffsetVal( const Conn* c, unsigned int zoffsetVal );
+	void innerSetZOffsetVal( unsigned int zoffsetVal );
+	static unsigned int getZOffsetVal( Eref e );
 	
+	static void setValueMin( const Conn* c, unsigned int index, double value );
+	void innerSetValueMin( unsigned int index, double value );
+
+	static void setValueMax( const Conn* c, unsigned int index, double value );
+	void innerSetValueMax( unsigned int index, double value ); 
+
 	static const int MSGTYPE_HEADERLENGTH;
      	static const int MSGSIZE_HEADERLENGTH;
 	static const char SYNCMODE_ACKCHAR;
@@ -101,22 +133,22 @@ class GLview
 
 	vector< Id > elements_; // the elements found on strPath_
 
-	double *values1_;
-	double *values2_;
-	double *values3_;
-	double *values4_;
-	double *values5_;
-	string strValue1Field_;
-	string strValue2Field_;
-	string strValue3Field_;
-	string strValue4Field_;
-	string strValue5Field_;
+	double* values_[5];
+	double value_min_[5];
+	double value_max_[5];
+	string strValueField_[5];
 
-	double *x_;
-	double *y_;
-	double *z_;
+	unsigned int color_val_;
+	unsigned int morph_val_;
+	unsigned int xoffset_val_;
+	unsigned int yoffset_val_;
+	unsigned int zoffset_val_;
 
-	int populateValues( int valueNum, double ** pValues, string strValueField );
+	double* x_;
+	double* y_;
+	double* z_;
+
+	int populateValues( int valueNum, double ** pValues, const string& strValueField );
 	
 	double populateXYZ();
 	string boxXYZ( const double& x, const double& y, const double& z );
