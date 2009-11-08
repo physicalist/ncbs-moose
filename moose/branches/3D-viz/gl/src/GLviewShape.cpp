@@ -22,8 +22,7 @@ GLviewShape::GLviewShape( unsigned int id, std::string pathName,
 	:
 	xoffset_( 0.0 ),
 	yoffset_( 0.0 ),
-	zoffset_( 0.0 ),
-	iconFileName_( "" )
+	zoffset_( 0.0 )
 {
 	id_ = id;
 	pathName_ = pathName;

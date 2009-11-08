@@ -538,23 +538,24 @@ void GLview::reinitFuncLocal( const Conn* c )
 {
 	elements_.clear();
 
-	// If this element has no children yet, create default shape templates
+	// If this element has no children yet:
 	Id id = c->target().id();
 	Conn* i = id()->targets( "childSrc", 0 );
 	if ( ! i->good() )
 	{
+		// create default shape templates
 		Neutral::createArray( "GLshape", "shape", id, Id::scratchId(), 2 );
-		
-		// setting default values for each shape
-		Conn* j = id()->targets( "childSrc", 0 );
-		Eref e = j->target();
-		set< double >( e, "color", 0.0 );
-		set< double >( e, "len", 0.1 );
-		j->increment();
-		e = j->target();
-		set< double >( e, "color", 1.0 );
-		set< double >( e, "len", 1.0 );
+
+		// set default values for the new shapes
+		vector< Eref > ret;
+		children( id, ret, "GLshape" );
+
+		set< double >( ret[0], "color", 0.0 );
+		set< double >( ret[0], "len", 0.0 );
+		set< double >( ret[1], "color", 1.0 );
+		set< double >( ret[1], "len", 1.0 );
 	}
+	delete i;
 
 	if ( ! strPath_.empty() )  
 	{
@@ -601,32 +602,176 @@ void GLview::processFunc( const Conn* c, ProcInfo info )
 
 void GLview::processFuncLocal( Eref e, ProcInfo info )
 {
-	if ( ! strValueField_[0].empty() )
-		populateValues( 1, &values_[0], strValueField_[0] ); 
-	if ( ! strValueField_[1].empty() )
-		populateValues( 2, &values_[1], strValueField_[1] ); 
-	if ( ! strValueField_[2].empty() )
-		populateValues( 3, &values_[2], strValueField_[2] ); 
-	if ( ! strValueField_[3].empty() )
-		populateValues( 4, &values_[3], strValueField_[3] ); 
-	if ( ! strValueField_[4].empty() )
-		populateValues( 5, &values_[4], strValueField_[4] );
+	// determine child elements of the type GLshape as possible interpolation targets
+	Id idGLview = e.id();
+	vector< Eref > ret;
+	children( idGLview, ret, "GLshape" );
 
-	if ( color_val_ > 0 && color_val_ <= 5 )
-	{	
+	if ( ret.size() < 2 )
+	{
+		std::cerr << "GLview: should have at least two child elements of type GLshape" << std::endl;
+		return;
 	}
+
+	if ( mapId2GLshapeData_.size() == 0 )
+	{ // allocate memory the first time
+		for ( unsigned int i = 0; i < elements_.size(); ++i )
+		{
+			Id id = elements_[i];
+			GLshapeData* temp = (GLshapeData *) malloc( sizeof( GLshapeData ) );
+			if ( temp == NULL )
+			{
+				std::cerr << "GLview: could not allocate memory!" << std::endl;
+				return;
+			}
+			else 
+			{
+				mapId2GLshapeData_[id] = temp;
+			}
+		}			   
+	}
+
+	// set parameters to default values
+	for ( unsigned int i = 0; i < elements_.size(); ++i )
+	{
+		Id id = elements_[i];
+		mapId2GLshapeData_[id]->color = 0.5;
+		mapId2GLshapeData_[id]->xoffset = 0.0;
+		mapId2GLshapeData_[id]->yoffset = 0.0;
+		mapId2GLshapeData_[id]->zoffset = 0.0;
+		mapId2GLshapeData_[id]->len = 0.5;
+		// set shapetype to that of the first interpolation target/template
+		get< int >( ret[0], "shapetype", mapId2GLshapeData_[id]->shapetype );
+	}
+
+	// refresh values_[][]
+	for ( unsigned int i = 0; i < 5; ++i )
+	{
+		if ( ! strValueField_[i].empty() )
+			populateValues( i+1, &values_[i], strValueField_[i] ); 
+	}
+
+	// obtain parameter values by linear interpolation between
+	// values of respective interpolation templates
+	if ( color_val_ > 0 && color_val_ <= 5 )
+	{
+		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		{
+			Id id = elements_[i];
+			double value = values_[color_val_-1][i];
+
+			// determine interpolation targets
+			unsigned int iLow, iHigh;
+			chooseInterpolationPair( ret.size(), value,
+						 value_min_[color_val_-1], value_max_[color_val_-1],
+						 iLow, iHigh);
+			// obtain parameter value by linear interpolation and set
+			double attr_low;
+			get< double >( ret[iLow], "color", attr_low );
+			double attr_high;
+			get< double >( ret[iHigh], "color", attr_high );
+
+			interpolate( value_min_[color_val_-1], attr_low,
+				     value_max_[color_val_-1], attr_high,
+				     value, mapId2GLshapeData_[id]->color );
+		}
+	}
+
 	if ( morph_val_ > 0 && morph_val_ <= 5 )
 	{
+		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		{
+			Id id = elements_[i];
+			double value = values_[morph_val_-1][i];
+
+			// determine interpolation targets
+			unsigned int iLow, iHigh;
+			chooseInterpolationPair( ret.size(), value,
+						 value_min_[morph_val_-1], value_max_[morph_val_-1],
+						 iLow, iHigh);
+			// obtain parameter value by linear interpolation and set
+			double attr_low;
+			get< double >( ret[iLow], "len", attr_low );
+			double attr_high;
+			get< double >( ret[iHigh], "len", attr_high );
+
+			interpolate( value_min_[morph_val_-1], attr_low,
+				     value_max_[morph_val_-1], attr_high,
+				     value, mapId2GLshapeData_[id]->len );
+		}
 	}
+
 	if ( xoffset_val_ > 0 && xoffset_val_ <= 5 )
 	{
+		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		{
+			Id id = elements_[i];
+			double value = values_[xoffset_val_-1][i];
+
+			// determine interpolation targets
+			unsigned int iLow, iHigh;
+			chooseInterpolationPair( ret.size(), value,
+						 value_min_[xoffset_val_-1], value_max_[xoffset_val_-1],
+						 iLow, iHigh);
+			// obtain parameter value by linear interpolation and set
+			double attr_low;
+			get< double >( ret[iLow], "xoffset", attr_low );
+			double attr_high;
+			get< double >( ret[iHigh], "xoffset", attr_high );
+
+			interpolate( value_min_[xoffset_val_-1], attr_low,
+				     value_max_[xoffset_val_-1], attr_high,
+				     value, mapId2GLshapeData_[id]->xoffset );
+		}
 	}
+
 	if ( yoffset_val_ > 0 && yoffset_val_ <= 5 )
 	{
+		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		{
+			Id id = elements_[i];
+			double value = values_[yoffset_val_-1][i];
+
+			// determine interpolation targets
+			unsigned int iLow, iHigh;
+			chooseInterpolationPair( ret.size(), value,
+						 value_min_[yoffset_val_-1], value_max_[yoffset_val_-1],
+						 iLow, iHigh);
+			// obtain parameter value by linear interpolation and set
+			double attr_low;
+			get< double >( ret[iLow], "yoffset", attr_low );
+			double attr_high;
+			get< double >( ret[iHigh], "yoffset", attr_high );
+
+			interpolate( value_min_[yoffset_val_-1], attr_low,
+				     value_max_[yoffset_val_-1], attr_high,
+				     value, mapId2GLshapeData_[id]->yoffset );
+		}
 	}
+
 	if ( zoffset_val_ > 0 && zoffset_val_ <= 5 )
 	{
-	}	
+		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		{
+			Id id = elements_[i];
+			double value = values_[zoffset_val_-1][i];
+
+			// determine interpolation targets
+			unsigned int iLow, iHigh;
+			chooseInterpolationPair( ret.size(), value,
+						 value_min_[zoffset_val_-1], value_max_[zoffset_val_-1],
+						 iLow, iHigh);
+			// obtain parameter value by linear interpolation and set
+			double attr_low;
+			get< double >( ret[iLow], "zoffset", attr_low );
+			double attr_high;
+			get< double >( ret[iHigh], "zoffset", attr_high );
+
+			interpolate( value_min_[zoffset_val_-1], attr_low,
+				     value_max_[zoffset_val_-1], attr_high,
+				     value, mapId2GLshapeData_[id]->zoffset );
+		}
+	}
 }
 
 ///////////////////////////////////////////////////
@@ -853,6 +998,64 @@ string GLview::inttostring( int i )
 	return out.str();
 }
 
+int GLview::children( Id object, vector< Eref >& ret, const string& type )
+{
+	unsigned int oldSize = ret.size();
+	
+	Eref found;
+	Conn* i = object()->targets( "childSrc", 0 );
+	for ( ; i->good(); i->increment() ) {
+		found = i->target();
+		if ( ! isType( found->id(), type ) )
+			continue;
+		
+		ret.push_back( found );		
+	}
+	delete i;
+	
+	return ret.size() - oldSize;
+}
+
+bool GLview::isType( Id object, const string& type )
+{
+	return object()->cinfo()->isA( Cinfo::find( type ) );
+}
+
+void GLview::chooseInterpolationPair( const int& numTargets, const double& val,
+				      const double& val_min, const double& val_max,
+				      unsigned int& iLow, unsigned int& iHigh )
+{
+	if ( numTargets == 2 )
+	{
+		iLow = 0;
+		iHigh = 1;
+	}
+	else
+	{
+		double step = 1. / (numTargets - 1);
+		int low, high;
+
+		low = static_cast< int >(floor((val-val_min) / ((val_max-val_min) * step) ));
+		if ( low >= numTargets - 1 )
+			low = numTargets - 2;
+		else if ( low < 0 )
+			low = 0;
+
+		high = low + 1;
+
+		iLow = low;
+		iHigh = high;
+	}
+}
+
+void GLview::interpolate( const double& val_min, const double& attr_min,
+			  const double& val_max, const double& attr_max,
+			  const double& val, double& attr )
+{
+	attr = attr_min +
+		((val - val_min) * (attr_max - attr_min)) / ( val_max - val_min );
+}
+
 ///////////////////////////////////////////////////
 // networking helper function definitions
 ///////////////////////////////////////////////////
@@ -1014,9 +1217,7 @@ int GLview::receiveAck()
 			}
 		}
 	}
-
 	free(buf);
-
 	return 1;
 }
 

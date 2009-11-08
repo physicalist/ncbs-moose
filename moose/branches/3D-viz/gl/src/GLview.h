@@ -8,6 +8,7 @@
 **********************************************************************/
 
 #include "moose.h"
+#include "GLshapeData.h"
 
 enum MSGTYPE
 {
@@ -15,12 +16,6 @@ enum MSGTYPE
 	PROCESS,
 	PROCESSSYNC,
 	DISCONNECT
-};
-
-enum SHAPETYPE
-{
-	CUBE,
-	SPHERE
 };
 
 class GLview
@@ -131,7 +126,8 @@ class GLview
 	string strPath_;
 	string strRelPath_;
 
-	vector< Id > elements_; // the elements found on strPath_
+	// the elements found on strPath_
+	vector< Id > elements_;
 
 	double* values_[5];
 	double value_min_[5];
@@ -148,11 +144,26 @@ class GLview
 	double* y_;
 	double* z_;
 
+	std::map< Id, GLshapeData* > mapId2GLshapeData_;
+
 	int populateValues( int valueNum, double ** pValues, const string& strValueField );
 	
 	double populateXYZ();
 	string boxXYZ( const double& x, const double& y, const double& z );
 	string inttostring( int i );
+	
+	// helper functions taken (largely) from BioScan; they are
+	// private there or I would use them directly
+	int children( Id object, vector< Eref >& ret, const string& type );
+	bool isType( Id object, const string& type );
+
+	void chooseInterpolationPair( const int& numTargets, const double& val,
+				      const double& val_min, const double& val_max,
+				      unsigned int& iLow, unsigned int& iHigh );
+
+	void interpolate( const double& val_min, const double& attr_min,
+			  const double& val_max, const double& attr_max,
+			  const double& val, double& attr );
 
 	// gets x, y, z co-ordinates for the element represented by id, or if not found
 	// such co-ordinates of its parent or its parent's parent and so on, unless root is reached

@@ -16,7 +16,7 @@ MOOSE_HEADERS = \
 	../../connections/Conn.h \
 	../../basecode/Element.h
 
-DATA_STRUCTURE_HEADERS = AckPickData.h GeometryData.h CompartmentData.h GLviewResetData.h
+DATA_STRUCTURE_HEADERS = AckPickData.h GeometryData.h CompartmentData.h GLviewResetData.h GLshapeData.h
 
 TARGET_CELL = glcell.o
 TARGET_VIEW = glview.o
@@ -41,7 +41,7 @@ $(TARGET_SHAPE) : $(OBJ_SHAPE) $(MOOSE_HEADERS)
 	$(LD) -r -o $(TARGET_SHAPE) $(OBJ_SHAPE)
 
 OBJ_VIEW = GLview.o
-$(OBJ_VIEW) : GLview.cpp GLview.h GLshapeData.h $(MOOSE_HEADERS)
+$(OBJ_VIEW) : GLview.cpp GLview.h $(DATA_STRUCTURE_HEADERS) $(MOOSE_HEADERS)
 	$(CXX) $(CXXFLAGS) -I../../ -I../../basecode -I$(OSG_INCLUDE) -c GLview.cpp
 $(TARGET_VIEW) : $(OBJ_VIEW) $(MOOSE_HEADERS)
 	$(LD) -r -o $(TARGET_VIEW) $(OBJ_VIEW)
