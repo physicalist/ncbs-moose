@@ -37,3 +37,6 @@ struct GLshapeData
 	}
 };
 
+#endif // GLSHAPEDATA_H
+
+

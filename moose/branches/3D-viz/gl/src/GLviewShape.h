@@ -28,7 +28,6 @@ class GLviewShape
 	void move( double xoffset, double yoffset, double zoffset );
 	void resize( double len );
 	void setShapeType( int shapetype );
-	// void setIcon( std::string iconFileName ); // TODO
 
  private:
 	unsigned int id_;
@@ -38,8 +37,6 @@ class GLviewShape
 	double len_;
 	int shapetype_;
 	
-	std::string iconFileName_;
-
 	osg::ref_ptr< osg::Geode > geode_;
 	osg::ref_ptr< osg::ShapeDrawable > drawable_;
 	osg::ref_ptr< osg::Box > box_;
