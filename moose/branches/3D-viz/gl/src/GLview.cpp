@@ -293,6 +293,7 @@ void GLview::setValue1Field( const Conn* c, string strValue1Field )
 void GLview::innerSetValue1Field( const string& strValue1Field )
 {
 	strValueField_[0] = strValue1Field;
+	populateValues( 1, &values_[0], strValue1Field ); 
 }
 
 string GLview::getValue1Field( Eref e )
@@ -308,6 +309,7 @@ void GLview::setValue2Field( const Conn* c, string strValue2Field )
 void GLview::innerSetValue2Field( const string& strValue2Field )
 {
 	strValueField_[1] = strValue2Field;
+	populateValues( 2, &values_[1], strValue2Field ); 
 }
 
 string GLview::getValue2Field( Eref e )
@@ -323,6 +325,7 @@ void GLview::setValue3Field( const Conn* c, string strValue3Field )
 void GLview::innerSetValue3Field( const string& strValue3Field )
 {
 	strValueField_[2] = strValue3Field;
+	populateValues( 3, &values_[2], strValue3Field ); 
 }
 
 string GLview::getValue3Field( Eref e )
@@ -338,6 +341,7 @@ void GLview::setValue4Field( const Conn* c, string strValue4Field )
 void GLview::innerSetValue4Field( const string& strValue4Field )
 {
 	strValueField_[3] = strValue4Field;
+	populateValues( 4, &values_[3], strValue4Field ); 
 }
 
 string GLview::getValue4Field( Eref e )
@@ -353,6 +357,7 @@ void GLview::setValue5Field( const Conn* c, string strValue5Field )
 void GLview::innerSetValue5Field( const string& strValue5Field )
 {
 	strValueField_[4] = strValue5Field;
+	populateValues( 5, &values_[4], strValue5Field ); 
 }
 
 string GLview::getValue5Field( Eref e )
@@ -421,7 +426,12 @@ void GLview::setColorVal( const Conn* c, unsigned int colorVal )
 
 void GLview::innerSetColorVal( unsigned int colorVal )
 {
-	color_val_ = colorVal;
+	if ( values_[colorVal-1] != NULL)
+		color_val_ = colorVal;
+	else
+		std::cerr << "GLview: setting color_val to " << colorVal
+			  << " failed because value" << colorVal
+			  << " is not yet assigned." << std::endl;
 }
 
 unsigned int GLview::getColorVal( Eref e )
@@ -436,7 +446,12 @@ void GLview::setMorphVal( const Conn* c, unsigned int morphVal )
 
 void GLview::innerSetMorphVal( unsigned int morphVal )
 {
-	morph_val_ = morphVal;
+	if ( values_[morphVal-1] != NULL)
+		morph_val_ = morphVal;
+	else
+		std::cerr << "GLview: setting morph_val to " << morphVal
+			  << " failed because value" << morphVal
+			  << " is not yet assigned." << std::endl;
 }
 
 unsigned int GLview::getMorphVal( Eref e )
@@ -451,7 +466,12 @@ void GLview::setXOffsetVal( const Conn* c, unsigned int xoffsetVal )
 
 void GLview::innerSetXOffsetVal( unsigned int xoffsetVal )
 {
-	xoffset_val_ = xoffsetVal;
+	if ( values_[xoffsetVal-1] != NULL)
+		xoffset_val_ = xoffsetVal;
+	else
+		std::cerr << "GLview: setting xoffset_val to " << xoffsetVal
+			  << " failed because value" << xoffsetVal
+			  << " is not yet assigned." << std::endl;
 }
 
 unsigned int GLview::getXOffsetVal( Eref e )
@@ -466,7 +486,12 @@ void GLview::setYOffsetVal( const Conn* c, unsigned int yoffsetVal )
 
 void GLview::innerSetYOffsetVal( unsigned int yoffsetVal )
 {
-	yoffset_val_ = yoffsetVal;
+	if ( values_[yoffsetVal-1] != NULL)
+		yoffset_val_ = yoffsetVal;
+	else
+		std::cerr << "GLview: setting yoffset_val to " << yoffsetVal
+			  << " failed because value" << yoffsetVal
+			  << " is not yet assigned." << std::endl;
 }
 
 unsigned int GLview::getYOffsetVal( Eref e )
@@ -481,7 +506,12 @@ void GLview::setZOffsetVal( const Conn* c, unsigned int zoffsetVal )
 
 void GLview::innerSetZOffsetVal( unsigned int zoffsetVal )
 {
-	zoffset_val_ = zoffsetVal;
+	if ( values_[zoffsetVal-1] != NULL)
+		zoffset_val_ = zoffsetVal;
+	else
+		std::cerr << "GLview: setting zoffset_val to " << zoffsetVal
+			  << " failed because value" << zoffsetVal
+			  << " is not yet assigned." << std::endl;
 }
 
 unsigned int GLview::getZOffsetVal( Eref e )
@@ -499,7 +529,8 @@ void GLview::innerSetValueMin( unsigned int index, double value )
 	if ( index >= 1 && index <= 5 )
 	{
 		if ( value >= value_max_[index-1] )
-			std::cerr << "Value being set to be >= of value_max[" << index-1 << "] == " << value_max_[index-1] << std::endl;
+			std::cerr << "Value being set to be >= of value_max["
+				  << index-1 << "] == " << value_max_[index-1] << std::endl;
 		
 		value_min_[index-1] = value;
 	}
@@ -517,7 +548,8 @@ void GLview::innerSetValueMax( unsigned int index, double value )
 	if ( index >= 1 && index <= 5 )
 	{
 		if ( value <= value_min_[index-1] )
-			std::cerr << "Value being set to be <= of value_min[" << index-1 << "] == " << value_min_[index-1] << std::endl;
+			std::cerr << "Value being set to be <= of value_min["
+				  << index-1 << "] == " << value_min_[index-1] << std::endl;
 
 		value_max_[index-1] = value;
 	}
@@ -617,7 +649,7 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 	{ // allocate memory the first time
 		for ( unsigned int i = 0; i < elements_.size(); ++i )
 		{
-			Id id = elements_[i];
+			unsigned int id = elements_[i].id();
 			GLshapeData* temp = (GLshapeData *) malloc( sizeof( GLshapeData ) );
 			if ( temp == NULL )
 			{
@@ -634,7 +666,7 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 	// set parameters to default values
 	for ( unsigned int i = 0; i < elements_.size(); ++i )
 	{
-		Id id = elements_[i];
+		unsigned int id = elements_[i].id();
 		mapId2GLshapeData_[id]->color = 0.5;
 		mapId2GLshapeData_[id]->xoffset = 0.0;
 		mapId2GLshapeData_[id]->yoffset = 0.0;
@@ -657,7 +689,7 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 	{
 		for ( unsigned int i = 0; i < elements_.size(); ++i)
 		{
-			Id id = elements_[i];
+			unsigned int id = elements_[i].id();
 			double value = values_[color_val_-1][i];
 
 			// determine interpolation targets
@@ -681,7 +713,7 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 	{
 		for ( unsigned int i = 0; i < elements_.size(); ++i)
 		{
-			Id id = elements_[i];
+			unsigned int id = elements_[i].id();
 			double value = values_[morph_val_-1][i];
 
 			// determine interpolation targets
@@ -705,7 +737,7 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 	{
 		for ( unsigned int i = 0; i < elements_.size(); ++i)
 		{
-			Id id = elements_[i];
+			unsigned int id = elements_[i].id();
 			double value = values_[xoffset_val_-1][i];
 
 			// determine interpolation targets
@@ -729,7 +761,7 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 	{
 		for ( unsigned int i = 0; i < elements_.size(); ++i)
 		{
-			Id id = elements_[i];
+			unsigned int id = elements_[i].id();
 			double value = values_[yoffset_val_-1][i];
 
 			// determine interpolation targets
@@ -753,7 +785,7 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 	{
 		for ( unsigned int i = 0; i < elements_.size(); ++i)
 		{
-			Id id = elements_[i];
+			unsigned int id = elements_[i].id();
 			double value = values_[zoffset_val_-1][i];
 
 			// determine interpolation targets
@@ -770,6 +802,25 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 			interpolate( value_min_[zoffset_val_-1], attr_low,
 				     value_max_[zoffset_val_-1], attr_high,
 				     value, mapId2GLshapeData_[id]->zoffset );
+		}
+	}
+
+	if ( syncMode_ )
+	{
+		transmit( mapId2GLshapeData_, PROCESSSYNC );
+		if ( receiveAck() < 0 )
+		{
+			isConnectionUp_ = false;
+		}
+		// the client will wait for the display to be updated before
+		// sending this ack in response to a PROCESSSYNC message
+	}
+	else
+	{
+		transmit( mapId2GLshapeData_, PROCESS );
+		if ( receiveAck() < 0 )
+		{
+			isConnectionUp_ = false;
 		}
 	}
 }
@@ -815,7 +866,7 @@ int GLview::populateValues( int valueNum, double ** pValues, const string& strVa
 			}
 			else if ( ! get< double >( id.eref(), strValueField, values[i] ) )
 			{
-				std::cerr << "GLview error: for value" << valueNum << ", unable to find a field called '" << strValueField << "' in elements on the path " << strPath_ << strRelPath_ << std::endl;
+				std::cerr << "GLview error: for value" << valueNum << ", unable to find a field called '" << strValueField << "' in elements on the path " << strPath_ << strRelPath_ << " The old value, if any, will be retained." << std::endl;
 				status = -3;
 				break;
 			}
@@ -827,7 +878,10 @@ int GLview::populateValues( int valueNum, double ** pValues, const string& strVa
 	}
 
 	if ( status == -2 || status == -3 )
+	{
 		free( *pValues );
+		*pValues = NULL;
+	}
 
 	return status;
 }
@@ -1207,8 +1261,7 @@ int GLview::receiveAck()
 		{
 			boost::archive::text_iarchive archive( archiveStream );
 		
-			AckPickData ackPickData;
-		
+			AckPickData ackPickData;		
 			archive >> ackPickData;
 
 			if ( ackPickData.wasSomethingPicked )

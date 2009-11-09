@@ -521,7 +521,7 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 			{
 				isConnectionUp_ = false;
 			}
-		  }
+		}
 	}
 }
 
@@ -774,9 +774,8 @@ int GLcell::receiveAck()
 		// starting new scope so that the archive's stream's destructor is called after the archive's
 		{
 			boost::archive::text_iarchive archive( archiveStream );
-		
-			AckPickData ackPickData;
-		
+			
+			AckPickData ackPickData;	
 			archive >> ackPickData;
 
 			if ( ackPickData.wasSomethingPicked )

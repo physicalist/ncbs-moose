@@ -60,6 +60,7 @@
 #include "AckPickData.h"
 #include "GeometryData.h"
 #include "GLviewResetData.h"
+#include "GLshapeData.h"
 #include "GLviewShape.h"
 
 #include "TextBox.h"
@@ -399,6 +400,7 @@ void receiveData( int newFd )
 						archive_i >> geometryData;
 
 						updateGeometryGLcell( geometryData );
+						isGeometryDirty_ = true;
 					}
 					else if ( messageType == PROCESS || messageType == PROCESSSYNC )
 					{
@@ -444,11 +446,53 @@ void receiveData( int newFd )
 						archive_i >> data;
 
 						updateGeometryGLview( data );
+						isGeometryDirty_ = true;
 					}
 					else if ( messageType == PROCESS || messageType == PROCESSSYNC )
 					{
-						std::cout << " Handling GLVIEW PROCESS" << std::endl; // TODO
-						
+						{  // additional scope to wrap scoped_lock
+							boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
+							
+							if ( mapId2GLshapeData_.size() > 0 )
+							{
+								std::map< unsigned int, GLshapeData* >::iterator id2glshapeIterator;
+
+								for ( id2glshapeIterator = mapId2GLshapeData_.begin();
+								      id2glshapeIterator != mapId2GLshapeData_.end();
+								      id2glshapeIterator++ )
+								{
+									delete id2glshapeIterator->second;
+								}
+
+								mapId2GLshapeData_.clear();
+							}
+							archive_i >> mapId2GLshapeData_;
+						}
+				
+						// wait for display to update if in sync mode
+						if ( messageType == PROCESS )
+						{
+							if ( isColorSetDirty_ == true ) // We meant to set data set dirty but
+								// it is already dirty which means the rendering thread has not picked it up yet.
+							{
+								std::cerr << "skipping frame..." << std::endl;
+							}
+	
+							isColorSetDirty_ = true;
+						}
+						else // messageType == PROCESSSYNC
+						{
+							isColorSetDirty_ = true;
+				
+							// wait for the updated data set to render to display
+							{
+								boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
+								while ( isColorSetDirty_ )
+								{
+									condColorSetUpdated_.wait( lock );
+								}
+							}
+						}		
 						sendAck( newFd );
 					}	
 				}
@@ -655,8 +699,6 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 			dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[id] )->closeOpenEnds();
 		}
 	}
-
-	isGeometryDirty_ = true;
 }
 
 void updateGeometryGLview( const GLviewResetData& data )
@@ -706,9 +748,7 @@ void updateGeometryGLview( const GLviewResetData& data )
 
 		root_->addChild( shape->getGeode() );
 		mapGeode2Id_[ shape->getGeode() ] = id;
-	}
-	
-	isGeometryDirty_ = true;
+	}	
 }
 
 void draw()
@@ -745,8 +785,6 @@ void draw()
 																    "jpg",															    osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
 	viewer_->addEventHandler( screenCaptureHandler_ );
 
-	std::map< unsigned int, double >::iterator renderMapColorsIterator;
-
 	while ( !viewer_->done() ) {
 
 		if ( isGeometryDirty_ ) {
@@ -759,34 +797,81 @@ void draw()
 		if ( isColorSetDirty_ ) {
 			boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 			
-			for ( renderMapColorsIterator = renderMapColors_.begin();
-			      renderMapColorsIterator != renderMapColors_.end();
-			      renderMapColorsIterator++ )
+			if ( mode_ == GLCELL )
 			{
-				unsigned int id = renderMapColorsIterator->first;
-				double color = renderMapColorsIterator->second;
+				std::map< unsigned int, double >::iterator renderMapColorsIterator;
 
-				GLCompartment* glcompartment = mapId2GLCompartment_[id];
-				int ix;
-				
-				if ( fabs( color - 0 ) < FP_EPSILON ) // color == 0
+				for ( renderMapColorsIterator = renderMapColors_.begin();
+				      renderMapColorsIterator != renderMapColors_.end();
+				      renderMapColorsIterator++ )
 				{
-					ix = 0;
-				}
-				else if ( fabs( color - 1 ) < FP_EPSILON ) // color = 1
-				{
-					ix = colormap_.size()-1;
-				}
-				else
-				{
-					ix = static_cast< int >( floor( color * colormap_.size() ) );
-				}
+					unsigned int id = renderMapColorsIterator->first;
+					double color = renderMapColorsIterator->second;
 
-				double red = colormap_[ ix ][ 0 ];
-				double green = colormap_[ ix ][ 1 ];
-				double blue = colormap_[ ix ][ 2 ];
+					GLCompartment* glcompartment = mapId2GLCompartment_[id];
 
-				glcompartment->setColor( osg::Vec4( red, green, blue, 1.0f ) );
+					int ix;				
+					if ( fabs( color - 0 ) < FP_EPSILON ) // color == 0
+					{
+						ix = 0;
+					}
+					else if ( fabs( color - 1 ) < FP_EPSILON ) // color = 1
+					{
+						ix = colormap_.size()-1;
+					}
+					else
+					{
+						ix = static_cast< int >( floor( color * colormap_.size() ) );
+					}
+					double red = colormap_[ ix ][ 0 ];
+					double green = colormap_[ ix ][ 1 ];
+					double blue = colormap_[ ix ][ 2 ];
+					glcompartment->setColor( osg::Vec4( red, green, blue, 1.0f ) );
+				}
+			}
+			else if ( mode_ == GLVIEW )
+			{
+				std::map< unsigned int, GLshapeData* >::iterator id2glshapeIterator;
+
+				for ( id2glshapeIterator = mapId2GLshapeData_.begin();
+				      id2glshapeIterator != mapId2GLshapeData_.end();
+				      id2glshapeIterator++ )
+				{
+					unsigned int id = id2glshapeIterator->first;
+					GLshapeData* newGLshape = id2glshapeIterator->second;
+					GLviewShape* glViewShape = mapId2GLviewShape_[id];
+
+					glViewShape->resize( newGLshape->len * maxsizeGLviewShape_ );
+
+					int ix;				
+					if ( fabs( newGLshape->color - 0 ) < FP_EPSILON ) // color == 0
+					{
+						ix = 0;
+					}
+					else if ( fabs( newGLshape->color - 1 ) < FP_EPSILON ) // color = 1
+					{
+						ix = colormap_.size()-1;
+					}
+					else
+					{
+						ix = static_cast< int >( floor( newGLshape->color * colormap_.size() ) );
+					}
+					double red = colormap_[ ix ][ 0 ];
+					double green = colormap_[ ix ][ 1 ];
+					double blue = colormap_[ ix ][ 2 ];
+					glViewShape->setColor( osg::Vec4( red, green, blue, 1.0f ) );
+
+					// TODO karan
+					//if non-zero offset
+					//  glViewShape->move();
+
+					// TODO karan
+					// glViewShape->setShapeType:
+					// this will be complicated
+					// and should probably be
+					// transmitted and handled in
+					// RESET, not PROCESS
+				}
 			}
 
 			{

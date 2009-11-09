@@ -7,11 +7,16 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#ifndef SHAPETYPE
+#define SHAPETYPE
+
 enum SHAPETYPE
 {
 	CUBE,
 	SPHERE
 };
+
+#endif // SHAPETYPE
 
 class GLshape
 {
