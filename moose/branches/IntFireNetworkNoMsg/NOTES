@@ -1,0 +1,1688 @@
+7 Jan 2009
+
+I have been playing around with a new messaging system, one that uses an
+intermediate buffer. The big advantage of this sytem is that it should
+simplify messaging in multithread and multinode systems. 
+
+Sync messages begin to look a bit like the kinetics optimizations in 
+GENESIS. 
+Differing: The msg source uses 'send' to place the data in a safe buffer.
+Similar: The msg dest scans list of ptrs to places in this buffer.
+Similar: Will need an 'ACTION'-like mechanism for calling dest funcs from
+clocks.
+Possibly this will work a bit faster than existing MOOSE messaging.
+
+Async messages are harder. Need to assemble all outgoing data on any given
+thread into an expanding buffer for that thread. Data packets include src id.
+These packets are transferred (issues here about selecting for targets).
+On target thread, src id used to look up whatever part of the ConnTainer info
+specifies the dest elements. Then the packet is delivered. Best if done through
+a scan of dests, since that retains similarity with Sync messages. 
+
+Need to introduce a mechanism for calling 'ACTIONS' directly.
+
+=============================================================================
+26 Jan 2009
+
+send -> buffer
+process -> lookup buffer
+trigger -> call func. Could restrict to fixed set, or provide a func lookup 
+	index. If fixed set could use virtual funcs.
+
+Or, eliminate trigger and provide only process, proc2, and reinit.
+	Would like to be able to call arb funcs.
+
+SendBack, SendTo become harder.
+
+
+Process op: well defined, clock ticked.
+Proc2: ditto
+Reinit: ditto.
+
+Then: generic arrival op: Scan for op request. The memory location has
+both the operation identifier and the arguments.
+
+Or: build up scan list through messages... sounds like GENESIS.
+
+Or: Alerting mechanism. 'SendTo' or 'SendBack' puts target id on queue
+
+High traffic messages are scheduled.
+	Synaptic input is scheduled even though it is sporadic. Total
+	traffic is expected to be big.
+Low traffic messages are polled by queue. When called, these are added
+	to a queue for the target object.
+Buffer info includes only data.
+	For regular input, like conc and Vm, data only is the conc/Vm.
+	For synaptic input the data includes source object info.
+	For low traffic messages the data includes complete conn info, plus args
+	For sendback messages like channelGates: It can be scheduled, so
+		the data includes return info and the op must use this to place
+		the response in the right location. Would be nice to do
+		efficiently in array form.
+	For field assignment: Regular low traffic
+	For field readout: Data includes Id for field access object.
+		This is a temporary from the command line
+		It is a regular object for plots etc.
+
+
+Design requirements:
+- Thread safe
+- Buffered data delivery for threading and for multinode operations.
+- Very fast for scheduled operations, whether threaded or not.
+- Connections remain fully traversible, 
+- Connections remain usable bidirectionally by multiple messages.
+
+Design desiderata
+- Completely deterministic for single-thread case (consider real-time ops)
+
+=============================================================================
+30 Jan 2009
+There is a problem to be sorted for any queued buffer messaging: Ensuring that
+things go into the buffer without stepping on each others' toes. For
+example, sending spikes. If we allocate a separate buffer per thread for
+each target object, things get costly and messy. But that may be better 
+than mutexes for writing into the buffer.
+
+We expect single 'synapse' objects to manage many input axons, each connecting
+with a distinct weight. Suppose 100 of these, so the convergence is up to 300.
+Assume a 16-way system, we don't want to manage 16 buffers for each synapse.
+
+Per-clock buffers: An extra step to unsort them. More info to put in to 
+identify dest.
+
+Thread-safe queue for writing: There is an extra overhead in mutex juggling
+for every 'send', though the subsequent reads can be clean as they are done
+on the object owning the queue. If we have per-object queues should be 
+manageable.
+
+=============================================================================
+31 Jan 2009
+A problem with the messaging concept: Can't put the message buf on the
+target element, because the data may go to multiple targets. Instead
+need the target element to manage ptr to the msg src(s) and read them.
+Either that, or have src element push data into multiple target bufs.
+Latter makes more sense, given that we may need to push data also into
+an MPI buffer or so.
+But by the same token data comes into the MPI Recv buffer and needs to
+be dispersed. 
+So, one way or another, the postmaster must be an active participant
+in getting data in or out of the buffer.
+
+Cost:
+Pushing data:
+Src needs addr for each buffer, N addrs.      Iterate N times.
+Each Dest needs buffer, N * datasize.         N dests each 1 lookup.
+Multhreading: No change, no need for any locks.
+MPI: Push right into MPI buffer. At remote node need to do further push.
+Sporadic Msgs: Push into queues of every target. No redundancy.
+			: Push into a single queue, later push into target?
+				No particular advantage.
+Variant on Moose 1.1 approach: Target object guarantees thread-safe
+	handling of incoming data... tricky. Need to put each incoming 
+	arg into separate location indexed by msg src itself.
+
+Pulling data:
+Src needs single buffer, no iteration. 1 addr. No iteration.
+Each dest needs addr of buffer: N* ptrsize    N dests each 1 lookup.
+Multhreading: No change, no need for any locks.
+MPI: Postmasters on src need to pull in data. At remote node usual pull.
+Sporadic msgs: Push into a single queue, managed by msg. This
+	subsequently needs to do multiple pushes anyway, unless there
+	is a very high chance that each entry will be of interest to each
+	receiving synapse.
+	: Push into multiple queues, basically into the target object.
+
+Seems like pulling data works better for scheduled messages.
+Something like pushing needed for sporadic msgs. 
+Like old GENESIS.
+
+=============================================================================
+1 Feb 2009
+Now the location of the buffers.
+sched data buffer
+- On source object:
+	+ No extra storage or management
+	. Need to redirect pointers if objects are deleted or moved
+	. Need to redirect pointers for zombies. But redirection needed anyway
+	- Mixes message transfer with object representation.
+- In a separate buffer managed by the Msg:
+	+ Management relatively straightforward, set up at msg creation time.
+	+ Deleting and moving objects managed along with messages.
+	. Zombies could do a hack and reuse the same msg space.
+	+ Separates message transfer from object representation.
+
+async data buffers: Synaptic input.
+- On dest objects:
+	+ Clean synapse management.
+	- Mixes message transfer with object representation.
+	. Sender must scan through all dests.
+	- Extra outgoing buffers.
+- In multiple separate buffers managed by each of the Msgs:
+	+ Again, management straightforward, set up at msg creation time.
+	+ Separates message transfer from object representation.
+	- Issue of additional data: weight, release prob, history, etc.
+	. Many-to-many msgs have a possible economy of assignment.
+	- All targets must scan through all potential sources
+- Input Q on Msg, synapse-local Q on objects
+	- Initial op: Get data from axon to Msg.
+	- Option 1: push onto Msg Q, accumulate on Msg.
+		- Thread locking needed.
+		- Msg subsequently called on tick to clean input Q.
+		- This could be a rare call if syn delay is large.
+		- Now it shuffles data into synapse-specific Q.
+			- Depending on update rate and convergence onto syn,
+				this could be a single entry Q.
+			- Multi-thread op here too, but very local.
+		- This synapse-specific Q could also be the sorted event Q
+		- Object scans base of event Q each timestep.
+		- Note that we cannot do event queueing on the incoming
+			APs, because of different delays to target.
+	- Option 2: Immediately sort onto target synapse Qs.
+		- Thread locking needed.
+		- This op has to immediately do the shuffling into 
+			synapse-specific Q, since otherwise full scan needed.
+		- This synapse-specific Q could also be the sorted event Q
+		- Object scans base of event Q each timestep.
+	- When object pops event Q, it has to locate syn wt, prob, history, etc.
+		- Option 1: Msg carries this info.
+			+ These are features of projection pattern
+			- Need to template whole Syn Msg structure
+			+ Projection could compute on fly.
+		- Option 2: Target obj carries this info
+			+ Local calculations easier. Postsyn compt history too.
+			+ No templating needed.
+			- Need index in msg for target obj to look up info.
+
+async data buffers: Sporadic input.
+- On Dest objects:
+	+ Clean data management
+	- Need to send out to all targets (But # likely small )
+	- Mixes message transfer with object representation
+- On Src objects
+	+ Single point of assignment
+	- All targets must scan through all potential sources
+	- Possible economy of assignment.
+- On buffers managed by each Msg:
+	- All targets must scan through all potential sources
+	- Possible economy of assignment.
+
+Seems like the best bet is to have Msgs manage the sync buffers.
+The clinching point is that about separation of message data transfer
+from objects.
+(Added 15 Feb: Another issue overrides this, for async messages: data flow
+should be unidirectional, that is, messages cannot be changed by their targets.
+This would happen if the spikeQ was on the message rather than the target.)
+
+Implemented a first pass test simulation using reacs and mols. Hard coded
+in buffer info. Works. Helps set up requirements for messaging.
+
+In this variant, the Element manages a vector< double* > that points to
+the data buffers, and this in turn is referenced by a vector< unsigned int >
+which converts the slots into the correct buffer location. The Element
+provides some helper functions for doing individual msg data (double) lookup,
+and others for taking sums and products of sequences: such ops are common.
+
+
+Next:
+	* Get svn working for this.
+	+ Implement sporadic messages for field access
+	+ Implement something that uses synaptic messages
+	- Implement message setup framework
+	- Implement field set/get
+	- Array elements and messages
+	- Scheduling
+	- Multithreading
+	- MPI
+	- Implement distribution of elements (entries) on threads and nodes.
+	- Benchmarking
+
+=============================================================================
+2 Feb 2009
+Svn now working, the path is
+https://moose.svn.sourceforge.net/svnroot/moose/moose/branches/Msg
+
+For sporadic messages:
+- Use indexing equivalent to Finfo definitions.
+- Use a template for an adaptor function from char* args to the class-specific
+	func. The adaptor func can also do the typecasting for the class itself.
+
+Need also a queue for synaptic input. Scan on sched, but variable # of entries.
+=============================================================================
+8 Feb 2009
+For async messages, no point in defining a specific class for the 
+data packets. There will always be a FuncId but after that no telling 
+what args to take.
+
+Implemented a first simple pass at async messages for field access.
+Checked in as revision 1009.
+
+Trying to template it out. No luck.
+=============================================================================
+10 Feb 2009
+After some more template contortions, it works. I'm not sure if this beast
+will compile on other systems, though.
+Checked in as revision 1010.
+
+Siji tested it on Windows. Somewhat to my surprise, it works there too. Mac
+is OK too.
+
+=============================================================================
+12 Feb 2009
+
+First pass design for synaptic messaging, based on above description 
+dated Feb 1 (though it has been updated since).
+
+Upon tick at src:
+src -> Msg -> scan through list of targets -> (threadlock) target-specific Q
+Msg contains all the synaptic info, including weight, delay etc.
+Msg also manages a Q for each target synapse object.
+
+Upon tick at target synapse: Query Msg Q. Collect all data if event arrived.
+
+=============================================================================
+15 Feb 2009
+
+Question: Should the Msg be const?
+	- Gets messy with bidirectional data flow in plastic synapses.
+		If we keep Msg const, then there are separate synaptic state
+		variables needed on the target.
+		If we allow it to vary, then the target has to write to Msg.
+	- The synapse Q itself involves bidirectional data flow. Even if the
+		Msg manages the pushing internally, the object has to tell it
+		to pop. Not good.
+	- These are issues with bidirectional data flow. However, it does
+		not mean that Msgs have to be constant objects. For example,
+		we could still have a projection as an object with regular
+		Msg and other inputs, which could change during the
+		simulation. But it would also adhere to the rule that it
+		gets input from msgs, but does not affect the msgs.
+Summary: 
+	- Q cannot be on Msg.
+	- A Msg is const from viewpoint of target: Unidirectional data flow.
+	- A Msg can however be a normal variable element with a clock tick,
+		and other incoming msgs.
+
+Accessing Msg info:
+	- A Msg is an edge between individual src and dest entries in arrays.
+		Either src or dest entry can access through independent indices.
+	- A Msg is also an edge between the array containers. Likewise.
+	- A Msg may (should?) be an accessible object with fields. Name
+		could be msg field name.
+		setfield /foo/axon/projection[] delay 1e-3
+		setfield /bar/GluR/incoming[23] weight 5
+		showfield /bar/GluR/incoming[]/src
+		showfield /foo/axon/projection[][dest=/bar/#/incoming] weight
+
+
+
+Data structures for synapses:
+
+* Fix up tests so they use assertions, not printouts
+* Check in. Currently at revision 1012.
+- Start setting up synapses.
+	I have a skeleton in place now, in the uncompiled files
+	Send.cpp, Msg.h. There are still-to-be-fixed changes to
+	Element.h and Data.h to let us access Data::pushQ and
+	to have indices into multiple data entries within Element.
+	The threading stuff has to be dealt with at the Element.cpp
+	level to lock out attempts to push onto the same Data.
+
+
+A preliminary design for Elements and messages:
+- All elements are array elements. 
+	- The Data* d_ becomes a vector.
+	- procBuf remains as is, but its range is looked up using
+		indexing for element index.
+- Conns are all many2many or equivalent all-to-all variants.
+	- They all connect one element (the whole array) to another.
+	- Typical sparse matrix implementation
+	- Usually traversed only for async (spike) messages, so 
+		bidrectional traversal is rare.
+	- Element manages vector of vector of Conn*. 
+		- First index for slot
+		- Second index for various other targets.
+
+=============================================================================
+16 Feb 2009
+Implemented a first pass at the framework for a lot of this stuff.
+Compiles. Not in the test. 
+Checked in. Currently at revision 1018.
+
+=============================================================================
+17 Feb 2009
+First test for IntFire: directly insert synaptic events into its queue.
+Confirmed that it responds correctly. Generates another time-series output,
+need to set up to handle assertions.
+Checked in as revision 1019.
+
+Set up above test to use assertions rather than printout.
+Checked in as revision 1020.
+
+Implemented a recurrent spiking loop using messaging. Seems to work fine.
+Checked in as revision 1021.
+
+Next:
+Attach sync messages also to the Msg data structure. Key issue is who
+owns and manages the buffer. This has been discussed above on 1 Feb.
+- Msg: Favoured because it separates data transfer from object,
+	However it mixes data transfer with connectivity specification.
+- (originating) Element: This also separates data transfer, easier to manage.
+- Object: This has been ruled out.
+
+Managing connection info in messages:
+	- Can extract ptr info from the finfo + message, use to fill ptr bufs
+		for sync messages
+	- Message slots predefined only for small set invoked by Process or
+		initPhase. Rest go via a map to look up entry in MsgVec.
+
+Field assignment
+	- Set inserts a request into the queue.
+	- Get either needs formation of a temporary message...
+		or: Inserts a request with additional info to tell where to
+		send data back to?
+=============================================================================
+18 Feb 2009
+How do we set up the locations to use in the data buffer?
+The object knows ahead of time exactly what it has to place during
+process and other calls. This is built into the Finfo for the msg
+source. So at element creation time we can build the send buffer.
+The only time this will change is if the element is resized or deleted.
+
+=============================================================================
+19 Feb 2009
+
+Reconfigured Element to use vector of Data ptrs.
+Some patching later, it compiles and runs again.
+
+Next: Begin to set up the benchmarks for sync and async messaging.
+	Look at memory and speed scaling as we do so.
+	- run reac system with 1 to 1e8 Data entries
+		- Ordered messages
+		- Sparse matrix messages
+		- Many individual elements.
+	- run spiking system ditto.
+
+Gear up with this for testing with multi-threading.
+
+=============================================================================
+20 Feb 2009
+
+Checked in as revision 1023
+
+Setting up a main.cpp::testSyncArray( unsigned int size ) function to
+build a reaction model with a big test array for a reaction scheme
+
+=============================================================================
+21 Feb 2009
+Compiled testSyncArray: OK. Ran it: Failed.
+
+=============================================================================
+22 Feb 2009.
+Checked in as revision 1032.
+
+Got the testSyncArray stuff to work. Did a little profiling. Spends
+about 25% of its time in Element::sumBuf. 
+Here are the timings of a single A <===> B reaction on this 1.4Ghz machine
+(Lenovo X301), using O3:
+syncArray10     ops=100000      time=0.057695
+syncArray100    ops=1e+06       time=0.313191
+syncArray1000   ops=1e+07       time=3.13012
+syncArray10000  ops=1e+08       time=31.7042
+
+Takes about 4 times longer with debugging and no optimization:
+syncArray10     ops=100000      time=0.170935
+syncArray100    ops=1e+06       time=1.18491
+syncArray1000   ops=1e+07       time=11.4804
+syncArray10000  ops=1e+08       time=115.368
+
+For reference, genesis does:
+completed 1000001 steps in 39.670479 cpu seconds 
+(for spine_v59.g, which is a model with 104 mols, 55 reacs and 76 enz).
+This is about 2e8 ops, so genesis is almost 2x faster. Amazing. This new 
+messaging was supposed to go much faster.
+
+Checked in as revision 1033.
+Decide whether further optimization comes first, or the threading.
+
+Did some minor tweaking to use const iterators. This gives about 
+3% improvement, useful, but not too exciting.
+Checked in as revision 1034.
+
+Implemented skeleton code for threads: creates and joins threads only.
+Compiles, runs.
+Checked in as revision 1040.
+
+For threading:
+- simplest approach, probably not practical:
+	Launch a thread for each processor on each clock tick.
+	Thread computes process for subset of entries.
+	Join threads after clock tick.
+	Problem is that thread launches and joins are not cheap.
+- Condition approach, trickier but maybe faster:
+	Launch threads for each processor when calculations starts.
+	Thread runs independent scheduling.
+	At end of each tick:
+	mutex to increment count # of threads completed.
+		If all threads done
+			signals to master thread/all other threads
+		else
+			cond_wait for count
+	close mutex
+	go on to next tick.
+- pthread_barriers
+	This is probably the cleanest. 
+	Launch threads for each processor when calculations starts.
+	Thread runs independent scheduling.
+	At end of each tick, put a barrier.
+	Problem is that pthread barriers are reported to be very slow.
+	Let's see.
+- busy-loop barriers
+	Same as above, only don't use pthreads barriers. Instead do a
+	mutex-protected increment of # of threads completed,
+	close mutex
+	and do a busy-loop barrier on the # of threads completed.
+	
+Working on pthread_barrier based implementation.
+
+Well, it looks like it works. The thread advantage isn't huge on my
+2-core laptop:
+syncArray10     ops=100000      time=0.056823
+syncArray100    ops=1000000     time=0.311645
+syncArray1000   ops=10000000    time=3.16343
+syncArray10000  ops=100000000   time=31.2464
+Main: creating 2 threads
+syncArray10     ops=100000      time=0.25066
+syncArray100    ops=1000000     time=0.524708
+syncArray1000   ops=10000000    time=2.19136
+syncArray10000  ops=100000000   time=19.7902
+Main: creating 4 threads
+syncArray10     ops=100000      time=0.755361
+syncArray100    ops=1000000     time=0.970983
+syncArray1000   ops=10000000    time=2.61468
+syncArray10000  ops=100000000   time=22.7247
+
+However, I need to do a lot more testing, including confirming that it
+gives the right answers. Do the current calculations go across threads?
+
+Also I need to check if the 4-core opteron nodes do better.
+Checked in as revision 1048.
+
+Did check that calculations give the right answers.
+Checked in as revision 1049.
+
+=============================================================================
+24 Feb 2009
+Ran on 4-CPU opteron (2 chips x 2 cores each). 
+Original( 1 thread ):
+syncArray10     ops=100000      time=0.02312
+syncArray100    ops=1000000     time=0.308771
+syncArray1000   ops=10000000    time=3.13899
+syncArray10000  ops=100000000   time=32.1735
+
+Main: creating 2 threads
+syncArray10     ops=100000      time=0.111654
+syncArray100    ops=1000000     time=0.26688
+syncArray1000   ops=10000000    time=1.77432
+syncArray10000  ops=100000000   time=17.8221
+
+Main: creating 4 threads
+syncArray10     ops=100000      time=0.363325
+syncArray100    ops=1000000     time=0.522495
+syncArray1000   ops=10000000    time=2.02002
+syncArray10000  ops=100000000   time=9.49299
+
+Well, that is interesting. it goes 1.8x faster on 2 cores, and 3.4x faster on 
+4 cores. Not linear scaling, but not bad either. But this is only effective
+for large arrays. The barrier overhead looks pretty bad.
+Successive runs on the same node cause marked improvements in single-node
+performance, but not as steep for threading. For example, three runs later
+we have:
+
+1 thread:
+syncArray10     ops=100000      time=0.023302
+syncArray100    ops=1000000     time=0.274423
+syncArray1000   ops=10000000    time=2.51467
+syncArray10000  ops=100000000   time=27.6373
+
+Main: creating 2 threads
+syncArray10     ops=100000      time=0.141666
+syncArray100    ops=1000000     time=0.263635
+syncArray1000   ops=10000000    time=1.71346
+syncArray10000  ops=100000000   time=17.0478
+
+Main: creating 4 threads
+syncArray10     ops=100000      time=0.315527
+syncArray100    ops=1000000     time=0.420413
+syncArray1000   ops=10000000    time=1.25926
+syncArray10000  ops=100000000   time=9.42896
+
+
+Trying now my own implementation of barriers. I would have liked to try it
+on gj, but time to go and still debugging. 
+Here is the status:
+c0 thread=0, cycle = 0counter = 1
+c1 Main: waiting for threads
+thread=1, cycle = 1counter = 0
+thread=1, cycle = 1counter = 1
+
+Implies that we've gone through the barrier withough letting thread 0 do so.
+
+Here is more info:
+c0 thread=0, cycle = 0, counter = 1, tc[0] = 0, tc[1] = 0
+c1 thread=1, cycle = 1, counter = 0, tc[0] = 0, tc[1] = 0
+thread=1, cycle = 1, counter = 1, tc[0] = 0, tc[1] = 1
+
+I fixed this by making the 'cycle' variable a volatile. But, at least on my
+laptop, there is not much improvement:
+
+1 thread:
+syncArray10     ops=100000     		time=0.055594	0.0575	0.056	0.057
+syncArray100    ops=1000000    		time=0.311743	0.3118	0.303	0.322
+syncArray1000   ops=10000000   		time=3.07243	3.147	3.09	3.11
+syncArray10000  ops=100000000  		time=31.0668	31.4	30.8	30.9
+Main: creating 2 threads, pthreads barrier
+syncArray10 	ops=100000      	time=0.241881	0.8	0.82	0.505
+syncArray100        ops=1000000     	time=0.606399	0.57	0.78	0.66
+syncArray1000       ops=10000000    	time=2.12019	2.03	2.51	2.06
+syncArray10000      ops=100000000   	time=18.5136	18.2	19.5	18.1
+
+Main: creating 2 threads, my barrier:
+syncArray10 	ops=100000     		time=0.053082	0.032	0.07	0.08
+syncArray100        ops=1000000     	time=0.294042	0.18	0.21	0.23
+syncArray1000       ops=10000000    	time=1.85085	1.77	2.0	1.76
+syncArray10000      ops=100000000   	time=18.137	17.6	19.5	17.5
+
+more seriously, it fails if # threads > # processors. Why?
+Tried making counter also volatile. Doesn't help.
+
+One good thing is that MyBarrier seems to have much less overhead: its
+speedup is respectable and consistent even for 100 entries in the array.
+Based on the single-thread timings for 10 entries, I estimate it costs
+around 0.05 sec / 10K ~ 5 usec per invocation on my laptop. The 
+pthreads barrier is around 0.8 sec / 10K = 80 usec.
+
+Let's see how it scales on the cluster nodes.
+
+Well, that was entertaining. Two things to try:
+- multithreading on the main MOOSE kinetic solver
+	Looked at it. Should work reasonably well for bigger models with
+	>100 molecules. But I'll have to write my own RK5 solver for multi
+	threading because the GSL one has a monolithic driver for the 
+	calculations that could be split between threads.
+- contine with implementation for the synaptic input queue code.
+	Looked at it. A major issue turned up: the 'process' call
+	manipulates both target and source spike queues. The 'sendSpike'
+	function after much indirection pushes the spike info onto all 
+	target queues. The 'process' function examines and pops the local
+	queue. I need to modify this so that the push and test/pop are on
+	different clock ticks. This may well happen in more realistic
+	neuron models. Here I can separate the harvesting of the spikes
+	onto a different tick than the testing and sending spike msgs.
+	With this fixed, I need to protect the spike msg handling.
+	Mutexes are a blunt instrument here, because they protect code
+	rather than individual data structures. Ideally I want only to
+	protect the buffer(s) I am working on.
+	I've suggested an approach to this in the Element::addSpike 
+	function:
+		// mutex lock
+		// Check if index is busy: bool vector
+		// Flag index as busy
+		// release mutex
+		// do stuff
+		// ?unflag index
+		// Carry merrily on.
+	but this has many loose ends.
+
+
+=============================================================================
+25 Feb 2009
+Checking it in so that I can run the tests on gj.
+Checked in as revision 1055.
+Oops, forgot to add MyBarrier.h
+Checked in as revision 1056.
+Now to run on gj.
+
+One thread
+syncArray10     ops=100000      time=0.023068	0.023	0.023	0.023
+syncArray100    ops=1000000     time=0.235919	0.236	0.236	0.301
+syncArray1000   ops=10000000    time=2.75227	2.46	2.61	2.52
+syncArray10000  ops=100000000   time=32.2201	30.52	32.6	31.7
+syncArray10000  ops=1e9		  				278.7
+
+Main: creating 2 threads, pthreads barrier
+syncArray10 ops=100000      time=0.123591	0.115	0.107	0.134
+syncArray100    ops=1000000     time=0.330623	0.285	0.304	0.272
+syncArray1000   ops=10000000    time=1.55576	1.74	1.727	1.76
+syncArray10000  ops=100000000   time=15.2927	16.74	15.6	15.8
+syncArray10000  ops=1e9	 					163.4
+
+Main: creating 4 threads, pthreads barrier
+syncArray10     ops=100000      time=0.309986	0.357	0.336	0.34
+syncArray100    ops=1000000     time=0.521644	0.508	0.486	0.48
+syncArray1000   ops=10000000    time=0.985141	1.842	0.989	1.38
+syncArray10000  ops=100000000   time=8.70518	10.48	11.6	7.64
+syncArray10000  ops=1e9						117
+
+Main: creating 2 threads: MyBarrier
+syncArray10 ops=100000      time=0.040132	0.043	0.040	0.042
+syncArray100    ops=1000000     time=0.178236	0.179	0.178	0.194
+syncArray1000   ops=10000000    time=1.63492	1.611	1.623	1.68
+syncArray10000  ops=100000000   time=15.7017	16.7	16.6	16.4
+syncArray10000  ops=1e9 					179
+
+Main: creating 4 threads: MyBarrier
+syncArray10     ops=100000      time=0.089063	0.249	0.076	0.132
+syncArray100    ops=1000000     time=0.125938	0.130	0.139	0.161
+syncArray1000   ops=10000000    time=0.835574	0.86	0.848	0.900
+syncArray10000  ops=100000000   time=7.48444	8.17	8.33	8.31
+syncArray10000  ops=1e9						114
+
+Summary:
+- MyBarrier works for 4 threads works on gj.
+- The speedup is reasonable except for 10 entries in the array. 
+- We're over 3.9 fold speedup on average, with MyBarrier on 4 nodes for
+	10K entries. But for 1K entries and less the speedup is much smaller,
+	possibly here we have cache considerations. This is confirmed by the
+	last run with 100K entries. It goes very slowly here, less than 
+	3x speedup, possibly because of cache contention? Perhaps it would
+	work better to interleave the calculations of different threads,
+	rather than to do them in separate blocks.
+
+=============================================================================
+19-20 Sep 2009
+Dimensions of problem:
+	Class management
+		Initialization
+	Element management
+		Elements handle data struct management.
+		Erefs do the ops that need index info.
+		Elements in arrays: Already by default. Distribute over nodes
+			Nested arrays: multiple child elements vs. clever lookup
+		Field management: Extended fields? Child data as fields?
+	Message management
+		Definition at static init: sync for buf, async if hard-coded
+		Creation, Deletion: Op on Msg, but sync needs extra work.
+		Shared messages: Incorporated into piggybacking: below.
+		Traversal
+			Field access via messages
+			Piggybacking onto messages
+				Msg and func are just arguments to send().
+			Using messages to scan for targets
+			Open-ended messages? Floating messages: not on elms?
+			Wildcards as message lists? On floating messages?
+				+++Concept merging for connection maps.
+				Must store original wildcard path in Msg.
+			Iterating through messages and their targets
+				Piggyback with returns instead of explicit iter
+				Do we have to give return func an id? Nodes?
+	Message use
+		Process: Centrally called for computation. Also does ClearQ.
+		ClearQ: Centrally called all the time.
+		Sync: process->src->Data->buffer; process->dest->scan buffers.
+		Async: send( Msg, func, args)->buffer; ClearQ->Elm->scan buffer.
+		Do we separate spikes from other async (queued) msgs? No.
+			Currently Data manages spike Q. Element will clear in
+			Process/ClearQ.
+		Passing arrays and other masses of data: Ptrs transform to mass
+		Return messages?: Temp Msg made from Id of src.
+		Functions and their ids: Sync across nodes. Expand dynamic? Bad.
+		Would like to access Msg fields, specially dest list, like a
+			wildcard. So make msg accessible like an object?
+	Parallel stuff
+		Threads: Element or index splits? Very sim dependent.
+		MPI: Again, need sim manager to decide how to split.
+		Object Id management: Master node hands out.
+		Moving objects between nodes: Field-based expansion.
+		Splitting Elements between nodes: Field-based expansion
+	Simulation management
+		Scheduling: Msgs from ticks, Special traverse func to call Proc.
+		Solvers and objects: Take over Process. Element remaps FuncIds
+			during clearQ. Replace Data with forwarding zombie obj.
+		Solvers to each other: Messaging.
+		Relation of objects to shell: As now.
+		Relation of shell to parser: As now.
+	Project management
+		Unit tests: cxxunit or boost? Develop basecode using UTs
+		Expectations for assertions:
+		Expectations for documentation: Doxygen.
+
+.............................................................................
+
+I think I have a picture now of most of this framework. Now to design an
+implmentation and testing process. Options:
+1. Replace current Msg implementation with updated version.
+	+ Will get rapidly to test key parts
+	+ Smaller, more testable system.
+	- Hands tied on heavier testing
+2. Go into main MOOSE and begin replacement.
+	- Horrible mess. Need to replace basecode part anyway.
+	- Too tied into older forms.
+	+ Get started on production use
+3. Rebuild entire basecode with this design, plan to bolt old MOOSE computation
+	modules on top
+	+ Good idea for eventual upgrade.
+	- Too much stuff to set up before serious testing on parallel stuff
+	can begin.
+	
+Will go with option 1. the current revision is 1056.
+Stages
+	- Set up standalone Send for async.
+		- Fix up Msg data structs to include original wildcard info.
+
+=============================================================================
+
+21 Sep
+After some muddling, seems like the place to start is field access
+(set/get) using messages. For context, assume that the operation is being
+done between nodes. This forces the operation to be done in a general way.
+
+set: Doesn't care about source, so current arrangement is fine. Here all the
+	buffer needs to store is the field identity (given by funcId) and value.
+get: Needs to specify source. Rather than use Id to do so, let's identify
+	it by a message, since there may already be one used for repeat access.
+	So we pass in the request to use the message in the access itself.
+	This implies that even a transient message needs to register with the
+	target Element. Should not be too hard now that we don't require
+	argument checking. Messages will need to carry an Id identifying them
+	on the src/dest. Otherwise we would have to put the entire Message info
+	into the buffer.
+
+	get(Id)->create temp object->locate target node->create temp message
+	through to target Id->send data on temp message->target object gets
+	message-> puts data onto message->back through postmaster->to 
+	originating object->used in script->destroy temp object->destroy msg.
+
+	Almost identical for single node
+
+	This would work with little change for wildcards onto multiple nodes.
+	Alternate approach is to ask the Shells to do this locally, and then
+	transmit their data back to the originating shell.
+	If I did not have to do the messaging, this would take somewhat less
+	effort. However, if the messaging is standardized it would take less
+	coding.
+	
+Things to do to get this to work:
+Phase 1: Single node messaging
+	- Code up MsgSet
+	- Implement add and drop for msg.
+	- Implement Cinfo that knows # and role of slots : predefined Msgs.
+	- Implement scheduling and clearQ
+	- Implement Finfo stuff to handle set/get functions.
+	- Implement some set/get functions
+	- Test above, and valgrind
+	- Implement with wildcards: multiple targets.
+	- Implement for tables, with predefined Msgs.
+	- Implement delete of one of the msg ends.
+
+Phase 2: Multinode messaging
+	- Implement cross-node data transfer with hardcoded messages.
+	- Implement cross-node message setup. Add, drop, valgrind.
+	- Test single field access
+	- Test massive tangled data flow.
+	
+
+Working from the middle out. Trying to implement a set/get function using
+this supposedly clean approach. Current issue: Suppose we have a many->one
+projection, e.g., to a channel lookup table. The get function needs to go
+back to the originating object.
+=============================================================================
+22 Sep 2009
+Finally some implementation. Goal is to figure out how to specify a single
+object for a return message. Need to do the regular messaging first.
+The current idea is to have the target Element itself do the final iteration
+among target indices. This means that each buffer entry has the function,
+its arguments, and a range of indices to which these are applied.
+Efficient because the function and arguments are generated only once, saving
+both space and time. The key thing is that the range of target object indices
+is supplied for now by the Msg.
+
+As far as value return is concerned, we want to tell the system to ignore
+what the Msg says, and return the value only to the originating Element index.
+
+=============================================================================
+23 Sep 2009
+Slowly taking shape. I need to factor in the presence of proxy elements. These
+will be pretty real in the case of elements whose objects are distributed.
+They may be virtual for elements that only represent their off-node actual
+data. I don't know about even having proxy elements for ones that have neither
+data nor any messages to the local node.
+
+Looking into using streams to put values into the buffer, rather than the
+ugly typecasts currently in use. Two things to do here:
+- See how to attach streams to existing char buffers.
+- Benchmark it to see if it is as fast as custom typecasting
+
+Tried to do the stream stuff. Total pain.  Forget it for now.
+
+Looking at messages coming to MultiNodeElement and MultiThreadElement
+(the combination of the two will be worse).
+
+Unless we precalculate the remapping, things will be hideous. We need to
+work out how the range of the message splits up onto different threads or
+nodes. So we need to go through all message entries (one range) and 
+partition according to the local and remote ranges. At the message level,
+this precalculation should result in formation of distinct sets of Ranges,
+one per target node or thread.
+
+=============================================================================
+24 Sep 2009
+
+Analysis continues. Hamstrung by lack of experience with prior implementations.
+Here we have a design decision about when to expand the Range:
+- During the final iteration on the target Element. The queue just stores an
+	identifier for this message, and the index of the originating object.
+- When we put the message on the queue. This means that the queue doesn't
+	know about the message: a problem with returns. It will also put a
+	lot of stuff repeatedly on the queue.
+
+Seems clear we expand the Range only during final iteration. This means we
+need to refer to the Msg on the target element by some Id.
+
+So, another decision: Organizing Msgs. We have a 2-level organization: one is
+for individual Msgs, which are maps between entries on single Elements. The
+other is for conceptual connections, which are groups of Msgs and also store
+the original constructor/wildcard strings for higher-level analysis. Options:
+- Make a Connection class for the concepts, which manage Msgs internally.
+	- Problem with identifying Msgs in the queue. We would like to do a
+	single index lookup to find the Msg, rather than have to look up
+	connection then Msg.
+	- Problem is that the Conn index may change during setup, if there
+	ever are any message deletes.
+
+- Have a vector of Msgs, and a separate vector of Connections. Each Connection
+	points to a group of Msgs.
+	- Problem is that the Msg index may change during setup, if there
+	ever are any message deletes.
+
+After some pen/paper scribbling, it looks like I actually should set up a
+3-layer structure:
+
+Msg: Lowest, most specific. From single src Element to single dest Element,
+	manages arbitrary indices. Implement as virtual base class with many
+	subclasses for different cases of connection patterns. Stored as
+	pointers. Shared between src and dest. 
+
+Connection: Next level up. All targets from a single src Element, including
+	a vector of Msgs. Equivalently, all srcs into a single Dest.
+	Called by Send operation. Includes Func information.
+	Also used in Wildcards. Can store original
+	Wildcard info. Overlapping but not equivalent on src and dest.
+
+Map: Highest, most general. All the conceptually related interconnections
+	between groups of elements. What the GENESIS createmap command would
+	build. Stores arrays of src and dest connections. Also stores the
+	creation command and parameters in high-level form. Is itself an
+	Element, and in due course will have
+	capabilities to manipulate the Connections that are its fields.
+
+=============================================================================
+25 Sep 2009
+Worked through control flow for different aspects of messaging by writing
+function sequences. Mostly there, but need to figure out two related things:
+- How to deal with specific info lookup for synapses
+	This is simple enough. Use the target indices. Have a separate
+	target index for each synapse, so that there is only one input coming
+	into each. Local info solved.
+- How to return data to caller, i.e., SendTo a specific target.
+	The s->sendTo function does it by going straight to Element::addToQ.
+
+=============================================================================
+27 Sep 2009.
+Starting re-implementation with Element. Did svn update to revision 1345.
+=============================================================================
+28 Sep 2009.
+Compiled first pass skeleton version. Many things to do:
+- Sort out FuncId stuff and how Slots are to set them up when messages are 
+	added.
+* Form of OpFunc: I think the size of args should be passed in, not worked
+	out in OpFunc. Needed, for example, for off-node stuff.
+	Fixed with creation of Qinfo.
+
+- Handle creation of Elements and associated data
+- Set up unit tests.
+
+=============================================================================
+29 Sep 2009.
+FuncId stuff.
+Option 1: Unique FuncId for every func. 
+	- Simple and consistent.
+Option 2: FuncId is semi-unique. Derived classes share FuncIds with their
+	parent classes, for overridden functions.
+	- We will have to maintain two sets of records: One for each unique
+		OpFunc, and another for OpFuncs grouped by class FuncIds.
+	- This helps with many inherited functions, such as reinit
+	- This helps with zombie functions, which have to transparently replace
+		the originals.
+	- Helps with Slot/Conn design, since we lessen need to do separate
+		Slots for multiple targets.
+	Further options:
+		- Use function name to determine overlap. Don't bother about
+		inheritance, but do carry out RTTI checks during setup to
+		ensure that the arguments match. Do not permit overlap without
+		this.
+			- This effectively sets up global functions.
+		- Use function name plus inheritance to determine overlap.
+		Do RTTI checks.
+			- No globals, but will need to be careful about
+			ensuring inheritance where we need it. E.g., reinit.
+
+
+Trying to compile. Relevant file is Cinfo.h
+=============================================================================
+30 Sep 2009
+Working on Ftype2.h. Also need to fix up OpFuncs and Ftype.h
+Created a Dinfo class, to handle information and utility functions for the
+Data type.
+Struggling with Cinfo::create function. look in Neutral.h
+
+Got it together, compiled.  Checked in as revision 1352
+
+Next: 
+	create a neutral *
+	do some 'send' tests.
+		Began with explict call to stuff data into buffer.
+
+=============================================================================
+2 Oct 2009
+Working on most basic tests.
+I'm now at the point where func requests have gone into the buffer, and the
+element is doing clearQ. The execFunc fails because at this point I have no
+Msgs on the Element, which is needed to farm out the function calls.
+Examining how to handle sendTo calls here. Needed for table lookup like calls.
+We need a way of specifying one target Data index in the Element.
+Options:
+	- Encode index also in Qinfo. Could make FuncId and MsgId shorts,
+	and have a full uint for Data index.
+		- Wasteful, as use of sendTo is very limited.
+			- Table lookups
+			- Solver controlling slaves.
+		- Will need special messages too, since we need to encode
+			the special request into the Qinfo.
+	- Encode it as a flag on one bit of the msgid, using the rest of the 
+		msgid as the data index. Use Msg # 0 as a
+		special one which looks up this one index for its exec call.
+		- Really ugly.
+	- Ignore for now.
+	- Encode SendBacks as an Element-level consolidation either way
+		into vectors.
+	- Encode SendBacks as individual Msgs.
+	- Define special SendBack Msgs that read extra info in args.
+	- Use sync msgs for this sort of thing.
+The conclusion of all this is that if I need a SendBack capable message, I
+have to set up a special msg.
+
+There is a good bit of cleanup needed for the buffers, both for safety
+and efficiency.
+Safety:
+	- Should do as a vector, with expansion as needed
+Efficiency:
+	- Align on ints or doubles?
+	- Use sensible sizes for fields in Qinfo.
+	- Map data directly to lookup structures like Qinfo, rather than
+		doing a copy.
+	
+Got it together, compiled.  Checked in as revision 1353
+
+One clarification: We have to pass in the SrcIndex for every call: many of the 
+Msgs use it. For example, the OneToOne and the SparseMsg both use it to look
+up targets. So Qinfo needs another field.
+
+Also it is desirable that we should be able to use SendTo with regular
+messages. Perhaps the added field for the SrcIndex in Qinfo can be used for
+this?
+Instead I think the data buffer should be used for the return index. Let's
+have it so that if needed one can always write an OpFunc that can see the
+src MsgId and src index (which together let us figure out the source Element).
+These are there in the args, it is just a case of using the additional 
+fields in Element::execFunc, or passing in a reference to Qinfo.
+What remains is a way to tell the Msgs to use the extra index in the
+args to determine the target of SendTo. Best to use the regular OpFuncs,
+so this means that the Msgs also juggle the args.
+
+Implemented it, tested the second part of it by stuffing the queue directly
+and then calling clearQ. That part works.
+Checked in as revision 1356
+
+Next: 
+- Get the 'send' part to work
+- Do a valgrind cleanup. 
+	- Figure out how to delete the data part cleanly.
+	- Msg deletion cleanup.
+	- Serious tests for memory leaks, lots of deletes and creates.
+- Sort out message setup including type safety 
+- Utility function (using messages) to 'get' field values.
+- Heavy traffic tests
+- Sync messages
+- Start to play with nodes and threads.
+- Optimization: buffer alignment, clean up management, use in-place rather than
+	copy.
+
+=============================================================================
+3 Oct 2009
+Before going into the above, doing a cleanup of memory allocation. 
+Valgrind helped track things down.
+Checked in as revision 1360: Major stuff cleaned.
+
+Another round of cleaning up, this time mostly stuff from class initialization.
+Now I have it so Valgrind is completely happy.
+Checked in as revision 1361.
+
+Implemented the 'send' operation using a hand-crafted Slot object. 
+Ran through it with valgrind, good first pass.
+Checked in as revision 1362.
+
+=============================================================================
+4 Oct 2009.
+Look at message setup.
+I've had a big simplification by separating the functions from the Msg.
+For the existing MOOSE messaging concept, though, the idea is that in Process
+or in response to a function call, an object should send data on a Message
+specifically set up for the purpose. Using this message, the object calls
+specific target functions whose type is predefined, and whose identity 
+is set up at the same time as the messages themselves.
+
+There is no room for slop: precisely the right # and type of target functions
+must be known.
+
+In the present design, the Slot does the job of tying Msg to function.
+At compile time we know what the Slot type is for all slots we can use.
+At Element creation time we can create predefined Slots for fast function calls.
+	Has to be then, since we want to hardcode Slot identity into
+	e.g. process functions.
+At Message setup time we can attach a ConnId and a FuncId to these slots.
+
+At compile time we know the ConnId for all precompiled Msgs.
+
+Instead of a separate Slot class, let's use SrcFinfos for the slots. 
+All SrcFinfos sharing a common Conn (Shared messages) just store the
+index to this Conn.
+The SrcFinfos/Slots do NOT store the FuncId, since they are static and the 
+FuncId is defined at setup time or even runtime. Instead they index a vector of
+FuncIds somewhere. This will be a fixed (statically defined) index, so we
+know the starting size of the vector. Options:
+	- On the Conn:
+		- Should keep Conn just for the connection info
+		- Clean association of Funcs with appropriate Conn
+	- As a separate vector on the Element
+		- A bit more economical, as it is a single vector for all the funcs.
+
+Note that run-time defined Slots could either directly hold the FuncId, or
+do this index stuff.
+Note that in this design we do not need to have anything special for the
+destinations in shared messages. The correct types have to exist, is all.
+
+In many cases the shared messages had MsgSrc on both sides. Often these 
+were for send-back situations. Also for bidirectional data such as 
+reaction-Molecule data transfer. Options:
+- Ignore this. Go back to GENESIS style where two messages had to be set up.
+- Implement as a higher level op, that results in two distinct messages
+	being formed, one each way, 
+	- Can we put both on the same Msg?
+		- This has some restrictions on there being matching conns.
+		- Really only a minor matter for the msg creation func to handle
+		- As at present, it could be symmetric or asymmetric.
+- Try to do as a single conceptual Msg.
+		- Don't see how it would work.
+
+=============================================================================
+8 Oct 2009
+Target elements should decide which func to use for a given message?
+
+Issue is having multiple possible target funcs from same SrcFinfo
+e.g., mol conc going to plot, to MM enzyme and to channel.
+Possible implementations:
+Category 1: SrcFinfo has static-init defined conn Id and FuncIndex.
+	Option 1:
+		- connId looks up entry on Element::vector<Conn>
+		- FuncIndex looks up entry on Element::vector<FuncId>
+		- Conn marches through Msgs, using same FuncId for all.
+		- Target finds OpFunc from FuncId using Cinfo::funcs_[FuncId]
+		Issues:
+		- Can't handle multiple kinds of target funcs, only derived.
+	Option 2:
+		- connId looks up entry on Element::vector<Conn>
+		- FuncIndex looks up entry on Conn::vector<FuncId>
+		- Conn marches through Msgs, using same FuncId for all.
+		- Conn is a linked list, and next conn has next FuncId.
+		- Target finds OpFunc from FuncId using Cinfo::funcs_[FuncId]
+		Issues:
+		- Ugly. Need to manage linked list, but only occasionally.
+		- Puts Func info on Conn.
+		- Costly. Each Conn manages a vector of FuncIds.
+	Option 3:
+		- connId looks up entry on Element::vector<Conn>
+		- FuncIndex looks up entry on Element::vector<FuncLookup>
+		- Conn marches through Msgs, using same FuncId for all.
+		- Target finds OpFunc from FuncId using Target::funcs_[FuncId]
+		Issues:
+		- Need to set up vector of funcs_ on each target Element
+		- Passing around and setting up a dynamic FuncLookup. Too cute.
+
+Categorey 2: SrcFinfo has static-init defined conn Id and SrcFinfoId
+	Option 4:
+		- connId looks up entry on Element::vector< Conn >
+		- SrcFinfoId plus specific, per msg index, to specify tgt.
+		- Conn marches through Msgs, using same FuncId for all.
+		- Target Cinfo has relatively small list of possible targets
+			for a given SrcFinfoId, based on type matches.
+			specific index pins it down.
+		Issues:
+		- Still problem with multiple kinds of target funcs on Conn.
+Category 3: SrcFinfo has static-init defined MsgId, using Msg link lists.
+	Option 5:
+		- MsgId looks up entry on Element::vector< Msg* >
+		- March through linked list of Msg* (all on vector)
+		- Each Msg has a matching entry in vector funcs_< FuncId >.
+		- Target Cinfo has relatively small list of possible targets
+			for a given SrcFinfoId, based on type matches.
+			specific index pins it down.
+		Issues:
+		- Still problem with multiple kinds of target funcs on Conn.
+Category 4: Exception handling. Assume that a single FuncId will normally
+	work, and treat other cases as rarely-used exceptions.
+	Option 6:
+		- connId looks up entry on Element::vector<Conn>
+		- FuncIndex looks up entry on Element::vector<FuncId>
+		Normal case: FuncId in range:
+			- Conn marches through Msgs, using same FuncId for all.
+		Exception: The FuncIndex is out of range
+			- FuncIndex identifies vector of FuncIds
+			- Conn marches through Msgs, using different FuncId
+				for each, from vector of FuncIds.
+		- Target finds OpFunc from FuncId using Cinfo::funcs_[FuncId]
+=============================================================================
+10 Oct 2009
+Compiled implementation. runs up to part way, then croaks on uninitialized
+variables.
+=============================================================================
+11 Oct 2009
+Fixed croaking problem: I had redefined some private fields in SrcFinfo. 
+
+Remaining issue with setting up the FuncIndex. This is something to be done
+by Cinfo::init().
+
+Fixed testSendMsg issue with setting up FuncIndex. 
+
+Converted both to doing almost silent unit tests.
+
+Implemented and cleared testCreateMsg, cleared valgrind. Need to make it silent.
+
+Also it is unable to find the 'set' field for the field assignment part,
+which is fine as I haven't yet defined it.
+
+For doing 'set':
+- Create Element explicitly, not using Create function
+	Pass in a ptr to the field to be set/get? not needed.
+- Create Msg using regular msg func.
+- Call asend directly
+
+
+
+Need to revisit all opfuncs to pass in Qinfo and Eref.
+Done.
+
+Need to revisit Conv<A> to return a reference or something similar, to avoid
+alloc etc.
+
+=============================================================================
+12 Oct 2009.
+Put the Qinfo into the OpFunc. Runs, clears.
+
+I have two variants of the OpFunc, perhaps premature optimization. One of them
+ignores all the additional info available, such as Qinfo and target eref.
+The other is also derived from OpFunc, but its func takes the reference to
+the Eref and the ptr to the Qinfo as additional args.
+
+Still to set up.
+
+Checked in as revision 1368.
+=============================================================================
+13 Oct 2009.
+Implemented EpFunc, which is a variant of OpFunc that passes in the
+Eref and Qinfo along with other args. This is needed whenever we have a 
+function that manipulates the Element, or needs additional data about the
+incoming message.
+
+Checked in as revision 1370.
+
+=============================================================================
+14 Oct 2009.
+Implemented testSet unit test. Seems OK, but need to clean up memory leaks.
+Checked in as revision 1372.
+
+Working on memory leak. Unexpected major problem with whole approach: the
+allocated message m is needed during the clearQ, after the set command
+has returned. So we have a dangling message.
+Related problem: We will have clearQ after Set has returned. So script
+command sequencing cannot be guaranteed, unless we tell the script execution
+to hold off till clearQ. This gets worse with 'get'.
+
+Working on 'get'. I have the skeleton in place.
+=============================================================================
+15 Oct 2009
+More implementation on 'get'. 
+- Msg leak issue could be handled if the msg is permanently stationed on the
+	SetGet object (due to be the Shell). Its far end can dangle, and be
+	connected to targets as needed.
+- Would want to refine this to deal with wildcards, so want a Conn, not just a
+	single Msg.
+- Would want to do cleanup and continuation of script function on the
+	SetGet::handleGet. This function is triggered only when the 'get'
+	call returns. A bit fragile, will want a timeout.
+- If we have multiple targets for 'get', we will need an index to go out to 
+	each target, and come back with the data, so that it can be organized
+	into a vector. The recipient function will then have to keep track of
+	how many have returned.
+- Do we need multiple 'get' buffers and funcIds? If the effective utilization
+	is serial, should be OK to have just one.
+
+After a day of implementation and debugging, seems to work.
+Checked in as revision 1375.
+
+This is leaking memory copiously. Next step is to organize set and get
+through the SetGet object/shell, of which there should be just one instance.
+In the current test run there were 100. This should allow us to reuse the
+Msg from the SetGet object, and avoid the memory leaks.
+
+Next Steps:
+- Clean up Set/Get
+- Heavy traffic tests
+- Sync messages
+- Start to play with nodes and threads.
+- Optimization: buffer alignment, clean up management, use in-place rather than
+	copy.
+- Incorporate unit tests into cinfo
+- Provide message tree diagnostics.
+
+=============================================================================
+17-18 Oct 2009.
+Replaced SetGet with Shell. Set up automatic creation of Shell as /root,
+during runtime init. Still leaks memory.
+Checked in as revision 1384.
+
+Working on handling Msgs from Shell. Need still to clear out old msgs during
+Set.
+
+Although it works now, valgrind picks up a nasty situation. When a dest
+Element is deleted, Msgs on it need to be deleted too. Msgs know how to 
+remove themselves from the src element, but not from Conns, which also
+have pointers to them. Options:
+1. Do a grungy search for Msg ptrs on all Conns. Deletes are rare so should
+	be OK.
+2. Store an extra index or two in each Msg for identifying parent Conn(s)
+3. Conns do not store Msg pointers, but lookup indices for them on the Element.
+
+Let's do #1. 
+Done. This completely fixes the memory leaks that afflicted the 'set' function.
+At some point I'll have to benchmark to figure out how much
+of an impact the message deleting has on the overall performance.
+
+=============================================================================
+20 Oct 2009.
+Also moved the 'get' function to use the Shell element.
+Next I need to generalize both set and get to handle arbitrary types.
+
+Trying to find a suitable place to do this. In the process I found that
+Send.h and Async.h are no longer used. Removed them.
+Checked in as revision 1388.
+=============================================================================
+26 Oct 2009.
+Implemented Set and Get operations in a new templated SetGet class. Better
+typechecking. Compiles but it doesn't yet work.
+Checked in as revision 1404.
+
+=============================================================================
+31 Oct 2009.
+Finally got to do some debugging. Fixed problem, now works, clears
+valgrind. 
+Checked in as revision 1422
+
+* Need to test with doubles and other types. Done. Did a partial 
+	re-implementation of IntFire, and did set/get on one of its 
+	fields of type double.
+
+Checked in as revision 1424
+
+There are several issues with a full implementation of IntFire, most notably
+that the design now requires there to be a distinct target Synapse object for
+each incoming message. In the earlier version we had some extra info 
+figured out by the system to identify the target SynInfo. here I just want
+to use the index of the traget Eref. This is good, but now the destination
+IntFire needs to juggle some subset of the target Synapses, which are
+independent objects presumably on a child element.
+For efficiency, the IntFire would like to have target Synapses as internal
+fields.
+For indexing synapses, we want each to be an individual array entry in a
+big array of Synapses.
+
+Assume we'll handle allocation etc within the parent IntFire.
+
+How to set up indexing? 
+	- Give each IntSyn the same #, which is the biggest # of syns on 
+	any one. 
+		- This needs us to be able to allocate an array of Data with
+		holes in it. Easy to do if we have an indirection step on
+		the Element, but as built the Element won't do it.
+
+	- Set up precisely as many IntSyns as are needed.
+		- Indexing and relating IntSyns to parent are both hard.
+
+	- Explicitly make it look like a 2-D array, with variable length
+		sub-indices.
+	
+	- Make it look like an array of Elements each with an array of
+		Synapses.
+=============================================================================
+1 Nov 2009
+Synaptic info options.
+1. Separate SynInfo or Synapse objects. Each receives input from only
+	one axon. The whole lot are in the same Element.
+	Spike operations:
+		- Spike arrives on a Synapse. 
+		- Synapse sends Msg to parent Element, with delay etc info.
+			It needs efficient orgn of the messaging to parent.
+			Even with optimal organisation, this is costly, 
+			going through entire msging again.
+		- Parent Element updates its pendingEvents queue
+	Process operations:
+		- Check if queue is due. If so, handle event and pop queue
+		- Check if Vm exceeds thresh. If so, send spike, and reset Vm.
+			Otherwise do exp decay calculations on Vm. 
+
+	This has an unpleasant extra messaging step from Synapse to parent.
+	However, there may be efficiencies in the first msg from axon to
+	Synapse as we guarantee a single input.
+
+2. Messages are directed to Synapses but are processed directly by
+	IntFire.
+	Can't do this without some juggling of target index. See next.
+
+3. Messages are directed to parents of Synapses. Munge the indexing of the
+	target Element so that part is used for indexing it, 
+	and part to index the correct Synapse.
+	This could be a special case of an ability to index 2D arrays.
+	But where does one stop?
+	Or, the extra info could just be something that messages can generally
+	do.
+	This arrangement deals with the threading.
+	It also eliminates the issue of passing info down to parent.
+
+4. Give the Synapse a pointer to its parent Element or IntFire.
+	Issues with threading.
+5. Special OpFunc to munge index.
+	- Create Element that deals with individual synapses, but points
+		to the parent IntFire (or ReceptorChannel) Element.
+	- OpFunc munges destIndex in some efficient manner. Bitmap may be
+		best, using top n bytes for specific synapse index.
+		For IntFire, we may need 2 bytes for synapse, leaving only
+		2 for target IntFire. Insufficient.
+	- OpFunc is class-local, so we can set up some reasonable subdivision.
+	- Pass in synapse index as additional arg to the func encapsulated
+		by the OpFunc.
+	- Can generalize to other fields of Synapse
+	- Can generalize to arbitrary arrays using templated 
+		ArrayOpFunc with dimensions?
+
+
+To test scalability, let's do this:
+- Make a speed reference using a sparse matrix and customized code to replace
+	messaging, as a recurrent network with N neurons and P probability
+	of connections. Goal is to do N >= 1e5, P ~0.1.
+- Make the equivalent network in MOOSE
+- Profile, look at bottlenecks.
+- Repeat with multithreading
+- Repeat with multinodes
+
+
+Let comp load of IntFire processing be I.
+Let comp load of Synapse processing be S.
+Let spiking occur every T timesteps.
+N and P are defined above.
+Let # of synapses per neuron = #
+
+If we ignore communcations cost,
+total load per timestep = I * N + N * # * S / T
+Some numbers
+N	#	I	S	T	Load	Notes
+1e5	1e4	1	2	100	2e7	zero messaging cost
+1e9	1e4	1	2	100	2e11	zero messaging cost
+1e9	1e4	1	10	100	1e12	medium messaging cost
+1e9	1e4	1	100	100	1e13	high messaging cost
+
+Now we go down 10x smaller timesteps.
+
+1e9	1e4	1000	2	1000	1e12	Realistic neuronal models,
+						zero messaging cost
+1e9	1e4	1000	10	1000	1.1e12	Some messaging cost.
+1e9	1e4	1000	100	1000	2e12	High messaging cost.
+					
+Main points:
+- in IntFire networks synaptic comput and messaging are overwhelming
+- in realistic neuronal model networks, the costs are comparable.
+
+Overall, efficiency does matter for spike messages.
+
+we may need 13 digits x3.3 = 43 bits. Too much for even an int.
+
+=============================================================================
+2 Nov 2009
+Working out implementations for accessing array fields, such as synapases 
+on an IntFire.
+See ArrayOpFunc.h::ArrayOpFunc0
+
+The array of synapses should act just like any other array in terms of 
+field access, adding messages, and so on.
+	This means that the Eref::data() function has to behave the same way
+	as for any other Element, and look up the correct Synapse without
+	further effort.
+When there is a need to do operations through the parent Data, then we use 
+	Eref::data1() to return the parent data.
+	Eref::index() has all information needed to look up synapse from data1.
+To handle these cases, we have a separate set of OpFuncs that operate on
+	data1 and pass in the index. This is the UpFuncs.
+To do these seamlessly we need to make DataVec a virtual base class, and
+	have 1D, 2D, 1D+field and similar options. The DataVec handles 
+	deleting of data too, so if we need to have more than one Element
+	refer to the same data, then suitable DataVecs have to be defined for
+	each element, and only one may delete the data.
+	Alternatively, we should have the Element itself be a virtual base 
+	class.
+
+Stages:
+* Put in DataId for all Eref indices.
+* Replace Data with char* in Element::data
+* Make Element a virtual base class.
+
+Checked in as revision 1425
+
+Next:
+* Derive off Element for Synapses on IntFunc. Checkin 1427.
+* Do Synapse and SynElement implementation. Checkin 1428.
+* Come up with special element creation options to set up this element. 1429
+* Check that field access works with it	Checkin 1431.
++ Send spike messages to it
+* Sort out how to handle its clearQ.
+* Fix up sub-fields within DataId.
+* Clean out const A& argument in OpFuncs. Should just pass argument, as most
+	of them will be doubles. Will need separate classes for strings and
+	things. Checked in as 1429, except for string stuff.
+
+Sending spike Msg seems OK, need more tests.
+=============================================================================
+4-5 Nov 2009
+working on testSendSpike. Runs but doesn't seem to make sense. After some
+debugging got it to work, sends the spike info. Much of the problem is due
+to the ugly handling of DataIds. Checkin 1433.
+
+Need to fix that next. Fixed. Checkin 1434.
+Also valgrind is very unhappy with the allocations. Need to fix that too.
+	Fixed, it was a simple matter of deleting the IntFire element. 1435.
+
+Next: 
+- Implement a sparse matrix Msg type and use it to build a serious
+	feedback network of IntFires.
+- Clean up scheduling a bit so that we can see the data flow over multiple
+	cycles.
+
+
+Working on sparse matrix. In order to fill the synapse indices, I need
+to fill the transpose of the matrix to start, and then transpose it.
+Transposition of the sparse matrix:
+
+Start with 
+
+[	1	0	0	0	2	]
+[	3	4	5	0	0	]
+[	0	0	0	6	7	]
+
+N_ =  1234567
+Col = 0401234
+rowStart = 0257
+
+Transpose is:
+[	1	3	0	]
+[	0	4	0	]
+[	0	5	0	]
+[	0	0	6	]
+[	2	0	7	]
+
+N_ =  1345627
+Col = 0111202
+rowStart = 023457
+
+To transpose.
+Step 1. Sort N_ by col to get N_T
+Step 2. Convert rowStart to row# for each entry, so, 
+	0257 becomes
+	0011122
+	Sort this by col = 0401234 to get new set of cols:
+	0111202
+	Note that this sort needs to retain original order of otherwise equal
+		numbers. So the first 4 comes before the last one.
+Step 3. Sort the col itself to get the new sequence for row#s:
+	0401234 becomes 0012344
+	Then put row starts on each, whenever the value increments:
+	02345
+	and wrap it up with a 7.
+
+Implemented. Compiles, not quite there with the unit tests.
+=============================================================================
+6 Nov: Fixed up, now does correct transposition.
+Checked in as Revision 1436.
+
+Next step is to do tests with messaging.
+Working on it. An issue comes up with randomConnect: In the function I
+set up the messaging to synapses, but the target object has not yet allocated
+the synapses. Good, we can do this correctly after setting up. 
+Bad, because we don't have a general way to tell objects that a specific
+field needs to be assigned. It is numSynapses in IntFire, but could be
+one or more different other fields.
+
+=============================================================================
+7 Nov.
+Approach taken to allocate synapse memory, which is generalizable to other
+kinds of array fields: Provide a 
+
+- We will usually have to access these other fields as part of the setup
+	command. For example, setting synaptic weights.
+- The messaging command itself passes input to a named field. More to the
+	point, the SynElement is on a specific array. Should be able to
+	provide info to it generally to define values in this array.
+	- The UpFuncs serve this task in the Cinfo. However, we need this
+	feature in the SynElement type classes quite generally. So it has
+	to be something that the compiler enforces.
+		- UpFuncs in the SynElement constructor?
+
+- Remember that messages were to be the equivalent of wildcards. We should
+	use the created message itself to assign fields, including setting
+	up the weights and the allocation of synapses.
+	- Setting weights: Implement a
+		setrandom<double>( const Msg* m, const string& field, 
+			double lo, double hi, bool isLog );
+		function.
+
+
+OK, hacked it in for now as hard-coded access functions within the SynElement.
+Compiled stuff and cleaned up old printf testing, now uses assertions as
+part of unit tests. Checkin 1438.
+
+Successfully created a 10000 X 10000 sparse matrix with 10% connectivity.
+So about 1e7 entries. Expect memory use to be about 1e7 * 8 bytes. The
+transposition would have used about 1e7 * 12 bytes more.
+Oddly it used over 1.5 G, perhaps would be less if I
+reserved the space rather than fill it with push_back calls. 
+For unit tests I'll use 1000X1000 as it is much faster.
+
+Valgrind is not amused: an error somewhere. 
+The size of rowStart() is 1 smaller thn it should be.
+This was quite nasty. I put in assertions that should have caught it but
+did not. I checked the web for odd interactions between assertions and
+templates. Finally I realized that SparseMsg.o did not depend on SparseMatrix.h
+in the makefile. So the SparseMsg was not seeing any of the updated code.
+Fixed, compiled, reran, clears valgrind. Checking 1440.
+
+=============================================================================
+8 Nov 2009
+Would like to implement a vector 'set' operation.
+For now stay focussed on the sparse messaging.
+
+I had a difficult bug in field assignment that only materialized after a very
+large number of assignments. After a lot of meandering, turned out that the 
+problem was that I was not clearing old messages out. In the absence of this
+garbage collection, the system was correctly assigning new msgids as it went
+along. In due course the system overflowed the 'short' field range.
+Solution, of course, is to fix up the garbage collection of old messages,
+or rather, the slots allocated to them.
+Implemented it. Works. Valgrind takes several minutes to chew on it, but
+eventually it too passes.  Checked in as revision 1441.
+
+This is as thorough a test of set/get as any i
+I've done so far. The vector 'set' operation would help.
+
+Now working on synaptic delivery. The system is taking up over a gig of
+RAM to store the pending synaptic events for just one timestep.
+
+# of synapses = 1e3 * 100 = 1e5.
+Should not happen even if every single synapse fires.
+
+I wonder if the buffer keeps getting extended as the process call is done..
+No, should have a cleanly separate eventq.
+
+Tracked it down, the SparseMsg dispatcher was sending out stuff to all
+targets regardless of the originating Eref. Fixed. Lots of tinkering later,
+we have a reasonable IntFire network. It goes into saturation rather
+quickly above a certain threshold of connectivity, otherwise decays.
+Also it scales pretty well in terms of speed and memory. 
+Need to do benchmarking.
+Checked in as revision 1442.
+
+Tried to do a profile. Failes outright in the optimization compile mode,
+with or without profiling. Clears valgrind in debug mode. So I am confused.
+Managed to track it down to very first unit test, was an innocuous array 
+allocation. Fixed and now works.
+
+Profiling shows that the most time is spent doing the field allocation.
+Silly. Let's set up vector assignment.
+Done, checked in as 1443.
+
+Now did the profiling with a long (1000 timestep) run of the IntFire
+network. The results are gratifying: By far the largest time is spent in the
+heap operations for the synapse. All told, under 10% of the time is spent in
+messaging.
+
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 56.83     18.49    18.49 102317402     0.00     0.00  void std::__adjust_heap<__gnu_cxx::__normal_iterator<Synapse*, std::vector<Synapse, std::allocator<Synapse> > >, long, Synapse, std::less<Synapse> >(__gnu_cxx::__normal_iterator<Synapse*, std::vector<Synapse, std::allocator<Synapse> > >, long, long, Synapse, std::less<Synapse>)
+ 17.09     24.05     5.56 103414264     0.00     0.00  IntFire::addSpike(DataId, double const&)
+  7.84     26.60     2.55 103414264     0.00     0.00  Synapse::Synapse(Synapse const&, double)
+  4.95     28.21     1.61  1012617     0.00     0.00  SparseMsg::exec(Element*, char const*) const
+  3.78     29.44     1.23  1024002     0.00     0.00  IntFire::process(ProcInfo const*, Eref const&)
+  2.06     30.11     0.67 103414264     0.00     0.00  UpFunc1<IntFire, double>::op(Eref, char const*) const
+  1.20     30.50     0.39 103414264     0.00     0.00  Eref::data1()
+  0.86     30.78     0.28 102317402     0.00     0.00  Synapse::getWeight() const
+  0.71     31.01     0.23 103340378     0.00     0.00  Synapse::getDelay() const
+  0.65     31.22     0.21 104896327     0.00     0.00  Eref::Eref(Element*, DataId)
+  0.61     31.42     0.20                             GetOpFunc<Synapse, double>::op(Eref, char const*) const
+
+
+=============================================================================
