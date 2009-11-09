@@ -7,14 +7,20 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#ifndef GLSHAPEDATA_H
-#define GLSHAPEDATA_H
+#ifndef SHAPETYPE
+#define SHAPETYPE
+
 
 enum SHAPETYPE
 {
 	CUBE,
 	SPHERE
 };
+
+#endif // SHAPETYPE
+
+#ifndef GLSHAPEDATA_H
+#define GLSHAPEDATA_H
 
 struct GLshapeData
 {

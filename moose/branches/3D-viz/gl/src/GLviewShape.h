@@ -8,14 +8,19 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#ifndef GLVIEWSHAPE_H
-#define GLVIEWSHAPE_H
+#ifndef SHAPETYPE
+#define SHAPETYPE
 
 enum SHAPETYPE
 {
 	CUBE,
 	SPHERE
 };
+
+#endif // SHAPETYPE
+
+#ifndef GLVIEWSHAPE_H
+#define GLVIEWSHAPE_H
 
 class GLviewShape
 {

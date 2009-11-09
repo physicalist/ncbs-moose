@@ -144,7 +144,7 @@ class GLview
 	double* y_;
 	double* z_;
 
-	std::map< Id, GLshapeData* > mapId2GLshapeData_;
+	std::map< unsigned int, GLshapeData* > mapId2GLshapeData_;
 
 	int populateValues( int valueNum, double ** pValues, const string& strValueField );
 	
