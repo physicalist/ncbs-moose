@@ -1,5 +1,7 @@
 #include <queue>
 #include "header.h"
+#include "SparseMatrix.h"
+#include "SparseMsg.h"
 #include "Synapse.h"
 #include "IntFire.h"
 #include "Dinfo.h"
@@ -68,13 +70,13 @@ const Cinfo* IntFire::initCinfo()
 static const Cinfo* intFireCinfo = IntFire::initCinfo();
 
 IntFire::IntFire()
-	: Vm_( 0.0 ), thresh_( 0.0 ), tau_( 1.0 ), refractoryPeriod_( 0.1 ), lastSpike_( -0.1 )
+	: Vm_( 0.0 ), thresh_( 0.0 ), tau_( 1.0 ), refractoryPeriod_( 0.1 ), lastSpike_( -0.1 ), sendPending_( 0 )
 {
 	;
 }
 
 IntFire::IntFire( double thresh, double tau )
-	: Vm_( 0.0 ), thresh_( thresh ), tau_( tau ), refractoryPeriod_( 0.1 ), lastSpike_( -0.1 )
+	: Vm_( 0.0 ), thresh_( thresh ), tau_( tau ), refractoryPeriod_( 0.1 ), lastSpike_( -0.1 ), sendPending_( 0 )
 {
 	;
 }
@@ -83,14 +85,7 @@ void IntFire::process( const ProcInfo* p, const Eref& e )
 {
 	if ( e.index().data() == 1023 && pendingEvents_.size() > 0 && p->currTime > 0.9 ) {
 		cout << "pending size on " << e.index() << " = " << pendingEvents_.size() << endl;
-		/*
-		while ( !pendingEvents_.empty() ) {
-			double v = pendingEvents_.top().getWeight();
-			double d = pendingEvents_.top().getDelay();
-			cout << "(" << v << "," << d << ")	";
-			pendingEvents_.pop();
-		}
-		*/
+
 	}
 	while ( !pendingEvents_.empty() &&
 		pendingEvents_.top().getDelay() <= p->currTime ) {
@@ -101,39 +96,40 @@ void IntFire::process( const ProcInfo* p, const Eref& e )
 		Vm_ = 0.0;
 
 	if ( Vm_ > thresh_ ) {
-		spike->send( e, p->currTime );
-		// e.sendSpike( spikeSlot, p->currTime );
+		sendPending_ = 1;
+		// This is what we do with messaging
+		// spike->send( e, p->currTime );
 		Vm_ = -1.0e-7;
 	} else {
 		Vm_ *= ( 1.0 - p->dt / tau_ );
 	}
+}
 
+void IntFire::process2( const ProcInfo* p, const Eref& e )
+{
+	Element* el = e.element();
 
-/* This is what we would do for a conductance  channel.
-	X_ = activation * xconst1_ + X_ * xconst2_;
-	Y_ = X_ * yconst1_ + Y_ * yconst2_;
-	*/
-	 
-/*
-	unsigned int synSize = sizeof( SynInfo );
-	for( char* i = e.processQ.begin(); i != e.processQ.end(); i += synSize )
-	{
-		SynInfo* si = static_cast< SynInfo* >( i );
-		insertQ( si );
-	}
-	
-	SynInfo* si = processQ.top();
-	double current = 0.0;
-	while ( si->time < p->time && si != processQ.end() ) {
-		current += si->weight;
-	}
+	if ( sendPending_ ) {
+		// This is what we do with messaging
+		// spike->send( e, p->currTime );
 
-	v_ += current * Gm_ + Em_ - tau_ * v_;
-	if ( v_ > vThresh ) {
-		v_ = Em_;
-		sendWithId< double >( e, spikeSlot, p->t );
+		// Below is the hack to replace messaging with direct calls.
+		const Msg* m = el->getMsg( 0 );
+		const SparseMsg* sm = dynamic_cast< const SparseMsg* >( m );
+		assert( sm != 0 );
+		const unsigned int* entry;
+		const unsigned int* col;
+		unsigned int i = e.index().data();
+		// for ( unsigned int i = 0; i < numRows; ++i ) {
+		unsigned int n = sm->matrix_.getRow( i, &entry, &col );
+		for ( unsigned int j = 0; j < n; ++j ) {
+			DataId di( *col++, *entry++ );
+			IntFire* inf = 
+				reinterpret_cast< IntFire* >( el->data( di.data() ));
+			inf->addSpike( di, p->currTime );
+		}
 	}
-*/
+	sendPending_ = 0;
 }
 
 /**
@@ -146,6 +142,7 @@ void IntFire::addSpike( DataId index, const double& time )
 {
 	assert( index.field() < synapses_.size() );
 	Synapse s( synapses_[ index.field() ], time );
+	// cout << index << "	";
 	pendingEvents_.push( s );
 }
 

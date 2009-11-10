@@ -10,6 +10,7 @@ class IntFire: public Data
 		IntFire();
 		IntFire( double thresh, double tau );
 		void process( const ProcInfo* p, const Eref& e );
+		void process2( const ProcInfo* p, const Eref& e );
 		void reinit( Eref& e );
 
 		/**
@@ -43,6 +44,7 @@ class IntFire: public Data
 		double lastSpike_; // Time of last action potential.
 		vector< Synapse > synapses_;
 		priority_queue< Synapse > pendingEvents_;
+		bool sendPending_; // Send event is pending.
 };
 
 #endif // _INT_FIRE_H

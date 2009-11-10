@@ -52,8 +52,8 @@ class SparseMsg: public Msg
 		 */
 		static bool add( Element* e1, const string& srcField, 
 			Element* e2, const string& destField, double probability );
-	private:
 		SparseMatrix< unsigned int > matrix_;
+	private:
 };
 
 #endif // _SPARSE_MSG_H

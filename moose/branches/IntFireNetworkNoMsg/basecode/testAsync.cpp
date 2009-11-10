@@ -564,12 +564,19 @@ void testSparseMsg()
 
 	ProcInfo p;
 	p.dt = timestep;
+	Element* elm = i2();
+	unsigned int numData = elm->numData();
 
 	for ( unsigned int i = 0; i < runsteps; ++i ) {
 		p.currTime += p.dt;
 		i2()->process( &p );
+		for ( unsigned int j = 0; j < numData; ++j ) {
+			Eref er( elm, j );
+			IntFire* f = reinterpret_cast< IntFire* >( elm->data( j ) );
+			f->process2( &p, er );
+		}
 		cout << "T = " << p.currTime << ", Q size = " << syn.q_.size() << endl;
-		syn.clearQ();
+//		syn.clearQ();
 //		i2()->process( &p );
 //		printGrid( i2(), "Vm", 0, thresh );
 		// sleep(1);
@@ -591,7 +598,9 @@ void testAsync( )
 	testSetGetDouble();
 	testSetGetSynapse();
 	testSetGetVec();
-	testSendSpike();
+//	testSendSpike();
 	testSparseMatrix();
+	/*
+	*/
 	testSparseMsg();
 }
