@@ -456,7 +456,6 @@ void receiveData( int newFd )
 							if ( mapId2GLshapeData_.size() > 0 )
 							{
 								std::map< unsigned int, GLshapeData* >::iterator id2glshapeIterator;
-
 								for ( id2glshapeIterator = mapId2GLshapeData_.begin();
 								      id2glshapeIterator != mapId2GLshapeData_.end();
 								      id2glshapeIterator++ )
@@ -576,7 +575,6 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 	if ( mapId2GLCompartment_.size() > 0 )
 	{
 		std::map< unsigned int, GLCompartment* >::iterator id2glcompIterator;
-
 		for ( id2glcompIterator = mapId2GLCompartment_.begin();
 		      id2glcompIterator != mapId2GLCompartment_.end();
 		      id2glcompIterator++ )
@@ -711,7 +709,6 @@ void updateGeometryGLview( const GLviewResetData& data )
 	if ( mapId2GLviewShape_.size() > 0 )
 	{
 		std::map< unsigned int, GLviewShape* >::iterator id2glcompIterator;
-
 		for ( id2glcompIterator = mapId2GLviewShape_.begin();
 		      id2glcompIterator != mapId2GLviewShape_.end();
 		      id2glcompIterator++ )
@@ -800,7 +797,6 @@ void draw()
 			if ( mode_ == GLCELL )
 			{
 				std::map< unsigned int, double >::iterator renderMapColorsIterator;
-
 				for ( renderMapColorsIterator = renderMapColors_.begin();
 				      renderMapColorsIterator != renderMapColors_.end();
 				      renderMapColorsIterator++ )
@@ -832,7 +828,6 @@ void draw()
 			else if ( mode_ == GLVIEW )
 			{
 				std::map< unsigned int, GLshapeData* >::iterator id2glshapeIterator;
-
 				for ( id2glshapeIterator = mapId2GLshapeData_.begin();
 				      id2glshapeIterator != mapId2GLshapeData_.end();
 				      id2glshapeIterator++ )
@@ -841,29 +836,40 @@ void draw()
 					GLshapeData* newGLshape = id2glshapeIterator->second;
 					GLviewShape* glViewShape = mapId2GLviewShape_[id];
 
-					glViewShape->resize( newGLshape->len * maxsizeGLviewShape_ );
+					if ( newGLshape->len > -1 + FP_EPSILON )
+					{
+						glViewShape->resize( newGLshape->len * maxsizeGLviewShape_ );
+					}
 
-					int ix;				
-					if ( fabs( newGLshape->color - 0 ) < FP_EPSILON ) // color == 0
+					if ( newGLshape->color > -1 + FP_EPSILON )
 					{
-						ix = 0;
+						int ix;			
+						if ( fabs( newGLshape->color - 0 ) < FP_EPSILON ) // color == 0
+						{
+							ix = 0;
+						}
+						else if ( fabs( newGLshape->color - 1 ) < FP_EPSILON ) // color = 1
+						{
+							ix = colormap_.size()-1;
+						}
+						else
+						{
+							ix = static_cast< int >( floor( newGLshape->color * colormap_.size() ) );
+						}
+						double red = colormap_[ ix ][ 0 ];
+						double green = colormap_[ ix ][ 1 ];
+						double blue = colormap_[ ix ][ 2 ];
+						glViewShape->setColor( osg::Vec4( red, green, blue, 1.0f ) );
 					}
-					else if ( fabs( newGLshape->color - 1 ) < FP_EPSILON ) // color = 1
-					{
-						ix = colormap_.size()-1;
-					}
-					else
-					{
-						ix = static_cast< int >( floor( newGLshape->color * colormap_.size() ) );
-					}
-					double red = colormap_[ ix ][ 0 ];
-					double green = colormap_[ ix ][ 1 ];
-					double blue = colormap_[ ix ][ 2 ];
-					glViewShape->setColor( osg::Vec4( red, green, blue, 1.0f ) );
 
-					// TODO karan
-					//if non-zero offset
-					//  glViewShape->move();
+					if ( fabs( newGLshape->xoffset - 0 ) > FP_EPSILON ||
+					     fabs( newGLshape->yoffset - 0 ) > FP_EPSILON ||
+					     fabs( newGLshape->zoffset - 0 ) > FP_EPSILON )
+					{
+						glViewShape->move( newGLshape->xoffset,
+								   newGLshape->yoffset,
+								   newGLshape->zoffset );
+					}
 
 					// TODO karan
 					// glViewShape->setShapeType:

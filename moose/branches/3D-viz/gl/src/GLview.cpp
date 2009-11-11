@@ -193,6 +193,11 @@ GLview::GLview()
 	bgcolorBlue_( 0.0 ),
 	strPath_( "" ),
 	strRelPath_( "" ),
+	color_val_( 0 ),
+	morph_val_( 0 ),
+	xoffset_val_( 0 ),
+	yoffset_val_( 0 ),
+	zoffset_val_( 0 ),
 	x_( NULL ),
 	y_( NULL ),
 	z_( NULL )
@@ -210,15 +215,27 @@ GLview::~GLview()
 {
 	disconnect();
 	
-	free ( values_[0] );
-	free ( values_[1] );
-	free ( values_[2] );
-	free ( values_[3] );
-	free ( values_[4] );
+	for ( unsigned int i = 0; i < 5; ++i )
+	  free ( values_[i] );
 	
 	free ( x_ );
 	free ( y_ );
 	free ( z_ );
+
+	if ( mapId2GLshapeData_.size() != 0 )
+	{
+		std::map< unsigned int, GLshapeData* >::iterator id2glshapeIterator;			
+		for ( id2glshapeIterator = mapId2GLshapeData_.begin();
+		      id2glshapeIterator != mapId2GLshapeData_.end();
+		      id2glshapeIterator++ )
+		{
+			free ( id2glshapeIterator->second );
+		}
+		
+		mapId2GLshapeData_.clear();
+	}
+	
+	elements_.clear();
 }
 
 ///////////////////////////////////////////////////
@@ -426,7 +443,7 @@ void GLview::setColorVal( const Conn* c, unsigned int colorVal )
 
 void GLview::innerSetColorVal( unsigned int colorVal )
 {
-	if ( values_[colorVal-1] != NULL)
+	if ( colorVal == 0 || values_[colorVal-1] != NULL)
 		color_val_ = colorVal;
 	else
 		std::cerr << "GLview: setting color_val to " << colorVal
@@ -446,7 +463,7 @@ void GLview::setMorphVal( const Conn* c, unsigned int morphVal )
 
 void GLview::innerSetMorphVal( unsigned int morphVal )
 {
-	if ( values_[morphVal-1] != NULL)
+	if ( morphVal == 0 || values_[morphVal-1] != NULL)
 		morph_val_ = morphVal;
 	else
 		std::cerr << "GLview: setting morph_val to " << morphVal
@@ -466,7 +483,7 @@ void GLview::setXOffsetVal( const Conn* c, unsigned int xoffsetVal )
 
 void GLview::innerSetXOffsetVal( unsigned int xoffsetVal )
 {
-	if ( values_[xoffsetVal-1] != NULL)
+	if ( xoffsetVal == 0 || values_[xoffsetVal-1] != NULL)
 		xoffset_val_ = xoffsetVal;
 	else
 		std::cerr << "GLview: setting xoffset_val to " << xoffsetVal
@@ -486,7 +503,7 @@ void GLview::setYOffsetVal( const Conn* c, unsigned int yoffsetVal )
 
 void GLview::innerSetYOffsetVal( unsigned int yoffsetVal )
 {
-	if ( values_[yoffsetVal-1] != NULL)
+	if ( yoffsetVal == 0 || values_[yoffsetVal-1] != NULL)
 		yoffset_val_ = yoffsetVal;
 	else
 		std::cerr << "GLview: setting yoffset_val to " << yoffsetVal
@@ -506,7 +523,7 @@ void GLview::setZOffsetVal( const Conn* c, unsigned int zoffsetVal )
 
 void GLview::innerSetZOffsetVal( unsigned int zoffsetVal )
 {
-	if ( values_[zoffsetVal-1] != NULL)
+	if ( zoffsetVal == 0 || values_[zoffsetVal-1] != NULL)
 		zoffset_val_ = zoffsetVal;
 	else
 		std::cerr << "GLview: setting zoffset_val to " << zoffsetVal
@@ -529,8 +546,7 @@ void GLview::innerSetValueMin( unsigned int index, double value )
 	if ( index >= 1 && index <= 5 )
 	{
 		if ( value >= value_max_[index-1] )
-			std::cerr << "Value being set to be >= of value_max["
-				  << index-1 << "] == " << value_max_[index-1] << std::endl;
+			std::cerr << "Value being set to be >= of corresponding value_max, which is " << value_max_[index-1] << std::endl;
 		
 		value_min_[index-1] = value;
 	}
@@ -548,8 +564,7 @@ void GLview::innerSetValueMax( unsigned int index, double value )
 	if ( index >= 1 && index <= 5 )
 	{
 		if ( value <= value_min_[index-1] )
-			std::cerr << "Value being set to be <= of value_min["
-				  << index-1 << "] == " << value_min_[index-1] << std::endl;
+			std::cerr << "Value being set to be <= of corresponding value_min, which is" << value_min_[index-1] << std::endl;
 
 		value_max_[index-1] = value;
 	}
@@ -568,8 +583,6 @@ void GLview::reinitFunc( const Conn* c, ProcInfo info )
 
 void GLview::reinitFuncLocal( const Conn* c )
 {
-	elements_.clear();
-
 	// If this element has no children yet:
 	Id id = c->target().id();
 	Conn* i = id()->targets( "childSrc", 0 );
@@ -591,8 +604,38 @@ void GLview::reinitFuncLocal( const Conn* c )
 
 	if ( ! strPath_.empty() )  
 	{
+		elements_.clear();
 		wildcardFind( strPath_, elements_ );
 		std::cout << "GLview: " << elements_.size() << " elements found." << std::endl; // TODO comment this out by default 
+
+		if ( mapId2GLshapeData_.size() != 0 )
+		{
+			std::map< unsigned int, GLshapeData* >::iterator id2glshapeIterator;			
+			for ( id2glshapeIterator = mapId2GLshapeData_.begin();
+			      id2glshapeIterator != mapId2GLshapeData_.end();
+			      id2glshapeIterator++ )
+			{
+				free ( id2glshapeIterator->second );
+			}
+
+			mapId2GLshapeData_.clear();
+		}
+
+		// (re) allocate memory (because elements_.size() might have changed)
+		for ( unsigned int i = 0; i < elements_.size(); ++i )
+		{
+			unsigned int id = elements_[i].id();
+			GLshapeData* temp = (GLshapeData *) malloc( sizeof( GLshapeData ) );
+			if ( temp == NULL )
+			{
+				std::cerr << "GLview: could not allocate memory!" << std::endl;
+				return;
+			}
+			else 
+			{
+				mapId2GLshapeData_[id] = temp;
+			}
+		}
 
 		double maxsize = populateXYZ();
 
@@ -645,33 +688,15 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 		return;
 	}
 
-	if ( mapId2GLshapeData_.size() == 0 )
-	{ // allocate memory the first time
-		for ( unsigned int i = 0; i < elements_.size(); ++i )
-		{
-			unsigned int id = elements_[i].id();
-			GLshapeData* temp = (GLshapeData *) malloc( sizeof( GLshapeData ) );
-			if ( temp == NULL )
-			{
-				std::cerr << "GLview: could not allocate memory!" << std::endl;
-				return;
-			}
-			else 
-			{
-				mapId2GLshapeData_[id] = temp;
-			}
-		}			   
-	}
-
 	// set parameters to default values
 	for ( unsigned int i = 0; i < elements_.size(); ++i )
 	{
 		unsigned int id = elements_[i].id();
-		mapId2GLshapeData_[id]->color = 0.5;
-		mapId2GLshapeData_[id]->xoffset = 0.0;
-		mapId2GLshapeData_[id]->yoffset = 0.0;
-		mapId2GLshapeData_[id]->zoffset = 0.0;
-		mapId2GLshapeData_[id]->len = 0.5;
+		mapId2GLshapeData_[id]->color = -1.; // -1 signifies no change in this variable
+		mapId2GLshapeData_[id]->xoffset = 0;
+		mapId2GLshapeData_[id]->yoffset = 0.;
+		mapId2GLshapeData_[id]->zoffset = 0.;
+		mapId2GLshapeData_[id]->len = -1.; // -1 signifies no change in this variable
 		// set shapetype to that of the first interpolation target/template
 		get< int >( ret[0], "shapetype", mapId2GLshapeData_[id]->shapetype );
 	}
@@ -694,6 +719,9 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 			// determine interpolation targets
 			unsigned int iLow, iHigh;
+
+			std::cerr << "oh1" << color_val_ << morph_val_<< std::endl; // TODO delete
+
 			chooseInterpolationPair( ret.size(), value,
 						 value_min_[color_val_-1], value_max_[color_val_-1],
 						 iLow, iHigh);
@@ -718,6 +746,9 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 			// determine interpolation targets
 			unsigned int iLow, iHigh;
+		       
+			std::cerr << "oh2" << color_val_ << morph_val_<< std::endl; // TODO delete
+
 			chooseInterpolationPair( ret.size(), value,
 						 value_min_[morph_val_-1], value_max_[morph_val_-1],
 						 iLow, iHigh);
