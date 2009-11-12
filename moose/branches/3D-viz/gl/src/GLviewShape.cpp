@@ -93,7 +93,3 @@ void GLviewShape::resize( double len )
 		sphere_->setRadius( len_/2 );
 }
 
-void GLviewShape::setShapeType( int shapetype )
-{
-	shapetype_ = shapetype;
-}

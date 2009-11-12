@@ -128,6 +128,8 @@ class GLview
 
 	// the elements found on strPath_
 	vector< Id > elements_;
+	// child elements of the type GLshape used as interpolation targets
+	vector< Eref > vecErefGLshapeChildren_;
 
 	double* values_[5];
 	double value_min_[5];

@@ -737,10 +737,11 @@ void updateGeometryGLview( const GLviewResetData& data )
 		const double& x = shapes[i].x;
 		const double& y = shapes[i].y;
 		const double& z = shapes[i].z;
+		const int& shapetype = shapes[i].shapetype;
 
 		GLviewShape * shape = new GLviewShape( id, pathName,
 						       x, y, z,
-						       0.5 * maxsizeGLviewShape_, CUBE );
+						       0.5 * maxsizeGLviewShape_, shapetype );
 		mapId2GLviewShape_[id] = shape;
 
 		root_->addChild( shape->getGeode() );
@@ -870,13 +871,6 @@ void draw()
 								   newGLshape->yoffset,
 								   newGLshape->zoffset );
 					}
-
-					// TODO karan
-					// glViewShape->setShapeType:
-					// this will be complicated
-					// and should probably be
-					// transmitted and handled in
-					// RESET, not PROCESS
 				}
 			}
 

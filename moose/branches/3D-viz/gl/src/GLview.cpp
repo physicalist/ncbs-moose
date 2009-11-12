@@ -310,7 +310,6 @@ void GLview::setValue1Field( const Conn* c, string strValue1Field )
 void GLview::innerSetValue1Field( const string& strValue1Field )
 {
 	strValueField_[0] = strValue1Field;
-	populateValues( 1, &values_[0], strValue1Field ); 
 }
 
 string GLview::getValue1Field( Eref e )
@@ -326,7 +325,6 @@ void GLview::setValue2Field( const Conn* c, string strValue2Field )
 void GLview::innerSetValue2Field( const string& strValue2Field )
 {
 	strValueField_[1] = strValue2Field;
-	populateValues( 2, &values_[1], strValue2Field ); 
 }
 
 string GLview::getValue2Field( Eref e )
@@ -342,7 +340,6 @@ void GLview::setValue3Field( const Conn* c, string strValue3Field )
 void GLview::innerSetValue3Field( const string& strValue3Field )
 {
 	strValueField_[2] = strValue3Field;
-	populateValues( 3, &values_[2], strValue3Field ); 
 }
 
 string GLview::getValue3Field( Eref e )
@@ -358,7 +355,6 @@ void GLview::setValue4Field( const Conn* c, string strValue4Field )
 void GLview::innerSetValue4Field( const string& strValue4Field )
 {
 	strValueField_[3] = strValue4Field;
-	populateValues( 4, &values_[3], strValue4Field ); 
 }
 
 string GLview::getValue4Field( Eref e )
@@ -374,7 +370,6 @@ void GLview::setValue5Field( const Conn* c, string strValue5Field )
 void GLview::innerSetValue5Field( const string& strValue5Field )
 {
 	strValueField_[4] = strValue5Field;
-	populateValues( 5, &values_[4], strValue5Field ); 
 }
 
 string GLview::getValue5Field( Eref e )
@@ -443,12 +438,7 @@ void GLview::setColorVal( const Conn* c, unsigned int colorVal )
 
 void GLview::innerSetColorVal( unsigned int colorVal )
 {
-	if ( colorVal == 0 || values_[colorVal-1] != NULL)
-		color_val_ = colorVal;
-	else
-		std::cerr << "GLview: setting color_val to " << colorVal
-			  << " failed because value" << colorVal
-			  << " is not yet assigned." << std::endl;
+	color_val_ = colorVal;
 }
 
 unsigned int GLview::getColorVal( Eref e )
@@ -463,12 +453,7 @@ void GLview::setMorphVal( const Conn* c, unsigned int morphVal )
 
 void GLview::innerSetMorphVal( unsigned int morphVal )
 {
-	if ( morphVal == 0 || values_[morphVal-1] != NULL)
-		morph_val_ = morphVal;
-	else
-		std::cerr << "GLview: setting morph_val to " << morphVal
-			  << " failed because value" << morphVal
-			  << " is not yet assigned." << std::endl;
+	morph_val_ = morphVal;
 }
 
 unsigned int GLview::getMorphVal( Eref e )
@@ -483,12 +468,7 @@ void GLview::setXOffsetVal( const Conn* c, unsigned int xoffsetVal )
 
 void GLview::innerSetXOffsetVal( unsigned int xoffsetVal )
 {
-	if ( xoffsetVal == 0 || values_[xoffsetVal-1] != NULL)
-		xoffset_val_ = xoffsetVal;
-	else
-		std::cerr << "GLview: setting xoffset_val to " << xoffsetVal
-			  << " failed because value" << xoffsetVal
-			  << " is not yet assigned." << std::endl;
+	xoffset_val_ = xoffsetVal;
 }
 
 unsigned int GLview::getXOffsetVal( Eref e )
@@ -503,12 +483,7 @@ void GLview::setYOffsetVal( const Conn* c, unsigned int yoffsetVal )
 
 void GLview::innerSetYOffsetVal( unsigned int yoffsetVal )
 {
-	if ( yoffsetVal == 0 || values_[yoffsetVal-1] != NULL)
-		yoffset_val_ = yoffsetVal;
-	else
-		std::cerr << "GLview: setting yoffset_val to " << yoffsetVal
-			  << " failed because value" << yoffsetVal
-			  << " is not yet assigned." << std::endl;
+	yoffset_val_ = yoffsetVal;
 }
 
 unsigned int GLview::getYOffsetVal( Eref e )
@@ -523,12 +498,7 @@ void GLview::setZOffsetVal( const Conn* c, unsigned int zoffsetVal )
 
 void GLview::innerSetZOffsetVal( unsigned int zoffsetVal )
 {
-	if ( zoffsetVal == 0 || values_[zoffsetVal-1] != NULL)
-		zoffset_val_ = zoffsetVal;
-	else
-		std::cerr << "GLview: setting zoffset_val to " << zoffsetVal
-			  << " failed because value" << zoffsetVal
-			  << " is not yet assigned." << std::endl;
+	zoffset_val_ = zoffsetVal;
 }
 
 unsigned int GLview::getZOffsetVal( Eref e )
@@ -602,12 +572,21 @@ void GLview::reinitFuncLocal( const Conn* c )
 	}
 	delete i;
 
+	// determine child elements of the type GLshape as possible interpolation targets
+	vecErefGLshapeChildren_.clear();
+	children( id, vecErefGLshapeChildren_, "GLshape" );
+
+	// set shapetype to that of the first interpolation target
+	int shapetype;
+	get< int >( vecErefGLshapeChildren_[0], "shapetype", shapetype );
+
 	if ( ! strPath_.empty() )  
 	{
 		elements_.clear();
 		wildcardFind( strPath_, elements_ );
 		std::cout << "GLview: " << elements_.size() << " elements found." << std::endl; // TODO comment this out by default 
 
+		// (re) allocate memory (because elements_.size() might have changed)
 		if ( mapId2GLshapeData_.size() != 0 )
 		{
 			std::map< unsigned int, GLshapeData* >::iterator id2glshapeIterator;			
@@ -620,8 +599,6 @@ void GLview::reinitFuncLocal( const Conn* c )
 
 			mapId2GLshapeData_.clear();
 		}
-
-		// (re) allocate memory (because elements_.size() might have changed)
 		for ( unsigned int i = 0; i < elements_.size(); ++i )
 		{
 			unsigned int id = elements_[i].id();
@@ -652,10 +629,10 @@ void GLview::reinitFuncLocal( const Conn* c )
 
 			shape.id = elements_[i].id();
 			shape.pathName = elements_[i].path();
-
 			shape.x = x_[i];
 			shape.y = y_[i];
 			shape.z = z_[i];
+			shape.shapetype = shapetype;
 
 			resetData.shapes.push_back( shape );
 		}
@@ -666,7 +643,6 @@ void GLview::reinitFuncLocal( const Conn* c )
 			std::cerr << "GLview error: Client hostname not specified." << std::endl;
 		else
 			transmit( resetData, RESET );
-	
 	}
 }
 
@@ -677,12 +653,7 @@ void GLview::processFunc( const Conn* c, ProcInfo info )
 
 void GLview::processFuncLocal( Eref e, ProcInfo info )
 {
-	// determine child elements of the type GLshape as possible interpolation targets
-	Id idGLview = e.id();
-	vector< Eref > ret;
-	children( idGLview, ret, "GLshape" );
-
-	if ( ret.size() < 2 )
+	if ( vecErefGLshapeChildren_.size() < 2 )
 	{
 		std::cerr << "GLview: should have at least two child elements of type GLshape" << std::endl;
 		return;
@@ -697,8 +668,6 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 		mapId2GLshapeData_[id]->yoffset = 0.;
 		mapId2GLshapeData_[id]->zoffset = 0.;
 		mapId2GLshapeData_[id]->len = -1.; // -1 signifies no change in this variable
-		// set shapetype to that of the first interpolation target/template
-		get< int >( ret[0], "shapetype", mapId2GLshapeData_[id]->shapetype );
 	}
 
 	// refresh values_[][]
@@ -719,17 +688,14 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 			// determine interpolation targets
 			unsigned int iLow, iHigh;
-
-			std::cerr << "oh1" << color_val_ << morph_val_<< std::endl; // TODO delete
-
-			chooseInterpolationPair( ret.size(), value,
+			chooseInterpolationPair( vecErefGLshapeChildren_.size(), value,
 						 value_min_[color_val_-1], value_max_[color_val_-1],
 						 iLow, iHigh);
 			// obtain parameter value by linear interpolation and set
 			double attr_low;
-			get< double >( ret[iLow], "color", attr_low );
+			get< double >( vecErefGLshapeChildren_[iLow], "color", attr_low );
 			double attr_high;
-			get< double >( ret[iHigh], "color", attr_high );
+			get< double >( vecErefGLshapeChildren_[iHigh], "color", attr_high );
 
 			interpolate( value_min_[color_val_-1], attr_low,
 				     value_max_[color_val_-1], attr_high,
@@ -746,17 +712,14 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 			// determine interpolation targets
 			unsigned int iLow, iHigh;
-		       
-			std::cerr << "oh2" << color_val_ << morph_val_<< std::endl; // TODO delete
-
-			chooseInterpolationPair( ret.size(), value,
+			chooseInterpolationPair( vecErefGLshapeChildren_.size(), value,
 						 value_min_[morph_val_-1], value_max_[morph_val_-1],
 						 iLow, iHigh);
 			// obtain parameter value by linear interpolation and set
 			double attr_low;
-			get< double >( ret[iLow], "len", attr_low );
+			get< double >( vecErefGLshapeChildren_[iLow], "len", attr_low );
 			double attr_high;
-			get< double >( ret[iHigh], "len", attr_high );
+			get< double >( vecErefGLshapeChildren_[iHigh], "len", attr_high );
 
 			interpolate( value_min_[morph_val_-1], attr_low,
 				     value_max_[morph_val_-1], attr_high,
@@ -773,14 +736,14 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 			// determine interpolation targets
 			unsigned int iLow, iHigh;
-			chooseInterpolationPair( ret.size(), value,
+			chooseInterpolationPair( vecErefGLshapeChildren_.size(), value,
 						 value_min_[xoffset_val_-1], value_max_[xoffset_val_-1],
 						 iLow, iHigh);
 			// obtain parameter value by linear interpolation and set
 			double attr_low;
-			get< double >( ret[iLow], "xoffset", attr_low );
+			get< double >( vecErefGLshapeChildren_[iLow], "xoffset", attr_low );
 			double attr_high;
-			get< double >( ret[iHigh], "xoffset", attr_high );
+			get< double >( vecErefGLshapeChildren_[iHigh], "xoffset", attr_high );
 
 			interpolate( value_min_[xoffset_val_-1], attr_low,
 				     value_max_[xoffset_val_-1], attr_high,
@@ -797,14 +760,14 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 			// determine interpolation targets
 			unsigned int iLow, iHigh;
-			chooseInterpolationPair( ret.size(), value,
+			chooseInterpolationPair( vecErefGLshapeChildren_.size(), value,
 						 value_min_[yoffset_val_-1], value_max_[yoffset_val_-1],
 						 iLow, iHigh);
 			// obtain parameter value by linear interpolation and set
 			double attr_low;
-			get< double >( ret[iLow], "yoffset", attr_low );
+			get< double >( vecErefGLshapeChildren_[iLow], "yoffset", attr_low );
 			double attr_high;
-			get< double >( ret[iHigh], "yoffset", attr_high );
+			get< double >( vecErefGLshapeChildren_[iHigh], "yoffset", attr_high );
 
 			interpolate( value_min_[yoffset_val_-1], attr_low,
 				     value_max_[yoffset_val_-1], attr_high,
@@ -821,14 +784,14 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 			// determine interpolation targets
 			unsigned int iLow, iHigh;
-			chooseInterpolationPair( ret.size(), value,
+			chooseInterpolationPair( vecErefGLshapeChildren_.size(), value,
 						 value_min_[zoffset_val_-1], value_max_[zoffset_val_-1],
 						 iLow, iHigh);
 			// obtain parameter value by linear interpolation and set
 			double attr_low;
-			get< double >( ret[iLow], "zoffset", attr_low );
+			get< double >( vecErefGLshapeChildren_[iLow], "zoffset", attr_low );
 			double attr_high;
-			get< double >( ret[iHigh], "zoffset", attr_high );
+			get< double >( vecErefGLshapeChildren_[iHigh], "zoffset", attr_high );
 
 			interpolate( value_min_[zoffset_val_-1], attr_low,
 				     value_max_[zoffset_val_-1], attr_high,
@@ -867,7 +830,7 @@ int GLview::populateValues( int valueNum, double ** pValues, const string& strVa
 	if ( *pValues == NULL )
 		*pValues = ( double * ) malloc( sizeof( double ) * elements_.size() );
 	
-	if ( *pValues == NULL )
+	if ( *pValues == NULL ) // if it's still NULL
 	{
 		std::cerr << "GLview error: could not allocate memory to set field values" << std::endl;
 		status = -1;
