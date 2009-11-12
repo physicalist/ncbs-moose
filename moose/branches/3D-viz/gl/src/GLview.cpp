@@ -584,7 +584,7 @@ void GLview::reinitFuncLocal( const Conn* c )
 	{
 		elements_.clear();
 		wildcardFind( strPath_, elements_ );
-		std::cout << "GLview: " << elements_.size() << " elements found." << std::endl; // TODO comment this out by default 
+		std::cout << "GLview: " << elements_.size() << " elements found." << std::endl; 
 
 		// (re) allocate memory (because elements_.size() might have changed)
 		if ( mapId2GLshapeData_.size() != 0 )
@@ -655,7 +655,7 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 {
 	if ( vecErefGLshapeChildren_.size() < 2 )
 	{
-		std::cerr << "GLview: should have at least two child elements of type GLshape" << std::endl;
+		std::cerr << "GLview error: should have at least two child elements of type GLshape" << std::endl;
 		return;
 	}
 
@@ -674,7 +674,12 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 	for ( unsigned int i = 0; i < 5; ++i )
 	{
 		if ( ! strValueField_[i].empty() )
-			populateValues( i+1, &values_[i], strValueField_[i] ); 
+		{
+			if ( populateValues( i+1, &values_[i], strValueField_[i] ) < 0 )
+			{
+				return;
+			}
+		}			
 	}
 
 	// obtain parameter values by linear interpolation between
@@ -854,13 +859,17 @@ int GLview::populateValues( int valueNum, double ** pValues, const string& strVa
 			
 			if ( id.eref() == NULL )
 			{
-				std::cerr << "Could not find path: " << path << "; error in relpath? " << std::endl;
+				std::cerr << "GLview error: could not find path: " << path << "; error in relpath? " << std::endl;
 				status = -2;
 				break;
 			}
-			else if ( ! get< double >( id.eref(), strValueField, values[i] ) )
+			else if ( id.eref().e->findFinfo( strValueField ) )
 			{
-				std::cerr << "GLview error: for value" << valueNum << ", unable to find a field called '" << strValueField << "' in elements on the path " << strPath_ << strRelPath_ << " The old value, if any, will be retained." << std::endl;
+				get< double >( id.eref(), strValueField, values[i] );
+			}
+			else
+			{
+				std::cerr << "GLview error: for value" << valueNum << ", unable to find a field called '" << strValueField << "' in " << id.path() << std::endl;
 				status = -3;
 				break;
 			}
@@ -880,27 +889,52 @@ int GLview::populateValues( int valueNum, double ** pValues, const string& strVa
 	return status;
 }
 
-int GLview::getXYZ( Id id, double& x, double& y, double& z, double &maxsize )
+int GLview::getXYZ( Id id, double& xout, double& yout, double& zout, double &maxsize )
 {
 	if ( id() == Element::root() )
 		return -1;
 
 	if ( ! id.eref().e->findFinfo( "x" ) ||
 	     ! id.eref().e->findFinfo( "y" ) ||
-	     ! id.eref().e->findFinfo( "z" ) )
+	     ! id.eref().e->findFinfo( "z" ) ||
+	     ! id.eref().e->findFinfo( "x0" ) ||
+	     ! id.eref().e->findFinfo( "y0" ) ||
+	     ! id.eref().e->findFinfo( "z0" ) ||
+	     ! id.eref().e->findFinfo( "length") )
 	{
 		Id parent = Shell::parent( id );
 		if ( parent == Id::badId() )
 			return -1;
 		else
-			return getXYZ( parent, x, y, z, maxsize ); // recurses
+			return getXYZ( parent, xout, yout, zout, maxsize ); // recurses
 	}
 	
 	// success
+	double x, y, z, x0, y0, z0, length;
 	get< double >( id.eref(), "x", x );
 	get< double >( id.eref(), "y", y );
 	get< double >( id.eref(), "z", z );
+	get< double >( id.eref(), "x0", x0 );
+	get< double >( id.eref(), "y0", y0 );
+	get< double >( id.eref(), "z0", z0 );
+	get< double >( id.eref(), "length", length );
+	std::string name = id.eref().name();
 	
+	if ( length < SIZE_EPSILON ||
+	     name.compare("soma") == 0 )
+	{
+		xout = x;
+		yout = y;
+		zout = z;
+	}
+	else
+	{
+		xout = ( x0 + x ) / 2;
+		yout = ( y0 + y ) / 2;
+		zout = ( z0 + z ) / 2;
+	}
+	
+	// determining maxsize_
 	double maxsize_ = 0, temp;
 	if ( id.eref().e->findFinfo( "diameter") &&
 	     get< double >( id.eref(), "diameter", temp ) &&
@@ -946,7 +980,6 @@ double GLview::populateXYZ()
 	// a map, intending to separate elements specified with
 	// duplicate x,y,z co-ordinates.
 	map< string, unsigned int > mapXYZ;
-
 	for ( unsigned int i = 0; i < elements_.size(); ++i )
 	{
 		if ( getXYZ( elements_[i], x, y, z, size ) == 0 )
@@ -1031,9 +1064,9 @@ double GLview::populateXYZ()
 
 string GLview::boxXYZ( const double& x, const double& y, const double& z )
 {
-	string key( inttostring( int( x * 1e6 ) ) );
-	key.append( inttostring( int( y * 1e6 ) ) );
-	key.append( inttostring( int( z * 1e6 ) ) );
+	string key( inttostring( int( x * 1e8 ) ) );
+	key.append( inttostring( int( y * 1e8 ) ) );
+	key.append( inttostring( int( z * 1e8 ) ) );
 
 	return key;
 }
@@ -1270,7 +1303,7 @@ int GLview::receiveAck()
 
 void GLview::handlePick( unsigned int idPicked )
 {
-	std::cout << "Compartment with id " << idPicked << " was picked!" << std::endl;
+	std::cout << "GLview: Compartment with id " << idPicked << " was picked!" << std::endl;
 }
 
 void GLview::disconnect()
