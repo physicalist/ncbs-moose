@@ -32,7 +32,6 @@ class GLviewShape
 	void setColor( osg::Vec4 color );
 	void move( double xoffset, double yoffset, double zoffset );
 	void resize( double len );
-	void setShapeType( int shapetype );
 
  private:
 	unsigned int id_;

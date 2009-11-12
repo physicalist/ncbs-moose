@@ -15,6 +15,7 @@ struct GLviewShapeResetData
 	unsigned int id;
 	std::string pathName;
 	double x, y, z;
+	int shapetype;
 
 	template< typename Archive >
 	void serialize( Archive& ar, const unsigned int version )
@@ -24,6 +25,7 @@ struct GLviewShapeResetData
 		ar & x;
 		ar & y;
 		ar & z;
+		ar & shapetype;
 	}	     
 };
 

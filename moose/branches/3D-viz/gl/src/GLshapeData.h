@@ -7,18 +7,6 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#ifndef SHAPETYPE
-#define SHAPETYPE
-
-
-enum SHAPETYPE
-{
-	CUBE,
-	SPHERE
-};
-
-#endif // SHAPETYPE
-
 #ifndef GLSHAPEDATA_H
 #define GLSHAPEDATA_H
 
@@ -29,7 +17,6 @@ struct GLshapeData
 	double yoffset;
 	double zoffset;
 	double len; // diameter if spherical
-	int shapetype;
 
 	template< typename Archive >
 	void serialize( Archive& ar, const unsigned int version )
@@ -39,7 +26,6 @@ struct GLshapeData
 		ar & yoffset;
 		ar & zoffset;
 		ar & len;
-		ar & shapetype;
 	}
 };
 
