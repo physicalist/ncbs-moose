@@ -169,6 +169,8 @@ bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* 
 	if ( ! viewer->getSceneData() )
 		return false;
 
+	textParentTop_->setText( "" );
+
 	double w = .05;
 	double h = .05;
 
@@ -182,11 +184,16 @@ bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* 
 		const osg::NodePath& nodePath = picker->getFirstIntersection().nodePath;
 		
 		osg::Geode* geode = dynamic_cast< osg::Geode* >( nodePath[nodePath.size()-1] );
-	        std::cout << mapGeode2Id_[geode] << " was picked." << std::endl;
+
+		std::stringstream pickedTextStream;
+		pickedTextStream << *(mapGeode2NameId_[geode]->second) << " ("
+				 << mapGeode2NameId_[geode]->first << ") was picked.";
+	        std::cout << pickedTextStream.str() << std::endl;
+		textParentTop_->setText( pickedTextStream.str() );
 
 		{
 			boost::mutex::scoped_lock lock( mutexPickingDataUpdated_ );
-			pickedId_ = mapGeode2Id_[geode];
+			pickedId_ = mapGeode2NameId_[geode]->first;
 		}
 		isPickingDataUpdated_ = true;
 		return true;
@@ -574,27 +581,40 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 	
 	if ( mapId2GLCompartment_.size() > 0 )
 	{
-		std::map< unsigned int, GLCompartment* >::iterator id2glcompIterator;
-		for ( id2glcompIterator = mapId2GLCompartment_.begin();
-		      id2glcompIterator != mapId2GLCompartment_.end();
-		      id2glcompIterator++ )
+		for ( std::map< unsigned int, GLCompartment* >::iterator iterator = mapId2GLCompartment_.begin();
+		      iterator != mapId2GLCompartment_.end();
+		      iterator++ )
 		{
-			delete id2glcompIterator->second;
+			delete iterator->second;
 		}
-
 		mapId2GLCompartment_.clear();
-		mapGeode2Id_.clear();
+
+		for ( std::map< osg::Geode*, std::pair< unsigned int, std::string* >* >::iterator iterator = mapGeode2NameId_.begin();
+		      iterator != mapGeode2NameId_.end();
+		      iterator++ )
+		{
+			delete iterator->second->second;
+			delete iterator->second;
+		}
+		mapGeode2NameId_.clear();
 	}
 
 	root_ = new osg::Group; // root_ is an osg::ref_ptr
 	root_->setDataVariance( osg::Object::STATIC );
 
-	if ( textParent_ != NULL)
-		delete textParent_;
-	textParent_ = new TextBox();
-	textParent_->setPosition( osg::Vec3d( 10, 10, 0 ) );
-	textParent_->setText( geometryData.pathName );
-	root_->addChild( textParent_->getGroup() );
+	if ( textParentBottom_ != NULL)
+		delete textParentBottom_;
+	textParentBottom_ = new TextBox();
+	textParentBottom_->setPosition( osg::Vec3d( 10, 10, 0 ) );
+	textParentBottom_->setText( geometryData.pathName );
+	root_->addChild( textParentBottom_->getGroup() );
+
+	if ( textParentTop_ != NULL)
+		delete textParentTop_;
+	textParentTop_ = new TextBox();
+	textParentTop_->setPosition( osg::Vec3d( 10, WINDOW_HEIGHT - 20, 0 ) );
+	textParentTop_->setText( "" );
+	root_->addChild( textParentTop_->getGroup() );
 
 	// First pass: create the basic hollow cylinders with no end-caps
 	for ( unsigned int i = 0; i < compartments.size(); ++i )
@@ -625,7 +645,7 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 			geode->addDrawable( sphereGeom );
 			root_->addChild( geode );
 			
-			mapGeode2Id_[geode] = id;
+			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( name ) );
 		}
 		else 
 			// the compartment is cylindrical
@@ -665,8 +685,8 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 			osg::Geode* geode = new osg::Geode;
 			geode->addDrawable( cylinderGeom );
 			root_->addChild( geode );
-			
-			mapGeode2Id_[geode] = id;
+
+			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( name ) );
 		}
 	}
 
@@ -717,18 +737,33 @@ void updateGeometryGLview( const GLviewResetData& data )
 		}
 
 		mapId2GLviewShape_.clear();
-		mapGeode2Id_.clear();
+
+		for ( std::map< osg::Geode*, std::pair< unsigned int, std::string* >* >::iterator iterator = mapGeode2NameId_.begin();
+		      iterator != mapGeode2NameId_.end();
+		      iterator++ )
+		{
+			delete iterator->second->second;
+			delete iterator->second;
+		}
+		mapGeode2NameId_.clear();
 	}
 
 	root_ = new osg::Group; // root_ is an osg::ref_ptr
 	root_->setDataVariance( osg::Object::STATIC );
 
-	if ( textParent_ != NULL)
-		delete textParent_;
-	textParent_ = new TextBox();
-	textParent_->setPosition( osg::Vec3d( 10, 10, 0 ) );
-	textParent_->setText( globalPathName );
-	root_->addChild( textParent_->getGroup() );
+	if ( textParentBottom_ != NULL)
+		delete textParentBottom_;
+	textParentBottom_ = new TextBox();
+	textParentBottom_->setPosition( osg::Vec3d( 10, 10, 0 ) );
+	textParentBottom_->setText( globalPathName );
+	root_->addChild( textParentBottom_->getGroup() );
+
+	if ( textParentTop_ != NULL)
+		delete textParentTop_;
+	textParentTop_ = new TextBox();
+	textParentTop_->setPosition( osg::Vec3d( 10, WINDOW_HEIGHT - 20, 0 ) );
+	textParentTop_->setText( "" );
+	root_->addChild( textParentTop_->getGroup() );
 
 	for ( unsigned int i = 0; i < shapes.size(); ++i )
 	{
@@ -745,7 +780,7 @@ void updateGeometryGLview( const GLviewResetData& data )
 		mapId2GLviewShape_[id] = shape;
 
 		root_->addChild( shape->getGeode() );
-		mapGeode2Id_[ shape->getGeode() ] = id;
+		mapGeode2NameId_[ shape->getGeode() ] = new std::pair< unsigned int, std::string* >( id, new std::string( pathName ) );
 	}	
 }
 

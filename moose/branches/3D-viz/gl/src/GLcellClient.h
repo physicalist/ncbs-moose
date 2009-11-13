@@ -52,7 +52,8 @@ void updateGeometryGLview( const GLviewResetData& data );
 std::string getSaveFilename( void );
 
 osg::ref_ptr< osg::Group > root_;
-TextBox::TextBox* textParent_ = NULL;
+TextBox::TextBox* textParentTop_ = NULL;
+TextBox::TextBox* textParentBottom_ = NULL;
 
 // GLcell mode: 
 std::map< unsigned int, GLCompartment* > mapId2GLCompartment_; // this is used to call the polymorphic function setColor()
@@ -62,7 +63,7 @@ std::map< unsigned int, GLviewShape* > mapId2GLviewShape_; // used to resize, mo
 std::map< unsigned int, GLshapeData* > mapId2GLshapeData_; // data received in PROCESS step
 
 // both modes:
-std::map< osg::Geode*, unsigned int > mapGeode2Id_; // this is used to obtain the id of a compartment or shape that the user has picked with the mouse
+std::map< osg::Geode*, std::pair< unsigned int, std::string* >* > mapGeode2NameId_; // this is used to obtain the id of a compartment or shape that the user has picked with the mouse
 double maxsizeGLviewShape_;
 
 volatile bool isGeometryDirty_ = false;
