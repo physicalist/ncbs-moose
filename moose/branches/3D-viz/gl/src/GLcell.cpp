@@ -273,7 +273,7 @@ void GLcell::setSyncMode( const Conn* c, string syncMode )
 	else if ( syncMode == string( "off" ) )
 		static_cast< GLcell * >( c->data() )->innerSetSyncMode( false );
 	else
-		std::cerr << "Cannot set sync mode; argument must be either 'on' or 'off'." << std::endl;
+		std::cerr << "GLcell error: annot set sync mode; argument must be either 'on' or 'off'." << std::endl;
 }
 
 void GLcell::innerSetSyncMode( const bool syncMode )
@@ -436,6 +436,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				
 				compartmentData.id = renderList_[i].id();
 				compartmentData.name = renderList_[i].eref().name();
+				compartmentData.pathName = renderList_[i].path();
 
 				std::vector< unsigned int > vNeighbourIds;			     
 				findNeighbours( renderList_[i], vNeighbourIds );

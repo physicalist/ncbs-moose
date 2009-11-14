@@ -112,6 +112,11 @@ const Cinfo* initGLviewCinfo()
 				GFCAST( &GLview::getBgColor ),
 				RFCAST( &GLview::setBgColor )
 				),
+		new ValueFinfo( "sync",
+				ValueFtype1< string >::global(),
+				GFCAST( &GLview::getSyncMode ),
+				RFCAST( &GLview::setSyncMode )
+				),
 		new ValueFinfo( "color_val",
 				ValueFtype1< unsigned int >::global(),
 				GFCAST( &GLview::getColorVal ),
@@ -429,6 +434,31 @@ string GLview::getBgColor( Eref e )
 	std::stringstream out;
 	out << bgcolor;
 	return out.str();
+}
+
+void GLview::setSyncMode( const Conn* c, string syncMode )
+{
+	if ( syncMode == string( "on" ) )
+		static_cast< GLview * >( c->data() )->innerSetSyncMode( true );
+	else if ( syncMode == string( "off" ) )
+		static_cast< GLview * >( c->data() )->innerSetSyncMode( false );
+	else
+		std::cerr << "GLview error: cannot set sync mode; argument must be either 'on' or 'off'." << std::endl;
+}
+
+void GLview::innerSetSyncMode( const bool syncMode )
+{
+	syncMode_ = syncMode;
+}
+
+string GLview::getSyncMode( Eref e )
+{
+	bool currentSyncMode = static_cast< const GLview* >( e.data() )->syncMode_;
+
+	if ( currentSyncMode )
+		return string( "on" );
+	else
+		return string( "off" );
 }
 
 void GLview::setColorVal( const Conn* c, unsigned int colorVal )

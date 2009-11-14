@@ -621,6 +621,7 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 	{
 		const std::string& name = compartments[i].name;
 		const unsigned int& id = compartments[i].id;
+		const std::string& pathName = compartments[i].pathName;
 		const double& diameter = compartments[i].diameter;
 		const double& length = compartments[i].length;
 		const double& x0 = compartments[i].x0;
@@ -645,7 +646,7 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 			geode->addDrawable( sphereGeom );
 			root_->addChild( geode );
 			
-			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( name ) );
+			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( pathName ) );
 		}
 		else 
 			// the compartment is cylindrical
@@ -686,7 +687,7 @@ void updateGeometryGLcell( const GeometryData& geometryData )
 			geode->addDrawable( cylinderGeom );
 			root_->addChild( geode );
 
-			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( name ) );
+			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( pathName ) );
 		}
 	}
 
