@@ -72,6 +72,10 @@ class GLview
 	void innerSetBgColor( const double red, const double green, const double blue );
 	static string getBgColor( Eref e );
 
+	static void setSyncMode( const Conn* c, string syncMode );
+	void innerSetSyncMode( const bool syncMode );
+	static string getSyncMode( Eref e );
+
 	static void setColorVal( const Conn* c, unsigned int colorVal );
 	void innerSetColorVal( unsigned int colorVal );
 	static unsigned int getColorVal( Eref e );

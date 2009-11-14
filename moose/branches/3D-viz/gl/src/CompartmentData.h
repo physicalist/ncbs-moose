@@ -5,6 +5,7 @@ struct CompartmentData
 {
 	std::string name;
 	unsigned int id;
+	std::string pathName;
 	std::vector< unsigned int > vNeighbourIds;
 
 	double diameter;
@@ -21,6 +22,7 @@ struct CompartmentData
 	{
 		ar & name;
 		ar & id;
+		ar & pathName;
 		ar & vNeighbourIds;
 		
 		ar & diameter;
