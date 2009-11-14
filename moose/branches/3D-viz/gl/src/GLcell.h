@@ -7,8 +7,8 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#include "CompartmentData.h"
-#include "GeometryData.h"
+#include "GLcellProcData.h"
+#include "GLcellResetData.h"
 
 enum MSGTYPE
 {

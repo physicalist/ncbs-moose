@@ -7,17 +7,17 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#ifndef GEOMETRYDATA_H
-#define GEOMETRYDATA_H
+#ifndef GLCELLRESETDATA_H
+#define GLCELLRESETDATA_H
 
-struct GeometryData
+struct GLcellResetData
 {
 	std::string pathName;
 	double vScale;
 	double bgcolorRed;
 	double bgcolorGreen;
 	double bgcolorBlue;
-	std::vector< CompartmentData > renderListCompartmentData;
+	std::vector< GLcellProcData > renderListCompartmentData;
 
 	template< typename Archive > 
 	void serialize( Archive& ar, const unsigned int version )
@@ -31,4 +31,4 @@ struct GeometryData
 	}
 };
 
-#endif // GEOMETRYDATA_H
+#endif // GLCELLRESETDATA_H

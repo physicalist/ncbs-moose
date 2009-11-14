@@ -11,7 +11,7 @@
 #define ACKPICKDATA_H
 
 // This structure is so named because it acts both as the acknowledgement message
-// from glcellclient to GLcell (in response to the latter's PROCESS or PROCESSSYNC
+// from glclient to GLcell (in response to the latter's PROCESS or PROCESSSYNC
 // message to the former) and as a container for the id of any compartment that the
 // user may have picked with the mouse in glcellclient's display window.
 //

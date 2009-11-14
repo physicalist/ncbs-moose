@@ -46,7 +46,7 @@ void* getInAddr( struct sockaddr* sa );
 int sendAll( int socket, char* buf, int* len );
 int recvAll( int socket, char* buf, int* len);
 void sendAck( int socket );
-void updateGeometryGLcell( const GeometryData& geometry );
+void updateGeometryGLcell( const GLcellResetData& geometry );
 void updateGeometryGLview( const GLviewResetData& data );
 
 std::string getSaveFilename( void );

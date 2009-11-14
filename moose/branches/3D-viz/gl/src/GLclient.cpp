@@ -56,9 +56,9 @@
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
 
-#include "CompartmentData.h"
+#include "GLcellProcData.h"
 #include "AckPickData.h"
-#include "GeometryData.h"
+#include "GLcellResetData.h"
 #include "GLviewResetData.h"
 #include "GLshapeData.h"
 #include "GLviewShape.h"
@@ -68,7 +68,7 @@
 #include "GLCompartmentSphere.h"
 #include "GLCompartment.h"
 
-#include "GLcellClient.h"
+#include "GLclient.h"
 
 
 bool KeystrokeHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa, osg::Object*, osg::NodeVisitor* )
@@ -301,18 +301,18 @@ int acceptNewConnection( char * port )
 	// loop through all the results and bind to the first we can
 	for( p = servinfo; p != NULL; p = p->ai_next ) {
 		if ( ( sockFd = socket( p->ai_family, p->ai_socktype, p->ai_protocol ) ) == -1 ) {
-			std::cerr <<  "GLcellClient error: socket" << std::endl;
+			std::cerr <<  "GLclient error: socket" << std::endl;
 			continue;
 		}
 		
 		if ( setsockopt( sockFd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof( int ) ) == -1 ) {
-			std::cerr << "GLcellClient error: setsockopt" << std::endl;
+			std::cerr << "GLclient error: setsockopt" << std::endl;
 			return -1;
 		}
 		
 		if ( bind( sockFd, p->ai_addr, p->ai_addrlen ) == -1 ) {
 			close( sockFd );
-			std::cerr << "GLcellClient error: bind" << std::endl;
+			std::cerr << "GLclient error: bind" << std::endl;
 			continue;
 		}
 		
@@ -320,29 +320,29 @@ int acceptNewConnection( char * port )
 	}
 	
 	if ( p == NULL )  {
-		std::cerr << "GLcellClient error: failed to bind" << std::endl;
+		std::cerr << "GLclient error: failed to bind" << std::endl;
 		return -1;
 	}
   
 	freeaddrinfo( servinfo ); // all done with this structure
   
 	if ( listen( sockFd, BACKLOG ) == -1 ) {
-		std::cerr << "GLcellClient error: listen" << std::endl;
+		std::cerr << "GLclient error: listen" << std::endl;
 		return -1;
 	}
 
-	std::cout << "GLcellClient: waiting for connections..." << std::endl;
+	std::cout << "GLclient: waiting for connections..." << std::endl;
 
 	sinSize = sizeof( theirAddr );
 	newFd = accept( sockFd, ( struct sockaddr * ) &theirAddr, &sinSize );
 	if ( newFd == -1 ) {
-		std::cerr << "GLcellClient error: accept" << std::endl;
+		std::cerr << "GLclient error: accept" << std::endl;
 		return -1;
 	}
 		
 	inet_ntop( theirAddr.ss_family, getInAddr( ( struct sockaddr * ) &theirAddr ), s, sizeof( s ) );
 
-	std::cout << "GLcellClient: connected to " << s << std::endl;
+	std::cout << "GLclient: connected to " << s << std::endl;
 
 	close( sockFd );
 	return newFd;
@@ -361,7 +361,7 @@ void receiveData( int newFd )
 		if ( recvAll( newFd, header, &numBytes ) == -1 ||
 		     numBytes < MSGSIZE_HEADERLENGTH + MSGTYPE_HEADERLENGTH + 1 ) 
 		{
-			std::cerr << "GLcellClient error:  could not receive message header!" << std::endl;
+			std::cerr << "GLclient error:  could not receive message header!" << std::endl;
 			break;
 		}
 		else
@@ -377,7 +377,7 @@ void receiveData( int newFd )
 
 			if ( messageType == DISCONNECT )
 			{
-				std::cout << "GLcellClient: MOOSE element disconnected normally." << std::endl;
+				std::cout << "GLclient: MOOSE element disconnected normally." << std::endl;
 				break;
 			}
 		}
@@ -388,7 +388,7 @@ void receiveData( int newFd )
 		if ( recvAll( newFd, buf, &numBytes ) == -1 ||
 		     numBytes < inboundDataSize + 1 )
 		{
-			std::cerr << "GLcellClient error: incomplete data received!" << std::endl;
+			std::cerr << "GLclient error: incomplete data received!" << std::endl;
 			std::cerr << "numBytes: " << numBytes << " inboundDataSize: " << inboundDataSize << std::endl;
 			break;
 		}
@@ -403,7 +403,7 @@ void receiveData( int newFd )
 				{
 					if ( messageType == RESET) 
 					{
-						GeometryData geometryData;
+						GLcellResetData geometryData;
 						archive_i >> geometryData;
 
 						updateGeometryGLcell( geometryData );
@@ -552,7 +552,7 @@ void sendAck( int socket )
 		if ( sendAll( socket, headerData, &headerLen ) == -1 ||
 		     headerLen < headerStream.str().size() + 1 )
 		{
-			std::cerr << "glcellclient error: couldn't transmit Ack header to GLcell!" << std::endl;
+			std::cerr << "GLclient error: couldn't transmit Ack header to GLcell!" << std::endl;
 			close( socket );
 		}
 		else
@@ -564,7 +564,7 @@ void sendAck( int socket )
 			if ( sendAll( socket, archiveData, &archiveLen ) == -1 ||
 			     archiveLen < archiveStream.str().size() + 1 )
 			{
-				std::cerr << "glcellclient error: couldn't transmit Ack to GLcell!" << std::endl;
+				std::cerr << "GLclient error: couldn't transmit Ack to GLcell!" << std::endl;
 			}
 
 			free( archiveData );
@@ -573,11 +573,11 @@ void sendAck( int socket )
 	}
 }
 
-void updateGeometryGLcell( const GeometryData& geometryData )
+void updateGeometryGLcell( const GLcellResetData& geometryData )
 {	
 	double vScale = geometryData.vScale;
 	bgcolor_ = osg::Vec4( geometryData.bgcolorRed, geometryData.bgcolorGreen, geometryData.bgcolorBlue, 1.0 ); 
-	const std::vector< CompartmentData >& compartments = geometryData.renderListCompartmentData;
+	const std::vector< GLcellProcData >& compartments = geometryData.renderListCompartmentData;
 	
 	if ( mapId2GLCompartment_.size() > 0 )
 	{
@@ -947,7 +947,7 @@ std::string getSaveFilename( void )
 int main( int argc, char* argv[] )
 {
 	int c;
-	std::string strHelp = "Usage: glcellclient\n"
+	std::string strHelp = "Usage: glclient\n"
 		"\t-p <number>: port number\n"
 		"\t-c <string>: filename of colormap file\n"
 		"\t-m <string>: 'c' or 'v', for connection with MOOSE element of type GLcell or GLview respectively\n"
