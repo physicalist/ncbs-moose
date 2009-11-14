@@ -16,12 +16,12 @@ MOOSE_HEADERS = \
 	../../connections/Conn.h \
 	../../basecode/Element.h
 
-DATA_STRUCTURE_HEADERS = AckPickData.h GeometryData.h CompartmentData.h GLviewResetData.h GLshapeData.h
+DATA_STRUCTURE_HEADERS = AckPickData.h GLcellResetData.h GLcellProcData.h GLviewResetData.h GLshapeData.h
 
 TARGET_CELL = glcell.o
 TARGET_VIEW = glview.o
 TARGET_SHAPE = glshape.o
-TARGET_CLIENT = glcellclient
+TARGET_CLIENT = glclient
 
 default: $(TARGET_CELL) $(TARGET_VIEW) $(TARGET_SHAPE) $(TARGET_CLIENT) 
 
@@ -46,7 +46,7 @@ $(OBJ_VIEW) : GLview.cpp GLview.h $(DATA_STRUCTURE_HEADERS) $(MOOSE_HEADERS)
 $(TARGET_VIEW) : $(OBJ_VIEW) $(MOOSE_HEADERS)
 	$(LD) -r -o $(TARGET_VIEW) $(OBJ_VIEW)
 
-TARGET_CLIENT_SOURCES = GLcellClient.cpp TextBox.cpp GLCompartment.cpp GLCompartmentCylinder.cpp GLCompartmentSphere.cpp GLviewShape.cpp
-TARGET_CLIENT_HEADERS = GLcellClient.h TextBox.h GLCompartment.h GLCompartmentCylinder.h GLCompartmentSphere.h GLviewShape.h
+TARGET_CLIENT_SOURCES = GLclient.cpp TextBox.cpp GLCompartment.cpp GLCompartmentCylinder.cpp GLCompartmentSphere.cpp GLviewShape.cpp
+TARGET_CLIENT_HEADERS = GLclient.h TextBox.h GLCompartment.h GLCompartmentCylinder.h GLCompartmentSphere.h GLviewShape.h
 $(TARGET_CLIENT) : $(TARGET_CLIENT_SOURCES) $(TARGET_CLIENT_HEADERS) $(DATA_STRUCTURE_HEADERS)
-	$(CXX) $(CXXFLAGS) -o glcellclient $(TARGET_CLIENT_SOURCES) $(BOOST_LIBS) $(OSG_LIBS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET_CLIENT) $(TARGET_CLIENT_SOURCES) $(BOOST_LIBS) $(OSG_LIBS)

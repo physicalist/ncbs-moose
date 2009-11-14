@@ -38,7 +38,7 @@
 #include <arpa/inet.h>
 
 #include "AckPickData.h"
-#include "CompartmentData.h"
+#include "GLcellProcData.h"
 #include "Constants.h"
 
 const int GLcell::MSGTYPE_HEADERLENGTH = 1;
@@ -397,7 +397,7 @@ void GLcell::reinitFunc( const Conn* c, ProcInfo info )
 
 void GLcell::reinitFuncLocal( const Conn* c )
 {
-	GeometryData geometryData;
+	GLcellResetData geometryData;
 	double diameter, length, x0, y0, z0, x, y, z;
 
 	/// Reload model geometry.
@@ -432,7 +432,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				&& get< double >( renderList_[i].eref(), "y", y )
 				&& get< double >( renderList_[i].eref(), "z", z ) )
 			{
-				CompartmentData compartmentData;
+				GLcellProcData compartmentData;
 				
 				compartmentData.id = renderList_[i].id();
 				compartmentData.name = renderList_[i].eref().name();

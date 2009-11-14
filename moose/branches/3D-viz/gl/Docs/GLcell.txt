@@ -1,0 +1,109 @@
+Using the GLcell element:
+---------------------
+
+The GLcell element must be explicitly created and set up with
+appropriate field values (some are optional) as described
+below. GENESIS-style script examples are also provided:
+
+> create GLcell gl0
+> setclock 4 0.01
+> useclock gl0 4
+
+Required fields:
+-------------
+
+a. 'path': this specifies the GENESIS-style path for the geometry to
+be visualized; this will have been loaded previously with the
+'readcell' script command:
+
+> readcell test.p /axon
+> setfield gl0 path /axon
+
+b. 'port': this specifies the network port (on localhost or on a
+remote machine) over which this GLcell element will communicate with
+the corresponding client instance (the process 'glclient'):
+
+> setfield gl0 port 9999
+
+
+Optional fields:
+-------------
+
+c. 'host': default value is '127.0.0.1'. This specifies the machine on
+which the corresponding client instance is running.
+
+> setfield gl0 host localhost
+
+d. 'attribute': default value is 'Vm'. This is the field under
+observation. Values for this field will be mapped to color ranges as
+specified by a colormap file passed to the client instance.
+
+>setfield gl0 attribute Vm
+
+e. 'threshold': default value is 1e-8. Changes in the 'attribute'
+field's value smaller than the value of 'threshold' are not
+transmitted to the client instance. Values are compared against the
+last value transmitted for the specific compartment, not necessarily
+the value at the last clock pulse. The intent is to reduce the
+bandwidth of transmission between the GLcell element and the client
+instance; this substantially improves the performance of the client
+instance.
+
+> setfield gl0 threshold 0.0015
+
+f. 'sync': default value is 'off'. If the time taken by the client
+instance to render one frame of color information (over all
+compartments) exceeds the time taken by the MOOSE simulation to
+simulate one time-step, the simulation may overtake the 3D display and
+the 3D display will skip intermediate frames in order to keep up with
+the state of the simulation.
+
+This flag forces the two to operate in lockstep, which may be useful
+for debugging or while recording movies for publication (so that no
+frames are skipped) but will slow down the MOOSE simulation.
+
+A longer explanation is provided in Appendix A of the file README.
+
+> setfield gl0 sync on
+OR
+> setfield gl0 sync off
+
+g. 'vscale': default value is 1.0. Cylindrical compartments when drawn
+in a physiologically accurate ratio between their diameters and
+lengths can be too thin to render well visually. They can be scaled up
+in thickness, only in terms of visual appearance and not numerically,
+by specificying this value as greater than 1.0.
+
+> setfield gl0 vscale 4
+
+h. 'bgcolor': default value is 000000000. This represents the
+background color of the viewer window, encoded as a string in the
+format RRRGGGBBB, where 000000000 is black (the default) and 255255255
+is white.
+
+> setfield gl0 bgcolor 100100100
+
+i. 'highvalue': default value is 0.05 (to be interpreted as 0.05V,
+where the attribute is Vm). This is the value represented by the color
+specified on the last line of the colormap file. This represents the
+highest value that the attribute is assumed to be able to attain. Any
+values greater than this, should they occur, will be mapped to the
+color which corresponds to this value.
+
+> setfield gl0 highvalue 0.1
+
+j. 'lowvalue': default value is -0.1 (to be interpreted as -0.1V,
+where the attribute is Vm). This is the value represented by the color
+specified on the first line of the colormap file. This represents the
+lowest value that the attribute is assumed to be able to attain. Any
+values lower than this, should they occur, will be mapped to the color
+which corresponds to this value.
+
+> setfield gl0 lowvalue -0.08
+
+
+
+A version of DEMOS/gbar/myelin.g, modified to include GLcell, is
+included in the directory DEMOS/gbar/ as cMyelin.g. See the file README
+for general operating instructions to launch such a script, coupled with
+an instance of 'glclient', as a complete example.

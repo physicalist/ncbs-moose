@@ -1,7 +1,7 @@
-#ifndef COMPARTMENTDATA_H
-#define COMPARTMENTDATA_H
+#ifndef GLCELLPROCDATA_H
+#define GLCELLPROCDATA_H
 
-struct CompartmentData
+struct GLcellProcData
 {
 	std::string name;
 	unsigned int id;
@@ -36,5 +36,5 @@ struct CompartmentData
 	}
 };
 
-#endif // COMPARTMENTDATA_H
+#endif // GLCELLPROCDATA_H
 
