@@ -182,8 +182,8 @@ array (1..5) and the second is the value to be set.
 So, for instance, this sets value_min for 'value1' to -0.1 and
 value_max for 'value1' to 0.05.
 
-l. 'host': default value is '127.0.0.1'. This specifies the machine on
-which the corresponding client instance is running.
+l. 'host': default value is 'localhost'. This specifies the hostname of
+the machine on which the corresponding client instance is running.
 
 > setfield gl0 host localhost
 
