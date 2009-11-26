@@ -58,23 +58,27 @@ Keyboard and mouse bindings:
 -------------------------
 
 SPACE key:				Reset camera position and
-      					        model position and zoom
+      					model position and zoom
 
-LEFT mouse button: 		Rotate camera around model
+LEFT mouse button: 			(If pointer over a displayed object)
+					Display name and id of object under the pointer
+
+					(If pointer not over a displayed object)
+					Rotate camera around model
 
 MIDDLE mouse button or
 LEFT and RIGHT mouse
 buttons together:			Pan model
 
-RIGHT mouse button or		Zoom model or truck-in camera
-mousewheel up/down:  	      	(if minimum zoom reached)
+RIGHT mouse button or			Zoom model or truck-in camera
+mousewheel up/down:  	      		(if minimum zoom reached)
 
 p or P key:				Switch between
-						perspective (default) and
-						orthographic views
+					perspective (default) and
+					orthographic views
 
 c or C key:				Capture single frame to
-       						image file
+       					image file
 
 m or M key:				Toggle sequential auto-capture
-       					        of frames to image files
+       					of frames to image files
