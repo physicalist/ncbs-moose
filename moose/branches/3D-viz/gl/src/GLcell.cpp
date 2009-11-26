@@ -28,14 +28,22 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/map.hpp>
 
-#include <unistd.h>
-#include <errno.h>
 #include <string.h>
+
+#ifdef WIN32
+#include <Winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#define errno WSAGetLastError()
+#else
+#include <errno.h>
+#include <unistd.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#endif
 
 #include "AckPickData.h"
 #include "GLcellProcData.h"
@@ -152,7 +160,7 @@ static const Cinfo* glcellCinfo = initGLcellCinfo();
 GLcell::GLcell()
 	:
 	strPath_( "" ),
-	strClientHost_( "127.0.0.1" ),
+	strClientHost_( "localhost" ),
 	strClientPort_( "" ),
 	isConnectionUp_( false ),
 	strAttributeName_( "Vm" ),
@@ -166,10 +174,21 @@ GLcell::GLcell()
 	highValue_( 0.05 ),
 	lowValue_( -0.1 )
 {
+#ifdef WIN32
+	if ( initWinsock() < 0 )
+	{
+		std::cerr << "Winsock could not be initialized. Cannot connect to client." << std::endl;
+	}
+#endif
 }
+
 GLcell::~GLcell()
 {
 	disconnect();
+
+#ifdef WIN32
+	WSACleanup();
+#endif
 }
 
 ///////////////////////////////////////////////////
@@ -643,7 +662,15 @@ int GLcell::getSocket( const char* hostname, const char* service )
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
 	char s[INET6_ADDRSTRLEN];
-	
+
+#ifdef WIN32
+	unsigned int socket_error = INVALID_SOCKET;
+	unsigned int connect_error = SOCKET_ERROR;
+#else
+	int socket_error = -1;
+	int connect_error = -1;
+#endif
+
 	memset( &hints, 0, sizeof hints );
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
@@ -655,13 +682,17 @@ int GLcell::getSocket( const char* hostname, const char* service )
 	// loop through all the results and connect to the first we can
 	for ( p = servinfo; p != NULL; p = p->ai_next ) {
 		if ( ( sockFd_ = socket( p->ai_family, p->ai_socktype,
-				     p->ai_protocol ) ) == -1 ) {
+				     p->ai_protocol ) ) == socket_error ) {
 		    //std::cerr << "GLcell error: socket" << std::endl;
 			continue;
 		}
 		
-		if ( connect( sockFd_, p->ai_addr, p->ai_addrlen ) == -1 ) {
+		if ( connect( sockFd_, p->ai_addr, p->ai_addrlen ) == connect_error ) {
+#ifdef WIN32
+			closesocket( sockFd_ );
+#else
 			close( sockFd_ );
+#endif
 			//std::cerr << "GLcell error: connect" << std::endl;
 			continue;
 		}
@@ -690,10 +721,16 @@ int GLcell::sendAll( int socket, char* buf, unsigned int* len )
 	int bytesleft = *len; // how many we have left to send
 	int n = 0;
 
+#ifdef WIN32
+	unsigned int send_error = SOCKET_ERROR;
+#else
+	int send_error = -1;
+#endif
+
 	while ( total < *len )
 	{
 		n = send( socket, buf+total, bytesleft, 0 );
-		if ( n == -1 )
+		if ( n == send_error )
 		{
 			std::cerr << "GLcell error: send error; errno: " << errno << " " << strerror( errno ) << std::endl;    
 			break;
@@ -712,11 +749,17 @@ int GLcell::recvAll( int socket, char *buf, unsigned int *len )
 	unsigned int total = 0;        // how many bytes we've received
 	int bytesleft = *len; // how many we have left to receive
 	int n = 0;
+
+#ifdef WIN32
+	unsigned int recv_error = SOCKET_ERROR;
+#else
+	int recv_error = -1;
+#endif
 	
 	while ( total < *len )
 	{
 		n = recv( socket, buf+total, bytesleft, 0 );
-		if ( n == -1 )
+		if ( n == recv_error )
 		{
 			std::cerr << "GLcell error: recv error; errno: " << errno << " " << strerror( errno ) << std::endl;
 			break;
@@ -837,7 +880,11 @@ void GLcell::transmit( T& data, MSGTYPE messageType)
 			std::cerr << "GLcell error: couldn't transmit header to client!" << std::endl;
 
 			isConnectionUp_ = false;
+#ifdef WIN32
+			closesocket( sockFd_ );
+#else
 			close( sockFd_ );
+#endif
 		}
 		else
 		{
@@ -884,5 +931,37 @@ void GLcell::disconnect()
 	}
 
 	free( headerData );
+#ifdef WIN32
+	closesocket( sockFd_ );
+#else
 	close( sockFd_ );
+#endif
 }
+
+#ifdef WIN32
+int GLcell::initWinsock( void )
+{
+	WORD wVersionRequested;
+	WSADATA wsaData;
+	int err;
+
+	wVersionRequested = MAKEWORD(2, 2);
+
+	err = WSAStartup(wVersionRequested, &wsaData);
+	if (err != 0) 
+	{
+		std::cerr << "WSAStartup failed with error: ." << err << std::endl;
+		return -1;
+	}
+
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+	{
+		std::cerr << "Could not find a usable version of Winsock.dll." << std::endl;
+		WSACleanup();
+		return -1;
+	}
+
+	return 0;
+}
+#endif
+

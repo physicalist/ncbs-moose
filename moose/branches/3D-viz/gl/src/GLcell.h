@@ -114,5 +114,10 @@ class GLcell
 	void disconnect();
 	template< class T >
 	  void transmit( T& data, MSGTYPE messageType );
+
+#ifdef WIN32
+	int initWinsock( void );
+#endif
+
 };
 

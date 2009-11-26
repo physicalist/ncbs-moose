@@ -27,14 +27,24 @@
 #include <boost/serialization/map.hpp>
 
 #include <math.h>
-#include <unistd.h>
-#include <errno.h>
 #include <string.h>
+#include <sys/types.h>
+
+#ifdef WIN32
+#include <Winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#define errno WSAGetLastError()
+#else
+#include <errno.h>
+#include <unistd.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#endif
+
 
 #include "Constants.h"
 #include "GLviewResetData.h"
@@ -190,7 +200,7 @@ GLview::GLview()
 	:
 	sockFd_( -1 ),
 	isConnectionUp_( false ),
-	strClientHost_( "127.0.0.1" ),
+	strClientHost_( "localhost" ),
 	strClientPort_( "" ),
 	syncMode_( false ),
 	bgcolorRed_( 0.0 ),
@@ -214,12 +224,23 @@ GLview::GLview()
 		value_max_[i] = VALUE_MAX_DEFAULT;
 		strValueField_[i] = "";
 	}
+
+#ifdef WIN32
+	if ( initWinsock() < 0 )
+	{
+		std::cerr << "Winsock could not be initialized. Cannot connect to client." << std::endl;
+	}
+#endif
 }
 
 GLview::~GLview()
 {
 	disconnect();
-	
+		
+#ifdef WIN32
+	WSACleanup();
+#endif
+
 	for ( unsigned int i = 0; i < 5; ++i )
 	  free ( values_[i] );
 	
@@ -1069,7 +1090,7 @@ double GLview::populateXYZ()
 	// (collision/unassigned) list as described in the last
 	// step. These co-ordinates will be assigned to lay out all
 	// elements in a planar grid, approximating a square in shape.
-	int n = int( sqrt( unassignedElements.size() ) );
+	int n = (int)( sqrt( (float) unassignedElements.size() ) );
 
 	// Another heuristic: if maxsize is still zero, i.e., no
 	// non-root ancestors with valid geometries were found, we
@@ -1185,6 +1206,14 @@ int GLview::getSocket( const char* hostname, const char* service )
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
 	char s[INET6_ADDRSTRLEN];
+
+#ifdef WIN32
+	unsigned int socket_error = INVALID_SOCKET;
+	unsigned int connect_error = SOCKET_ERROR;
+#else
+	int socket_error = -1;
+	int connect_error = -1;
+#endif
 	
 	memset( &hints, 0, sizeof hints );
 	hints.ai_family = AF_UNSPEC;
@@ -1197,13 +1226,17 @@ int GLview::getSocket( const char* hostname, const char* service )
 	// loop through all the results and connect to the first we can
 	for ( p = servinfo; p != NULL; p = p->ai_next ) {
 		if ( ( sockFd_ = socket( p->ai_family, p->ai_socktype,
-				     p->ai_protocol ) ) == -1 ) {
+				     p->ai_protocol ) ) == socket_error ) {
 		    //std::cerr << "GLview error: socket" << std::endl;
 			continue;
 		}
 		
-		if ( connect( sockFd_, p->ai_addr, p->ai_addrlen ) == -1 ) {
+		if ( connect( sockFd_, p->ai_addr, p->ai_addrlen ) == connect_error ) {
+#ifdef WIN32
+			closesocket( sockFd_ );
+#else
 			close( sockFd_ );
+#endif
 			//std::cerr << "GLview error: connect" << std::endl;
 			continue;
 		}
@@ -1212,7 +1245,7 @@ int GLview::getSocket( const char* hostname, const char* service )
 	}
 
 	if ( p == NULL ) {
-		std::cerr << "GLcell error: failed to connect" << std::endl;
+		std::cerr << "GLview error: failed to connect" << std::endl;
 		return -1;
 	}
 	
@@ -1232,10 +1265,16 @@ int GLview::sendAll( int socket, char* buf, unsigned int* len )
 	int bytesleft = *len; // how many we have left to send
 	int n = 0;
 
+#ifdef WIN32
+	unsigned int send_error = SOCKET_ERROR;
+#else
+	int send_error = -1;
+#endif
+
 	while ( total < *len )
 	{
 		n = send( socket, buf+total, bytesleft, 0 );
-		if ( n == -1 )
+		if ( n == send_error )
 		{
 			std::cerr << "GLview error: send error; errno: " << errno << " " << strerror( errno ) << std::endl;    
 			break;
@@ -1254,11 +1293,17 @@ int GLview::recvAll( int socket, char* buf, unsigned int* len)
 	unsigned int total = 0;        // how many bytes we've received
 	int bytesleft = *len; // how many we have left to receive
 	int n = 0;
+
+#ifdef WIN32
+	unsigned int recv_error = SOCKET_ERROR;
+#else
+	int recv_error = -1;
+#endif
 	
 	while ( total < *len )
 	{
 		n = recv( socket, buf+total, bytesleft, 0 );
-		if ( n == -1 )
+		if ( n == recv_error )
 		{
 			std::cerr << "GLview error: recv error; errno: " << errno << " " << strerror( errno ) << std::endl;
 			break;
@@ -1364,7 +1409,11 @@ void GLview::disconnect()
 	}
 
 	free( headerData );
+#ifdef WIN32
+	closesocket( sockFd_ );
+#else
 	close( sockFd_ );
+#endif
 }
 
 template< class T >
@@ -1378,7 +1427,7 @@ void GLview::transmit( T& data, MSGTYPE messageType )
 		sockFd_ = getSocket( strClientHost_.c_str(), strClientPort_.c_str() );
 		if ( sockFd_ == -1 ) 
 		{
-			std::cerr << "GLcell error: Couldn't connect to client!" << std::endl;
+			std::cerr << "GLview error: Couldn't connect to client!" << std::endl;
 			return;
 		}
 	}
@@ -1405,10 +1454,14 @@ void GLview::transmit( T& data, MSGTYPE messageType )
 		if ( sendAll( sockFd_, headerData, &headerLen ) == -1 ||
 		     headerLen < headerStream.str().size() + 1 )
 		{
-			std::cerr << "GLcell error: couldn't transmit header to client!" << std::endl;
+			std::cerr << "GLview error: couldn't transmit header to client!" << std::endl;
 
 			isConnectionUp_ = false;
+#ifdef WIN32
+			closesocket( sockFd_ );
+#else
 			close( sockFd_ );
+#endif
 		}
 		else
 		{
@@ -1419,10 +1472,37 @@ void GLview::transmit( T& data, MSGTYPE messageType )
 			if ( sendAll( sockFd_, archiveData, &archiveLen ) == -1 ||
 			     archiveLen < archiveStream.str().size() + 1 )
 			{
-				std::cerr << "GLcell error: couldn't transmit data to client!" << std::endl;	
+				std::cerr << "GLview error: couldn't transmit data to client!" << std::endl;	
 			}
 			free( archiveData );
 		}
 		free( headerData );
 	}
 }
+
+#ifdef WIN32
+int GLview::initWinsock( void )
+{
+	WORD wVersionRequested;
+	WSADATA wsaData;
+	int err;
+
+	wVersionRequested = MAKEWORD(2, 2);
+
+	err = WSAStartup(wVersionRequested, &wsaData);
+	if (err != 0) 
+	{
+		std::cerr << "WSAStartup failed with error: ." << err << std::endl;
+		return -1;
+	}
+
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+	{
+		std::cerr << "Could not find a usable version of Winsock.dll." << std::endl;
+		WSACleanup();
+		return -1;
+	}
+
+	return 0;
+}
+#endif

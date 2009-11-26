@@ -16,6 +16,10 @@
 #include <algorithm>
 #include <math.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846             
+#endif
+
 #include "GLCompartmentSphere.h"
 
 GLCompartmentSphere::GLCompartmentSphere( osg::Vec3 position, double radius, double incrementAngle )
