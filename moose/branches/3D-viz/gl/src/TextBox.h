@@ -14,6 +14,9 @@
 
 #include "Constants.h"
 
+#ifndef TEXTBOX_H
+#define TEXTBOX_H
+
 class TextBox
 {
  public:
@@ -34,3 +37,5 @@ class TextBox
 	osg::ref_ptr< osg::Geode > textGeode_; // hosts the text drawable
 	osg::ref_ptr< osgText::Text > text_;
 };
+
+#endif // TEXTBOX_H

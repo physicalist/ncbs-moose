@@ -12,19 +12,32 @@
 // at http://beej.us/guide/bgnet/. The original code is in the public domain. //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <ctype.h>
-#include <unistd.h>
+#ifdef WIN32
+#include <Winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#include "win32getopt.h"
+#define getopt wgetopt
+#define optarg woptarg
+#define optopt woptopt
+#define errno WSAGetLastError()
+#else
 #include <errno.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#include <unistd.h>
 #include <netdb.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
+#endif
+
+#include <ctype.h>
+#include <string.h>
 #include <signal.h>
 #include <math.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include <iostream>
 #include <string>
@@ -70,6 +83,9 @@
 
 #include "GLclient.h"
 
+#ifndef M_PI
+#define M_PI           3.14159265358979323846
+#endif
 
 bool KeystrokeHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa, osg::Object*, osg::NodeVisitor* )
 {
@@ -169,7 +185,10 @@ bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* 
 	if ( ! viewer->getSceneData() )
 		return false;
 
-	textParentTop_->setText( "" );
+	if ( textParentTop_ != NULL )
+	{
+		textParentTop_->setText( "" );
+	}
 
 	double w = .05;
 	double h = .05;
@@ -220,10 +239,16 @@ int sendAll( int socket, char* buf, unsigned int* len )
 	int bytesleft = *len; // how many we have left to send
 	int n = 0;
 
+#ifdef WIN32
+	unsigned int send_error = SOCKET_ERROR;
+#else
+	int send_error = -1;
+#endif
+
 	while ( total < *len )
 	{
 		n = send( socket, buf+total, bytesleft, 0 );
-		if ( n == -1 )
+		if ( n == send_error )
 		{
 			std::cerr << "send error; errno: " << errno << " " << strerror( errno ) << std::endl;    
 			break;
@@ -243,10 +268,16 @@ int recvAll( int socket, char *buf, unsigned int *len )
 	int bytesleft = *len; // how many we have left to receive
 	int n = 0;
 	
+#ifdef WIN32
+	unsigned int recv_error = SOCKET_ERROR;
+#else
+	int recv_error = -1;
+#endif
+
 	while ( total < *len )
 	{
 		n = recv( socket, buf+total, bytesleft, 0 );
-		if ( n == -1 )
+		if ( n == recv_error )
 		{
 			std::cerr << "recv error; errno: " << errno << " " << strerror( errno ) << std::endl;
 			break;
@@ -273,10 +304,37 @@ void networkLoop( void )
 		else
 		{
 			std::cerr << "Error in network loop... exiting." << std::endl;
-			break;
+			exit(1);
 		}
 	}
 }
+
+#ifdef WIN32
+int initWinsock( void )
+{
+	WORD wVersionRequested;
+	WSADATA wsaData;
+	int err;
+
+	wVersionRequested = MAKEWORD(2, 2);
+
+	err = WSAStartup(wVersionRequested, &wsaData);
+	if (err != 0) 
+	{
+		std::cerr << "WSAStartup failed with error: . Exiting." << err << std::endl;
+		return -1;
+	}
+
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+	{
+		std::cerr << "Could not find a usable version of Winsock.dll. Exiting." << std::endl;
+		WSACleanup();
+		return -1;
+	}
+
+	return 0;
+}
+#endif
 
 int acceptNewConnection( char * port )
 {
@@ -288,6 +346,25 @@ int acceptNewConnection( char * port )
 	char s[INET6_ADDRSTRLEN];
 	int rv;
 	
+#ifdef WIN32
+	unsigned int socket_error = INVALID_SOCKET;
+	unsigned int setsockopt_error = SOCKET_ERROR;
+	unsigned int bind_error = SOCKET_ERROR;
+	unsigned int listen_error = SOCKET_ERROR;
+	unsigned int accept_error = INVALID_SOCKET;
+
+	if ( initWinsock() < 0 )
+	{
+			exit(1);
+	}
+#else
+	int socket_error = -1;
+	int setsockopt_error = -1;
+	int bind_error = -1;
+	int listen_error = -1;
+	int accept_error = -1;
+#endif
+
 	memset( &hints, 0, sizeof( hints ) );
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
@@ -300,18 +377,26 @@ int acceptNewConnection( char * port )
 	
 	// loop through all the results and bind to the first we can
 	for( p = servinfo; p != NULL; p = p->ai_next ) {
-		if ( ( sockFd = socket( p->ai_family, p->ai_socktype, p->ai_protocol ) ) == -1 ) {
+		if ( ( sockFd = socket( p->ai_family, p->ai_socktype, p->ai_protocol ) ) == socket_error ) {
 			std::cerr <<  "GLclient error: socket" << std::endl;
 			continue;
 		}
 		
-		if ( setsockopt( sockFd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof( int ) ) == -1 ) {
+#ifdef WIN32
+		if ( setsockopt( sockFd, SOL_SOCKET, SO_REUSEADDR, (const char*) &yes, sizeof( int ) ) == setsockopt_error ) {
+#else
+		if ( setsockopt( sockFd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof( int ) ) == setsockopt_error ) {
+#endif
 			std::cerr << "GLclient error: setsockopt" << std::endl;
 			return -1;
 		}
 		
-		if ( bind( sockFd, p->ai_addr, p->ai_addrlen ) == -1 ) {
+		if ( bind( sockFd, p->ai_addr, p->ai_addrlen ) == bind_error ) {
+#ifdef WIN32
+			closesocket( sockFd );
+#else
 			close( sockFd );
+#endif
 			std::cerr << "GLclient error: bind" << std::endl;
 			continue;
 		}
@@ -326,7 +411,7 @@ int acceptNewConnection( char * port )
   
 	freeaddrinfo( servinfo ); // all done with this structure
   
-	if ( listen( sockFd, BACKLOG ) == -1 ) {
+	if ( listen( sockFd, BACKLOG ) == listen_error ) {
 		std::cerr << "GLclient error: listen" << std::endl;
 		return -1;
 	}
@@ -335,7 +420,7 @@ int acceptNewConnection( char * port )
 
 	sinSize = sizeof( theirAddr );
 	newFd = accept( sockFd, ( struct sockaddr * ) &theirAddr, &sinSize );
-	if ( newFd == -1 ) {
+	if ( newFd == accept_error ) {
 		std::cerr << "GLclient error: accept" << std::endl;
 		return -1;
 	}
@@ -344,7 +429,11 @@ int acceptNewConnection( char * port )
 
 	std::cout << "GLclient: connected to " << s << std::endl;
 
+#ifdef WIN32
+	closesocket( sockFd );
+#else
 	close( sockFd );
+#endif
 	return newFd;
 }
 
@@ -508,7 +597,11 @@ void receiveData( int newFd )
 		free( buf );
 	}
 
-	close( newFd );	
+#ifdef WIN32
+	closesocket( newFd );
+#else
+	close( newFd );
+#endif
 }
 
 void sendAck( int socket )
@@ -553,7 +646,11 @@ void sendAck( int socket )
 		     headerLen < headerStream.str().size() + 1 )
 		{
 			std::cerr << "GLclient error: couldn't transmit Ack header to GLcell!" << std::endl;
+#ifdef WIN32
+			closesocket( socket );
+#else
 			close( socket );
+#endif
 		}
 		else
 		{		
@@ -815,8 +912,9 @@ void draw()
 	viewer_->addEventHandler( new osgViewer::StatsHandler );
 	viewer_->addEventHandler( new KeystrokeHandler );
 
-	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile::WriteToFile( getSaveFilename(),
-																    "jpg",															    osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
+	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile( getSaveFilename(),
+																													"jpg",
+																													osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
 	viewer_->addEventHandler( screenCaptureHandler_ );
 
 	while ( !viewer_->done() ) {
@@ -844,11 +942,11 @@ void draw()
 					GLCompartment* glcompartment = mapId2GLCompartment_[id];
 
 					int ix;				
-					if ( fabs( color - 0 ) < FP_EPSILON ) // color == 0
+					if ( color <= (0 + FP_EPSILON) ) // color <= 0
 					{
 						ix = 0;
 					}
-					else if ( fabs( color - 1 ) < FP_EPSILON ) // color = 1
+					else if ( color >= (1 - FP_EPSILON) ) // color >= 1
 					{
 						ix = colormap_.size()-1;
 					}
@@ -873,19 +971,19 @@ void draw()
 					GLshapeData* newGLshape = id2glshapeIterator->second;
 					GLviewShape* glViewShape = mapId2GLviewShape_[id];
 
-					if ( newGLshape->len > -1 + FP_EPSILON )
+					if ( newGLshape->len > (-1 + FP_EPSILON) ) // newGLshape->len > -1
 					{
 						glViewShape->resize( newGLshape->len * maxsizeGLviewShape_ );
 					}
 
-					if ( newGLshape->color > -1 + FP_EPSILON )
+					if ( newGLshape->color > (-1 + FP_EPSILON) ) // newGLshape->color > -1
 					{
 						int ix;			
-						if ( fabs( newGLshape->color - 0 ) < FP_EPSILON ) // color == 0
+						if ( newGLshape->color <= (0 + FP_EPSILON) ) // newGLshape->color <= 0
 						{
 							ix = 0;
 						}
-						else if ( fabs( newGLshape->color - 1 ) < FP_EPSILON ) // color = 1
+						else if ( newGLshape->color >= (1 - FP_EPSILON) ) // newGLshape->color >= 1
 						{
 							ix = colormap_.size()-1;
 						}
@@ -1052,6 +1150,10 @@ int main( int argc, char* argv[] )
 	// launch network thread and run the GUI in the main loop
 	boost::thread threadProcess( networkLoop );
 	draw();
+
+#ifdef WIN32
+	WSACleanup();
+#endif
 
 	return 0;
 }

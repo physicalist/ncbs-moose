@@ -38,6 +38,7 @@ readcell myelin2.p /axon
 
 create GLview gl0
 setfield gl0 path /axon/##[CLASS=Compartment]
+setfield gl0 host localhost
 setfield gl0 port 9999
 setfield gl0 bgcolor 050050050
 setfield gl0 value1 Vm

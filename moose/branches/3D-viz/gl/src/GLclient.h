@@ -9,6 +9,7 @@
 
 #include "Constants.h"
 #include "AckPickData.h"
+#include "TextBox.h"
 
 class KeystrokeHandler : public osgGA::GUIEventHandler
 {
@@ -51,9 +52,13 @@ void updateGeometryGLview( const GLviewResetData& data );
 
 std::string getSaveFilename( void );
 
+#ifdef WIN32
+int initWinsock( void );
+#endif
+
 osg::ref_ptr< osg::Group > root_;
-TextBox::TextBox* textParentTop_ = NULL;
-TextBox::TextBox* textParentBottom_ = NULL;
+TextBox* textParentTop_ = NULL;
+TextBox* textParentBottom_ = NULL;
 
 // GLcell mode: 
 std::map< unsigned int, GLCompartment* > mapId2GLCompartment_; // this is used to call the polymorphic function setColor()
