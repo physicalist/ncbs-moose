@@ -29,8 +29,8 @@ the corresponding client instance (the process 'glclient'):
 Optional fields:
 -------------
 
-c. 'host': default value is '127.0.0.1'. This specifies the machine on
-which the corresponding client instance is running.
+c. 'host': default value is 'localhost'. This specifies the hostname of
+the machine on which the corresponding client instance is running.
 
 > setfield gl0 host localhost
 
