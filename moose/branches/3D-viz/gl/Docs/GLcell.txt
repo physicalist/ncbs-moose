@@ -51,12 +51,12 @@ instance.
 
 > setfield gl0 threshold 0.0015
 
-f. 'sync': default value is 'off'. If the time taken by the client
-instance to render one frame of color information (over all
-compartments) exceeds the time taken by the MOOSE simulation to
-simulate one time-step, the simulation may overtake the 3D display and
-the 3D display will skip intermediate frames in order to keep up with
-the state of the simulation.
+f. 'sync': default value is 'off'; possible values are 'on' and
+'off'. If the time taken by the client instance to render one frame of
+color information (over all compartments) exceeds the time taken by
+the MOOSE simulation to simulate one time-step, the simulation may
+overtake the 3D display and the 3D display will skip intermediate
+frames in order to keep up with the state of the simulation.
 
 This flag forces the two to operate in lockstep, which may be useful
 for debugging or while recording movies for publication (so that no

@@ -127,6 +127,11 @@ const Cinfo* initGLviewCinfo()
 				GFCAST( &GLview::getSyncMode ),
 				RFCAST( &GLview::setSyncMode )
 				),
+		new ValueFinfo( "grid",
+				ValueFtype1< string >::global(),
+				GFCAST( &GLview::getGridMode ),
+				RFCAST( &GLview::setGridMode )
+				),
 		new ValueFinfo( "color_val",
 				ValueFtype1< unsigned int >::global(),
 				GFCAST( &GLview::getColorVal ),
@@ -203,6 +208,7 @@ GLview::GLview()
 	strClientHost_( "localhost" ),
 	strClientPort_( "" ),
 	syncMode_( false ),
+	gridMode_( false ),
 	bgcolorRed_( 0.0 ),
 	bgcolorGreen_( 0.0 ),
 	bgcolorBlue_( 0.0 ),
@@ -477,6 +483,31 @@ string GLview::getSyncMode( Eref e )
 	bool currentSyncMode = static_cast< const GLview* >( e.data() )->syncMode_;
 
 	if ( currentSyncMode )
+		return string( "on" );
+	else
+		return string( "off" );
+}
+
+void GLview::setGridMode( const Conn* c, string gridMode )
+{
+	if ( gridMode == string( "on" ) )
+		static_cast< GLview * >( c->data() )->innerSetGridMode( true );
+	else if ( gridMode == string( "off" ) )
+		static_cast< GLview * >( c->data() )->innerSetGridMode( false );
+	else
+		std::cerr << "GLview error: cannot set grid mode; argument must be either 'on' or 'off'." << std::endl;
+}
+
+void GLview::innerSetGridMode( const bool gridMode )
+{
+	gridMode_ = gridMode;
+}
+
+string GLview::getGridMode( Eref e )
+{
+	bool currentGridMode = static_cast< const GLview* >( e.data() )->gridMode_;
+
+	if ( currentGridMode )
 		return string( "on" );
 	else
 		return string( "off" );
@@ -1014,96 +1045,114 @@ double GLview::populateXYZ()
 		z_ = ( double * ) malloc( sizeof( double ) * elements_.size() );
 
 	double x, y, z, size, maxsize = 0;
-
-	// There are three passes for determining collision-free x,y,z
-	// co-ordinates (to 6 decimal places). This procedure also
-	// determines the maximum length in any dimension of elements
-	// with given geometries so that the remaining elements (with
-	// no geometrical basis) can be assigned sizes on the same
-	// scale of size; this is based on the assumption that most
-	// geometrical elements in the simulation will be laid out to
-	// be non-overlapping and therefore the maximum length
-	// provides an approximation of the typical distance between
-	// elements.
-
-	// 1. We get x,y,z from elements or their first non-root
-	// ancestor that have valid x,y,z values. We check these into
-	// a map, intending to separate elements specified with
-	// duplicate x,y,z co-ordinates.
-	map< string, unsigned int > mapXYZ;
-	for ( unsigned int i = 0; i < elements_.size(); ++i )
-	{
-		if ( getXYZ( elements_[i], x, y, z, size ) == 0 )
-		{
-			string key = boxXYZ( x, y, z );
-			if ( mapXYZ.count( key ) == 0 )
-				mapXYZ[ key ] = 1;
-			else
-				mapXYZ[ key ] += 1;
-
-			if ( size > maxsize )
-				maxsize = size;
-		}
-	}
-
-	// 2. We finalize non-duplicate x,y,z co-ordinates and place
-	// the rest on a list that will be automatically assigned sane
-	// co-ordinates just outside the bounding box of the first
-	// group. We also determine a corner of this bounding box to
-	// act as the starting location of the second group.
+	vector< unsigned int > unassignedShapes;
 	double bbx = 0;
 	double bby = 0;
 	double bbz = 0;
-	vector< unsigned int > unassignedElements;
 
-	for ( unsigned int i = 0; i < elements_.size(); ++i )
+	// If the field 'grid' is 'off', there will be two steps to
+	// determine collision-free x,y,z co-ordinates (to 6 decimal
+	// places). This procedure also determines the maximum length
+	// in any dimension of shapes with given geometries so that
+	// the remaining shapes (with no geometrical basis) can be
+	// assigned sizes on the same scale of size; this is based on
+	// the assumption that most geometrical shapes in the
+	// simulation will be laid out to be non-overlapping and
+	// therefore the maximum length provides an approximation of
+	// the typical distance between elements.
+	//
+	// If the field 'grid' is 'on', maxsize will be set to 1 and
+	// all shapes will be forced into a grid layout.
+
+	if ( gridMode_ )
 	{
-		if ( getXYZ( elements_[i], x, y, z, size ) == 0 )
+		for ( unsigned int i = 0; i < elements_.size(); ++i )
 		{
-			string key = boxXYZ( x, y, z );
-			if ( mapXYZ[key] > 1 ) // collision
+			unassignedShapes.push_back( i );
+		}
+	}
+	else
+	{
+		// 1. We get x,y,z from elements or their first
+		// non-root ancestor that have valid x,y,z values. We
+		// check these into a map, intending to separate
+		// shapes corresponding to elements specified with
+		// duplicate x,y,z co-ordinates.
+
+		map< string, unsigned int > mapXYZ;
+		for ( unsigned int i = 0; i < elements_.size(); ++i )
+		{
+			if ( getXYZ( elements_[i], x, y, z, size ) == 0 )
 			{
-				unassignedElements.push_back( i );
+				string key = boxXYZ( x, y, z );
+				if ( mapXYZ.count( key ) == 0 )
+					mapXYZ[ key ] = 1;
+				else
+					mapXYZ[ key ] += 1;
+
+				if ( size > maxsize )
+					maxsize = size;
+			}
+		}
+
+		// 2. We finalize non-duplicate x,y,z co-ordinates and place
+		// the rest on a list that will be automatically assigned sane
+		// co-ordinates just outside the bounding box of the first
+		// group. We also determine a corner of this bounding box to
+		// act as the starting location of the second group.
+
+		for ( unsigned int i = 0; i < elements_.size(); ++i )
+		{
+			if ( getXYZ( elements_[i], x, y, z, size ) == 0 )
+			{
+				string key = boxXYZ( x, y, z );
+				if ( mapXYZ[key] > 1 ) // collision
+				{
+					unassignedShapes.push_back( i );
+				}
+				else
+				{
+					x_[i] = x;
+					y_[i] = y;
+					z_[i] = z;
+				
+					if ( bbx < x )
+						bbx = x + maxsize;
+					if ( bby < y )
+						bby = y + maxsize;
+					if ( bbz < z )
+						bbz = z + maxsize;
+				}
 			}
 			else
 			{
-				x_[i] = x;
-				y_[i] = y;
-				z_[i] = z;
-				
-				if ( bbx < x )
-					bbx = x + maxsize;
-				if ( bby < y )
-					bby = y + maxsize;
-				if ( bbz < z )
-					bbz = z + maxsize;
+				unassignedShapes.push_back( i );
 			}
 		}
-		else
-		{
-			unassignedElements.push_back( i );
-		}
 	}
-	
-	// 3. We take the starting location calculated in the last
-	// step and assign co-ordinates to all elements on the
+
+	// We take the starting location calculated in the last
+	// step and assign co-ordinates to all shapes on the
 	// (collision/unassigned) list as described in the last
 	// step. These co-ordinates will be assigned to lay out all
 	// elements in a planar grid, approximating a square in shape.
-	int n = (int)( sqrt( (float) unassignedElements.size() ) );
 
-	// Another heuristic: if maxsize is still zero, i.e., no
-	// non-root ancestors with valid geometries were found, we
-	// must still set the size to an arbitrary non-zero value, so
-	// we use 1.
+	int n = (int)( sqrt( (float) unassignedShapes.size() ) );
+
+	// Finally, if maxsize is still zero, i.e., no non-root
+	// ancestors with valid geometries were found, we must still
+	// set the size to an arbitrary non-zero value, so we use 1.
+	//
+	// This will always apply if the field 'grid' is 'on'.
+
 	if ( maxsize < FP_EPSILON )
 	{
 		maxsize = 1;
 	}
 
-	for ( unsigned int j = 0; j < unassignedElements.size(); ++j )
+	for ( unsigned int j = 0; j < unassignedShapes.size(); ++j )
 	{
-		unsigned int i = unassignedElements[j];
+		unsigned int i = unassignedShapes[j];
 		
 		x_[i] = bbx + (j % n) * maxsize;
 		y_[i] = bby + (j / n) * maxsize;
