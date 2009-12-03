@@ -46,6 +46,8 @@ call gl0 set_valuemin 1 -0.1
 call gl0 set_valuemax 1 0.05
 setfield gl0 morph_val 1
 setfield gl0 color_val 1
+setfield gl0 sync off
+setfield gl0 grid off
 reset
 
 ////////////////////////////////////////////////////////////////////////////////

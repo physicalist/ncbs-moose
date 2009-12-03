@@ -187,12 +187,12 @@ the machine on which the corresponding client instance is running.
 
 > setfield gl0 host localhost
 
-m. 'sync': default value is 'off'. If the time taken by the client
-instance to render one frame of color information (over all
-compartments) exceeds the time taken by the MOOSE simulation to
-simulate one time-step, the simulation may overtake the 3D display and
-the 3D display will skip intermediate frames in order to keep up with
-the state of the simulation.
+m. 'sync': default value is 'off'; possible values are 'on' and
+'off'. If the time taken by the client instance to render one frame of
+color information (over all compartments) exceeds the time taken by
+the MOOSE simulation to simulate one time-step, the simulation may
+overtake the 3D display and the 3D display will skip intermediate
+frames in order to keep up with the state of the simulation.
 
 This flag forces the two to operate in lockstep, which may be useful
 for debugging or while recording movies for publication (so that no
@@ -204,7 +204,16 @@ A longer explanation is provided in Appendix A of the file README.
 OR
 > setfield gl0 sync off
 
-n. 'bgcolor': default value is 000000000. This represents the
+n. 'grid': default value is 'off'; possible values are 'on' and
+'off'. When this is set to 'on', all shapes in the visualization will
+be forced into a grid layout and will no longer inherit 3D
+co-ordinates from corresponding parent elements.
+
+> setfield gl0 grid on
+OR
+> setfield gl0 grid off
+
+o. 'bgcolor': default value is 000000000. This represents the
 background color of the viewer window, encoded as a string in the
 format RRRGGGBBB, where 000000000 is black (the default) and 255255255
 is white.

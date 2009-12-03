@@ -76,6 +76,10 @@ class GLview
 	void innerSetSyncMode( const bool syncMode );
 	static string getSyncMode( Eref e );
 
+	static void setGridMode( const Conn* c, string gridMode );
+	void innerSetGridMode( const bool gridMode );
+	static string getGridMode( Eref e );
+
 	static void setColorVal( const Conn* c, unsigned int colorVal );
 	void innerSetColorVal( unsigned int colorVal );
 	static unsigned int getColorVal( Eref e );
@@ -112,6 +116,7 @@ class GLview
 	string strClientHost_;
 	string strClientPort_;
 	bool syncMode_;
+	bool gridMode_;
 	double bgcolorRed_;
 	double bgcolorGreen_;
 	double bgcolorBlue_;
