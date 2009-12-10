@@ -9,6 +9,7 @@
 
 #include "Constants.h"
 #include "AckPickData.h"
+#include "ParticleData.h"
 #include "TextBox.h"
 
 class KeystrokeHandler : public osgGA::GUIEventHandler
@@ -31,14 +32,6 @@ class KeystrokeHandler : public osgGA::GUIEventHandler
 	double isCurrentProjectionOrtho_;
 };
 
-enum MSGTYPE
-{
-	RESET,
-	PROCESS,
-	PROCESSSYNC,
-	DISCONNECT
-};
-
 void networkLoop( void );
 int acceptNewConnection( char * port );
 void receiveData( int newFd );
@@ -47,6 +40,7 @@ void* getInAddr( struct sockaddr* sa );
 int sendAll( int socket, char* buf, int* len );
 int recvAll( int socket, char* buf, int* len);
 void sendAck( int socket );
+void initializeRoot( const std::string& pathName );
 void updateGeometryGLcell( const GLcellResetData& geometry );
 void updateGeometryGLview( const GLviewResetData& data );
 
@@ -57,6 +51,10 @@ int initWinsock( void );
 #endif
 
 osg::ref_ptr< osg::Group > root_;
+
+std::vector< ParticleData > vecParticleData_;
+std::vector< osg::Geode* > particleGeodes_;
+
 TextBox* textParentTop_ = NULL;
 TextBox* textParentBottom_ = NULL;
 
@@ -68,11 +66,17 @@ std::map< unsigned int, GLviewShape* > mapId2GLviewShape_; // used to resize, mo
 std::map< unsigned int, GLshapeData* > mapId2GLshapeData_; // data received in PROCESS step
 
 // both modes:
-std::map< osg::Geode*, std::pair< unsigned int, std::string* >* > mapGeode2NameId_; // this is used to obtain the id of a compartment or shape that the user has picked with the mouse
+std::map< osg::Geode*, std::pair< unsigned int, std::string* >* > mapGeode2NameId_; 
+// this is used to obtain the id of a compartment or shape that the user has picked with the mouse
 double maxsizeGLviewShape_;
 
 volatile bool isGeometryDirty_ = false;
 volatile bool isColorSetDirty_ = false;
+
+volatile bool isParticlesDirty_ = false;
+boost::mutex mutexParticlesSaved_;
+boost::mutex mutexParticlesUpdated_;
+boost::condition condParticlesUpdated_;
 
 volatile bool isPickingDataUpdated_ = false;
 boost::mutex mutexPickingDataUpdated_;

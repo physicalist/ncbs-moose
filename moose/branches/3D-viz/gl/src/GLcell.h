@@ -9,14 +9,8 @@
 
 #include "GLcellProcData.h"
 #include "GLcellResetData.h"
-
-enum MSGTYPE
-{
-	RESET,
-	PROCESS,
-	PROCESSSYNC,
-	DISCONNECT
-};
+#include "ParticleData.h"
+#include "Constants.h"
 
 class GLcell
 {
@@ -71,7 +65,10 @@ class GLcell
 	static void setLowValue( const Conn* c, double lowValue );
 	void innerSetLowValue( const double lowValue );
 	static double getLowValue( Eref e );
-	
+
+	static void setParticleData( const Conn* c, vector< ParticleData > vecParticleData );
+	void innerSetParticleData( const vector< ParticleData > vecParticleData );
+
 	static const int MSGTYPE_HEADERLENGTH;
 	static const int MSGSIZE_HEADERLENGTH;
 	static const char SYNCMODE_ACKCHAR;
@@ -93,7 +90,10 @@ class GLcell
 	double highValue_;
 	double lowValue_;
 
+	unsigned int testTicker_; // used by testInsertVecParticleData()
+
 	vector< Id > renderList_;
+	vector< ParticleData > vecParticleData_;
 
 	map< unsigned int, double > renderMapAttrsLastTransmitted_;
 	map< unsigned int, double > renderMapAttrsTransmitted_;
@@ -114,6 +114,10 @@ class GLcell
 	void disconnect();
 	template< class T >
 	  void transmit( T& data, MSGTYPE messageType );
+	
+	// testing function
+	void testInsertVecParticleData( void );
+  
 
 #ifdef WIN32
 	int initWinsock( void );

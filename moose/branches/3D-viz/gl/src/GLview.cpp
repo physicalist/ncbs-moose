@@ -598,7 +598,7 @@ void GLview::innerSetValueMin( unsigned int index, double value )
 	if ( index >= 1 && index <= 5 )
 	{
 		if ( value >= value_max_[index-1] )
-			std::cerr << "Value being set to be >= of corresponding value_max, which is " << value_max_[index-1] << std::endl;
+			std::cerr << "GLview warning: value being set to be >= of corresponding value_max, which is " << value_max_[index-1] << std::endl;
 		
 		value_min_[index-1] = value;
 	}
@@ -616,7 +616,7 @@ void GLview::innerSetValueMax( unsigned int index, double value )
 	if ( index >= 1 && index <= 5 )
 	{
 		if ( value <= value_min_[index-1] )
-			std::cerr << "Value being set to be <= of corresponding value_min, which is" << value_min_[index-1] << std::endl;
+			std::cerr << "GLview warning: value being set to be <= of corresponding value_min, which is" << value_min_[index-1] << std::endl;
 
 		value_max_[index-1] = value;
 	}
@@ -888,21 +888,15 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 	if ( syncMode_ )
 	{
-		transmit( mapId2GLshapeData_, PROCESSSYNC );
-		if ( receiveAck() < 0 )
-		{
-			isConnectionUp_ = false;
-		}
-		// the client will wait for the display to be updated before
-		// sending this ack in response to a PROCESSSYNC message
+		transmit( mapId2GLshapeData_, PROCESS_COLORS_SYNC );
+		receiveAck();
+		// The client will wait for the display to be updated before
+		// sending this ack in response to a PROCESS_COLORS_SYNC message.
 	}
 	else
 	{
-		transmit( mapId2GLshapeData_, PROCESS );
-		if ( receiveAck() < 0 )
-		{
-			isConnectionUp_ = false;
-		}
+		transmit( mapId2GLshapeData_, PROCESS_COLORS );
+		receiveAck();
 	}
 }
 
@@ -1386,6 +1380,7 @@ int GLview::receiveAck()
 	     numBytes < MSGSIZE_HEADERLENGTH + 1 )
 	{
 		std::cerr << "GLview error: could not receive Ack header!" << std::endl;
+		isConnectionUp_ = false;
 		return -1;
 	}
 	else
@@ -1402,6 +1397,7 @@ int GLview::receiveAck()
 	     numBytes < inboundDataSize + 1 )
 	{
 		std::cerr << "GLview error: could not receive Ack!" << std::endl;
+		isConnectionUp_ = false;
 		return -2;
 	}
 	else

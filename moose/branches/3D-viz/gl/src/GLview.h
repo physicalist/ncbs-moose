@@ -9,14 +9,7 @@
 
 #include "moose.h"
 #include "GLshapeData.h"
-
-enum MSGTYPE
-{
-	RESET,
-	PROCESS,
-	PROCESSSYNC,
-	DISCONNECT
-};
+#include "Constants.h"
 
 class GLview
 {
