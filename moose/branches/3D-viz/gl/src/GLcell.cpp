@@ -46,6 +46,7 @@
 #endif
 
 #include "AckPickData.h"
+#include "ParticleData.h"
 #include "GLcellProcData.h"
 #include "Constants.h"
 
@@ -122,6 +123,13 @@ const Cinfo* initGLcellCinfo()
 				RFCAST( &GLcell::setLowValue )
 				),
 	///////////////////////////////////////////////////////
+	// Message destination definitions
+	///////////////////////////////////////////////////////
+		new DestFinfo( "particleData",
+			       Ftype1< vector< ParticleData > >::global(),
+			       RFCAST( &GLcell::setParticleData )
+			       ),
+	///////////////////////////////////////////////////////
 	// Shared definitions
 	///////////////////////////////////////////////////////
 		//		parser,
@@ -172,7 +180,8 @@ GLcell::GLcell()
 	bgcolorGreen_( 0.0 ),
 	bgcolorBlue_( 0.0 ),
 	highValue_( 0.05 ),
-	lowValue_( -0.1 )
+	lowValue_( -0.1 ),
+	testTicker_( 0 )
 {
 #ifdef WIN32
 	if ( initWinsock() < 0 )
@@ -419,6 +428,13 @@ void GLcell::reinitFuncLocal( const Conn* c )
 	GLcellResetData geometryData;
 	double diameter, length, x0, y0, z0, x, y, z;
 
+	vecParticleData_.clear();
+
+	geometryData.pathName = " ";
+	geometryData.bgcolorRed = bgcolorRed_;
+	geometryData.bgcolorGreen = bgcolorGreen_;
+	geometryData.bgcolorBlue = bgcolorBlue_;
+
 	/// Reload model geometry.
 	// strPath_ should have been set.
 	if ( ! strPath_.empty() )
@@ -428,9 +444,6 @@ void GLcell::reinitFuncLocal( const Conn* c )
 
 		geometryData.pathName = strPath_;
 		geometryData.vScale = vScale_;
-		geometryData.bgcolorRed = bgcolorRed_;
-		geometryData.bgcolorGreen = bgcolorGreen_;
-		geometryData.bgcolorBlue = bgcolorBlue_;
 		geometryData.renderListCompartmentData.clear();
 
 		// Start populating renderList_ with the node in strPath_ 
@@ -473,14 +486,14 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				geometryData.renderListCompartmentData.push_back( compartmentData );
 			}
 		}
-
-		if ( strClientPort_.empty() )
-			std::cerr << "GLcell error: Client port not specified." << std::endl;
-		else if ( strClientHost_.empty() )
-			std::cerr << "GLcell error: Client hostname not specified." << std::endl;
-		else
-			transmit( geometryData, RESET );
 	}
+
+	if ( strClientPort_.empty() )
+		std::cerr << "GLcell error: Client port not specified." << std::endl;
+	else if ( strClientHost_.empty() )
+		std::cerr << "GLcell error: Client hostname not specified." << std::endl;
+	else
+		transmit( geometryData, RESET );
 }
 
 
@@ -526,23 +539,52 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 
 		if ( syncMode_ )
 		{
-			transmit( mapColors, PROCESSSYNC );
-			if ( receiveAck() < 0 )
-			{
-				isConnectionUp_ = false;
-			}
-			// the client will wait for the display to be updated before
-			// sending this ack in response to a PROCESSSYNC message
+			transmit( mapColors, PROCESS_COLORS_SYNC );
+			receiveAck();
+			// The client will wait for the display to be updated before
+			// sending this ack in response to a PROCESS_COLORS_SYNC message.
 		}
 		else
 		{
-			transmit( mapColors, PROCESS );
-			if ( receiveAck() < 0 )
-			{
-				isConnectionUp_ = false;
-			}
+			transmit( mapColors, PROCESS_COLORS );
+			receiveAck();
 		}
 	}
+
+	testInsertVecParticleData();
+
+	if ( vecParticleData_.size() > 0 )
+	{
+		if ( syncMode_ )
+		{
+			transmit( vecParticleData_, PROCESS_PARTICLES_SYNC );
+			receiveAck();
+			// The client will wait for the display to be updated before
+			// sending this ack in response to a PROCESS_PARTICLES_SYNC message.
+		}
+		else
+		{
+			transmit( vecParticleData_, PROCESS_PARTICLES );
+			receiveAck();
+		}
+
+		vecParticleData_.clear();
+	}
+}
+
+void GLcell::setParticleData( const Conn* c, vector< ParticleData > vecParticleData )
+{
+	static_cast< GLcell * >( c->data() )->innerSetParticleData( vecParticleData );
+}
+
+void GLcell::innerSetParticleData( const vector< ParticleData > vecParticleData )
+{
+	if ( vecParticleData_.size() > 0 )
+	{
+		vecParticleData_.clear();
+	}
+
+	vecParticleData_ = vecParticleData;
 }
 
 ///////////////////////////////////////////////////
@@ -793,6 +835,7 @@ int GLcell::receiveAck()
 	     numBytes < MSGSIZE_HEADERLENGTH + 1 )
 	{
 		std::cerr << "GLcell error: could not receive Ack header!" << std::endl;
+		isConnectionUp_ = false;
 		return -1;
 	}
 	else
@@ -809,6 +852,7 @@ int GLcell::receiveAck()
 	     numBytes < inboundDataSize + 1 )
 	{
 		std::cerr << "GLcell error: could not receive Ack!" << std::endl;
+		isConnectionUp_ = false;
 		return -2;
 	}
 	else
@@ -936,6 +980,37 @@ void GLcell::disconnect()
 #else
 	close( sockFd_ );
 #endif
+}
+
+void GLcell::testInsertVecParticleData( void )
+{
+	ParticleData p;
+	p.colorRed = 1.0;
+	p.colorBlue = 0.0;
+	p.colorGreen = 0.0;
+	p.diameter = 1;
+	for ( unsigned int i = 0; i < 100; i++ )
+	{
+		p.coords.push_back( 1e-6 * (i*10 + 100*sin(testTicker_)) );
+		p.coords.push_back( 1e-6 * (i*10 + 100*cos(testTicker_++)) );
+		p.coords.push_back( 1e-6 * (i*10 + 10) );
+	}
+
+	ParticleData p1;
+	p1.colorRed = 0.0;
+	p1.colorBlue = 0.0;
+	p1.colorGreen = 1.0;
+	p1.diameter = 5;
+	unsigned int j = (unsigned int)(random() % 100);
+	for ( unsigned int i = 0; i < 100+j; i++ )
+	{
+		p1.coords.push_back( 1e-6 * (i*5 + 50*cos(testTicker_)) );
+		p1.coords.push_back( 1e-6 * (i*5 + 50*sin(testTicker_++)) );
+		p1.coords.push_back( 1e-6 * (i*5 + 5) );
+	}
+
+	vecParticleData_.push_back( p );
+	vecParticleData_.push_back( p1 );
 }
 
 #ifdef WIN32

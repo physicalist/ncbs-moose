@@ -68,6 +68,8 @@
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
+#include <osg/CullSettings>
+#include <osg/Point>
 
 #include "GLcellProcData.h"
 #include "AckPickData.h"
@@ -204,23 +206,24 @@ bool KeystrokeHandler::pick( const double x, const double y, osgViewer::Viewer* 
 		
 		osg::Geode* geode = dynamic_cast< osg::Geode* >( nodePath[nodePath.size()-1] );
 
-		std::stringstream pickedTextStream;
-		pickedTextStream << *(mapGeode2NameId_[geode]->second) << " ("
-				 << mapGeode2NameId_[geode]->first << ") was picked.";
-	        std::cout << pickedTextStream.str() << std::endl;
-		textParentTop_->setText( pickedTextStream.str() );
-
+		if ( mapGeode2NameId_.count( geode ) == 1 )
 		{
-			boost::mutex::scoped_lock lock( mutexPickingDataUpdated_ );
-			pickedId_ = mapGeode2NameId_[geode]->first;
+			std::stringstream pickedTextStream;
+			pickedTextStream << *(mapGeode2NameId_[geode]->second) << " ("
+					 << mapGeode2NameId_[geode]->first << ") was picked.";
+			std::cout << pickedTextStream.str() << std::endl;
+			textParentTop_->setText( pickedTextStream.str() );
+
+			{
+				boost::mutex::scoped_lock lock( mutexPickingDataUpdated_ );
+				pickedId_ = mapGeode2NameId_[geode]->first;
+			}
+			isPickingDataUpdated_ = true;
 		}
-		isPickingDataUpdated_ = true;
-		return true;
+		return true;	
 	}
-	else
-	{
-		return false;
-	}
+	
+	return false;
 }
 
 // get sockaddr, IPv4 or IPv6:
@@ -495,10 +498,12 @@ void receiveData( int newFd )
 						GLcellResetData geometryData;
 						archive_i >> geometryData;
 
+						initializeRoot( geometryData.pathName );
 						updateGeometryGLcell( geometryData );
+
 						isGeometryDirty_ = true;
 					}
-					else if ( messageType == PROCESS || messageType == PROCESSSYNC )
+					else if ( messageType == PROCESS_COLORS || messageType == PROCESS_COLORS_SYNC )
 					{
 						{  // additional scope to wrap scoped_lock
 							boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
@@ -508,17 +513,17 @@ void receiveData( int newFd )
 						}
 				
 						// wait for display to update if in sync mode
-						if ( messageType == PROCESS )
+						if ( messageType == PROCESS_COLORS )
 						{
 							if ( isColorSetDirty_ == true ) // We meant to set colorset dirty but
 								// it is already dirty which means the rendering thread has not picked it up yet.
 							{
-								std::cerr << "skipping frame..." << std::endl;
+								std::cerr << "skipping colors update in frame..." << std::endl;
 							}
 	
 							isColorSetDirty_ = true;
 						}
-						else // messageType == PROCESSSYNC
+						else // messageType == PROCESS_COLORS_SYNC
 						{
 							isColorSetDirty_ = true;
 				
@@ -533,6 +538,40 @@ void receiveData( int newFd )
 						}
 						sendAck( newFd );
 					}
+					else if ( messageType == PROCESS_PARTICLES || messageType == PROCESS_PARTICLES_SYNC )
+					{
+						{ // additional scope to wrap scoped_lock
+							boost::mutex::scoped_lock lock( mutexParticlesSaved_ );
+							
+							archive_i >> vecParticleData_;
+						}
+
+						// wait for display to update if in sync mode
+						if ( messageType == PROCESS_PARTICLES )
+						{
+							if ( isParticlesDirty_ == true ) // We meant to set particles dirty but
+								// it is already dirty which means the rendering thread has not picked it up yet.
+							{
+								std::cerr << "skipping particles update in frame..." << std::endl;
+							}
+	
+							isParticlesDirty_ = true;
+						}
+						else // messageType == PROCESS_PARTICLES_SYNC
+						{
+							isParticlesDirty_ = true;
+				
+							// wait for the updated particles to render to display
+							{
+								boost::mutex::scoped_lock lock( mutexParticlesUpdated_ );
+								while ( isParticlesDirty_ )
+								{
+									condParticlesUpdated_.wait( lock );
+								}
+							}
+						}
+						sendAck( newFd );
+					}
 				}
 				else if ( mode_ == GLVIEW )
 				{
@@ -541,10 +580,12 @@ void receiveData( int newFd )
 						GLviewResetData data;
 						archive_i >> data;
 
+						initializeRoot( data.pathName );
 						updateGeometryGLview( data );
+
 						isGeometryDirty_ = true;
 					}
-					else if ( messageType == PROCESS || messageType == PROCESSSYNC )
+					else if ( messageType == PROCESS_COLORS || messageType == PROCESS_COLORS_SYNC )
 					{
 						{  // additional scope to wrap scoped_lock
 							boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
@@ -565,7 +606,7 @@ void receiveData( int newFd )
 						}
 				
 						// wait for display to update if in sync mode
-						if ( messageType == PROCESS )
+						if ( messageType == PROCESS_COLORS )
 						{
 							if ( isColorSetDirty_ == true ) // We meant to set data set dirty but
 								// it is already dirty which means the rendering thread has not picked it up yet.
@@ -575,7 +616,7 @@ void receiveData( int newFd )
 	
 							isColorSetDirty_ = true;
 						}
-						else // messageType == PROCESSSYNC
+						else // messageType == PROCESS_COLORS_SYNC
 						{
 							isColorSetDirty_ = true;
 				
@@ -670,6 +711,26 @@ void sendAck( int socket )
 	}
 }
 
+void initializeRoot( const std::string& pathName )
+{
+	root_ = new osg::Group; // root_ is an osg::ref_ptr
+	root_->setDataVariance( osg::Object::DYNAMIC );
+
+	if ( textParentBottom_ != NULL)
+		delete textParentBottom_;
+	textParentBottom_ = new TextBox();
+	textParentBottom_->setPosition( osg::Vec3d( 10, 10, 0 ) );
+	textParentBottom_->setText( pathName );
+	root_->addChild( textParentBottom_->getGroup() );
+
+	if ( textParentTop_ != NULL)
+		delete textParentTop_;
+	textParentTop_ = new TextBox();
+	textParentTop_->setPosition( osg::Vec3d( 10, WINDOW_HEIGHT - 20, 0 ) );
+	textParentTop_->setText( "" );
+	root_->addChild( textParentTop_->getGroup() );
+}
+
 void updateGeometryGLcell( const GLcellResetData& geometryData )
 {	
 	double vScale = geometryData.vScale;
@@ -682,7 +743,7 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 		      iterator != mapId2GLCompartment_.end();
 		      iterator++ )
 		{
-			delete iterator->second;
+			delete iterator->second; // TODO really necessary or will just mapId2GLCompartment_.clear() do?
 		}
 		mapId2GLCompartment_.clear();
 
@@ -691,27 +752,10 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 		      iterator++ )
 		{
 			delete iterator->second->second;
-			delete iterator->second;
+			delete iterator->second; // TODO really necessary? see above, find other examples if you're going to delete this
 		}
 		mapGeode2NameId_.clear();
 	}
-
-	root_ = new osg::Group; // root_ is an osg::ref_ptr
-	root_->setDataVariance( osg::Object::STATIC );
-
-	if ( textParentBottom_ != NULL)
-		delete textParentBottom_;
-	textParentBottom_ = new TextBox();
-	textParentBottom_->setPosition( osg::Vec3d( 10, 10, 0 ) );
-	textParentBottom_->setText( geometryData.pathName );
-	root_->addChild( textParentBottom_->getGroup() );
-
-	if ( textParentTop_ != NULL)
-		delete textParentTop_;
-	textParentTop_ = new TextBox();
-	textParentTop_->setPosition( osg::Vec3d( 10, WINDOW_HEIGHT - 20, 0 ) );
-	textParentTop_->setText( "" );
-	root_->addChild( textParentTop_->getGroup() );
 
 	// First pass: create the basic hollow cylinders with no end-caps
 	for ( unsigned int i = 0; i < compartments.size(); ++i )
@@ -820,7 +864,6 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 void updateGeometryGLview( const GLviewResetData& data )
 {
 	bgcolor_ = osg::Vec4( data.bgcolorRed, data.bgcolorGreen, data.bgcolorBlue, 1.0 );
-	const std::string& globalPathName = data.pathName;
 	maxsizeGLviewShape_ = data.maxsize;
 	const std::vector< GLviewShapeResetData >& shapes = data.shapes;
 
@@ -845,23 +888,6 @@ void updateGeometryGLview( const GLviewResetData& data )
 		}
 		mapGeode2NameId_.clear();
 	}
-
-	root_ = new osg::Group; // root_ is an osg::ref_ptr
-	root_->setDataVariance( osg::Object::STATIC );
-
-	if ( textParentBottom_ != NULL)
-		delete textParentBottom_;
-	textParentBottom_ = new TextBox();
-	textParentBottom_->setPosition( osg::Vec3d( 10, 10, 0 ) );
-	textParentBottom_->setText( globalPathName );
-	root_->addChild( textParentBottom_->getGroup() );
-
-	if ( textParentTop_ != NULL)
-		delete textParentTop_;
-	textParentTop_ = new TextBox();
-	textParentTop_->setPosition( osg::Vec3d( 10, WINDOW_HEIGHT - 20, 0 ) );
-	textParentTop_->setText( "" );
-	root_->addChild( textParentTop_->getGroup() );
 
 	for ( unsigned int i = 0; i < shapes.size(); ++i )
 	{
@@ -907,26 +933,30 @@ void draw()
 	viewer_->getCamera()->setDrawBuffer( buffer );
 	viewer_->getCamera()->setReadBuffer( buffer );
 
+	viewer_->getCamera()->setCullingMode(viewer_->getCamera()->getCullingMode() &
+					     ~osg::CullSettings::SMALL_FEATURE_CULLING); // so that point particles are not culled away
+
 	viewer_->realize();
 	viewer_->setCameraManipulator( new osgGA::TrackballManipulator );
 	viewer_->addEventHandler( new osgViewer::StatsHandler );
 	viewer_->addEventHandler( new KeystrokeHandler );
 
-	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile( getSaveFilename(),
-																													"jpg",
-																													osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
+	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile( getSaveFilename(),																						"jpg",
+														       osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
 	viewer_->addEventHandler( screenCaptureHandler_ );
 
-	while ( !viewer_->done() ) {
-
-		if ( isGeometryDirty_ ) {
+	while ( !viewer_->done() )
+	{
+		if ( isGeometryDirty_ )
+		{
 			isGeometryDirty_ = false;
-			
-			viewer_->setSceneData( root_ );
-			viewer_->getCamera()->setClearColor( bgcolor_ );
+
+			viewer_->getCamera()->setClearColor( bgcolor_ );			
+			viewer_->setSceneData( root_.get() );
 		}
 
-		if ( isColorSetDirty_ ) {
+		if ( isColorSetDirty_ ) 
+		{
 			boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 			
 			if ( mode_ == GLCELL )
@@ -1012,7 +1042,66 @@ void draw()
 				boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
 				isColorSetDirty_ = false;
 				
-				condColorSetUpdated_.notify_one(); // no-op except when responding to PROCESSSYNC
+				condColorSetUpdated_.notify_one(); // no-op except when responding to PROCESS_COLORS_SYNC
+			}
+		}
+
+		if ( isParticlesDirty_ )
+		{
+			boost::mutex::scoped_lock lock( mutexParticlesSaved_ ); // TODO think about the scope of this one, and colors above; too wide?
+			
+			for ( unsigned int i = 0; i < particleGeodes_.size(); ++i )
+			{
+				root_->removeChild( particleGeodes_[i] );
+			}
+
+			for ( unsigned int i = 0; i < vecParticleData_.size(); ++i )
+			{
+				ParticleData* particleData = &vecParticleData_[i];
+
+				osg::Geode* geode = new osg::Geode;
+				osg::Geometry* geometry = new osg::Geometry;
+
+				osg::ref_ptr< osg::Vec3Array > vertices = new osg::Vec3Array;
+				for ( unsigned int j = 0; j < particleData->coords.size(); j += 3 )
+				{
+					vertices->push_back( osg::Vec3( particleData->coords[j],
+									particleData->coords[j+1],
+									particleData->coords[j+2] ) );
+				}
+				geometry->setVertexArray( vertices.get() );
+				
+				osg::ref_ptr< osg::Vec4Array > colors = new osg::Vec4Array;
+				colors->push_back( osg::Vec4( particleData->colorRed,
+							      particleData->colorGreen,
+							      particleData->colorBlue,
+							      1.0f ) );
+				geometry->setColorArray( colors.get() );
+				geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
+				
+				osg::DrawArrays* drawArrays = new osg::DrawArrays( osg::PrimitiveSet::POINTS,
+										   0,
+										   vertices->size() );
+				geometry->addPrimitiveSet( drawArrays );
+				geode->getOrCreateStateSet()->setMode( GL_LIGHTING,
+								       osg::StateAttribute::OFF );
+				
+				osg::ref_ptr< osg::Point > point = new osg::Point;
+				point->setSize( particleData->diameter );
+				geode->getOrCreateStateSet()->setAttribute( point.get(),
+									    osg::StateAttribute::ON );
+
+				geode->addDrawable( geometry );
+				root_->addChild( geode );
+				particleGeodes_.push_back( geode );
+			}
+			vecParticleData_.clear();
+			
+			{
+				boost::mutex::scoped_lock lock( mutexParticlesUpdated_ );
+				isParticlesDirty_ = false;
+				
+				condParticlesUpdated_.notify_one(); // no-op except when responding to PROCESS_PARTICLES_SYNC
 			}
 		}
 
