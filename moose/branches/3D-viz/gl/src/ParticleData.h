@@ -20,19 +20,20 @@
 
 struct ParticleData
 {
-	// note that the following colors are specified over [0,1],
-	// and are not w.r.t any particular colormap file
+	// Note that the following colors are specified over [0,1],
+	// and are not w.r.t any particular colormap file.
 	double colorRed;
 	double colorBlue;
 	double colorGreen;
 
-	// if diameter == 0, particles herein will be represented
-	// as points, otherwise, as spheres
+	// If diameter <= 0, particles herein will be represented
+	// as points with size POINT_PARTICLE_DIAMETER, otherwise, as
+	// spheres with the diameter given.
 	double diameter;
 
-	// the length of coordinates will be a multiple of 3;
+	// The length of coordinates will be a multiple of 3;
 	// each consecutive 3-tuple will represent x, y, z for a single
-	// particle to be drawn as points or spheres
+	// particle to be drawn as points or spheres.
 	std::vector< double > coords;
 
 	template< typename Archive >
