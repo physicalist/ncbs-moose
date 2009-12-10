@@ -988,7 +988,7 @@ void GLcell::testInsertVecParticleData( void )
 	p.colorRed = 1.0;
 	p.colorBlue = 0.0;
 	p.colorGreen = 0.0;
-	p.diameter = 1;
+	p.diameter = 0;
 	for ( unsigned int i = 0; i < 100; i++ )
 	{
 		p.coords.push_back( 1e-6 * (i*10 + 100*sin(testTicker_)) );
@@ -1000,9 +1000,9 @@ void GLcell::testInsertVecParticleData( void )
 	p1.colorRed = 0.0;
 	p1.colorBlue = 0.0;
 	p1.colorGreen = 1.0;
-	p1.diameter = 5;
-	unsigned int j = (unsigned int)(random() % 100);
-	for ( unsigned int i = 0; i < 100+j; i++ )
+	p1.diameter = 1e-6 * 10;
+	unsigned int j = (unsigned int)(random() % 10);
+	for ( unsigned int i = 0; i < 10+j; i++ )
 	{
 		p1.coords.push_back( 1e-6 * (i*5 + 50*cos(testTicker_)) );
 		p1.coords.push_back( 1e-6 * (i*5 + 50*sin(testTicker_++)) );

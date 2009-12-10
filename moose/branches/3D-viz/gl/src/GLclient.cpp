@@ -1048,7 +1048,7 @@ void draw()
 
 		if ( isParticlesDirty_ )
 		{
-			boost::mutex::scoped_lock lock( mutexParticlesSaved_ ); // TODO think about the scope of this one, and colors above; too wide?
+			boost::mutex::scoped_lock lock( mutexParticlesSaved_ );
 			
 			for ( unsigned int i = 0; i < particleGeodes_.size(); ++i )
 			{
@@ -1059,41 +1059,66 @@ void draw()
 			{
 				ParticleData* particleData = &vecParticleData_[i];
 
-				osg::Geode* geode = new osg::Geode;
-				osg::Geometry* geometry = new osg::Geometry;
-
-				osg::ref_ptr< osg::Vec3Array > vertices = new osg::Vec3Array;
-				for ( unsigned int j = 0; j < particleData->coords.size(); j += 3 )
+				if ( particleData->diameter <= 0 + FP_EPSILON )
 				{
-					vertices->push_back( osg::Vec3( particleData->coords[j],
-									particleData->coords[j+1],
-									particleData->coords[j+2] ) );
-				}
-				geometry->setVertexArray( vertices.get() );
-				
-				osg::ref_ptr< osg::Vec4Array > colors = new osg::Vec4Array;
-				colors->push_back( osg::Vec4( particleData->colorRed,
-							      particleData->colorGreen,
-							      particleData->colorBlue,
-							      1.0f ) );
-				geometry->setColorArray( colors.get() );
-				geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
-				
-				osg::DrawArrays* drawArrays = new osg::DrawArrays( osg::PrimitiveSet::POINTS,
-										   0,
-										   vertices->size() );
-				geometry->addPrimitiveSet( drawArrays );
-				geode->getOrCreateStateSet()->setMode( GL_LIGHTING,
-								       osg::StateAttribute::OFF );
-				
-				osg::ref_ptr< osg::Point > point = new osg::Point;
-				point->setSize( particleData->diameter );
-				geode->getOrCreateStateSet()->setAttribute( point.get(),
-									    osg::StateAttribute::ON );
+					osg::Geode* geode = new osg::Geode;
+					osg::Geometry* geometry = new osg::Geometry;
 
-				geode->addDrawable( geometry );
-				root_->addChild( geode );
-				particleGeodes_.push_back( geode );
+					osg::ref_ptr< osg::Vec3Array > vertices = new osg::Vec3Array;
+					for ( unsigned int j = 0; j < particleData->coords.size(); j += 3 )
+					{
+						vertices->push_back( osg::Vec3( particleData->coords[j],
+										particleData->coords[j+1],
+										particleData->coords[j+2] ) );
+					}
+					geometry->setVertexArray( vertices.get() );
+				
+					osg::ref_ptr< osg::Vec4Array > colors = new osg::Vec4Array;
+					colors->push_back( osg::Vec4( particleData->colorRed,
+								      particleData->colorGreen,
+								      particleData->colorBlue,
+								      1.0f ) );
+					geometry->setColorArray( colors.get() );
+					geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
+				
+					osg::DrawArrays* drawArrays = new osg::DrawArrays( osg::PrimitiveSet::POINTS,
+											   0,
+											   vertices->size() );
+					geometry->addPrimitiveSet( drawArrays );
+					geode->getOrCreateStateSet()->setMode( GL_LIGHTING,
+									       osg::StateAttribute::OFF );
+				
+					osg::ref_ptr< osg::Point > point = new osg::Point;
+					point->setSize( POINT_PARTICLE_DIAMETER );
+					geode->getOrCreateStateSet()->setAttribute( point.get(),
+										    osg::StateAttribute::ON );
+					geode->addDrawable( geometry );
+
+					root_->addChild( geode );
+					particleGeodes_.push_back( geode );
+				}
+				else
+				{
+					for ( unsigned int j = 0; j < particleData->coords.size(); j += 3 )
+					{
+						GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( particleData->coords[j],
+														   particleData->coords[j+1],
+														   particleData->coords[j+2] ),
+												       particleData->diameter/2,
+												       incrementAngle_ );
+						sphere->setColor( osg::Vec4( particleData->colorRed,
+									     particleData->colorGreen,
+									     particleData->colorBlue,
+									     1.0f ) );
+						osg::Geometry* sphereGeom = sphere->getGeometry();
+						
+						osg::Geode* geode = new osg::Geode;
+						geode->addDrawable( sphereGeom );
+						
+						root_->addChild( geode );
+						particleGeodes_.push_back( geode );
+					}
+				}
 			}
 			vecParticleData_.clear();
 			

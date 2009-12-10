@@ -25,6 +25,7 @@ const double DEFAULT_INCREMENT_ANGLE = 10;
 
 const double VALUE_MIN_DEFAULT = 0.0;
 const double VALUE_MAX_DEFAULT = 1.0;
+const unsigned int POINT_PARTICLE_DIAMETER = 1;
 
 enum MSGTYPE
 {
