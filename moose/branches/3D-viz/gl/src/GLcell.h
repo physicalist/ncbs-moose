@@ -90,7 +90,7 @@ class GLcell
 	double highValue_;
 	double lowValue_;
 
-	unsigned int testTicker_; // used by testInsertVecParticleData()
+	double testTicker_; // used by testInsertVecParticleData()
 
 	vector< Id > renderList_;
 	vector< ParticleData > vecParticleData_;

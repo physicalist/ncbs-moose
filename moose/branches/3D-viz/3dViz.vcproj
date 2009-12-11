@@ -179,11 +179,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\signeur\Adaptor.h"
+				RelativePath=".\robots\Adaptor.h"
 				>
 			</File>
 			<File
-				RelativePath=".\robots\Adaptor.h"
+				RelativePath=".\signeur\Adaptor.h"
 				>
 			</File>
 			<File
@@ -639,6 +639,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\gl\src\ParticleData.h"
+				>
+			</File>
+			<File
 				RelativePath=".\utility\PathUtility.h"
 				>
 			</File>
@@ -911,11 +915,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\robots\Adaptor.cpp"
+				RelativePath=".\signeur\Adaptor.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\signeur\Adaptor.cpp"
+				RelativePath=".\robots\Adaptor.cpp"
 				>
 			</File>
 			<File
@@ -1439,11 +1443,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\robots\SigNeur.cpp"
+				RelativePath=".\signeur\SigNeur.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\signeur\SigNeur.cpp"
+				RelativePath=".\robots\SigNeur.cpp"
 				>
 			</File>
 			<File

@@ -219,6 +219,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\ParticleData.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\TextBox.h"
 				>
 			</File>

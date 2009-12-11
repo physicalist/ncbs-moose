@@ -551,7 +551,7 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 		}
 	}
 
-	testInsertVecParticleData();
+	// testInsertVecParticleData();
 
 	if ( vecParticleData_.size() > 0 )
 	{
@@ -1001,7 +1001,11 @@ void GLcell::testInsertVecParticleData( void )
 	p1.colorBlue = 0.0;
 	p1.colorGreen = 1.0;
 	p1.diameter = 1e-6 * 10;
+#ifdef WIN32
+	unsigned int j = 0;
+#else
 	unsigned int j = (unsigned int)(random() % 10);
+#endif
 	for ( unsigned int i = 0; i < 10+j; i++ )
 	{
 		p1.coords.push_back( 1e-6 * (i*5 + 50*cos(testTicker_)) );
