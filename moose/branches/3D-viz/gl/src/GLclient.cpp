@@ -1039,11 +1039,10 @@ void draw()
 			}
 
 			{
-				boost::mutex::scoped_lock lock( mutexColorSetUpdated_ );
-				isColorSetDirty_ = false;
-				
-				condColorSetUpdated_.notify_one(); // no-op except when responding to PROCESS_COLORS_SYNC
+				boost::mutex::scoped_lock lock2( mutexColorSetUpdated_ );
+				isColorSetDirty_ = false;				
 			}
+			condColorSetUpdated_.notify_one(); // no-op except when responding to PROCESS_COLORS_SYNC
 		}
 
 		if ( isParticlesDirty_ )
@@ -1123,11 +1122,11 @@ void draw()
 			vecParticleData_.clear();
 			
 			{
-				boost::mutex::scoped_lock lock( mutexParticlesUpdated_ );
-				isParticlesDirty_ = false;
-				
-				condParticlesUpdated_.notify_one(); // no-op except when responding to PROCESS_PARTICLES_SYNC
+				boost::mutex::scoped_lock lock2( mutexParticlesUpdated_ );
+				isParticlesDirty_ = false;				
 			}
+			condParticlesUpdated_.notify_one(); // no-op except when responding to PROCESS_PARTICLES_SYNC
+				
 		}
 
 		if ( isSavingMovie_ )
