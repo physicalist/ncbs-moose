@@ -779,7 +779,7 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 			GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( x, y, z ),
 									       diameter/2,
 									       incrementAngle_ );
-			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( sphere );
+			mapId2GLCompartment_[id] = sphere;
 
 			osg::Geometry* sphereGeom = sphere->getGeometry();
 			
@@ -820,7 +820,7 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 										     vScale * diameter/2,
 										     incrementAngle_ );
 			
-			mapId2GLCompartment_[id] = dynamic_cast< GLCompartment* >( cylinder );
+			mapId2GLCompartment_[id] = cylinder;
 
 			osg::Geometry* cylinderGeom = cylinder->getGeometry();
 

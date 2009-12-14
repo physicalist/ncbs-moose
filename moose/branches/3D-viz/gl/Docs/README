@@ -30,11 +30,7 @@ included in the same directory and named vMyelin.g.
 
 Appendix A (explanation of network flow between GLcell|GLview and
 glclient) :
--------------------------------------------------------
-
-(Please note that the attached images mention only GLcell but apply
-equally to GLview, which was developed later. Also note that
-'glclient' as shown in the images has been renamed to 'glclient'.)
+---------------------------------------------------------------------
 
 GLcell and GLview are single-threaded whereas glclient runs in two
 separate threads. The first thread is responsible for network
@@ -44,12 +40,13 @@ events invoked by the user which are transmitted back to GLcell|GLview
 via the first thread.
 
 An overview of the flow of network communication in the two modes
-(given by the two states of the 'sync' flag) is provided in the two
+(given by the two states of the 'sync' flag) is provided in the
 figures accompanying this document:
 
 a. When 'sync' is 'on':
 
-Please refer to the sequence diagram in fig_sync_on.png.
+Please refer to the sequence diagrams in GLcell_sync_on.png and
+GLview_sync_on.png.
 
   In this mode, GLcell|GLview will await an acknowledgement message
 from the client after every transmission of updated color data to it,
@@ -63,7 +60,8 @@ simulation.
 
 b. When 'sync' is 'off':
 
-Please refer to the sequence diagram in fig_sync_off.png.
+Please refer to the sequence diagram in GLcell_sync_off.png and
+GLview_sync_off.png.
 
   In this mode, the client instance will always display the last set
 of colors transmitted to it by GLcell|GLview. Intermediate frames may
