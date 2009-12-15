@@ -498,7 +498,7 @@ void receiveData( int newFd )
 						GLcellResetData geometryData;
 						archive_i >> geometryData;
 
-						initializeRoot( geometryData.pathName );
+						initializeRoot( geometryData.strPathName );
 						updateGeometryGLcell( geometryData );
 
 						isGeometryDirty_ = true;
@@ -580,7 +580,7 @@ void receiveData( int newFd )
 						GLviewResetData data;
 						archive_i >> data;
 
-						initializeRoot( data.pathName );
+						initializeRoot( data.strPathName );
 						updateGeometryGLview( data );
 
 						isGeometryDirty_ = true;
@@ -590,7 +590,7 @@ void receiveData( int newFd )
 						{  // additional scope to wrap scoped_lock
 							boost::mutex::scoped_lock lock( mutexColorSetSaved_ );
 							
-							if ( mapId2GLshapeData_.size() > 0 )
+							if ( ! mapId2GLshapeData_.empty() )
 							{
 								std::map< unsigned int, GLshapeData* >::iterator id2glshapeIterator;
 								for ( id2glshapeIterator = mapId2GLshapeData_.begin();
@@ -711,7 +711,7 @@ void sendAck( int socket )
 	}
 }
 
-void initializeRoot( const std::string& pathName )
+void initializeRoot( const std::string& strPathName )
 {
 	root_ = new osg::Group; // root_ is an osg::ref_ptr
 	root_->setDataVariance( osg::Object::DYNAMIC );
@@ -720,7 +720,7 @@ void initializeRoot( const std::string& pathName )
 		delete textParentBottom_;
 	textParentBottom_ = new TextBox();
 	textParentBottom_->setPosition( osg::Vec3d( 10, 10, 0 ) );
-	textParentBottom_->setText( pathName );
+	textParentBottom_->setText( strPathName );
 	root_->addChild( textParentBottom_->getGroup() );
 
 	if ( textParentTop_ != NULL)
@@ -735,9 +735,9 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 {	
 	double vScale = geometryData.vScale;
 	bgcolor_ = osg::Vec4( geometryData.bgcolorRed, geometryData.bgcolorGreen, geometryData.bgcolorBlue, 1.0 ); 
-	const std::vector< GLcellProcData >& compartments = geometryData.renderListCompartmentData;
+	const std::vector< GLcellProcData >& compartments = geometryData.vecRenderListCompartmentData;
 	
-	if ( mapId2GLCompartment_.size() > 0 )
+	if ( ! mapId2GLCompartment_.empty() )
 	{
 		for ( std::map< unsigned int, GLCompartment* >::iterator iterator = mapId2GLCompartment_.begin();
 		      iterator != mapId2GLCompartment_.end();
@@ -760,9 +760,9 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 	// First pass: create the basic hollow cylinders with no end-caps
 	for ( unsigned int i = 0; i < compartments.size(); ++i )
 	{
-		const std::string& name = compartments[i].name;
+		const std::string& strName = compartments[i].strName;
 		const unsigned int& id = compartments[i].id;
-		const std::string& pathName = compartments[i].pathName;
+		const std::string& strPathName = compartments[i].strPathName;
 		const double& diameter = compartments[i].diameter;
 		const double& length = compartments[i].length;
 		const double& x0 = compartments[i].x0;
@@ -773,7 +773,7 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 		const double& z = compartments[i].z;
 			
 		if ( length < SIZE_EPSILON ||
-		     name.compare("soma") == 0 ) 
+		     strName.compare("soma") == 0 ) 
 			// the compartment is spherical
 		{ 
 			GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( x, y, z ),
@@ -787,7 +787,7 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 			geode->addDrawable( sphereGeom );
 			root_->addChild( geode );
 			
-			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( pathName ) );
+			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( strPathName ) );
 		}
 		else 
 			// the compartment is cylindrical
@@ -828,7 +828,7 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 			geode->addDrawable( cylinderGeom );
 			root_->addChild( geode );
 
-			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( pathName ) );
+			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( strPathName ) );
 		}
 	}
 
@@ -836,15 +836,15 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 	for ( unsigned int i = 0; i < compartments.size(); ++i )
 	{
 		const unsigned int& id = compartments[i].id;
-		const std::vector< unsigned int > vNeighbourIds = compartments[i].vNeighbourIds;
+		const std::vector< unsigned int > vecNeighbourIds = compartments[i].vecNeighbourIds;
 
-		for ( unsigned int j = 0; j < vNeighbourIds.size(); ++j )
+		for ( unsigned int j = 0; j < vecNeighbourIds.size(); ++j )
 		{
 			if ( mapId2GLCompartment_[id]->getCompartmentType() == COMP_CYLINDER &&
-			     mapId2GLCompartment_[vNeighbourIds[j]]->getCompartmentType() == COMP_CYLINDER )
+			     mapId2GLCompartment_[vecNeighbourIds[j]]->getCompartmentType() == COMP_CYLINDER )
 			{
 				dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[id] )->
-					addHalfJointToNeighbour( dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[vNeighbourIds[j]] ) );
+					addHalfJointToNeighbour( dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[vecNeighbourIds[j]] ) );
 			}
 		} 
 	 }
@@ -865,9 +865,9 @@ void updateGeometryGLview( const GLviewResetData& data )
 {
 	bgcolor_ = osg::Vec4( data.bgcolorRed, data.bgcolorGreen, data.bgcolorBlue, 1.0 );
 	maxsizeGLviewShape_ = data.maxsize;
-	const std::vector< GLviewShapeResetData >& shapes = data.shapes;
+	const std::vector< GLviewShapeResetData >& vecShapes = data.vecShapes;
 
-	if ( mapId2GLviewShape_.size() > 0 )
+	if ( ! mapId2GLviewShape_.empty() )
 	{
 		std::map< unsigned int, GLviewShape* >::iterator id2glcompIterator;
 		for ( id2glcompIterator = mapId2GLviewShape_.begin();
@@ -889,22 +889,22 @@ void updateGeometryGLview( const GLviewResetData& data )
 		mapGeode2NameId_.clear();
 	}
 
-	for ( unsigned int i = 0; i < shapes.size(); ++i )
+	for ( unsigned int i = 0; i < vecShapes.size(); ++i )
 	{
-		const unsigned int& id = shapes[i].id;
-		const std::string& pathName = shapes[i].pathName;
-		const double& x = shapes[i].x;
-		const double& y = shapes[i].y;
-		const double& z = shapes[i].z;
-		const int& shapetype = shapes[i].shapetype;
+		const unsigned int& id = vecShapes[i].id;
+		const std::string& strPathName = vecShapes[i].strPathName;
+		const double& x = vecShapes[i].x;
+		const double& y = vecShapes[i].y;
+		const double& z = vecShapes[i].z;
+		const int& shapetype = vecShapes[i].shapetype;
 
-		GLviewShape * shape = new GLviewShape( id, pathName,
+		GLviewShape * shape = new GLviewShape( id, strPathName,
 						       x, y, z,
 						       0.5 * maxsizeGLviewShape_, shapetype );
 		mapId2GLviewShape_[id] = shape;
 
 		root_->addChild( shape->getGeode() );
-		mapGeode2NameId_[ shape->getGeode() ] = new std::pair< unsigned int, std::string* >( id, new std::string( pathName ) );
+		mapGeode2NameId_[ shape->getGeode() ] = new std::pair< unsigned int, std::string* >( id, new std::string( strPathName ) );
 	}	
 }
 
@@ -978,15 +978,15 @@ void draw()
 					}
 					else if ( color >= (1 - FP_EPSILON) ) // color >= 1
 					{
-						ix = colormap_.size()-1;
+						ix = vecColormap_.size()-1;
 					}
 					else
 					{
-						ix = static_cast< int >( floor( color * colormap_.size() ) );
+						ix = static_cast< int >( floor( color * vecColormap_.size() ) );
 					}
-					double red = colormap_[ ix ][ 0 ];
-					double green = colormap_[ ix ][ 1 ];
-					double blue = colormap_[ ix ][ 2 ];
+					double red = vecColormap_[ ix ][ 0 ];
+					double green = vecColormap_[ ix ][ 1 ];
+					double blue = vecColormap_[ ix ][ 2 ];
 					glcompartment->setColor( osg::Vec4( red, green, blue, 1.0f ) );
 				}
 			}
@@ -1015,15 +1015,15 @@ void draw()
 						}
 						else if ( newGLshape->color >= (1 - FP_EPSILON) ) // newGLshape->color >= 1
 						{
-							ix = colormap_.size()-1;
+							ix = vecColormap_.size()-1;
 						}
 						else
 						{
-							ix = static_cast< int >( floor( newGLshape->color * colormap_.size() ) );
+							ix = static_cast< int >( floor( newGLshape->color * vecColormap_.size() ) );
 						}
-						double red = colormap_[ ix ][ 0 ];
-						double green = colormap_[ ix ][ 1 ];
-						double blue = colormap_[ ix ][ 2 ];
+						double red = vecColormap_[ ix ][ 0 ];
+						double green = vecColormap_[ ix ][ 1 ];
+						double blue = vecColormap_[ ix ][ 2 ];
 						glViewShape->setColor( osg::Vec4( red, green, blue, 1.0f ) );
 					}
 
@@ -1049,9 +1049,9 @@ void draw()
 		{
 			boost::mutex::scoped_lock lock( mutexParticlesSaved_ );
 			
-			for ( unsigned int i = 0; i < particleGeodes_.size(); ++i )
+			for ( unsigned int i = 0; i < vecParticleGeodes_.size(); ++i )
 			{
-				root_->removeChild( particleGeodes_[i] );
+				root_->removeChild( vecParticleGeodes_[i] );
 			}
 
 			for ( unsigned int i = 0; i < vecParticleData_.size(); ++i )
@@ -1064,11 +1064,11 @@ void draw()
 					osg::Geometry* geometry = new osg::Geometry;
 
 					osg::ref_ptr< osg::Vec3Array > vertices = new osg::Vec3Array;
-					for ( unsigned int j = 0; j < particleData->coords.size(); j += 3 )
+					for ( unsigned int j = 0; j < particleData->vecCoords.size(); j += 3 )
 					{
-						vertices->push_back( osg::Vec3( particleData->coords[j],
-										particleData->coords[j+1],
-										particleData->coords[j+2] ) );
+						vertices->push_back( osg::Vec3( particleData->vecCoords[j],
+										particleData->vecCoords[j+1],
+										particleData->vecCoords[j+2] ) );
 					}
 					geometry->setVertexArray( vertices.get() );
 				
@@ -1094,15 +1094,15 @@ void draw()
 					geode->addDrawable( geometry );
 
 					root_->addChild( geode );
-					particleGeodes_.push_back( geode );
+					vecParticleGeodes_.push_back( geode );
 				}
 				else
 				{
-					for ( unsigned int j = 0; j < particleData->coords.size(); j += 3 )
+					for ( unsigned int j = 0; j < particleData->vecCoords.size(); j += 3 )
 					{
-						GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( particleData->coords[j],
-														   particleData->coords[j+1],
-														   particleData->coords[j+2] ),
+						GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( particleData->vecCoords[j],
+														   particleData->vecCoords[j+1],
+														   particleData->vecCoords[j+2] ),
 												       particleData->diameter/2,
 												       incrementAngle_ );
 						sphere->setColor( osg::Vec4( particleData->colorRed,
@@ -1115,7 +1115,7 @@ void draw()
 						geode->addDrawable( sphereGeom );
 						
 						root_->addChild( geode );
-						particleGeodes_.push_back( geode );
+						vecParticleGeodes_.push_back( geode );
 					}
 				}
 			}
@@ -1254,7 +1254,7 @@ int main( int argc, char* argv[] )
 				color[1] = strtod( pEnd, &pEnd ) / 65535.;
 				color[2] = strtod( pEnd, NULL ) / 65535.;
 				
-				colormap_.push_back( color );
+				vecColormap_.push_back( color );
 			}
 		}
 	}

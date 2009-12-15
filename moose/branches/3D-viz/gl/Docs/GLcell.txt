@@ -102,8 +102,33 @@ which corresponds to this value.
 > setfield gl0 lowvalue -0.08
 
 
-
 A version of DEMOS/gbar/myelin.g, modified to include GLcell, is
 included in the directory DEMOS/gbar/ as cMyelin.g. See the file README
 for general operating instructions to launch such a script, coupled with
 an instance of 'glclient', as a complete example.
+
+Particles and the 'particleData' message:
+--------------------------------
+
+The GLcell element can be used for the visualization of individual
+molecules simulated by Smoldyn, where input is obtained from Smoldyn
+via a MOOSE interface. Such molecules can be rendered as point
+particles or as individual spheres (which is more expensive). Setting
+'sync' to 'on' will be necessary when the number of molecules
+displayed is large and frame-skipping must to be avoided, for
+instance, when saving individual frames for a movie for publication.
+
+The GLcell element expects incoming messages of the type
+'particleData', each of which will contain a vector of the struct
+ParticleData (refer to ParticleData.h). Each ParticleData struct lists
+particles of a specific kind, which will all be rendered with the
+colour and diameter as specified in that struct. If diameter is equal
+to zero, particles will be rendered as points; if greater than zero,
+as spheres of that diameter. Colour is specified as RGB values over
+[0,1]. Individual particles are represented by their co-ordinates.
+Each particleData message lists particle positions after a particular
+display timestep. Therefore the animation consists of one frame per
+display timestep/particleData message.
+
+A test function is included in GLview.cpp to simulate incoming
+particleData messages for a particular test-case.

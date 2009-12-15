@@ -430,7 +430,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 
 	vecParticleData_.clear();
 
-	geometryData.pathName = " ";
+	geometryData.strPathName = " ";
 	geometryData.bgcolorRed = bgcolorRed_;
 	geometryData.bgcolorGreen = bgcolorGreen_;
 	geometryData.bgcolorBlue = bgcolorBlue_;
@@ -439,40 +439,40 @@ void GLcell::reinitFuncLocal( const Conn* c )
 	// strPath_ should have been set.
 	if ( ! strPath_.empty() )
 	{
-		// renderList_ holds the flattened tree of elements to render.
-		renderList_.clear();
+		// vecRenderList_ holds the flattened tree of elements to render.
+		vecRenderList_.clear();
 
-		geometryData.pathName = strPath_;
+		geometryData.strPathName = strPath_;
 		geometryData.vScale = vScale_;
-		geometryData.renderListCompartmentData.clear();
+		geometryData.vecRenderListCompartmentData.clear();
 
-		// Start populating renderList_ with the node in strPath_ 
+		// Start populating vecRenderList_ with the node in strPath_ 
 		// and its children, recursively.
 		add2RenderList( Shell::path2eid( strPath_, "/", 1 ) );
 
-		for ( unsigned int i = 0; i < renderList_.size(); ++i )
+		for ( unsigned int i = 0; i < vecRenderList_.size(); ++i )
 		{
 
-			if ( ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
-			       || renderList_[i]()->cinfo()->isA( Cinfo::find( "SymCompartment" ) ) )
-				&& get< double >( renderList_[i].eref(), "diameter", diameter )
-				&& get< double >( renderList_[i].eref(), "length", length )
-				&& get< double >( renderList_[i].eref(), "x0", x0 )
-				&& get< double >( renderList_[i].eref(), "y0", y0 )
-				&& get< double >( renderList_[i].eref(), "z0", z0 )
-				&& get< double >( renderList_[i].eref(), "x", x )
-				&& get< double >( renderList_[i].eref(), "y", y )
-				&& get< double >( renderList_[i].eref(), "z", z ) )
+			if ( ( vecRenderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
+			       || vecRenderList_[i]()->cinfo()->isA( Cinfo::find( "SymCompartment" ) ) )
+				&& get< double >( vecRenderList_[i].eref(), "diameter", diameter )
+				&& get< double >( vecRenderList_[i].eref(), "length", length )
+				&& get< double >( vecRenderList_[i].eref(), "x0", x0 )
+				&& get< double >( vecRenderList_[i].eref(), "y0", y0 )
+				&& get< double >( vecRenderList_[i].eref(), "z0", z0 )
+				&& get< double >( vecRenderList_[i].eref(), "x", x )
+				&& get< double >( vecRenderList_[i].eref(), "y", y )
+				&& get< double >( vecRenderList_[i].eref(), "z", z ) )
 			{
 				GLcellProcData compartmentData;
 				
-				compartmentData.id = renderList_[i].id();
-				compartmentData.name = renderList_[i].eref().name();
-				compartmentData.pathName = renderList_[i].path();
+				compartmentData.id = vecRenderList_[i].id();
+				compartmentData.strName = vecRenderList_[i].eref().name();
+				compartmentData.strPathName = vecRenderList_[i].path();
 
-				std::vector< unsigned int > vNeighbourIds;			     
-				findNeighbours( renderList_[i], vNeighbourIds );
-				compartmentData.vNeighbourIds = vNeighbourIds;
+				std::vector< unsigned int > vecNeighbourIds;			     
+				findNeighbours( vecRenderList_[i], vecNeighbourIds );
+				compartmentData.vecNeighbourIds = vecNeighbourIds;
 				
 				compartmentData.diameter = diameter;
 				compartmentData.length = length;
@@ -483,7 +483,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 				compartmentData.y = y;
 				compartmentData.z = z;
 				
-				geometryData.renderListCompartmentData.push_back( compartmentData );
+				geometryData.vecRenderListCompartmentData.push_back( compartmentData );
 			}
 		}
 	}
@@ -508,19 +508,19 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 	double attrValue;
 	std::map< unsigned int, double> mapColors;
        
-	if ( !renderList_.empty() )
+	if ( ! vecRenderList_.empty() )
 	{
 		renderMapAttrsTransmitted_.clear();
 		
-		for ( unsigned int i = 0; i < renderList_.size(); ++i )
+		for ( unsigned int i = 0; i < vecRenderList_.size(); ++i )
 		{
-			if ( ( renderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
-			       || renderList_[i]()->cinfo()->isA( Cinfo::find( "SymCompartment" ) ) )
-			     && get< double >( renderList_[i].eref(), strAttributeName_.c_str(), attrValue ) )
+			if ( ( vecRenderList_[i]()->cinfo()->isA( Cinfo::find( "Compartment" ) ) 
+			       || vecRenderList_[i]()->cinfo()->isA( Cinfo::find( "SymCompartment" ) ) )
+			     && get< double >( vecRenderList_[i].eref(), strAttributeName_.c_str(), attrValue ) )
 			{
-				id = renderList_[i].id();
+				id = vecRenderList_[i].id();
 
-				if ( ( renderMapAttrsLastTransmitted_.size() == 0 )  ||
+				if ( ( renderMapAttrsLastTransmitted_.empty() )  ||
 				     // on the first PROCESS after a RESET
 
 				     syncMode_ ||
@@ -663,8 +663,8 @@ void GLcell::add2RenderList( Id id )
 	vector< Id > children;
 	Id found;
 
-	// Save this node on renderList_, the flattened tree of elements to render.
-	renderList_.push_back( id );
+	// Save this node on vecRenderList_, the flattened tree of elements to render.
+	vecRenderList_.push_back( id );
 	
 	// Determine this node's (immediate) children by tracing outgoing "childSrc" messages.
 	Conn* i = id()->targets( "childSrc", 0 );
@@ -991,9 +991,9 @@ void GLcell::testInsertVecParticleData( void )
 	p.diameter = 0;
 	for ( unsigned int i = 0; i < 100; i++ )
 	{
-		p.coords.push_back( 1e-6 * (i*10 + 100*sin(testTicker_)) );
-		p.coords.push_back( 1e-6 * (i*10 + 100*cos(testTicker_++)) );
-		p.coords.push_back( 1e-6 * (i*10 + 10) );
+		p.vecCoords.push_back( 1e-6 * (i*10 + 100*sin(testTicker_)) );
+		p.vecCoords.push_back( 1e-6 * (i*10 + 100*cos(testTicker_++)) );
+		p.vecCoords.push_back( 1e-6 * (i*10 + 10) );
 	}
 
 	ParticleData p1;
@@ -1008,9 +1008,9 @@ void GLcell::testInsertVecParticleData( void )
 #endif
 	for ( unsigned int i = 0; i < 10+j; i++ )
 	{
-		p1.coords.push_back( 1e-6 * (i*5 + 50*cos(testTicker_)) );
-		p1.coords.push_back( 1e-6 * (i*5 + 50*sin(testTicker_++)) );
-		p1.coords.push_back( 1e-6 * (i*5 + 5) );
+		p1.vecCoords.push_back( 1e-6 * (i*5 + 50*cos(testTicker_)) );
+		p1.vecCoords.push_back( 1e-6 * (i*5 + 50*sin(testTicker_++)) );
+		p1.vecCoords.push_back( 1e-6 * (i*5 + 5) );
 	}
 
 	vecParticleData_.push_back( p );

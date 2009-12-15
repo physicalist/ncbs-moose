@@ -13,7 +13,7 @@
 struct GLviewShapeResetData
 {
 	unsigned int id;
-	std::string pathName;
+	std::string strPathName;
 	double x, y, z;
 	int shapetype;
 
@@ -21,7 +21,7 @@ struct GLviewShapeResetData
 	void serialize( Archive& ar, const unsigned int version )
 	{
 		ar & id;
-		ar & pathName;
+		ar & strPathName;
 		ar & x;
 		ar & y;
 		ar & z;
@@ -34,13 +34,13 @@ struct GLviewResetData
 	double bgcolorRed;
 	double bgcolorGreen;
 	double bgcolorBlue;
-	std::string pathName;
+	std::string strPathName;
 
 	// this will be the maximum size (absolute value) of
 	// our elements along any dimension
 	double maxsize;
 	
-	std::vector< GLviewShapeResetData > shapes;
+	std::vector< GLviewShapeResetData > vecShapes;
 
 	template< typename Archive >
 	void serialize( Archive& ar, const unsigned int version )
@@ -48,9 +48,9 @@ struct GLviewResetData
 		ar & bgcolorRed;
 		ar & bgcolorGreen;
 		ar & bgcolorBlue;
-		ar & pathName;
+		ar & strPathName;
 		ar & maxsize;
-		ar & shapes;
+		ar & vecShapes;
 	}
 };
 

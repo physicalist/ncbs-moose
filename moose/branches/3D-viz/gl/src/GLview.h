@@ -134,7 +134,7 @@ class GLview
 	string strRelPath_;
 
 	// the elements found on strPath_
-	vector< Id > elements_;
+	vector< Id > vecElements_;
 	// child elements of the type GLshape used as interpolation targets
 	vector< Eref > vecErefGLshapeChildren_;
 
