@@ -92,7 +92,7 @@ class GLcell
 
 	double testTicker_; // used by testInsertVecParticleData()
 
-	vector< Id > renderList_;
+	vector< Id > vecRenderList_;
 	vector< ParticleData > vecParticleData_;
 
 	map< unsigned int, double > renderMapAttrsLastTransmitted_;

@@ -12,22 +12,22 @@
 
 struct GLcellResetData
 {
-	std::string pathName;
+	std::string strPathName;
 	double vScale;
 	double bgcolorRed;
 	double bgcolorGreen;
 	double bgcolorBlue;
-	std::vector< GLcellProcData > renderListCompartmentData;
+	std::vector< GLcellProcData > vecRenderListCompartmentData;
 
 	template< typename Archive > 
 	void serialize( Archive& ar, const unsigned int version )
 	{
-		ar & pathName;
+		ar & strPathName;
 		ar & vScale;
 		ar & bgcolorRed;
 		ar & bgcolorGreen;
 		ar & bgcolorBlue;
-		ar & renderListCompartmentData;
+		ar & vecRenderListCompartmentData;
 	}
 };
 

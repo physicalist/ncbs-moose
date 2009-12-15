@@ -25,7 +25,7 @@ enum SHAPETYPE
 class GLviewShape
 {
  public:
-	GLviewShape( unsigned int id, std::string pathName, 
+	GLviewShape( unsigned int id, std::string strPathName, 
 		     double x, double y, double z,
 		     double len, int shapetype );
 	osg::ref_ptr< osg::Geode > getGeode();
@@ -35,7 +35,7 @@ class GLviewShape
 
  private:
 	unsigned int id_;
-	std::string pathName_;
+	std::string strPathName_;
 	double x_, y_, z_;
 	double xoffset_, yoffset_, zoffset_;
 	double len_;

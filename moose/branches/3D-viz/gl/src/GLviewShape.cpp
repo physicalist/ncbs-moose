@@ -16,7 +16,7 @@
 
 #include "GLviewShape.h"
 
-GLviewShape::GLviewShape( unsigned int id, std::string pathName, 
+GLviewShape::GLviewShape( unsigned int id, std::string strPathName, 
 			  double x, double y, double z,
 			  double len, int shapetype )
 	:
@@ -25,7 +25,7 @@ GLviewShape::GLviewShape( unsigned int id, std::string pathName,
 	zoffset_( 0.0 )
 {
 	id_ = id;
-	pathName_ = pathName;
+	strPathName_ = strPathName;
 	x_ = x; 
 	y_ = y;
 	z_ = z;

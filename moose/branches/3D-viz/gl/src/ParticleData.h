@@ -31,10 +31,10 @@ struct ParticleData
 	// spheres with the diameter given.
 	double diameter;
 
-	// The length of coordinates will be a multiple of 3;
-	// each consecutive 3-tuple will represent x, y, z for a single
-	// particle to be drawn as points or spheres.
-	std::vector< double > coords;
+	// The length of vecCoords will be a multiple of 3;
+	// each consecutive 3-tuple will represent x, y, z for an
+	// individual particle.
+	std::vector< double > vecCoords;
 
 	template< typename Archive >
 	void serialize( Archive& ar, const unsigned int version)
@@ -43,7 +43,7 @@ struct ParticleData
 		ar & colorBlue;
 		ar & colorGreen;
 		ar & diameter;
-		ar & coords;
+		ar & vecCoords;
 	}
 };
 

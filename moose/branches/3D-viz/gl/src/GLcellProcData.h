@@ -3,10 +3,10 @@
 
 struct GLcellProcData
 {
-	std::string name;
+	std::string strName;
 	unsigned int id;
-	std::string pathName;
-	std::vector< unsigned int > vNeighbourIds;
+	std::string strPathName;
+	std::vector< unsigned int > vecNeighbourIds;
 
 	double diameter;
 	double length;
@@ -20,10 +20,10 @@ struct GLcellProcData
 	template< typename Archive > 
 	void serialize( Archive& ar, const unsigned int version )
 	{
-		ar & name;
+		ar & strName;
 		ar & id;
-		ar & pathName;
-		ar & vNeighbourIds;
+		ar & strPathName;
+		ar & vecNeighbourIds;
 		
 		ar & diameter;
 		ar & length;

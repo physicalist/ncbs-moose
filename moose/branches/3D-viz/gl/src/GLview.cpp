@@ -254,7 +254,7 @@ GLview::~GLview()
 	free ( y_ );
 	free ( z_ );
 
-	if ( mapId2GLshapeData_.size() != 0 )
+	if ( ! mapId2GLshapeData_.empty() )
 	{
 		std::map< unsigned int, GLshapeData* >::iterator id2glshapeIterator;			
 		for ( id2glshapeIterator = mapId2GLshapeData_.begin();
@@ -267,7 +267,7 @@ GLview::~GLview()
 		mapId2GLshapeData_.clear();
 	}
 	
-	elements_.clear();
+	vecElements_.clear();
 }
 
 ///////////////////////////////////////////////////
@@ -664,11 +664,11 @@ void GLview::reinitFuncLocal( const Conn* c )
 
 	if ( ! strPath_.empty() )  
 	{
-		elements_.clear();
-		wildcardFind( strPath_, elements_ );
-		std::cout << "GLview: " << elements_.size() << " elements found." << std::endl; 
+		vecElements_.clear();
+		wildcardFind( strPath_, vecElements_ );
+		std::cout << "GLview: " << vecElements_.size() << " elements found." << std::endl; 
 
-		// (re) allocate memory (because elements_.size() might have changed)
+		// (re) allocate memory (because vecElements_.size() might have changed)
 		if ( mapId2GLshapeData_.size() != 0 )
 		{
 			std::map< unsigned int, GLshapeData* >::iterator id2glshapeIterator;			
@@ -681,9 +681,9 @@ void GLview::reinitFuncLocal( const Conn* c )
 
 			mapId2GLshapeData_.clear();
 		}
-		for ( unsigned int i = 0; i < elements_.size(); ++i )
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i )
 		{
-			unsigned int id = elements_[i].id();
+			unsigned int id = vecElements_[i].id();
 			GLshapeData* temp = (GLshapeData *) malloc( sizeof( GLshapeData ) );
 			if ( temp == NULL )
 			{
@@ -702,21 +702,21 @@ void GLview::reinitFuncLocal( const Conn* c )
 		resetData.bgcolorRed = bgcolorRed_;
 		resetData.bgcolorGreen = bgcolorGreen_;
 		resetData.bgcolorBlue = bgcolorBlue_;
-		resetData.pathName = strPath_;
+		resetData.strPathName = strPath_;
 		resetData.maxsize = maxsize;
 		
-		for ( unsigned int i = 0; i < elements_.size(); ++i )
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i )
 		{
 			GLviewShapeResetData shape;
 
-			shape.id = elements_[i].id();
-			shape.pathName = elements_[i].path();
+			shape.id = vecElements_[i].id();
+			shape.strPathName = vecElements_[i].path();
 			shape.x = x_[i];
 			shape.y = y_[i];
 			shape.z = z_[i];
 			shape.shapetype = shapetype;
 
-			resetData.shapes.push_back( shape );
+			resetData.vecShapes.push_back( shape );
 		}
 
 		if ( strClientPort_.empty() )
@@ -742,9 +742,9 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 	}
 
 	// set parameters to default values
-	for ( unsigned int i = 0; i < elements_.size(); ++i )
+	for ( unsigned int i = 0; i < vecElements_.size(); ++i )
 	{
-		unsigned int id = elements_[i].id();
+		unsigned int id = vecElements_[i].id();
 		mapId2GLshapeData_[id]->color = -1.; // -1 signifies no change in this variable
 		mapId2GLshapeData_[id]->xoffset = 0;
 		mapId2GLshapeData_[id]->yoffset = 0.;
@@ -768,9 +768,9 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 	// values of respective interpolation templates
 	if ( color_val_ > 0 && color_val_ <= 5 )
 	{
-		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i)
 		{
-			unsigned int id = elements_[i].id();
+			unsigned int id = vecElements_[i].id();
 			double value = values_[color_val_-1][i];
 
 			// determine interpolation targets
@@ -792,9 +792,9 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 	if ( morph_val_ > 0 && morph_val_ <= 5 )
 	{
-		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i)
 		{
-			unsigned int id = elements_[i].id();
+			unsigned int id = vecElements_[i].id();
 			double value = values_[morph_val_-1][i];
 
 			// determine interpolation targets
@@ -816,9 +816,9 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 	if ( xoffset_val_ > 0 && xoffset_val_ <= 5 )
 	{
-		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i)
 		{
-			unsigned int id = elements_[i].id();
+			unsigned int id = vecElements_[i].id();
 			double value = values_[xoffset_val_-1][i];
 
 			// determine interpolation targets
@@ -840,9 +840,9 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 	if ( yoffset_val_ > 0 && yoffset_val_ <= 5 )
 	{
-		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i)
 		{
-			unsigned int id = elements_[i].id();
+			unsigned int id = vecElements_[i].id();
 			double value = values_[yoffset_val_-1][i];
 
 			// determine interpolation targets
@@ -864,9 +864,9 @@ void GLview::processFuncLocal( Eref e, ProcInfo info )
 
 	if ( zoffset_val_ > 0 && zoffset_val_ <= 5 )
 	{
-		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i)
 		{
-			unsigned int id = elements_[i].id();
+			unsigned int id = vecElements_[i].id();
 			double value = values_[zoffset_val_-1][i];
 
 			// determine interpolation targets
@@ -909,7 +909,7 @@ int GLview::populateValues( int valueNum, double ** pValues, const string& strVa
 	int status = 0;
 
 	if ( *pValues == NULL )
-		*pValues = ( double * ) malloc( sizeof( double ) * elements_.size() );
+		*pValues = ( double * ) malloc( sizeof( double ) * vecElements_.size() );
 	
 	if ( *pValues == NULL ) // if it's still NULL
 	{
@@ -920,14 +920,14 @@ int GLview::populateValues( int valueNum, double ** pValues, const string& strVa
 	{
 		double * values = *pValues;
 
-		for ( unsigned int i = 0; i < elements_.size(); ++i)
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i)
 		{
-			Id id = elements_[i];
+			Id id = vecElements_[i];
 			std::string path;
 
 			if ( ! strRelPath_.empty() ) 
 			{
-				path = elements_[i].path();
+				path = vecElements_[i].path();
 				path.push_back('/');
 				path.append(strRelPath_);
 				id = Id::Id( path, "/" );
@@ -1032,11 +1032,11 @@ int GLview::getXYZ( Id id, double& xout, double& yout, double& zout, double &max
 double GLview::populateXYZ()
 {
 	if ( x_ == NULL )
-		x_ = ( double * ) malloc( sizeof( double ) * elements_.size() );
+		x_ = ( double * ) malloc( sizeof( double ) * vecElements_.size() );
 	if ( y_ == NULL )
-		y_ = ( double * ) malloc( sizeof( double ) * elements_.size() );
+		y_ = ( double * ) malloc( sizeof( double ) * vecElements_.size() );
 	if ( z_ == NULL )
-		z_ = ( double * ) malloc( sizeof( double ) * elements_.size() );
+		z_ = ( double * ) malloc( sizeof( double ) * vecElements_.size() );
 
 	double x, y, z, size, maxsize = 0;
 	vector< unsigned int > unassignedShapes;
@@ -1060,7 +1060,7 @@ double GLview::populateXYZ()
 
 	if ( gridMode_ )
 	{
-		for ( unsigned int i = 0; i < elements_.size(); ++i )
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i )
 		{
 			unassignedShapes.push_back( i );
 		}
@@ -1074,9 +1074,9 @@ double GLview::populateXYZ()
 		// duplicate x,y,z co-ordinates.
 
 		map< string, unsigned int > mapXYZ;
-		for ( unsigned int i = 0; i < elements_.size(); ++i )
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i )
 		{
-			if ( getXYZ( elements_[i], x, y, z, size ) == 0 )
+			if ( getXYZ( vecElements_[i], x, y, z, size ) == 0 )
 			{
 				string key = boxXYZ( x, y, z );
 				if ( mapXYZ.count( key ) == 0 )
@@ -1095,9 +1095,9 @@ double GLview::populateXYZ()
 		// group. We also determine a corner of this bounding box to
 		// act as the starting location of the second group.
 
-		for ( unsigned int i = 0; i < elements_.size(); ++i )
+		for ( unsigned int i = 0; i < vecElements_.size(); ++i )
 		{
-			if ( getXYZ( elements_[i], x, y, z, size ) == 0 )
+			if ( getXYZ( vecElements_[i], x, y, z, size ) == 0 )
 			{
 				string key = boxXYZ( x, y, z );
 				if ( mapXYZ[key] > 1 ) // collision

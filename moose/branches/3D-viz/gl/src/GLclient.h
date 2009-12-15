@@ -53,7 +53,7 @@ int initWinsock( void );
 osg::ref_ptr< osg::Group > root_;
 
 std::vector< ParticleData > vecParticleData_;
-std::vector< osg::Geode* > particleGeodes_;
+std::vector< osg::Geode* > vecParticleGeodes_;
 
 TextBox* textParentTop_ = NULL;
 TextBox* textParentBottom_ = NULL;
@@ -108,7 +108,7 @@ boost::mutex mutexColorSetSaved_;
 boost::mutex mutexColorSetUpdated_;
 boost::condition condColorSetUpdated_;
 
-std::vector< osg::Vec3d > colormap_;
+std::vector< osg::Vec3d > vecColormap_;
 
 osgViewer::ScreenCaptureHandler* screenCaptureHandler_;
 osgViewer::Viewer* viewer_;
