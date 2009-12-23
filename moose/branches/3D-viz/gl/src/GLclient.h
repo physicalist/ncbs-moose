@@ -10,6 +10,7 @@
 #include "Constants.h"
 #include "AckPickData.h"
 #include "ParticleData.h"
+#include "SmoldynShapeData.h"
 #include "TextBox.h"
 
 class KeystrokeHandler : public osgGA::GUIEventHandler
@@ -43,6 +44,7 @@ void sendAck( int socket );
 void initializeRoot( const std::string& pathName );
 void updateGeometryGLcell( const GLcellResetData& geometry );
 void updateGeometryGLview( const GLviewResetData& data );
+void updateSmoldynGeometry( const std::vector< SmoldynShapeData >& vecSmoldynShapeData );
 
 std::string getSaveFilename( void );
 
@@ -77,6 +79,10 @@ volatile bool isParticlesDirty_ = false;
 boost::mutex mutexParticlesSaved_;
 boost::mutex mutexParticlesUpdated_;
 boost::condition condParticlesUpdated_;
+
+volatile bool isSmoldynShapesDirty_ = false;
+
+std::vector< GLCompartment* > vecSmoldynCompartments_;
 
 volatile bool isPickingDataUpdated_ = false;
 boost::mutex mutexPickingDataUpdated_;

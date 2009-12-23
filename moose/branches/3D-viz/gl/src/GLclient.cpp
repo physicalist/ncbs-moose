@@ -81,12 +81,16 @@
 #include "TextBox.h"
 #include "GLCompartmentCylinder.h"
 #include "GLCompartmentSphere.h"
+#include "GLCompartmentTri.h"
+#include "GLCompartmentRect.h"
+#include "GLCompartmentDisk.h"
+#include "GLCompartmentHemi.h"
 #include "GLCompartment.h"
 
 #include "GLclient.h"
 
 #ifndef M_PI
-#define M_PI           3.14159265358979323846
+#define M_PI 3.14159265358979323846
 #endif
 
 bool KeystrokeHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa, osg::Object*, osg::NodeVisitor* )
@@ -503,6 +507,16 @@ void receiveData( int newFd )
 
 						isGeometryDirty_ = true;
 					}
+					else if ( messageType == PROCESS_SMOLDYN_SHAPES )
+					{
+						std::vector< SmoldynShapeData > vecSmoldynShapeData;
+						archive_i >> vecSmoldynShapeData;
+						
+						initializeRoot( std::string( "Smoldyn model" ) );
+						updateSmoldynGeometry( vecSmoldynShapeData );
+
+						isSmoldynShapesDirty_ = true;
+					}
 					else if ( messageType == PROCESS_COLORS || messageType == PROCESS_COLORS_SYNC )
 					{
 						{  // additional scope to wrap scoped_lock
@@ -743,7 +757,7 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 		      iterator != mapId2GLCompartment_.end();
 		      iterator++ )
 		{
-			delete iterator->second; // TODO really necessary or will just mapId2GLCompartment_.clear() do?
+			delete iterator->second;
 		}
 		mapId2GLCompartment_.clear();
 
@@ -752,7 +766,7 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 		      iterator++ )
 		{
 			delete iterator->second->second;
-			delete iterator->second; // TODO really necessary? see above, find other examples if you're going to delete this
+			delete iterator->second;
 		}
 		mapGeode2NameId_.clear();
 	}
@@ -771,65 +785,33 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 		const double& x = compartments[i].x;
 		const double& y = compartments[i].y;
 		const double& z = compartments[i].z;
-			
+		
+		GLCompartment* compartment;
+
 		if ( length < SIZE_EPSILON ||
 		     strName.compare("soma") == 0 ) 
 			// the compartment is spherical
 		{ 
-			GLCompartmentSphere* sphere = new GLCompartmentSphere( osg::Vec3f( x, y, z ),
-									       diameter/2,
-									       incrementAngle_ );
-			mapId2GLCompartment_[id] = sphere;
-
-			osg::Geometry* sphereGeom = sphere->getGeometry();
-			
-			osg::Geode* geode = new osg::Geode;
-			geode->addDrawable( sphereGeom );
-			root_->addChild( geode );
-			
-			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( strPathName ) );
+			compartment = new GLCompartmentSphere( osg::Vec3f( x, y, z ),
+							       diameter/2,
+							       incrementAngle_ );
 		}
-		else 
-			// the compartment is cylindrical
+		else // the compartment is cylindrical
 		{ 
-			// GLCompartmentCylinders (like OSG::Cylinders) are oriented
-			// by default along (0,0,1). To orient them
-			// according to readcell's specification of (the line joining) the
-			// centers of their circular faces, they must be rotated around 
-			// an axis given by the cross-product of the initial and final
-			// vectors, by an angle given by the dot-product of the same.
-					
-			// Also note that although readcell's conventions for 
-			// the x,y,z directions differ from OSG's, (in OSG z is down to up
-			// and y is perpendicular to the display, pointing inward),
-			// OSG's viewer chooses a suitable viewpoint by default.
-
-			osg::Vec3f initial( 0.0f, 0.0f, 1.0f );
-			initial.normalize();
-
-			osg::Vec3f final( x-x0, y-y0, z-z0 );
-			final.normalize();
-
-			osg::Quat::value_type angle = acos( initial * final );
-			osg::Vec3f axis = initial ^ final;
-			axis.normalize();
-
-			GLCompartmentCylinder* cylinder = new GLCompartmentCylinder( osg::Vec3f( (x0+x)/2, (y0+y)/2, (z0+z)/2 ),
-										     osg::Quat( angle, axis ),
-										     length,
-										     vScale * diameter/2,
-										     incrementAngle_ );
-			
-			mapId2GLCompartment_[id] = cylinder;
-
-			osg::Geometry* cylinderGeom = cylinder->getGeometry();
-
-			osg::Geode* geode = new osg::Geode;
-			geode->addDrawable( cylinderGeom );
-			root_->addChild( geode );
-
-			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( strPathName ) );
+			compartment = new GLCompartmentCylinder( osg::Vec3( x0, y0, z0 ),
+								 osg::Vec3( x, y, z ),
+								 vScale * diameter/2,
+								 incrementAngle_ );
 		}
+
+		mapId2GLCompartment_[id] = compartment;
+
+		osg::Geometry* geometry = compartment->getGeometry();	
+		osg::Geode* geode = new osg::Geode;
+		geode->addDrawable( geometry );
+		root_->addChild( geode );
+			
+		mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( id, new std::string( strPathName ) );
 	}
 
 	// Second pass: for cylinders only, find neighbours and create interpolated joints
@@ -858,6 +840,80 @@ void updateGeometryGLcell( const GLcellResetData& geometryData )
 		{
 			dynamic_cast< GLCompartmentCylinder* >( mapId2GLCompartment_[id] )->closeOpenEnds();
 		}
+	}
+}
+
+class updateSmoldynGeometryVisitor : public boost::static_visitor< GLCompartment* >
+{
+public:
+	GLCompartment* operator()( const GLCompartmentCylinderData& cylinderData ) const
+	{
+		return new GLCompartmentCylinder( cylinderData, incrementAngle_ );
+	}
+
+	GLCompartment* operator()( const GLCompartmentDiskData& diskData ) const
+	{
+		return new GLCompartmentDisk( diskData, incrementAngle_ );
+	}
+
+	GLCompartment* operator()( const GLCompartmentHemiData& hemiData ) const
+	{
+		return new GLCompartmentHemi( hemiData, incrementAngle_ );
+	}
+
+	GLCompartment* operator()( const GLCompartmentRectData& rectData ) const
+	{
+		return new GLCompartmentRect( rectData );
+	}
+
+	GLCompartment* operator()( const GLCompartmentSphereData& sphereData ) const
+	{
+		return new GLCompartmentSphere( sphereData, incrementAngle_ );
+	}
+
+	GLCompartment* operator()( const GLCompartmentTriData& triData ) const
+	{
+		return new GLCompartmentTri( triData );
+	}
+};
+
+void updateSmoldynGeometry( const std::vector< SmoldynShapeData >& vecSmoldynShapeData )
+{
+	if ( ! mapGeode2NameId_.empty() )
+	{
+		for ( unsigned int i = 0; i < vecSmoldynCompartments_.size(); ++i )
+		{
+			delete vecSmoldynCompartments_[i];
+		}
+		vecSmoldynCompartments_.clear();
+
+		for ( std::map< osg::Geode*, std::pair< unsigned int, std::string* >* >::iterator iterator = mapGeode2NameId_.begin();
+		      iterator != mapGeode2NameId_.end();
+		      iterator++ )
+		{
+			delete iterator->second->second;
+			delete iterator->second;
+		}
+		mapGeode2NameId_.clear();
+	}
+
+	for ( unsigned int i = 0; i < vecSmoldynShapeData.size(); ++i )
+	{
+		GLCompartment* compartment = boost::apply_visitor( updateSmoldynGeometryVisitor(), vecSmoldynShapeData[i].data );
+		vecSmoldynCompartments_.push_back( compartment );
+
+		osg::Geometry* geometry = compartment->getGeometry();	
+		osg::Geode* geode = new osg::Geode;
+		geode->addDrawable( geometry );
+		root_->addChild( geode );
+			
+		if ( ! vecSmoldynShapeData[i].name.empty() )
+			mapGeode2NameId_[geode] = new std::pair< unsigned int, std::string* >( 0, new std::string( vecSmoldynShapeData[i].name ) );		
+
+		compartment->setColor( osg::Vec4( vecSmoldynShapeData[i].color[0],
+						  vecSmoldynShapeData[i].color[1],
+						  vecSmoldynShapeData[i].color[2],
+						  vecSmoldynShapeData[i].color[3] ) );
 	}
 }
 
@@ -941,8 +997,7 @@ void draw()
 	viewer_->addEventHandler( new osgViewer::StatsHandler );
 	viewer_->addEventHandler( new KeystrokeHandler );
 
-	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile( getSaveFilename(),																						"jpg",
-														       osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
+	screenCaptureHandler_ = new osgViewer::ScreenCaptureHandler( new osgViewer::ScreenCaptureHandler::WriteToFile( getSaveFilename(), "jpg", osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER ) );
 	viewer_->addEventHandler( screenCaptureHandler_ );
 
 	while ( !viewer_->done() )
@@ -952,6 +1007,13 @@ void draw()
 			isGeometryDirty_ = false;
 
 			viewer_->getCamera()->setClearColor( bgcolor_ );			
+			viewer_->setSceneData( root_.get() );
+		}
+
+		if ( isSmoldynShapesDirty_ )
+		{
+			isSmoldynShapesDirty_ = false;
+
 			viewer_->setSceneData( root_.get() );
 		}
 
@@ -1073,9 +1135,9 @@ void draw()
 					geometry->setVertexArray( vertices.get() );
 				
 					osg::ref_ptr< osg::Vec4Array > colors = new osg::Vec4Array;
-					colors->push_back( osg::Vec4( particleData->colorRed,
-								      particleData->colorGreen,
-								      particleData->colorBlue,
+					colors->push_back( osg::Vec4( particleData->color[0],
+								      particleData->color[1],
+								      particleData->color[2],
 								      1.0f ) );
 					geometry->setColorArray( colors.get() );
 					geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
@@ -1105,9 +1167,9 @@ void draw()
 														   particleData->vecCoords[j+2] ),
 												       particleData->diameter/2,
 												       incrementAngle_ );
-						sphere->setColor( osg::Vec4( particleData->colorRed,
-									     particleData->colorGreen,
-									     particleData->colorBlue,
+						sphere->setColor( osg::Vec4( particleData->color[0],
+									     particleData->color[1],
+									     particleData->color[2],
 									     1.0f ) );
 						osg::Geometry* sphereGeom = sphere->getGeometry();
 						

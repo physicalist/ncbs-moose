@@ -9,31 +9,31 @@
 **********************************************************************/
 
 #include "GLCompartment.h"
-#include "GLCompartmentSphereData.h"
+#include "GLCompartmentTriData.h"
 
-class GLCompartmentSphere : public GLCompartment
+class GLCompartmentTri : public GLCompartment
 {
 public:
-	GLCompartmentSphere( osg::Vec3 centre, double radius, double incrementAngle );
-	GLCompartmentSphere( const GLCompartmentSphereData& data, double incrementAngle );
-	~GLCompartmentSphere();
+	GLCompartmentTri( osg::Vec3 corner1, osg::Vec3 corner2, osg::Vec3 corner3 );
+	GLCompartmentTri( const GLCompartmentTriData& data );
+	~GLCompartmentTri();
 
 	osg::ref_ptr< osg::Geometry > getGeometry();
-	void setColor( osg::Vec4 color );
 
+	void setColor( osg::Vec4 color );
+	
 	CompartmentType getCompartmentType();
 
 private:
 	void init();
-	void addHemisphericalCap( bool leftEndP );
-  
-	osg::Vec3 centre_;
-	double radius_;
-	double incrementAngle_;
+	void constructGeometry();
+
+	osg::Vec3 corner1_;
+	osg::Vec3 corner2_;
+	osg::Vec3 corner3_;
 
 	osg::ref_ptr< osg::Geometry > cylGeometry_;
 	osg::ref_ptr< osg::Vec3Array > cylVertices_;
 	osg::ref_ptr< osg::Vec3Array > cylNormals_;
-
 };
 

@@ -34,3 +34,26 @@ osg::Vec3 GLCompartment::makeNormal( const osg::Vec3& P1, const osg::Vec3& P2, c
 
 	return Normal;
 }
+
+double GLCompartment::distance( const osg::Vec3& P1, const osg::Vec3& P2 )
+{
+	return sqrt( pow( P1[0] - P2[0], 2 ) +
+		     pow( P1[1] - P2[1], 2 ) + 
+		     pow( P1[2] - P2[2], 2 ) );
+}
+
+double GLCompartment::distance( const float& x1, const float& y1, const float& z1,
+				const float& x2, const float& y2, const float& z2 )
+{
+	return sqrt( pow( x1 - x2, 2 ) +
+		     pow( y1 - y2, 2 ) + 
+		     pow( z1 - z2, 2 ) );
+}
+
+double GLCompartment::distance( const double& x1, const double& y1, const double& z1,
+				const double& x2, const double& y2, const double& z2 )
+{
+	return sqrt( pow( x1 - x2, 2 ) +
+		     pow( y1 - y2, 2 ) + 
+		     pow( z1 - z2, 2 ) );
+}

@@ -47,8 +47,16 @@
 
 #include "AckPickData.h"
 #include "ParticleData.h"
+#include "SmoldynShapeData.h"
 #include "GLcellProcData.h"
 #include "Constants.h"
+
+#include "GLCompartmentCylinderData.h"
+#include "GLCompartmentDiskData.h"
+#include "GLCompartmentHemiData.h"
+#include "GLCompartmentRectData.h"
+#include "GLCompartmentSphereData.h"
+#include "GLCompartmentTriData.h"
 
 const int GLcell::MSGTYPE_HEADERLENGTH = 1;
 const int GLcell::MSGSIZE_HEADERLENGTH = 8;
@@ -128,6 +136,10 @@ const Cinfo* initGLcellCinfo()
 		new DestFinfo( "particleData",
 			       Ftype1< vector< ParticleData > >::global(),
 			       RFCAST( &GLcell::setParticleData )
+			       ),
+		new DestFinfo( "smoldynShapeData",
+			       Ftype1< vector< SmoldynShapeData > >::global(),
+			       RFCAST( &GLcell::setSmoldynShapeData )
 			       ),
 	///////////////////////////////////////////////////////
 	// Shared definitions
@@ -429,6 +441,7 @@ void GLcell::reinitFuncLocal( const Conn* c )
 	double diameter, length, x0, y0, z0, x, y, z;
 
 	vecParticleData_.clear();
+	vecSmoldynShapeData_.clear();
 
 	geometryData.strPathName = " ";
 	geometryData.bgcolorRed = bgcolorRed_;
@@ -494,6 +507,9 @@ void GLcell::reinitFuncLocal( const Conn* c )
 		std::cerr << "GLcell error: Client hostname not specified." << std::endl;
 	else
 		transmit( geometryData, RESET );
+
+
+	// testInsertVecSmoldynShapeData();
 }
 
 
@@ -553,6 +569,14 @@ void GLcell::processFuncLocal( Eref e, ProcInfo info )
 
 	// testInsertVecParticleData();
 
+	if ( vecSmoldynShapeData_.size() > 0 )
+	{
+		transmit( vecSmoldynShapeData_, PROCESS_SMOLDYN_SHAPES );
+		receiveAck();
+		
+		vecSmoldynShapeData_.clear();
+	}
+
 	if ( vecParticleData_.size() > 0 )
 	{
 		if ( syncMode_ )
@@ -585,6 +609,21 @@ void GLcell::innerSetParticleData( const vector< ParticleData > vecParticleData 
 	}
 
 	vecParticleData_ = vecParticleData;
+}
+
+void GLcell::setSmoldynShapeData( const Conn* c, vector< SmoldynShapeData > vecSmoldynShapeData )
+{
+	static_cast< GLcell * >( c->data() )->innerSetSmoldynShapeData( vecSmoldynShapeData );
+}
+
+void GLcell::innerSetSmoldynShapeData( const vector< SmoldynShapeData > vecSmoldynShapeData )
+{
+	if ( vecSmoldynShapeData_.size() > 0 )
+	{
+		vecSmoldynShapeData_.clear();
+	}
+
+	vecSmoldynShapeData_ = vecSmoldynShapeData;
 }
 
 ///////////////////////////////////////////////////
@@ -884,7 +923,7 @@ void GLcell::handlePick( unsigned int idPicked )
 }
 
 template< class T >
-void GLcell::transmit( T& data, MSGTYPE messageType)
+void GLcell::transmit( T& data, MsgType messageType)
 {
 	if ( strClientHost_.empty() || strClientPort_.empty() ) // these should have been set.
 		return;
@@ -982,12 +1021,12 @@ void GLcell::disconnect()
 #endif
 }
 
-void GLcell::testInsertVecParticleData( void )
+void GLcell::testInsertVecParticleData( )
 {
 	ParticleData p;
-	p.colorRed = 1.0;
-	p.colorBlue = 0.0;
-	p.colorGreen = 0.0;
+	p.color[0] = 1.0;
+	p.color[1] = 0.0;
+	p.color[2] = 0.0;
 	p.diameter = 0;
 	for ( unsigned int i = 0; i < 100; i++ )
 	{
@@ -997,9 +1036,9 @@ void GLcell::testInsertVecParticleData( void )
 	}
 
 	ParticleData p1;
-	p1.colorRed = 0.0;
-	p1.colorBlue = 0.0;
-	p1.colorGreen = 1.0;
+	p1.color[0] = 0.0;
+	p1.color[1] = 0.0;
+	p1.color[2] = 1.0;
 	p1.diameter = 1e-6 * 10;
 #ifdef WIN32
 	unsigned int j = 0;
@@ -1015,6 +1054,67 @@ void GLcell::testInsertVecParticleData( void )
 
 	vecParticleData_.push_back( p );
 	vecParticleData_.push_back( p1 );
+}
+
+void GLcell::testInsertVecSmoldynShapeData( )
+{
+	SmoldynShapeData s1, s2, s3, s4, s5, s6;
+
+	s1.color[0] = 0.6; s1.color[1] = 0.7; s1.color[2] = 0.8; s1.color[3] = 1.0;
+	s2.color[0] = 0.6; s2.color[1] = 0.7; s2.color[2] = 0.8; s2.color[3] = 1.0;
+	s3.color[0] = 0.6; s3.color[1] = 0.7; s3.color[2] = 0.8; s3.color[3] = 1.0;
+	s4.color[0] = 0.6; s4.color[1] = 0.7; s4.color[2] = 0.8; s4.color[3] = 1.0;
+	s5.color[0] = 0.6; s5.color[1] = 0.7; s5.color[2] = 0.8; s5.color[3] = 1.0;
+	s6.color[0] = 0.6; s6.color[1] = 0.7; s6.color[2] = 0.8; s6.color[3] = 1.0;
+
+	GLCompartmentCylinderData d1;
+	d1.endPoint1[0] = 2; d1.endPoint1[1] = 2; d1.endPoint1[2] = 2;
+	d1.endPoint2[0] = 6; d1.endPoint2[1] = 2; d1.endPoint2[2] = 2;
+	d1.radius = 0.5;
+	s1.data = d1;
+	s1.name = "Cylinder";
+	
+	GLCompartmentSphereData d2;
+	d2.centre[0] = 2; d2.centre[1] = 4; d2.centre[2] = 2;
+	d2.radius = 1;
+	s2.data = d2;
+	s2.name = "Sphere";
+
+	GLCompartmentDiskData d3;
+	d3.centre[0] = 2; d3.centre[1] = 6; d3.centre[2] = 2;
+	d3.orientation[0] = 0; d3.orientation[1] = 0; d3.orientation[2] = 1;
+	d3.radius = 1;
+	s3.data = d3;
+	s3.name = "Disk";
+
+	GLCompartmentHemiData d4;
+	d4.centre[0] = 2; d4.centre[1] = 8; d4.centre[2] = 2;
+	d4.orientation[0] = 0; d4.orientation[1] = 0; d4.orientation[2] = 1;
+	d4.radius = 1;
+	s4.data = d4;
+	s4.name = "Hemi";
+	
+	GLCompartmentTriData d5;
+	d5.corner1[0] = 2; d5.corner1[1] = 10; d5.corner1[2] = 2;
+	d5.corner2[0] = 0; d5.corner2[1] = 12; d5.corner2[2] = 2;
+	d5.corner3[0] = 4; d5.corner3[1] = 14; d5.corner3[2] = 2;
+	s5.data = d5;
+	s5.name = "Tri";
+
+	GLCompartmentRectData d6;
+	d6.corner1[0] = 2; d6.corner1[1] = 12; d6.corner1[2] = 2;
+	d6.corner2[0] = 2; d6.corner2[1] = 14; d6.corner2[2] = 2;
+	d6.corner3[0] = 4; d6.corner3[1] = 14; d6.corner3[2] = 2;
+	d6.corner4[0] = 4; d6.corner4[1] = 12; d6.corner4[2] = 2;
+	s6.data = d6;
+	s6.name = "Rect";
+
+	vecSmoldynShapeData_.push_back( s1 );
+	vecSmoldynShapeData_.push_back( s2 );
+	vecSmoldynShapeData_.push_back( s3 );
+	vecSmoldynShapeData_.push_back( s4 );
+	vecSmoldynShapeData_.push_back( s5 );
+	vecSmoldynShapeData_.push_back( s6 );
 }
 
 #ifdef WIN32

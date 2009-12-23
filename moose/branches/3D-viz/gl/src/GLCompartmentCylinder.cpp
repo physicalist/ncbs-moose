@@ -13,7 +13,6 @@
 #include <osg/Geometry>
 
 #include <vector>
-#include <algorithm>
 #include <math.h>
 
 #ifndef M_PI
@@ -21,20 +20,120 @@
 #endif
 
 #include "GLCompartmentCylinder.h"
+#include "GLCompartmentCylinderData.h"
 
-GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 position, osg::Quat quatRotation, 
-					      double height, double radius, double incrementAngle )
+GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 endPoint1, osg::Vec3 endPoint2,
+					      double radius, double incrementAngle )
 	:
 	ringRight( new osg::Vec3Array ),
 	ringLeft( new osg::Vec3Array ),
-	position_( position ),
-	quatRotation_( quatRotation ),
-	height_( height ),
+	length_( distance(endPoint1, endPoint2) ),
 	radius_( radius ),
 	incrementAngle_( incrementAngle ),
 	isLeftEndClosed_( false ),
 	isRightEndClosed_( false )
 { 
+	position_ = osg::Vec3f( (endPoint1[0]+endPoint2[0])/2,
+				(endPoint1[1]+endPoint2[1])/2,
+				(endPoint1[2]+endPoint2[2])/2 );
+
+	// GLCompartmentCylinders (like OSG::Cylinders) are oriented
+	// by default along (0,0,1). To orient them according to
+	// readcell's specification of (the line joining) the centers
+	// of their circular faces, they must be rotated around an
+	// axis given by the cross-product of the initial and final
+	// vectors, by an angle given by the dot-product of the same.
+					
+	// Also note that although readcell's conventions for the
+	// x,y,z directions differ from OSG's, (in OSG z is down to up
+	// and y is perpendicular to the display, pointing inward),
+	// OSG's viewer chooses a suitable viewpoint by default.
+
+	osg::Vec3f initial( 0.0f, 0.0f, 1.0f );
+	initial.normalize();
+	
+	osg::Vec3f final( endPoint2[0]-endPoint1[0],
+			  endPoint2[1]-endPoint1[1],
+			  endPoint2[2]-endPoint1[2] );
+	final.normalize();
+
+	osg::Quat::value_type angle = acos( initial * final );
+	osg::Vec3f axis = initial ^ final;
+	axis.normalize();
+
+	quatRotation_ = osg::Quat( angle, axis );
+
+	init();
+}
+
+GLCompartmentCylinder::GLCompartmentCylinder( const GLCompartmentCylinderData& data, double incrementAngle )
+	:
+	ringRight( new osg::Vec3Array ),
+	ringLeft( new osg::Vec3Array ),
+	length_( distance( data.endPoint1[0], data.endPoint1[1], data.endPoint1[2],
+			   data.endPoint2[0], data.endPoint2[1], data.endPoint2[2] ) ),
+	radius_( data.radius ),
+	incrementAngle_( incrementAngle ),
+	isLeftEndClosed_( false ),
+	isRightEndClosed_( false )
+{
+	position_ = osg::Vec3f( (data.endPoint1[0]+data.endPoint2[0])/2,
+				(data.endPoint1[1]+data.endPoint2[1])/2,
+				(data.endPoint1[2]+data.endPoint2[2])/2 );
+
+	// GLCompartmentCylinders (like OSG::Cylinders) are oriented
+	// by default along (0,0,1). To orient them according to
+	// readcell's specification of (the line joining) the centers
+	// of their circular faces, they must be rotated around an
+	// axis given by the cross-product of the initial and final
+	// vectors, by an angle given by the dot-product of the same.
+					
+	// Also note that although readcell's conventions for the
+	// x,y,z directions differ from OSG's, (in OSG z is down to up
+	// and y is perpendicular to the display, pointing inward),
+	// OSG's viewer chooses a suitable viewpoint by default.
+
+	osg::Vec3f initial( 0.0f, 0.0f, 1.0f );
+	initial.normalize();
+	
+	osg::Vec3f final( data.endPoint2[0]-data.endPoint1[0],
+			  data.endPoint2[1]-data.endPoint1[1],
+			  data.endPoint2[2]-data.endPoint1[2] );
+	final.normalize();
+
+	osg::Quat::value_type angle = acos( initial * final );
+	osg::Vec3f axis = initial ^ final;
+	axis.normalize();
+
+	quatRotation_ = osg::Quat( angle, axis );
+
+	init();
+}
+
+GLCompartmentCylinder::~GLCompartmentCylinder()
+{
+	ringRight = NULL;
+	ringLeft = NULL;
+	cylGeometry_ = NULL;
+	cylVertices_ = NULL;
+	cylNormals_ = NULL;
+}
+
+void GLCompartmentCylinder::init()
+{
+	cylGeometry_ = new osg::Geometry;
+	cylVertices_ = new osg::Vec3Array;
+	cylNormals_ = new osg::Vec3Array;
+
+	constructGeometry();
+
+	cylGeometry_->setVertexArray( cylVertices_ );
+	cylGeometry_->setNormalArray( cylNormals_ );
+	cylGeometry_->setNormalBinding( osg::Geometry::BIND_PER_PRIMITIVE_SET );
+}
+
+void GLCompartmentCylinder::constructGeometry()
+{
 	std::vector< double > angles;
 	for ( double i = 0; i <= 360 - incrementAngle_; i += incrementAngle_ )
 		angles.push_back( 2*M_PI*i / 360 );
@@ -44,7 +143,7 @@ GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 position, osg::Quat quat
 	{
 		ringRight->push_back( rotateTranslatePoint( osg::Vec3( radius_*cos(angles[i]),
 								       radius_*sin(angles[i]),
-								       height_/2 ),
+								       length_/2 ),
 							    quatRotation_,
 							    position_) );
 	}
@@ -53,14 +152,10 @@ GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 position, osg::Quat quat
 	{
 		ringLeft->push_back( rotateTranslatePoint( osg::Vec3( radius_*cos(angles[i]),
 								      radius_*sin(angles[i]),
-								      -height_/2 ),
+								      -length_/2 ),
 							    quatRotation_,
 							    position_) );
 	}
-		
-	cylGeometry_ = new osg::Geometry;
-	cylVertices_ = new osg::Vec3Array;
-	cylNormals_ = new osg::Vec3Array;
 
 	for ( unsigned int j = 0; j < angles.size() - 1; ++j )
 	{
@@ -69,7 +164,6 @@ GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 position, osg::Quat quat
 		cylVertices_->push_back( ( *ringLeft )[j]    );
 		cylVertices_->push_back( ( *ringLeft )[j+1]  );    
 	}
-	cylGeometry_->setVertexArray( cylVertices_ );
 
 	for ( unsigned int j = 0; j < angles.size() - 1; ++j )
 	{
@@ -85,19 +179,7 @@ GLCompartmentCylinder::GLCompartmentCylinder( osg::Vec3 position, osg::Quat quat
 		cylNormals_->push_back(makeNormal( ( *cylVertices_ )[j*4+0],
 						   ( *cylVertices_ )[j*4+1],
 						   ( *cylVertices_ )[j*4+2] ));
-	}
-
-	cylGeometry_->setNormalArray( cylNormals_ );
-	cylGeometry_->setNormalBinding( osg::Geometry::BIND_PER_PRIMITIVE_SET );
-}
-
-GLCompartmentCylinder::~GLCompartmentCylinder()
-{
-	ringRight = NULL;
-	ringLeft = NULL;
-	cylGeometry_ = NULL;
-	cylVertices_ = NULL;
-	cylNormals_ = NULL;
+	}	
 }
 
 osg::ref_ptr< osg::Geometry > GLCompartmentCylinder::getGeometry()
@@ -105,7 +187,7 @@ osg::ref_ptr< osg::Geometry > GLCompartmentCylinder::getGeometry()
 	return cylGeometry_;
 }
 
-int GLCompartmentCylinder::getCompartmentType()
+CompartmentType GLCompartmentCylinder::getCompartmentType()
 {
 	return COMP_CYLINDER;
 }
@@ -128,12 +210,12 @@ void GLCompartmentCylinder::setColor( osg::Vec4 color )
 bool GLCompartmentCylinder::isPointInsideCylinder( osg::Vec3& testPoint )
 {
 	// p1 is the point at the center of the base-face of the cylinder.
-	osg::Vec3 p1 = rotateTranslatePoint( osg::Vec3( 0, 0, -height_/2 ),
+	osg::Vec3 p1 = rotateTranslatePoint( osg::Vec3( 0, 0, -length_/2 ),
 					     quatRotation_,
 					     position_);
 
 	// p2 is the point at the center of the top-face of the cylinder.
-	osg::Vec3 p2 = rotateTranslatePoint( osg::Vec3( 0, 0, height_/2 ),
+	osg::Vec3 p2 = rotateTranslatePoint( osg::Vec3( 0, 0, length_/2 ),
 					     quatRotation_,
 					     position_);
 	
@@ -148,14 +230,14 @@ bool GLCompartmentCylinder::isPointInsideCylinder( osg::Vec3& testPoint )
 
 	double dot = pd * d;
 
-	if ( dot < 0 || dot > pow( height_, 2 ) )
+	if ( dot < 0 || dot > pow( length_, 2 ) )
 	{
 		return false; // testPoint is not between base and top faces
 	}
 	else
 	{
 		// Distance squared to the cylinder axis
-		double dsq = ( pd * pd ) - ( dot * dot ) / pow( height_, 2 );
+		double dsq = ( pd * pd ) - ( dot * dot ) / pow( length_, 2 );
 
 		if ( dsq > pow (radius_, 2 ) )
 		{
@@ -165,7 +247,6 @@ bool GLCompartmentCylinder::isPointInsideCylinder( osg::Vec3& testPoint )
 
 	return true;
 }
-
 
 void GLCompartmentCylinder::closeOpenEnds()
 {
@@ -197,7 +278,7 @@ void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
 	}
 
 	// add vertex at tip first
-	cylVertices_->push_back( rotateTranslatePoint( osg::Vec3(0, 0, neighbourSign * (radius_ + height_/2) ),
+	cylVertices_->push_back( rotateTranslatePoint( osg::Vec3(0, 0, neighbourSign * (radius_ + length_/2) ),
 						       quatRotation_,
 						       position_ ) );
 	for ( unsigned int i = 0; i < angles.size()-1; ++i)
@@ -206,13 +287,13 @@ void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
 
 		cylVertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * cos( angles[i] ),
 									  radius_ * sin( angles[i] ),
-									  neighbourSign * height_/2 ),
+									  neighbourSign * length_/2 ),
 							       quatRotation_,
 							       position_ ) );
 
 		cylVertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * cos( angles[i+1] ),
 									  radius_ * sin( angles[i+1] ),
-									  neighbourSign * height_/2  ),
+									  neighbourSign * length_/2  ),
 							       quatRotation_,
 							       position_ ) );
 		unsigned int j;
@@ -223,13 +304,13 @@ void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
 
 			cylVertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * sin( acos(j*0.1) ) * cos( angles[i] ),
 										  radius_ * sin( acos(j*0.1) ) * sin( angles[i] ),
-										  neighbourSign * ( (j*0.1) * radius_ + height_/2 ) ),
+										  neighbourSign * ( (j*0.1) * radius_ + length_/2 ) ),
 								       quatRotation_,
 								       position_ ) );
 
 			cylVertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * sin( acos(j*0.1) ) * cos( angles[i+1] ),
 										  radius_ * sin( acos(j*0.1) ) * sin( angles[i+1] ),
-										  neighbourSign * ( (j*0.1) * radius_ + height_/2 ) ),
+										  neighbourSign * ( (j*0.1) * radius_ + length_/2 ) ),
 								       quatRotation_,
 								       position_ ) );
 

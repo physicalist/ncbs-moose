@@ -9,31 +9,32 @@
 **********************************************************************/
 
 #include "GLCompartment.h"
-#include "GLCompartmentSphereData.h"
+#include "GLCompartmentDiskData.h"
 
-class GLCompartmentSphere : public GLCompartment
+class GLCompartmentDisk : public GLCompartment
 {
 public:
-	GLCompartmentSphere( osg::Vec3 centre, double radius, double incrementAngle );
-	GLCompartmentSphere( const GLCompartmentSphereData& data, double incrementAngle );
-	~GLCompartmentSphere();
+	GLCompartmentDisk( osg::Vec3 centre, osg::Vec3f orientation, double radius, double incrementAngle );
+	GLCompartmentDisk( const GLCompartmentDiskData& data, double incrementAngle );
+	~GLCompartmentDisk();
 
 	osg::ref_ptr< osg::Geometry > getGeometry();
-	void setColor( osg::Vec4 color );
 
+	void setColor( osg::Vec4 color );
+	
 	CompartmentType getCompartmentType();
 
 private:
 	void init();
-	void addHemisphericalCap( bool leftEndP );
-  
+	void constructGeometry();
+
 	osg::Vec3 centre_;
+	osg::Quat quatRotation_;
 	double radius_;
 	double incrementAngle_;
 
 	osg::ref_ptr< osg::Geometry > cylGeometry_;
 	osg::ref_ptr< osg::Vec3Array > cylVertices_;
 	osg::ref_ptr< osg::Vec3Array > cylNormals_;
-
 };
 

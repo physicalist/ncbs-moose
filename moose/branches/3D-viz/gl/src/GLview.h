@@ -123,7 +123,7 @@ class GLview
 	void handlePick( unsigned int idPicked );
 	void disconnect();
 	template< class T >
-	  void transmit( T& data, MSGTYPE messageType );
+	  void transmit( T& data, MsgType messageType );
 
 #ifdef WIN32
 	int initWinsock( void );
