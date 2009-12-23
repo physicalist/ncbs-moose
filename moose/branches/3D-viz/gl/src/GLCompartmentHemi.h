@@ -9,14 +9,14 @@
 **********************************************************************/
 
 #include "GLCompartment.h"
-#include "GLCompartmentSphereData.h"
+#include "GLCompartmentHemiData.h"
 
-class GLCompartmentSphere : public GLCompartment
+class GLCompartmentHemi : public GLCompartment
 {
 public:
-	GLCompartmentSphere( osg::Vec3 centre, double radius, double incrementAngle );
-	GLCompartmentSphere( const GLCompartmentSphereData& data, double incrementAngle );
-	~GLCompartmentSphere();
+	GLCompartmentHemi( osg::Vec3 centre, osg::Vec3f orientation, double radius, double incrementAngle );
+	GLCompartmentHemi( const GLCompartmentHemiData& data, double incrementAngle );
+	~GLCompartmentHemi();
 
 	osg::ref_ptr< osg::Geometry > getGeometry();
 	void setColor( osg::Vec4 color );
@@ -25,15 +25,15 @@ public:
 
 private:
 	void init();
-	void addHemisphericalCap( bool leftEndP );
-  
+	void constructGeometry();
+	
 	osg::Vec3 centre_;
 	double radius_;
 	double incrementAngle_;
+	osg::Vec3f orientation_;
 
 	osg::ref_ptr< osg::Geometry > cylGeometry_;
 	osg::ref_ptr< osg::Vec3Array > cylVertices_;
 	osg::ref_ptr< osg::Vec3Array > cylNormals_;
-
 };
 

@@ -1462,7 +1462,7 @@ void GLview::disconnect()
 }
 
 template< class T >
-void GLview::transmit( T& data, MSGTYPE messageType )
+void GLview::transmit( T& data, MsgType messageType )
 {
 	if ( strClientHost_.empty() || strClientPort_.empty() ) // these should have been set.
 		return;

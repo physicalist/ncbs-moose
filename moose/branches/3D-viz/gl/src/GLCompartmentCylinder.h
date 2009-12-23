@@ -9,11 +9,13 @@
 **********************************************************************/
 
 #include "GLCompartment.h"
+#include "GLCompartmentCylinderData.h"
 
 class GLCompartmentCylinder : public GLCompartment
 {
 public:
-	GLCompartmentCylinder( osg::Vec3 position, osg::Quat quatRotation, double height, double radius, double incrementAngle );
+	GLCompartmentCylinder( osg::Vec3 endPoint1, osg::Vec3 endPoint2, double radius, double incrementAngle );
+	GLCompartmentCylinder( const GLCompartmentCylinderData& data, double incrementAngle );
 	~GLCompartmentCylinder();
 
 	osg::ref_ptr< osg::Geometry > getGeometry();
@@ -23,7 +25,7 @@ public:
 
 	void setColor( osg::Vec4 color );
 	
-	int getCompartmentType();
+	CompartmentType getCompartmentType();
 
 	bool isPointInsideCylinder( osg::Vec3& testPoint );
 
@@ -31,9 +33,12 @@ public:
 	osg::ref_ptr< osg::Vec3Array > ringLeft;
 
 private:
+	void init();
+	void constructGeometry();
+
 	osg::Vec3 position_;
 	osg::Quat quatRotation_;
-	double height_;
+	double length_;
 	double radius_;
 	double incrementAngle_;
 	bool isLeftEndClosed_;
@@ -44,6 +49,5 @@ private:
 	osg::ref_ptr< osg::Geometry > cylGeometry_;
 	osg::ref_ptr< osg::Vec3Array > cylVertices_;
 	osg::ref_ptr< osg::Vec3Array > cylNormals_;
-
 };
 

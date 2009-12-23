@@ -16,12 +16,25 @@ MOOSE_HEADERS = \
 	../../connections/Conn.h \
 	../../basecode/Element.h
 
-DATA_STRUCTURE_HEADERS = AckPickData.h GLcellResetData.h GLcellProcData.h GLviewResetData.h GLshapeData.h
+DATA_STRUCTURE_HEADERS = AckPickData.h GLcellResetData.h GLcellProcData.h \
+	ParticleData.h SmoldynShapeData.h GLviewResetData.h GLshapeData.h
 
 TARGET_CELL = glcell.o
 TARGET_VIEW = glview.o
 TARGET_SHAPE = glshape.o
 TARGET_CLIENT = glclient
+
+COMPARTMENT_DATA_HEADERS = GLCompartmentCylinderData.h GLCompartmentDiskData.h GLCompartmentSphereData.h \
+	GLCompartmentHemiData.h GLCompartmentTriData.h GLCompartmentRectData.h
+
+TARGET_CLIENT_SOURCES = GLclient.cpp TextBox.cpp GLCompartment.cpp \
+	GLCompartmentCylinder.cpp GLCompartmentSphere.cpp GLCompartmentHemi.cpp \
+	GLCompartmentDisk.cpp GLCompartmentTri.cpp GLCompartmentRect.cpp GLviewShape.cpp
+
+TARGET_CLIENT_HEADERS = GLclient.h TextBox.h GLCompartment.h GLCompartmentType.h \
+	GLCompartmentCylinder.h GLCompartmentSphere.h GLCompartmentHemi.h \
+	GLCompartmentDisk.h GLCompartmentTri.h GLCompartmentRect.h \
+	$(COMPARTMENT_DATA_HEADERS) ParticleData.h SmoldynShapeData.h GLviewShape.h
 
 default: $(TARGET_CELL) $(TARGET_VIEW) $(TARGET_SHAPE) $(TARGET_CLIENT) 
 
@@ -29,7 +42,7 @@ clean:
 	rm -f *.o $(TARGET_CELL) $(TARGET_VIEW) $(TARGET_SHAPE) $(TARGET_CLIENT) core core.*
 
 OBJ_CELL = GLcell.o
-$(OBJ_CELL) : GLcell.cpp GLcell.h $(DATA_STRUCTURE_HEADERS) $(MOOSE_HEADERS)
+$(OBJ_CELL) : GLcell.cpp GLcell.h $(DATA_STRUCTURE_HEADERS) $(MOOSE_HEADERS) $(COMPARTMENT_DATA_HEADERS)
 	$(CXX) $(CXXFLAGS) -I../../ -I../../basecode -I$(OSG_INCLUDE) -c GLcell.cpp
 $(TARGET_CELL) : $(OBJ_CELL) $(MOOSE_HEADERS)
 	$(LD) -r -o $(TARGET_CELL) $(OBJ_CELL)
@@ -46,7 +59,5 @@ $(OBJ_VIEW) : GLview.cpp GLview.h $(DATA_STRUCTURE_HEADERS) $(MOOSE_HEADERS)
 $(TARGET_VIEW) : $(OBJ_VIEW) $(MOOSE_HEADERS)
 	$(LD) -r -o $(TARGET_VIEW) $(OBJ_VIEW)
 
-TARGET_CLIENT_SOURCES = GLclient.cpp TextBox.cpp GLCompartment.cpp GLCompartmentCylinder.cpp GLCompartmentSphere.cpp GLviewShape.cpp
-TARGET_CLIENT_HEADERS = GLclient.h TextBox.h GLCompartment.h GLCompartmentCylinder.h GLCompartmentSphere.h GLviewShape.h
 $(TARGET_CLIENT) : $(TARGET_CLIENT_SOURCES) $(TARGET_CLIENT_HEADERS) $(DATA_STRUCTURE_HEADERS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET_CLIENT) $(TARGET_CLIENT_SOURCES) $(BOOST_LIBS) $(OSG_LIBS)

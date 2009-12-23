@@ -11,11 +11,7 @@
 #ifndef GLCOMPARTMENT_H
 #define GLCOMPARTMENT_H
 
-enum COMPARTMENT_TYPE
-{
-	COMP_CYLINDER,
-	COMP_SPHERE
-};
+#include "GLCompartmentType.h"
 
 class GLCompartment
 {
@@ -23,13 +19,18 @@ class GLCompartment
 	virtual osg::ref_ptr< osg::Geometry > getGeometry() = 0;
 	virtual void setColor( osg::Vec4 color ) = 0;
 	
-	virtual int getCompartmentType() = 0;
+	virtual CompartmentType getCompartmentType() = 0;
 	
 	virtual ~GLCompartment() {}
 
  protected:
-	virtual osg::Vec3 rotateTranslatePoint( osg::Vec3 position, osg::Quat& quatRotation, osg::Vec3& translation );
-	virtual osg::Vec3 makeNormal( const osg::Vec3& P1, const osg::Vec3& P2, const osg::Vec3& P3 );
+	osg::Vec3 rotateTranslatePoint( osg::Vec3 position, osg::Quat& quatRotation, osg::Vec3& translation );
+	double distance( const osg::Vec3& P1, const osg::Vec3& P2 );
+	double distance( const float& x1, const float& y1, const float& z1,
+			 const float& x2, const float& y2, const float& z2 );
+	double distance( const double& x1, const double& y1, const double& z1,
+			 const double& x2, const double& y2, const double& z2 );
+	osg::Vec3 makeNormal( const osg::Vec3& P1, const osg::Vec3& P2, const osg::Vec3& P3 );
 };
 
 #endif // GLCOMPARTMENT_H

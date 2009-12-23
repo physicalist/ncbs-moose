@@ -20,11 +20,9 @@
 
 struct ParticleData
 {
-	// Note that the following colors are specified over [0,1],
+	// Note that the following colors are specified as RGB over [0,1],
 	// and are not w.r.t any particular colormap file.
-	double colorRed;
-	double colorBlue;
-	double colorGreen;
+	double color[3];
 
 	// If diameter <= 0, particles herein will be represented
 	// as points with size POINT_PARTICLE_DIAMETER, otherwise, as
@@ -39,9 +37,9 @@ struct ParticleData
 	template< typename Archive >
 	void serialize( Archive& ar, const unsigned int version)
 	{
-		ar & colorRed;
-		ar & colorBlue;
-		ar & colorGreen;
+		ar & color[0];
+		ar & color[1];
+		ar & color[2];
 		ar & diameter;
 		ar & vecCoords;
 	}

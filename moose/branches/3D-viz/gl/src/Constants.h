@@ -7,12 +7,16 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#include <limits>
+
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
 const double SIZE_EPSILON = 1e-8; // floating-point (FP) epsilon for 
                                   // ... minimum compartment size
-const double FP_EPSILON = 1e-8;   // FP epsilon for comparison
+
+//const double FP_EPSILON = 1e-8;   // FP epsilon for comparison
+const double FP_EPSILON = std::numeric_limits<double>::epsilon();
 
 const int WINDOW_OFFSET_X = 50;
 const int WINDOW_OFFSET_Y = 50;
@@ -27,13 +31,14 @@ const double VALUE_MIN_DEFAULT = 0.0;
 const double VALUE_MAX_DEFAULT = 1.0;
 const unsigned int POINT_PARTICLE_DIAMETER = 1;
 
-enum MSGTYPE
+enum MsgType
 {
 	RESET,
 	PROCESS_COLORS,
 	PROCESS_COLORS_SYNC,
 	PROCESS_PARTICLES,
 	PROCESS_PARTICLES_SYNC,
+	PROCESS_SMOLDYN_SHAPES,
 	DISCONNECT
 };
 

@@ -10,6 +10,7 @@
 #include "GLcellProcData.h"
 #include "GLcellResetData.h"
 #include "ParticleData.h"
+#include "SmoldynShapeData.h"
 #include "Constants.h"
 
 class GLcell
@@ -69,6 +70,9 @@ class GLcell
 	static void setParticleData( const Conn* c, vector< ParticleData > vecParticleData );
 	void innerSetParticleData( const vector< ParticleData > vecParticleData );
 
+	static void setSmoldynShapeData( const Conn* c, vector< SmoldynShapeData > vecSmoldynShapeData );
+	void innerSetSmoldynShapeData( const vector< SmoldynShapeData > vecSmoldynShapeData );
+
 	static const int MSGTYPE_HEADERLENGTH;
 	static const int MSGSIZE_HEADERLENGTH;
 	static const char SYNCMODE_ACKCHAR;
@@ -94,6 +98,7 @@ class GLcell
 
 	vector< Id > vecRenderList_;
 	vector< ParticleData > vecParticleData_;
+	vector< SmoldynShapeData > vecSmoldynShapeData_;
 
 	map< unsigned int, double > renderMapAttrsLastTransmitted_;
 	map< unsigned int, double > renderMapAttrsTransmitted_;
@@ -113,9 +118,10 @@ class GLcell
 	void handlePick( unsigned int idPicked );
 	void disconnect();
 	template< class T >
-	  void transmit( T& data, MSGTYPE messageType );
+	  void transmit( T& data, MsgType messageType );
 	
-	// testing function
+	// testing functions
+	void testInsertVecSmoldynShapeData( void );
 	void testInsertVecParticleData( void );
   
 
