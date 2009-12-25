@@ -16,8 +16,8 @@
 class GLCompartment
 {
  public:
-	virtual osg::ref_ptr< osg::Geometry > getGeometry() = 0;
-	virtual void setColor( osg::Vec4 color ) = 0;
+	osg::ref_ptr< osg::Geometry > getGeometry();
+	void setColor( osg::Vec4 color );
 	
 	virtual CompartmentType getCompartmentType() = 0;
 	
@@ -31,6 +31,10 @@ class GLCompartment
 	double distance( const double& x1, const double& y1, const double& z1,
 			 const double& x2, const double& y2, const double& z2 );
 	osg::Vec3 makeNormal( const osg::Vec3& P1, const osg::Vec3& P2, const osg::Vec3& P3 );
+
+	osg::ref_ptr< osg::Geometry > geometry_;
+	osg::ref_ptr< osg::Vec3Array > vertices_;
+	osg::ref_ptr< osg::Vec3Array > normals_;
 };
 
 #endif // GLCOMPARTMENT_H

@@ -114,22 +114,22 @@ GLCompartmentCylinder::~GLCompartmentCylinder()
 {
 	ringRight = NULL;
 	ringLeft = NULL;
-	cylGeometry_ = NULL;
-	cylVertices_ = NULL;
-	cylNormals_ = NULL;
+	geometry_ = NULL;
+	vertices_ = NULL;
+	normals_ = NULL;
 }
 
 void GLCompartmentCylinder::init()
 {
-	cylGeometry_ = new osg::Geometry;
-	cylVertices_ = new osg::Vec3Array;
-	cylNormals_ = new osg::Vec3Array;
+	geometry_ = new osg::Geometry;
+	vertices_ = new osg::Vec3Array;
+	normals_ = new osg::Vec3Array;
 
 	constructGeometry();
 
-	cylGeometry_->setVertexArray( cylVertices_ );
-	cylGeometry_->setNormalArray( cylNormals_ );
-	cylGeometry_->setNormalBinding( osg::Geometry::BIND_PER_PRIMITIVE_SET );
+	geometry_->setVertexArray( vertices_ );
+	geometry_->setNormalArray( normals_ );
+	geometry_->setNormalBinding( osg::Geometry::BIND_PER_PRIMITIVE_SET );
 }
 
 void GLCompartmentCylinder::constructGeometry()
@@ -159,10 +159,10 @@ void GLCompartmentCylinder::constructGeometry()
 
 	for ( unsigned int j = 0; j < angles.size() - 1; ++j )
 	{
-		cylVertices_->push_back( ( *ringRight )[j+1] );
-		cylVertices_->push_back( ( *ringRight )[j]   );
-		cylVertices_->push_back( ( *ringLeft )[j]    );
-		cylVertices_->push_back( ( *ringLeft )[j+1]  );    
+		vertices_->push_back( ( *ringRight )[j+1] );
+		vertices_->push_back( ( *ringRight )[j]   );
+		vertices_->push_back( ( *ringLeft )[j]    );
+		vertices_->push_back( ( *ringLeft )[j+1]  );    
 	}
 
 	for ( unsigned int j = 0; j < angles.size() - 1; ++j )
@@ -174,32 +174,17 @@ void GLCompartmentCylinder::constructGeometry()
 		cylFaces->push_back( j*4 + 2 );
 		cylFaces->push_back( j*4 + 3 );
 
-		cylGeometry_->addPrimitiveSet( cylFaces );
+		geometry_->addPrimitiveSet( cylFaces );
 
-		cylNormals_->push_back(makeNormal( ( *cylVertices_ )[j*4+0],
-						   ( *cylVertices_ )[j*4+1],
-						   ( *cylVertices_ )[j*4+2] ));
+		normals_->push_back(makeNormal( ( *vertices_ )[j*4+0],
+						( *vertices_ )[j*4+1],
+						( *vertices_ )[j*4+2] ));
 	}	
-}
-
-osg::ref_ptr< osg::Geometry > GLCompartmentCylinder::getGeometry()
-{
-	return cylGeometry_;
 }
 
 CompartmentType GLCompartmentCylinder::getCompartmentType()
 {
 	return COMP_CYLINDER;
-}
-
-void GLCompartmentCylinder::setColor( osg::Vec4 color )
-{
-	osg::Vec4Array* colors_ = new osg::Vec4Array;
-
-	colors_->push_back( color );
-
-	cylGeometry_->setColorArray( colors_ );
-	cylGeometry_->setColorBinding( osg::Geometry::BIND_OVERALL );
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -260,7 +245,7 @@ void GLCompartmentCylinder::closeOpenEnds()
 void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
 {
 	// draw an approximation of a hemisphere at the given end
-	int oldSizeCylVertices = cylVertices_->size();
+	int oldSizeVertices = vertices_->size();
     
 	std::vector< double > angles;
 	for ( double i = 0; i <= 360 - incrementAngle_; i += incrementAngle_ )
@@ -278,22 +263,22 @@ void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
 	}
 
 	// add vertex at tip first
-	cylVertices_->push_back( rotateTranslatePoint( osg::Vec3(0, 0, neighbourSign * (radius_ + length_/2) ),
+	vertices_->push_back( rotateTranslatePoint( osg::Vec3(0, 0, neighbourSign * (radius_ + length_/2) ),
 						       quatRotation_,
 						       position_ ) );
 	for ( unsigned int i = 0; i < angles.size()-1; ++i)
 	{
 		osg::DrawElementsUInt* cylFaces = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
 
-		cylVertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * cos( angles[i] ),
-									  radius_ * sin( angles[i] ),
-									  neighbourSign * length_/2 ),
+		vertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * cos( angles[i] ),
+								       radius_ * sin( angles[i] ),
+								       neighbourSign * length_/2 ),
 							       quatRotation_,
 							       position_ ) );
 
-		cylVertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * cos( angles[i+1] ),
-									  radius_ * sin( angles[i+1] ),
-									  neighbourSign * length_/2  ),
+		vertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * cos( angles[i+1] ),
+								       radius_ * sin( angles[i+1] ),
+								       neighbourSign * length_/2  ),
 							       quatRotation_,
 							       position_ ) );
 		unsigned int j;
@@ -302,31 +287,31 @@ void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
 	  
 			cylFaces = new osg::DrawElementsUInt( osg::PrimitiveSet::QUADS, 0 );
 
-			cylVertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * sin( acos(j*0.1) ) * cos( angles[i] ),
-										  radius_ * sin( acos(j*0.1) ) * sin( angles[i] ),
-										  neighbourSign * ( (j*0.1) * radius_ + length_/2 ) ),
+			vertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * sin( acos(j*0.1) ) * cos( angles[i] ),
+									       radius_ * sin( acos(j*0.1) ) * sin( angles[i] ),
+									       neighbourSign * ( (j*0.1) * radius_ + length_/2 ) ),
 								       quatRotation_,
 								       position_ ) );
 
-			cylVertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * sin( acos(j*0.1) ) * cos( angles[i+1] ),
-										  radius_ * sin( acos(j*0.1) ) * sin( angles[i+1] ),
-										  neighbourSign * ( (j*0.1) * radius_ + length_/2 ) ),
+			vertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_ * sin( acos(j*0.1) ) * cos( angles[i+1] ),
+									       radius_ * sin( acos(j*0.1) ) * sin( angles[i+1] ),
+									       neighbourSign * ( (j*0.1) * radius_ + length_/2 ) ),
 								       quatRotation_,
 								       position_ ) );
 
-			cylFaces->push_back( oldSizeCylVertices + 1 + i*20 + 1 + 2*(j-1) ); // 20 == 2 + 9*2 ; duplicate vertices on selfRing + two vertices per face added
-			cylFaces->push_back( oldSizeCylVertices + 1 + i*20 + 0 + 2*(j-1) );
-			cylFaces->push_back( oldSizeCylVertices + 1 + i*20 + 2 + 2*(j-1) );
-			cylFaces->push_back( oldSizeCylVertices + 1 + i*20 + 3 + 2*(j-1) );
+			cylFaces->push_back( oldSizeVertices + 1 + i*20 + 1 + 2*(j-1) ); // 20 == 2 + 9*2 ; duplicate vertices on selfRing + two vertices per face added
+			cylFaces->push_back( oldSizeVertices + 1 + i*20 + 0 + 2*(j-1) );
+			cylFaces->push_back( oldSizeVertices + 1 + i*20 + 2 + 2*(j-1) );
+			cylFaces->push_back( oldSizeVertices + 1 + i*20 + 3 + 2*(j-1) );
 
-			cylGeometry_->addPrimitiveSet( cylFaces );
+			geometry_->addPrimitiveSet( cylFaces );
 
-			osg::Vec3 normal = makeNormal( ( *cylVertices_ )[oldSizeCylVertices + 1 + i*20 + 1 + 2*(j-1)],
-						       ( *cylVertices_ )[oldSizeCylVertices + 1 + i*20 + 0 + 2*(j-1)],
-						       ( *cylVertices_ )[oldSizeCylVertices + 1 + i*20 + 2 + 2*(j-1)] );
-			cylNormals_->push_back(osg::Vec3( normal[0] * -1 * neighbourSign,
-							  normal[1] * -1 * neighbourSign,
-							  normal[2] * -1 * neighbourSign ) );
+			osg::Vec3 normal = makeNormal( ( *vertices_ )[oldSizeVertices + 1 + i*20 + 1 + 2*(j-1)],
+						       ( *vertices_ )[oldSizeVertices + 1 + i*20 + 0 + 2*(j-1)],
+						       ( *vertices_ )[oldSizeVertices + 1 + i*20 + 2 + 2*(j-1)] );
+			normals_->push_back(osg::Vec3( normal[0] * -1 * neighbourSign,
+						       normal[1] * -1 * neighbourSign,
+						       normal[2] * -1 * neighbourSign ) );
 	
 			cylFaces = new osg::DrawElementsUInt( osg::PrimitiveSet::QUADS, 0);
 
@@ -336,18 +321,18 @@ void GLCompartmentCylinder::addHemisphericalCap( bool leftEndP )
 		j = 9;
 	
 		cylFaces = new osg::DrawElementsUInt( osg::PrimitiveSet::TRIANGLES, 0 );
-		cylFaces->push_back( oldSizeCylVertices + 1 + i*20 + 3 + 2*(j-1) );
-		cylFaces->push_back( oldSizeCylVertices + 1 + i*20 + 2 + 2*(j-1) );
-		cylFaces->push_back( oldSizeCylVertices );
+		cylFaces->push_back( oldSizeVertices + 1 + i*20 + 3 + 2*(j-1) );
+		cylFaces->push_back( oldSizeVertices + 1 + i*20 + 2 + 2*(j-1) );
+		cylFaces->push_back( oldSizeVertices );
 
-		cylGeometry_->addPrimitiveSet( cylFaces );
+		geometry_->addPrimitiveSet( cylFaces );
 
-		osg::Vec3 normal = makeNormal( ( *cylVertices_ )[oldSizeCylVertices + 1 + i*20 + 3 + 2*(j-1)],
-					       ( *cylVertices_ )[oldSizeCylVertices + 1 + i*20 + 2 + 2*(j-1)],
-					       ( *cylVertices_ )[oldSizeCylVertices] );
-		cylNormals_->push_back( osg::Vec3( normal[0] * -1 * neighbourSign,
-						   normal[1] * -1 * neighbourSign,
-						   normal[2] * -1 * neighbourSign ) );
+		osg::Vec3 normal = makeNormal( ( *vertices_ )[oldSizeVertices + 1 + i*20 + 3 + 2*(j-1)],
+					       ( *vertices_ )[oldSizeVertices + 1 + i*20 + 2 + 2*(j-1)],
+					       ( *vertices_ )[oldSizeVertices] );
+		normals_->push_back( osg::Vec3( normal[0] * -1 * neighbourSign,
+						normal[1] * -1 * neighbourSign,
+						normal[2] * -1 * neighbourSign ) );
 	}
 }
 
@@ -516,18 +501,18 @@ void GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 	// and the neighbour's ring.
 
 	int iDiff = iMaxYNeighbourRing - iMaxYSelfRing;
-	int oldSizeCylVertices = cylVertices_->size();
+	int oldSizeVertices = vertices_->size();
 
 	for ( unsigned int i = 0; i < selfRing->size()-1; ++i )
 	{
 		// NOTE: Because selfRing's vertices already exist, we will be adding some duplicate vertices.
      
-		cylVertices_->push_back( ( *selfRing )[i] );
-		cylVertices_->push_back( ( *selfRing )[i+1] );
-		cylVertices_->push_back( midpoint( ( *neighbourRing )[ (i+1+iDiff) % selfRing->size() ],
-						  ( *selfRing )[i+1] ) );
-		cylVertices_->push_back( midpoint( ( *neighbourRing )[ (i+iDiff) % selfRing->size() ],
-						   ( *selfRing )[i] ) );
+		vertices_->push_back( ( *selfRing )[i] );
+		vertices_->push_back( ( *selfRing )[i+1] );
+		vertices_->push_back( midpoint( ( *neighbourRing )[ (i+1+iDiff) % selfRing->size() ],
+						( *selfRing )[i+1] ) );
+		vertices_->push_back( midpoint( ( *neighbourRing )[ (i+iDiff) % selfRing->size() ],
+						( *selfRing )[i] ) );
 	}
 
 	for ( unsigned int j = 0; j < selfRing->size()-1; ++j )
@@ -536,33 +521,33 @@ void GLCompartmentCylinder::addHalfJointToNeighbour( GLCompartmentCylinder* neig
 
 		if ( isLeftSelfRingCloser )
 		{
-			cylFaces->push_back( oldSizeCylVertices + j*4 + 0 ); // faces must be constructed anticlockwise from the front
-			cylFaces->push_back( oldSizeCylVertices + j*4 + 1 );
-			cylFaces->push_back( oldSizeCylVertices + j*4 + 2 );
-			cylFaces->push_back( oldSizeCylVertices + j*4 + 3 );
+			cylFaces->push_back( oldSizeVertices + j*4 + 0 ); // faces must be constructed anticlockwise from the front
+			cylFaces->push_back( oldSizeVertices + j*4 + 1 );
+			cylFaces->push_back( oldSizeVertices + j*4 + 2 );
+			cylFaces->push_back( oldSizeVertices + j*4 + 3 );
 		}
 		else
 		{
-			cylFaces->push_back( oldSizeCylVertices + j*4 + 3 );
-			cylFaces->push_back( oldSizeCylVertices + j*4 + 2 );
-			cylFaces->push_back( oldSizeCylVertices + j*4 + 1 );
-			cylFaces->push_back( oldSizeCylVertices + j*4 + 0 );
+			cylFaces->push_back( oldSizeVertices + j*4 + 3 );
+			cylFaces->push_back( oldSizeVertices + j*4 + 2 );
+			cylFaces->push_back( oldSizeVertices + j*4 + 1 );
+			cylFaces->push_back( oldSizeVertices + j*4 + 0 );
 		}
 
-		cylGeometry_->addPrimitiveSet( cylFaces );
+		geometry_->addPrimitiveSet( cylFaces );
 
 		if ( isLeftSelfRingCloser )
 		{
-			osg::Vec3 normal = makeNormal( ( *cylVertices_ )[oldSizeCylVertices + j*4 + 0],
-						       ( *cylVertices_ )[oldSizeCylVertices + j*4 + 1],
-						       ( *cylVertices_ )[oldSizeCylVertices + j*4 + 2] );
-			cylNormals_->push_back( osg::Vec3( -normal[0], -normal[1], -normal[2] ) );
+			osg::Vec3 normal = makeNormal( ( *vertices_ )[oldSizeVertices + j*4 + 0],
+						       ( *vertices_ )[oldSizeVertices + j*4 + 1],
+						       ( *vertices_ )[oldSizeVertices + j*4 + 2] );
+			normals_->push_back( osg::Vec3( -normal[0], -normal[1], -normal[2] ) );
 		}
 		else
 		{
-			cylNormals_->push_back( makeNormal( ( *cylVertices_ )[ oldSizeCylVertices + j*4 + 0 ],
-							    ( *cylVertices_ )[ oldSizeCylVertices + j*4 + 1 ],
-							    ( *cylVertices_ )[ oldSizeCylVertices + j*4 + 2 ] ) );
+			normals_->push_back( makeNormal( ( *vertices_ )[ oldSizeVertices + j*4 + 0 ],
+							 ( *vertices_ )[ oldSizeVertices + j*4 + 1 ],
+							 ( *vertices_ )[ oldSizeVertices + j*4 + 2 ] ) );
 		}
 	}       
 }

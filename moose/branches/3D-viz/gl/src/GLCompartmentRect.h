@@ -17,10 +17,6 @@ public:
 	GLCompartmentRect( osg::Vec3 corner1, osg::Vec3 corner2, osg::Vec3 corner3, osg::Vec3 corner4 );
 	GLCompartmentRect( const GLCompartmentRectData& data );
 	~GLCompartmentRect();
-
-	osg::ref_ptr< osg::Geometry > getGeometry();
-
-	void setColor( osg::Vec4 color );
 	
 	CompartmentType getCompartmentType();
 
@@ -32,9 +28,5 @@ private:
 	osg::Vec3 corner2_;
 	osg::Vec3 corner3_;
 	osg::Vec3 corner4_;
-
-	osg::ref_ptr< osg::Geometry > cylGeometry_;
-	osg::ref_ptr< osg::Vec3Array > cylVertices_;
-	osg::ref_ptr< osg::Vec3Array > cylNormals_;
 };
 

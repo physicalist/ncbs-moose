@@ -66,22 +66,22 @@ GLCompartmentDisk::GLCompartmentDisk( const GLCompartmentDiskData& data, double 
 
 GLCompartmentDisk::~GLCompartmentDisk()
 {
-	cylGeometry_ = NULL;
-	cylVertices_ = NULL;
-	cylNormals_ = NULL;
+	geometry_ = NULL;
+	vertices_ = NULL;
+	normals_ = NULL;
 }
 
 void GLCompartmentDisk::init()
 {
-	cylGeometry_ = new osg::Geometry;
-	cylVertices_ = new osg::Vec3Array;
-	cylNormals_ = new osg::Vec3Array;
+	geometry_ = new osg::Geometry;
+	vertices_ = new osg::Vec3Array;
+	normals_ = new osg::Vec3Array;
 
 	constructGeometry();
 
-	cylGeometry_->setVertexArray( cylVertices_ );
-	cylGeometry_->setNormalArray( cylNormals_ );
-	cylGeometry_->setNormalBinding( osg::Geometry::BIND_PER_PRIMITIVE_SET );
+	geometry_->setVertexArray( vertices_ );
+	geometry_->setNormalArray( normals_ );
+	geometry_->setNormalBinding( osg::Geometry::BIND_PER_PRIMITIVE_SET );
 }
 
 void GLCompartmentDisk::constructGeometry()
@@ -92,51 +92,36 @@ void GLCompartmentDisk::constructGeometry()
 	angles.push_back( 0.0 );
 
 	// push the centrepoint first
-	cylVertices_->push_back( rotateTranslatePoint( osg::Vec3( 0.0, 0.0, 0.0 ),
-						       quatRotation_,
-						       centre_ ) );
+	vertices_->push_back( rotateTranslatePoint( osg::Vec3( 0.0, 0.0, 0.0 ),
+						    quatRotation_,
+						    centre_ ) );
     
 	for ( unsigned int i = 0; i < angles.size(); ++i )
 	{
-		cylVertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_*cos(angles[i]),
-									  radius_*sin(angles[i]),
-									  0.0 ),
+		vertices_->push_back( rotateTranslatePoint( osg::Vec3( radius_*cos(angles[i]),
+								       radius_*sin(angles[i]),
+								       0.0 ),
 							       quatRotation_,
 							       centre_ ) );
 	}
 
 	for ( unsigned int j = 0; j < angles.size() - 1; ++j )
 	{
-		osg::DrawElementsUInt* cylFaces = new osg::DrawElementsUInt( osg::PrimitiveSet::TRIANGLES, 0 );
+		osg::DrawElementsUInt* faces = new osg::DrawElementsUInt( osg::PrimitiveSet::TRIANGLES, 0 );
 
-		cylFaces->push_back( 0 );
-		cylFaces->push_back( j + 1 );
-		cylFaces->push_back( j + 2 );
+		faces->push_back( 0 );
+		faces->push_back( j + 1 );
+		faces->push_back( j + 2 );
 
-		cylGeometry_->addPrimitiveSet( cylFaces );
+		geometry_->addPrimitiveSet( faces );
 
-		cylNormals_->push_back(makeNormal( ( *cylVertices_ )[0],
-						   ( *cylVertices_ )[j+1],
-						   ( *cylVertices_ )[j+2] ));
+		normals_->push_back(makeNormal( ( *vertices_ )[0],
+						( *vertices_ )[j+1],
+						( *vertices_ )[j+2] ));
 	}	
-}
-
-osg::ref_ptr< osg::Geometry > GLCompartmentDisk::getGeometry()
-{
-	return cylGeometry_;
 }
 
 CompartmentType GLCompartmentDisk::getCompartmentType()
 {
 	return COMP_DISK;
-}
-
-void GLCompartmentDisk::setColor( osg::Vec4 color )
-{
-	osg::Vec4Array* colors_ = new osg::Vec4Array;
-
-	colors_->push_back( color );
-
-	cylGeometry_->setColorArray( colors_ );
-	cylGeometry_->setColorBinding( osg::Geometry::BIND_OVERALL );
 }

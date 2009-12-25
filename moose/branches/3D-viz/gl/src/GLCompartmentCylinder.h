@@ -18,12 +18,8 @@ public:
 	GLCompartmentCylinder( const GLCompartmentCylinderData& data, double incrementAngle );
 	~GLCompartmentCylinder();
 
-	osg::ref_ptr< osg::Geometry > getGeometry();
-
 	void addHalfJointToNeighbour( GLCompartmentCylinder* neighbour );
 	void closeOpenEnds();
-
-	void setColor( osg::Vec4 color );
 	
 	CompartmentType getCompartmentType();
 
@@ -45,9 +41,5 @@ private:
 	bool isRightEndClosed_;
 
 	void addHemisphericalCap( bool leftEndP );
-
-	osg::ref_ptr< osg::Geometry > cylGeometry_;
-	osg::ref_ptr< osg::Vec3Array > cylVertices_;
-	osg::ref_ptr< osg::Vec3Array > cylNormals_;
 };
 

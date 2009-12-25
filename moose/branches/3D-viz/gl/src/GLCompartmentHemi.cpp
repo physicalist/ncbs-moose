@@ -44,14 +44,9 @@ GLCompartmentHemi::GLCompartmentHemi( const GLCompartmentHemiData& data, double 
 
 GLCompartmentHemi::~GLCompartmentHemi()
 {
-	cylGeometry_ = NULL;
-	cylVertices_ = NULL;
-	cylNormals_ = NULL;
-}
-
-osg::ref_ptr< osg::Geometry > GLCompartmentHemi::getGeometry()
-{
-	return cylGeometry_;
+	geometry_ = NULL;
+	vertices_ = NULL;
+	normals_ = NULL;
 }
 
 CompartmentType GLCompartmentHemi::getCompartmentType()
@@ -59,27 +54,17 @@ CompartmentType GLCompartmentHemi::getCompartmentType()
 	return COMP_HEMISPHERE;
 }
 
-void GLCompartmentHemi::setColor( osg::Vec4 color )
-{
-	osg::Vec4Array* colors_ = new osg::Vec4Array;
-
-	colors_->push_back( color );
-
-	cylGeometry_->setColorArray( colors_ );
-	cylGeometry_->setColorBinding( osg::Geometry::BIND_OVERALL );
-}
-
 void GLCompartmentHemi::init()
 {
-	cylGeometry_ = new osg::Geometry;
-	cylVertices_ = new osg::Vec3Array;
-	cylNormals_ = new osg::Vec3Array;
+	geometry_ = new osg::Geometry;
+	vertices_ = new osg::Vec3Array;
+	normals_ = new osg::Vec3Array;
 
 	constructGeometry();
 	
-	cylGeometry_->setVertexArray( cylVertices_ );
-	cylGeometry_->setNormalArray( cylNormals_ );
-	cylGeometry_->setNormalBinding( osg::Geometry::BIND_PER_PRIMITIVE_SET );
+	geometry_->setVertexArray( vertices_ );
+	geometry_->setNormalArray( normals_ );
+	geometry_->setNormalBinding( osg::Geometry::BIND_PER_PRIMITIVE_SET );
 }
 
 void GLCompartmentHemi::constructGeometry()
@@ -100,68 +85,68 @@ void GLCompartmentHemi::constructGeometry()
 	osg::Quat quatRotation( acos( initial * orientation_ ), axis );
 
 	// add vertex at tip first
-	cylVertices_->push_back( quatRotation * osg::Vec3( centre_[0],
-							   centre_[1],
-							   centre_[2] + radius_ ) );
+	vertices_->push_back( quatRotation * osg::Vec3( centre_[0],
+							centre_[1],
+							centre_[2] + radius_ ) );
 	
 	for ( unsigned int i = 0; i < angles.size()-1; ++i)
 	{
-		osg::DrawElementsUInt* cylFaces = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
+		osg::DrawElementsUInt* faces = new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS, 0);
 
-		cylVertices_->push_back( quatRotation * osg::Vec3( centre_[0] + radius_ * cos( angles[i] ),
-								   centre_[1] + radius_ * sin( angles[i] ),
-								   centre_[2] ) );
-		cylVertices_->push_back( quatRotation * osg::Vec3( centre_[0] + radius_ * cos( angles[i+1] ),
-								   centre_[1] + radius_ * sin( angles[i+1] ),
-								   centre_[2] ) );
+		vertices_->push_back( quatRotation * osg::Vec3( centre_[0] + radius_ * cos( angles[i] ),
+								centre_[1] + radius_ * sin( angles[i] ),
+								centre_[2] ) );
+		vertices_->push_back( quatRotation * osg::Vec3( centre_[0] + radius_ * cos( angles[i+1] ),
+								centre_[1] + radius_ * sin( angles[i+1] ),
+								centre_[2] ) );
 
 		unsigned int j;
 		for ( j = 1; j <= 9; ++j )
 		{
 	  
-			cylFaces = new osg::DrawElementsUInt( osg::PrimitiveSet::QUADS, 0 );
+			faces = new osg::DrawElementsUInt( osg::PrimitiveSet::QUADS, 0 );
 
-			cylVertices_->push_back( quatRotation * osg::Vec3( centre_[0] + radius_ * sin( acos(j*0.1) ) * cos( angles[i] ),
-									   centre_[1] + radius_ * sin( acos(j*0.1) ) * sin( angles[i] ),
-									   centre_[2] + ( (j*0.1) * radius_ ) ) );
-			cylVertices_->push_back( quatRotation * osg::Vec3( centre_[0] + radius_ * sin( acos(j*0.1) ) * cos( angles[i+1] ),
-									   centre_[1] + radius_ * sin( acos(j*0.1) ) * sin( angles[i+1] ),
-									   centre_[2] + ( (j*0.1) * radius_ ) ) );
+			vertices_->push_back( quatRotation * osg::Vec3( centre_[0] + radius_ * sin( acos(j*0.1) ) * cos( angles[i] ),
+									centre_[1] + radius_ * sin( acos(j*0.1) ) * sin( angles[i] ),
+									centre_[2] + ( (j*0.1) * radius_ ) ) );
+			vertices_->push_back( quatRotation * osg::Vec3( centre_[0] + radius_ * sin( acos(j*0.1) ) * cos( angles[i+1] ),
+									centre_[1] + radius_ * sin( acos(j*0.1) ) * sin( angles[i+1] ),
+									centre_[2] + ( (j*0.1) * radius_ ) ) );
 
-			cylFaces->push_back( 1 + i*20 + 1 + 2*(j-1) ); // 20 == 2 + 9*2 ; vertices on middle ring + two vertices per face added
-			cylFaces->push_back( 1 + i*20 + 0 + 2*(j-1) );
-			cylFaces->push_back( 1 + i*20 + 2 + 2*(j-1) );
-			cylFaces->push_back( 1 + i*20 + 3 + 2*(j-1) );
+			faces->push_back( 1 + i*20 + 1 + 2*(j-1) ); // 20 == 2 + 9*2 ; vertices on middle ring + two vertices per face added
+			faces->push_back( 1 + i*20 + 0 + 2*(j-1) );
+			faces->push_back( 1 + i*20 + 2 + 2*(j-1) );
+			faces->push_back( 1 + i*20 + 3 + 2*(j-1) );
 
-			cylGeometry_->addPrimitiveSet( cylFaces );
+			geometry_->addPrimitiveSet( faces );
 
-			osg::Vec3 normal = makeNormal( ( *cylVertices_ )[1 + i*20 + 1 + 2*(j-1)],
-						       ( *cylVertices_ )[1 + i*20 + 0 + 2*(j-1)],
-						       ( *cylVertices_ )[1 + i*20 + 2 + 2*(j-1)] );
-			cylNormals_->push_back(osg::Vec3( normal[0] * -1,
-							  normal[1] * -1,
-							  normal[2] * -1 ) );
+			osg::Vec3 normal = makeNormal( ( *vertices_ )[1 + i*20 + 1 + 2*(j-1)],
+						       ( *vertices_ )[1 + i*20 + 0 + 2*(j-1)],
+						       ( *vertices_ )[1 + i*20 + 2 + 2*(j-1)] );
+			normals_->push_back(osg::Vec3( normal[0] * -1,
+						       normal[1] * -1,
+						       normal[2] * -1 ) );
 	
-			cylFaces = new osg::DrawElementsUInt( osg::PrimitiveSet::QUADS, 0);
+			faces = new osg::DrawElementsUInt( osg::PrimitiveSet::QUADS, 0);
 
 
 		}
 
 		j = 9;
 	
-		cylFaces = new osg::DrawElementsUInt( osg::PrimitiveSet::TRIANGLES, 0 );
-		cylFaces->push_back( 1 + i*20 + 3 + 2*(j-1) );
-		cylFaces->push_back( 1 + i*20 + 2 + 2*(j-1) );
-		cylFaces->push_back( 0 );
+		faces = new osg::DrawElementsUInt( osg::PrimitiveSet::TRIANGLES, 0 );
+		faces->push_back( 1 + i*20 + 3 + 2*(j-1) );
+		faces->push_back( 1 + i*20 + 2 + 2*(j-1) );
+		faces->push_back( 0 );
 
-		cylGeometry_->addPrimitiveSet( cylFaces );
+		geometry_->addPrimitiveSet( faces );
 
-		osg::Vec3 normal = makeNormal( ( *cylVertices_ )[1 + i*20 + 3 + 2*(j-1)],
-					       ( *cylVertices_ )[1 + i*20 + 2 + 2*(j-1)],
-					       ( *cylVertices_ )[0] );
-		cylNormals_->push_back( osg::Vec3( normal[0] * -1,
-						   normal[1] * -1,
-						   normal[2] * -1 ) );
+		osg::Vec3 normal = makeNormal( ( *vertices_ )[1 + i*20 + 3 + 2*(j-1)],
+					       ( *vertices_ )[1 + i*20 + 2 + 2*(j-1)],
+					       ( *vertices_ )[0] );
+		normals_->push_back( osg::Vec3( normal[0] * -1,
+						normal[1] * -1,
+						normal[2] * -1 ) );
 	}
 }
 

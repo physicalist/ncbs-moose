@@ -61,11 +61,17 @@ TextBox* textParentTop_ = NULL;
 TextBox* textParentBottom_ = NULL;
 
 // GLcell mode: 
-std::map< unsigned int, GLCompartment* > mapId2GLCompartment_; // this is used to call the polymorphic function setColor()
-std::map< unsigned int, double > renderMapColors_; // Attribute values mapped to colors, data received in PROCESS step:
+// this is used to call the function setColor() and also acts as general storage for GLCompartment
+std::map< unsigned int, GLCompartment* > mapId2GLCompartment_;
+
+// Attribute values mapped to colors, data received in PROCESS step:
+std::map< unsigned int, double > renderMapColors_;
+
 // GLview mode:
-std::map< unsigned int, GLviewShape* > mapId2GLviewShape_; // used to resize, move and recolor displayed shapes
-std::map< unsigned int, GLshapeData* > mapId2GLshapeData_; // data received in PROCESS step
+// used to resize, move and recolor displayed shapes
+std::map< unsigned int, GLviewShape* > mapId2GLviewShape_;
+// data received in PROCESS step
+std::map< unsigned int, GLshapeData* > mapId2GLshapeData_;
 
 // both modes:
 std::map< osg::Geode*, std::pair< unsigned int, std::string* >* > mapGeode2NameId_; 
