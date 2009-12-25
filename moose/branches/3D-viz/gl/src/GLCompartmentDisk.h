@@ -17,10 +17,6 @@ public:
 	GLCompartmentDisk( osg::Vec3 centre, osg::Vec3f orientation, double radius, double incrementAngle );
 	GLCompartmentDisk( const GLCompartmentDiskData& data, double incrementAngle );
 	~GLCompartmentDisk();
-
-	osg::ref_ptr< osg::Geometry > getGeometry();
-
-	void setColor( osg::Vec4 color );
 	
 	CompartmentType getCompartmentType();
 
@@ -32,9 +28,5 @@ private:
 	osg::Quat quatRotation_;
 	double radius_;
 	double incrementAngle_;
-
-	osg::ref_ptr< osg::Geometry > cylGeometry_;
-	osg::ref_ptr< osg::Vec3Array > cylVertices_;
-	osg::ref_ptr< osg::Vec3Array > cylNormals_;
 };
 

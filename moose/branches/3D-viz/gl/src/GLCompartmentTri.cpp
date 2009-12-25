@@ -37,59 +37,44 @@ GLCompartmentTri::GLCompartmentTri( const GLCompartmentTriData& data )
 
 GLCompartmentTri::~GLCompartmentTri()
 {
-	cylGeometry_ = NULL;
-	cylVertices_ = NULL;
-	cylNormals_ = NULL;
+	geometry_ = NULL;
+	vertices_ = NULL;
+	normals_ = NULL;
 }
 
 void GLCompartmentTri::init()
 {
-	cylGeometry_ = new osg::Geometry;
-	cylVertices_ = new osg::Vec3Array;
-	cylNormals_ = new osg::Vec3Array;
+	geometry_ = new osg::Geometry;
+	vertices_ = new osg::Vec3Array;
+	normals_ = new osg::Vec3Array;
 
 	constructGeometry();
 
-	cylGeometry_->setVertexArray( cylVertices_ );
-	cylGeometry_->setNormalArray( cylNormals_ );
-	cylGeometry_->setNormalBinding( osg::Geometry::BIND_PER_PRIMITIVE_SET );
+	geometry_->setVertexArray( vertices_ );
+	geometry_->setNormalArray( normals_ );
+	geometry_->setNormalBinding( osg::Geometry::BIND_PER_PRIMITIVE_SET );
 }
 
 void GLCompartmentTri::constructGeometry()
 {
-	cylVertices_->push_back( corner1_ );
-	cylVertices_->push_back( corner2_ );
-	cylVertices_->push_back( corner3_ );
+	vertices_->push_back( corner1_ );
+	vertices_->push_back( corner2_ );
+	vertices_->push_back( corner3_ );
 
-	osg::DrawElementsUInt* cylFaces = new osg::DrawElementsUInt( osg::PrimitiveSet::TRIANGLES, 0 );
+	osg::DrawElementsUInt* faces = new osg::DrawElementsUInt( osg::PrimitiveSet::TRIANGLES, 0 );
 
-	cylFaces->push_back( 0 );
-	cylFaces->push_back( 1 );
-	cylFaces->push_back( 2 );
+	faces->push_back( 0 );
+	faces->push_back( 1 );
+	faces->push_back( 2 );
 
-	cylGeometry_->addPrimitiveSet( cylFaces );
+	geometry_->addPrimitiveSet( faces );
 
-	cylNormals_->push_back(makeNormal( ( *cylVertices_ )[0],
-					   ( *cylVertices_ )[1],
-					   ( *cylVertices_ )[2] ));
-}
-
-osg::ref_ptr< osg::Geometry > GLCompartmentTri::getGeometry()
-{
-	return cylGeometry_;
+	normals_->push_back(makeNormal( ( *vertices_ )[0],
+					   ( *vertices_ )[1],
+					   ( *vertices_ )[2] ));
 }
 
 CompartmentType GLCompartmentTri::getCompartmentType()
 {
 	return COMP_TRI;
-}
-
-void GLCompartmentTri::setColor( osg::Vec4 color )
-{
-	osg::Vec4Array* colors_ = new osg::Vec4Array;
-
-	colors_->push_back( color );
-
-	cylGeometry_->setColorArray( colors_ );
-	cylGeometry_->setColorBinding( osg::Geometry::BIND_OVERALL );
 }

@@ -4,6 +4,20 @@
 
 #include "GLCompartment.h"
 
+osg::ref_ptr< osg::Geometry > GLCompartment::getGeometry()
+{
+	return geometry_;
+}
+
+void GLCompartment::setColor( osg::Vec4 color )
+{
+	osg::Vec4Array* colors_ = new osg::Vec4Array;
+	colors_->push_back( color );
+
+	geometry_->setColorArray( colors_ );
+	geometry_->setColorBinding( osg::Geometry::BIND_OVERALL );
+}
+
 osg::Vec3 GLCompartment::rotateTranslatePoint( osg::Vec3 position, osg::Quat& quatRotation, osg::Vec3& translation )
 {
 	position = quatRotation * position;

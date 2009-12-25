@@ -18,9 +18,6 @@ public:
 	GLCompartmentHemi( const GLCompartmentHemiData& data, double incrementAngle );
 	~GLCompartmentHemi();
 
-	osg::ref_ptr< osg::Geometry > getGeometry();
-	void setColor( osg::Vec4 color );
-
 	CompartmentType getCompartmentType();
 
 private:
@@ -31,9 +28,5 @@ private:
 	double radius_;
 	double incrementAngle_;
 	osg::Vec3f orientation_;
-
-	osg::ref_ptr< osg::Geometry > cylGeometry_;
-	osg::ref_ptr< osg::Vec3Array > cylVertices_;
-	osg::ref_ptr< osg::Vec3Array > cylNormals_;
 };
 
