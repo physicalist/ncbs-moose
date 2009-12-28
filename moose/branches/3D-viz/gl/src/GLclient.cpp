@@ -905,6 +905,8 @@ void updateSmoldynGeometry( const std::vector< SmoldynShapeData >& vecSmoldynSha
 		osg::Geometry* geometry = compartment->getGeometry();	
 		osg::Geode* geode = new osg::Geode;
 		geode->addDrawable( geometry );
+		geode->getOrCreateStateSet()->setMode( GL_BLEND,
+						       osg::StateAttribute::ON );
 		root_->addChild( geode );
 			
 		if ( ! vecSmoldynShapeData[i].name.empty() )

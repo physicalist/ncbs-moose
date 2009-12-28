@@ -1063,9 +1063,9 @@ void GLcell::testInsertVecSmoldynShapeData( )
 	s1.color[0] = 0.6; s1.color[1] = 0.7; s1.color[2] = 0.8; s1.color[3] = 1.0;
 	s2.color[0] = 0.6; s2.color[1] = 0.7; s2.color[2] = 0.8; s2.color[3] = 1.0;
 	s3.color[0] = 0.6; s3.color[1] = 0.7; s3.color[2] = 0.8; s3.color[3] = 1.0;
-	s4.color[0] = 0.6; s4.color[1] = 0.7; s4.color[2] = 0.8; s4.color[3] = 1.0;
-	s5.color[0] = 0.6; s5.color[1] = 0.7; s5.color[2] = 0.8; s5.color[3] = 1.0;
-	s6.color[0] = 0.6; s6.color[1] = 0.7; s6.color[2] = 0.8; s6.color[3] = 1.0;
+	s4.color[0] = 0.6; s4.color[1] = 0.7; s4.color[2] = 0.8; s4.color[3] = 0.1;
+	s5.color[0] = 0.6; s5.color[1] = 0.7; s5.color[2] = 0.8; s5.color[3] = 0.1;
+	s6.color[0] = 0.6; s6.color[1] = 0.7; s6.color[2] = 0.8; s6.color[3] = 0.1;
 
 	GLCompartmentCylinderData d1;
 	d1.endPoint1[0] = 2; d1.endPoint1[1] = 2; d1.endPoint1[2] = 2;
@@ -1085,14 +1085,14 @@ void GLcell::testInsertVecSmoldynShapeData( )
 	d3.orientation[0] = 0; d3.orientation[1] = 0; d3.orientation[2] = 1;
 	d3.radius = 1;
 	s3.data = d3;
-	s3.name = "Disk";
+	// s3.name = "Disk"; // Note that no name is provided
 
 	GLCompartmentHemiData d4;
 	d4.centre[0] = 2; d4.centre[1] = 8; d4.centre[2] = 2;
 	d4.orientation[0] = 0; d4.orientation[1] = 0; d4.orientation[2] = 1;
 	d4.radius = 1;
 	s4.data = d4;
-	s4.name = "Hemi";
+	// s4.name = "Hemi";
 	
 	GLCompartmentTriData d5;
 	d5.corner1[0] = 2; d5.corner1[1] = 10; d5.corner1[2] = 2;

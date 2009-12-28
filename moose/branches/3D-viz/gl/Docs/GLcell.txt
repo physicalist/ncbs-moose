@@ -116,7 +116,8 @@ via a MOOSE interface. Such molecules can be rendered as point
 particles or as individual spheres (which is more expensive). Setting
 'sync' to 'on' will be necessary when the number of molecules
 displayed is large and frame-skipping must to be avoided, for
-instance, when saving individual frames for a movie for publication.
+instance, when saving individual frames for a publication-ready
+animation.
 
 The GLcell element expects incoming messages of the type
 'particleData', each of which will contain a vector of the struct
@@ -126,9 +127,31 @@ colour and diameter as specified in that struct. If diameter is equal
 to zero, particles will be rendered as points; if greater than zero,
 as spheres of that diameter. Colour is specified as RGB values over
 [0,1]. Individual particles are represented by their co-ordinates.
+
 Each particleData message lists particle positions after a particular
 display timestep. Therefore the animation consists of one frame per
-display timestep/particleData message.
+display timestep/particleData message. A test function is included in
+GLview.cpp to simulate incoming particleData messages for a particular
+testcase.
 
-A test function is included in GLview.cpp to simulate incoming
-particleData messages for a particular test-case.
+Smoldyn geometry and the 'smoldynShapeData' message:
+---------------------------------------------
+
+When GLcell is being used to display particles simulated in Smoldyn,
+it is expected that supporting geometry data represented by Smoldyn
+'surfaces' will also need to be imported into GLcell and displayed in
+the graphical client.
+
+This is supported in GLcell via incoming messages of the type
+'smoldynShapeData'. Each message will contain a vector of the struct
+SmoldynShapeData (refer to SmoldynShapeData.h). Each SmoldynShapeData
+struct holds data for a particular surface, colour information and
+optionally a name for the surface. Surfaces can be specified as one of
+a few specific types, viz. cylinder, disk, hemisphere, sphere,
+triangle and rectangle. Colour is specified as RGBA values over [0,1].
+
+Multiple 'smoldynShapeData' messages can be received but the geometry
+specified in a new message will replace all previous geometry in the
+scene, whether specified via readcell or imported from a previous
+'smoldynShapeData' message. A test function is included in GLview.cpp
+to simulate this message for a particular testcase.
