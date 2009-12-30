@@ -31,4 +31,4 @@ struct GLCompartmentRectData
 	}
 };
 
-#endif GLCOMPRECTDATA_H
+#endif // GLCOMPRECTDATA_H
