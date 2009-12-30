@@ -12,6 +12,7 @@
 #include <osg/ref_ptr>
 #include <osg/Geometry>
 
+#include <algorithm>
 #include <vector>
 #include <math.h>
 
