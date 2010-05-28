@@ -46,5 +46,12 @@ openfile { outfile } w
 closefile { outfile }
 
 save_plots
+echo "
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Plots written to *.plot. 
+
+If you have gnuplot, run 'gnuplot plot.gnuplot' to view the graphs.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"
 quit
 
