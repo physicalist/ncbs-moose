@@ -32,4 +32,12 @@ step 100e-3 -t
 tab2file events.plot event_table table -overwrite
 tab2file vm.plot vm_table table -overwrite
 pope
+echo "
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Plots written to vm.plot. 
+
+If you have gnuplot, run 'gnuplot plot.gp' to view the graphs.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"
+quit
 
