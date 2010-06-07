@@ -45,8 +45,8 @@
 
 # Code:
 
-GL_CLIENT_EXECUTABLE = '../../gl/src/glclient'
-GL_COLORMAP_DIR = '../../gl/colormaps'
+GL_CLIENT_EXECUTABLE = 'glclient'
+GL_COLORMAP_DIR = '/usr/share/moose1.3/colormaps'
 GL_COLORMAP_RAINBOW2 = 'rainbow2'
 GL_COLORMAP_HOT = 'hot'
 GL_COLORMAP_GREY = 'grey'

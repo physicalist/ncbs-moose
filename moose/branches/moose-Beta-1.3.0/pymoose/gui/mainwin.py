@@ -241,11 +241,8 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
     def loadSquid_Axon_Tutorial(self):
 #     self.mooseHandler.load('../../DEMOS/pymoose/squid/qtSquid.py', 'MOOSE')
 #	spath = sys.path[0] + '/../../DEMOS/pymoose/squid/qtSquid.py'
-      spath = '/usr/share/doc/moose1.3/DEMOS/pymoose/squid/qtSquid.py'
-       self.mooseHandler.load(spath, 'MOOSE')
-       
-	
-
+        spath = '/usr/share/doc/moose1.3/DEMOS/pymoose/squid/qtSquid.py'
+        self.mooseHandler.load(spath, 'MOOSE')
 
     def showAbout_MOOSE(self):
 	about = QtCore.QT_TR_NOOP('<p>MOOSE is the Multi-scale Object Oriented Simulation Environment.</p>'

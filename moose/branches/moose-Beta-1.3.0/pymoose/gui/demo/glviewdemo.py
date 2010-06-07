@@ -76,7 +76,7 @@ class GLViewDemo(object):
     bottom), you will see nice changes in color and size of the cubes
     indicating the propagation of spikes.
     '''
-    def __init__(self, port=9999, colormap='../../../gl/colormaps/rainbow2', celltype='Mitral'):
+    def __init__(self, port=9999, colormap='/usr/share/moose1.3/colormaps/rainbow2', celltype='Mitral'):
 	self.client = GLClient(port=str(port), colormap=colormap, mode='v')
 	time.sleep(3) # Without a little delay the client gives bind error
         # create the channels for Mitral cell.        
