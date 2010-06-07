@@ -54,7 +54,7 @@ SIMDT = 1e-5
 GLDT = 1e-4
 RUNTIME = 100e-3
 
-morphs_dir = '../../../DEMOS/gl-demo/morphologies/'
+morphs_dir = '/usr/share/doc/moose1.3/DEMOS/gl-demo/morphologies/'
 models = {'CA1':'ca1passive.p',
 	  'Mitral': 'mit.p',
 	  'Purkinje1': 'psmall.p',
@@ -70,7 +70,7 @@ class GLViewLoader(object):
 	filepath = morphs_dir + models[cell_type]
 
         # Load the channel definitions from bulbchan.g
-        CONTEXT.loadG('../../../DEMOS/gl-demo/channels/bulbchan.g')
+        CONTEXT.loadG('/usr/share/doc/moose1.3/DEMOS/gl-demo/channels/bulbchan.g')
         cwe = CONTEXT.getCwe()
         CONTEXT.setCwe('/library')
         CONTEXT.runG('make_LCa3_mit_usb')

@@ -87,7 +87,7 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
                     prop = eval('moose.' + self.mooseObject.__class__.__name__ + '.' + fieldName)
                     if (type(prop) is property) and prop.fset:
                         flag = flag | Qt.ItemIsEditable
-                except (SyntaxError, AttributeError) as err:
+                except Error, err:
                     config.LOGGER.debug('ObjectFieldsModel.__init__: %s' % (str(err)))
 
                 self.field_flags[fieldName] = [flag, False]

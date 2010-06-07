@@ -50,16 +50,16 @@ import sys
 from getopt import getopt
 from subprocess import Popen
 
-GLCLIENT_EXE = '../../../gl/src/glclient'
+GLCLIENT_EXE = 'glclient'
 
 option_dict={'-p': '9999',
 	     '-m': 'c',
-	     '-c': '../../../gl/colormaps/rainbow2' # This must be updated with a relative path
+	     '-c': '/usr/share/moose1.3/colormaps/rainbow2' # This must be updated with a relative path
 	     }
 
 
 class GLClient(object):
-    def __init__(self, port='9999', mode='c', colormap='../../../gl/colormaps/rainbow2'):
+    def __init__(self, port='9999', mode='c', colormap='/usr/share/moose1.3/colormaps/rainbow2'):
 	self.opt_dict = {}
 	self.opt_dict['-p'] = port
 	self.opt_dict['-m'] = mode
