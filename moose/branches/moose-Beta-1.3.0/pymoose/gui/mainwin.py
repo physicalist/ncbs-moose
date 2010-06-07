@@ -224,7 +224,8 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
     def loadIzhikevich_Neurons_Tutorial(self):
 #     self.mooseHandler.load('../../DEMOS/pymoose/izhikevich/Izhikevich.py', 'MOOSE')
-        spath = sys.path[0] + '/../../DEMOS/pymoose/izhikevich/Izhikevich.py'
+#	spath = sys.path[0] + '/../../DEMOS/pymoose/izhikevich/Izhikevich.py'
+        spath = '/usr/share/doc/moose1.3/DEMOS/pymoose/izhikevich/Izhikevich.py'
         self.mooseHandler.load(spath, 'MOOSE')
         
     def loadGLCellDemo(self):
@@ -239,7 +240,8 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
     def loadSquid_Axon_Tutorial(self):
 #     self.mooseHandler.load('../../DEMOS/pymoose/squid/qtSquid.py', 'MOOSE')
-       spath = sys.path[0] + '/../../DEMOS/pymoose/squid/qtSquid.py'
+#	spath = sys.path[0] + '/../../DEMOS/pymoose/squid/qtSquid.py'
+      spath = '/usr/share/doc/moose1.3/DEMOS/pymoose/squid/qtSquid.py'
        self.mooseHandler.load(spath, 'MOOSE')
        
 	

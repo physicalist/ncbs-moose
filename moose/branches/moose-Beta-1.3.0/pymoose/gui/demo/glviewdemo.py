@@ -56,7 +56,7 @@ SIMDT = 1e-5
 GLDT = 1e-2
 RUNTIME = 100e-3
 
-morphs_dir = '../../../DEMOS/gl-demo/morphologies/'
+morphs_dir = '/usr/share/doc/moose/DEMOS/gl-demo/morphologies/'
 models = {'CA1':'ca1passive.p',
 	  'Mitral': 'mit.p',
 	  'Purkinje1': 'psmall.p',
