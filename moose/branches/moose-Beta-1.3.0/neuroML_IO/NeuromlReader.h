@@ -34,7 +34,7 @@ class NeuromlReader
 		double calcSurfaceArea(double length,double diameter);
 		/* Returns the volume of the compartment */
 		double calcVolume(double length,double diameter);
-		void setupSynChannels(map< string,vector<string> > &,map< string,vector< string > > &);
+		void setupSynChannels(map< string,vector<string> > &,map< string,vector< string > > &,unsigned int numsynchans);
 		void setupChannels(map< string,vector<string> > &,map< string,vector< string > > &,string unit);
 		void setupPools(map< string,vector<string> > &,map< string,vector< string > > &,string unit);
 	#endif	// USE_NEUROML	
@@ -47,6 +47,7 @@ class NeuromlReader
 		Element* synchannel_;
 		Element* leak_;
 		Element* ionPool_;
+		Element* mgblock_;
 		static const double PI;
 		map< string,Id > segMap_;
 		map< string,string > NMsegMap_;
@@ -61,5 +62,6 @@ extern const Cinfo* initLeakageCinfo();
 extern const Cinfo* initSynChanCinfo();
 extern const Cinfo* initCaConcCinfo();
 extern const Cinfo* initInterpolCinfo();
+extern const Cinfo* initMg_blockCinfo();
 #endif // _NEUROMLREADER_H
 
