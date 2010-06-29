@@ -13,14 +13,13 @@ try:
     import moose
 except ImportError:
     print "ERROR: Could not import moose. Please add the directory containing moose.py in your PYTHONPATH"
-    import sys
     sys.exit(1)
 
 
 from squid import *
 
 import numpy
-import pylab
+
 
 EPSILON = numpy.finfo(float).eps
 class SquidModel(moose.Neutral):
