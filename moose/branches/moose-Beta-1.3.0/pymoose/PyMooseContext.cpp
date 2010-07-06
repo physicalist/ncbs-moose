@@ -391,6 +391,10 @@ static const Slot readSbmlSlot =
 	initPyMooseContextCinfo()->getSlot( "parser.readsbml" );
 static const Slot writeSbmlSlot = 
 	initPyMooseContextCinfo()->getSlot( "parser.writesbml" );
+static const Slot readNeuroMLSlot =
+        initPyMooseContextCinfo()->getSlot( "parser.readneuroml" );
+static const Slot writeNeuroMLSlot =
+        initPyMooseContextCinfo()->getSlot( "parser.writeneuroml" );
 static const Slot createGateSlot = 
 	initPyMooseContextCinfo()->getSlot( "parser.createGate" );
 
@@ -1462,7 +1466,11 @@ void PyMooseContext::tabFill(const Id& table, int xdivs, int mode)
                                  setFieldSlot, table, "tabFill", argstr );
 }
 
-
+vector <double> PyMooseContext::getTableVector(const Id& table)
+{
+    get< vector < double > > (table(), "tableVector", dbls_);
+    return dbls_;
+}
 void PyMooseContext::readCell(string filename, string cellpath)
 {
     std::string command = "readcell " + filename + " " + cellpath;
@@ -1516,6 +1524,16 @@ void PyMooseContext::readSBML(string fileName, string modelPath)
 {
     int node = parseNodeNum(modelPath);
     send3< string, string, int >(myId_(), readSbmlSlot, fileName, modelPath, node );
+}
+
+void PyMooseContext::readNeuroML(string fileName, string modelPath)
+{
+    int node = parseNodeNum(modelPath);
+#ifdef USE_NEUROML    
+    send3< string, string, int >(myId_(), readNeuroMLSlot, fileName, modelPath, node);
+#else
+    cout << "void PyMooseContext::readNeuroML(string fileName, string modelPath) -- this version of MOOSE was built without neuroML support." << endl;
+#endif
 }
 
 const string& PyMooseContext::className(const Id& objId) const

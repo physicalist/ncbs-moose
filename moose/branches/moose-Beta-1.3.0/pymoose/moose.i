@@ -162,6 +162,8 @@ def listproperty(getter=None, setter=None, deller=None):
 %attribute(pymoose::PyMooseBase, const int, dataMem, __get_dataMem)
 %attribute(pymoose::PyMooseBase, const int, msgMem, __get_msgMem)
 %attribute(pymoose::PyMooseBase, const std::vector<std::string>&, fieldList, __get_fieldList)
+%attribute(pymoose::PyMooseBase, std::string, name, __get_name, __set_name)
+%attribute(pymoose::PyMooseBase, const std::string, path, __get_path)
 
 
 %pythoncode %{
@@ -177,14 +179,12 @@ def doc(cls):
         return PyMooseBase.getContext().doc(cls)		
 %} // !pythoncode
 	    
-%attribute(pymoose::PyMooseBase, const std::string, name, __get_name)
-%attribute(pymoose::PyMooseBase, const std::string, path, __get_path)
 
 %include "Neutral.h"
 %attribute(pymoose::Neutral, int, child, __get_child, __set_child)
 
 %include "Class.h"
-%attribute(pymoose::Class, std::string, name, __get_name, __set_name)
+/* %attribute(pymoose::Class, std::string, name, __get_name, __set_name) */
 %attribute(pymoose::Class, std::string, author, __get_author)
 %attribute(pymoose::Class, std::string, description, __get_description)
 %attribute(pymoose::Class, unsigned int, tick, __get_tick, __set_tick)
@@ -217,7 +217,7 @@ def doc(cls):
 /* Numpy interface for Interpol */
 %extend pymoose::Interpol{
 #ifdef USE_NUMPY
-PyObject* get__array_struct__()
+PyObject* __array_struct__()
 {
     PyArrayObject* result;
     int dimensions[1];
@@ -271,6 +271,7 @@ void fillData(PyObject* args)
 %attribute(pymoose::Interpol, double, dx, __get_dx, __set_dx)
 %attribute(pymoose::Interpol, double, sy, __get_sy, __set_sy)
 %attribute(pymoose::Interpol, int, calcMode, __get_calcMode, __set_calcMode)
+%attribute(pymoose::Interpol, const vector<double>&, table, __get_table)
 
 %include "TableIterator.h"
 %extend pymoose::TableIterator

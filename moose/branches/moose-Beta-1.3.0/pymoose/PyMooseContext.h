@@ -113,7 +113,7 @@ enum {OUTGOING, INCOMING, INOUT};
         void tweakAlpha( std::string channel, std::string gate );
         void tweakTau( std::string channel, std::string gate);
         void tabFill(const Id& table, int xdivs, int mode);    
-        
+        vector <double> getTableVector(const Id& table);
         void setupAlpha( const Id& gateId, std::vector <double> parms );
         void setupTau( const Id& gateId, std::vector <double> parms );
         void tweakAlpha( const Id& gateId );
@@ -122,6 +122,7 @@ enum {OUTGOING, INCOMING, INOUT};
         void readCell(std::string filename, std::string cellpath, std::vector <double> params);        
         void readCell(std::string fileName, std::string cellPath);
         void readSBML(std::string fileName, std::string modelPath);
+        void readNeuroML(std::string fileName, std::string modelPath);
         double getCurrentTime();
         bool exists(const Id& id);
         bool exists(std::string path);
