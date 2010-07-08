@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Jul  5 21:35:09 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Jul  6 03:39:23 2010 (+0530)
+# Last-Updated: Wed Jul  7 17:34:20 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 200
+#     Update #: 335
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -84,26 +84,27 @@ class MoosePlot(Qwt.QwtPlot):
         self.xmin = 100.1
         self.curveTableMap = {} # curve -> moose table
         self.tableCurveMap = {} # moose table -> curve
-        self.setTitle('Plot %d' % (self.plotNo))
+        self.overlay = False
+        self.insertLegend(Qwt.QwtLegend())
+
+        # self.setTitle('Plot %d' % (self.plotNo))
         mY = Qwt.QwtPlotMarker()
         mY.setLabelAlignment(Qt.AlignRight | Qt.AlignTop)
         mY.setLineStyle(Qwt.QwtPlotMarker.HLine)
         mY.setYValue(0.0)
         mY.attach(self)
-        ###########################################
-        # This is a place holder curve
-        ###########################################
-        dummyCurve = Qwt.QwtPlotCurve('Dummy curve')
-        xx = arange(0.0, 100.1, 0.5)
-        yy = sin(xx * pi / 27.18282)
-        dummyCurve.setData(xx, yy)
-        dummyCurve.setPen(MoosePlot.colors[0])
-        dummyCurve.attach(self)
-        ###########################################
-        self.setAxisTitle(Qwt.QwtPlot.xBottom, 'Time (ms)')
-        self.setAxisTitle(Qwt.QwtPlot.yLeft, 'Values')
+        xtitle = Qwt.QwtText('Time (ms)')
+        ytitle = Qwt.QwtText('Value')
+        if self.parent():
+            xtitle.setFont(self.parent().font())
+            ytitle.setFont(self.parent().font())
+        else:
+            xtitle.setFont(QtGui.QFont("Helvetica", 18))
+            ytitle.setFont(QtGui.QFont("Helvetica", 18))
+        print xtitle.font().pointSize()
+        self.setAxisTitle(Qwt.QwtPlot.xBottom, xtitle)
+        self.setAxisTitle(Qwt.QwtPlot.yLeft, ytitle)
 
-        # self.timer = self.startTimer(500)
 
     def alignScales(self):
         self.canvas().setFrameStyle(QtGui.QFrame.Box | QtGui.QFrame.Plain)
@@ -116,35 +117,28 @@ class MoosePlot(Qwt.QwtPlot):
             if scaleDraw:
                 scaleDraw.enableComponent(Qwt.QwtAbstractScaleDraw.Backbone, False)
 
-    def timerEvent(self, e):
-        # print 'Timer event'
-        current_time = moose.PyMooseBase.getContext().getCurrentTime()
-        if current_time + self.steptime < self.simtime:
-            moose.PyMooseBase.getContext().step(self.steptime)
-        elif current_time < self.simtime:
-            moose.PyMooseBase.getContext().step(self.simtime - current_time)
-        else: 
-            self.killTimer(self.timer)
-        current_time = moose.PyMooseBase.getContext().getCurrentTime()
-        if current_time > self.xmin * 1e-3:
-            self.xmin = current_time * 1e3
+    def updatePlot(self, currentTime):
+        if currentTime > self.xmin * 1e-3:
+            self.xmin = currentTime * 1e3
         for curve, table in self.curveTableMap.items():
-            if len(table) == 0:
-                print 'Table is 0 length'
+            tabLen = len(table)
+            if tabLen == 0:
                 continue
-            else:
-                print 'Table is %d length' % (len(table))
-            xx = linspace(0.0, current_time * 1e3, len(table))
-            yy = array(table.table)
-            curve.setData(xx, yy)
+            ydata = array(table.table)                
+            xdata = linspace(0, currentTime, tabLen)
+            curve.setData(xdata, ydata)
         self.replot()
 
     def addTable(self, table):
-        curve = Qwt.QwtPlotCurve(table.name)
-        curve.setPen(MoosePlot.colors[self.curveIndex])
-        self.curveIndex = self.curveIndex + 1
-        self.curveTableMap[curve] = table
-        self.tableCurveMap[table] = curve
+        try:
+            curve = self.tableCurveMap[table]
+        except KeyError:
+            curve = Qwt.QwtPlotCurve(table.name)
+            curve.setPen(MoosePlot.colors[self.curveIndex])
+            self.curveIndex = (self.curveIndex + 1) % len(MoosePlot.colors)
+            self.curveTableMap[curve] = table
+            self.tableCurveMap[table] = curve
+            curve.attach(self)
         current_time = moose.PyMooseBase.getContext().getCurrentTime() * 1e3
         if current_time > self.xmin:
             self.xmin = current_time
@@ -152,7 +146,38 @@ class MoosePlot(Qwt.QwtPlot):
             yy = array(table.table)
             xx = linspace(0.0, current_time, len(yy))
             curve.setData(xx, yy)
-        curve.attach(self)
+        self.replot()
+
+    def removeTable(self, table):
+        try:
+            curve = self.tableCurveMap.pop(table)
+            curve.detach()
+            self.curveTableMap.pop(curve)
+        except KeyError:
+            pass
+
+    def setOverlay(self, overlay):
+        self.overlay = overlay
+
+    def reset(self):
+        if not self.overlay:
+            return
+
+        table_list = []
+        try:
+            while self.tableCurveMap:
+                (table, curve) = self.tableCurveMap.popitem()                
+                self.curveTableMap.pop(curve)
+                table_list.append(table)
+        except KeyError:
+            pass
+        for table in table_list:
+            self.addTable(table)
+
+    def detachItems(self):
+        self.tableCurveMap.clear()
+        self.curveTableMap.clear()
+        QtGui.QwtPlotDict.detachItems(self)
 
 import sys
 if __name__ == '__main__':
