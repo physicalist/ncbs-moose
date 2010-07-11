@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # moosegui.py --- 
 # 
 # Filename: moosegui.py
@@ -6,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Jul  9 21:23:30 2010 (+0530)
+# Last-Updated: Sun Jul 11 15:27:37 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2062
+#     Update #: 2155
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -47,6 +48,7 @@
 
 import sys
 import code
+import subprocess
 from datetime import date
 from collections import defaultdict
 
@@ -77,6 +79,7 @@ from mooseshell import MooseShell
 from moosehandler import MooseHandler
 from mooseplot import MoosePlot
 from plotconfig import PlotConfig
+from glwizard import MooseGLWizard
 
 def makeClassList(parent=None, mode=MooseGlobals.MODE_ADVANCED):
     """Make a list of classes that can be used in current mode
@@ -109,7 +112,10 @@ class MainWindow(QtGui.QMainWindow):
 	QtGui.QMainWindow.__init__(self, parent)
         self.mooseHandler = MooseHandler()
         self.connect(self.mooseHandler, QtCore.SIGNAL('updatePlots(float)'), self.updatePlots)
-        self.settings = config.get_settings()
+        self.settings = config.get_settings()        
+        self.demosDir = str(self.settings.value(config.KEY_DEMOS_DIR).toString())
+        if not self.demosDir:
+            self.demosDir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Please select pymoose demos directory'))
         self.resize(800, 600)
         self.setDockOptions(self.AllowNestedDocks | self.AllowTabbedDocks | self.ForceTabbedDocks | self.AnimatedDocks)        
         # The following are for holding transient selections from
@@ -314,6 +320,7 @@ class MainWindow(QtGui.QMainWindow):
             return
         
     def createActions(self):
+        # Actions for view menu
         # The following actions are to toggle visibility of various widgets
         self.glClientAction = self.glClientDock.toggleViewAction()
         self.glClientAction.setChecked(False)
@@ -327,7 +334,7 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(self.mooseGLCellAction, QtCore.SIGNAL('triggered()'), self.createGLCellWidget)
 
         self.autoHideAction = QtGui.QAction(self.tr('Autohide during simulation'), self, checkable=True)
-        self.autoHideAction.setChecked(True)
+        self.autoHideAction.setChecked(self.settings.value(config.KEY_RUNTIME_AUTOHIDE).toBool())
 
         self.showRightBottomDocksAction = QtGui.QAction(self.tr('Right and Bottom Docks'), self, checkable=True, triggered=self.showRightBottomDocks)
         self.showRightBottomDocksAction.setChecked(False)
@@ -369,7 +376,13 @@ class MainWindow(QtGui.QMainWindow):
         # Quit action
         self.quitAction = QtGui.QAction(self.tr('&Quit'), self)
         self.quitAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+Q')))
-        self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), QtGui.qApp, QtCore.SLOT('closeAllWindows()'))
+        self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), self.doQuit)
+
+        # Actions for 3D visualization
+        self.startGLWizardAction = QtGui.QAction(self.tr('Start GL&Wizard'), self)
+        self.connect(self.startGLWizardAction, QtCore.SIGNAL('triggered()'), self.startGLWizard)
+        self.stopGLAction = QtGui.QAction(self.tr('Stop G&L Visualization'), self)
+        self.connect(self.stopGLAction, QtCore.SIGNAL('triggered()'), self.mooseHandler.stopGL)
 
         # Help menu actions
         self.aboutMooseAction = QtGui.QAction(self.tr('&About'), self)
@@ -385,21 +398,37 @@ class MainWindow(QtGui.QMainWindow):
         
         
     def runSquidDemo(self):
-        QtGui.QMessageBox.information(self, 'Not yet incorporated', 'this demo is yet to be incorporated into new moosegui')
+        path = self.demosDir + '/squid/qtSquid.py'
+        subprocess.call(['python', path])
 
     def runIzhikevichDemo(self):
-        QtGui.QMessageBox.information(self, 'Not yet incorporated', 'this demo is yet to be incorporated into new moosegui')
+        path = self.demosDir + '/izhikevich/demogui_qt.py'
+        subprocess.call(['python', path])
+
+    def runGLCellDemo(self):
+        path = self.demosDir + '/gl/glcelldemo.py'
+        subprocess.call(['python', path])
+
+    def runGLViewDemo(self):
+        path = self.demosDir + '/gl/glviewdemo.py'
+        subprocess.call(['python', path])
+        
     
     def makeDemosMenu(self):
         self.squidDemoAction = QtGui.QAction(self.tr('Squid Axon'), self)
         self.connect(self.squidDemoAction, QtCore.SIGNAL('triggered()'), self.runSquidDemo)
         self.IzhikevichDemoAction = QtGui.QAction(self.tr('Izhikevich Model'), self)
         self.connect(self.IzhikevichDemoAction, QtCore.SIGNAL('triggered()'), self.runIzhikevichDemo)
+        self.glCellDemoAction = QtGui.QAction(self.tr('GL Cell'), self)
+        self.glCellDemoAction.triggered.connect(self.runGLCellDemo)
+        self.glViewDemoAction = QtGui.QAction(self.tr('GL View'), self)
+        self.glViewDemoAction.triggered.connect(self.runGLCellDemo)
         menu = QtGui.QMenu('&Demos and Tutorials', self)
         menu.addAction(self.squidDemoAction)
         menu.addAction(self.IzhikevichDemoAction)
+        menu.addAction(self.glCellDemoAction)
+        menu.addAction(self.glViewDemoAction)
         return menu
-        # TODO: create a class for the demos menu.
         
     def makeMenu(self):
         self.fileMenu = QtGui.QMenu(self.tr('&File'), self)
@@ -427,12 +456,16 @@ class MainWindow(QtGui.QMainWindow):
         self.runMenu.addAction(self.runAction)
 
 
-        self.editModelMenu = QtGui.QMenu(self.tr('&Model'), self)
+        self.editModelMenu = QtGui.QMenu(self.tr('&Edit Model'), self)
         self.editModelMenu.addAction(self.connectionDialogAction)
 
         self.plotMenu = QtGui.QMenu(self.tr('&Plot Settings'), self)
         self.plotMenu.addAction(self.configurePlotAction)
 
+        self.glMenu = QtGui.QMenu(self.tr('Open&GL'), self)
+        self.glMenu.addAction(self.startGLWizardAction)
+        self.glMenu.addAction(self.stopGLAction)
+                                  
         self.helpMenu = QtGui.QMenu('&Help', self)
         self.helpMenu.addAction(self.showDocAction)
         self.helpMenu.addAction(self.contextHelpAction)
@@ -444,6 +477,7 @@ class MainWindow(QtGui.QMainWindow):
         self.menuBar().addMenu(self.editModelMenu)
         self.menuBar().addMenu(self.runMenu)
         self.menuBar().addMenu(self.plotMenu)
+        self.menuBar().addMenu(self.glMenu)
         self.menuBar().addMenu(self.helpMenu)
 
     def createConnectionMenu(self, clickpoint):
@@ -474,6 +508,9 @@ class MainWindow(QtGui.QMainWindow):
         layout_data = self.saveState()
         self.settings.setValue(config.KEY_WINDOW_GEOMETRY, QtCore.QVariant(geo_data))
         self.settings.setValue(config.KEY_WINDOW_LAYOUT, QtCore.QVariant(layout_data))
+        self.settings.setValue(config.KEY_RUNTIME_AUTOHIDE, QtCore.QVariant(self.autoHideAction.isChecked()))
+        self.settings.setValue(config.KEY_DEMOS_DIR, QtCore.QVariant(self.demosDir))
+                              
 
     def loadLayout(self):
         '''Load the window layout.'''
@@ -505,6 +542,7 @@ class MainWindow(QtGui.QMainWindow):
             self.mooseShellAction.setChecked(False)
         else:
             self.mooseShellAction.setChecked(True)
+        
     
     def createMooseClassesPanel(self):
         config.LOGGER.debug('createMooseClassesPanel - start')
@@ -621,7 +659,8 @@ class MainWindow(QtGui.QMainWindow):
 	    fileType = self.mooseHandler.fileExtensionMap[str(fileFilter)]
 	    directory = fileDialog.directory() # Potential bug: if user types the whole file path, does it work? - no but gives error message
 	    for fileName in fileNames: 
-		self.mooseHandler.loadModel(str(fileName), str(fileType))
+		if self.mooseHandler.loadModel(str(fileName), str(fileType)) == MooseHandler.type_kkit:
+                    self.populateKKitPlots()
             self.modelTreeWidget.recreateTree()
 
 
@@ -777,6 +816,27 @@ class MainWindow(QtGui.QMainWindow):
     def setCurrentPlotWindow(self, subWindow):
         if subWindow:
             self.currentPlotWindow = subWindow.widget()
+
+    def startGLWizard(self):
+        self.glWizard = MooseGLWizard(self, self.mooseHandler)
+        self.glWizard.setVisible(True)
+
+    def populateKKitPlots(self):
+        graphs = self.mooseHandler.getKKitGraphs()
+        for graph in graphs:
+            self.plots[0].addTable(graph)
+        self.plots[0].replot()
+        moregraphs =self.mooseHandler.getKKitMoreGraphs()
+        if len(moregraphs) > 0:
+            if len(self.plots) == 1:
+                self.addPlotWindow()
+            for graph in moregraphs:
+                self.plots[1].addTable(graph)
+            self.plots[1].replot()
+
+    def doQuit(self):
+        self.mooseHandler.stopGL()
+        QtGui.qApp.closeAllWindows()
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
