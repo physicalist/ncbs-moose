@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jan 28 15:08:29 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Jul  7 16:41:05 2010 (+0530)
+# Last-Updated: Sun Jul 11 01:30:17 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 370
+#     Update #: 560
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -74,7 +74,7 @@ class MooseXMLHandler(saxhandler.ContentHandler):
         elif name == 'neuroml':
             self.model_type = MooseHandler.type_neuroml
         else:
-            print name
+            pass
 
 class MooseHandler(QtCore.QObject):
     """Access to MOOSE functionalities"""
@@ -88,10 +88,12 @@ class MooseHandler(QtCore.QObject):
     type_xml = 'XML'
     type_neuroml = 'NEUROML'
     type_sbml = 'SBML'
+    type_python = 'PYTHON'
     # Map between file extension and known broad filetypes.
     fileExtensionMap = {
         'Genesis Script(*.g)': type_genesis,
         'neuroML/SBML(*.xml *.bz2 *.zip *.gz)': type_xml,
+        'Python script(*.py)': type_python
         }
     DEFAULT_SIMDT = 2.5e-5
     DEFAULT_PLOTDT = 1e-4
@@ -117,7 +119,10 @@ class MooseHandler(QtCore.QObject):
         self.fieldTableMap = {}
         self._tableIndex = 0
         self._tableSuffix = random.randint(1, 999)
-        
+        self._connSrcObj = None
+        self._connDestObj = None
+        self._connSrcMsg = None
+        self._connDestMsg = None
         
     def runGenesisCommand(self, cmd):
 	"""Runs a GENESIS command and returns the output string"""
@@ -129,11 +134,15 @@ class MooseHandler(QtCore.QObject):
         directory = os.path.dirname(filename)
         os.chdir(directory)
         filename = os.path.basename(filename) # ideally this should not be required - but neuroML reader has a bug and gets a segmentation fault when given abosolute path.
-        config.LOGGER.info('SIMPATH modidied to: %s' % (moose.Property.getSimPath()))
+        moose.Property.addSimPath(directory)
         if filetype == MooseHandler.type_genesis:
             return self.loadGenesisModel(filename)
         elif filetype == MooseHandler.type_xml:
             return self.loadXMLModel(filename)
+        elif filetype == MooseHandler.type_python:
+            sys.path.append(directory)
+            return self.loadPythonScript(filename)
+        
 
 
     def loadGenesisModel(self, filename):
@@ -203,7 +212,12 @@ class MooseHandler(QtCore.QObject):
             self._context.readSBML(filename, self._current_element.path)
         
         return ret    
-        
+
+    def loadPythonScript(self, filename):
+        """Evaluate a python script."""
+        extension_start = filename.rfind('.py')
+        script = filename[:extension_start]
+        exec 'import %s' % (script)
 
     def doReset(self, simdt, plotdt, gldt, plotupdate_dt):
         """Reset moose.
@@ -273,7 +287,157 @@ class MooseHandler(QtCore.QObject):
         self._context.step(time_left)
         self.emit(QtCore.SIGNAL('updatePlots(float)'), self._context.getCurrentTime())
         
+    def doConnect(self):
+        ret = False
+        if self._connSrcObj and self._connDestObj and self._connSrcMsg and self._connDestMsg:
+            ret = self._connSrcObj.connect(self._connSrcMsg, self._connDestObj, self._connDestMsg)
+            print 'Connected %s/%s to %s/%s: ' % (self._connSrcObj.path, self._connSrcMsg, self._connDestObj.path, self._connDestMsg), ret
+            self._connSrcObj = None
+            self._connDestObj = None
+            self._connSrcMsg = None
+            self._connDestMsg = None
 
+    def setConnSrc(self, fieldPath):
+        pos = fieldPath.rfind('/')
+        moosePath = fieldPath[:pos]
+        field = fieldPath[pos+1:]
+        self._connSrcObj = moose.Neutral(moosePath)
+        self._connSrcMsg = field
 
+    def setConnDest(self, fieldPath):
+        pos = fieldPath.rfind('/')
+        moosePath = fieldPath[:pos]
+        field = fieldPath[pos+1:]
+        self._connDestObj = moose.Neutral(moosePath)
+        self._connDestMsg = field
+
+    def getSrcFields(self, mooseObj):
+        srcFields = self._context.getFieldList(mooseObj.id, moose.FTYPE_SOURCE)
+        sharedFields = self._context.getFieldList(mooseObj.id, moose.FTYPE_SHARED)
+        ret = []
+        for field in srcFields:
+            ret.append(field)
+        for field in sharedFields:
+            ret.append(field)
+        return ret
+
+    def getDestFields(self, mooseObj):
+        destFields = self._context.getFieldList(mooseObj.id, moose.FTYPE_DEST)
+        sharedFields = self._context.getFieldList(mooseObj.id, moose.FTYPE_SHARED)
+        ret = []
+        for field in destFields:
+            ret.append(field)
+        for field in sharedFields:
+            ret.append(field)
+        return ret
+
+    def makeGLCell(self, mooseObjPath, port, field=None, threshold=None, lowValue=None, highValue=None, vscale=None, bgColor=None, sync=None):
+        """Make a GLcell instance.
+        
+        mooseObjPath -- path of the moose object to be monitored
+        
+        port -- string representation of the port number for the client.
+        
+        field -- name of the field to be observed. Vm by default.
+
+        threshold -- the % change in the field value that will be
+        taken up for visualization. 1% by default.
+
+        highValue -- value represented by the last line of the
+        colourmap file. Any value of the field above this will be
+        represented by the colour corresponding to this value.
+
+        lowValue -- value represented by the first line of the
+        colourmap file. Any value of the field below this will be
+        represented by the colour corresponding to this value.
+
+        vscale -- Scaling of thickness for visualization of very thin
+        compartments. 
+
+        bgColor -- background colour of the visualization window.
+
+        sync -- Run simulation in sync with the visualization. If on,
+        it may slowdown the simulation.
+        
+        """
+        glCellPath = 'gl_' + mooseObjPath.replace('/', '_')
+        glCell = moose.GLcell(glCellPath)
+        glCell.vizpath = mooseObjPath
+        glCell.clientPort = port
+        if field is not None:
+            glCell.attributeName = field
+        if threshold is not None:
+            glCell.changeThreshold = threshold
+        if highValue is not None:
+            glCell.highValue = highValue
+        if lowValue is not None:
+            glCell.lowValue = lowValue
+        if vscale is not None:
+            glCell.VScale = vscale
+        if bgColor is not None:
+            glCell.bgColor = bgColor
+        if sync is not None:
+            glCell.syncMode = sync
+        
+    def makeGLView(self, mooseObjPath, port, fieldList, minValueList, maxValueList, colorFieldIndex, morphFieldIndex=None, grid=None, bgColor=None, sync=None):
+        """
+        Make a GLview object to visualize some field of a bunch of
+        moose elements.
+        
+        mooseObjPath -- GENESIS-style path for elements to be
+        observed.
+
+        port -- port to use for communicating with the client.
+
+        fieldList -- list of fields to be observed.
+
+        minValueList -- minimum value for fields in fieldList. 
+
+        maxValueList -- maximum value for fields in fieldList.
+        
+        colorFieldIndex -- index of the field to be represented by the
+        colour of the 3-D shapes in visualization.
+
+        morphFieldIndex -- index of the field to be represented by the
+        size of the 3D shape.
+        
+        grid -- whether to put the 3D shapes in a grid or to use the
+        x, y, z coordinates in the objects for positioning them in
+        space.
+
+        bgColor -- background colour of visualization window.
+
+        sync -- synchronize simulation with visualization.
+
+        """
+        glViewPath = 'gl_' + mooseObjPath.replace('/', '_')
+        glView = moose.GLview(glViewPath)
+        glView.vizpath = mooseObjPath
+        glView.clientPort = port
+        if len(fieldList) > 5:
+            fieldList = fieldList[:5]
+
+        for ii in range(len(fieldList)):
+            visField = 'value%dField' % (ii+1)
+            setattr(glView, visField, fieldList[ii])
+            try:
+                setattr(glView, 'value%dMin' % (ii+1), minValueList[ii])
+                setattr(glView, 'value%dMax' % (ii+1), maxValueList[ii])
+            except IndexError:
+                break
+        glCell.colorVal = int(colorFieldIndex)
+        if morphFieldIndex is not None:
+            glView.morphVal = int(morphFieldIndex)
+        if grid and (grid != 'off'):
+            glView.gridMode = 'on'
+
+        if bgColor is not None:
+            glView.bgColor = bgColor
+
+        if sync and (sync != 'off'):
+            glView.syncMode = 'on'
+
+        
+    
 # 
 # moosehandler.py ends here

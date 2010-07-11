@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Jun 23 18:54:14 2009 (+0530)
 # Version: 
-# Last-Updated: Fri Jul  2 11:03:27 2010 (+0530)
+# Last-Updated: Fri Jul  9 15:43:42 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 145
+#     Update #: 149
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -45,11 +45,12 @@
 
 # Code:
 
-import moose
 import sys
 from PyQt4 import QtCore, QtGui
-sys.path.append('/home/subha/src/moose/pymoose')
 
+import moose
+
+import config
 
 class MooseTreeItem(QtGui.QTreeWidgetItem):
     def __init__(self, *args):
@@ -70,7 +71,6 @@ class MooseTreeItem(QtGui.QTreeWidgetItem):
 	return self.mooseObj_
 
     def updateSlot(self, text):
-        print 'updateSlot -- ', self.mooseObj_.name
 	self.setText(0, QtCore.QString(self.mooseObj_.name))
 
 class MooseTreeWidget(QtGui.QTreeWidget):
@@ -111,7 +111,7 @@ class MooseTreeWidget(QtGui.QTreeWidget):
             current.addChild(new_item)
             self.itemList.append(new_item)
         except AttributeError:
-            print class_name, ': no such class in module moose'
+            config.LOGGER.error('%s: no such class in module moose' % (className))
 
 if __name__ == '__main__':
     c = moose.Compartment("c")
