@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Sun Apr 12 14:05:01 2009 (+0530)
 # Version: 
-# Last-Updated: Tue Jun 29 17:25:10 2010 (+0530)
+# Last-Updated: Fri Jul  9 20:20:39 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 210
+#     Update #: 220
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -46,13 +46,14 @@
 
 # Code:
 import sys
-#sys.path.append('..')
 import moose
 from PyQt4 import QtCore, QtGui
 
-moose_category = ['base', 'builtins', 'biophysics', 'kinetics', 'device']
+moose_category = ['base', 'builtins', 'biophysics', 'kinetics', 'device', 'robots']
 moose_class = {'Neutral':'base', 
                'Tick':'base',
+
+               # biophysics direcypry
                  'BinSynchan':'biophysics',
 #                  'BioScan':'biophysics', # For hsolve internal use
                  'CaConc':'biophysics',
@@ -77,19 +78,20 @@ moose_class = {'Neutral':'base',
                  'SynChan':'biophysics',
 		 'NMDAChan':'biophysics',
                  'TauPump':'biophysics',
-
+               # builtins directory
                  'AscFile':'builtins',
                  'Calculator':'builtins',
                  'Interpol2D':'builtins',
                  'Interpol':'builtins',
                  'Table':'builtins',
                  'TimeTable':'builtins',
-
+               # device directory
                  'DiffAmp':'device',
                  'PIDController':'device',
                  'PulseGen':'device',
                  'RC':'device',
                  
+               # kinetics directory
                  # 'KineticManager':'kinetics',
                  'CylPanel':'kinetics',
                  'DiskPanel':'kinetics',
@@ -107,7 +109,11 @@ moose_class = {'Neutral':'base',
                  # 'SmoldynHub':'kinetics',
                  'SpherePanel':'kinetics',
                  'Surface':'kinetics',
-                 'TriPanel':'kinetics'}
+                 'TriPanel':'kinetics',
+               # robots directory
+               'SigNeur': 'robots',
+               'Adaptor': 'robots'
+               }
 
 class MooseClassItem(QtGui.QListWidgetItem):
     """Items in MOOSE classbox"""

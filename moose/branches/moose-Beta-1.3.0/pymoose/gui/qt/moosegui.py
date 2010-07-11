@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Jul  7 17:02:59 2010 (+0530)
+# Last-Updated: Fri Jul  9 21:23:30 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1575
+#     Update #: 2062
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -76,10 +76,7 @@ from mooseglobals import MooseGlobals
 from mooseshell import MooseShell
 from moosehandler import MooseHandler
 from mooseplot import MoosePlot
-
-def makeModelTree(parent):
-    mooseTree = MooseTreeWidget(parent)
-    return mooseTree
+from plotconfig import PlotConfig
 
 def makeClassList(parent=None, mode=MooseGlobals.MODE_ADVANCED):
     """Make a list of classes that can be used in current mode
@@ -98,7 +95,14 @@ def makeClassList(parent=None, mode=MooseGlobals.MODE_ADVANCED):
 	print 'Error: makeClassList() - mode:', mode, 'is undefined.'
 
 
-    
+# class ConnStruct:
+#     def __init__(self, srcElm=None, srcField=None, destElm=None, destField=None):
+#         self.srcElm = srcElm
+#         self.destElm = destElm
+#         self.srcField = srcField
+#         self.destField = destField
+
+
 class MainWindow(QtGui.QMainWindow):
     default_plot_count = 1
     def __init__(self, interpreter=None, parent=None):
@@ -108,6 +112,14 @@ class MainWindow(QtGui.QMainWindow):
         self.settings = config.get_settings()
         self.resize(800, 600)
         self.setDockOptions(self.AllowNestedDocks | self.AllowTabbedDocks | self.ForceTabbedDocks | self.AnimatedDocks)        
+        # The following are for holding transient selections from
+        # connection dialog
+        self._sourceSelectMode = False
+        self._destSelectMode = False
+        self._srcElement = None
+        self._destElement = None
+        self._srcField = None
+        self._destField = None
         # This is the element tree of MOOSE
         self.createMooseTreePanel()
         # List of classes - one can double click on any class to
@@ -138,11 +150,15 @@ class MainWindow(QtGui.QMainWindow):
         # tablePlotMap is a maps all currently available tables to the
         # plot widgets they belong to.
         self.tablePlotMap = {}
+        self.currentPlotWindow = None
         # Start with a default number of plot widgets
         for ii in range(MainWindow.default_plot_count):
             self.addPlotWindow()
+        self.plotConfig = PlotConfig(self)
+        self.plotConfig.setVisible(False)        
         self.setCentralWidget(self.centralPanel)
         self.centralPanel.tileSubWindows()
+        self.centralPanel.subWindowActivated.connect(self.setCurrentPlotWindow)
         # We connect the double-click event on the class-list to
         # insertion of moose object in model tree.
         for listWidget in self.mooseClassesWidget.getClassListWidget():
@@ -156,6 +172,68 @@ class MainWindow(QtGui.QMainWindow):
         # have been created
         self.loadLayout()
 
+    def makeConnectionPopup(self):
+        """Create a dialog to connect moose objects via messages."""
+        self.connectionDialog = QtGui.QDialog(self)
+        self.connectionDialog.setWindowTitle(self.tr('Create Connection'))
+        self.connectionDialog.setModal(False)
+
+        self.sourceButton = QtGui.QToolButton(self.connectionDialog)
+        self.sourceButton.setDefaultAction(self.setSourceSelectModeAction)
+
+        self.destButton = QtGui.QToolButton(self.connectionDialog)
+        self.destButton.setDefaultAction(self.setDestSelectModeAction)
+
+        sourceFieldLabel = QtGui.QLabel(self.tr('Source Field'), self.connectionDialog)
+        self.sourceFieldComboBox = QtGui.QComboBox(self.connectionDialog)
+        
+        destFieldLabel = QtGui.QLabel(self.tr('Target Field'), self.connectionDialog)
+        self.destFieldComboBox = QtGui.QComboBox(self.connectionDialog)
+
+        self.sourceObjText = QtGui.QLineEdit(self.connectionDialog)
+        self.destObjText = QtGui.QLineEdit(self.connectionDialog)
+
+        okButton = QtGui.QPushButton(self.tr('OK'), self.connectionDialog)
+        okButton.clicked.connect(self.connectionDialog.accept)
+        cancelButton = QtGui.QPushButton(self.tr('Cancel'), self.connectionDialog)
+        cancelButton.clicked.connect(self.connectionDialog.reject)
+
+        self.connectionDialog.accepted.connect(self.createConnection)
+        self.connectionDialog.rejected.connect(self.cancelConnection)
+
+        layout = QtGui.QGridLayout()
+        layout.addWidget(self.sourceButton, 0, 0)
+        layout.addWidget(self.sourceObjText, 1, 0)
+        layout.addWidget(sourceFieldLabel, 0, 1)
+        layout.addWidget(self.sourceFieldComboBox, 1, 1)
+        sep = QtGui.QFrame(self.connectionDialog)
+        sep.setFrameStyle(QtGui.QFrame.VLine | QtGui.QFrame.Sunken)
+        layout.addWidget(sep, 0, 2, -1, 1)
+        layout.addWidget(self.destButton, 0, 3)
+        layout.addWidget(self.destObjText, 1, 3)
+        layout.addWidget(destFieldLabel, 0, 4)
+        layout.addWidget(self.destFieldComboBox, 1, 4)
+        
+        layout.addWidget(cancelButton, 2, 0)
+        layout.addWidget(okButton, 2, 1)
+
+        self.connectionDialog.setLayout(layout)
+        self.connectionDialog.show()
+
+    def setSourceSelectMode(self, on):
+        self._sourceSelectMode = on
+        self._destSelectMode = not on
+
+    def setDestSelectMode(self, on):
+        self._destSelectMode = on
+        self._sourceSelectMode = not on
+
+    def cancelConnection(self):
+        self._destSelectMode = False
+        self._sourceSelectMode = False
+        self._connSrcObject = None
+        self._connDestObject = None
+
     def makeAboutMooseLabel(self):
             """Create a QLabel with basic info about MOOSE."""
             sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
@@ -167,11 +245,6 @@ class MainWindow(QtGui.QMainWindow):
                  MooseGlobals.WEBSITE,
                  MooseGlobals.WEBSITE)
             aboutMooseMessage = QtGui.QMessageBox.about(self, self.tr('About MOOSE'), self.tr(aboutText))
-            # aboutMooseLabel = QtGui.QLabel(dialog)
-            # aboutMooseLabel.setText(aboutText)
-            # aboutMooseLabel.setWordWrap(True)
-            # aboutMooseLabel.setAlignment(Qt.AlignHCenter)
-            # aboutMooseLabel.setSizePolicy(sizePolicy)
             return aboutMooseMessage
 
     def quit(self):
@@ -180,7 +253,6 @@ class MainWindow(QtGui.QMainWindow):
 
     def showRightBottomDocks(self, checked):
         """Hides the widgets on right and bottom dock area"""
-        print 'Toggle'
         for child in self.findChildren(QtGui.QDockWidget):
             area = self.dockWidgetArea(child)
             if ( area == QtCore.Qt.BottomDockWidgetArea) or \
@@ -227,25 +299,31 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(self.objFieldEditModel, 
                      QtCore.SIGNAL('objectNameChanged(const QString&)'),
                      item.updateSlot)
-        self.objFieldEditor.setContextMenuPolicy(Qt.CustomContextMenu)
+        # self.objFieldEditor.setContextMenuPolicy(Qt.CustomContextMenu)
         # self.connect(self.objFieldEditor, QtCore.SIGNAL('customContextMenuRequested ( const QPoint&)'), self.popupFieldMenu)
         self.objFieldEditPanel.setWidget(self.objFieldEditor)
 	self.objFieldEditPanel.show()
 
     def createGLCellWidget(self):
     	"""Create a GLCell object to show the currently selected cell"""
+        raise DeprecationWarning('This function is not implemented properly and is deprecated.')
         cellItem = self.modelTreeWidget.currentItem()
         cell = cellItem.getMooseObject()
         if not cell.className == 'Cell':
             QtGui.QMessageBox.information(self, self.tr('Incorrect type for GLCell'), self.tr('GLCell is for visualizing a cell. Please select one in the Tree view. Currently selected item is of ' + cell.className + ' class. Hover mouse over an item to see its class.'))
             return
-
+        
     def createActions(self):
+        # The following actions are to toggle visibility of various widgets
         self.glClientAction = self.glClientDock.toggleViewAction()
+        self.glClientAction.setChecked(False)
         self.mooseTreeAction = self.mooseTreePanel.toggleViewAction()
+        self.refreshMooseTreeAction = QtGui.QAction(self.tr('Refresh model tree'), self, triggered=self.modelTreeWidget.recreateTree)
         self.mooseClassesAction = self.mooseClassesPanel.toggleViewAction()
         self.mooseShellAction = self.commandLineDock.toggleViewAction()
+        self.mooseShellAction.setChecked(False)
         self.mooseGLCellAction = QtGui.QAction(self.tr('GLCell'), self)
+        self.mooseGLCellAction.setChecked(False)
         self.connect(self.mooseGLCellAction, QtCore.SIGNAL('triggered()'), self.createGLCellWidget)
 
         self.autoHideAction = QtGui.QAction(self.tr('Autohide during simulation'), self, checkable=True)
@@ -263,23 +341,47 @@ class MainWindow(QtGui.QMainWindow):
         self.subWindowLayoutActionGroup.setExclusive(True)
         self.tilePlotWindowsAction.setChecked(True)
 
-        self.quitAction = QtGui.QAction(self.tr('&Quit'), self)
-        self.quitAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+Q')))
-        self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), QtGui.qApp, QtCore.SLOT('closeAllWindows()'))
-        self.aboutMooseAction = QtGui.QAction(self.tr('&About'), self)
-        self.connect(self.aboutMooseAction, QtCore.SIGNAL('triggered()'), self.makeAboutMooseLabel)
-        self.resetSettingsAction = QtGui.QAction(self.tr('Reset Settings'), self)
-        self.connect(self.resetSettingsAction, QtCore.SIGNAL('triggered()'), self.resetSettings)
-        # TODO: the following actions are yet to be implemented.
-        self.showDocAction = QtGui.QAction(self.tr('Documentation'), self)
-        self.contextHelpAction = QtGui.QAction(self.tr('Context Help'), self)
+        # Action to configure plots
+        self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self, triggered=self.configurePlots)
+        
+        # Action to create connections
+        self.connectionDialogAction = QtGui.QAction(self.tr('&Connect elements'), self, triggered=self.makeConnectionPopup)
+        self.connectionActionGroup = QtGui.QActionGroup(self)
+        self.setSourceSelectModeAction = QtGui.QAction(self.tr('&Source element'), self.connectionActionGroup, checkable=True, triggered=self.setSourceSelectMode)        
+        self.setDestSelectModeAction =  QtGui.QAction(self.tr('&Target element'), self.connectionActionGroup, checkable=True, triggered=self.setDestSelectMode)
+        self.connectionActionGroup.setExclusive(True)
+
+        # Actions for file menu
         self.loadModelAction = QtGui.QAction(self.tr('Load Model'), self)
         self.connect(self.loadModelAction, QtCore.SIGNAL('triggered()'), self.popupLoadModelDialog)
         
         self.newPlotWindowAction = QtGui.QAction(self.tr('New Plot Window'), self)
         self.connect(self.newPlotWindowAction, QtCore.SIGNAL('triggered(bool)'), self.addPlotWindow)
-        # self.runAction = QtGui.QAction(self.tr('Run Simulation'), self)
-        # self.resetAction = QtGui.QAction(self.tr('Reset Simulation'), self)
+
+        # Actions to switch the command line between python and genesis mode.
+        self.shellModeActionGroup = QtGui.QActionGroup(self)
+        self.pythonModeAction = QtGui.QAction(self.tr('Python'), self.shellModeActionGroup, checkable=True)
+        self.pythonModeAction.setChecked(True)
+        self.genesisModeAction = QtGui.QAction(self.tr('GENESIS'), self.shellModeActionGroup, checkable=True)
+        self.shellModeActionGroup.setExclusive(True)
+        self.connect(self.shellModeActionGroup, QtCore.SIGNAL('triggered(QAction*)'), self.changeShellMode)
+        
+        # Quit action
+        self.quitAction = QtGui.QAction(self.tr('&Quit'), self)
+        self.quitAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+Q')))
+        self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), QtGui.qApp, QtCore.SLOT('closeAllWindows()'))
+
+        # Help menu actions
+        self.aboutMooseAction = QtGui.QAction(self.tr('&About'), self)
+        self.connect(self.aboutMooseAction, QtCore.SIGNAL('triggered()'), self.makeAboutMooseLabel)
+        self.resetSettingsAction = QtGui.QAction(self.tr('Reset Settings'), self)
+        self.connect(self.resetSettingsAction, QtCore.SIGNAL('triggered()'), self.resetSettings)
+        self.showDocAction = QtGui.QAction(self.tr('Documentation'), self)
+        self.contextHelpAction = QtGui.QAction(self.tr('Context Help'), self)
+        self.runAction = QtGui.QAction(self.tr('Run Simulation'), self, triggered=self.runSlot)
+        self.resetAction = QtGui.QAction(self.tr('Reset Simulation'), self, triggered=self.resetSlot)
+
+        
         
         
     def runSquidDemo(self):
@@ -300,33 +402,72 @@ class MainWindow(QtGui.QMainWindow):
         # TODO: create a class for the demos menu.
         
     def makeMenu(self):
-        self.fileMenu = QtGui.QMenu('&File', self)
+        self.fileMenu = QtGui.QMenu(self.tr('&File'), self)
         self.fileMenu.addAction(self.newPlotWindowAction)
         self.fileMenu.addAction(self.loadModelAction)
-        self.fileMenu.addAction(self.quitAction)
+        self.shellModeMenu = self.fileMenu.addMenu(self.tr('Moose Shell mode'))
+        self.shellModeMenu.addActions(self.shellModeActionGroup.actions())
         self.fileMenu.addAction(self.resetSettingsAction)
+        self.fileMenu.addAction(self.quitAction)
 
         self.viewMenu = QtGui.QMenu('&View', self)
         self.viewMenu.addAction(self.glClientAction)
         self.viewMenu.addAction(self.mooseTreeAction)
+        self.viewMenu.addAction(self.refreshMooseTreeAction)
         self.viewMenu.addAction(self.mooseClassesAction)
         self.viewMenu.addAction(self.mooseShellAction)
         self.viewMenu.addAction(self.autoHideAction)
         self.viewMenu.addAction(self.showRightBottomDocksAction)
-        self.viewMenu.addSeparator().setText('Layout Plot Windows')
+        self.viewMenu.addSeparator().setText(self.tr('Layout Plot Windows'))
         self.viewMenu.addAction(self.tilePlotWindowsAction)
         self.viewMenu.addAction(self.cascadePlotWindowsAction)
 
+        self.runMenu = QtGui.QMenu(self.tr('&Run'), self)
+        self.runMenu.addAction(self.resetAction)
+        self.runMenu.addAction(self.runAction)
+
+
+        self.editModelMenu = QtGui.QMenu(self.tr('&Model'), self)
+        self.editModelMenu.addAction(self.connectionDialogAction)
+
+        self.plotMenu = QtGui.QMenu(self.tr('&Plot Settings'), self)
+        self.plotMenu.addAction(self.configurePlotAction)
+
         self.helpMenu = QtGui.QMenu('&Help', self)
         self.helpMenu.addAction(self.showDocAction)
-        self.helpMenu.addAction(self.contextHelpAction) 
+        self.helpMenu.addAction(self.contextHelpAction)
         self.demosMenu = self.makeDemosMenu()
         self.helpMenu.addMenu(self.demosMenu)
         self.helpMenu.addAction(self.aboutMooseAction)
         self.menuBar().addMenu(self.fileMenu)
         self.menuBar().addMenu(self.viewMenu)
+        self.menuBar().addMenu(self.editModelMenu)
+        self.menuBar().addMenu(self.runMenu)
+        self.menuBar().addMenu(self.plotMenu)
         self.menuBar().addMenu(self.helpMenu)
 
+    def createConnectionMenu(self, clickpoint):
+        # index = self.modelTreeWidget.indexAt(clickpoint)
+        mooseObject = self.modelTreeWidget.currentItem().getMooseObject()
+        self.connectionMenu = QtGui.QMenu(self.tr('Connect'), self.modelTreeWidget)
+        self.srcMenu = QtGui.QMenu(self.tr('Source Field'), self)
+        self.connectionMenu.addMenu(self.srcMenu)
+        self.destMenu = QtGui.QMenu(self.tr('Destination Field'), self)
+        self.connectionMenu.addMenu(self.destMenu)
+        self.connectActionGroup = QtGui.QActionGroup(self)
+        srcFields = self.mooseHandler.getSrcFields(mooseObject)
+        destFields = self.mooseHandler.getDestFields(mooseObject)
+        for field in srcFields:
+            action = QtGui.QAction(self.tr(field), self.connectActionGroup, triggered=self.setConnSrc)
+            action.setData(QtCore.QVariant(QtCore.QString(mooseObject.path + '/' + field)))
+            self.srcMenu.addAction(action)
+        for field in destFields:
+            action = QtGui.QAction(self.tr(field), self.connectActionGroup, triggered=self.setConnDest)
+            action.setData(QtCore.QVariant(QtCore.QString(mooseObject.path + '/' + field)))
+            self.destMenu.addAction(action)
+        self.connectActionGroup.setExclusive(True)
+        self.connectionMenu.popup(clickpoint)
+        
     def saveLayout(self):
         '''Save window layout'''
         geo_data = self.saveGeometry()
@@ -365,8 +506,6 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.mooseShellAction.setChecked(True)
     
-
-
     def createMooseClassesPanel(self):
         config.LOGGER.debug('createMooseClassesPanel - start')
         self.mooseClassesPanel = QtGui.QDockWidget(self.tr('Classes'), self)
@@ -381,7 +520,9 @@ class MainWindow(QtGui.QMainWindow):
 	self.mooseTreePanel = QtGui.QDockWidget(self.tr('Element Tree'), self)
         self.mooseTreePanel.setObjectName(self.tr('MooseClassPanel'))
 	self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.mooseTreePanel)
-	self.modelTreeWidget = makeModelTree(self.mooseTreePanel) 
+	self.modelTreeWidget = MooseTreeWidget(self.mooseTreePanel) 
+        self.modelTreeWidget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.connect(self.modelTreeWidget, QtCore.SIGNAL('customContextMenuRequested ( const QPoint&)'), self.createConnectionMenu)
 	self.mooseTreePanel.setWidget(self.modelTreeWidget)
         config.LOGGER.debug('createMooseTreePanel - end')
         
@@ -446,12 +587,15 @@ class MainWindow(QtGui.QMainWindow):
         plot.setObjectName(title)
         plotWindow.setCentralWidget(plot)
         self.plots.append(plot)
-        self.centralPanel.addSubWindow(plotWindow)
+        subWindow = self.centralPanel.addSubWindow(plotWindow)
+        self.centralPanel.setActiveSubWindow(subWindow)
         plotWindow.show()
         if hasattr(self, 'cascadePlotWindowsAction') and self.cascadePlotWindowsAction.isChecked():
             self.centralPanel.cascadeSubWindows()
         else:
             self.centralPanel.tileSubWindows()
+        self.currentPlotWindow = plotWindow
+        return plotWindow
         
 
     def popupLoadModelDialog(self):
@@ -486,7 +630,16 @@ class MainWindow(QtGui.QMainWindow):
 
     def setCurrentElement(self, item, column):
         """Set the current object of the mooseHandler"""
-        self.mooseHandler._current_element = item.getMooseObject()
+        current_element = item.getMooseObject()
+        self.mooseHandler._current_element = current_element
+        if self._sourceSelectMode:
+            self._srcElement = current_element
+            self.sourceObjText.setText(current_element.path)
+            self.sourceFieldComboBox.addItems(self.mooseHandler.getSrcFields(self._srcElement))
+        elif self._destSelectMode:
+            self._destElement = current_element
+            self.destObjText.setText(current_element.path)
+            self.destFieldComboBox.addItems(self.mooseHandler.getDestFields(self._destElement))
 
     def resetSlot(self):
         """Get the dt-s from the UI and call the reset method in
@@ -543,10 +696,12 @@ class MainWindow(QtGui.QMainWindow):
         except ValueError:
             runtime = MooseHandler.runtime
             self.runtimeText.setText(str(runtime))
-        self.repaint()
+        self.updatePlots(runtime)
         self.mooseHandler.doRun(runtime)
 
     def changeFieldPlotWidget(self, full_field_path, plotname):
+        """Remove the plot for the specified field from the current
+        plot window and set it to the plotwindow with given name."""
         fieldpath = str(full_field_path)
         for plot in self.plots:
             if plotname == plot.objectName():
@@ -558,11 +713,70 @@ class MainWindow(QtGui.QMainWindow):
                 except KeyError:
                     pass
                 self.tablePlotMap[table] = plot
+                plot.replot()
 
     def updatePlots(self, currentTime):
         for plot in self.plots:
             plot.updatePlot(currentTime)
+
+    def changeShellMode(self, action):
+        if action == self.pythonModeAction:
+            self.shellWidget.setMode(MooseGlobals.CMD_MODE_PYMOOSE)
+        elif action == self.genesisModeAction:
+            self.shellWidget.setMode(MooseGlobals.CMD_MODE_GENESIS)
+        else:
+            config.LOGGER.error('Unknown action: %s' % (action.text()))
+
+    def setConnSrc(self):
+        sender = QtCore.QObject.sender()
+        path = str(sender.data().toString())
+        print 'setConnSrc', path
+        self.mooseHandler.setConnSrc(path)
+        self.mooseHandler.doConnect()
+
+    def setConnDest(self):
+        sender = QtCore.QObject.sender()
+        path = str(sender.data().toString())
+        print 'setConnDest', path
+        self.mooseHandler.setConnDest(path)
+        self.mooseHandler.doConnect()
+
+    def configurePlots(self):
+        """Interactively allow the user to configure everything about
+        the plots."""
+        self.plotConfig.setVisible(True)
+        ret = self.plotConfig.exec_()
+        print ret, QtGui.QDialog.Accepted
+        if ret == QtGui.QDialog.Accepted:
+            pen = self.plotConfig.getPen()
+            symbol = self.plotConfig.getSymbol()
+            style = self.plotConfig.getStyle()
+            attribute = self.plotConfig.getAttribute()
+            activePlot = self.currentPlotWindow            
+            plotName = activePlot.windowTitle() # The window title is the plot name
+            print 'configurePlots', plotName 
+            for plot in self.plots:
+                if plot.objectName() == plotName:
+                    plot.reconfigureSelectedCurves(pen, symbol, style, attribute)
+                    break
+
+    def createConnection(self):
+        print 'Creating connection'
+        if (self._srcElement is None) or (self._destElement is None):
+            return
+        src = self._srcElement.path + '/' + str(self.sourceFieldComboBox.currentText())
+        dest = self._destElement.path + '/' + str(self.destFieldComboBox.currentText())
+        self.mooseHandler.setConnSrc(src)
+        self.mooseHandler.setConnDest(dest)
+        self.mooseHandler.doConnect()
+        self._srcElement = None
+        self._destElement = None
         
+
+
+    def setCurrentPlotWindow(self, subWindow):
+        if subWindow:
+            self.currentPlotWindow = subWindow.widget()
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
