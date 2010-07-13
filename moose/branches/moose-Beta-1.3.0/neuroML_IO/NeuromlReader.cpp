@@ -35,9 +35,9 @@ void NeuromlReader::readModel( string filename,Id location )
    for ( unsigned int i = 0; i < pathUtil.size(); ++i )
    {
 	paths.push_back( pathUtil.getPath( i ) );
-	cout << "path is : " << pathUtil.getPath( i ) << endl;
+	//cout << "path is : " << pathUtil.getPath( i ) << endl;
    }
-   cout << "path size : " << pathUtil.size() << endl;
+   //cout << "path size : " << pathUtil.size() << endl;
    NBase::setPaths( paths );
    NBase nb;   
    ncl_= nb.readNeuroML (filename);
