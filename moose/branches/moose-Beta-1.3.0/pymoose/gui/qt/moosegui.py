@@ -414,7 +414,7 @@ class MainWindow(QtGui.QMainWindow):
         self.glCellDemoAction = QtGui.QAction(self.tr('GL Cell'), self)
         self.glCellDemoAction.triggered.connect(self.runGLCellDemo)
         self.glViewDemoAction = QtGui.QAction(self.tr('GL View'), self)
-        self.glViewDemoAction.triggered.connect(self.runGLCellDemo)
+        self.glViewDemoAction.triggered.connect(self.runGLViewDemo)
         menu = QtGui.QMenu('&Demos and Tutorials', self)
         menu.addAction(self.squidDemoAction)
         menu.addAction(self.IzhikevichDemoAction)
