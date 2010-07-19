@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sun Jul 11 15:31:00 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Jul 13 11:25:45 2010 (+0530)
+# Last-Updated: Wed Jul 14 14:54:52 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 145
+#     Update #: 150
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -68,7 +68,7 @@ class FirstTimeWizard(QtGui.QWizard):
         self.addPage(self._createDemosPage())
         self.addPage(self._createGLClientPage())
         self.addPage(self._createColormapPage())
-        self.accepted.connect(self._finished)
+        self.connect(self, QtCore.SIGNAL('accepted()'), self._finished)
 
     def _createIntroPage(self):
         page = QtGui.QWizardPage(self)
@@ -95,7 +95,7 @@ class FirstTimeWizard(QtGui.QWizard):
         label = QtGui.QLabel('PyMOOSE demos directory:', page)
         line = QtGui.QLineEdit(self._pymooseDemosDir, page)
         button = QtGui.QPushButton(self.tr('Browse'), page)
-        button.clicked.connect(self._locateDemosDir)
+        self.connect(button, QtCore.SIGNAL('clicked()'), self._locateDemosDir)
         layout = QtGui.QHBoxLayout()
         layout.addWidget(label)
         layout.addWidget(line)
@@ -112,7 +112,7 @@ class FirstTimeWizard(QtGui.QWizard):
         label = QtGui.QLabel('glclient executable', page)
         line = QtGui.QLineEdit(self._glclientPath, page)
         button = QtGui.QPushButton(self.tr('Browse'), page)
-        button.clicked.connect(self._locateGLClient)
+        self.connect(button, QtCore.SIGNAL('clicked()'), self._locateGLClient)
         layout = QtGui.QHBoxLayout()
         layout.addWidget(label)
         layout.addWidget(line)
@@ -129,7 +129,7 @@ class FirstTimeWizard(QtGui.QWizard):
         label = QtGui.QLabel('Colormap file', page)
         line = QtGui.QLineEdit(self._colormapPath, page)
         button = QtGui.QPushButton(self.tr('Browse'), page)
-        button.clicked.connect(self._locateColormapFile)
+        self.connect(button, QtCore.SIGNAL('clicked()'), self._locateColormapFile)
         layout = QtGui.QHBoxLayout()
         layout.addWidget(label)
         layout.addWidget(line)
@@ -152,7 +152,7 @@ class FirstTimeWizard(QtGui.QWizard):
         self._colormapLine.setText(self._colormapPath)
 
     def _finished(self):
-        config.get_settings().setValue(config.KEY_FIRSTTIME, False)
+        config.get_settings().setValue(config.KEY_FIRSTTIME, QtCore.QVariant(False))
         config.get_settings().setValue(config.KEY_GL_CLIENT_EXECUTABLE, self.field('glclient'))
         config.get_settings().setValue(config.KEY_DEMOS_DIR, self.field('demosdir'))
         config.get_settings().setValue(config.KEY_GL_COLORMAP, self.field('colormap'))

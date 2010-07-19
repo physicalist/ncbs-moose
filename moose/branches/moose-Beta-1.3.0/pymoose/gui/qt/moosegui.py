@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Jul 13 11:32:58 2010 (+0530)
+# Last-Updated: Wed Jul 14 14:59:36 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2266
+#     Update #: 2287
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -46,12 +46,20 @@
 
 # Code:
 
+from __future__ import with_statement    
+
 import os
 import sys
 import code
 import subprocess
 from datetime import date
 from collections import defaultdict
+
+
+python_version = sys.version_info
+required_version = (2,5)
+if  python_version[0] < required_version[0] or python_version[0] == required_version[0] and python_version[1] < required_version[1]:
+    raise 'Need Python version 2.5 or greater'
 
 from PyQt4 import QtCore, QtGui
 from PyQt4.Qt import Qt
@@ -117,9 +125,9 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(self.mooseHandler, QtCore.SIGNAL('updatePlots(float)'), self.updatePlots)
         self.settings = config.get_settings()        
         self.demosDir = str(self.settings.value(config.KEY_DEMOS_DIR).toString())
-        print self.demosDir
-        if not self.demosDir:
-            self.demosDir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Please select pymoose demos directory'))
+        # print self.demosDir
+        # if not self.demosDir:
+        #     self.demosDir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Please select pymoose demos directory'))
         self.resize(800, 600)
         self.setDockOptions(self.AllowNestedDocks | self.AllowTabbedDocks | self.ForceTabbedDocks | self.AnimatedDocks)        
         # The following are for holding transient selections from
@@ -166,7 +174,7 @@ class MainWindow(QtGui.QMainWindow):
         self.plotConfig.setVisible(False)        
         self.setCentralWidget(self.centralPanel)
         self.centralPanel.tileSubWindows()
-        self.centralPanel.subWindowActivated.connect(self.setCurrentPlotWindow)
+        self.connect(self.centralPanel, QtCore.SIGNAL('subWindowActivated(QMdiSubWindow *)'), self.setCurrentPlotWindow)
         # We connect the double-click event on the class-list to
         # insertion of moose object in model tree.
         for listWidget in self.mooseClassesWidget.getClassListWidget():
@@ -200,9 +208,9 @@ class MainWindow(QtGui.QMainWindow):
         self.destObjText = QtGui.QLineEdit(self.connectionDialog)
 
         okButton = QtGui.QPushButton(self.tr('OK'), self.connectionDialog)
-        okButton.clicked.connect(self.connectionDialog.accept)
+        self.connect(okButton, QtCore.SIGNAL('clicked()'), self.connectionDialog.accept)
         cancelButton = QtGui.QPushButton(self.tr('Cancel'), self.connectionDialog)
-        cancelButton.clicked.connect(self.connectionDialog.reject)
+        self.connect(cancelButton, QtCore.SIGNAL('clicked()'), self.connectionDialog.reject)
 
         self.connectionDialog.accepted.connect(self.createConnection)
         self.connectionDialog.rejected.connect(self.cancelConnection)
@@ -315,7 +323,8 @@ class MainWindow(QtGui.QMainWindow):
         self.glClientAction = self.glClientDock.toggleViewAction()
         self.glClientAction.setChecked(False)
         self.mooseTreeAction = self.mooseTreePanel.toggleViewAction()
-        self.refreshMooseTreeAction = QtGui.QAction(self.tr('Refresh model tree'), self, triggered=self.modelTreeWidget.recreateTree)
+        self.refreshMooseTreeAction = QtGui.QAction(self.tr('Refresh model tree'), self)
+	self.connect(self.refreshMooseTreeAction, QtCore.SIGNAL('triggered(bool)'), self.modelTreeWidget.recreateTree)
         self.mooseClassesAction = self.mooseClassesPanel.toggleViewAction()
         self.mooseShellAction = self.commandLineDock.toggleViewAction()
         self.mooseShellAction.setChecked(False)
@@ -323,14 +332,21 @@ class MainWindow(QtGui.QMainWindow):
         self.mooseGLCellAction.setChecked(False)
         self.connect(self.mooseGLCellAction, QtCore.SIGNAL('triggered()'), self.createGLCellWidget)
 
-        self.autoHideAction = QtGui.QAction(self.tr('Autohide during simulation'), self, checkable=True)
+        self.autoHideAction = QtGui.QAction(self.tr('Autohide during simulation'), self)
+	self.autoHideAction.setCheckable(True)
         self.autoHideAction.setChecked(self.settings.value(config.KEY_RUNTIME_AUTOHIDE).toBool())
 
-        self.showRightBottomDocksAction = QtGui.QAction(self.tr('Right and Bottom Docks'), self, checkable=True, triggered=self.showRightBottomDocks)
+        self.showRightBottomDocksAction = QtGui.QAction(self.tr('Right and Bottom Docks'), self)
+	self.showRightBottomDocksAction.setCheckable(True)
+	self.connect(self.showRightBottomDocksAction, QtCore.SIGNAL('triggered(bool)'), self.showRightBottomDocks)
         self.showRightBottomDocksAction.setChecked(False)
 
-        self.tilePlotWindowsAction = QtGui.QAction(self.tr('Tile Plots'), self, checkable=True, triggered=self.centralPanel.tileSubWindows)
-        self.cascadePlotWindowsAction = QtGui.QAction(self.tr('Cascade Plots'), self, checkable=True, triggered=self.centralPanel.cascadeSubWindows)
+        self.tilePlotWindowsAction = QtGui.QAction(self.tr('Tile Plots'), self)
+	self.tilePlotWindowsAction.setCheckable(True)
+	self.connect(self.tilePlotWindowsAction, QtCore.SIGNAL('triggered(bool)'), self.centralPanel.tileSubWindows)
+        self.cascadePlotWindowsAction = QtGui.QAction(self.tr('Cascade Plots'), self)
+        self.cascadePlotWindowsAction.setCheckable(True)
+	self.connect(self.cascadePlotWindowsAction, QtCore.SIGNAL('triggered(bool)'), self.centralPanel.cascadeSubWindows)
         
         self.subWindowLayoutActionGroup = QtGui.QActionGroup(self)
         self.subWindowLayoutActionGroup.addAction(self.tilePlotWindowsAction)
@@ -339,10 +355,12 @@ class MainWindow(QtGui.QMainWindow):
         self.tilePlotWindowsAction.setChecked(True)
 
         # Action to configure plots
-        self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self, triggered=self.configurePlots)
+        self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
+	self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.configurePlots)
         
         # Action to create connections
-        self.connectionDialogAction = QtGui.QAction(self.tr('&Connect elements'), self, triggered=self.makeConnectionPopup)
+        self.connectionDialogAction = QtGui.QAction(self.tr('&Connect elements'), self)
+	self.connect(self.connectionDialogAction, QtCore.SIGNAL('triggered()'), self.makeConnectionPopup)
 
         # Actions for file menu
         self.loadModelAction = QtGui.QAction(self.tr('Load Model'), self)
@@ -351,13 +369,15 @@ class MainWindow(QtGui.QMainWindow):
         self.newPlotWindowAction = QtGui.QAction(self.tr('New Plot Window'), self)
         self.connect(self.newPlotWindowAction, QtCore.SIGNAL('triggered(bool)'), self.addPlotWindow)
         self.firstTimeWizardAction = QtGui.QAction(self.tr('FirstTime Configuration WIzard'), self)
-        self.firstTimeWizardAction.triggered.connect(self.startFirstTimeWizard)
+        self.connect(self.firstTimeWizardAction, QtCore.SIGNAL('triggered(bool)'), self.startFirstTimeWizard)
 
         # Actions to switch the command line between python and genesis mode.
         self.shellModeActionGroup = QtGui.QActionGroup(self)
-        self.pythonModeAction = QtGui.QAction(self.tr('Python'), self.shellModeActionGroup, checkable=True)
+        self.pythonModeAction = QtGui.QAction(self.tr('Python'), self.shellModeActionGroup)
+	self.pythonModeAction.setCheckable(True)
         self.pythonModeAction.setChecked(True)
-        self.genesisModeAction = QtGui.QAction(self.tr('GENESIS'), self.shellModeActionGroup, checkable=True)
+        self.genesisModeAction = QtGui.QAction(self.tr('GENESIS'), self.shellModeActionGroup)
+	self.genesisModeAction.setCheckable(True)
         self.shellModeActionGroup.setExclusive(True)
         self.connect(self.shellModeActionGroup, QtCore.SIGNAL('triggered(QAction*)'), self.changeShellMode)
         
@@ -379,15 +399,17 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(self.resetSettingsAction, QtCore.SIGNAL('triggered()'), self.resetSettings)
         self.showDocAction = QtGui.QAction(self.tr('Documentation'), self)
         self.contextHelpAction = QtGui.QAction(self.tr('Context Help'), self)
-        self.runAction = QtGui.QAction(self.tr('Run Simulation'), self, triggered=self.runSlot)
-        self.resetAction = QtGui.QAction(self.tr('Reset Simulation'), self, triggered=self.resetSlot)
+        self.runAction = QtGui.QAction(self.tr('Run Simulation'), self)
+	self.connect(self.runAction, QtCore.SIGNAL('triggered(bool)'), self.runSlot)
+        self.resetAction = QtGui.QAction(self.tr('Reset Simulation'), self)
+	self.connect(self.resetAction, QtCore.SIGNAL('triggered()'), self.resetSlot)
 
         
         
         
     def runSquidDemo(self):
         path = os.path.join(self.demosDir, 'squid', 'qtSquid.py')
-        print path
+        print 'Going to run:', path
         subprocess.call(['python', path])
 
     def runIzhikevichDemo(self):
@@ -412,9 +434,9 @@ class MainWindow(QtGui.QMainWindow):
         self.IzhikevichDemoAction = QtGui.QAction(self.tr('Izhikevich Model'), self)
         self.connect(self.IzhikevichDemoAction, QtCore.SIGNAL('triggered()'), self.runIzhikevichDemo)
         self.glCellDemoAction = QtGui.QAction(self.tr('GL Cell'), self)
-        self.glCellDemoAction.triggered.connect(self.runGLCellDemo)
+        self.connect(self.glCellDemoAction, QtCore.SIGNAL('triggered(bool)'), self.runGLCellDemo)
         self.glViewDemoAction = QtGui.QAction(self.tr('GL View'), self)
-        self.glViewDemoAction.triggered.connect(self.runGLViewDemo)
+        self.connect(self.glViewDemoAction, QtCore.SIGNAL('triggered(bool)'), self.runGLViewDemo)
         menu = QtGui.QMenu('&Demos and Tutorials', self)
         menu.addAction(self.squidDemoAction)
         menu.addAction(self.IzhikevichDemoAction)
@@ -824,7 +846,7 @@ class MainWindow(QtGui.QMainWindow):
     def startFirstTimeWizard(self):
         firstTimeWizard = FirstTimeWizard(self)
         firstTimeWizard.show()
-        firstTimeWizard.accepted.connect(self.updatePaths)
+        self.connect(firstTimeWizard, QtCore.SIGNAL('accepted()'), self.updatePaths)
 
     def doQuit(self):
         self.mooseHandler.stopGL()
@@ -842,7 +864,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def updatePaths(self):
         self.demosDir = str(config.get_settings().value(config.KEY_DEMOS_DIR).toString())
+	print 'Demos directory', self.demosDir
         
+
+
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     icon = QtGui.QIcon('moose_icon.png')

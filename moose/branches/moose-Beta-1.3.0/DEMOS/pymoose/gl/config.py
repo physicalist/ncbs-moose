@@ -45,13 +45,13 @@
 
 # Code:
 
-GL_CLIENT_EXECUTABLE = '../../../gl/src/glclient'
-GL_COLORMAP_DIR = '../../../gl/colormaps'
+GL_CLIENT_EXECUTABLE = 'glclient'
+GL_COLORMAP_DIR = 'colormaps'
 GL_COLORMAP_RAINBOW2 = 'rainbow2'
 GL_COLORMAP_HOT = 'hot'
 GL_COLORMAP_GREY = 'grey'
 GL_COLORMAP_REDHOT = 'redhot'
-GL_DEFAULT_COLORMAP = '../../../gl/colormaps/rainbow2'
+GL_DEFAULT_COLORMAP = 'colormaps/rainbow2'
 GL_PORT = '9999'
 
 import logging
