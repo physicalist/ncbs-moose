@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul  9 21:23:39 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Jul 14 14:55:07 2010 (+0530)
-#           By: Subhasis Ray
-#     Update #: 787
+# Last-Updated: Tue Jul 20 12:20:39 2010 (+0530)
+#           By: subha
+#     Update #: 794
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -92,7 +92,7 @@ class MooseGLWizard(QtGui.QWizard):
             self._colormap = config.GL_DEFAULT_COLORMAP
         # if not os.path.isfile(self._colormap):
         #     self._colormap = unicode(QtGui.QFileDialog.getOpenFileName(self, 'Select Colormap File'))
-        self._settings.setValue(config.KEY_GL_COLORMAP, self._colormap)
+        self._settings.setValue(config.KEY_GL_COLORMAP, QtCore.QVariant(self._colormap))
         self._glClientExe = unicode(self._settings.value(config.KEY_GL_CLIENT_EXECUTABLE).toString())
         if not self._glClientExe:
             self._glClientExe = config.GL_CLIENT_EXECUTABLE
@@ -115,13 +115,13 @@ class MooseGLWizard(QtGui.QWizard):
         page.setSubTitle(self.tr('Setup the client for 3-D visualization'))
         
         exeLabel = QtGui.QLabel(self.tr('&Executable of glclient:'))
-        exeLineEdit = QtGui.QLineEdit(self.tr(self._glClientExe))
+        exeLineEdit = QtGui.QLineEdit(str(self._glClientExe))
         exeButton = QtGui.QPushButton(self.tr('Browse'))
         self.connect(exeButton, QtCore.SIGNAL('clicked()'), self._selectExeSlot)
         exeLabel.setBuddy(exeButton)
 
         colormapLabel = QtGui.QLabel(self.tr('&Colormap File'))
-        colormapLineEdit = QtGui.QLineEdit(self.tr(self._colormap))
+        colormapLineEdit = QtGui.QLineEdit(self._colormap)
         colormapButton = QtGui.QPushButton(self.tr('Browse'))
         self.connect(colormapButton, QtCore.SIGNAL('clicked()'), self._selectColormapSlot)
         colormapLabel.setBuddy(colormapButton)
@@ -369,14 +369,14 @@ class MooseGLWizard(QtGui.QWizard):
             valueMax = []
             for ii in range(5):
                 field.append(str(self.field('fieldName%d' % (ii+1)).toString()))
-                (valueMin, ok) = self.field('valueMin%d' % (ii+1)).toDouble()
+                (value, ok) = self.field('valueMin%d' % (ii+1)).toDouble()
                 if not ok:
-                    valueMin = 0.0
-                valueMin.append(valueMin)
-                (valueMax, ok) = self.field('valueMax%d' % (ii+1)).toDouble() 
+                    value = 0.0
+                valueMin.append(value)
+                (value, ok) = self.field('valueMax%d' % (ii+1)).toDouble() 
                 if not ok:
-                    valueMax = 1.0
-                valueMax.append(valueMax)
+                    value = 1.0
+                valueMax.append(value)
             (colorFieldIndex, ok) = self.field('colorField').toInt()
             if not ok:
                 colorFieldIndex = 1
