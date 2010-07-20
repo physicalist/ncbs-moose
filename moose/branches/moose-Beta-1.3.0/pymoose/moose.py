@@ -1254,11 +1254,6 @@ class PathUtility(object):
         this = _moose.new_PathUtility(*args)
         try: self.this.append(this)
         except: self.this = this
-    def isAbsolutePath(*args):
-        """isAbsolutePath(string path) -> bool"""
-        return _moose.PathUtility_isAbsolutePath(*args)
-
-    isAbsolutePath = staticmethod(isAbsolutePath)
     def addPath(*args):
         """addPath(self, string paths)"""
         return _moose.PathUtility_addPath(*args)
@@ -1285,10 +1280,6 @@ PathUtility_swigregister = _moose.PathUtility_swigregister
 PathUtility_swigregister(PathUtility)
 PathUtility.PATH_SEPARATOR = _moose.cvar.PathUtility_PATH_SEPARATOR
 PathUtility.DIR_SEPARATOR = _moose.cvar.PathUtility_DIR_SEPARATOR
-
-def PathUtility_isAbsolutePath(*args):
-  """PathUtility_isAbsolutePath(string path) -> bool"""
-  return _moose.PathUtility_isAbsolutePath(*args)
 
 FTYPE_ALL = _moose.FTYPE_ALL
 FTYPE_VALUE = _moose.FTYPE_VALUE
