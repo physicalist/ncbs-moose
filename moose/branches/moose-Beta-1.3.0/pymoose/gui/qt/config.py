@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Feb 13 16:07:56 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Jul 12 16:28:59 2010 (+0530)
+# Last-Updated: Thu Jul 22 11:42:05 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 112
+#     Update #: 114
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -65,6 +65,7 @@ KEY_FIRSTTIME = 'firsttime'
 KEY_GL_COLORMAP = 'glclient/colormap'
 KEY_GL_PORT = 'glclient/port'
 KEY_GL_CLIENT_EXECUTABLE = 'glclient/executable'
+KEY_GL_BACKGROUND_COLOR = 'glclient/bgcolor'
 
 KEY_WINDOW_GEOMETRY = 'main/geometry'
 KEY_WINDOW_LAYOUT = 'main/layout'

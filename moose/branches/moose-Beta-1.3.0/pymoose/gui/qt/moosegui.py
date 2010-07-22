@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Jul 20 16:30:41 2010 (+0530)
-#           By: subha
-#     Update #: 2292
+# Last-Updated: Thu Jul 22 15:01:56 2010 (+0530)
+#           By: Subhasis Ray
+#     Update #: 2298
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -108,15 +108,6 @@ def makeClassList(parent=None, mode=MooseGlobals.MODE_ADVANCED):
     else:
 	print 'Error: makeClassList() - mode:', mode, 'is undefined.'
 
-
-# class ConnStruct:
-#     def __init__(self, srcElm=None, srcField=None, destElm=None, destField=None):
-#         self.srcElm = srcElm
-#         self.destElm = destElm
-#         self.srcField = srcField
-#         self.destField = destField
-
-
 class MainWindow(QtGui.QMainWindow):
     default_plot_count = 1
     def __init__(self, interpreter=None, parent=None):
@@ -196,8 +187,8 @@ class MainWindow(QtGui.QMainWindow):
 
         self.sourceTree = MooseTreeWidget(self.connectionDialog)
         self.destTree = MooseTreeWidget(self.connectionDialog)
-        self.connect(self.sourceTree, QtCore.SIGNAL('itemClicked(QAbstractTreeItem *, int)'), self.selectConnSource)
-        self.connect(self.destTree, QtCore.SIGNAL('itemClicked(QAbstractTreeItem*, int)'), self.selectConnDest)
+        self.connect(self.sourceTree, QtCore.SIGNAL('itemClicked(QTreeWidgetItem *, int)'), self.selectConnSource)
+        self.connect(self.destTree, QtCore.SIGNAL('itemClicked(QTreeWidgetItem*, int)'), self.selectConnDest)
         sourceFieldLabel = QtGui.QLabel(self.tr('Source Field'), self.connectionDialog)
         self.sourceFieldComboBox = QtGui.QComboBox(self.connectionDialog)
         
@@ -250,10 +241,6 @@ class MainWindow(QtGui.QMainWindow):
                  MooseGlobals.WEBSITE)
             aboutMooseMessage = QtGui.QMessageBox.about(self, self.tr('About MOOSE'), self.tr(aboutText))
             return aboutMooseMessage
-
-    def quit(self):
-        """Do cleanup, saving, etc. before quitting."""
-        QtGui.qApp.closeAllWIndows()
 
     def showRightBottomDocks(self, checked):
         """Hides the widgets on right and bottom dock area"""
