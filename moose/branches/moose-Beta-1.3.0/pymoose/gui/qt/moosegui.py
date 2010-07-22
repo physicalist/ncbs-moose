@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Jul 22 17:48:55 2010 (+0530)
+# Last-Updated: Thu Jul 22 18:02:15 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2328
+#     Update #: 2330
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -314,6 +314,7 @@ class MainWindow(QtGui.QMainWindow):
     def createActions(self):
         # Actions for view menu
         # The following actions are to toggle visibility of various widgets
+        self.controlDockAction = self.controlDock.toggleViewAction()
         self.glClientAction = self.glClientDock.toggleViewAction()
         self.glClientAction.setChecked(False)
         self.mooseTreeAction = self.mooseTreePanel.toggleViewAction()
@@ -449,6 +450,7 @@ class MainWindow(QtGui.QMainWindow):
         self.fileMenu.addAction(self.quitAction)
 
         self.viewMenu = QtGui.QMenu('&View', self)
+        self.viewMenu.addAction(self.controlDockAction)
         self.viewMenu.addAction(self.glClientAction)
         self.viewMenu.addAction(self.mooseTreeAction)
         self.viewMenu.addAction(self.refreshMooseTreeAction)
