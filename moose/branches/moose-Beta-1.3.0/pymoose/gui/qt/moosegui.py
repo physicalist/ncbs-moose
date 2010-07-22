@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Jul 22 16:57:53 2010 (+0530)
+# Last-Updated: Thu Jul 22 17:48:55 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2324
+#     Update #: 2328
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -282,11 +282,11 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 self.objFieldEditPanel = QtGui.QDockWidget(self.tr(obj.name), self)
                 self.objFieldEditPanel.setObjectName(self.tr('MooseObjectFieldEdit'))
+                if (config.QT_MAJOR_VERSION > 4) or ((config.QT_MAJOR_VERSION == 4) and (config.QT_MINOR_VERSION >= 5)):
+                    self.tabifyDockWidget(self.mooseClassesPanel, self.objFieldEditPanel)
+                else:
+                    self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.objFieldEditPanel)
                 self.restoreDockWidget(self.objFieldEditPanel)
-                # if (config.QT_MAJOR_VERSION > 4) or ((config.QT_MAJOR_VERSION == 4) and (config.QT_MINOR_VERSION >= 5)):
-                #     self.tabifyDockWidget(self.mooseClassesPanel, self.objFieldEditPanel)
-                # else:
-                #     self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.objFieldEditPanel)
                 
         self.objFieldEditor = QtGui.QTableView(self.objFieldEditPanel)
         self.objFieldEditor.setModel(self.objFieldEditModel)
@@ -299,7 +299,7 @@ class MainWindow(QtGui.QMainWindow):
                      QtCore.SIGNAL('objectNameChanged(const QString&)'),
                      item.updateSlot)
         self.objFieldEditPanel.setWidget(self.objFieldEditor)
-        self.objFieldEditPanel.setVisible(True)
+        self.objFieldEditPanel.raise_()
 	self.objFieldEditPanel.show()
 
     def createGLCellWidget(self):
