@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Feb 13 16:07:56 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Jul 22 11:42:05 2010 (+0530)
+# Last-Updated: Thu Jul 22 15:38:34 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 114
+#     Update #: 116
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -71,6 +71,10 @@ KEY_WINDOW_GEOMETRY = 'main/geometry'
 KEY_WINDOW_LAYOUT = 'main/layout'
 KEY_RUNTIME_AUTOHIDE = 'main/rtautohide'
 KEY_DEMOS_DIR = 'main/demosdir'
+
+QT_VERSION = str(QtCore.QT_VERSION_STR).split('.')
+QT_MAJOR_VERSION = int(QT_VERSION[0])
+QT_MINOR_VERSION = int(QT_VERSION[1])
 
 def get_settings():
     '''Initializes the QSettings for the application and returns it.'''
