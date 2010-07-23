@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jan 28 15:08:29 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Jul 22 13:34:36 2010 (+0530)
+# Last-Updated: Fri Jul 23 10:13:09 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 790
+#     Update #: 791
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -550,7 +550,7 @@ class MooseHandler(QtCore.QObject):
         tableList = []
         for container in moose.Neutral('/moregraphs').children():
             for child in moose.Neutral(container).children():
-                if child.className == 'Table':
+                if moose.Neutral(child).className == 'Table':
                     tableList.append(moose.Table(child))
         return tableList
         
