@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Jul 22 18:02:15 2010 (+0530)
+# Last-Updated: Tue Jul 27 10:31:58 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2330
+#     Update #: 2346
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -352,7 +352,11 @@ class MainWindow(QtGui.QMainWindow):
         # Action to configure plots
         self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
 	self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.configurePlots)
-        
+        self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Hide plots'), self)
+        self.togglePlotVisibilityAction.setCheckable(True)
+        self.togglePlotVisibilityAction.setChecked(False)
+        self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.togglePlotVisibility)
+
         # Action to create connections
         self.connectionDialogAction = QtGui.QAction(self.tr('&Connect elements'), self)
 	self.connect(self.connectionDialogAction, QtCore.SIGNAL('triggered()'), self.makeConnectionPopup)
@@ -472,6 +476,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.plotMenu = QtGui.QMenu(self.tr('&Plot Settings'), self)
         self.plotMenu.addAction(self.configurePlotAction)
+        self.plotMenu.addAction(self.togglePlotVisibilityAction)
 
         self.glMenu = QtGui.QMenu(self.tr('Open&GL'), self)
         self.glMenu.addAction(self.startGLWizardAction)
@@ -800,6 +805,16 @@ class MainWindow(QtGui.QMainWindow):
                 if plot.objectName() == plotName:
                     plot.reconfigureSelectedCurves(pen, symbol, style, attribute)
                     break
+
+    def togglePlotVisibility(self, hide):
+        print 'Currently selected to hide?', hide
+        activePlot = self.currentPlotWindow            
+        plotName = activePlot.windowTitle() # The window title is the plot name
+        for plot in self.plots:
+            if plot.objectName() == plotName:
+                plot.showSelectedCurves(not hide)
+                break
+        
 
     def createConnection(self):
         if (self._srcElement is None) or (self._destElement is None):
