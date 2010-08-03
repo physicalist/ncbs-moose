@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun 30 11:18:34 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Jul 22 15:12:02 2010 (+0530)
+# Last-Updated: Wed Aug  4 01:58:00 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 362
+#     Update #: 400
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -64,9 +64,12 @@ import config
 class ObjectFieldsModel(QtCore.QAbstractTableModel):
     """Model the fields list for MOOSE objects.
     
-    extra_fields -- list of fields that are of no use in the fields editor.
+    extra_fields -- list of fields that are of no use in the fields
+                    editor.
 
-    sys_fields -- list of fields that carry system information.
+    sys_fields -- list of fields that carry system information. This
+                  is for future - so that we can restrict the
+                  visibility of these fields to advanced mode.
 
     """
     extra_fields = ['parent', 'childList', 'fieldList']
@@ -78,6 +81,19 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
         The table model has one moose field in each row.  A field that
         has a set method is editable. Fields listed in extra_fields
         are not shown.
+
+        Members:
+
+        fields -- list of the names of the fields in the object.
+
+        plotNames -- lists the names of the available plot
+                     windows. These are displayed as the targets in
+                     the plot submenu / combobox.
+
+        fieldFlags -- flags for each field. We calculate these ahead
+                      of time by checking if the field can be set, if
+                      it is a numerical (so can be dragged to a plot
+                      window).
 
         """
         QtCore.QAbstractTableModel.__init__(self, parent)
@@ -100,7 +116,6 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
             if fieldName in ObjectFieldsModel.extra_fields:
                 continue
             flag = Qt.ItemIsEnabled | Qt.ItemIsSelectable
-            checkFlag = Qt.ItemIsEnabled
             try:
                 prop = eval('moose.' + self.mooseObject.__class__.__name__ + '.' + fieldName)                
                 if (type(prop) is property) and prop.fset:
@@ -108,7 +123,7 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
                 value = mooseObject.getField(fieldName)
                 try:
                     dummy = float(value)
-                    checkFlag = Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                    flag = flag | Qt.ItemIsDragEnabled
                     self.fieldPlotNameMap[fieldName] = self.plotNames[0]
                 except ValueError:
                     pass
@@ -193,20 +208,13 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
         """
         flag = Qt.ItemIsEnabled
         if index.isValid():
-            if index.column() == 0:
-                flag = Qt.ItemIsEnabled | Qt.ItemIsSelectable
-            elif index.column() == 1:
-                try:
-                    flag = self.fieldFlags[self.fields[index.row()]]
-                except KeyError, e:
-                    pass
-            elif index.column() == 2:
-                try:
-                    flag = self.fieldPlotNameMap[self.fields[index.row()]]
-                    if flag is not None:
-                        flag = Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-                except KeyError:
-                    pass
+            try:
+                flag = self.fieldFlags[self.fields[index.row()]]
+            except KeyError:
+                pass
+            # First column is the field name - so not editable
+            if index.column() == 0: 
+                flag = flag & ( ~Qt.ItemIsEditable) 
         return flag
 
     def rowCount(self, parent):
@@ -214,14 +222,6 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
 
     def columnCount(self, parent):
         return len(self._header)
-
-    @property
-    def checkedFields(self):
-        checked_fields = []
-        for field in self.fields:
-            if self.fieldChecked[field]:
-                checked_fields.append(field)
-        return checked_fields
 
 class ObjectEditDelegate(QtGui.QItemDelegate):
     """Delegate to handle object editor"""
@@ -255,6 +255,7 @@ class ObjectEditDelegate(QtGui.QItemDelegate):
             model.setData(index, QtCore.QVariant(editor.currentText()))
         else:
             QtGui.QItemDelegate.setModelData(self, editor, model, index)
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication([])

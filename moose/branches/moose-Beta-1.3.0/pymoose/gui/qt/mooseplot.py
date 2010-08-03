@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Jul  5 21:35:09 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Jul 20 16:43:18 2010 (+0530)
-#           By: subha
-#     Update #: 513
+# Last-Updated: Wed Aug  4 02:57:57 2010 (+0530)
+#           By: Subhasis Ray
+#     Update #: 569
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -78,6 +78,7 @@ class MoosePlot(Qwt.QwtPlot):
         Qwt.QwtPlot.__init__(self, *args)
         self.plotNo = MoosePlot.plot_index
         MoosePlot.plot_index = MoosePlot.plot_index + 1
+        self.setAcceptDrops(True)
         self.curveIndex = 0
         self.setCanvasBackground(Qt.white)
         self.alignScales()
@@ -111,6 +112,7 @@ class MoosePlot(Qwt.QwtPlot):
                                    self.canvas())
         self.zoomer.setRubberBandPen(QtGui.QPen(Qt.black))
         self.zoomer.setTrackerPen(QtGui.QPen(Qt.black))
+        self.mooseHandler = None # I added this horrible code for drag and drop. -- Subha
 
     def clearZoomStack(self):
         """Auto scale and clear the zoom stack
@@ -265,6 +267,44 @@ class MoosePlot(Qwt.QwtPlot):
         self.tableCurveMap.clear()
         self.curveTableMap.clear()
         QtGui.QwtPlotDict.detachItems(self)
+
+    def dragEnterEvent(self, event):        
+        event.accept()
+        # event.accept(QtGui.QTextDrag.canDecode(event))
+
+    def dropEvent(self, event):
+        """Overrides QWidget's method to accept drops of fields from
+        ObjectEditor.
+
+        """
+        source = event.source()
+        print 'Dropped:', source.objectName(), source, event.mimeData().text()
+        # Should check that source is objectEditor - right now we don't have
+        # any other source for Plot, so don't bother.
+        model = source.model()
+        index = source.currentIndex()
+        if index.isValid():
+            # This is horrible code as I am peeping into the
+            # ObjectEditor's internals, but I don't have the time or
+            # patience to implement Drag objects for ObjectEditor.
+            fieldName = model.fields[index.row()]
+            fieldPath = model.mooseObject.path + '/' + fieldName
+            print 'Field: ', model.mooseObject.path + '/' + fieldName
+            # Till now this file was decoupled from MooseHandler. Now
+            # I am going to break that for the sake of getting the job
+            # done quick and dirty.
+
+            # This is terrible code ... I would have been ashamed of
+            # this unless it was a brainless typing session to meet
+            # the immediate needs. I hope some day somebody with the
+            # time and skill to do "Software Engineering" will clean
+            # this mishmash of dependencies.
+            # -- Subha
+            table = self.mooseHandler.addFieldTable(fieldPath)
+            self.addTable(table)
+            # This also breaks the capability to move a plot from one
+            # plot window to another.
+
 
 import sys
 if __name__ == '__main__':
