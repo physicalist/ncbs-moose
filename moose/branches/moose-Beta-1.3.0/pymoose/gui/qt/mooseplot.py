@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Jul  5 21:35:09 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Aug  4 02:57:57 2010 (+0530)
+# Last-Updated: Wed Aug  4 11:45:35 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 569
+#     Update #: 583
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -218,7 +218,6 @@ class MoosePlot(Qwt.QwtPlot):
             ydata = array(table.table)                
             xdata = linspace(0, currentTime, tabLen)
             curve.setData(xdata, ydata)
-            # config.LOGGER.debug('x0 = %g, x[-1] = %g, y[0] = %g, y[-1] = %g' % (xdata[0], xdata[-1], ydata[0], ydata[-1]))
         self.clearZoomStack()
 
     def addTable(self, table):
@@ -270,7 +269,6 @@ class MoosePlot(Qwt.QwtPlot):
 
     def dragEnterEvent(self, event):        
         event.accept()
-        # event.accept(QtGui.QTextDrag.canDecode(event))
 
     def dropEvent(self, event):
         """Overrides QWidget's method to accept drops of fields from
@@ -278,7 +276,6 @@ class MoosePlot(Qwt.QwtPlot):
 
         """
         source = event.source()
-        print 'Dropped:', source.objectName(), source, event.mimeData().text()
         # Should check that source is objectEditor - right now we don't have
         # any other source for Plot, so don't bother.
         model = source.model()
@@ -289,7 +286,6 @@ class MoosePlot(Qwt.QwtPlot):
             # patience to implement Drag objects for ObjectEditor.
             fieldName = model.fields[index.row()]
             fieldPath = model.mooseObject.path + '/' + fieldName
-            print 'Field: ', model.mooseObject.path + '/' + fieldName
             # Till now this file was decoupled from MooseHandler. Now
             # I am going to break that for the sake of getting the job
             # done quick and dirty.
@@ -304,6 +300,19 @@ class MoosePlot(Qwt.QwtPlot):
             self.addTable(table)
             # This also breaks the capability to move a plot from one
             # plot window to another.
+
+class MoosePlotWindow(QtGui.QMdiSubWindow):
+    """This is to customize MDI sub window for our purpose.
+
+    In particular, we don't want anything to be deleted when the window is closed. 
+    
+    """
+    def __init__(self, *args):
+        QtGui.QMdiSubWindow.__init__(self, *args)
+        
+    def closeEvent(self, event):
+        self.emit(QtCore.SIGNAL('subWindowClosed()'))
+        self.hide()
 
 
 import sys
