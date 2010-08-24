@@ -9107,7 +9107,7 @@ checked in as revision  1332
 Tried with slightly bigger model  SNARE_dup_bis_m2star_TRI.g
 This fails to expand the state table, and loses track if there are 
 some non-convergent solutions. See StateScanner.cpp:832 and 898
-Another symptom is that every time the Stedy state iteration fails, the
+Another symptom is that every time the Steady state iteration fails, the
 size of the state vector is depleted by one.
 
 Let's see how it handles one of the traffillator models.
@@ -9123,5 +9123,31 @@ checked in as revision 1333.
 18 Sep 2009
 General cleanup. Problem with extra solutions fixed. 
 Csv and xplot outputs fixed.
+checked in as revision 1335.
 
+=============================================================================
+13 Aug 2010.
+Coming back to the trunk in order to fix up SigNeur clock handling. The
+current version does not deal properly with NeuroML compilations.
+Set SigNeur to assign clocks 0, 1, 2 to hsolve, and 3, 4 to signaling.
+Checkin as 2118.
+=============================================================================
+19 Aug 2010
+Issue with ordering of molecule identities for readout by zombies
+as compared to setup.
+When using SigNeur, setup is through KineticManager.
+The function that sets up the elist is 
+findDescendants( Eref manager, vector< Id >& ret )
+	which recursively gets the childList of each Element.
+This is extremely messy for arrays, but looks like it starts on
+index 0, traverses through tree, then does index 1 through tree,
+and so on.
+
+Put a 'sort' function in Stoich::rebuildMatrix to ensure that the
+incoming vector< Id > is independent of the algorithm used to build the
+tree. This seems to help.
+Checkin 2129.
+=============================================================================
+22 Aug 2010
+Implemented handling of SynChans in SigNeurAdaptor.cpp.
 =============================================================================
