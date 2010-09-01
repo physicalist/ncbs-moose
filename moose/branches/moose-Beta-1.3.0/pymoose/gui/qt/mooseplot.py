@@ -316,8 +316,6 @@ class MoosePlotWindow(QtGui.QMdiSubWindow):
         self.emit(QtCore.SIGNAL('subWindowClosed()'))
         self.hide()
 
-
-=======
     def plotItemClicked(self,item):
 	
 	if(item.isVisible):
@@ -334,7 +332,6 @@ class MoosePlotWindow(QtGui.QMdiSubWindow):
 	self.replot()
  		
 
->>>>>>> .merge-right.r2090
 import sys
 if __name__ == '__main__':
     app = QtGui.QApplication([])
