@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun 30 11:18:34 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Aug  4 01:58:00 2010 (+0530)
+# Last-Updated: Wed Sep  1 15:37:11 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 400
+#     Update #: 367
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -208,10 +208,20 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
         """
         flag = Qt.ItemIsEnabled
         if index.isValid():
-            try:
-                flag = self.fieldFlags[self.fields[index.row()]]
-            except KeyError:
-                pass
+            if index.column() == 0:
+                flag = Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            elif index.column() == 1:
+                try:
+                    flag = self.fieldFlags[self.fields[index.row()]]
+                except KeyError, e:
+                    pass
+            elif index.column() == 2:
+                try:
+                    flag = self.fieldPlotNameMap[self.fields[index.row()]]
+                    if flag is not None:
+                        flag = Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                except KeyError:
+                    pass
             # First column is the field name - so not editable
             if index.column() == 0: 
                 flag = flag & ( ~Qt.ItemIsEditable) 
@@ -222,6 +232,14 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
 
     def columnCount(self, parent):
         return len(self._header)
+
+    @property
+    def checkedFields(self):
+        checked_fields = []
+        for field in self.fields:
+            if self.fieldChecked[field]:
+                checked_fields.append(field)
+        return checked_fields
 
 class ObjectEditDelegate(QtGui.QItemDelegate):
     """Delegate to handle object editor"""

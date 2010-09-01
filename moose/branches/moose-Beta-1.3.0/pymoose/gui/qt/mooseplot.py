@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Jul  5 21:35:09 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Aug  4 11:45:35 2010 (+0530)
+# Last-Updated: Wed Sep  1 15:38:10 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 583
+#     Update #: 585
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -87,7 +87,7 @@ class MoosePlot(Qwt.QwtPlot):
         self.tableCurveMap = {} # moose table -> curve
         self.overlay = False
         legend = Qwt.QwtLegend()
-        legend.setItemMode(Qwt.QwtLegend.CheckableItem)
+        legend.setItemMode(Qwt.QwtLegend.ClickableItem)
         self.insertLegend(legend, Qwt.QwtPlot.RightLegend)
         # self.setTitle('Plot %d' % (self.plotNo))
         mY = Qwt.QwtPlotMarker()
@@ -112,7 +112,6 @@ class MoosePlot(Qwt.QwtPlot):
                                    self.canvas())
         self.zoomer.setRubberBandPen(QtGui.QPen(Qt.black))
         self.zoomer.setTrackerPen(QtGui.QPen(Qt.black))
-        self.mooseHandler = None # I added this horrible code for drag and drop. -- Subha
 	QtCore.QObject.connect(self, QtCore.SIGNAL("legendClicked(QwtPlotItem *)"), self.plotItemClicked)
 
 
@@ -144,6 +143,7 @@ class MoosePlot(Qwt.QwtPlot):
         self.replot()
             
     def showSelectedCurves(self, on):
+	print "here in showselectedcurve"
         for item in self.itemList():
             widget = self.legend().find(item)
             if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
@@ -269,6 +269,22 @@ class MoosePlot(Qwt.QwtPlot):
         self.curveTableMap.clear()
         QtGui.QwtPlotDict.detachItems(self)
 
+    def plotItemClicked(self,item):
+	
+	if(item.isVisible):
+		''' Initially all the item.isVisible is true'''
+		item.setVisible(not item.isVisible)
+                item.isVisible = False
+		item.setItemAttribute(Qwt.QwtPlotItem.AutoScale,False);	                 
+        else:
+                '''If the item.isVisible is made false (say hidden) here makes true'''
+                item.setVisible(not item.isVisible)
+                item.isVisible = True
+                item.setItemAttribute(Qwt.QwtPlotItem.AutoScale,True);	                 
+            
+	self.replot()
+ 		
+
     def dragEnterEvent(self, event):        
         event.accept()
 
@@ -316,21 +332,6 @@ class MoosePlotWindow(QtGui.QMdiSubWindow):
         self.emit(QtCore.SIGNAL('subWindowClosed()'))
         self.hide()
 
-    def plotItemClicked(self,item):
-	
-	if(item.isVisible):
-		''' Initially all the item.isVisible is true'''
-		item.setVisible(not item.isVisible)
-                item.isVisible = False
-		item.setItemAttribute(Qwt.QwtPlotItem.AutoScale,False);	                 
-        else:
-                '''If the item.isVisible is made false (say hidden) here makes true'''
-                item.setVisible(not item.isVisible)
-                item.isVisible = True
-                item.setItemAttribute(Qwt.QwtPlotItem.AutoScale,True);	                 
-            
-	self.replot()
- 		
 
 import sys
 if __name__ == '__main__':
