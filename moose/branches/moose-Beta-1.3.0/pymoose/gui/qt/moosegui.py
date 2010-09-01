@@ -673,7 +673,6 @@ class MainWindow(QtGui.QMainWindow):
     def setPlotWindowsVisible(self, on=True):
         """Toggle visibility of plot windows.
 
-<<<<<<< .working
         """
         print 'Setting plot windows visible:', on
         if on:
@@ -690,14 +689,13 @@ class MainWindow(QtGui.QMainWindow):
             self._visiblePlotWindowCount -= 1
         if self._visiblePlotWindowCount == 0:
             self.togglePlotWindowsAction.setChecked(False)
-=======
+
     def addLayoutWindow(self):
         self.layout = Screen()
         self.centralPanel.addSubWindow(self.layout)
 	self.centralPanel.tileSubWindows()
         self.layout.show()
     
->>>>>>> .merge-right.r2069
     def popupLoadModelDialog(self):
         fileDialog = QtGui.QFileDialog(self)
         fileDialog.setFileMode(QtGui.QFileDialog.ExistingFile)
