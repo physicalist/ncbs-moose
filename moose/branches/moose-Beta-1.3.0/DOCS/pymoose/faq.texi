@@ -1,0 +1,3 @@
+@node FAQ, GNU Free Documentation License, Detailed Guide, Top
+@chapter Frequently Asked Questions
+Yet to be written.

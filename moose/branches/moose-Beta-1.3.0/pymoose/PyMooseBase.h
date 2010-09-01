@@ -11,7 +11,6 @@
 #include "PyMooseContext.h"
 namespace pymoose
 {
-    
     class PyMooseBase
     {
       public:
@@ -27,7 +26,6 @@ namespace pymoose
         
         virtual ~PyMooseBase();
 
-        const std::string& __get_className() const;
         const std::string& __get_author() const;
         const std::string& __get_description() const;
         static bool destroy(Id id);    
@@ -35,27 +33,16 @@ namespace pymoose
         virtual const std::string& getType() = 0;
         static const std::string& getSeparator();
         static pymoose::PyMooseContext* getContext();
-        const std::vector<std::string> getFieldList() const;
-        const std::vector<std::string> __get_fieldList() const;
         const std::string& getField(std::string name) const;
         void setField(std::string name, std::string value);
         const std::vector<std::string> getFieldList(FieldType ftype=FTYPE_ALL);
-        const std::vector<Id> neighbours(const std::string& msgName="*", int direction=INCOMING);
+        const std::vector<Id>& neighbours(std::string msgName="*", int direction=INCOMING);
         // TODO: need a way to find the field name of the other end of
         // a message. It will be good to have the source object Id and
         // the field name.
         //        const std::map<Id, string> neighbourFields(std::string& field);
-        const vector< Id > children() const;
-        const Id* __get_parent() const;
         const std::string& __get_path() const;   
         const Id* __get_id() const;
-        const std::string& __get_name() const;
-        void __set_name(string name);
-        const int __get_index() const;
-        const int __get_dataMem() const;
-        const int __get_msgMem() const;
-        const int __get_node() const;
-        const int __get_cpu() const;
         void addField(const std::string fieldName);
 //        static const std::string __get_docString() const;
         void useClock(int clockNo, string func="process");
