@@ -90,7 +90,8 @@ from mooseplot import MoosePlot, MoosePlotWindow
 from plotconfig import PlotConfig
 from glwizard import MooseGLWizard
 from firsttime import FirstTimeWizard
-from layout import Screen
+#from layout import Screen
+import layout
 
 def makeClassList(parent=None, mode=MooseGlobals.MODE_ADVANCED):
     """Make a list of classes that can be used in current mode
@@ -141,7 +142,7 @@ class MainWindow(QtGui.QMainWindow):
         # creation of the object editor.
         self.connect(self.modelTreeWidget, 
                      QtCore.SIGNAL('itemDoubleClicked(QTreeWidgetItem *, int)'),
-                     self.makeObjectFieldEditor)
+                     self.makeObjEditorFromTreeItem)
         self.connect(self.modelTreeWidget, 
                      QtCore.SIGNAL('itemClicked(QTreeWidgetItem *, int)'),
                      self.setCurrentElement)
@@ -270,10 +271,14 @@ class MainWindow(QtGui.QMainWindow):
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.commandLineDock)
         self.commandLineDock.setObjectName('MooseCommandLine')
         return self.commandLineDock
-        
-    def makeObjectFieldEditor(self, item, column):
-        """Creates a table-editor for a selected object."""
+
+    def makeObjEditorFromTreeItem(self, item, column):
+        """Wraps makeObjectFieldEditor for use via a tree item"""
         obj = item.getMooseObject()
+        self.makeObjectFieldEditor(obj)
+
+    def makeObjectFieldEditor(self, obj):
+        """Creates a table-editor for a selected object."""
         try:
             self.objFieldEditModel = self.objFieldEditorMap[obj.path]
         except KeyError:
@@ -304,8 +309,15 @@ class MainWindow(QtGui.QMainWindow):
                 self.objFieldEditModel.plotNames += [plot.objectName() for plot in self.plots]
         self.objFieldEditor.setItemDelegate(ObjectEditDelegate(self))
         self.connect(self.objFieldEditModel, 
-                     QtCore.SIGNAL('objectNameChanged(const QString&)'),
-                     item.updateSlot)
+                     QtCore.SIGNAL('objectNameChanged(PyQt_PyObject)'),
+                     self.modelTreeWidget.updateItemSlot)
+	if hasattr(self, 'sceneLayout'):
+	        self.connect(self.objFieldEditModel, 
+        	             QtCore.SIGNAL('objectNameChanged(PyQt_PyObject)'),
+        	             self.sceneLayout.updateItemSlot)
+
+        # self.objFieldEditor.setContextMenuPolicy(Qt.CustomContextMenu)
+        # self.connect(self.objFieldEditor, QtCore.SIGNAL('customContextMenuRequested ( const QPoint&)'), self.popupFieldMenu)
         self.objFieldEditPanel.setWidget(self.objFieldEditor)
         self.objFieldEditPanel.raise_()
 	self.objFieldEditPanel.show()
@@ -691,10 +703,11 @@ class MainWindow(QtGui.QMainWindow):
             self.togglePlotWindowsAction.setChecked(False)
 
     def addLayoutWindow(self):
-        self.layout = Screen()
-        self.centralPanel.addSubWindow(self.layout)
+        self.sceneLayout = layout.Scene()
+	self.connect(self.sceneLayout, QtCore.SIGNAL("itemDoubleClicked(PyQt_PyObject)"), self.makeObjectFieldEditor)
+        self.centralPanel.addSubWindow(self.sceneLayout)
 	self.centralPanel.tileSubWindows()
-        self.layout.show()
+        self.sceneLayout.show()
     
     def popupLoadModelDialog(self):
         fileDialog = QtGui.QFileDialog(self)

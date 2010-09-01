@@ -43,6 +43,8 @@ extern const Cinfo* initClockJobCinfo();
 extern const Cinfo* initTableCinfo();
 extern const Cinfo* initSchedulerCinfo();
 
+
+
 const Cinfo* initPyMooseContextCinfo()
 {
 	static Finfo* parserShared[] =
@@ -398,7 +400,6 @@ static const Slot writeNeuroMLSlot =
         initPyMooseContextCinfo()->getSlot( "parser.writeneuroml" );
 static const Slot createGateSlot = 
 	initPyMooseContextCinfo()->getSlot( "parser.createGate" );
-
 
 
 //////////////////////////
@@ -872,7 +873,7 @@ void PyMooseContext::addField(Id objectId, string fieldname)
     send2<Id, string>(myId_(), addfieldSlot, objectId, fieldname);
 }
 
-vector < Id > PyMooseContext::getChildren(Id id)
+const vector < Id >& PyMooseContext::getChildren(Id id)
 {
     elist_.resize(0);
     if ( id() != NULL )
@@ -887,7 +888,7 @@ vector < Id > PyMooseContext::getChildren(Id id)
     return elist_;
 }
 
-vector < Id > PyMooseContext::getChildren(string path)
+const vector < Id >& PyMooseContext::getChildren(string path)
 {
     elist_.resize(0);    
     Id id(path);
@@ -1598,13 +1599,13 @@ const string& PyMooseContext::doc(const string& target) const
 // think if this is sane - returning a local vector - swig somehow
 // takes care of it, but shouldn't we be passing a vector reference as
 // argument which will be filled in?
-vector<Id> PyMooseContext::getNeighbours(Id src, const string& finfoName, int direction)
+const vector<Id>& PyMooseContext::getNeighbours(Id src, string finfoName, int direction)
 {
     vector<string> fieldList;
-    vector<Id> ret;
     Element* element = src();
+    this->elist_.clear();
     if (finfoName.length() == 0){
-        return ret;
+        return this->elist_;
     } else if (finfoName.length() == 1 && finfoName[0] == '*'){
         const Cinfo* cinfo = element->cinfo();
         vector<const Finfo*> finfoList;
@@ -1620,12 +1621,12 @@ vector<Id> PyMooseContext::getNeighbours(Id src, const string& finfoName, int di
         while (conn->good()){
             if (conn->isDest() == direction || direction == INOUT){
                 Eref target = conn->target();
-                ret.push_back(target.id());
+                this->elist_.push_back(target.id());
             }
             conn->increment();
         }      
     }
-    return ret;
+    return this->elist_;
 }
 /*
 
@@ -1671,7 +1672,6 @@ vector <string> PyMooseContext::getValueFieldList(Id id)
  */
 vector<string> PyMooseContext::getFieldList(Id id, FieldType ftype)
 {
-    vector<string> fieldList;
     const Cinfo* cinfo = id()->cinfo();
     vector<const Finfo*> finfoList;
     cinfo->listFinfos(finfoList);
@@ -1682,7 +1682,7 @@ vector<string> PyMooseContext::getFieldList(Id id, FieldType ftype)
             {
                 const ValueFinfo* finfo = dynamic_cast<const ValueFinfo*>(finfoList[i]);
                 if (finfo){
-                    fieldList.push_back(finfo->name());
+                    strings_.push_back(finfo->name());
                 }
             }
             break;
@@ -1691,7 +1691,7 @@ vector<string> PyMooseContext::getFieldList(Id id, FieldType ftype)
             {
                 const LookupFinfo* finfo = dynamic_cast<const LookupFinfo*>(finfoList[i]);
                 if (finfo){
-                    fieldList.push_back(finfo->name());
+                    strings_.push_back(finfo->name());
                 }
             }
             break;
@@ -1700,7 +1700,7 @@ vector<string> PyMooseContext::getFieldList(Id id, FieldType ftype)
             {
                 const SrcFinfo* finfo = dynamic_cast<const SrcFinfo*>(finfoList[i]);
                 if (finfo){
-                    fieldList.push_back(finfo->name());
+                    strings_.push_back(finfo->name());
                 }
             }
             break;
@@ -1709,7 +1709,7 @@ vector<string> PyMooseContext::getFieldList(Id id, FieldType ftype)
             {
                 const DestFinfo* finfo = dynamic_cast<const DestFinfo*>(finfoList[i]);
                 if (finfo){
-                    fieldList.push_back(finfo->name());
+                    strings_.push_back(finfo->name());
                 }
             }
             break;
@@ -1718,7 +1718,7 @@ vector<string> PyMooseContext::getFieldList(Id id, FieldType ftype)
             {
                 const SharedFinfo* finfo = dynamic_cast<const SharedFinfo*>(finfoList[i]);
                 if (finfo){
-                    fieldList.push_back(finfo->name());
+                    strings_.push_back(finfo->name());
                 }
             }
             break;
@@ -1767,13 +1767,13 @@ vector<string> PyMooseContext::getFieldList(Id id, FieldType ftype)
         case FTYPE_ALL:
             for (int i = 0; i < finfoList.size(); ++i)
             {
-                fieldList.push_back(finfoList[i]->name());
+                strings_.push_back(finfoList[i]->name());
             }
             break;
         default:
             cout << "ERROR: Unknown Finfo type." << endl;
     }
-    return fieldList;
+    return strings_;
 }
 
 #ifdef DO_UNIT_TESTS
