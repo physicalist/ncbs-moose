@@ -113,6 +113,8 @@ class MoosePlot(Qwt.QwtPlot):
         self.zoomer.setRubberBandPen(QtGui.QPen(Qt.black))
         self.zoomer.setTrackerPen(QtGui.QPen(Qt.black))
         self.mooseHandler = None # I added this horrible code for drag and drop. -- Subha
+	QtCore.QObject.connect(self, QtCore.SIGNAL("legendClicked(QwtPlotItem *)"), self.plotItemClicked)
+
 
     def clearZoomStack(self):
         """Auto scale and clear the zoom stack
@@ -315,6 +317,24 @@ class MoosePlotWindow(QtGui.QMdiSubWindow):
         self.hide()
 
 
+=======
+    def plotItemClicked(self,item):
+	
+	if(item.isVisible):
+		''' Initially all the item.isVisible is true'''
+		item.setVisible(not item.isVisible)
+                item.isVisible = False
+		item.setItemAttribute(Qwt.QwtPlotItem.AutoScale,False);	                 
+        else:
+                '''If the item.isVisible is made false (say hidden) here makes true'''
+                item.setVisible(not item.isVisible)
+                item.isVisible = True
+                item.setItemAttribute(Qwt.QwtPlotItem.AutoScale,True);	                 
+            
+	self.replot()
+ 		
+
+>>>>>>> .merge-right.r2090
 import sys
 if __name__ == '__main__':
     app = QtGui.QApplication([])
