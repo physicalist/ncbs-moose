@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Feb 13 16:07:56 2010 (+0530)
 # Version: 
-# Last-Updated: Sat Sep 11 13:32:47 2010 (+0530)
+# Last-Updated: Mon Sep 13 09:57:03 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 128
+#     Update #: 129
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -53,6 +53,7 @@ GL_COLORMAP_GREY = 'grey'
 GL_COLORMAP_REDHOT = 'redhot'
 GL_DEFAULT_COLORMAP = 'colormaps/rainbow2'
 GL_PORT = '9999'
+import os
 import sys
 import tempfile
 import logging
