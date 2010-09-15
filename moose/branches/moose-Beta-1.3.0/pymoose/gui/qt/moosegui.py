@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Aug  4 11:48:19 2010 (+0530)
+# Last-Updated: Wed Sep 15 21:52:03 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2416
+#     Update #: 2447
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -379,10 +379,13 @@ class MainWindow(QtGui.QMainWindow):
         # Action to configure plots
         self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
 	self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.configurePlots)
-        self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Hide plots'), self)
+        self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Hide selected plots'), self)
         self.togglePlotVisibilityAction.setCheckable(True)
         self.togglePlotVisibilityAction.setChecked(False)
         self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.togglePlotVisibility)
+        self.showAllPlotsAction = QtGui.QAction(self.tr('Show all plots'), self)
+        self.connect(self.showAllPlotsAction, QtCore.SIGNAL('triggered()'), self.showAllPlots)
+        
 
         # Action to create connections
         self.connectionDialogAction = QtGui.QAction(self.tr('&Connect elements'), self)
@@ -504,7 +507,7 @@ class MainWindow(QtGui.QMainWindow):
         self.plotMenu = QtGui.QMenu(self.tr('&Plot Settings'), self)
         self.plotMenu.addAction(self.configurePlotAction)
         self.plotMenu.addAction(self.togglePlotVisibilityAction)
-
+        self.plotMenu.addAction(self.showAllPlotsAction)
         self.glMenu = QtGui.QMenu(self.tr('Open&GL'), self)
         self.glMenu.addAction(self.startGLWizardAction)
         self.glMenu.addAction(self.stopGLAction)
@@ -664,6 +667,7 @@ class MainWindow(QtGui.QMainWindow):
         title = self.tr('Plot %d' % (len(self.plots)))
         plotWindow = MoosePlotWindow()
         plotWindow.setWindowTitle(title)
+        plotWindow.setObjectName(title)
         plot = MoosePlot(plotWindow)
         plot.mooseHandler = self.mooseHandler
         plot.setObjectName(title)
@@ -682,11 +686,11 @@ class MainWindow(QtGui.QMainWindow):
         #     self.centralPanel.tileSubWindows()
         self.currentPlotWindow = plotWindow
         return plotWindow
+
     def setPlotWindowsVisible(self, on=True):
         """Toggle visibility of plot windows.
 
         """
-        print 'Setting plot windows visible:', on
         if on:
             for window in self.centralPanel.subWindowList():
                 window.show()
@@ -861,9 +865,10 @@ class MainWindow(QtGui.QMainWindow):
             style = self.plotConfig.getStyle()
             attribute = self.plotConfig.getAttribute()
             activePlot = self.currentPlotWindow            
-            plotName = activePlot.windowTitle() # The window title is the plot name
+            plotName = activePlot.objectName() #windowTitle() # The window title is the plot name
             # print 'configurePlots', plotName 
             for plot in self.plots:
+                # print 'plot.objectName:', plot.objectName(), 'plotName:', plotName
                 if plot.objectName() == plotName:
                     plot.reconfigureSelectedCurves(pen, symbol, style, attribute)
                     break
@@ -871,12 +876,16 @@ class MainWindow(QtGui.QMainWindow):
     def togglePlotVisibility(self, hide):
         print 'Currently selected to hide?', hide
         activePlot = self.currentPlotWindow            
-        plotName = activePlot.windowTitle() # The window title is the plot name
+        plotName = activePlot.objectName()#windowTitle() # The window title is the plot name
         for plot in self.plots:
+            print plot.objectName(), '#', plotName
             if plot.objectName() == plotName:
                 plot.showSelectedCurves(not hide)
                 break
-        
+
+    def showAllPlots(self):
+        for plot in self.plots:
+            plot.showAllCurves()
 
     def createConnection(self):
         if (self._srcElement is None) or (self._destElement is None):
@@ -886,7 +895,7 @@ class MainWindow(QtGui.QMainWindow):
         self.mooseHandler.setConnSrc(src)
         self.mooseHandler.setConnDest(dest)
         ret = self.mooseHandler.doConnect()
-        print 'Connecting %s to %s: %s' % (src, dest, 'success' if ret else 'failed')        
+        # print 'Connecting %s to %s: %s' % (src, dest, 'success' if ret else 'failed')        
         self._srcElement = None
         self._destElement = None
         
