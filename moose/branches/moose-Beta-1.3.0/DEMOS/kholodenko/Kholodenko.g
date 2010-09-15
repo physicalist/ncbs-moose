@@ -63,58 +63,58 @@ simobjdump linkinfo xtree_fg_req xtree_textfg_req uplink downlink x y z
 simobjdump uplink xtree_fg_req xtree_textfg_req x y z
 simobjdump downlink xtree_fg_req xtree_textfg_req x y z
 simobjdump mirror notes xtree_fg_req x y z
-simundump group /kinetics/MAPK 0 yellow black x 0 0 "" MAPK \
+simundump group /kinetics/MAPK 0 blue black x 0 0 "" MAPK \
   /home2/bhalla/scripts/modules/MAPK_0.g 0 0 0 1 10 0
-simundump kpool /kinetics/MAPK/MAPK 0 1 0.3 0.3 0.3 0.3 1 0 1 0 "" 35 yellow \
+simundump kpool /kinetics/MAPK/MAPK 0 1 0.3 0.3 0.3 0.3 1 0 1 0 "" 35 blue \
   -8 -7 0
 simundump kpool /kinetics/MAPK/MKKK 0 0.1 0.1 0.1 0.1 0.1 0.1 0 1 0 "" 16 \
-  yellow -8 5 0
+  blue -8 5 0
 simundump kpool /kinetics/MAPK/MKK 0 0.3 0.3 0.3 0.3 0.3 0.3 0 1 0 "" 60 \
-  yellow -8 -1 0
+  blue -8 -1 0
 simundump kpool /kinetics/MAPK/int1 0 1 0.001 0.001 0.001 0.001 1 0 1 0 "" 30 \
-  yellow -4 4 0
+  blue -4 4 0
 simundump kenz /kinetics/MAPK/int1/2 0 0 0 0 0 1 156.25 1 0.25 0 1 "" red 30 \
   "" -4 5 0
-simundump kpool /kinetics/MAPK/MKKK-P 0 0.05 0 0 0 0 0.05 0 1 0 "" 51 yellow \
+simundump kpool /kinetics/MAPK/MKKK-P 0 0.05 0 0 0 0 0.05 0 1 0 "" 51 blue \
   0 5 0
 simundump kenz /kinetics/MAPK/MKKK-P/3 0 0 0 0 0 1 8.3333 0.1 0.025 0 1 "" \
   red 51 "" -4 2 0
 simundump kenz /kinetics/MAPK/MKKK-P/4 0 0 0 0 0 1 8.3333 0.1 0.025 0 1 "" \
   red 51 "" 4 2 0
 simundump kpool /kinetics/MAPK/int3 0 1 0.001 0.001 0.001 0.001 1 0 1 0 "" \
-  blue yellow -4 -2 0
+  blue blue -4 -2 0
 simundump kenz /kinetics/MAPK/int3/6 0 0 0 0 0 1 250 3 0.75 0 1 "" red blue \
   "" -4 -1 0
 simundump kpool /kinetics/MAPK/int5 0 1 0.001 0.001 0.001 0.001 1 0 1 0 "" 1 \
-  yellow -4 -8 0
+  blue -4 -8 0
 simundump kenz /kinetics/MAPK/int5/10 0 0 0 0 0 1 166.67 2 0.5 0 1 "" red 1 \
   "" -4 -7 0
-simundump kpool /kinetics/MAPK/MKK-P 0 0.1 0 0 0 0 0.1 0 1 0 "" 5 yellow 0 -1 \
+simundump kpool /kinetics/MAPK/MKK-P 0 0.1 0 0 0 0 0.1 0 1 0 "" 5 blue 0 -1 \
   0
-simundump kpool /kinetics/MAPK/MAPK-P 0 0.1 0 0 0 0 0.1 0 1 0 "" 55 yellow 0 \
+simundump kpool /kinetics/MAPK/MAPK-P 0 0.1 0 0 0 0 0.1 0 1 0 "" 55 blue 0 \
   -7 0
 simundump kpool /kinetics/MAPK/int2 0 1 0.001 0.001 0.001 0.001 1 0 1 0 "" 2 \
-  yellow 4 -2 0
+  blue 4 -2 0
 simundump kenz /kinetics/MAPK/int2/5 0 0 0 0 0 1 250 3 0.75 0 1 "" red 2 "" 4 \
   -1 0
 simundump kpool /kinetics/MAPK/int4 0 1 0.001 0.001 0.001 0.001 1 0 1 0 "" 17 \
-  yellow 4 -8 0
+  blue 4 -8 0
 simundump kenz /kinetics/MAPK/int4/9 0 0 0 0 0 1 166.67 2 0.5 0 1 "" red 17 \
   "" 4 -7 0
 simundump kpool /kinetics/MAPK/Ras-MKKKK 0 0.1 0.001 0.001 0.001 0.001 0.1 0 \
-  1 0 "" 47 yellow 6 8 0
+  1 0 "" 47 blue 6 8 0
 simundump kenz /kinetics/MAPK/Ras-MKKKK/1 0 0 0 0 0 1 1250 10 2.5 0 1 "" red \
   47 "" -4 8 0
 simundump kpool /kinetics/MAPK/inactiveRas-MKKK 0 0 0 0 0 0 0 0 1 0 "" 30 \
-  yellow 11 8 0
-simundump kreac /kinetics/MAPK/Neg_feedback 0 1 0.009 "" white yellow 11 2 0
-simundump kpool /kinetics/MAPK/MKK-PP 0 0.1 0 0 0 0 0.1 0 1 0 "" 60 yellow 8 \
+  blue 11 8 0
+simundump kreac /kinetics/MAPK/Neg_feedback 0 1 0.009 "" white blue 11 2 0
+simundump kpool /kinetics/MAPK/MKK-PP 0 0.1 0 0 0 0 0.1 0 1 0 "" 60 blue 8 \
   -1 0
 simundump kenz /kinetics/MAPK/MKK-PP/7 0 0 0 0 0 1 8.3333 0.1 0.025 0 1 "" \
   red 60 "" -4 -4 0
 simundump kenz /kinetics/MAPK/MKK-PP/8 0 0 0 0 0 1 8.3333 0.1 0.025 0 1 "" \
   red 60 "" 4 -4 0
-simundump kpool /kinetics/MAPK/MAPK-PP 0 0.1 0 0 0 0 0.1 0 1 0 "" 46 yellow 8 \
+simundump kpool /kinetics/MAPK/MAPK-PP 0 0.1 0 0 0 0 0.1 0 1 0 "" 46 blue 8 \
   -7 0
 simundump xgraph /graphs/conc1 0 0 6000 0 0.3 0
 simundump xgraph /graphs/conc2 0 0 6000 4.5157e-05 0.3 0
