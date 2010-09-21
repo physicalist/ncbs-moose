@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Feb 13 16:07:56 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Sep 14 16:04:39 2010 (+0530)
+# Last-Updated: Mon Sep 20 15:40:19 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 110
+#     Update #: 109
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -56,6 +56,7 @@ GL_PORT = '9999'
 import sys
 import os
 import tempfile
+import sys
 import logging
 from PyQt4.Qt import Qt
 from PyQt4 import QtGui, QtCore
@@ -66,7 +67,8 @@ settings = None
 KEY_GL_COLORMAP = 'glclient/colormap'
 KEY_GL_PORT = 'glclient/port'
 KEY_GL_CLIENT_EXECUTABLE = 'glclient/executable'
-
+KEY_GL_CLIENT_EXECUTABLE = 'glclient/executable'
+KEY_GL_BACKGROUND_COLOR = 'glclient/bgcolor'
 KEY_WINDOW_GEOMETRY = 'main/geometry'
 KEY_WINDOW_LAYOUT = 'main/layout'
 
@@ -80,10 +82,10 @@ def get_settings():
     settings = QtCore.QSettings()
     return settings
 
-LOG_FILENAME = os.path.join(tempfile.gettempdir(), 'moose.log')
+# LOG_FILENAME = 'moose.log'
 LOG_LEVEL = logging.ERROR
-# logging.basicConfig(filename=LOG_FILENAME, level=LOG_LEVEL, filemode='w', format='%(asctime)s %(levelname)s %(name)s %(filename)s %(funcName)s: %(lineno)d: %(message)s')
 logging.basicConfig(stream=sys.stdout, level=LOG_LEVEL, filemode='w', format='%(asctime)s %(levelname)s %(name)s %(filename)s %(funcName)s: %(lineno)d: %(message)s')
+# logging.basicConfig(filename=LOG_FILENAME, level=LOG_LEVEL, filemode='w', format='%(asctime)s %(levelname)s %(name)s %(filename)s %(funcName)s: %(lineno)d: %(message)s')
 LOGGER = logging.getLogger('moose')
 BENCHMARK_LOGGER = logging.getLogger('moose.benchmark')
 BENCHMARK_LOGGER.setLevel(logging.INFO)
