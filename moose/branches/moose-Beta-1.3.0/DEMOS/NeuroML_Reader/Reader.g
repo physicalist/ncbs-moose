@@ -1,21 +1,21 @@
 include plotUtil.g
 
 str infile = "PurkinjeCell.morph.xml"
-//~ str infile = "GranuleCell.morph.xml"
+//str infile = "GranuleCell.morph.xml"
 str outfile = "moose.plot"
 str target = "/cell"
 
 int USE_SOLVER = 1
 float SIMDT = 100e-6
 float IODT = 100e-6
-float VIZDT = 2e-4
-float SIMLENGTH = 1.00
+//float VIZDT = 2e-4
+float SIMLENGTH = 0.1
 int IOCLOCK = 2
 
 setclock 0 {SIMDT}
 setclock 1 {SIMDT}
 setclock 2 {IODT}
-setclock 3 {VIZDT}
+//setclock 3 {VIZDT}
 
 readNeuroML { infile } { target }
 setfield { target }/Soma_0 inject 10.0e-10
@@ -26,7 +26,7 @@ add_plot  { target }/Soma_0 Vm { outfile }
 if ( ! USE_SOLVER )
 	setfield { target } method "ee"
 end
-
+/*
 //=====================================
 //  Vis object
 //=====================================
@@ -39,6 +39,7 @@ setfield /gl0 threshold 0.0015
 setfield /gl0 sync off
 
 useclock /gl0 3
+*/
 
 reset
 step {SIMLENGTH} -time
@@ -48,4 +49,11 @@ openfile { outfile } w
 closefile { outfile }
 
 save_plots
+echo "
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Plots written to *.plot. 
+
+If you have gnuplot, run 'gnuplot plot.gnuplot' to view the graphs.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"
 quit
