@@ -611,7 +611,7 @@ void PyMooseContext::setCwe(string path)
    @param fieldName - name of the field to be retrieved
    @returns the string representation of the field value
 */
-string& PyMooseContext::getField(Id objectId, string fieldName)
+const string& PyMooseContext::getField(Id objectId, string fieldName)
 {
     send2<Id, string >(myId_(), requestFieldSlot, objectId, fieldName);
     return fieldValue_;
@@ -1656,7 +1656,7 @@ double PyMooseContext::getCurrentTime()
    getFieldList with FieldType = FTYPE_VALUE, this version gets all value
    fields including the user-added ones (by addField call).
 */
-vector <string> PyMooseContext::getValueFieldList(Id id)
+const vector <string>& PyMooseContext::getValueFieldList(Id id)
 {
     
     send2 <Id, string>(myId_(), requestFieldSlot, id, "fieldList");
@@ -1672,7 +1672,7 @@ vector <string> PyMooseContext::getValueFieldList(Id id)
    fields, it does not retrieve the fields added later via addField
    call.
  */
-vector<string> PyMooseContext::getFieldList(Id id, FieldType ftype)
+const vector<string>& PyMooseContext::getFieldList(Id id, FieldType ftype)
 {
     const Cinfo* cinfo = id()->cinfo();
     vector<const Finfo*> finfoList;

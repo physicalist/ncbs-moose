@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Sep 20 15:13:59 2010 (+0530)
+# Last-Updated: Wed Sep 22 15:40:42 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2480
+#     Update #: 2482
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -113,6 +113,7 @@ class MainWindow(QtGui.QMainWindow):
     default_plot_count = 1
     def __init__(self, interpreter=None, parent=None):
 	QtGui.QMainWindow.__init__(self, parent)
+        self.setWindowTitle('MOOSE GUI')
         self.mooseHandler = MooseHandler()
         self.connect(self.mooseHandler, QtCore.SIGNAL('updatePlots(float)'), self.updatePlots)
         self.settings = config.get_settings()        
@@ -314,8 +315,6 @@ class MainWindow(QtGui.QMainWindow):
         	             QtCore.SIGNAL('objectNameChanged(PyQt_PyObject)'),
         	             self.sceneLayout.updateItemSlot)
 
-        # self.objFieldEditor.setContextMenuPolicy(Qt.CustomContextMenu)
-        # self.connect(self.objFieldEditor, QtCore.SIGNAL('customContextMenuRequested ( const QPoint&)'), self.popupFieldMenu)
         self.objFieldEditPanel.setWidget(self.objFieldEditor)
         self.objFieldEditPanel.raise_()
 	self.objFieldEditPanel.show()
@@ -391,6 +390,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Actions for file menu
         self.loadModelAction = QtGui.QAction(self.tr('Load Model'), self)
+        self.loadModelAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+L')))
         self.connect(self.loadModelAction, QtCore.SIGNAL('triggered()'), self.popupLoadModelDialog)
         
         self.newPlotWindowAction = QtGui.QAction(self.tr('New Plot Window'), self)
@@ -414,7 +414,7 @@ class MainWindow(QtGui.QMainWindow):
         self.quitAction = QtGui.QAction(self.tr('&Quit'), self)
         self.quitAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+Q')))
         self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), self.doQuit)
-
+	
         # Actions for 3D visualization
         self.startGLWizardAction = QtGui.QAction(self.tr('Start GL&Wizard'), self)
         self.connect(self.startGLWizardAction, QtCore.SIGNAL('triggered()'), self.startGLWizard)
@@ -707,19 +707,20 @@ class MainWindow(QtGui.QMainWindow):
             self.centralPanel.closeAllSubWindows()
             self._visiblePlotWindowCount = 0
 
+    def addLayoutWindow(self):
+        self.sceneLayout = layout.LayoutWidget()
+	self.connect(self.sceneLayout, QtCore.SIGNAL("itemDoubleClicked(PyQt_PyObject)"), self.makeObjectFieldEditor)
+        self.centralPanel.addSubWindow(self.sceneLayout)
+	self.centralPanel.tileSubWindows()
+        self.sceneLayout.show()
+    
+
     def decrementSubWindowCount(self):
         if self._visiblePlotWindowCount > 0:
             self._visiblePlotWindowCount -= 1
         if self._visiblePlotWindowCount == 0:
             self.togglePlotWindowsAction.setChecked(False)
 
-    def addLayoutWindow(self):
-        self.sceneLayout = layout.Scene()
-	self.connect(self.sceneLayout, QtCore.SIGNAL("itemDoubleClicked(PyQt_PyObject)"), self.makeObjectFieldEditor)
-        self.centralPanel.addSubWindow(self.sceneLayout)
-	self.centralPanel.tileSubWindows()
-        self.sceneLayout.show()
-    
     def popupLoadModelDialog(self):
         fileDialog = QtGui.QFileDialog(self)
         fileDialog.setFileMode(QtGui.QFileDialog.ExistingFile)

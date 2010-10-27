@@ -32,7 +32,6 @@
 	#include "Leakage.h"
 	#include "HHChannel.h"
 	#include "Mg_block.h"
-	#include "Compartment.h"
 	#include "NeuroScan.h"
 	#include "HSolve.h"
 	#include "Enzyme.h"
@@ -117,7 +116,7 @@
 %template(Id_vector) std::vector<Id>;
 
 %pythoncode %{
-    
+
 def listproperty(getter=None, setter=None, deller=None):
     """Adds property attributes that behave like lists or 
     dictionaries but use underlying function calls for getter and
@@ -152,6 +151,10 @@ def listproperty(getter=None, setter=None, deller=None):
         sprintf(tmp, "%d[%d]", $self->id(), $self->index());
         return tmp;
     }
+    %insert("python")%{
+        def __hash__(self):
+                return str(self).__hash__()
+    %}
  }
 
 %include "../utility/Property.h"
@@ -165,6 +168,8 @@ def listproperty(getter=None, setter=None, deller=None):
 %attribute(pymoose::PyMooseBase, const std::string, description, __get_description)
 %attribute(pymoose::PyMooseBase, const std::string, path, __get_path)
 %pythoncode %{
+
+context = PyMooseBase.getContext()    
 from inspect import isclass
 
 def doc(cls):
@@ -360,7 +365,8 @@ NMDAChan.transitionParam = listproperty(NMDAChan.getTransitionParam, NMDAChan.se
 //%template(StochSynchanDILookup) InnerPyMooseIterable < StochSynchan, unsigned int, double > ;
 %include "KinSynChan.h"
 %attribute(pymoose::KinSynChan, double, rInf, __get_rInf, __set_rInf)
-%attribute(pymoose::KinSynChan, double, tauR, __get_tauR, __set_tauR)
+%attribute(pymoose::KinSynChan, double, tau1, __get_tau1, __set_tau1)
+//%attribute(pymoose::KinSynChan, double, tauR, __get_tauR, __set_tauR)
 %attribute(pymoose::KinSynChan, double, pulseWidth, __get_pulseWidth, __set_pulseWidth)
 
 %include "SpikeGen.h"
@@ -520,13 +526,14 @@ NMDAChan.transitionParam = listproperty(NMDAChan.getTransitionParam, NMDAChan.se
 %include "Reaction.h"
 %attribute(pymoose::Reaction, double, kf, __get_kf, __set_kf)
 %attribute(pymoose::Reaction, double, kb, __get_kb, __set_kb)
-%attribute(pymoose::Reaction, double, scaleKf, __get_Kf, __set_Kf)
-%attribute(pymoose::Reaction, double, scaleKb, __get_Kb, __set_Kb)
+%attribute(pymoose::Reaction, double, Kf, __get_Kf, __set_Kf)
+%attribute(pymoose::Reaction, double, Kb, __get_Kb, __set_Kb)
 %attribute(pymoose::Reaction, double, x, __get_x, __set_x)
 %attribute(pymoose::Reaction, double, y, __get_y, __set_y)
 %attribute(pymoose::Reaction, string, xtreeTextFg, __get_xtreeTextFg, __set_xtreeTextFg)
 
 %include "Molecule.h"
+%attribute(pymoose::Molecule, double, D, __get_D, __set_D)
 %attribute(pymoose::Molecule, double, nInit, __get_nInit, __set_nInit)
 %attribute(pymoose::Molecule, double, volumeScale, __get_volumeScale, __set_volumeScale)
 %attribute(pymoose::Molecule, double, n, __get_n, __set_n)
