@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun 30 11:18:34 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Sep 16 12:54:32 2010 (+0530)
+# Last-Updated: Fri Oct 15 14:29:40 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 428
+#     Update #: 445
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -72,7 +72,7 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
                   visibility of these fields to advanced mode.
 
     """
-    extra_fields = ['parent', 'childList', 'fieldList', 'index']
+    extra_fields = ['parent', 'childList', 'fieldList', 'index', 'xtree_textfg_req', 'xtree_fg_req','nInitComplex','concInitComplex']
     sys_fields = ['node', 'cpu', 'dataMem', 'msgMem', 'class']
 
     def __init__(self, mooseObject, parent=None):
@@ -173,6 +173,8 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
             return None
         ret = None
         field = self.fields[index.row()]        
+        if role == Qt.ToolTipRole:
+            return self.tr('<html>' + config.context.doc(self.mooseObject.className + '.' + str(field)).replace(chr(27) + '[1m', '<b>').replace(chr(27) + '[0m', '</b>') + '</html>')
         if index.column() == 0 and role == Qt.DisplayRole:
             ret = QtCore.QVariant(QtCore.QString(field))
         elif index.column() == 1 and role == Qt.DisplayRole:

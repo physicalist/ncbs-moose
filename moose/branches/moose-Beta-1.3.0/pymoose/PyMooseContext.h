@@ -79,7 +79,7 @@ enum {OUTGOING, INCOMING, INOUT};
         void loadG(std::string script); /// load a GENESIS script file
         void runG(std::string statement); /// run a GENESIS statement
         
-        std::string& getField(Id, std::string);
+        const std::string& getField(Id, std::string);
         void setField(Id, std::string, std::string);
         std::vector <std::string> getMessageList(Id obj, std::string field, bool incoming);
         std::vector <std::string> getMessageList(Id obj, bool incoming);
@@ -142,8 +142,8 @@ enum {OUTGOING, INCOMING, INOUT};
         const std::string& author(const std::string className) const;
         const std::string& doc(const std::string& className) const;
         const vector<Id>& getNeighbours(Id object, std::string fieldName="*", int direction=INCOMING);
-        vector <string> getValueFieldList(Id id);
-        vector<string> getFieldList(Id id, FieldType ftype=FTYPE_ALL);        
+        const vector <string>& getValueFieldList(Id id);
+        const vector<string>& getFieldList(Id id, FieldType ftype=FTYPE_ALL);        
 #ifdef DO_UNIT_TESTS    
         static bool testPyMooseContext(int count, bool print);
         bool testCreateDestroy(std::string className, int count, bool print);

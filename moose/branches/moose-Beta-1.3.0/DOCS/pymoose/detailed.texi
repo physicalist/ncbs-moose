@@ -2,11 +2,13 @@
 @chapter In-Depth Guide to PyMOOSE
 In this chapter we go through the internal details of PyMOOSE.
 @menu
-* Overview:: 
-* Model Tree::        All elements in MOOSE are part of a Tree structure
-* Id::                The unique identifier for each MOOSE object
-* Neutral::           Common properties of all MOOSE classes
-* PyMooseContext::    The God object giving access to global functions
+* Overview::                    A short overview of impotrant internals of PyMOOSE
+* Model Tree::                  All elements in MOOSE are part of a Tree structure
+* Id::                          The unique identifier for each MOOSE object
+* Neutral::                     Common properties of all MOOSE classes
+* PyMooseContext::              The God object giving access to global functions
+* Messaging::                   How to setup communication between elements in a model
+* Running GENESIS scripts in Python::  How to run GENESIS-2 commands/scripts in Python
 @end menu
 
 @node Overview
@@ -16,6 +18,7 @@ an object of some MOOSE class. Elements are the basic building blocks of
 a model. You set the properties of the individual elements and connect
 them via messages to build a model.
 
+@subsection Id - the unique identifier of each MOOSE object
 Each element has a unique identifier, called its @code{id}. PyMOOSE
 provides Pythonic wrappers around this id. For every MOOSE class, we
 have a corresponding Python class provided by PyMOOSE. This class
@@ -23,13 +26,15 @@ essentially creates an illusion of mirrorring the MOOSE class via a set
 of properties which correspond to the fields in the MOOSE class. The
 main data contained in instances of the PyMOOSE classes is only a copy
 of the @code{id} of the original MOOSE object. All the fields are
-accessed via function calls using this @code{id} as the handle.
+accessed on-demand via function calls using this @code{id} as the
+handle.
 
+@subsection Class hierarchy of MOOSE
 MOOSE provides a class hierarchy which is closely imitated by the
-PyMOOSE classes. @code{Neutral} is the base class of all other
-classes. So instance of any other MOOSE class is also an instance of
-@code{Neutral} class. A Neutral object is most often used as a container
-of other objects.
+PyMOOSE classes. @code{Neutral} is at the top of the class hierarchy. So
+instance of any other MOOSE class is also an instance of @code{Neutral}
+class. A Neutral object is most often used as a container of other
+objects.
 
 Major areas of focus in MOOSE are neuronal simulations and biochemical
 simulations. So many of the classes are for modeling these
@@ -52,20 +57,41 @@ scenarios. Some of the commonly used classes in Neuronal models are:
 Commonly used classes in biochemistry/chemical kinetics models are:
 @itemize
 @item Molecule
+-     A pool of molecules.
 @item Enzyme
+-     An abstraction of enzymatic mechanism.
 @item Reaction
+-     A general chemical reaction with forward and backward rate constants.
 @item KinCompt
+-     A volume in space in which molecules exist/reactions take place.
 @end itemize
 
 Some classes are there to provide utilities and infrastructure for doing
 simulation experiments:
 @itemize
 @item Table
+-     A versatile list-like structure which allows interpolation,
+      data-recording, sending pre-assigned sequence of data at each time
+      step tp some target object and saving data to file.
 @item AscFile
-@item TimeTable
-@item Random numbet generators 
+-     A general text(ascii) file handle.
+@item Random number generators 
 - a whole bunch of them to generate samples from various distributions.
 @end itemize
+TODO: incorporate class-herarchy diagram
+
+@subsection Messaging
+Any complex model is composed of multiple components called
+@code{elements} which represent some well defined biological concept,
+like an ion-channel or an enzyme. The components of a model are
+connected to each other via messages. These messages allow state
+variables of one element to be seen by the other. For example, a
+synaptic channel has a conductance @code{g} which depends on the
+membrane potential @code{Vm} of a neuronal compartment. @code{Vm} on the
+other hand changes with change in @code{g}. Thus, we need a message
+sending @code{Vm} from compartment to synapse and a message sending
+@code{g} from synapse to compartment. These two messages are combined in
+another message, @code{channel}.
 
 @example
 Take, for example, a simple reaction: @code{A + B <---> C}. By
@@ -204,6 +230,9 @@ True
 @end group
 @end example
 
+In addition, @code{Id} objects are hashable. Also, their hash is the
+hash of their string representation. Thus you can use them as keys in a
+@code{dict}.
 
 @node Neutral
 @section Neutral
@@ -269,7 +298,7 @@ to the parent object.
 You can wrap the Id of any existing MOOSE object inside a
 @code{Neutral}. The following example shows a common idiom used for
 looping through the list of children of an object.
-@example @samp
+@example 
 @group
 >>> root = moose.Neutral('/')
 >>> for child_id in root.childList:
@@ -362,14 +391,156 @@ Memory used by data part of object
 Memory used by messaging (Element) part of object.
 
 @item childList
-Vector of @code{Id}s of the children of this object.
+Vector of @code{Id}s of the children of this object. This is also
+available via @code{children()} method, which is retained for backward
+compatibility.
 
 @end table
 
-The following are the functions available in @code{Neutral} class:
-@table @samp
-@end table
+
 @node PyMooseContext
 @section PyMooseContext
-One global object that provides access to global functions.
-Yet to be written.
+
+One global object that provides access to global functions in PyMOOSE is
+the instance of PyMooseContext. It is available from the abstract base
+class of all PyMOOSE classes, PyMooseBase (which, being abstract, cannot
+be instantiated, but whose public properties are inherited throughout
+the class hierarchy).
+
+PyMooseContext should be considered a singleton. There should be only
+one instance of it at any given time. And usually this instamce is
+created at startup (when moose is imported for the first time).
+
+@example
+The standard way to access the context is:
+context = PyMooseBase.getContext()
+@end example
+
+The context object provides quite low level access to MOOSE. So you
+should be discriminate about using the functions available. There are
+some functions to control simulation which are very common and must
+accessed via the context object.
+@table @samp
+@item  setClock(clockNo, dt, stage=0)
+       set the clock no. specified by @code{clockNo} with time step
+       @code{dt} and stage @code{stage}.
+
+@item useClock(clockNo, path, func='process')
+      use clock specified by @code{clockNo} on @code{path}, which can be
+      a wildcard path, calling the internal function @code{func} of the
+      element class at each time step. The internal function is by
+      default 'process', which calculates the state of the object at the
+      end of the timestep.
+
+@item reset()
+      reset the simulation. This clears all recording Table objects that
+      have been scheduled on some clock, and usually sets things back to
+      initial values.
+
+@item step(time)
+      Run the simulation. If @code{time} is a @code{float}, it is taken
+      as the length of time to be simulated. Each clock in the
+      simulation proceeds by its @code{dt} until its @code{currentTime}
+      reaches or exceeds @code{time}.
+
+      If @code{time} is an integer, then it is taken as the number of
+      steps for the fastest clock in the system. Thus, if the fastest
+      clock in the system has @code{dt = 0.01} and @code{time = 10},
+      then this will run the simulation for 0.1 time units.
+
+@item readCell
+@item readSBML,
+@item readNeuroML, 
+@item getCurrentTime, 
+@item addField.
+@item loadG
+@item runG
+@item move
+@item exists
+@end table
+The following are more advanced methods and should be used with
+caution. Usually for each of them there is a more accessible counterpart
+as a member of the PyMooseBase object or its derivative. The methods in
+PyMooseContext are required only when there is no such counterpart.
+
+@table @samp
+@item getField
+@item setField
+@item getParent
+@item getPath
+@item getName
+@item getChildren
+@item copy
+
+@end table
+
+@node Messaging
+@section Messaging
+@cindex connection
+@cindex message
+@subsection Source and Destination fields
+@cindex source field
+@cindex destination field
+Elements in a MOOSE model communicate with each other at runtime via
+messages. For example, to set up a constant current injection into a
+neuronal compartment, you want to connect a @code{PulseGen} object
+@code{pulsegen} to the @code{Compartment} object @code{comp}. In the
+definition of @code{PulseGen} class you have predefined source fields
+which tell what are the fields that can be transmitted out of the
+@code{pulsegen} object. Similarly, @code{Compartment} has a destination
+field where it can receive a current injection value. By connecting the
+source and the destination fields we set up communication between these
+two components.
+
+The syntax for connecting source and destination messages is simple:
+@code{@{source-object@}.connect(@{source-field@}, @{target-object@},
+@{target-field@})}
+
+With the current example, it will be:
+
+@code{pulsegen.connect('outputSrc', comp, 'injectMsg')}
+
+A very common yet confusing scenario is when you want to record the
+value of some state variable periodically. This is achieved by using
+@code{Table} objects. The confusing bit here is that the table object is
+used as a source, not a destination. The relevant source-field is
+@code{inputRequest} and the destination-field is the field to be
+recorded. This is a special case as the fields to be recorded are not
+destination fields, but value fields, which do not usually participate
+in messaging. Also, to use the Table object as an output buffer, you
+have to set the stepMode field to @code{3} (TAB_BUF).
+
+Thus, to record the membrane potential Vm from our compartment, we can
+issue the following statements:
+
+@group
+table = moose.Table('/Vm_tbl')
+table.stepMode = 3
+table.connect('inputRequest', comp, 'Vm')
+@end group
+
+@node Running GENESIS scripts in Python
+@section Running GENESIS scripts in Python
+@cindex GENESIS script
+There are two commands in PyMOOSE that allows you to run legacy GENESIS
+commands inside Python. These are @code{loadG} and @code{runG}. If you
+have a file @code{script.g} containing a GENESIS script, then you can
+execute the contents of it by invoking: 
+
+@code{context.loadG(script.g)}
+
+where context is the singleton PyMooseContext object (can be obtained
+via: @code{context = moose.PyMooseBase.getContext()}).
+
+Sometimes it is useful to access the MOOSE objects via the GENESIS
+commands. This is because for some classes, the Python wrappers may not
+be up to date, or it may just be ease of use. In those cases, just to
+carry out a single command, you can use
+@code{context.runG('@{genesis-command@}')}.
+
+For example, to display the messages on an element specified by the path
+@code{/my_element}, you can use: 
+@group 
+@code{context.runG('showmsg /my_element')} 
+@end group.
+
