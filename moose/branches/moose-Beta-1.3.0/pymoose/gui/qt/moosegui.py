@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Nov  1 15:09:23 2010 (+0530)
+# Last-Updated: Tue Nov  2 04:29:14 2010 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2526
+#     Update #: 2563
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -436,10 +436,12 @@ class MainWindow(QtGui.QMainWindow):
         # self.contextHelpAction = QtGui.QAction(self.tr('Context Help'), self)
         
         # Run menu action
-        self.runAction = QtGui.QAction(self.tr('Run Simulation'), self)
+        self.runAction = QtGui.QAction(self.tr('Run Simulation'), self)        
 	self.connect(self.runAction, QtCore.SIGNAL('triggered(bool)'), self.resetAndRunSlot)
         # self.resetAction = QtGui.QAction(self.tr('Reset Simulation'), self)
 	# self.connect(self.resetAction, QtCore.SIGNAL('triggered()'), self.resetSlot)
+        self.continueRunAction = QtGui.QAction(self.tr('Continue simulation'), self)
+        self.connect(self.continueRunAction, QtCore.SIGNAL('triggered()'), self._runSlot)
 
     
     def runMichaelisMentenDemo(self):
@@ -514,6 +516,7 @@ class MainWindow(QtGui.QMainWindow):
         self.runMenu = QtGui.QMenu(self.tr('&Run'), self)
         # self.runMenu.addAction(self.resetAction)
         self.runMenu.addAction(self.runAction)
+        self.runMenu.addAction(self.continueRunAction)
 
 
         self.editModelMenu = QtGui.QMenu(self.tr('&Edit Model'), self)
@@ -651,7 +654,8 @@ class MainWindow(QtGui.QMainWindow):
         self.updateTimeLabel = QtGui.QLabel(self.tr('Update interval for plots (second):'), self.controlPanel)
         self.updateTimeText = QtGui.QLineEdit('%1.3e' % (MooseHandler.plotupdate_dt), self.controlPanel)
         # self.resetButton = QtGui.QPushButton(self.tr('Reset'), self.controlPanel)
-        self.runButton = QtGui.QPushButton(self.tr('Run'), self.controlPanel)
+        self.runButton = QtGui.QPushButton(self.tr('Run simulation'), self.controlPanel)
+        self.continueButton = QtGui.QPushButton(self.tr('Continue simulation'), self.controlPanel)
         self.simdtLabel = QtGui.QLabel(self.tr('Simulation timestep (second):'), self.controlPanel)
         self.plotdtLabel = QtGui.QLabel(self.tr('Plotting timestep (second):'), self.controlPanel)
         self.gldtLabel = QtGui.QLabel(self.tr('3D visualization timestep (second):'), self.controlPanel)
@@ -661,7 +665,7 @@ class MainWindow(QtGui.QMainWindow):
         self.overlayCheckBox = QtGui.QCheckBox(self.tr('Overlay plots'), self.controlPanel)
         
         self.connect(self.runButton, QtCore.SIGNAL('clicked()'), self.resetAndRunSlot)
-        # self.connect(self.resetButton, QtCore.SIGNAL('clicked()'), self.resetSlot)
+        self.connect(self.continueButton, QtCore.SIGNAL('clicked()'), self._runSlot)
         layout.addWidget(self.simdtLabel, 0,0)
         layout.addWidget(self.simdtText, 0, 1)
         layout.addWidget(self.plotdtLabel, 1, 0)
@@ -673,8 +677,8 @@ class MainWindow(QtGui.QMainWindow):
         layout.addWidget(self.runtimeText, 4, 1)
         layout.addWidget(self.updateTimeLabel, 5, 0)
         layout.addWidget(self.updateTimeText, 5,1)
-        # layout.addWidget(self.resetButton, 6, 0)
-        layout.addWidget(self.runButton, 6, 1)
+        layout.addWidget(self.runButton, 6, 0)
+        layout.addWidget(self.continueButton, 6, 1)
         self.controlPanel.setLayout(layout)
         self.controlDock.setWidget(self.controlPanel)
 
@@ -754,6 +758,7 @@ class MainWindow(QtGui.QMainWindow):
                     self.populateKKitPlots()
 		    self.addLayoutWindow()
                 print 'Loaded model',  fileName, 'of type', modeltype
+            self.updateDefaultTimes(modeltype)
             self.modelTreeWidget.recreateTree()
 
 
@@ -968,6 +973,17 @@ class MainWindow(QtGui.QMainWindow):
 
     def browseDocumentation(self):
         QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_DOC_URL)))
+
+    def updateDefaultTimes(self, modeltype):
+        self.simdtText.setText(QtCore.QString('%1.3e' % (MooseHandler.DEFAULT_SIMDT)))
+        if (modeltype == MooseHandler.type_kkit) or (modeltype == MooseHandler.type_sbml):
+            self.simdtText.setText(QtCore.QString('%1.3e' % (MooseHandler.DEFAULT_SIMDT_KKIT)))
+            self.plotdtText.setText(QtCore.QString('%1.3e' % (MooseHandler.DEFAULT_PLOTDT_KKIT)))
+            self.gldtText.setText(QtCore.QString('%1.3e' % (MooseHandler.DEFAULT_GLDT_KKIT)))
+            self.runtimeText.setText(QtCore.QString('%1.3e' % (MooseHandler.DEFAULT_RUNTIME_KKIT)))
+            self.updateTimeText.setText(QtCore.QString('%1.3e' % (MooseHandler.DEFAULT_PLOTUPDATE_DT_KKIT)))
+            
+            
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
