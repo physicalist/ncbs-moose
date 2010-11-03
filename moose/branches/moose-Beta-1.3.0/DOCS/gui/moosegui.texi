@@ -370,6 +370,29 @@ Similar to selecting source, you have to select the destination element
 and the target field in the right pane.
 @item Click OK to actually make the connection.
 @end enumerate
+
+@node Getting help
+@chapter Getting help in MOOSE
+The documentation for MOOSE is work under progress. You can get some
+contextual information in the tool tip text (popped up by hovering the
+mouse cursor above a class in @code{Class List} or a field in
+@code{Object Editor}. 
+@image{moose_class_tooltip_lowres, 15 cm, 10 cm, moose class
+tooltip,png}
+@image{moose_field_tooltip_lowres, 15 cm, 10 cm, moose field tooltip,png}
+Moreover you can get detailed documentation on a
+class by calling moose.doc() function on the class in the @code{MOOSE
+Shell}.
+@example
+print moose.doc(moose.HHChannel)
+print moose.doc('HHChannel.channel')
+@end example
+
+Note that the documentation is formatted with special characters for
+printing in a terminal. Thus you have to call @code{print} on the
+returned string.
+
+
 @bye
 
 @c Local Variables: 
