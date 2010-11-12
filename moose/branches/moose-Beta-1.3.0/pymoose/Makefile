@@ -214,7 +214,7 @@ default: $(TARGET)
 .PHONY: clean
 
 $(TARGET): moose.py moose_wrap.o $(OBJ) $(HEADERS)
-	$(LD)  -r -o $(TARGET) $(OBJ) 
+	$(LD)  -r -o $(TARGET) $(OBJ) moose_wrap.o
 
 moose_wrap.o: moose_wrap.cxx
 	$(CXX) $(CXXFLAGS) -c $^ -o $@
