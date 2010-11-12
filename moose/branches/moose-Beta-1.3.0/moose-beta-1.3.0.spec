@@ -25,13 +25,13 @@ MOOSE is the Multiscale Object-Oriented Simulation Environment.
 
 %build
 make pymoose USE_GL=0 USE_NEUROML=1
-mv pymoose/_moose.so ./
-mv pymoose/moose.py ./
-mv pymoose/pymoose.py ./
 mv external/neuroML_src/libneuroml.so ./
-make clean
-make moose USE_GL=1 USE_NEUROML=1
+mv _moose.so _moose.so.tmp
+mv moose.py moose.py.tmp
+make clean USE_NEUROML=1
+make moose USE_GL=0 USE_NEUROML=1
 mv external/neuroML_src/libneuroml.a ./
+g++ TESTS/regression/neardiff.cpp -o TESTS/regression/neardiff
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p "$RPM_BUILD_ROOT/usr/bin"
@@ -40,20 +40,25 @@ mkdir -p "$RPM_BUILD_ROOT/usr/share/man/man1"
 mkdir -p "$RPM_BUILD_ROOT/usr/share/info"
 mkdir -p "$RPM_BUILD_ROOT/usr/share/moose1.3/lib"
 mkdir -p "$RPM_BUILD_ROOT/usr/share/moose1.3/py_stage"
-install -m 644 _moose.so "$RPM_BUILD_ROOT/usr/share/moose1.3/py_stage"
-install -m 755 moose.py "$RPM_BUILD_ROOT/usr/share/moose1.3/py_stage"
-install -m 755 pymoose.py "$RPM_BUILD_ROOT/usr/share/moose1.3/py_stage"
-install -m 644 DEMOS "$RPM_BUILD_ROOT/usr/share/doc/moose1.3"
-install -m 644 TEST "$RPM_BUILD_ROOT/usr/share/doc/moose1.3"
-install -m 644 DOCS "$RPM_BUILD_ROOT/usr/share/doc/moose1.3"
-install -m 644 pymoose/gui/qt "$RPM_BUILD_ROOT/usr/share/moose1.3/moosegui"
-install -m 644 gl/colormaps "$RPM_BUILD_ROOT/usr/share/moose1.3/colormaps"
-install -m 644 DOCS/Beta-1.3/moose.1 "$RPM_BUILD_ROOT/usr/share/man/man1"
+install -m 755 moosegui "$RPM_BUILD_ROOT/usr/bin/"
+install -s -m 755 moose "$RPM_BUILD_ROOT/usr/bin/moose-bin"
+install -s -m 644 _moose.so.tmp "$RPM_BUILD_ROOT/usr/share/moose1.3/py_stage/_moose.so"
+install -m 755 moose.py.tmp "$RPM_BUILD_ROOT/usr/share/moose1.3/py_stage/moose.py"
+install -m 755 pymoose/pymoose.py "$RPM_BUILD_ROOT/usr/share/moose1.3/py_stage/"
+cp -r DEMOS "$RPM_BUILD_ROOT/usr/share/doc/moose1.3/"
+cp -r TESTS "$RPM_BUILD_ROOT/usr/share/doc/moose1.3/"
+cp -r DOCS "$RPM_BUILD_ROOT/usr/share/doc/moose1.3/"
+cp -r pymoose/gui/qt "$RPM_BUILD_ROOT/usr/share/moose1.3/moosegui"
+cp -r gl/colormaps "$RPM_BUILD_ROOT/usr/share/moose1.3/colormaps/"
+install -m 644 "DOCS/Beta-1.3/moose.1" "$RPM_BUILD_ROOT/usr/share/man/man1/"
 install -m 644 DOCS/pymoose/pymoose.info "$RPM_BUILD_ROOT/usr/share/info/pymoose.info"
+install -s -m 755 TESTS/regression/neardiff  "$RPM_BUILD_ROOT/usr/share/doc/moose1.3/TESTS/regression/"
+install -m 755 TESTS/regression/do_regression.bat "$RPM_BUILD_ROOT/usr/share/doc/moose1.3/TESTS/regression/"
+chmod 755 "$RPM_BUILD_ROOT/usr/share/moose1.3/moosegui/moosegui.py"
 
 # Copy the libraries to lib directory in moose-shared deirectory
 #( ldd _moose.so; ldd gl/src/glclient )    | while read line; do 
-( ldd _moose.so)    | while read line; do 
+( ldd _moose.so.tmp)    | while read line; do 
     a=`echo $line |sed -e 's/(.*$//'`; 
     b=`echo $a | cut -s -d '>' -f2`
     if [ ! -z `echo $b | tr -d [:space:]` ]; then
@@ -61,7 +66,7 @@ install -m 644 DOCS/pymoose/pymoose.info "$RPM_BUILD_ROOT/usr/share/info/pymoose
 	    echo $b $libname 
 	    if [[ $b =~ $libname ]] ; then
 		echo "Copying $b to lib/"  
-		cp $b "$RPM_BUILD_ROOT/usr/share/moose1.3/lib"
+		install -m 644 $b "$RPM_BUILD_ROOT/usr/share/moose1.3/lib"
 		break
 	     fi
 	done
@@ -70,7 +75,7 @@ done
 
 %post
 ln -s "$RPM_BUILD_ROOT/usr/share/moose1.3/moosegui/moosegui.py" "$RPM_BUILD_ROOT/usr/bin/moosegui-bin"
-echo "$RPM_BUILD_ROOT/usr/share/moose1.3/lib/" > /etc/ld.so.conf.d
+echo "$RPM_BUILD_ROOT/usr/share/moose1.3/lib/" > /etc/ld.so.conf.d/moose.conf
 ldconfig
 install-info --infodir="$RPM_BUILD_ROOT/usr/share/info" "$RPM_BUILD_ROOT/usr/share/info/pymoose.info"
 
