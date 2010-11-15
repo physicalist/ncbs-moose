@@ -32,8 +32,9 @@ improvements. The following are the major ones:
 
 * Improved documentation.
   Info documents have been added for PyMOOSE. This documentation aims at 
-  showing how to use moose as a library in Python scripts. Although the
-  GUI 
+  showing how to use moose as a library in Python scripts. The documentations 
+  will be continuously updated and the latest versions will be available on 
+  moose website (http://moose.ncbs.res.in/content/view/5/6/).
 
 * Change in class hierarchy.
   Now the class hierarchy in PyMOOSE follows that in MOOSE more
