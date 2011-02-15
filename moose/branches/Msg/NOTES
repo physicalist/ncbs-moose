@@ -10814,5 +10814,8 @@ Got rid of MsgId garbage collection. Now it clears the unit test for
 creation of the copy, as well as the messaging in copies.
 
 Dies a bit later though, in testScheduling.
+Checkin 2470.
+
+Cleaned out a whole lot of printf debugging messages.
 
 ============================================================================
