@@ -540,6 +540,7 @@ void testMultiNodeIntFireNetwork()
 	static const double timestep = 0.2;
 	static const double connectionProbability = 0.1;
 	static const unsigned int runsteps = 5;
+	static const unsigned int NUM_TOT_SYN = 104576;
 	// These are the starting indices of synapses on
 	// IntFire[0], [100], [200], ...
 	/*
@@ -614,7 +615,17 @@ void testMultiNodeIntFireNetwork()
 
 	unsigned int nd = syn->dataHandler()->localEntries();
 	assert( syn->dataHandler()->totalEntries() == size * 134 );
-	assert( nd == 104576 );
+	if ( Shell::numNodes() == 1 )
+		assert( nd == NUM_TOT_SYN );
+	if ( Shell::numNodes() == 2 )
+		assert( nd == 52446 );
+	if ( Shell::numNodes() == 3 )
+		assert( nd == 34969 );
+	if ( Shell::numNodes() == 4 )
+		assert( nd == 26381 );
+
+//	cout << "nd = " << nd << endl;
+	
 	// cout << "Num Syn = " << nd << endl;
 	// nd = 104576;
 
@@ -648,19 +659,46 @@ void testMultiNodeIntFireNetwork()
 	assert( fd );
 	unsigned int fieldSize = fd->biggestFieldArraySize();
 	fd->setFieldDimension( fieldSize );
+	cout << Shell::myNode() << ": fieldSize = " << fieldSize << endl;
+	vector< unsigned int > numSynVec;
+
 	vector< double > weight( size * fieldSize, 0.0 );
 	vector< double > delay( size * fieldSize, 0.0 );
 	unsigned int numTotSyn = 0;
+	Eref alle2( e2.element(), DataId::any() );
+	Field< unsigned int >::getVec( alle2, "numSynapses", numSynVec );
+	assert ( numSynVec.size() == size );
+	for ( unsigned int i = 0; i < size; ++i ) 
+		cout << "(" << i << ", " << numSynVec[i] << "	";
+	cout << endl;
 	for ( unsigned int i = 0; i < size; ++i ) {
-		unsigned int numSyn = fd->getFieldArraySize( i );
 		unsigned int k = i * fieldSize;
-		for ( unsigned int j = 0; j < numSyn; ++j ) {
+		for ( unsigned int j = 0; j < numSynVec[i]; ++j ) {
+			assert( ( k + j ) < ( size * fieldSize ) );
 			weight[ k + j ] = mtrand() * weightMax;
 			delay[ k + j ] = mtrand() * delayMax;
 			++numTotSyn;
 		}
 	}
-	assert ( numTotSyn == nd );
+	assert ( numTotSyn == NUM_TOT_SYN );
+	/*
+	for ( unsigned int i = 0; i < size; ++i ) {
+		unsigned int numSyn = fd->getFieldArraySize( i );
+		unsigned int k = i * fieldSize;
+		// cout << numSyn << endl;
+		for ( unsigned int j = 0; j < numSyn; ++j ) {
+			assert( ( k + j ) < ( size * fieldSize ) );
+			weight[ k + j ] = mtrand() * weightMax;
+			delay[ k + j ] = mtrand() * delayMax;
+			++numTotSyn;
+		}
+	}
+	*/
+	// assert ( numTotSyn == nd );
+	for ( unsigned int i = 0; i < size; i+= 100 ) {
+		cout << "correct wt = " << weight[ i * fieldSize ] << endl << flush;
+		// assert( doubleEq( wt, weight[ i * fieldSize ] ) );
+	}
 
 	/*
 	vector< double > weight;
@@ -680,9 +718,8 @@ void testMultiNodeIntFireNetwork()
 	for ( unsigned int i = 0; i < size; i+= 100 ) {
 		double wt = Field< double >::get( 
 			Eref( syne.element(), DataId( i, 0 ) ), "weight" );
-		assert( doubleEq( wt, weight[ i * fieldSize ] ) );
-		// assert( doubleEq( wt, weight[ synIndices[ i / 100 ] ] ) );
-		// cout << "Actual wt = " << wt << ", expected = " << weight[ synIndices[ i / 100 ] ] << endl;
+		cout << "Got wt = " << wt << ", correct = " << weight[ i * fieldSize ] << endl << flush;
+		// assert( doubleEq( wt, weight[ i * fieldSize ] ) );
 	}
 
 	Element* ticke = Id( 2 )();
