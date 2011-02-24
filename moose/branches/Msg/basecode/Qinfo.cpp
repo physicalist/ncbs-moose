@@ -564,6 +564,8 @@ void Qinfo::addToReduceQ( ReduceBase* r, unsigned int threadIndex )
 	unsigned int threadIndex )
 	*/
 {
+	cout << Shell::myNode() << ": addToReduceQ on threadindex " <<
+		threadIndex << ", size = " << reduceQ_.size() << endl;
 	reduceQ_[ threadIndex ].push_back( r );
 }
 

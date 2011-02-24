@@ -604,18 +604,6 @@ void testSetGetSynapse()
 	}
 	assert( syn->dataHandler()->localEntries() == ( size * (size - 1) ) / 2 );
 
-	/*
-	** Can't run this here: the Process Loop has to be running first.
-	Eref sheller = Id().eref();
-	Shell* shell = reinterpret_cast< Shell* >( sheller.data() );
-	const Finfo* f = IntFire::initCinfo()->findFinfo( "get_numSynapses" );
-	const DestFinfo* df = dynamic_cast< const DestFinfo* >( f );
-	assert( df );
-	shell->doSyncDataHandler( i2, df->getFid() );
-	*/
-
-/*
-	*/
 	FieldDataHandlerBase * fdh =
 		static_cast< FieldDataHandlerBase *>( syn->dataHandler() );
 	fdh->syncFieldArraySize();

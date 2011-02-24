@@ -418,7 +418,7 @@ void testBuiltinsProcess()
 {
 	testFibonacci();
 	testGetMsg();
-	testStatsReduce();
+//	testStatsReduce();
 }
 
 void testMpiBuiltins( )

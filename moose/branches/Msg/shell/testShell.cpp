@@ -1199,7 +1199,8 @@ void testMpiShell( )
 	testShellAddMsg();
 	testCopyMsgOps();
 	testWildcard();
-	testSyncSynapseSize();
+	// testSyncSynapseSize(); // 23 Feb 2011: commented out to check
+	// if this causes the queue problems.
 
 	// Stuff for doLoadModel
 	testFindModelParent();

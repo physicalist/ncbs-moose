@@ -10816,6 +10816,107 @@ creation of the copy, as well as the messaging in copies.
 Dies a bit later though, in testScheduling.
 Checkin 2470.
 
-Cleaned out a whole lot of printf debugging messages.
+Cleaned out a whole lot of printf debugging messages. Checkin 2471
+
+It goes OK to the same point for 1,2,3,4 nodes. I've incorporated the 
+local count of synapses into the unit tests. Oddly for 8 nodes it fails
+with the assertions on biggest field array size. 
+
+For the smaller number of nodes it fails when checking weights. I suspect
+it is just an array misalignment.
+
+Checked, not an obvious aligmnment issue. Here is some output 
+from  mpirun -np 2 ./moose -c 1
+in testScheduling.cpp:testMultiNodeIntFireNetwork.
+
+Got wt = 0.00347109, correct = 0.00347109
+Got wt = 0.0106652, correct = 0
+Got wt = 0.0191519, correct = 0
+Got wt = 0, correct = 0
+Got wt = 0, correct = 0
+Got wt = 0.00509742, correct = 0
+
+Very odd. Why is the 'correct' vector, which is something we set up
+directly in the C++code, going to zero?
+
+Now it transpires that the vector has already got the zeros. Should track.
+
+============================================================================
+16 Feb 2011
+I've gotten to an unpleasant random bug point. The program crashes with 
+different error messages at different points. 
+Single thread: never seems to crash.
+2 threads: Crashes in one of two possible places:
+	- One place is triggered by getVec. The immediate problem
+	is a bad value for the MsgId in hackForSendTo
+	- Second place is digesting the output of the getVec, when the # of
+	synapses are being counted. Printf debug shows that most of the
+	returned vec is empty, though the size is right.
+
+Checked, it has the same symptoms when recompiled without MPI.
+Is it some earlier funtion leaving droppings?
+	
+============================================================================
+17 Feb 2011
+The testMultiNodeIntFireNetwork function gets called twice, once for the 
+regular scheduling, and once for MPI. The program crashes with either or both
+present.
+If both are eliminated, the program sometimes makes it through to the end,
+but on some runs it crashes.
+
+============================================================================
+18 Feb 2011
+Checked whether syncFieldArraySize() is the problem. Commented it out,
+reran. Still dies, both places as above.
+
+============================================================================
+20 Feb 2011
+Commented out all the IntFireNetwork runs. 
+Now it clears the run with two threads, usually, but croaks (usually)
+with more than that.
+
+Commented out the testSchedulingProcess and the
+testMpiScheduling from the main. Now it clears all combinations...
+Actually no, it still manages to fail sometimes.
+
+============================================================================
+21 Feb.
+Qinfo ptr is bad in Qinfo::readQ->readBuf->hackForSendTo.
+Some garbage is coming out of the queue.
+Possibly even out of the Qvec argument of readBuf.
+
+============================================================================
+22 Feb
+Some places to look:
+- AssignmentMsg.cpp:sendAckBack. This seems to behave properly in using the
+addToQbackward function using a sensible procinfo.
+- Qinfo::hackForSendTo. Never did like this, maybe temporarily put the
+	tgt id in the Qinfo or somehow add it to the args.
+
+Some debug/tracing later, there seems to be a problem in the contents of the
+Qvec. Did the Reduce opertion put junk there?
+
+Checked insertion of ops into ReduceQ. That is OK, happens on separate
+index.
+
+As it turns out, at this point the Shell:;reduceInt is commented out...
+in FieldDataHandlerBase::syncFieldArraySize()
+was this the non-functional version?
+============================================================================
+23 Feb
+Yes, this was the version that didn't work. The actual logic goes through
+ReduceMsg::exec.
+
+Looking in Qinfo::clearReduceQ. Things look mostly OK, exept that the
+address of the two ReduceQ entries are in completely different ranges. 
+Something odd happening here.
+
+Went through trying to eliminate all calls to the Reduce functionality.
+Got rid of the call to reduceStats in testBuiltins.cpp, and the call to 
+shell::doSyncDataHandler in testSyncSynapseSize() in testShell.cpp.
+I still have problems.
+
+Now it looks like I may have to revert to an earlier version of MOOSE
+to figure out what has broken.
 
 ============================================================================
