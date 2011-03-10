@@ -262,7 +262,7 @@ void mpiTests()
 		cout << "+" << flush;
 #endif
 }
-
+#ifndef PYMOOSE
 int main( int argc, char** argv )
 {
 	Id shellId = init( argc, argv );
@@ -303,4 +303,5 @@ int main( int argc, char** argv )
 #endif
 	return 0;
 }
+#endif
 
