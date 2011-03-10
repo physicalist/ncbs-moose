@@ -259,10 +259,16 @@ libmoose.so: libs
 	$(CXX) -G $(LIBS) -o libmoose.so
 	@echo "Created dynamic library"
 
-pymoose: CXXFLAGS += -fPIC 
+# There are some unix/gcc specific paths here. Should be cleaned up later.
+pymoose: CXXFLAGS += -DPYMOOSE -fPIC -fno-strict-aliasing -I/usr/include/python2.6 # Should be updated according to platform
 pymoose: SUBDIR += pymoose
+pymoose: OBJLIBS += pymoose/pymoose.o
+pymoose: LIBS += -lpython2.6 # Needs to be modified according to Python version
 pymoose: libs $(OBJLIBS) 
 	$(MAKE) -C $@
+pymoose: moose.so
+moose.so: libs $(OBJLIBS)
+	$(CXX) -shared $(LDFLAGS) $(CXXFLAGS) -o $@ $(OBJLIBS) $(LIBS)
 
 libs:
 	@(for i in $(SUBDIR) $(PARALLEL_DIR); do $(MAKE) -C $$i; done)
