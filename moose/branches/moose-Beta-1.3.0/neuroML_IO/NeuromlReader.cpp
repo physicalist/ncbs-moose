@@ -35,14 +35,18 @@ void NeuromlReader::readModel( string filename,Id location )
    for ( unsigned int i = 0; i < pathUtil.size(); ++i )
    {
 	paths.push_back( pathUtil.getPath( i ) );
-	//cout << "path is : " << pathUtil.getPath( i ) << endl;
+	cout << "path is : " << pathUtil.getPath( i ) << endl;
    }
-   //cout << "path size : " << pathUtil.size() << endl;
+   cout << "path size : " << pathUtil.size() << endl;
    NBase::setPaths( paths );
+   cout<<"set paths"<<endl;
    NBase nb;   
+   cout<<"nb"<<endl;
    ncl_= nb.readNeuroML (filename);
+   cout<<"read"<<endl;
    ncl_->register_namespaces();
-   string lengthunits = ncl_->getLengthUnits();
+   cout<<"register"<<endl;
+   //string lengthunits = ncl_->getLengthUnits();
    double x,y,z,x1,y1,z1,diam1,diam2,diameter,length,initVm,r,ca,Cm,Ra;
    initVm = ncl_->getInit_memb_potential();
    ca = ncl_->getSpec_capacitance();
@@ -166,7 +170,7 @@ void NeuromlReader::readModel( string filename,Id location )
    setupPools(groupcableMap,cablesegMap,biophysicsunit);
    unsigned int numsynchans =ncl_->getNumSynChannels();
    if ( numsynchans != 0 )
- 	setupSynChannels(groupcableMap,cablesegMap,numsynchans);
+     setupSynChannels(groupcableMap,cablesegMap,numsynchans);
  #else
 	cout << "This version does not have NEUROML support." << endl; 
 #endif 
@@ -348,7 +352,7 @@ void NeuromlReader::setupChannels(map< string,vector<string> > &groupcableMap,ma
 {
 	static const Cinfo* compartmentCinfo = initCompartmentCinfo();
 	static const Finfo* EmFinfo = compartmentCinfo->findFinfo( "Em" );
-        static const Finfo* RmFinfo = compartmentCinfo->findFinfo( "Rm" );	
+    static const Finfo* RmFinfo = compartmentCinfo->findFinfo( "Rm" );	
 	static const Cinfo* channelCinfo = initHHChannelCinfo();
 	static const Finfo* gbarFinfo = channelCinfo->findFinfo( "Gbar" );
 	static const Finfo* ekFinfo = channelCinfo->findFinfo( "Ek" );
@@ -364,9 +368,10 @@ void NeuromlReader::setupChannels(map< string,vector<string> > &groupcableMap,ma
 	static const Finfo* tableVectorFinfo = interpolCinfo->findFinfo( "tableVector" );
 	unsigned int num_channels = 0;
 	num_channels = ncl_->getNumChannels();
+	//cout<<" num_channels "<<num_channels<<endl;
 	if ( num_channels != 0 ) {  		
 	map< string,vector<string> >::iterator cmap_iter;
-    	map< string,vector<string> >::iterator smap_iter; 
+    map< string,vector<string> >::iterator smap_iter; 
 	vector< string > channel_vec;
 	channel_vec.clear();
 	vector< string >::iterator it;
@@ -378,15 +383,15 @@ void NeuromlReader::setupChannels(map< string,vector<string> > &groupcableMap,ma
 		Id loc( "/library" );
 		string name = chl->getName();
 		it = find(channel_vec.begin(), channel_vec.end(), name);
-                if( it == channel_vec.end() ){
+        if( it == channel_vec.end() ){
 		    channel_vec.push_back(name);
 		    //bool is2DChannel = chl->isSetConc_dependence();
 		    string cion = chl->getConc_ion();
 		    if ( cion != "" )
-                        ionchlMap_[name] = cion;
+               ionchlMap_[name] = cion;
 		    string ion = chl->getIon();
 		    if ( ion != "" )
-                        ionchlMap_[name] = ion;
+               ionchlMap_[name] = ion;
 		    bool is2DChannel  = false;
 		    bool passive = chl->getPassivecond();
 		    ek = chl->getDefault_erev();
@@ -402,7 +407,7 @@ void NeuromlReader::setupChannels(map< string,vector<string> > &groupcableMap,ma
 		    else if ( is2DChannel ){
 			channel_ = Neutral::create( "HHChannel2D",name,loc,Id::scratchId() );	
 			::set< double >( channel_, ekFinfo, ek );
-			 ::set< double > ( channel_, gbarFinfo, gmax );
+			::set< double > ( channel_, gbarFinfo, gmax );
 		   }
 		   else{	
  	 		channel_ = Neutral::create( "HHChannel",name,loc,Id::scratchId() );
@@ -413,7 +418,7 @@ void NeuromlReader::setupChannels(map< string,vector<string> > &groupcableMap,ma
         }
     	for(unsigned int ch = 0; ch < num_channels; ch++ )
     	{
-    		Channel * chl ;
+    	Channel * chl ;
 		chl =ncl_->getChannel( ch );
 		string name = "", group = "";
 		double gmax,ek;
@@ -425,9 +430,9 @@ void NeuromlReader::setupChannels(map< string,vector<string> > &groupcableMap,ma
 		ek = chl->getDefault_erev();
 		bool use_conc = false;
 		gmax = chl->getGmax();
-                if ( biophysicsunit == "Physiological Units" ){
+        if ( biophysicsunit == "Physiological Units" ){
 			gmax *= 10; 
-	 	        ek /= 1000; 
+	 	    ek /= 1000; 
 	 	}
 		if ( passive )
 			::set< double >( Eref(chlId()), leakekFinfo, ek );
@@ -456,7 +461,7 @@ void NeuromlReader::setupChannels(map< string,vector<string> > &groupcableMap,ma
 		if ( num > 3 ) 
 		    	cout << "Error: More than 3 gates is not alllowed" << endl;
 		int counter = 0;
-	 	for( unsigned int i=1;i<=num;i++ )
+	 	for( unsigned int i=0;i<num;i++ )
 	 	{	
 			Gate* gat ;	
 			bool flag = false;	
@@ -629,9 +634,8 @@ void NeuromlReader::setupChannels(map< string,vector<string> > &groupcableMap,ma
 
 void NeuromlReader::setupSynChannels(map< string,vector<string> > &groupcableMap,map< string,vector< string > > &cablesegMap,unsigned int numsynchans)
 {
-	//unsigned int numsynchans =ncl_->getNumSynChannels(); 
 	static const Cinfo* synchanCinfo = initSynChanCinfo();
-    	static const Finfo* synGbarFinfo = synchanCinfo->findFinfo( "Gbar" );
+    static const Finfo* synGbarFinfo = synchanCinfo->findFinfo( "Gbar" );
 	static const Finfo* synEkFinfo = synchanCinfo->findFinfo( "Ek" );
 	static const Finfo* synTau1Finfo = synchanCinfo->findFinfo( "tau1" );
 	static const Finfo* synTau2Finfo = synchanCinfo->findFinfo( "tau2" );
@@ -640,8 +644,7 @@ void NeuromlReader::setupSynChannels(map< string,vector<string> > &groupcableMap
 	static const Finfo* KMg_AFinfo = mgblockCinfo->findFinfo( "KMg_A" );
 	static const Finfo* KMg_BFinfo = mgblockCinfo->findFinfo( "KMg_B" );
 	map< string,vector<string> >::iterator cmap_iter;
-    	map< string,vector<string> >::iterator smap_iter; 
-	if ( numsynchans != 0 ){
+    map< string,vector<string> >::iterator smap_iter; 
 	for( unsigned int i = 1; i <= numsynchans; i ++ )
 	{
 		SynChannel* synchl;	
@@ -712,7 +715,7 @@ void NeuromlReader::setupSynChannels(map< string,vector<string> > &groupcableMap
 		   }
 		}
 	}
-	}
+	
 }
 /*function which insert elements into the vector for setupAlpha */
 void NeuromlReader::pushtoVector(vector< double > &result,string expr_form,double r,double s,double m)
