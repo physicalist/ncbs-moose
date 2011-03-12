@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Sat Mar 12 18:30:09 2011 (+0530)
+// Last-Updated: Sat Mar 12 18:45:43 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 424
+//     Update #: 427
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -180,15 +180,15 @@ extern "C" {
         if (trimmed_type.length() <= 0){
             PyErr_SetString(PyExc_ValueError, "type must be non-empty string.");
             return NULL;
-        }
+        }        
         
-        
-        if (length > 1 && trimmed_path[length - 1] == '/'){
+        if ((length > 1) && (trimmed_path[length - 1] == '/')){
             trimmed_path = trimmed_path.substr(0, length-1);
         }
         if (trimmed_path[0] != '/'){ // Convert relative path to absolute path
             Id cwe = getShell()->getCwe();
             trimmed_path = cwe.path() + trimmed_path;
+            length = trimmed_path.length();
         }
         Id id = Id(trimmed_path);
         if (length > 1 && id == Id()) { // object does not exist

@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Sat Mar 12 18:24:12 2011 (+0530)
+// Last-Updated: Sat Mar 12 18:43:55 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 94
+//     Update #: 95
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -59,10 +59,6 @@ class _pymoose_Neutral: public PyMooseBase
 };
 
 } // namespace pymoose
-
-extern "C" {
-    
-}
 
 // 
 // moosemodule.h ends here
