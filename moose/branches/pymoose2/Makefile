@@ -228,6 +228,7 @@ SUBDIR = \
 	kinetics \
 	ksolve \
 	regressionTests \
+	utility \
 
 # Used for 'make clean'
 CLEANSUBDIR = $(SUBDIR) $(PARALLEL_DIR)
@@ -243,7 +244,7 @@ OBJLIBS =	\
 	kinetics/kinetics.o \
 	ksolve/ksolve.o \
 	regressionTests/rt.o \
-
+	utility/utility.o \
 
 export CXX
 export CXXFLAGS
@@ -266,8 +267,8 @@ pymoose: OBJLIBS += pymoose/pymoose.o
 pymoose: LIBS += -lpython2.6 # Needs to be modified according to Python version
 pymoose: libs $(OBJLIBS) 
 	$(MAKE) -C $@
-pymoose: moose.so
-moose.so: libs $(OBJLIBS)
+pymoose: _moose.so
+_moose.so: libs $(OBJLIBS)
 	$(CXX) -shared $(LDFLAGS) $(CXXFLAGS) -o $@ $(OBJLIBS) $(LIBS)
 
 libs:

@@ -3,7 +3,7 @@
 # Author: Subhasis Ray
 # Created: 2011-03-10 12:10:32 (+0530)
 TARGET = pymoose.o
-
+CXXFLAGS += -I../basecode -I../msg -I../shell
 .PHONY: clean
 
 OBJ = moosemodule.o
