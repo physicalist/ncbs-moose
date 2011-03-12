@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Sat Mar 12 23:54:15 2011 (+0530)
+// Last-Updated: Sun Mar 13 00:16:22 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 448
+//     Update #: 460
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -59,11 +59,11 @@ PyMooseBase::~PyMooseBase()
 {
 }
 
-PyMooseNeutral::PyMooseNeutral(Id id)
+_pymoose_Neutral::_pymoose_Neutral(Id id)
 {
     this->id_ = new Id(id);
 }
-PyMooseNeutral::~PyMooseNeutral()
+_pymoose_Neutral::~_pymoose_Neutral()
 {
     delete this->id_;
 }
@@ -80,18 +80,18 @@ extern "C" {
     static PyObject * MooseError;    
     static PyObject * __shell;
     static PyObject * moose_test_dummy(PyObject* dummy, PyObject* args);
-    // static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
-    static PyObject * _PyMooseNeutral_new(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
+    // static PyObject * _PyMooseNeutral_new(PyObject * dummy, PyObject * args);
     /**
      * Method definitions.
      */
     static PyMethodDef MooseMethods[] = {
         {"test_dummy",  moose_test_dummy, METH_VARARGS,
          "A test function."},
-        // {"_pymoose_Neutral_new", _pymoose_Neutral_new, METH_VARARGS,
-        //  "Create a new MOOSE element."},
-        {"_PyMooseNeutral_new", _PyMooseNeutral_new, METH_VARARGS,
+        {"_pymoose_Neutral_new", _pymoose_Neutral_new, METH_VARARGS,
          "Create a new MOOSE element."},
+        // {"_PyMooseNeutral_new", _PyMooseNeutral_new, METH_VARARGS,
+        //  "Create a new MOOSE element."},
         {NULL, NULL, 0, NULL}        /* Sentinel */
     };
 
@@ -116,7 +116,7 @@ extern "C" {
         __shell = (PyObject *)(getShell());
         Py_INCREF(__shell);
     }
-    
+#if 0    
     static PyMooseNeutral * PyMooseNeutral_new(PyObject * dummy, PyObject * args)
     {
         const char * type;
@@ -130,7 +130,7 @@ extern "C" {
         if (length <= 0){
             return NULL;
         }
-        Id id;
+        Id id = Id();
         if (length > 1){
             if (str_path[length - 1] == '/'){
                 str_path = str_path.substr(0, length-1);
@@ -165,7 +165,7 @@ extern "C" {
         PyObject* obj = (PyObject*)PyMooseNeutral_new(dummy, args);
         return obj;
     }
-#if 0
+#endif
     static PyObject* _pymoose_Neutral_new(PyObject * dummy, PyObject * args)
     {
         const char * type;;
@@ -173,7 +173,8 @@ extern "C" {
         PyObject * dims = NULL;
         if (!PyArg_ParseTuple(args, "ss|O", &type, &path, &dims))
             return NULL;
-        string trimmed_path = trim(string(path));
+        string trimmed_path = path;
+        trimmed_path = trim(trimmed_path);
         size_t length = trimmed_path.length();
         if (length <= 0){
             PyErr_SetString(PyExc_ValueError, "path must be non-empty string.");
@@ -188,11 +189,11 @@ extern "C" {
         if ((length > 1) && (trimmed_path[length - 1] == '/')){
             trimmed_path = trimmed_path.substr(0, length-1);
         }
-        if (trimmed_path[0] != '/'){ // Convert relative path to absolute path
-            Id cwe = getShell()->getCwe();
-            trimmed_path = cwe.path() + trimmed_path;
-            length = trimmed_path.length();
-        }
+        // if (trimmed_path[0] != '/'){ // Convert relative path to absolute path
+        //     Id cwe = getShell()->getCwe();
+        //     trimmed_path = cwe.path() + trimmed_path;
+        //     length = trimmed_path.length();
+        // }
         Id id = Id(trimmed_path);
         if (length > 1 && id == Id()) { // object does not exist
             size_t pos = trimmed_path.rfind('/');
@@ -217,7 +218,6 @@ extern "C" {
         }
         return (PyObject*)(new _pymoose_Neutral(id));
     }
-#endif
 
 } // end extern "C"
 
