@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Sat Mar 12 18:43:55 2011 (+0530)
+// Last-Updated: Sat Mar 12 19:01:24 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 95
+//     Update #: 96
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -48,11 +48,11 @@ class PyMooseBase
 /**
  * Wraps Neutral.
  */
-class _pymoose_Neutral: public PyMooseBase
+class PyMooseNeutral: public PyMooseBase
 {
   public:
-    _pymoose_Neutral(Id id);
-    ~_pymoose_Neutral();
+    PyMooseNeutral(Id id);
+    ~PyMooseNeutral();
     
   private:
     const Id* id_;
