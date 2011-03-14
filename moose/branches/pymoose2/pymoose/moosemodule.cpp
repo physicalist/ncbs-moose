@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Sun Mar 13 00:16:22 2011 (+0530)
+// Last-Updated: Mon Mar 14 12:35:39 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 460
+//     Update #: 607
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -49,9 +49,67 @@
 #include "ReduceMax.h"
 #include "Shell.h"
 #include "../utility/strutil.h"
+#include "../scheduling/Tick.h"
+#include "../scheduling/TickMgr.h"
+#include "../scheduling/TickPtr.h"
+#include "../scheduling/Clock.h"
+
+extern Id init(int argc, char **argv);
+extern void nonMpiTests(Shell *);
+extern void mpiTests();
+extern void processTests(Shell *);
+extern void regressionTests();
 
 using namespace std;
 using namespace pymoose;
+
+static Shell * getShell()
+{
+    static Shell * shell = NULL;
+    if (!shell){
+        // Going with all these dafaults to start with
+        int isSingleThreaded = 1;
+        int numCores = 1;
+        int numNodes = 1;
+        int myNode = 0;
+        bool isInfinite = 0;
+        
+        cout << "getShell: Creating the shell instance" << endl;
+
+        // Now it is copied over from main.cpp: init()
+        Msg::initNull();
+        Id shellId;
+        vector <unsigned int> dims;
+        dims.push_back(1);
+        Element * shellE = new Element(shellId, Shell::initCinfo(), "root", dims, 1);
+        Id clockId = Id::nextId();
+        shell = reinterpret_cast<Shell*>(shellId.eref().data());
+        shell->setShellElement(shellE);
+        shell->setHardware(isSingleThreaded, numCores, numNodes, myNode);
+        shell->loadBalance();
+
+        new Element(clockId, Clock::initCinfo(), "clock", dims, 1);
+        Id tickId( 2 );
+        assert(tickId() != 0);
+	assert( tickId.value() == 2 );
+	assert( tickId()->getName() == "tick" ) ;
+
+	assert ( shellId == Id() );
+	assert( clockId == Id( 1 ) );
+	assert( tickId == Id( 2 ) );
+
+	/// Sets up the Elements that represent each class of Msg.
+	Msg::initMsgManagers();
+
+	shell->connectMasterMsg();
+
+	Shell::adopt( shellId, clockId );
+	while ( isInfinite ) // busy loop for debugging under gdb and MPI.
+            ;        
+    }
+    return shell;    
+}
+
 PyMooseBase::PyMooseBase()
 {
 }
@@ -59,29 +117,25 @@ PyMooseBase::~PyMooseBase()
 {
 }
 
-_pymoose_Neutral::_pymoose_Neutral(Id id)
+pymoose_Neutral::pymoose_Neutral(Id id)
 {
     this->id_ = new Id(id);
 }
-_pymoose_Neutral::~_pymoose_Neutral()
+pymoose_Neutral::~pymoose_Neutral()
 {
     delete this->id_;
 }
+// Class definitions end here
 
-Shell* getShell()
-{
-    static Shell* shell = NULL;
-    if (shell == NULL)
-        shell = new Shell();
-    return shell;
-}
 
+// 
+// C wrappers for C++ classes
+// This is used by Python
 extern "C" {
     static PyObject * MooseError;    
-    static PyObject * __shell;
     static PyObject * moose_test_dummy(PyObject* dummy, PyObject* args);
     static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
-    // static PyObject * _PyMooseNeutral_new(PyObject * dummy, PyObject * args);
+    static PyObject* __shell;
     /**
      * Method definitions.
      */
@@ -105,74 +159,29 @@ extern "C" {
     }
 
     /* module initialization */
-    PyMODINIT_FUNC init_moose(void)
+    PyMODINIT_FUNC init_moose()
     {
+        cout << "init_moose: start" << endl;
         PyObject *moose_module = Py_InitModule("_moose", MooseMethods);
         if (moose_module == NULL)
             return;
         MooseError = PyErr_NewException("moose.error", NULL, NULL);
         Py_INCREF(MooseError);
         PyModule_AddObject(moose_module, "error", MooseError);
-        __shell = (PyObject *)(getShell());
+        __shell = (PyObject*)getShell();
         Py_INCREF(__shell);
-    }
-#if 0    
-    static PyMooseNeutral * PyMooseNeutral_new(PyObject * dummy, PyObject * args)
-    {
-        const char * type;
-        const char * path;
-        PyObject * dims;
-        if (!PyArg_ParseTuple(args, "ssO", &type, &path, &dims))
-            return NULL;
-        string str_path = string(path);
-        str_path = trim(str_path);
-        size_t length = str_path.length();
-        if (length <= 0){
-            return NULL;
-        }
-        Id id = Id();
-        if (length > 1){
-            if (str_path[length - 1] == '/'){
-                str_path = str_path.substr(0, length-1);
-            }
-            id = Id(str_path);
-
-            if (id == Id()) { // object does not exist
-                size_t pos = str_path.rfind('/');
-                string parent_path = str_path.substr(0, pos);
-                Id parent_id = Id(parent_path);
-                string name = str_path.substr(pos);
-
-                vector<unsigned int> vec_dims;                
-                if (PySequence_Check(dims)){
-                    Py_ssize_t len = PySequence_Length(dims);
-                    for (Py_ssize_t ii = 0; ii < len; ++ ii){
-                        PyObject* dim = PySequence_GetItem(dims, ii);
-                        unsigned int dim_value;
-                        if (PyArg_ParseTuple(dim, "I", &dim_value)){
-                            vec_dims.push_back(dim_value);
-                        }
-                    }
-                }
-                id = getShell()->doCreate(string("Neutral"), Id(parent_path), string(name), vector<unsigned int>(vec_dims));
-            }
-        }
-        return new PyMooseNeutral(id);
+        PyModule_AddObject(moose_module, "__shell", __shell);
+        cout << "Finishing init_moose." << endl;
     }
 
-    static PyObject* _PyMooseNeutral_new(PyObject* dummy, PyObject* args)
-    {
-        PyObject* obj = (PyObject*)PyMooseNeutral_new(dummy, args);
-        return obj;
-    }
-#endif
-    static PyObject* _pymoose_Neutral_new(PyObject * dummy, PyObject * args)
+    pymoose_Neutral* pymoose_Neutral_new(PyObject * dummy, PyObject * args)
     {
         const char * type;;
         const char * path;
         PyObject * dims = NULL;
         if (!PyArg_ParseTuple(args, "ss|O", &type, &path, &dims))
             return NULL;
+        cout << "Params: " << type << " " << path << endl;
         string trimmed_path = path;
         trimmed_path = trim(trimmed_path);
         size_t length = trimmed_path.length();
@@ -194,7 +203,9 @@ extern "C" {
         //     trimmed_path = cwe.path() + trimmed_path;
         //     length = trimmed_path.length();
         // }
-        Id id = Id(trimmed_path);
+        Id id = Id::nextId();
+        cout << "Trimmed path " << trimmed_path << endl;
+	id = Id(trimmed_path);
         if (length > 1 && id == Id()) { // object does not exist
             size_t pos = trimmed_path.rfind('/');
             string parent_path = trimmed_path.substr(0, pos);
@@ -214,9 +225,17 @@ extern "C" {
             if (vec_dims.empty()){
                 vec_dims.push_back(1);
             }
-            id = getShell()->doCreate(trimmed_type, Id(parent_path), name, vec_dims);
+            id = getShell()->doCreate(string(trimmed_type), Id(parent_path), string(name), vector<unsigned int>(vec_dims));
         }
-        return (PyObject*)(new _pymoose_Neutral(id));
+        cout << "Returning from pymoose_Neutral_new" << endl;
+        return new pymoose_Neutral(id);
+    }
+
+    static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args)
+    {
+        cout << "In _pymoose_Neutral_new(PyObject * dummy, PyObject * args)" << endl;
+        return (PyObject *)(pymoose_Neutral_new(dummy, args));
+        cout << "Finished _pymoose_Neutral_new(PyObject * dummy, PyObject * args)" << endl;
     }
 
 } // end extern "C"
@@ -224,6 +243,8 @@ extern "C" {
 
 int main(int argc, char* argv[])
 {
+    cout << "main: argc= " << argc << endl;
+    Shell * shell = getShell();
     Py_SetProgramName(argv[0]);
     Py_Initialize();
     init_moose();
