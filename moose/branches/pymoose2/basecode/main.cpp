@@ -101,6 +101,7 @@ bool quitFlag = 0;
 
 Id init( int argc, char** argv )
 {
+    cout << "init( " << argc << endl;
 	int numCores = getNumCores();
 	int numNodes = 1;
 	int myNode = 0;
@@ -204,7 +205,7 @@ Id init( int argc, char** argv )
 	
 	while ( isInfinite ) // busy loop for debugging under gdb and MPI.
 		;
-
+        cout << "init: Returning shellId " << endl;
 	return shellId;
 }
 

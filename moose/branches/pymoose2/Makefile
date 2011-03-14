@@ -282,4 +282,4 @@ default: moose mpp
 
 clean:
 	@(for i in $(CLEANSUBDIR) ; do $(MAKE) -C $$i clean;  done)
-	-rm -rf moose mpp core.* DOCS/html *.so *.py *.pyc
+	-rm -rf moose mpp core.* DOCS/html *.so *.pyc
