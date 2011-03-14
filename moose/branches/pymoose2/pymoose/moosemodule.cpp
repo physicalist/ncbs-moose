@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Mar 14 14:30:17 2011 (+0530)
+// Last-Updated: Mon Mar 14 17:50:57 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 619
+//     Update #: 670
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -123,6 +123,7 @@ pymoose_Neutral::pymoose_Neutral(Id id)
 }
 pymoose_Neutral::~pymoose_Neutral()
 {
+    cout << "pymoose_Neutral::~pymoose_Neutral()" << endl;
     delete this->id_;
 }
 // Class definitions end here
@@ -135,6 +136,7 @@ extern "C" {
     static PyObject * MooseError;    
     static PyObject * moose_test_dummy(PyObject* dummy, PyObject* args);
     static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_delete(PyObject * dummy, PyObject * args);
     // static PyObject* __shell;
     /**
      * Method definitions.
@@ -144,6 +146,8 @@ extern "C" {
          "A test function."},
         {"_pymoose_Neutral_new", _pymoose_Neutral_new, METH_VARARGS,
          "Create a new MOOSE element."},
+        {"_pymoose_Neutral_delete", _pymoose_Neutral_delete, METH_VARARGS,
+         "Delete MOOSE element."},
         // {"_PyMooseNeutral_new", _PyMooseNeutral_new, METH_VARARGS,
         //  "Create a new MOOSE element."},
         {NULL, NULL, 0, NULL}        /* Sentinel */
@@ -221,14 +225,39 @@ extern "C" {
             id = getShell()->doCreate(string(trimmed_type), Id(parent_path), string(name), vector<unsigned int>(vec_dims));
         }
         cout << "Returning from pymoose_Neutral_new" << endl;
-        return new pymoose_Neutral(id);
+        pymoose_Neutral* ret = new pymoose_Neutral(id);
+        printf("Address of %s: %p\n", path, (void*)ret);
+        return ret;
     }
 
     static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args)
     {
         cout << "In _pymoose_Neutral_new(PyObject * dummy, PyObject * args)" << endl;
-        return (PyObject *)(pymoose_Neutral_new(dummy, args));
+        PyObject * ret = (PyObject *)(pymoose_Neutral_new(dummy, args));
+        // Py_INCREF(ret);
         cout << "Finished _pymoose_Neutral_new(PyObject * dummy, PyObject * args)" << endl;
+        return ret;
+    }
+
+    void pymoose_Neutral_delete(PyObject* dummy, PyObject* object)
+    {
+        cout << "In nonstatic delete: " << object << endl;
+        pymoose_Neutral * moose_object = reinterpret_cast<pymoose_Neutral*>(object);
+        printf("Deleting: %p\n", (void*)moose_object);        
+        delete moose_object;
+        cout << "Finished nonstatic delete" << endl;
+    }
+
+    static PyObject * _pymoose_Neutral_delete(PyObject * dummy, PyObject * args)
+    {
+        cout << "In _pymoose_Neutral_delete" << endl;
+        PyObject * object = NULL;
+        if (!PyArg_ParseTuple(args, "O", &object)){
+                return NULL;
+        }
+        // Py_DECREF(object);
+        pymoose_Neutral_delete(dummy, object);
+        Py_RETURN_NONE;
     }
 
 } // end extern "C"
