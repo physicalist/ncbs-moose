@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Mar 15 16:09:27 2011 (+0530)
+// Last-Updated: Tue Mar 15 17:46:42 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 690
+//     Update #: 761
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -127,10 +127,6 @@ pymoose_Neutral::~pymoose_Neutral()
     delete this->id_;
 }
 
-string pymoose_Neutral::id_str()
-{
-    return Id::id2str(*(this->id_));
-}
 // Class definitions end here
 
 
@@ -142,7 +138,8 @@ extern "C" {
     static PyObject * moose_test_dummy(PyObject* dummy, PyObject* args);
     static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_delete(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_id_str(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_id(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_path(PyObject* dummy, PyObject * args);
     // static PyObject* __shell;
     /**
      * Method definitions.
@@ -154,8 +151,10 @@ extern "C" {
          "Create a new MOOSE element."},
         {"_pymoose_Neutral_delete", _pymoose_Neutral_delete, METH_VARARGS,
          "Delete MOOSE element."},
-        {"_pymoose_Neutral_id_str", _pymoose_Neutral_id_str, METH_VARARGS,
-         "return string representation of the id of the element."},
+        {"_pymoose_Neutral_id", _pymoose_Neutral_id, METH_VARARGS,
+         "return integer representation of the id of the element."},
+        {"_pymoose_Neutral_path", _pymoose_Neutral_path, METH_VARARGS,
+         "return path of the element."},
         {NULL, NULL, 0, NULL}        /* Sentinel */
     };
 
@@ -202,34 +201,47 @@ extern "C" {
             PyErr_SetString(PyExc_ValueError, "type must be non-empty string.");
             return NULL;
         }        
-        
+
+        //  paths ending with '/' should raise exception
         if ((length > 1) && (trimmed_path[length - 1] == '/')){
-            trimmed_path = trimmed_path.substr(0, length-1);
+            PyErr_SetString(PyExc_ValueError, "Non-root path must not end with '/'");
+            return NULL;
         }
-        Id id = Id::nextId();
-        cout << "Trimmed path " << trimmed_path << endl;
-	id = Id(trimmed_path);
-        if (length > 1 && id == Id()) { // object does not exist
+	Id id = Id(trimmed_path);
+        if ((id == Id()) && (trimmed_path != "/")) { // object does not exist
+            cout << "Creating new object " << endl;
             size_t pos = trimmed_path.rfind('/');
-            string parent_path = trimmed_path.substr(0, pos);
-            Id parent_id = Id(parent_path);
-            string name = trimmed_path.substr(pos);
+            string parent_path;
+            string name;
+            if (pos != string:: npos){
+                parent_path = trimmed_path.substr(0, pos);
+                name = trimmed_path.substr(pos);
+            } else {
+                parent_path = getShell()->getCwe().path();
+                name = trimmed_path;
+            }
+            cout << "parent_path : " << parent_path << endl;
+            cout << "name: " << name << endl;
             vector <unsigned int> vec_dims;
             if (dims!= NULL && PySequence_Check(dims)){
                 Py_ssize_t len = PySequence_Length(dims);
+                cout << "Length of dimension sequence " << len << endl;
                 for (Py_ssize_t ii = 0; ii < len; ++ ii){
                     PyObject* dim = PySequence_GetItem(dims, ii);
-                    unsigned int dim_value;
-                    if (PyArg_ParseTuple(dim, "I", &dim_value)){
-                        vec_dims.push_back(dim_value);
+                    long dim_value = PyInt_AsLong(dim);
+                    if (dim_value == -1 && PyErr_Occurred()){
+                        return NULL;
                     }
-                }
+                    cout << "dimension: " << dim_value << endl;
+                    vec_dims.push_back((unsigned int)dim_value);
+                }                
             }
             if (vec_dims.empty()){
                 vec_dims.push_back(1);
             }
             id = getShell()->doCreate(string(trimmed_type), Id(parent_path), string(name), vector<unsigned int>(vec_dims));
         }
+        cout << "id: " << id << ", path: " << id.path() << endl;
         cout << "Returning from pymoose_Neutral_new" << endl;
         pymoose_Neutral* ret = new pymoose_Neutral(id);
         printf("Address of %s: %p\n", path, (void*)ret);
@@ -265,18 +277,28 @@ extern "C" {
         pymoose_Neutral_delete(dummy, object);
         Py_RETURN_NONE;
     }
-    string pymoose_Neutral_id_str(pymoose_Neutral * obj)
+    static PyObject* _pymoose_Neutral_id(PyObject * dummy, PyObject * args)
     {
-        return obj->id_str();
+        PyObject * obj = NULL;
+        pymoose_Neutral * instance = NULL;
+        if (!PyArg_ParseTuple(args, "O", &obj)){
+            return NULL;
+        }
+        instance = reinterpret_cast<pymoose_Neutral*>(obj);
+        cout << "_pymoose_Neutral_id: " << instance->id_ << " val: " << instance->id_->value() << endl;
+        unsigned int id = instance->id_->value();
+        PyObject * ret = Py_BuildValue("I", id);
+        return ret;
     }
-    static PyObject* _pymoose_Neutral_id_str(PyObject * dummy, PyObject * args)
+
+    static PyObject * _pymoose_Neutral_path(PyObject * dummy, PyObject * args)
     {
         PyObject * obj = NULL;
         if (!PyArg_ParseTuple(args, "O", &obj)){
             return NULL;
         }
-        string id(pymoose_Neutral_id_str((pymoose_Neutral*)obj));
-        PyObject * ret = Py_BuildValue("s", id.c_str());
+        string path = ((pymoose_Neutral*)obj)->id_->path();
+        PyObject * ret = Py_BuildValue("s", path.c_str());
         return ret;
     }
 
