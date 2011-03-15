@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Sat Mar 12 14:02:40 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Mar 14 14:00:59 2011 (+0530)
+# Last-Updated: Tue Mar 15 16:44:01 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 16
+#     Update #: 31
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -41,7 +41,15 @@ class Neutral(object):
             except TypeError:
                 dims = [1]
         self.__dont_touch_me = _moose._pymoose_Neutral_new('Neutral', path, dims)
-        
 
+    # def __del__(self):
+    #     _moose._pymoose_Neutral_delete(self.__dont_touch_me)
+    def __get_id(self):
+        return _moose._pymoose_Neutral_id(self.__dont_touch_me)
+    def __get_path(self):
+        return _moose._pymoose_Neutral_path(self.__dont_touch_me)
+    id = property(__get_id) # moose Id
+    path = property(__get_path)
+        
 # 
 # moose.py ends here
