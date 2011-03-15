@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Mar 14 17:50:57 2011 (+0530)
+// Last-Updated: Tue Mar 15 16:09:27 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 670
+//     Update #: 690
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -126,6 +126,11 @@ pymoose_Neutral::~pymoose_Neutral()
     cout << "pymoose_Neutral::~pymoose_Neutral()" << endl;
     delete this->id_;
 }
+
+string pymoose_Neutral::id_str()
+{
+    return Id::id2str(*(this->id_));
+}
 // Class definitions end here
 
 
@@ -137,6 +142,7 @@ extern "C" {
     static PyObject * moose_test_dummy(PyObject* dummy, PyObject* args);
     static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_delete(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_id_str(PyObject * dummy, PyObject * args);
     // static PyObject* __shell;
     /**
      * Method definitions.
@@ -148,8 +154,8 @@ extern "C" {
          "Create a new MOOSE element."},
         {"_pymoose_Neutral_delete", _pymoose_Neutral_delete, METH_VARARGS,
          "Delete MOOSE element."},
-        // {"_PyMooseNeutral_new", _PyMooseNeutral_new, METH_VARARGS,
-        //  "Create a new MOOSE element."},
+        {"_pymoose_Neutral_id_str", _pymoose_Neutral_id_str, METH_VARARGS,
+         "return string representation of the id of the element."},
         {NULL, NULL, 0, NULL}        /* Sentinel */
     };
 
@@ -258,6 +264,20 @@ extern "C" {
         // Py_DECREF(object);
         pymoose_Neutral_delete(dummy, object);
         Py_RETURN_NONE;
+    }
+    string pymoose_Neutral_id_str(pymoose_Neutral * obj)
+    {
+        return obj->id_str();
+    }
+    static PyObject* _pymoose_Neutral_id_str(PyObject * dummy, PyObject * args)
+    {
+        PyObject * obj = NULL;
+        if (!PyArg_ParseTuple(args, "O", &obj)){
+            return NULL;
+        }
+        string id(pymoose_Neutral_id_str((pymoose_Neutral*)obj));
+        PyObject * ret = Py_BuildValue("s", id.c_str());
+        return ret;
     }
 
 } // end extern "C"
