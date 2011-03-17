@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 16 17:20:12 2011 (+0530)
+// Last-Updated: Thu Mar 17 17:19:43 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 893
+//     Update #: 1040
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -129,7 +129,141 @@ pymoose_Neutral::~pymoose_Neutral()
 
 // Class definitions end here
 
+char shorttype(string ftype){
+    static map<string, char> typemap;
+    if (typemap.empty()){
+        typemap["char"] = 'c';
+        typemap["i"] = 'i';
+        typemap["int"] = 'i';
+        typemap["long"] = 'i';        
+        typemap["f"] = 'f';
+        typemap["float"] = 'f';
+        typemap["double"] = 'f';
+        typemap["ObjId"] = 'o';
+        typemap["O"] = 'o';
+        typemap["Object"] = 'o';
+        typemap["short"] = 'i';
+        typemap["s"] = 's';
+        typemap["string"] = 's';
+        typemap["str"] = 's';
+        typemap["unsigned"] = 'u';
+        typemap["unsigned int"] = 'u';
+        typemap["uint"] = 'u';
+        typemap["int_vector"] = 'v';
+        typemap["float_vector"] = 'w';
+        typemap["string_vector"] = 'x';
+        typemap["double_vector"] = 'w';
+        typemap["id_vector"] = 'y';
+        typemap["oid_vector"] = 'z';
+    }
+    return typemap[ftype];
+}
 
+PyObject * pymoose_Neutral_getField(pymoose_Neutral * instance, int index, string fname, string ftype)
+{
+    switch(shorttype(ftype)){
+        case 'c':
+            {
+                char ret = Field< char >::get(ObjId(*(instance->id_), index), fname);
+                return Py_BuildValue("c", ret);
+            }
+        case 'i':
+            {
+                int ret = Field< int >::get(ObjId(*(instance->id_), index), fname);
+                return Py_BuildValue("i", ret);
+            }
+        case 'f':
+            {
+                double ret = Field< double >::get(ObjId(*(instance->id_), index), fname);
+                return Py_BuildValue("f", ret);
+            }
+        case 's':
+            {
+                const char * ret = Field< string >::get(ObjId(*(instance->id_), index), fname).c_str();
+                return Py_BuildValue("s", ret);
+            }
+            break;
+        case 'u':
+            {
+                unsigned long ret = Field<unsigned int>::get(ObjId(*(instance->id_), index), fname);
+                return Py_BuildValue("i", ret);
+            }
+            break;
+        case 'v':
+            {
+                vector<int> ret;
+                Field<int>::getVec(Id(*(instance->id_)), string(fname), ret);
+                PyObject * pyret = PyTuple_New((Py_ssize_t)ret.size());
+                for (int ii = 0; ii < ret.size(); ++ ii){
+                    if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyInt_FromLong(ret[ii])))
+                        return NULL;
+                }
+                return pyret;
+            }
+        case 'w':
+            {
+                vector<double> ret;
+                Field<double>::getVec(Id(*(instance->id_)), string(fname), ret);
+                PyObject * pyret = PyTuple_New((Py_ssize_t)ret.size());
+                for (int ii = 0; ii < ret.size(); ++ ii){
+                    if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyFloat_FromDouble(ret[ii])))
+                        return NULL;
+                }
+                return pyret;
+            }
+        default:
+            {
+                PyErr_SetString(PyExc_TypeError, string("Invalid field type: " + ftype).c_str());
+                return NULL;
+            }
+    };
+}
+    
+PyObject * pymoose_Neutral_setField(pymoose_Neutral * instance, int index, string fname, string ftype, PyObject * value)
+{
+    switch(shorttype(ftype)){
+        case 'c':
+            {
+                char * c_val = PyString_AsString(value);
+                if (c_val && (PyString_Size(value)>0)){
+                    Field<char>::set(ObjId(*(instance->id_), index), fname, c_val[0]);
+                } else {
+                    return NULL;
+                }
+            break;
+            }                
+        case 'i':
+            {
+                int c_val = PyInt_AsLong(value);
+                if ((c_val == -1) && PyErr_Occurred()){
+                    return NULL;
+
+                }
+                Field<int>::set(ObjId(*(instance->id_), index), fname, c_val);
+                break;
+            }
+        case 'f':
+            {
+                double c_val = PyFloat_AsDouble(value);
+                Field<double>::set(ObjId(*(instance->id_), index), fname, c_val);
+                break;
+            }
+        case 's':
+            {
+                char * c_val = PyString_AsString(value);
+                if (c_val){
+                    Field<string>::set(ObjId(*(instance->id_), index), string(fname), string(c_val));
+                } else {
+                    return NULL;
+                }
+                break;
+            }
+        default:
+            PyErr_SetString(PyExc_TypeError, string("Invalid field type: " + ftype).c_str());
+            return NULL;            
+    };
+    Py_RETURN_NONE;
+}
 // 
 // C wrappers for C++ classes
 // This is used by Python
@@ -319,55 +453,27 @@ extern "C" {
         }
         string ftype_str(ftype);
         string field_str(field);
-        if (ftype_str == "ObjId"){
-            ObjId objId = Field< ObjId >::get(ObjId(*(instance->id_), index), field_str);
-        } else if (ftype_str == "int"){
-            int ret = Field< int >::get(ObjId(*(instance->id_), index), field_str);
-            return Py_BuildValue("i", ret);
-        } else if (ftype_str == "float" || ftype_str == "double"){
-            double ret = Field< double >::get(ObjId(*(instance->id_), index), field_str);
-            return Py_BuildValue("f", ret);
-        } else if (ftype_str == "str" || ftype_str == "string"){
-            string ret = Field<string>::get(ObjId(Id(*(instance->id_)), index), field_str);
-            return Py_BuildValue("s", ret.c_str());
-        } else if (ftype_str == "int_vector" ){
-            vector<int> ret;
-            PyObject * pyret;
-            string field_str(field); 
-            Field< int >::getVec(Id(*(instance->id_)), field_str, ret);
-            pyret = PyTuple_New((Py_ssize_t)ret.size());
-            for (int ii = 0; ii < ret.size(); ++ ii){
-                if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyInt_FromLong(ret[ii])))
-                    return NULL;
-            }
-            return pyret;
-        } else if (ftype_str == "float_vector" || ftype_str == "double_vector"){
-            vector<double> ret;
-            PyObject * pyret;
-            Field< double >::getVec(Id(*(instance->id_)), field_str, ret);
-            pyret = PyTuple_New((Py_ssize_t)ret.size());
-            for (int ii = 0; ii < ret.size(); ++ ii){
-                if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyFloat_FromDouble(ret[ii])))
-                    return NULL;
-            }
-            return pyret;
-        }else if (ftype_str == "string_vector"){
-            vector<string> ret;
-            PyObject * pyret;
-            Field< string >::getVec(Id(*(instance->id_)), field_str, ret);
-            pyret = PyTuple_New((Py_ssize_t)ret.size());
-            for (int ii = 0; ii < ret.size(); ++ ii){
-                if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyString_FromString(ret[ii].c_str())))
-                    return NULL;
-            }
-            return pyret;
-        }
-        Py_RETURN_NONE;
+        return pymoose_Neutral_getField(instance, index, field_str, ftype_str);
     }
     static PyObject * _pymoose_Neutral_setattr(PyObject * dummy, PyObject * args)
     {
-        cout << "Not yet implemented" << endl;
-        Py_RETURN_NONE;
+        PyObject * obj = NULL;
+        PyObject * value;
+        char * field;
+        char * ftype;
+        int index = 0;
+        if (!PyArg_ParseTuple(args, "OssO|i", &obj, &field, &ftype, &value, &index)){
+            return NULL;
+        }
+        pymoose_Neutral * instance = reinterpret_cast<pymoose_Neutral*>(obj);
+        if (!instance){
+            PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
+            return NULL;
+        }
+        string field_str(field);
+        string ftype_str(ftype);
+        //--- todo - finish ---//
+        return pymoose_Neutral_setField(instance, index, field, ftype, value);
     }
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args)
     {
@@ -384,7 +490,6 @@ extern "C" {
         Py_DECREF(obj);
         Py_RETURN_NONE;
     }
-
 } // end extern "C"
 
 

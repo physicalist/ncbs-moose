@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Sat Mar 12 14:02:40 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Mar 16 17:59:22 2011 (+0530)
+# Last-Updated: Thu Mar 17 17:16:53 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 44
+#     Update #: 64
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -41,6 +41,7 @@ class Neutral(object):
             except TypeError:
                 dims = [1]
         self.__ptr = _moose._pymoose_Neutral_new(className, path, dims)
+        
 
     # def __del__(self):
     #     _moose._pymoose_Neutral_delete(self.__ptr)
@@ -53,6 +54,23 @@ class Neutral(object):
     def __get_class(self):
         return _moose._pymoose_Neutral_getattr(self.__ptr, 'class', 'string')
     className = property(__get_class)
+
+    def _getattr(self, fname, ftype, index=0):
+        return _moose._pymoose_Neutral_getattr(self.__ptr, fname, ftype, index)
+
+    def _setattr(self, fname, ftype, value, index=0):
+        return _moose._pymoose_Neutral_setattr(self.__ptr, fname, ftype, value, index)
+
+class IntFire(Neutral):
+    def __init__(self, path, dims=[1]):
+        Neutral.__init__(self, path, dims, 'IntFire')
+
+    def getVm(self, index=0):
+        return self._getattr('Vm', 'f', index)
+
+    def setVm(self, value, index=0):
+        return self._setattr('Vm', 'f', value, index)
+    
         
 # 
 # moose.py ends here
