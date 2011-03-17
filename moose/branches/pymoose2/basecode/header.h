@@ -83,12 +83,15 @@ class FuncBarrier;
 #include "SrcFinfo.h"
 #include "FieldDataHandlerBase.h"
 #include "FieldDataHandler.h"
+
+extern DestFinfo* receiveGet();
 #include "SetGet.h"
 #include "OpFunc.h"
 #include "EpFunc.h"
 #include "UpFunc.h"
 #include "ProcOpFunc.h"
 #include "ValueFinfo.h"
+#include "LookupValueFinfo.h"
 #include "SharedFinfo.h"
 #include "FieldElementFinfo.h"
 #include "../shell/Neutral.h"

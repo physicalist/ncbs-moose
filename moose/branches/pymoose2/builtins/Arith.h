@@ -33,6 +33,9 @@ class Arith
 		void setOutput( double v );
 		double getOutput() const;
 
+		void setIdentifiedArg( unsigned int i, double val );
+		double getIdentifiedArg( unsigned int i ) const;
+
 		////////////////////////////////////////////////////////////////
 		// Dest Func
 		////////////////////////////////////////////////////////////////
@@ -40,6 +43,8 @@ class Arith
 		void arg1( double v );
 		void arg2( double v );
 		void arg3( double v );
+
+		void arg1x2( double arg1, double arg2 );
 
 		////////////////////////////////////////////////////////////////
 		// Helper func for tests

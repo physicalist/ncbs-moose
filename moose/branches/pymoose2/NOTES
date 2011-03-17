@@ -11660,3 +11660,175 @@ For the lab people to use: added in some documentation  in Shell.h and in
 the Docs subdir.
 Checkin 2508.
 
+============================================================================
+11 March 2011
+Added isRunning and cwe MOOSE fields to Shell.
+Checkin 2516.
+
+Next, provide some message access functions. Two approaches: One to put it
+in the Neutral fields. Two, to provide a shell function to do it. I think the
+Neutral is the cleanest. Should just return a vector of ObjIds that match
+criteria, these being the MsgHandlers.
+
+Need to figure out how to run doxygen.
+
+In the meantime, implementing message traversal operations.
+Still to compile.
+
+============================================================================
+12 March 2011
+Compiled Neutral::getOutgoingMsgs and getIncomingMsgs as new fields.
+getMsgTargetIds is compiled but I don't yet have a way to specify
+'get' calls with an argument for the field name to which the
+Msg is to connect.
+Also need to put in unit tests. Setting those up.
+
+============================================================================
+13 March 2011
+First set of tests, for outgoing msgs, fine. Incoming are confusing as it
+reports 7 msgs rather than 1 I was expecting. Turns out that I had 
+misunderstood the usage of the Element::m_ vector, which actually keeps
+track of all msgs. Also some cleanup needed to eliminate the AssignmentMsg
+from the returned msg lists, as it comes and goes and its targets change
+all the time. Now clears a good set of tests.
+
+Should create an Element for ClassFinfos, as I had earlier. Useful for
+looking up Finfo lists, documentation, etc. Showfield would also find this
+useful.
+
+============================================================================
+14 March 2011.
+
+Checkin 2524 with yesterday's messaging inspection fields, unit tests, and
+docs.
+
+Subha confirms that it would be useful to get a list of targets connected to
+a specific field on an object.
+
+To make this happen I need to have a 'get' call which takes an argument for
+lookup. This will be generally useful, for example in table lookups.
+
+Put in skeleton code for this. The OpFunc and SetGet template parts are
+done, but some nasty Shell code remains.
+
+Checkin 2526.
+
+This was the easy part. For the Shell code it may actually be better to go 
+with the handleSet type operations using a prepacked buffer to provide the args. 
+It would be pretty ugly to adapt the current dispatchGet and handleGet.
+
+============================================================================
+15 March
+Things to match up:
+
+Type of return value, type of Get function.
+Type of arguments, arguments in Get function (which are passed through Set).
+
+Things are taking shape. Need to make sure the new Shell::dispatchGet is
+in the header, and the old ones are out.
+
+Need to work on SetGet2 (at least) to enable setVec. Need it for the 
+LookupField. Could go further with this and have Field1, Field2, etc.
+
+First step: Get compilation and unit tests to work with the new variant of
+the 'dispatchGet' logic, which uses the Set calls.
+
+Compilation done
+Unit tests: now stuck in testAsync.cpp:1602 which is to do with
+testSetGetExtField.
+============================================================================
+16 March
+
+Found and fixed issue with extFields.
+Now clears the unit tests. Surprisingly painless for such a major change.
+Checkin 2529.
+
+Doing a recompile with MPI flags, to make sure it still works across nodes.
+OK, still works. Tested with up to (nodes X threads) = 7x2 , 4x4.
+
+Second step: Design for SetGet2::setVec. Here we need a consistent way to pass 
+in array arguments.
+Given the way the Prepacked Buffer already chunks out the indices, it is pretty
+clear: at each index we need a block of memory that has the arguments for that
+index in sequence. Everything in the downstream code is already set up to
+handle this. Just need to fill in the PrepackedBuffer suitably.
+
+Next I also need to go and fix how setVec deals with putting string vectors
+into the PrepackedBuffer.
+
+Could also ask the Prepacked buffer to provide an allocated char* buffer to put
+stuff into so I don't have to do an extra memcpy and memory allocation.
+
+Implemented SetGet2::setVec and its unit test. OK. Checkin 2530.
+
+Next: Work on LookupField, a field which has an index for every entry.
+This is proceeding, but it shows up a problem with the semantics of setting or
+getting a vector when there are 2 args: Do we treat the operation as applying
+to an array of objects, each of which gets unique arguments, or do we treat
+it as a single object entry, which has the function applied repeatedly.
+The latter case might be an array of fields on the object which get all set
+or looked up at the same time.
+
+For now I've implemented the 'set' for both options. Option 2 is done in a 
+slow, brute force manner. 'get' currently only implemented for the first option,
+scanning through an array of objects.
+
+Need to now put in unit tests for all these cases.
+Implemented the LookupValueFinfo and put it in the Arith to test in due course.
+Now compiles. Checkin 2531.
+
+Implemented unit test, clears it. Added a couple of lines to the API.txt 
+Doc file. Checkin 2532.
+
+Next: Fix the string handling of PrepackedBuffer. Done. Checkin 2535.
+
+Then: Set up fields in Neutral for accessing messages and child Elements.
+
+Working on it, the compile fails in a typically obscure way on the
+new code.
+
+============================================================================
+17 March.
+Fixed up and added unit tests for Neutral fields "msgSrc" and "msgDest"
+for getting vector of Ids of src and targets Elements of msgs to given field.
+Checkin 2536.
+
+Implemented additional Neutral inspection fields for linearSize and dimensions.
+Implemented unit tests for these within the existing 
+testShell.cpp:testSyncSynapseSize() function. Works. Checkin 2537.
+
+Updated the API document with the key Neutral fields.
+
+Next is the access to class and field info.
+Each Finfo should know
+	name
+	docs
+	Type
+	Num args ?
+	Type of each arg ?
+	
+	ValueFinfos have to identify set and get Finfos
+	SharedFinfos have to identify src and destFinfos.
+
+Clearly, Finfos will need to be individual child Elements, much like the
+	Synapse.
+
+Each Cinfo should know
+	name
+	docs
+	parent class
+	SrcFinfos
+	DestFinfos
+	ValueFinfos
+	LookupFinfos
+	SharedFinfos
+	# instances?
+
+Cinfos should be implemented as individual children of a neutral, 'classes'.
+Indexed entries would be messy.
+
+Seems I haven't put the doc string into the Cinfo. Must do.
+
+For now: Implemented the Cinfo MOOSE field stuff. Compiles, not
+yet hooked up.
+============================================================================

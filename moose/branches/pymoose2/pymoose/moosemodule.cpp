@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 17 17:19:43 2011 (+0530)
+// Last-Updated: Thu Mar 17 17:37:46 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 1040
+//     Update #: 1059
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -46,6 +46,11 @@
 #include "moosemodule.h"
 #include "header.h"
 #include "ObjId.h"
+
+#ifdef USE_MPI
+#include <mpi.h>
+#endif
+
 #include "ReduceBase.h"
 #include "ReduceMax.h"
 #include "Shell.h"
@@ -60,23 +65,70 @@ extern void nonMpiTests(Shell *);
 extern void mpiTests();
 extern void processTests(Shell *);
 extern void regressionTests();
+extern unsigned int getNumCores();
 
 using namespace std;
 using namespace pymoose;
 
-static Shell * getShell()
+static Shell * getShell(int argc, char **argv)
 {
+    // TODO: figure out what will be the expected argc/argv for MPI
+    // and put them in the argument list.
     static Shell * shell = NULL;
     if (!shell){
-        // Going with all these dafaults to start with
-        int isSingleThreaded = 1;
-        int numCores = 1;
+        // Going with all these dafaults to start with...
+        int isSingleThreaded = 0;
+        int numCores = getNumCores();
         int numNodes = 1;
         int myNode = 0;
         bool isInfinite = 0;
-        
+        int opt;
         cout << "getShell: Creating the shell instance" << endl;
+#ifdef USE_MPI
+	int provided;
+	// OpenMPI does not use argc or argv.
+	// unsigned int temp_argc = 1;
+	//MPI_Init_thread( &temp_argc, &argv, MPI_THREAD_SERIALIZED, &provided );
+	MPI_Init_thread( &argc, &argv, MPI_THREAD_SERIALIZED, &provided );
 
+	MPI_Comm_size( MPI_COMM_WORLD, &numNodes );
+	MPI_Comm_rank( MPI_COMM_WORLD, &myNode );
+	if ( provided < MPI_THREAD_SERIALIZED && myNode == 0 ) {
+		cout << "Warning: This MPI implementation does not like multithreading: " << provided << "\n";
+	}
+	// myNode = MPI::COMM_WORLD.Get_rank();
+#endif
+	/**
+	 * Here we allow the user to override the automatic identification
+	 * of processor configuration
+	 */
+	while ( ( opt = getopt( argc, argv, "shiqn:c:b:B:" ) ) != -1 ) {
+            switch ( opt ) {
+                case 's': // Single threaded mode
+                    isSingleThreaded = 1;
+                    break;
+                case 'i' : // infinite loop, used for multinode debugging, to give gdb something to attach to.
+                    isInfinite = 1;
+                    break;
+                case 'n': // Multiple nodes
+                    numNodes = atoi( optarg );
+                    break;
+                case 'c': // Multiple cores per node
+                    // Each node handles 
+                    numCores = atoi( optarg );
+                    break;
+                case 'b': // Benchmark: handle later.
+                    break;
+                case 'B': // Benchmark, dump data: handle later.
+                    break;
+                case 'q': // quit immediately after completion.
+                    quitFlag = 1;
+                    break;
+            }
+        }
+        cout << "on node " << myNode
+             << ", numNodes = " << numNodes
+             << ", numCores = " << numCores << endl;
         // Now it is copied over from main.cpp: init()
         Msg::initNull();
         Id shellId;
