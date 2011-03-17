@@ -40,15 +40,18 @@ class SetGet
 
 
 		/**
+		 * Utility function to check that the target field matches this
+		 * source type, to look up and pass back the fid, and to return
+		 * the number of targetEntries.
 		 * Tgt is passed in as the destination ObjId. May be changed inside,
 		 * if the function determines that it should be directed to a 
 		 * child Element acting as a Value.
 		 * Checks arg # and types for a 'set' call. Can be zero to 3 args.
-		 * Returns true if good. Passes back found fid.
-		 * Utility function to check that the target field matches this
-		 * source type, and to look up and pass back the fid.
+		 * Returns # of tgts if good. This is 0 if bad. 
+		 * Passes back found fid.
 		 */
-		bool checkSet( const string& field, ObjId& tgt, FuncId& fid ) const;
+		unsigned int checkSet( 
+			const string& field, ObjId& tgt, FuncId& fid ) const;
 
 //////////////////////////////////////////////////////////////////////
 		/**
@@ -79,14 +82,28 @@ class SetGet
 		static void dispatchSet( const ObjId& oid, FuncId fid, 
 			const char* args, unsigned int size );
 
-		/// Adapter function, just forwards to Shell::dispatchSet
+		/// Adapter function, just forwards to Shell::dispatchSetVec
 		static void dispatchSetVec( const ObjId& oid, FuncId fid, 
 			const PrepackedBuffer& arg );
 
-		/// Adapter function, just forwards to Shell::dispatchSet
+		/// Adapter function, just forwards to Shell::dispatchGet
 		static const vector< char* >& dispatchGet( 
+			const ObjId& oid, FuncId fid,
+			const PrepackedBuffer& arg );
+
+		/*
+		static const vector< char* >& dispatchGetVec( 
+			const ObjId& oid, FuncId fid,
+			const char* args, unsigned int size );
+			*/
+
+		/// Adapter function, forwards to Shell::dispatchLookupGet
+		/*
+		static const vector< char* >& dispatchLookupGet( 
 			const ObjId& oid, const string& field,
-			const SetGet* sg, unsigned int& numGetEntries );
+			char* indexBuf, const SetGet* sg, 
+			unsigned int& numGetEntries );
+			*/
 
 		///  char* buf();
 
@@ -178,9 +195,21 @@ template< class A > class SetGet1: public SetGet
 				return 0;
 
 			if ( sg.checkSet( field, tgt, fid ) ) {
-				const char* data = reinterpret_cast< const char* >( &arg[0] );
-				PrepackedBuffer pb( data, arg.size() * sizeof( A ), 
-					arg.size() ) ;
+				unsigned int totalArgSize = 0;
+				for ( unsigned int i = 0; i < arg.size(); ++i ) {
+					Conv< A > conv( arg[i] );
+					totalArgSize += conv.size();
+				}
+				char* data = new char[ totalArgSize ];
+				char* temp = data;
+
+				for ( unsigned int i = 0; i < arg.size(); ++i ) {
+					Conv< A > conv( arg[i] );
+					conv.val2buf( temp );
+					temp += conv.size();
+				}
+
+				PrepackedBuffer pb( data, totalArgSize, arg.size() ) ;
 				dispatchSetVec( tgt, fid, pb );
 				return 1;
 			}
@@ -259,14 +288,32 @@ template< class A > class Field: public SetGet1< A >
 		 */
 		static A get( const ObjId& dest, const string& field)
 		{ 
-			SetGet1< A > sg( dest );
-			string temp = "get_" + field;
-			unsigned int numRetEntries = 0;
-			const vector< char* >& ret = 
-				dispatchGet( dest, temp, &sg, numRetEntries );
-			assert( numRetEntries == 1 );
-			Conv< A > conv( ret[0] );
-			return *conv;
+			Field< A > sg( dest );
+			ObjId tgt( dest );
+			FuncId fid;
+
+			string fullFieldName = "get_" + field;
+			if ( sg.checkSet( fullFieldName, tgt, fid ) ) {
+				FuncId retFuncId = receiveGet()->getFid();
+				PrepackedBuffer buf( 
+					reinterpret_cast< const char* >( &retFuncId ), 
+					sizeof( FuncId ) );
+				const vector< char* >& ret = 
+					SetGet::dispatchGet( tgt, fid, buf );
+				if ( ret.size() == 1 ) {
+					Conv< A > conv( ret[0] );
+					return *conv;
+				}
+			}
+			return A();
+			/*
+			Conv< FuncId > args( retFuncId );
+			char *temp = new char[ args.size() ];
+			args.val2buf( temp );
+			const char* ret = dispatchGet( &sg, dest, fullFieldName, buf, 
+				args.size() );
+			delete[] temp;
+			*/
 		}
 
 		/**
@@ -274,27 +321,46 @@ template< class A > class Field: public SetGet1< A >
 		 */
 		static void getVec( Id dest, const string& field, vector< A >& vec )
 		{
-			SetGet1< A > sg( ObjId( dest, 0 ) );
-			string temp = "get_" + field;
-			unsigned int numRetEntries;
-			const vector< char* >& ret = 
-				dispatchGet( ObjId( dest, DataId::any() ), 
-					temp, &sg, numRetEntries );
+			Field< A > sg( ObjId( dest, 0 ) );
+			ObjId tgt( dest );
+			FuncId fid;
 
-			vec.resize( numRetEntries );
-			for ( unsigned int i = 0; i < numRetEntries; ++i ) {
-				Conv< A > conv( ret[i] );
-				vec[i] = *conv;
+			string fullFieldName = "get_" + field;
+			unsigned int numRetEntries = 
+				sg.checkSet( fullFieldName, tgt, fid );
+			if ( numRetEntries > 0 ) {
+				FuncId retFuncId = receiveGet()->getFid();
+				vector< FuncId > fidVec( numRetEntries, retFuncId );
+
+				PrepackedBuffer pb( 
+					reinterpret_cast< const char* >( &fidVec[0] ), 
+					numRetEntries * sizeof( FuncId ), numRetEntries );
+
+				const vector< char* >& ret = SetGet::dispatchGet( 
+					dest, fid, pb );
+
+				assert( ret.size() == numRetEntries );
+				vec.resize( numRetEntries );
+				for ( unsigned int i = 0; i < numRetEntries; ++i ) {
+					Conv< A > conv( ret[i] );
+					vec[i] = *conv;
+				}
+				return;
 			}
+			vec.resize( 0 );
 		}
 
+
 		/**
-		 * Blocking virtual call for finding a value and returning in a
+		 * Blocking call for finding a value and returning in a
 		 * string.
 		 */
 		static bool innerStrGet( const ObjId& dest, const string& field, 
 			string& str )
 		{
+			Conv< A >::val2str( str, get( dest, field ) );
+			return 1;
+			/*
 			SetGet1< A > sg( dest );
 			string temp = "get_" + field;
 			unsigned int numEntries = 0;
@@ -304,6 +370,7 @@ template< class A > class Field: public SetGet1< A >
 			Conv< A > conv( ret[0] );
 			Conv<A>::val2str( str, *conv );
 			return 1;
+			*/
 		}
 };
 
@@ -341,6 +408,74 @@ template< class A1, class A2 > class SetGet2: public SetGet
 		}
 
 		/**
+		 * Assign a vector of targets, using matching vectors of arguments
+		 * arg1 and arg2. Specifically, index i on the target receives
+		 * arguments arg1[i], arg2[i].
+		 * Note that there is no requirement for the size of the 
+		 * argument vectors to be equal to the size of the target array
+		 * of objects. If there are fewer arguments then the index cycles
+		 * back, so as to tile the target array with as many arguments as
+		 * we have.
+		 * Need to clean up to handle string arguments later.
+		 */
+		static bool setVec( Id destId, const string& field, 
+			const vector< A1 >& arg1, const vector< A2 >& arg2 )
+		{
+			ObjId tgt( destId, 0 );
+			SetGet2< A1, A2 > sg( tgt );
+			FuncId fid;
+			if ( sg.checkSet( field, tgt, fid ) ) {
+				unsigned int size = arg1.size();
+				if ( size > arg2.size() ) 
+					size = arg2.size();
+				if ( size == 0 )
+					return 0;
+				unsigned int totalSize = 0;
+				for ( unsigned int i = 0; i < size; ++i ) {
+					Conv< A1 > a1( arg1[i] );
+					Conv< A2 > a2( arg2[i] );
+					totalSize += a1.size() + a2.size();
+				}
+	
+				char* data = new char[ totalSize ];
+				char* temp = data;
+				for ( unsigned int i = 0; i < size; ++i ) {
+					Conv< A1 > a1( arg1[i] );
+					a1.val2buf( temp );
+					temp += a1.size();
+	
+					Conv< A2 > a2( arg2[i] );
+					a2.val2buf( temp );
+					temp += a2.size();
+				}
+				PrepackedBuffer pb( data, totalSize, size );
+				dispatchSetVec( tgt, fid, pb );
+				delete[] data;
+				return 1;
+			}
+			return 0;
+		}
+
+		/**
+		 * This setVec takes a specific object entry, presumably one with
+		 * an array of values within it. The it goes through each specified
+		 * index and assigns the corresponding argument.
+		 * This is a brute-force assignment.
+		 */
+		static bool setVec( ObjId dest, const string& field, 
+			const vector< A1 >& arg1, const vector< A2 >& arg2 )
+		{
+			unsigned int max = arg1.size();
+			if ( max > arg2.size() ) 
+				max = arg2.size();
+			bool ret = 1;
+			for ( unsigned int i = 0; i < max; ++i )
+				ret &= 
+					SetGet2< A1, A2 >::set( dest, field, arg1[i], arg2[i] );
+			return ret;
+		}
+
+		/**
 		 * Blocking call using string conversion.
 		 */
 		static bool innerStrSet( const ObjId& dest, const string& field, 
@@ -364,6 +499,179 @@ template< class A1, class A2 > class SetGet2: public SetGet
 		string harvestStrGet() const
 		{ 
 			return "";
+		}
+};
+
+/**
+ * LookupField handles fields that have an index arguments. Examples include
+ * arrays and maps.
+ * The first argument in the 'Set' is the index, the second the value.
+ * The first and only argument in the 'get' is the index.
+ * Here A is the type of the value, and L the lookup index.
+ * 
+ */
+template< class L, class A > class LookupField: public SetGet2< L, A >
+{
+	public:
+		LookupField( const ObjId& dest )
+			: SetGet2< L, A >( dest )
+		{;}
+
+		/**
+		 * Blocking, typed 'Set' call. Identical to SetGet2::set.
+		 */
+		static bool set( const ObjId& dest, const string& field, 
+			L index, A arg )
+		{
+			string temp = "set_" + field;
+			return SetGet2< L, A >::set( dest, temp, index, arg );
+		}
+
+		/** 
+		 * This setVec assigns goes through each object entry in the
+		 * destId, and assigns the corresponding index and argument to it.
+		 */
+		static bool setVec( Id destId, const string& field, 
+			const vector< L >& index, const vector< A >& arg )
+		{
+			string temp = "set_" + field;
+			return SetGet2< L, A >::setVec( destId, temp, index, arg );
+		}
+
+		/**
+		 * This setVec takes a specific object entry, presumably one with
+		 * an array of values within it. The it goes through each specified
+		 * index and assigns the corresponding argument.
+		 * This is a brute-force assignment.
+		 */
+		static bool setVec( ObjId dest, const string& field, 
+			const vector< L >& index, const vector< A >& arg )
+		{
+			string temp = "set_" + field;
+			return SetGet2< L, A >::setVec( dest, temp, index, arg );
+		}
+
+		/**
+		 * Faking setRepeat too. Just plugs into setVec.
+		 */
+		static bool setRepeat( Id destId, const string& field, 
+			const vector< L >& index, A arg )
+		{
+			vector< A > avec( index.size(), arg );
+			return setVec( destId, field, index, avec );
+		}
+
+		/**
+		 * Blocking call using string conversion
+		 */
+		static bool innerStrSet( const ObjId& dest, const string& field, 
+			const string& indexStr, const string& val )
+		{
+			L index;
+			Conv< L >::str2val( index, indexStr );
+
+			A arg;
+			// Do NOT add 'set_' to the field name, as the 'set' func
+			// does it anyway.
+			Conv< A >::str2val( arg, val );
+			return set( dest, field, index, arg );
+		}
+
+	//////////////////////////////////////////////////////////////////
+
+		/**
+		 * Gets a value on a specific object, looking it up using the
+		 * provided index.
+		 */
+		static A get( const ObjId& dest, const string& field, L index)
+		{ 
+			LookupField< L, A > sg( dest );
+			ObjId tgt( dest );
+			FuncId fid;
+
+			string fullFieldName = "get_" + field;
+			if ( sg.checkSet( fullFieldName, tgt, fid ) ) {
+				FuncId retFuncId = receiveGet()->getFid();
+				Conv< FuncId > conv1( retFuncId );
+				Conv< L > conv2 ( index );
+				char* temp = new char[ conv1.size() + conv2.size() ];
+				conv1.val2buf( temp );
+				conv2.val2buf( temp + conv1.size() );
+
+				PrepackedBuffer pb( temp, conv1.size() + conv2.size() );
+				delete[] temp;
+
+				const vector< char* >& ret = 
+					SetGet::dispatchGet( dest, fid, pb );
+
+				if ( ret.size() == 1 ) {
+					Conv< A > conv( ret[0] );
+					return *conv;
+				}
+			}
+			return A();
+		}
+
+		/**
+		 * Blocking call that returns a vector of values in vec.
+		 * This variant goes through each target object entry on dest,
+		 * and passes in a separate lookup index to each one. The results
+		 * are put together in the vector vec.
+		 */
+		static void getVec( Id dest, const string& field, 
+			vector< L >& index, vector< A >& vec )
+		{
+			LookupField< L, A > sg( ObjId( dest, 0 ) );
+			ObjId tgt( dest );
+			FuncId fid;
+			string fullFieldName = "get_" + field;
+			unsigned int numRetEntries = 
+				sg.checkSet( fullFieldName, tgt, fid );
+			if ( numRetEntries > 0 ) {
+				FuncId retFuncId = receiveGet()->getFid();
+				unsigned int totalArgSize = index.size() * sizeof( FuncId );
+				for ( unsigned int i = 0; i < index.size(); ++i ) {
+					Conv< L > conv( index[i] );
+					totalArgSize += conv.size();
+				}
+
+				char* data = new char[ totalArgSize ];
+				char* temp = data;
+				for ( unsigned int i = 0; i < index.size(); ++i ) {
+					memcpy( temp, &retFuncId, sizeof( FuncId ) );
+					temp += sizeof( FuncId );
+					Conv< L > conv( index[i] );
+					conv.val2buf( temp );
+					temp += conv.size();
+				}
+				PrepackedBuffer pb( data, totalArgSize, index.size() );
+				delete[] data;
+
+				const vector< char* >& ret = 
+					SetGet::dispatchGet( dest, fid, pb );
+
+				assert( ret.size() == numRetEntries );
+				vec.resize( numRetEntries );
+				for ( unsigned int i = 0; i < numRetEntries; ++i ) {
+					Conv< A > conv( ret[i] );
+					vec[i] = *conv;
+				}
+			}
+		}
+
+		/**
+		 * Blocking virtual call for finding a value and returning in a
+		 * string.
+		 */
+		static bool innerStrGet( const ObjId& dest, const string& field, 
+			const string& indexStr, string& str )
+		{
+			L index;
+			Conv< L >::str2val( index, indexStr );
+
+			A ret = get( dest, field, index );
+			Conv<A>::val2str( str, ret );
+			return 1;
 		}
 };
 

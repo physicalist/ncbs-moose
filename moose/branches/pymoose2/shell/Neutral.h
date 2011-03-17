@@ -54,6 +54,37 @@ class Neutral
 		unsigned int getGroup( const Eref& e, const Qinfo* q ) const;
 
 		/**
+		 * Readonly field access function for getting all outgoing Msgs.
+		 */
+		vector< ObjId > getOutgoingMsgs(
+			const Eref& e, const Qinfo* q ) const;
+
+		/**
+		 * Readonly field access function for getting all incoming Msgs.
+		 */
+		vector< ObjId > getIncomingMsgs(
+			const Eref& e, const Qinfo* q ) const;
+
+		/**
+		 * Readonly field access function for getting source Ids
+		 * that sent a Msg to the current Id.
+		 * Field is specified by its name.
+		 * Returns an empty vector if it fails.
+		 */
+		vector< Id > getMsgTargetIds( 
+			const Eref& e, const Qinfo* q, string field ) const;
+
+		/**
+		 * Readonly field access function for getting destination Ids
+		 * that receive Msgs from the current Id.
+		 * Field is specified by its name.
+		 * Returns an empty vector if it fails.
+		 */
+		vector< Id > getMsgSourceIds(
+			const Eref& e, const Qinfo* q, string field ) const;
+
+
+		/**
 		 * Simply returns own ObjId
 		 */
 		ObjId getObjId( const Eref& e, const Qinfo* q ) const;
@@ -83,6 +114,22 @@ class Neutral
 		 * Looks up the Class name of the current Element
 		 */
 		string getClass( const Eref& e, const Qinfo* q ) const;
+
+		/**
+		 * linearSize is the # of entries on Element. Its value is
+		 * the product of all dimensions.
+		 * Note that on a FieldElement this includes field entries.
+		 * If field entries form a ragged array, then the linearSize may be
+		 * greater than the actual number of allocated entries, since the
+		 * fieldDimension is at least as big as the largest ragged array.
+		 */
+		unsigned int getLinearSize( const Eref& e, const Qinfo* q ) const;
+
+		/**
+		 * Dimensions of data on the Element.
+		 * This includes the fieldDimension if present.
+		 */
+		vector< unsigned int > getDimensions( const Eref& e, const Qinfo* q ) const;
 
 		/**
 		 * Access function for the fieldDimension of the data handler

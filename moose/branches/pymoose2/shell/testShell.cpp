@@ -24,6 +24,8 @@
 #include "SparseMatrix.h"
 #include "SparseMsg.h"
 #include "SingleMsg.h"
+#include "OneToAllMsg.h"
+#include "AssignmentMsg.h"
 #include "Wildcard.h"
 
 
@@ -1159,9 +1161,218 @@ void testSyncSynapseSize()
 	shell->doSyncDataHandler( neuronId, "get_numSynapses", synId );
 
 	assert( syn->dataHandler()->totalEntries() == size * (size - 1 ) );
+
+	assert( Field< unsigned int >::get( neuronId, "linearSize" ) == size );
+	assert( Field< unsigned int >::get( synId, "linearSize" ) == size * (size - 1 ) );
+
+	dims = 
+		Field< vector< unsigned int > >::get( neuronId, "dimensions" );
+	assert( dims.size() == 1 );
+	assert( dims[0] == size );
+	dims = Field< vector< unsigned int > >::get( synId, "dimensions" );
+	assert( dims.size() == 2 );
+	assert( dims[0] == size - 1 ); // Note that the order is reversed.
+	assert( dims[1] == size );
+
 	// cout << "NumSyn = " << syn.totalEntries() << endl;
 	shell->doDelete( neuronId );
 	cout << "." << flush;
+}
+
+/**
+ * Tests message inspection fields on Neutral.
+ * These include 
+ *  msgOut: all outgoing Msgs, reported as ObjId of their managers
+ *  msgIn: all incoming Msgs, reported as ObjId of their managers
+ *  msgSrc: All source Ids of messages coming into specified field
+ *  msgDest: All dest Ids of messages going out of specified field
+ */
+void testGetMsgs()
+{
+	Eref sheller = Id().eref();
+	Shell* shell = reinterpret_cast< Shell* >( sheller.data() );
+	vector< unsigned int > dimensions;
+	dimensions.push_back( 5 );
+
+
+	///////////////////////////////////////////////////////////
+	// Set up the objects.
+	///////////////////////////////////////////////////////////
+	Id a1 = shell->doCreate( "Arith", Id(), "a1", dimensions );
+	Id a2 = shell->doCreate( "Arith", Id(), "a2", dimensions );
+
+	Id b1 = shell->doCreate( "Arith", Id(), "b1", dimensions );
+	Id b2 = shell->doCreate( "Arith", Id(), "b2", dimensions );
+
+	Id c1 = shell->doCreate( "Arith", Id(), "c1", dimensions );
+	Id c2 = shell->doCreate( "Arith", Id(), "c2", dimensions );
+
+	Id d1 = shell->doCreate( "Arith", Id(), "d1", dimensions );
+	Id d2 = shell->doCreate( "Arith", Id(), "d2", dimensions );
+
+	Id e1 = shell->doCreate( "Arith", Id(), "e1", dimensions );
+	Id e2 = shell->doCreate( "Arith", Id(), "e2", dimensions );
+
+	///////////////////////////////////////////////////////////
+	// Set up messaging
+	///////////////////////////////////////////////////////////
+	// Should give 04000
+	MsgId m1 = shell->doAddMsg( "Single", 
+		ObjId( a1, 3 ), "output", ObjId( a2, 1 ), "arg3" );
+	assert( m1 != Msg::badMsg );
+
+	// Should give 33333
+	MsgId m2 = shell->doAddMsg( "OneToAll", 
+		ObjId( a1, 2 ), "output", ObjId( b2, 0 ), "arg3" );
+	assert( m2 != Msg::badMsg );
+
+	// Should give 12345
+	MsgId m3 = shell->doAddMsg( "OneToOne", 
+		ObjId( a1, 0 ), "output", ObjId( c2, 0 ), "arg3" );
+	assert( m3 != Msg::badMsg );
+
+	// Should give 01234
+	MsgId m4 = shell->doAddMsg( "Diagonal", 
+		ObjId( a1, 0 ), "output", ObjId( d2, 0 ), "arg3" );
+	assert( m4 != Msg::badMsg );
+
+	// Should give 54321
+	MsgId m5 = shell->doAddMsg( "Sparse", 
+		ObjId( a1, 0 ), "output", ObjId( e2, 0 ), "arg3" );
+	assert( m5 != Msg::badMsg );
+
+	////////////////////////////////////////////////////////////////
+	// Check that the outgoing Msgs are OK.
+	////////////////////////////////////////////////////////////////
+
+	vector< ObjId > msgMgrs = 
+		Field< vector< ObjId > >::get( a1, "msgOut" );
+	assert( msgMgrs.size() == 5 ); // 5 above.
+	for ( unsigned int i = 0; i < 5; ++i )
+		assert( Field< Id >::get( msgMgrs[i], "e1" ) == a1 );
+
+	assert( Field< string >::get( msgMgrs[0], "class" ) == "SingleMsg" );
+	assert( Field< string >::get( msgMgrs[1], "class" ) == "OneToAllMsg" );
+	assert( Field< string >::get( msgMgrs[2], "class" ) == "OneToOneMsg" );
+	assert( Field< string >::get( msgMgrs[3], "class" ) == "DiagonalMsg" );
+	assert( Field< string >::get( msgMgrs[4], "class" ) == "SparseMsg" );
+
+	assert( Field< Id >::get( msgMgrs[0], "e2" ) == a2 );
+	assert( Field< Id >::get( msgMgrs[1], "e2" ) == b2 );
+	assert( Field< Id >::get( msgMgrs[2], "e2" ) == c2 );
+	assert( Field< Id >::get( msgMgrs[3], "e2" ) == d2 );
+	assert( Field< Id >::get( msgMgrs[4], "e2" ) == e2 );
+	cout << "." << flush;
+
+	////////////////////////////////////////////////////////////////
+	// Check that the incoming Msgs are OK.
+	////////////////////////////////////////////////////////////////
+	msgMgrs = Field< vector< ObjId > >::get( a1, "msgIn" );
+	assert( msgMgrs.size() == 1 ); // parent msg
+	assert( msgMgrs[0].id == OneToAllMsg::managerId_ );
+
+	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
+	assert( Field< Id >::get( msgMgrs[0], "e2" ) == a1 );
+
+	msgMgrs = Field< vector< ObjId > >::get( a2, "msgIn" );
+	assert( msgMgrs.size() == 2 ); // parent msg + input msg
+	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
+	assert( Field< Id >::get( msgMgrs[0], "e2" ) == a2 );
+	assert( Field< Id >::get( msgMgrs[1], "e1" ) == a1 );
+	assert( Field< Id >::get( msgMgrs[1], "e2" ) == a2 );
+
+	msgMgrs = Field< vector< ObjId > >::get( b2, "msgIn" );
+	assert( msgMgrs.size() == 2 ); // parent msg + input msg
+	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
+	assert( Field< Id >::get( msgMgrs[0], "e2" ) == b2 );
+	assert( Field< Id >::get( msgMgrs[1], "e1" ) == a1 );
+	assert( Field< Id >::get( msgMgrs[1], "e2" ) == b2 );
+
+	msgMgrs = Field< vector< ObjId > >::get( c2, "msgIn" );
+	assert( msgMgrs.size() == 2 ); // parent msg + input msg
+	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
+	assert( Field< Id >::get( msgMgrs[0], "e2" ) == c2 );
+	assert( Field< Id >::get( msgMgrs[1], "e1" ) == a1 );
+	assert( Field< Id >::get( msgMgrs[1], "e2" ) == c2 );
+
+	msgMgrs = Field< vector< ObjId > >::get( d2, "msgIn" );
+	assert( msgMgrs.size() == 2 ); // parent msg + input msg
+	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
+	assert( Field< Id >::get( msgMgrs[0], "e2" ) == d2 );
+	assert( Field< Id >::get( msgMgrs[1], "e1" ) == a1 );
+	assert( Field< Id >::get( msgMgrs[1], "e2" ) == d2 );
+
+	msgMgrs = Field< vector< ObjId > >::get( e2, "msgIn" );
+	assert( msgMgrs.size() == 2 ); // parent msg + input msg
+	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
+	assert( Field< Id >::get( msgMgrs[0], "e2" ) == e2 );
+	assert( Field< Id >::get( msgMgrs[1], "e1" ) == a1 );
+	assert( Field< Id >::get( msgMgrs[1], "e2" ) == e2 );
+	cout << "." << flush;
+
+	////////////////////////////////////////////////////////////////
+	// Check that the MsgSrcs are OK. 
+	////////////////////////////////////////////////////////////////
+	vector< Id > srcIds;
+	srcIds = LookupField< string, vector< Id > >::get( a2, "msgSrc", "arg3" );
+	assert( srcIds.size() == 1 );
+	assert( srcIds[0] == a1 );
+	srcIds.resize( 0 );
+	srcIds = LookupField< string, vector< Id > >::get( b2, "msgSrc", "arg3" );
+	assert( srcIds.size() == 1 );
+	assert( srcIds[0] == a1 );
+	srcIds.resize( 0 );
+	srcIds = LookupField< string, vector< Id > >::get( c2, "msgSrc", "arg3" );
+	assert( srcIds.size() == 1 );
+	assert( srcIds[0] == a1 );
+
+	MsgId m6 = shell->doAddMsg( "Single", 
+		ObjId( b1, 3 ), "output", ObjId( b2, 1 ), "arg3" );
+	assert( m6 != Msg::badMsg );
+	srcIds.resize( 0 );
+	srcIds = LookupField< string, vector< Id > >::get( b2, "msgSrc", "arg3" );
+	assert( srcIds.size() == 2 );
+	assert( srcIds[0] == a1 );
+	assert( srcIds[1] == b1 );
+	cout << "." << flush;
+
+	////////////////////////////////////////////////////////////////
+	// Check that the MsgDests are OK. 
+	////////////////////////////////////////////////////////////////
+	vector< Id > destIds;
+	destIds = LookupField< string, vector< Id > >::get( a1, "msgDest", "output" );
+	assert( destIds.size() == 5 );
+	assert( destIds[0] == a2 );
+	assert( destIds[1] == b2 );
+	assert( destIds[2] == c2 );
+	assert( destIds[3] == d2 );
+	assert( destIds[4] == e2 );
+	destIds.resize( 0 );
+	destIds = LookupField< string, vector< Id > >::get( b1, "msgDest", "output" );
+	assert( destIds.size() == 1 );
+	assert( destIds[0] == b2 );
+	cout << "." << flush;
+
+	////////////////////////////////////////////////////////////////
+	// Clean up.
+	////////////////////////////////////////////////////////////////
+
+
+	shell->doDelete( a1 );
+	shell->doDelete( a2 );
+	shell->doDelete( b1 );
+	shell->doDelete( b2 );
+	shell->doDelete( c1 );
+	shell->doDelete( c2 );
+	shell->doDelete( d1 );
+	shell->doDelete( d2 );
+	shell->doDelete( e1 );
+	shell->doDelete( e2 );
+}
+
+void testGetMsgSrcAndTarget()
+{
+	// cout << "." << flush;
 }
 
 void testShell( )
@@ -1170,6 +1381,8 @@ void testShell( )
 	testTreeTraversal();
 	testChildren();
 	// testShellParserQuit();
+	testGetMsgs();	// Tests getting Msg info from Neutral.
+	testGetMsgSrcAndTarget();
 }
 
 extern void testWildcard();
