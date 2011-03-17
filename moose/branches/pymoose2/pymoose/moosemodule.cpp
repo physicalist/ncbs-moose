@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 17 17:37:46 2011 (+0530)
+// Last-Updated: Thu Mar 17 18:15:19 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 1059
+//     Update #: 1094
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -320,6 +320,7 @@ PyObject * pymoose_Neutral_setField(pymoose_Neutral * instance, int index, strin
 // C wrappers for C++ classes
 // This is used by Python
 extern "C" {
+    static Shell * __shell = NULL;
     static PyObject * MooseError;    
     static PyObject * moose_test_dummy(PyObject* dummy, PyObject* args);
     static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
@@ -329,6 +330,7 @@ extern "C" {
     static PyObject * _pymoose_Neutral_setattr(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_getattr(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args);
+    static PyObject * initShell(PyObject * dummy, PyObject * args);
     // static PyObject* __shell;
     /**
      * Method definitions.
@@ -371,9 +373,29 @@ extern "C" {
         MooseError = PyErr_NewException("moose.error", NULL, NULL);
         Py_INCREF(MooseError);
         PyModule_AddObject(moose_module, "error", MooseError);
-        Shell * __shell = getShell();
+
     }
 
+    static PyObject * initShell(PyObject * dummy, PyObject * args)
+    {
+        int argc;
+        const char * options;
+        if (!PyArg_ParseTuple(args, "s", &options)){
+            PyErr_SetString(PyExc_RuntimeWarning, "Could not parse parameters.");            
+            return (PyObject*)(getShell(0, NULL));
+        }
+        vector<string> tokens;
+        tokenize(string(options), " ", tokens);
+        argc = tokens.size();
+        char ** argv = (char **)calloc(sizeof(char*), argc);
+        for (int ii = 0; ii < argc; ++ii){
+            argv[ii] = tokens[ii].c_str();
+        }
+        __shell = getShell(argc, argv);
+        free(argv);
+        return __shell;
+    }
+    
     pymoose_Neutral* pymoose_Neutral_new(PyObject * dummy, PyObject * args)
     {
         const char * type;;
@@ -398,6 +420,9 @@ extern "C" {
         if ((length > 1) && (trimmed_path[length - 1] == '/')){
             PyErr_SetString(PyExc_ValueError, "Non-root path must not end with '/'");
             return NULL;
+        }
+        if (!__shell){
+            __shell = getShell(0, NULL);
         }
 	Id id = Id(trimmed_path);
         if ((id == Id()) && (trimmed_path != "/")) { // object does not exist
