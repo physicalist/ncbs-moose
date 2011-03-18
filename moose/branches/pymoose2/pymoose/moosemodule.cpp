@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Mar 18 14:18:07 2011 (+0530)
+// Last-Updated: Fri Mar 18 15:26:14 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 1237
+//     Update #: 1261
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -341,39 +341,29 @@ extern "C" {
 	 * Here we allow the user to override the automatic identification
 	 * of processor configuration
 	 */
-        PyObject * argv = PySys_GetObject("argv");
-        int argc = (int)PyList_Size(argv);
-        char ** c_argv = (char**)calloc(sizeof(char*), argc);
-        cout << "ARGC: " << argc << endl;
-        for (int ii = 0; ii < argc; ++ii){
-            char * arg = PyString_AsString(PyList_GetItem(argv, ii));
-            if (strlen(arg) > 0){
-                strcpy(c_argv[ii], arg);
+        char * env_opt = NULL;
+        env_opt = getenv("SINGLETHREADED");
+        if (env_opt){            
+            if(!(istringstream(string(env_opt)) >> isSingleThreaded)){
+                isSingleThreaded = 0;
             }
         }
-        char opt;
-        while ((opt = getopt(argc, c_argv,"shiqn:c:b:B:")) != -1 ) {
-            switch ( opt ) {
-                case 's': // Single threaded mode
-                    isSingleThreaded = 1;
-                    break;
-                case 'i' : // infinite loop, used for multinode debugging, to give gdb something to attach to.
-                    isInfinite = 1;
-                    break;
-                case 'n': // Multiple nodes
-                    numNodes = atoi( optarg );
-                    break;
-                case 'c': // Multiple cores per node
-                    // Each node handles 
-                    numCores = atoi( optarg );
-                    break;
-                case 'b': // Benchmark: handle later.
-                    break;
-                case 'B': // Benchmark, dump data: handle later.
-                    break;
-                case 'q': // quit immediately after completion.
-                    quitFlag = 1;
-                    break;
+        env_opt = getenv("INFINITE");
+        if (env_opt){
+            if (!(istringstream(env_opt) >> isInfinite)){
+                isInfinite = 0;
+            }
+        }
+        env_opt = getenv("NODES");
+        if (env_opt){
+            if (!(istringstream(env_opt) >> numNodes)){
+                numNodes = 1;
+            }
+        }
+        env_opt = getenv("CORES");
+        if (env_opt){
+            if (!(istringstream(env_opt) >> numCores)){
+                numCores = getNumCores();
             }
         }
         if (isSingleThreaded < 0){            
@@ -396,9 +386,10 @@ extern "C" {
         NumNodes = PyInt_FromLong(numNodes);
         MyNode = PyInt_FromLong(myNode);
         Infinite = PyInt_FromLong(isInfinite);
-        cout << "on node " << myNode
+        cout << "Creating MOOSE Shell on node " << myNode
              << ", numNodes = " << numNodes
-             << ", numCores = " << numCores << endl;
+             << ", numCores = " << numCores 
+             << ", multithreaded = " << !isSingleThreaded << endl;
         // Now it is copied over from main.cpp: init()
         Msg::initNull();
         Id shellId;
