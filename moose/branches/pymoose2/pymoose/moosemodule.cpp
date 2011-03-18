@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Mar 18 15:26:14 2011 (+0530)
+// Last-Updated: Fri Mar 18 18:19:37 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 1261
+//     Update #: 1427
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -119,82 +119,74 @@ char shorttype(string ftype){
     return typemap[ftype];
 }
 
-PyObject * pymoose_Neutral_getField(pymoose_Neutral * instance, int index, string fname, string ftype)
+void * pymoose_Neutral_getField(pymoose_Neutral * instance, int index, string fname, char ftype)
 {
-    switch(shorttype(ftype)){
+    switch(ftype){
         case 'c':
             {
-                char ret = Field< char >::get(ObjId(*(instance->id_), index), fname);
-                return Py_BuildValue("c", ret);
+                char * ret = (char*)malloc(sizeof(char));
+                *ret = Field< char >::get(ObjId(*(instance->id_), index), fname);
+                return (void*)ret;
             }
         case 'i':
             {
-                int ret = Field< int >::get(ObjId(*(instance->id_), index), fname);
-                return Py_BuildValue("i", ret);
+                long* ret = (long*)malloc(sizeof(long));
+                * ret = Field< int >::get(ObjId(*(instance->id_), index), fname);
+                return (void*)ret;
             }
         case 'f':
             {
-                double ret = Field< double >::get(ObjId(*(instance->id_), index), fname);
-                return Py_BuildValue("f", ret);
+                double * ret = (double*)malloc(sizeof(double));
+                *ret = Field< double >::get(ObjId(*(instance->id_), index), fname);
+                return (void*) ret;
             }
         case 's':
             {
-                const char * ret = Field< string >::get(ObjId(*(instance->id_), index), fname).c_str();
-                return Py_BuildValue("s", ret);
+                string val = Field< string >::get(ObjId(*(instance->id_), index), fname);
+                char ** ret = (char**)malloc(sizeof(char*));
+                *ret = (char*)calloc(sizeof(char), val.length() + 1);
+                strcpy(*ret, val.c_str());
+                return (void*)ret;
             }
             break;
         case 'u':
             {
-                unsigned long ret = Field<unsigned int>::get(ObjId(*(instance->id_), index), fname);
-                return Py_BuildValue("i", ret);
+                unsigned long * ret = new unsigned long;
+                *ret = Field<unsigned int>::get(ObjId(*(instance->id_), index), fname);
+                return (void*)ret;
             }
             break;
         case 'v':
             {
-                vector<int> ret;
-                Field<int>::getVec(Id(*(instance->id_)), string(fname), ret);
-                PyObject * pyret = PyTuple_New((Py_ssize_t)ret.size());
-                for (int ii = 0; ii < ret.size(); ++ ii){
-                    if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyInt_FromLong(ret[ii])))
-                        return NULL;
-                }
-                return pyret;
+                vector<int> val;
+                Field<int>::getVec(Id(*(instance->id_)), string(fname), val);
+                vector<int> * ret = new vector<int>(val);
+                return (void*)ret;
             }
         case 'w':
             {
-                vector<double> ret;
-                Field<double>::getVec(Id(*(instance->id_)), string(fname), ret);
-                PyObject * pyret = PyTuple_New((Py_ssize_t)ret.size());
-                for (int ii = 0; ii < ret.size(); ++ ii){
-                    if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyFloat_FromDouble(ret[ii])))
-                        return NULL;
-                }
-                return pyret;
+                vector<double> val;
+                Field<double>::getVec(Id(*(instance->id_)), string(fname), val);
+                vector<double> * ret = new vector<double>(val);
+                return (void*)ret;
             }
         default:
-            {
-                PyErr_SetString(PyExc_TypeError, string("Invalid field type: " + ftype).c_str());
-                return NULL;
-            }
+            return NULL;
     };
 }
     
-PyObject * pymoose_Neutral_setField(pymoose_Neutral * instance, int index, string fname, string ftype, PyObject * value)
+int pymoose_Neutral_setField(pymoose_Neutral * instance, int index, string fname, char ftype, void * value)
 {
-    switch(shorttype(ftype)){
+    switch(ftype){
         case 'c':
             {
-                char * c_val = PyString_AsString(value);
-                if (c_val && (PyString_Size(value)>0)){
-                    Field<char>::set(ObjId(*(instance->id_), index), fname, c_val[0]);
-                } else {
-                    return NULL;
-                }
-            break;
+                char  c_val = *((char*)value);
+                Field<char>::set(ObjId(*(instance->id_), index), fname, c_val);
+                break;
             }                
         case 'i':
             {
-                int c_val = PyInt_AsLong(value);
+                int c_val = *((int*)value);
                 if ((c_val == -1) && PyErr_Occurred()){
                     return NULL;
 
@@ -204,25 +196,24 @@ PyObject * pymoose_Neutral_setField(pymoose_Neutral * instance, int index, strin
             }
         case 'f':
             {
-                double c_val = PyFloat_AsDouble(value);
+                double c_val = *((double*)value);
                 Field<double>::set(ObjId(*(instance->id_), index), fname, c_val);
                 break;
             }
         case 's':
             {
-                char * c_val = PyString_AsString(value);
+                char * c_val = *((char**)value);
                 if (c_val){
                     Field<string>::set(ObjId(*(instance->id_), index), string(fname), string(c_val));
                 } else {
-                    return NULL;
+                    return 0;
                 }
                 break;
             }
         default:
-            PyErr_SetString(PyExc_TypeError, string("Invalid field type: " + ftype).c_str());
-            return NULL;            
+            return 0;            
     };
-    Py_RETURN_NONE;
+    return 1;
 }
 // 
 // C wrappers for C++ classes
@@ -245,6 +236,7 @@ extern "C" {
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args);
     // static PyObject * initShell(PyObject * dummy, PyObject * args, PyObject * kwdict);
     static Shell * getShell();
+    static void initEnvironment();
     /**
      * Method definitions.
      */
@@ -291,7 +283,10 @@ extern "C" {
         Infinite = PyInt_FromLong(0);
         Py_INCREF(Infinite);
         PyModule_AddObject(moose_module, "Infinite", Infinite);
+        PyGILState_STATE gstate;
+        gstate = PyGILState_Ensure();
         __shell = getShell();
+        PyGILState_Release(gstate);
     }
 
     // static PyObject * initShell(PyObject * dummy, PyObject * args, PyObject * kwords)
@@ -308,37 +303,11 @@ extern "C" {
     //     __shell = getShell();
     //     return reinterpret_cast<PyObject*>(__shell);
     // }
-    
-    static Shell * getShell()
+    static void initEnvironment()
     {
-        static Shell * shell = NULL;
-        if (shell){
-            return shell;
-        }
-        
-        // Going with all these dafaults to start with...
-        long isSingleThreaded = -1;
-        long numCores = -1;
-        long numNodes = -1;
-        long myNode = -1;
-        long isInfinite = -1;
-        long quitFlag = 0;
-#ifdef USE_MPI
-	int provided;
-	// OpenMPI does not use argc or argv.
-	// unsigned int temp_argc = 1;
-	//MPI_Init_thread( &temp_argc, &argv, MPI_THREAD_SERIALIZED, &provided );
-	MPI_Init_thread( &argc, &argv, MPI_THREAD_SERIALIZED, &provided );
-
-	MPI_Comm_size( MPI_COMM_WORLD, &numNodes );
-	MPI_Comm_rank( MPI_COMM_WORLD, &myNode );
-	if ( provided < MPI_THREAD_SERIALIZED && myNode == 0 ) {
-            cout << "Warning: This MPI implementation does not like multithreading: " << provided << "\n";
-	}
-	// myNode = MPI::COMM_WORLD.Get_rank();
-#endif
-	/**
-	 * Here we allow the user to override the automatic identification
+        int isSingleThreaded, numNodes, numCores, isInfinite, myNode;
+        /**
+         * Here we allow the user to override the automatic identification
 	 * of processor configuration
 	 */
         char * env_opt = NULL;
@@ -390,6 +359,34 @@ extern "C" {
              << ", numNodes = " << numNodes
              << ", numCores = " << numCores 
              << ", multithreaded = " << !isSingleThreaded << endl;
+
+    }
+    static Shell * getShell()
+    {
+        static Shell * shell = NULL;
+        if (shell){
+            return shell;
+        }
+                
+        long isSingleThreaded = PyInt_AsLong(SingleThreaded);
+        long numCores = PyInt_AsLong(NumCores);
+        long numNodes = PyInt_AsLong(NumNodes);
+        long myNode = PyInt_AsLong(MyNode);
+        long isInfinite = PyInt_AsLong(Infinite);
+        
+#ifdef USE_MPI
+	int provided;
+	// OpenMPI does not use argc or argv.
+	// unsigned int temp_argc = 1;
+	//MPI_Init_thread( &temp_argc, &argv, MPI_THREAD_SERIALIZED, &provided );
+	MPI_Init_thread( &argc, &argv, MPI_THREAD_SERIALIZED, &provided );
+	MPI_Comm_size( MPI_COMM_WORLD, &numNodes );
+	MPI_Comm_rank( MPI_COMM_WORLD, &myNode );
+	if ( provided < MPI_THREAD_SERIALIZED && myNode == 0 ) {
+            cout << "Warning: This MPI implementation does not like multithreading: " << provided << "\n";
+	}
+	// myNode = MPI::COMM_WORLD.Get_rank();
+#endif
         // Now it is copied over from main.cpp: init()
         Msg::initNull();
         Id shellId;
@@ -501,7 +498,11 @@ extern "C" {
         if (!PyArg_ParseTuple(args, "O", &object)){
                 return NULL;
         }
+        PyGILState_STATE gstate;
+        gstate = PyGILState_Ensure();
         pymoose_Neutral_delete(dummy, object);
+        PyGILState_Release(gstate);
+
         Py_RETURN_NONE;
     }
     static PyObject* _pymoose_Neutral_id(PyObject * dummy, PyObject * args)
@@ -553,7 +554,69 @@ extern "C" {
         }
         string ftype_str(ftype);
         string field_str(field);
-        return pymoose_Neutral_getField(instance, index, field_str, ftype_str);
+        char _ftype = shorttype(ftype);
+        PyGILState_STATE gstate;
+        gstate = PyGILState_Ensure();
+        void * ret = pymoose_Neutral_getField(instance, index, field_str, _ftype);
+        PyGILState_Release(gstate);
+        PyObject * pyret = NULL;
+        switch(_ftype){
+            case 'c':
+                {
+                    pyret = Py_BuildValue("c", *((char*)ret));
+                    break;
+                }
+            case 'i':
+                {
+                    pyret = Py_BuildValue("i", *((long*)ret));
+                }
+            case 'f':
+                {
+                    pyret = Py_BuildValue("f", *((double*)ret));
+                }
+                break;
+            case 's':
+                {
+                    pyret = Py_BuildValue("s", *((char *)ret));                
+                }
+                break;
+            case 'u':
+                {
+                    pyret = Py_BuildValue("i", *((unsigned long*)ret));                    
+                }
+                break;
+            case 'v':
+                {
+                    vector <long>& val = *((vector<long>*)ret);
+                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
+                    for (int ii = 0; ii < val.size(); ++ ii ){
+                        if (!PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyInt_FromLong(val[ii]))){
+                            pyret = NULL;
+                            break;
+                        }                        
+                    }
+                }
+                break;
+            case 'w':
+                {
+                    vector<double>& val = *((vector<double> *) ret);
+                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
+                    for (int ii = 0; ii < ((vector<long>*)ret)->size(); ++ ii){
+                        if (!PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyFloat_FromDouble(val[ii]))){
+                            pyret = NULL;
+                            break;
+                        }
+                    }
+                }
+                break;
+            default:
+                {
+                    PyErr_SetString(PyExc_TypeError, string("Invalid field type: " + ftype_str).c_str());
+                    pyret = NULL;
+                }
+        }
+        delete ret;
+        return pyret;        
     }
     static PyObject * _pymoose_Neutral_setattr(PyObject * dummy, PyObject * args)
     {
@@ -572,7 +635,68 @@ extern "C" {
         }
         string field_str(field);
         string ftype_str(ftype);
-        return pymoose_Neutral_setField(instance, index, field, ftype, value);
+        void * value_ptr = NULL;
+        char _ftype = shorttype(ftype);
+        switch(_ftype){
+            case 'c':
+                {
+                    char * _value_ptr = (char*)malloc(sizeof(char));
+                    char * pychar = PyString_AsString(value);
+                    
+                    if (pychar){
+                        *_value_ptr = pychar[0];
+                        value_ptr = _value_ptr;
+                    } else {
+                        return NULL;
+                    }
+                    break;
+                }
+            case 'i':
+                {
+                    long * _value_ptr = (long*)malloc(sizeof(long));
+                    long pyint = PyInt_AsLong(value);
+                    if ((pyint == -1) && (PyErr_Occurred())){
+                        return NULL;
+                    } else {
+                        *_value_ptr = pyint;
+                        value_ptr = _value_ptr;
+                    }
+                    break;
+                }
+            case 'f':
+                {
+                    double * _value_ptr = (double*) malloc(sizeof(double));
+                    double pydouble = PyFloat_AsDouble(value);
+                    * _value_ptr = pydouble;
+                    value_ptr = _value_ptr;
+                    break;
+                }
+            case 's':
+                {
+                    char **_value_ptr = (char**)malloc(sizeof(char*));
+                    char * pystr = PyString_AsString(value);
+                    if (pystr){
+                        *_value_ptr = (char*)calloc(sizeof(char), strlen(pystr) + 1);
+                        strcpy(*_value_ptr, pystr);
+                        value_ptr = _value_ptr;
+                    } else {
+                        return NULL;
+                    }
+                    break;
+                }
+            default:
+                break;
+        }
+        PyGILState_STATE gstate;
+        gstate = PyGILState_Ensure();
+        int ret = pymoose_Neutral_setField(instance, index, field, _ftype, value_ptr);
+        PyGILState_Release(gstate);
+        if (ret){
+            Py_RETURN_NONE;
+        } else {
+            PyErr_SetString(PyExc_TypeError, "The specified field type is not valid.");
+            return NULL;
+        }
     }
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args)
     {
@@ -585,7 +709,10 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
             return NULL;
         }
+        PyGILState_STATE gstate;
+        gstate = PyGILState_Ensure();
         instance->id_->destroy();
+        PyGILState_Release(gstate);
         Py_DECREF(obj);
         Py_RETURN_NONE;
     }
@@ -599,6 +726,7 @@ int main(int argc, char* argv[])
     }
     cout << endl;
     Py_SetProgramName(argv[0]);
+    PyEval_InitThreads();
     Py_Initialize();
     init_moose();
     return 0;
