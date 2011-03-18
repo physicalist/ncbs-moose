@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 17 18:15:19 2011 (+0530)
+// Last-Updated: Fri Mar 18 14:18:07 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 1094
+//     Update #: 1237
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -44,15 +44,15 @@
 #include <Python.h>
 
 #include "moosemodule.h"
-#include "header.h"
-#include "ObjId.h"
+#include "../basecode/header.h"
+#include "../basecode/ObjId.h"
 
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
 
-#include "ReduceBase.h"
-#include "ReduceMax.h"
+#include "../basecode/ReduceBase.h"
+#include "../basecode/ReduceMax.h"
 #include "Shell.h"
 #include "../utility/strutil.h"
 #include "../scheduling/Tick.h"
@@ -60,7 +60,6 @@
 #include "../scheduling/TickPtr.h"
 #include "../scheduling/Clock.h"
 
-extern Id init(int argc, char **argv);
 extern void nonMpiTests(Shell *);
 extern void mpiTests();
 extern void processTests(Shell *);
@@ -70,98 +69,7 @@ extern unsigned int getNumCores();
 using namespace std;
 using namespace pymoose;
 
-static Shell * getShell(int argc, char **argv)
-{
-    // TODO: figure out what will be the expected argc/argv for MPI
-    // and put them in the argument list.
-    static Shell * shell = NULL;
-    if (!shell){
-        // Going with all these dafaults to start with...
-        int isSingleThreaded = 0;
-        int numCores = getNumCores();
-        int numNodes = 1;
-        int myNode = 0;
-        bool isInfinite = 0;
-        int opt;
-        cout << "getShell: Creating the shell instance" << endl;
-#ifdef USE_MPI
-	int provided;
-	// OpenMPI does not use argc or argv.
-	// unsigned int temp_argc = 1;
-	//MPI_Init_thread( &temp_argc, &argv, MPI_THREAD_SERIALIZED, &provided );
-	MPI_Init_thread( &argc, &argv, MPI_THREAD_SERIALIZED, &provided );
 
-	MPI_Comm_size( MPI_COMM_WORLD, &numNodes );
-	MPI_Comm_rank( MPI_COMM_WORLD, &myNode );
-	if ( provided < MPI_THREAD_SERIALIZED && myNode == 0 ) {
-		cout << "Warning: This MPI implementation does not like multithreading: " << provided << "\n";
-	}
-	// myNode = MPI::COMM_WORLD.Get_rank();
-#endif
-	/**
-	 * Here we allow the user to override the automatic identification
-	 * of processor configuration
-	 */
-	while ( ( opt = getopt( argc, argv, "shiqn:c:b:B:" ) ) != -1 ) {
-            switch ( opt ) {
-                case 's': // Single threaded mode
-                    isSingleThreaded = 1;
-                    break;
-                case 'i' : // infinite loop, used for multinode debugging, to give gdb something to attach to.
-                    isInfinite = 1;
-                    break;
-                case 'n': // Multiple nodes
-                    numNodes = atoi( optarg );
-                    break;
-                case 'c': // Multiple cores per node
-                    // Each node handles 
-                    numCores = atoi( optarg );
-                    break;
-                case 'b': // Benchmark: handle later.
-                    break;
-                case 'B': // Benchmark, dump data: handle later.
-                    break;
-                case 'q': // quit immediately after completion.
-                    quitFlag = 1;
-                    break;
-            }
-        }
-        cout << "on node " << myNode
-             << ", numNodes = " << numNodes
-             << ", numCores = " << numCores << endl;
-        // Now it is copied over from main.cpp: init()
-        Msg::initNull();
-        Id shellId;
-        vector <unsigned int> dims;
-        dims.push_back(1);
-        Element * shellE = new Element(shellId, Shell::initCinfo(), "root", dims, 1);
-        Id clockId = Id::nextId();
-        shell = reinterpret_cast<Shell*>(shellId.eref().data());
-        shell->setShellElement(shellE);
-        shell->setHardware(isSingleThreaded, numCores, numNodes, myNode);
-        shell->loadBalance();
-
-        new Element(clockId, Clock::initCinfo(), "clock", dims, 1);
-        Id tickId( 2 );
-        assert(tickId() != 0);
-	assert( tickId.value() == 2 );
-	assert( tickId()->getName() == "tick" ) ;
-
-	assert ( shellId == Id() );
-	assert( clockId == Id( 1 ) );
-	assert( tickId == Id( 2 ) );
-
-	/// Sets up the Elements that represent each class of Msg.
-	Msg::initMsgManagers();
-
-	shell->connectMasterMsg();
-
-	Shell::adopt( shellId, clockId );
-	while ( isInfinite ) // busy loop for debugging under gdb and MPI.
-            ;        
-    }
-    return shell;    
-}
 
 PyMooseBase::PyMooseBase()
 {
@@ -321,8 +229,13 @@ PyObject * pymoose_Neutral_setField(pymoose_Neutral * instance, int index, strin
 // This is used by Python
 extern "C" {
     static Shell * __shell = NULL;
-    static PyObject * MooseError;    
-    static PyObject * moose_test_dummy(PyObject* dummy, PyObject* args);
+    static PyObject * MooseError;
+    static PyObject * SingleThreaded;
+    static PyObject * NumNodes;
+    static PyObject * NumCores;
+    static PyObject * MyNode;
+    static PyObject * Infinite;
+    
     static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_delete(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_id(PyObject * dummy, PyObject * args);
@@ -330,14 +243,12 @@ extern "C" {
     static PyObject * _pymoose_Neutral_setattr(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_getattr(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args);
-    static PyObject * initShell(PyObject * dummy, PyObject * args);
-    // static PyObject* __shell;
+    // static PyObject * initShell(PyObject * dummy, PyObject * args, PyObject * kwdict);
+    static Shell * getShell();
     /**
      * Method definitions.
      */
     static PyMethodDef MooseMethods[] = {
-        {"test_dummy",  moose_test_dummy, METH_VARARGS,
-         "A test function."},
         {"_pymoose_Neutral_new", _pymoose_Neutral_new, METH_VARARGS,
          "Create a new MOOSE element."},
         {"_pymoose_Neutral_delete", _pymoose_Neutral_delete, METH_VARARGS,
@@ -355,14 +266,6 @@ extern "C" {
         {NULL, NULL, 0, NULL}        /* Sentinel */
     };
 
-    static PyObject *  moose_test_dummy(PyObject* dummy, PyObject* args)
-    {
-        const char * param;
-        if (!PyArg_ParseTuple(args, "s", &param))
-            return NULL;
-        
-        return PyString_InternFromString(param);
-    }
 
     /* module initialization */
     PyMODINIT_FUNC init_moose()
@@ -373,29 +276,161 @@ extern "C" {
         MooseError = PyErr_NewException("moose.error", NULL, NULL);
         Py_INCREF(MooseError);
         PyModule_AddObject(moose_module, "error", MooseError);
-
+        SingleThreaded = PyInt_FromLong(1);
+        Py_INCREF(SingleThreaded);
+        PyModule_AddObject(moose_module, "SingleThreaded", SingleThreaded);
+        NumCores = PyInt_FromLong(1);
+        Py_INCREF(NumCores);
+        PyModule_AddObject(moose_module, "NumCores", NumCores);
+        NumNodes = PyInt_FromLong(1);
+        Py_INCREF(NumNodes);
+        PyModule_AddObject(moose_module, "NumNodes", NumNodes);
+        MyNode = PyInt_FromLong(0);
+        Py_INCREF(MyNode);
+        PyModule_AddObject(moose_module, "MyNode", MyNode);
+        Infinite = PyInt_FromLong(0);
+        Py_INCREF(Infinite);
+        PyModule_AddObject(moose_module, "Infinite", Infinite);
+        __shell = getShell();
     }
 
-    static PyObject * initShell(PyObject * dummy, PyObject * args)
-    {
-        int argc;
-        const char * options;
-        if (!PyArg_ParseTuple(args, "s", &options)){
-            PyErr_SetString(PyExc_RuntimeWarning, "Could not parse parameters.");            
-            return (PyObject*)(getShell(0, NULL));
-        }
-        vector<string> tokens;
-        tokenize(string(options), " ", tokens);
-        argc = tokens.size();
-        char ** argv = (char **)calloc(sizeof(char*), argc);
-        for (int ii = 0; ii < argc; ++ii){
-            argv[ii] = tokens[ii].c_str();
-        }
-        __shell = getShell(argc, argv);
-        free(argv);
-        return __shell;
-    }
+    // static PyObject * initShell(PyObject * dummy, PyObject * args, PyObject * kwords)
+    // {
+    //     int isSingleThreaded, numNodes, numCores, isInfinite;
+    //     static char * kwlist[] = {"singlethreaded", "numcores", "numnodes"};
+    //     if (__shell){
+    //         PyErr_SetString(PyExc_RuntimeWarning, "Shell already initialized.");
+    //         Py_RETURN_NONE;
+    //     }
+    //     if (!PyArg_ParseTupleAndKeywords(args, kwords, "|iiii", kwlist, &isSingleThreaded, &numCores, &numNodes, &isInfinite)){
+    //         return NULL;
+    //     }
+    //     __shell = getShell();
+    //     return reinterpret_cast<PyObject*>(__shell);
+    // }
     
+    static Shell * getShell()
+    {
+        static Shell * shell = NULL;
+        if (shell){
+            return shell;
+        }
+        
+        // Going with all these dafaults to start with...
+        long isSingleThreaded = -1;
+        long numCores = -1;
+        long numNodes = -1;
+        long myNode = -1;
+        long isInfinite = -1;
+        long quitFlag = 0;
+#ifdef USE_MPI
+	int provided;
+	// OpenMPI does not use argc or argv.
+	// unsigned int temp_argc = 1;
+	//MPI_Init_thread( &temp_argc, &argv, MPI_THREAD_SERIALIZED, &provided );
+	MPI_Init_thread( &argc, &argv, MPI_THREAD_SERIALIZED, &provided );
+
+	MPI_Comm_size( MPI_COMM_WORLD, &numNodes );
+	MPI_Comm_rank( MPI_COMM_WORLD, &myNode );
+	if ( provided < MPI_THREAD_SERIALIZED && myNode == 0 ) {
+            cout << "Warning: This MPI implementation does not like multithreading: " << provided << "\n";
+	}
+	// myNode = MPI::COMM_WORLD.Get_rank();
+#endif
+	/**
+	 * Here we allow the user to override the automatic identification
+	 * of processor configuration
+	 */
+        PyObject * argv = PySys_GetObject("argv");
+        int argc = (int)PyList_Size(argv);
+        char ** c_argv = (char**)calloc(sizeof(char*), argc);
+        cout << "ARGC: " << argc << endl;
+        for (int ii = 0; ii < argc; ++ii){
+            char * arg = PyString_AsString(PyList_GetItem(argv, ii));
+            if (strlen(arg) > 0){
+                strcpy(c_argv[ii], arg);
+            }
+        }
+        char opt;
+        while ((opt = getopt(argc, c_argv,"shiqn:c:b:B:")) != -1 ) {
+            switch ( opt ) {
+                case 's': // Single threaded mode
+                    isSingleThreaded = 1;
+                    break;
+                case 'i' : // infinite loop, used for multinode debugging, to give gdb something to attach to.
+                    isInfinite = 1;
+                    break;
+                case 'n': // Multiple nodes
+                    numNodes = atoi( optarg );
+                    break;
+                case 'c': // Multiple cores per node
+                    // Each node handles 
+                    numCores = atoi( optarg );
+                    break;
+                case 'b': // Benchmark: handle later.
+                    break;
+                case 'B': // Benchmark, dump data: handle later.
+                    break;
+                case 'q': // quit immediately after completion.
+                    quitFlag = 1;
+                    break;
+            }
+        }
+        if (isSingleThreaded < 0){            
+            isSingleThreaded = 0;
+        }
+        if (numCores < 0){
+            numCores = getNumCores();
+        }
+        if (numNodes < 0){
+            numNodes = 1;
+        }
+        if (isInfinite < 0){
+            isInfinite = 0;
+        }
+        if (myNode < 0){
+            myNode = 0;
+        }
+        SingleThreaded = PyInt_FromLong(isSingleThreaded);
+        NumCores = PyInt_FromLong(numCores);
+        NumNodes = PyInt_FromLong(numNodes);
+        MyNode = PyInt_FromLong(myNode);
+        Infinite = PyInt_FromLong(isInfinite);
+        cout << "on node " << myNode
+             << ", numNodes = " << numNodes
+             << ", numCores = " << numCores << endl;
+        // Now it is copied over from main.cpp: init()
+        Msg::initNull();
+        Id shellId;
+        vector <unsigned int> dims;
+        dims.push_back(1);
+        Element * shellE = new Element(shellId, Shell::initCinfo(), "root", dims, 1);
+        Id clockId = Id::nextId();
+        shell = reinterpret_cast<Shell*>(shellId.eref().data());
+        shell->setShellElement(shellE);
+        shell->setHardware(isSingleThreaded, numCores, numNodes, myNode);
+        shell->loadBalance();
+
+        new Element(clockId, Clock::initCinfo(), "clock", dims, 1);
+        Id tickId( 2 );
+        assert(tickId() != 0);
+	assert( tickId.value() == 2 );
+	assert( tickId()->getName() == "tick" ) ;
+
+	assert ( shellId == Id() );
+	assert( clockId == Id( 1 ) );
+	assert( tickId == Id( 2 ) );
+
+	/// Sets up the Elements that represent each class of Msg.
+	Msg::initMsgManagers();
+
+	shell->connectMasterMsg();
+
+	Shell::adopt( shellId, clockId );
+	while ( isInfinite ) // busy loop for debugging under gdb and MPI.
+            ;        
+        return shell;    
+    }
     pymoose_Neutral* pymoose_Neutral_new(PyObject * dummy, PyObject * args)
     {
         const char * type;;
@@ -420,9 +455,6 @@ extern "C" {
         if ((length > 1) && (trimmed_path[length - 1] == '/')){
             PyErr_SetString(PyExc_ValueError, "Non-root path must not end with '/'");
             return NULL;
-        }
-        if (!__shell){
-            __shell = getShell(0, NULL);
         }
 	Id id = Id(trimmed_path);
         if ((id == Id()) && (trimmed_path != "/")) { // object does not exist
@@ -549,7 +581,6 @@ extern "C" {
         }
         string field_str(field);
         string ftype_str(ftype);
-        //--- todo - finish ---//
         return pymoose_Neutral_setField(instance, index, field, ftype, value);
     }
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args)
@@ -572,6 +603,10 @@ extern "C" {
 
 int main(int argc, char* argv[])
 {
+    for (int ii = 0; ii < argc; ++ii){
+        cout << "ARGV: " << argv[ii];
+    }
+    cout << endl;
     Py_SetProgramName(argv[0]);
     Py_Initialize();
     init_moose();
