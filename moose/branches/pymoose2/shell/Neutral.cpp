@@ -455,7 +455,6 @@ Id Neutral::child( const Eref& e, const string& name )
 			const Msg* m = Msg::getMsg( i->mid );
 			assert( m );
                         string _name = m->e2()->getName();
-                        cout << "child:: " << _name << ", " << name << endl;
 			if ( _name == name )
 				return m->e2()->id();
 		}

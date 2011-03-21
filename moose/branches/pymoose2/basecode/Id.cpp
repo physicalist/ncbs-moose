@@ -51,7 +51,6 @@ Id Id::str2Id( const std::string& s )
 vector< Element* >& Id::elements()
 {
 	static vector< Element* > e;
-        cout << "Id::elements() - size is: " << e.size() << endl;
 	return e;
 }
 
@@ -107,7 +106,6 @@ Id Id::nextId()
 	// so they don't go dangling.
 	Id ret( elements().size() );
 	elements().push_back( 0 );
-        cout << "Next Id: elements size " << elements().size() << endl;
 	return ret;
 }
 

@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Sat Mar 12 14:02:40 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Mar 21 11:58:04 2011 (+0530)
+# Last-Updated: Mon Mar 21 17:15:49 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 68
+#     Update #: 84
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -57,11 +57,19 @@ class Neutral(object):
     def __get_name(self):
         return _moose._pymoose_Neutral_getattr(self.__ptr, 'name', 'string')
     name = property(__get_name)
-    def _getattr(self, fname, ftype, index=0):
-        return _moose._pymoose_Neutral_getattr(self.__ptr, fname, ftype, index)
+    def _getattr(self, fname, index=0):
+        return _moose._pymoose_Neutral_getattr(self.__ptr, fname, index)
 
-    def _setattr(self, fname, ftype, value, index=0):
-        return _moose._pymoose_Neutral_setattr(self.__ptr, fname, ftype, value, index)
+    def _setattr(self, fname, value, index=0):
+        return _moose._pymoose_Neutral_setattr(self.__ptr, fname, value, index)
+
+    def children(self, index=0):
+        children = _moose._pymoose_Neutral_getChildren(self.__ptr, index)
+        ret = []
+        for child in children:
+            ret.append(Neutral('/'))
+            ret[-1].__ptr = child
+        return ret                       
 
     def getFieldNames(self, ftype='v'):
         return _moose._pymoose_Neutral_getFieldNames(self.__ptr, ftype)
@@ -71,7 +79,7 @@ class IntFire(Neutral):
         Neutral.__init__(self, path, dims, 'IntFire')
 
     def getVm(self, index=0):
-        return self._getattr('Vm', 'f', index)
+        return self._getattr('Vm', index)
 
     def setVm(self, value, index=0):
         return self._setattr('Vm', 'f', value, index)
