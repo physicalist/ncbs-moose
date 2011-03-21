@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Mar 18 18:19:37 2011 (+0530)
+// Last-Updated: Mon Mar 21 11:55:07 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 1427
+//     Update #: 1561
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -89,7 +89,8 @@ pymoose_Neutral::~pymoose_Neutral()
 
 // Class definitions end here
 
-char shorttype(string ftype){
+char shorttype(string ftype)
+{
     static map<string, char> typemap;
     if (typemap.empty()){
         typemap["char"] = 'c';
@@ -119,39 +120,50 @@ char shorttype(string ftype){
     return typemap[ftype];
 }
 
+char finfotype(string ftype)
+{
+    static map<string, char> typemap;
+    if (typemap.empty()){
+        typemap["srcFinfo"] = 's';
+        typemap["destFinfo"] = 'd';
+        typemap["valueFindo"] = 'v';
+        typemap["lookupFinfo"] = 'l';
+        typemap["sharedFinfo"] = 'x';
+    }
+    return typemap[ftype];
+}
+
 void * pymoose_Neutral_getField(pymoose_Neutral * instance, int index, string fname, char ftype)
 {
     switch(ftype){
         case 'c':
             {
-                char * ret = (char*)malloc(sizeof(char));
+                char * ret = new char();
                 *ret = Field< char >::get(ObjId(*(instance->id_), index), fname);
                 return (void*)ret;
             }
         case 'i':
             {
-                long* ret = (long*)malloc(sizeof(long));
+                long* ret = new long();
                 * ret = Field< int >::get(ObjId(*(instance->id_), index), fname);
                 return (void*)ret;
             }
         case 'f':
             {
-                double * ret = (double*)malloc(sizeof(double));
+                double * ret = new double();
                 *ret = Field< double >::get(ObjId(*(instance->id_), index), fname);
                 return (void*) ret;
             }
         case 's':
             {
                 string val = Field< string >::get(ObjId(*(instance->id_), index), fname);
-                char ** ret = (char**)malloc(sizeof(char*));
-                *ret = (char*)calloc(sizeof(char), val.length() + 1);
-                strcpy(*ret, val.c_str());
+                string * ret = new string(val);
                 return (void*)ret;
             }
             break;
         case 'u':
             {
-                unsigned long * ret = new unsigned long;
+                unsigned long * ret = new unsigned long();
                 *ret = Field<unsigned int>::get(ObjId(*(instance->id_), index), fname);
                 return (void*)ret;
             }
@@ -215,6 +227,55 @@ int pymoose_Neutral_setField(pymoose_Neutral * instance, int index, string fname
     };
     return 1;
 }
+
+vector<string> pymoose_Neutral_getFieldNames(pymoose_Neutral * instance, char ftype){
+    vector <string> fields;
+    string * className = (string *)pymoose_Neutral_getField(instance, 0, "class", 's');
+    cout << "Class Name: " << *className << endl;
+    string classInfoPath("/classes/" + *className);
+    string finfotype;
+    switch (ftype){
+        case 's':
+            {
+                finfotype = "srcFinfo";
+            }
+            break;
+        case 'd':
+            {
+                finfotype = "destFinfo";
+            }
+            break;
+        case 'v':
+            {
+                finfotype = "valueFinfo";
+            }
+            break;
+        case 'l':
+            {
+                finfotype = "lookupFinfo";
+            }
+            break;
+        case 'x':
+            {
+                finfotype = "sharedFinfo";
+            }
+            break;
+        default:
+            return fields;
+    }
+    Id classId(classInfoPath);
+    cout << "## Class Id path: " << classInfoPath << " path() = " << classId.path() << ", " << (classId != Id())<< endl;
+    unsigned int numFinfo = Field<unsigned int>::get(classId, "num_"+finfotype);
+    cout << "Num Finfos: " << numFinfo << endl;
+    for ( unsigned int ii = 0; ii < numFinfo; ++ii){
+        Id fieldId(classInfoPath + "/" + finfotype);
+        cout << fieldId << endl;
+        string fieldname = Field<string>::get(fieldId, "name");
+        cout << fieldname << endl;
+        fields.push_back(fieldname);
+    }
+    return fields;
+}
 // 
 // C wrappers for C++ classes
 // This is used by Python
@@ -233,10 +294,11 @@ extern "C" {
     static PyObject * _pymoose_Neutral_path(PyObject* dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_setattr(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_getattr(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_getFieldNames(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args);
     // static PyObject * initShell(PyObject * dummy, PyObject * args, PyObject * kwdict);
     static Shell * getShell();
-    static void initEnvironment();
+    // static void initEnvironment();
     /**
      * Method definitions.
      */
@@ -253,6 +315,9 @@ extern "C" {
          "get specified attribute of the element."},
         {"_pymoose_Neutral_setattr", _pymoose_Neutral_setattr, METH_VARARGS,
          "set specified attribute of the element."},
+        {"_pymoose_Neutral_getFieldNames", _pymoose_Neutral_getFieldNames, METH_VARARGS,
+         "get the list field-names."
+        },
         {"_pymoose_Neutral_destroy", _pymoose_Neutral_destroy, METH_VARARGS,
          "destroy the underlying moose element"},
         {NULL, NULL, 0, NULL}        /* Sentinel */
@@ -303,6 +368,7 @@ extern "C" {
     //     __shell = getShell();
     //     return reinterpret_cast<PyObject*>(__shell);
     // }
+#if 0
     static void initEnvironment()
     {
         int isSingleThreaded, numNodes, numCores, isInfinite, myNode;
@@ -361,6 +427,7 @@ extern "C" {
              << ", multithreaded = " << !isSingleThreaded << endl;
 
     }
+#endif    
     static Shell * getShell()
     {
         static Shell * shell = NULL;
@@ -564,50 +631,58 @@ extern "C" {
             case 'c':
                 {
                     pyret = Py_BuildValue("c", *((char*)ret));
-                    break;
+                    delete (char*)ret;
                 }
+                break;
             case 'i':
                 {
                     pyret = Py_BuildValue("i", *((long*)ret));
+                    delete (long*)ret;
                 }
+                break;
             case 'f':
                 {
                     pyret = Py_BuildValue("f", *((double*)ret));
+                    delete (double*)ret;
                 }
                 break;
             case 's':
                 {
-                    pyret = Py_BuildValue("s", *((char *)ret));                
+                    pyret = Py_BuildValue("s", ((string*)ret)->c_str());
+                    delete (string*)ret;
                 }
                 break;
             case 'u':
                 {
-                    pyret = Py_BuildValue("i", *((unsigned long*)ret));                    
+                    pyret = Py_BuildValue("i", *((unsigned long*)ret));
+                    delete (unsigned long*)ret;
                 }
                 break;
             case 'v':
                 {
                     vector <long>& val = *((vector<long>*)ret);
                     PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (int ii = 0; ii < val.size(); ++ ii ){
+                    for (unsigned int ii = 0; ii < val.size(); ++ ii ){
                         if (!PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyInt_FromLong(val[ii]))){
                             pyret = NULL;
                             break;
                         }                        
                     }
                 }
+                delete (vector<long>*)ret;
                 break;
             case 'w':
                 {
                     vector<double>& val = *((vector<double> *) ret);
                     PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (int ii = 0; ii < ((vector<long>*)ret)->size(); ++ ii){
+                    for (unsigned int ii = 0; ii < ((vector<long>*)ret)->size(); ++ ii){
                         if (!PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyFloat_FromDouble(val[ii]))){
                             pyret = NULL;
                             break;
                         }
                     }
                 }
+                delete (vector<double>*)ret;
                 break;
             default:
                 {
@@ -615,7 +690,6 @@ extern "C" {
                     pyret = NULL;
                 }
         }
-        delete ret;
         return pyret;        
     }
     static PyObject * _pymoose_Neutral_setattr(PyObject * dummy, PyObject * args)
@@ -690,6 +764,7 @@ extern "C" {
         PyGILState_STATE gstate;
         gstate = PyGILState_Ensure();
         int ret = pymoose_Neutral_setField(instance, index, field, _ftype, value_ptr);
+        free(value_ptr);
         PyGILState_Release(gstate);
         if (ret){
             Py_RETURN_NONE;
@@ -697,6 +772,55 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, "The specified field type is not valid.");
             return NULL;
         }
+    }
+
+    static PyObject * _pymoose_Neutral_getFieldNames(PyObject * dummy, PyObject *args)
+    {
+        PyObject * obj = NULL;
+        char * ftype;
+        char typec;
+        if (!PyArg_ParseTuple(args, "O|s", &obj, &ftype)){
+            return NULL;
+        }else if ( !ftype || (strlen(ftype) == 0)){
+            PyErr_SetString(PyExc_ValueError, "Field type must be a character or string");
+            return NULL;
+        }
+        if (strlen(ftype)>1){
+            typec = finfotype(ftype);
+            if (!typec){
+                PyErr_SetString(PyExc_TypeError, "Invalid finfo type specified");
+                return NULL;
+            }
+        } else {            
+            typec = ftype[0];
+            if ((typec != 's') && (typec != 'd') && (typec != 'v') && (typec != 'l') && (typec != 'x')){
+                PyErr_SetString(PyExc_ValueError, "Invalid finfo type specified.");
+                return NULL;
+            }
+        }
+        pymoose_Neutral * instance = reinterpret_cast<pymoose_Neutral *>(obj);
+        if (!instance){
+            PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
+            return NULL;
+        }
+        PyGILState_STATE gstate;
+        gstate = PyGILState_Ensure();
+        vector<string> fieldNames = pymoose_Neutral_getFieldNames(instance, typec);
+        PyGILState_Release(gstate);
+        PyObject * pyret = PyTuple_New((Py_ssize_t)fieldNames.size());
+        for (unsigned int ii = 0; ii < fieldNames.size(); ++ ii ){
+            PyObject * fname = PyString_FromString(fieldNames[ii].c_str());
+            if (!pyret){
+                pyret = NULL;
+                break;
+            }
+            if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, fname)){
+                pyret = NULL;
+                break;
+            }
+        }
+        return pyret;
+             
     }
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args)
     {

@@ -2110,6 +2110,130 @@ void testFieldDataHandler()
 	cout << "." << flush;
 }
 
+void testFinfoFields()
+{
+	const Finfo* vmFinfo = IntFire::initCinfo()->findFinfo( "Vm" );
+	const Finfo* synFinfo = IntFire::initCinfo()->findFinfo( "synapse" );
+	const Finfo* procFinfo = IntFire::initCinfo()->findFinfo( "proc" );
+	const Finfo* reinitFinfo = IntFire::initCinfo()->findFinfo( "reinit" );
+	const Finfo* spikeFinfo = IntFire::initCinfo()->findFinfo( "spike" );
+
+	assert( vmFinfo->name() == "Vm" );
+	assert( vmFinfo->docs() == "Membrane potential" );
+	assert( vmFinfo->src().size() == 0 );
+	assert( vmFinfo->dest().size() == 2 );
+	assert( vmFinfo->dest()[0] == "set_Vm" );
+	assert( vmFinfo->dest()[1] == "get_Vm" );
+	assert( vmFinfo->type() == "10ValueFinfoI7IntFiredE" );
+
+	assert( synFinfo->name() == "synapse" );
+	assert( synFinfo->docs() == "Sets up field Elements for synapse" );
+	assert( synFinfo->src().size() == 0 );
+	assert( synFinfo->dest().size() == 0 );
+	// cout <<  synFinfo->type() << endl;
+	assert( synFinfo->type() == "17FieldElementFinfoI7IntFire7SynapseE" );
+
+	assert( procFinfo->name() == "proc" );
+	assert( procFinfo->docs() == "Shared message for process and reinit" );
+	assert( procFinfo->src().size() == 0 );
+	assert( procFinfo->dest().size() == 2 );
+	assert( procFinfo->dest()[0] == "process" );
+	assert( procFinfo->dest()[1] == "reinit" );
+	// cout << procFinfo->type() << endl;
+	assert( procFinfo->type() == "11SharedFinfo" );
+
+	assert( reinitFinfo->name() == "reinit" );
+	assert( reinitFinfo->docs() == "Handles reinit call" );
+	assert( reinitFinfo->src().size() == 0 );
+	assert( reinitFinfo->dest().size() == 0 );
+	// cout << reinitFinfo->type() << endl;
+	assert( reinitFinfo->type() == "10ProcOpFuncI7IntFireE" );
+
+	assert( spikeFinfo->name() == "spike" );
+	assert( spikeFinfo->docs() == "Sends out spike events" );
+	assert( spikeFinfo->src().size() == 0 );
+	assert( spikeFinfo->dest().size() == 0 );
+	// cout << spikeFinfo->type() << endl;
+	assert( spikeFinfo->type() == "9SrcFinfo1IdE" );
+
+	cout << "." << flush;
+}
+
+void testCinfoFields()
+{
+	assert( IntFire::initCinfo()->getDocs() == "" );
+	assert( IntFire::initCinfo()->getBaseClass() == "Neutral" );
+
+	// We have a little bit of a hack here to cast away
+	// constness, due to the way the FieldElementFinfos
+	// are set up.
+	Cinfo *cinfo = const_cast< Cinfo* >( IntFire::initCinfo() );
+	assert( cinfo->getNumSrcFinfo() == 1 );
+	assert( cinfo->getSrcFinfo( 0 ) == cinfo->findFinfo( "spike" ) );
+
+	assert( cinfo->getNumDestFinfo() == 14 );
+	assert( cinfo->getDestFinfo( 0 ) == cinfo->findFinfo( "set_Vm" ) );
+	assert( cinfo->getDestFinfo( 1 ) == cinfo->findFinfo( "get_Vm" ) );
+	assert( cinfo->getDestFinfo( 2 ) == cinfo->findFinfo( "set_tau" ) );
+	assert( cinfo->getDestFinfo( 3 ) == cinfo->findFinfo( "get_tau" ) );
+
+	assert( cinfo->getDestFinfo( 4 ) == cinfo->findFinfo( "set_thresh" ) );
+	assert( cinfo->getDestFinfo( 5 ) == cinfo->findFinfo( "get_thresh" ) );
+	assert( cinfo->getDestFinfo( 6 ) == cinfo->findFinfo( "set_refractoryPeriod" ) );
+	assert( cinfo->getDestFinfo( 7 ) == cinfo->findFinfo( "get_refractoryPeriod" ) );
+	assert( cinfo->getDestFinfo( 8 ) == cinfo->findFinfo( "set_numSynapses" ) );
+	assert( cinfo->getDestFinfo( 9 ) == cinfo->findFinfo( "get_numSynapses" ) );
+	assert( cinfo->getDestFinfo( 10 ) == cinfo->findFinfo( "process" ) );
+	assert( cinfo->getDestFinfo( 11 ) == cinfo->findFinfo( "reinit" ) );
+
+	assert( cinfo->getDestFinfo( 12 ) == cinfo->findFinfo( "set_num_synapse" ) );
+	assert( cinfo->getDestFinfo( 13 ) == cinfo->findFinfo( "get_num_synapse" ) );
+
+	assert( cinfo->getDestFinfo( 14 )->name() == "dummy" );
+
+	assert( cinfo->getNumValueFinfo() == 5 );
+	assert( cinfo->getValueFinfo( 0 ) == cinfo->findFinfo( "Vm" ) );
+
+	assert( cinfo->getNumLookupFinfo() == 0 );
+	assert( cinfo->getLookupFinfo( 0 )->name() == "dummy");
+	assert( cinfo->getNumSharedFinfo() == 1 );
+	assert( cinfo->getSharedFinfo( 0 ) == cinfo->findFinfo( "proc" ) );
+
+	cout << "." << flush;
+}
+
+void testCinfoElements()
+{
+	Id intFireCinfoId( "/classes/IntFire" );
+	assert( intFireCinfoId != Id() );
+	assert( Field< string >::get( intFireCinfoId, "name" ) == "IntFire" );
+	assert( Field< string >::get( intFireCinfoId, "baseClass" ) == "Neutral" );
+	assert( Field< unsigned int >::get( 
+		intFireCinfoId, "num_valueFinfo" ) == 5 );
+	assert( Field< unsigned int >::get( 
+		intFireCinfoId, "num_srcFinfo" ) == 1 );
+	assert( Field< unsigned int >::get( 
+		intFireCinfoId, "num_destFinfo" ) == 14 );
+	
+	Id intFireSrcFinfoId( "/classes/IntFire/srcFinfo" );
+	assert( intFireSrcFinfoId != Id() );
+	assert( Field< string >::get( intFireSrcFinfoId, "name" ) == "spike" );
+	assert( Field< string >::get( intFireSrcFinfoId, "type" ) == "9SrcFinfo1IdE" );
+
+	Id intFireDestFinfoId( "/classes/IntFire/destFinfo" );
+	assert( intFireDestFinfoId != Id() );
+	/*
+	unsigned int ret = Field< unsigned int >::get( intFireDestFinfoId, "linearSize" );
+	assert( Field< unsigned int >::get( intFireDestFinfoId, "linearSize" ) == 14 );
+	*/
+
+	ObjId temp( intFireDestFinfoId, DataId( 0, 7 ) );
+	assert( Field< string >::get( temp, "name" ) == "get_refractoryPeriod");
+	temp = ObjId( intFireDestFinfoId, DataId( 0, 11 ) );
+	// temp.dataId.fieldu= 11;
+	assert( Field< string >::get( temp, "name" ) == "reinit" );
+}
+
 void testAsync( )
 {
 	showFields();
@@ -2145,4 +2269,7 @@ void testAsync( )
 	testDataCopyAny();
 	testOneDimHandler();
 	testFieldDataHandler();
+	testFinfoFields();
+	testCinfoFields();
+	testCinfoElements();
 }

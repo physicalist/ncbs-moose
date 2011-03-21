@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Sat Mar 12 14:02:40 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Mar 17 17:16:53 2011 (+0530)
+# Last-Updated: Mon Mar 21 11:58:04 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 64
+#     Update #: 68
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -54,12 +54,17 @@ class Neutral(object):
     def __get_class(self):
         return _moose._pymoose_Neutral_getattr(self.__ptr, 'class', 'string')
     className = property(__get_class)
-
+    def __get_name(self):
+        return _moose._pymoose_Neutral_getattr(self.__ptr, 'name', 'string')
+    name = property(__get_name)
     def _getattr(self, fname, ftype, index=0):
         return _moose._pymoose_Neutral_getattr(self.__ptr, fname, ftype, index)
 
     def _setattr(self, fname, ftype, value, index=0):
         return _moose._pymoose_Neutral_setattr(self.__ptr, fname, ftype, value, index)
+
+    def getFieldNames(self, ftype='v'):
+        return _moose._pymoose_Neutral_getFieldNames(self.__ptr, ftype)
 
 class IntFire(Neutral):
     def __init__(self, path, dims=[1]):
