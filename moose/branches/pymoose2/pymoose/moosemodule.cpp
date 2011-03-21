@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Mar 21 11:55:07 2011 (+0530)
+// Last-Updated: Mon Mar 21 18:06:56 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 1561
+//     Update #: 1868
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -43,9 +43,11 @@
 
 #include <Python.h>
 
+#include <typeinfo>
 #include "moosemodule.h"
 #include "../basecode/header.h"
 #include "../basecode/ObjId.h"
+#include "../basecode/DataId.h"
 
 #ifdef USE_MPI
 #include <mpi.h>
@@ -93,29 +95,21 @@ char shorttype(string ftype)
 {
     static map<string, char> typemap;
     if (typemap.empty()){
-        typemap["char"] = 'c';
-        typemap["i"] = 'i';
-        typemap["int"] = 'i';
-        typemap["long"] = 'i';        
-        typemap["f"] = 'f';
-        typemap["float"] = 'f';
-        typemap["double"] = 'f';
-        typemap["ObjId"] = 'o';
-        typemap["O"] = 'o';
-        typemap["Object"] = 'o';
-        typemap["short"] = 'i';
-        typemap["s"] = 's';
-        typemap["string"] = 's';
-        typemap["str"] = 's';
-        typemap["unsigned"] = 'u';
-        typemap["unsigned int"] = 'u';
-        typemap["uint"] = 'u';
-        typemap["int_vector"] = 'v';
-        typemap["float_vector"] = 'w';
-        typemap["string_vector"] = 'x';
-        typemap["double_vector"] = 'w';
-        typemap["id_vector"] = 'y';
-        typemap["oid_vector"] = 'z';
+        typemap[typeid(char).name()] = 'c';
+        typemap[typeid(int).name()] = 'i';
+        typemap[typeid(long).name()] = 'i';        
+        typemap[typeid(short).name()] = 'i';
+        typemap[typeid(float).name()] = 'f';
+        typemap[typeid(double).name()] = 'f';
+        typemap[typeid(ObjId).name()] = 'o';
+        typemap[typeid(string).name()] = 's';
+        typemap[typeid(unsigned int).name()] = 'u';
+        typemap[typeid(vector<int>).name()] = 'v';
+        typemap[typeid(vector<float>).name()] = 'w';
+        typemap[typeid(vector<double>).name()] = 'w';
+        typemap[typeid(vector<string>).name()] = 'x';
+        typemap[typeid(vector <Id>).name()] = 'y';
+        typemap[typeid(vector <ObjId>).name()] = 'z';
     }
     return typemap[ftype];
 }
@@ -170,21 +164,25 @@ void * pymoose_Neutral_getField(pymoose_Neutral * instance, int index, string fn
             break;
         case 'v':
             {
-                vector<int> val;
-                Field<int>::getVec(Id(*(instance->id_)), string(fname), val);
-                vector<int> * ret = new vector<int>(val);
+                vector<int>* ret = new vector<int>();
+                *ret = Field< vector<int> >::get(ObjId((*(instance->id_)), index), string(fname));
                 return (void*)ret;
             }
         case 'w':
             {
-                vector<double> val;
-                Field<double>::getVec(Id(*(instance->id_)), string(fname), val);
-                vector<double> * ret = new vector<double>(val);
+                vector<double>* ret = new vector<double>();
+                *ret = Field< vector<double> >::get(ObjId(*(instance->id_), index), string(fname));
                 return (void*)ret;
+            }
+        case 'y': // element type - Ids
+            {
+                vector <Id>* ret = new vector<Id>();
+                *ret = Field< vector<Id> >::get(ObjId(*(instance->id_), index), "children");
+                return (void*) ret;
             }
         default:
             return NULL;
-    };
+    }
 }
     
 int pymoose_Neutral_setField(pymoose_Neutral * instance, int index, string fname, char ftype, void * value)
@@ -233,6 +231,7 @@ vector<string> pymoose_Neutral_getFieldNames(pymoose_Neutral * instance, char ft
     string * className = (string *)pymoose_Neutral_getField(instance, 0, "class", 's');
     cout << "Class Name: " << *className << endl;
     string classInfoPath("/classes/" + *className);
+    delete className;
     string finfotype;
     switch (ftype){
         case 's':
@@ -267,14 +266,57 @@ vector<string> pymoose_Neutral_getFieldNames(pymoose_Neutral * instance, char ft
     cout << "## Class Id path: " << classInfoPath << " path() = " << classId.path() << ", " << (classId != Id())<< endl;
     unsigned int numFinfo = Field<unsigned int>::get(classId, "num_"+finfotype);
     cout << "Num Finfos: " << numFinfo << endl;
+    Id fieldId(classInfoPath + "/" + finfotype);
+    cout << "Field Id path: " << fieldId.path() << endl;
     for ( unsigned int ii = 0; ii < numFinfo; ++ii){
-        Id fieldId(classInfoPath + "/" + finfotype);
-        cout << fieldId << endl;
-        string fieldname = Field<string>::get(fieldId, "name");
-        cout << fieldname << endl;
+        string fieldname = Field<string>::get(ObjId(fieldId, ii), "name");
+        cout << ii << ": " << fieldname << endl;
         fields.push_back(fieldname);
     }
     return fields;
+}
+
+string pymoose_Neutral_getFieldType(pymoose_Neutral * instance, string field)
+{
+    string className = Field<string>::get(ObjId(*(instance->id_), 0), "class");
+    string classPath = "/classes/" + className;
+    Id classId = Id(classPath);
+    assert(classId != Id());
+    static vector<string> finfotypes;
+    if (finfotypes.empty()){
+        finfotypes.push_back("srcFinfo");
+        finfotypes.push_back("destFinfo");
+        finfotypes.push_back("valueFinfo");
+        finfotypes.push_back("lookupFinfo");
+        finfotypes.push_back("sharedFinfo");        
+    }
+
+    for (unsigned jj = 0; jj < finfotypes.size(); ++ jj){
+        unsigned int numFinfos = Field<unsigned int>::get(ObjId(classId, 0), "num_" + finfotypes[jj]);
+        Id fieldId(classId.path() + "/" + finfotypes[jj]);
+        for ( unsigned int ii = 0; ii < numFinfos; ++ii){
+            string fieldName = Field<string>::get(ObjId(fieldId, DataId(0, ii)), "name");
+            if (fieldName == field){
+                string fieldType = Field<string>::get(ObjId(fieldId, DataId(0, ii)), "type");
+                return fieldType;
+            }
+        }
+    }    
+    return "";
+}
+
+vector<pymoose_Neutral*> pymoose_Neutral_getChildren(pymoose_Neutral* instance, int index=0)
+{
+    vector<Id> children = Field< vector<Id> >::get(ObjId(*(instance->id_), DataId(0,index)), "children");
+    cout << "## Size: " << children.size() << endl;
+    vector <pymoose_Neutral*> ret;
+    for (unsigned int ii = 0; ii < children.size(); ++ ii){
+        cout << "child: " << children[ii].path() << endl;
+        pymoose_Neutral* child = new pymoose_Neutral(children[ii]);
+        ret.push_back(child);
+    }
+    cout << "Here" << endl;
+    return ret;
 }
 // 
 // C wrappers for C++ classes
@@ -295,6 +337,7 @@ extern "C" {
     static PyObject * _pymoose_Neutral_setattr(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_getattr(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_getFieldNames(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_getChildren(PyObject * dummy, PyObject *args);
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args);
     // static PyObject * initShell(PyObject * dummy, PyObject * args, PyObject * kwdict);
     static Shell * getShell();
@@ -316,8 +359,9 @@ extern "C" {
         {"_pymoose_Neutral_setattr", _pymoose_Neutral_setattr, METH_VARARGS,
          "set specified attribute of the element."},
         {"_pymoose_Neutral_getFieldNames", _pymoose_Neutral_getFieldNames, METH_VARARGS,
-         "get the list field-names."
-        },
+         "get the list field-names."},
+        {"_pymoose_Neutral_getChildren", _pymoose_Neutral_getChildren, METH_VARARGS,
+         "get list of children"},
         {"_pymoose_Neutral_destroy", _pymoose_Neutral_destroy, METH_VARARGS,
          "destroy the underlying moose element"},
         {NULL, NULL, 0, NULL}        /* Sentinel */
@@ -354,80 +398,6 @@ extern "C" {
         PyGILState_Release(gstate);
     }
 
-    // static PyObject * initShell(PyObject * dummy, PyObject * args, PyObject * kwords)
-    // {
-    //     int isSingleThreaded, numNodes, numCores, isInfinite;
-    //     static char * kwlist[] = {"singlethreaded", "numcores", "numnodes"};
-    //     if (__shell){
-    //         PyErr_SetString(PyExc_RuntimeWarning, "Shell already initialized.");
-    //         Py_RETURN_NONE;
-    //     }
-    //     if (!PyArg_ParseTupleAndKeywords(args, kwords, "|iiii", kwlist, &isSingleThreaded, &numCores, &numNodes, &isInfinite)){
-    //         return NULL;
-    //     }
-    //     __shell = getShell();
-    //     return reinterpret_cast<PyObject*>(__shell);
-    // }
-#if 0
-    static void initEnvironment()
-    {
-        int isSingleThreaded, numNodes, numCores, isInfinite, myNode;
-        /**
-         * Here we allow the user to override the automatic identification
-	 * of processor configuration
-	 */
-        char * env_opt = NULL;
-        env_opt = getenv("SINGLETHREADED");
-        if (env_opt){            
-            if(!(istringstream(string(env_opt)) >> isSingleThreaded)){
-                isSingleThreaded = 0;
-            }
-        }
-        env_opt = getenv("INFINITE");
-        if (env_opt){
-            if (!(istringstream(env_opt) >> isInfinite)){
-                isInfinite = 0;
-            }
-        }
-        env_opt = getenv("NODES");
-        if (env_opt){
-            if (!(istringstream(env_opt) >> numNodes)){
-                numNodes = 1;
-            }
-        }
-        env_opt = getenv("CORES");
-        if (env_opt){
-            if (!(istringstream(env_opt) >> numCores)){
-                numCores = getNumCores();
-            }
-        }
-        if (isSingleThreaded < 0){            
-            isSingleThreaded = 0;
-        }
-        if (numCores < 0){
-            numCores = getNumCores();
-        }
-        if (numNodes < 0){
-            numNodes = 1;
-        }
-        if (isInfinite < 0){
-            isInfinite = 0;
-        }
-        if (myNode < 0){
-            myNode = 0;
-        }
-        SingleThreaded = PyInt_FromLong(isSingleThreaded);
-        NumCores = PyInt_FromLong(numCores);
-        NumNodes = PyInt_FromLong(numNodes);
-        MyNode = PyInt_FromLong(myNode);
-        Infinite = PyInt_FromLong(isInfinite);
-        cout << "Creating MOOSE Shell on node " << myNode
-             << ", numNodes = " << numNodes
-             << ", numCores = " << numCores 
-             << ", multithreaded = " << !isSingleThreaded << endl;
-
-    }
-#endif    
     static Shell * getShell()
     {
         static Shell * shell = NULL;
@@ -472,9 +442,15 @@ extern "C" {
 	assert( tickId.value() == 2 );
 	assert( tickId()->getName() == "tick" ) ;
 
+	Id classMasterId( 3 );
+
+	new Element( classMasterId, Neutral::initCinfo(), "classes", dims, 1 );
+
 	assert ( shellId == Id() );
 	assert( clockId == Id( 1 ) );
 	assert( tickId == Id( 2 ) );
+	assert( classMasterId == Id( 3 ) );
+
 
 	/// Sets up the Elements that represent each class of Msg.
 	Msg::initMsgManagers();
@@ -482,6 +458,10 @@ extern "C" {
 	shell->connectMasterMsg();
 
 	Shell::adopt( shellId, clockId );
+	Shell::adopt( shellId, classMasterId );
+
+	Cinfo::makeCinfoElements( classMasterId );
+
 	while ( isInfinite ) // busy loop for debugging under gdb and MPI.
             ;        
         return shell;    
@@ -517,11 +497,11 @@ extern "C" {
             string parent_path;
             string name;
             if (pos != string:: npos){
-                parent_path = trimmed_path.substr(0, pos);
-                name = trimmed_path.substr(pos);
+                parent_path = trimmed_path.substr(0, pos+1);
+                name = trimmed_path.substr(pos+1);
             } else {
                 parent_path = getShell()->getCwe().path();
-                name = trimmed_path;
+                name = trimmed_path;                
             }
             vector <unsigned int> vec_dims;
             if (dims!= NULL && PySequence_Check(dims)){
@@ -609,9 +589,8 @@ extern "C" {
     {
         PyObject * obj = NULL;
         const char * field = NULL;
-        const char * ftype = NULL;
         const int index = 0;
-        if (!PyArg_ParseTuple(args, "Oss|i", &obj, &field, &ftype, &index)){
+        if (!PyArg_ParseTuple(args, "Os|i", &obj, &field, &index)){
             return NULL;
         }
         pymoose_Neutral * instance = reinterpret_cast<pymoose_Neutral*>(obj);
@@ -619,13 +598,23 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
             return NULL;
         }
-        string ftype_str(ftype);
         string field_str(field);
-        char _ftype = shorttype(ftype);
         PyGILState_STATE gstate;
         gstate = PyGILState_Ensure();
-        void * ret = pymoose_Neutral_getField(instance, index, field_str, _ftype);
+        string ftype = pymoose_Neutral_getFieldType(instance, field_str);
+        cout << "_pymoose_Neutral_getattr " << ftype << endl;
+        char _ftype = shorttype(ftype);
+        if (!_ftype){
+            PyGILState_Release(gstate);
+            PyErr_SetString(PyExc_AttributeError, "Invalid field name.");
+            return NULL;
+        }
+        void * ret = pymoose_Neutral_getField(instance, index, field_str, _ftype );
         PyGILState_Release(gstate);
+        if (!ret){
+            PyErr_SetString(PyExc_RuntimeError, "pymoose_Neutral_getField returned NULL");
+            return NULL;
+        }
         PyObject * pyret = NULL;
         switch(_ftype){
             case 'c':
@@ -663,7 +652,9 @@ extern "C" {
                     vector <long>& val = *((vector<long>*)ret);
                     PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
                     for (unsigned int ii = 0; ii < val.size(); ++ ii ){
-                        if (!PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyInt_FromLong(val[ii]))){
+                        PyObject * entry = PyInt_FromLong(val[ii]);
+                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
+                            free(pyret);
                             pyret = NULL;
                             break;
                         }                        
@@ -676,7 +667,10 @@ extern "C" {
                     vector<double>& val = *((vector<double> *) ret);
                     PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
                     for (unsigned int ii = 0; ii < ((vector<long>*)ret)->size(); ++ ii){
-                        if (!PyTuple_SetItem(pyret, (Py_ssize_t)ii, PyFloat_FromDouble(val[ii]))){
+                        PyObject * entry = PyFloat_FromDouble(val[ii]);
+                        
+                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
+                            free(pyret);
                             pyret = NULL;
                             break;
                         }
@@ -684,9 +678,23 @@ extern "C" {
                 }
                 delete (vector<double>*)ret;
                 break;
+            case 'y':
+                {
+                    vector<Id>& val = *((vector<Id>*) ret);
+                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
+                    for (unsigned int ii = 0; ii < ((vector<Id>*)ret)->size(); ++ ii){
+                        pymoose_Neutral * entry = new pymoose_Neutral(val[ii]);
+                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, (PyObject*)entry)){
+                            free(pyret);
+                            pyret = NULL;
+                            break;
+                        }
+                    }                    
+                }
+                break;
             default:
                 {
-                    PyErr_SetString(PyExc_TypeError, string("Invalid field type: " + ftype_str).c_str());
+                    PyErr_SetString(PyExc_TypeError, string("Invalid field type: " + ftype).c_str());
                     pyret = NULL;
                 }
         }
@@ -714,45 +722,36 @@ extern "C" {
         switch(_ftype){
             case 'c':
                 {
-                    char * _value_ptr = (char*)malloc(sizeof(char));
-                    char * pychar = PyString_AsString(value);
-                    
+                    char * pychar = PyString_AsString(value);                    
                     if (pychar){
-                        *_value_ptr = pychar[0];
-                        value_ptr = _value_ptr;
+                        value_ptr = (void*)(new char(pychar[0]));
                     } else {
+                        PyErr_SetString(PyExc_ValueError, "Invalid field type.");
                         return NULL;
                     }
                     break;
                 }
             case 'i':
                 {
-                    long * _value_ptr = (long*)malloc(sizeof(long));
                     long pyint = PyInt_AsLong(value);
                     if ((pyint == -1) && (PyErr_Occurred())){
                         return NULL;
                     } else {
-                        *_value_ptr = pyint;
-                        value_ptr = _value_ptr;
+                        value_ptr = (void*)(new long(pyint));
                     }
                     break;
                 }
             case 'f':
                 {
-                    double * _value_ptr = (double*) malloc(sizeof(double));
-                    double pydouble = PyFloat_AsDouble(value);
-                    * _value_ptr = pydouble;
-                    value_ptr = _value_ptr;
+                    double pydouble = PyFloat_AsDouble(value);                    
+                    value_ptr = (void*)(new double(pydouble));
                     break;
                 }
             case 's':
                 {
-                    char **_value_ptr = (char**)malloc(sizeof(char*));
                     char * pystr = PyString_AsString(value);
                     if (pystr){
-                        *_value_ptr = (char*)calloc(sizeof(char), strlen(pystr) + 1);
-                        strcpy(*_value_ptr, pystr);
-                        value_ptr = _value_ptr;
+                        value_ptr = (void*)(new string(pystr));
                     } else {
                         return NULL;
                     }
@@ -821,6 +820,33 @@ extern "C" {
         }
         return pyret;
              
+    }
+
+    static PyObject * _pymoose_Neutral_getChildren(PyObject * dummy, PyObject *args)
+    {
+        PyObject * obj = NULL;
+        int index = 0;
+        if (!PyArg_ParseTuple(args, "O|i", &obj, &index)){
+            return NULL;
+        }
+        pymoose_Neutral * instance = reinterpret_cast<pymoose_Neutral *>(obj);
+        if (!instance){
+            PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
+            return NULL;
+        }
+        PyGILState_STATE gstate;
+        gstate = PyGILState_Ensure();
+        vector<pymoose_Neutral*> children = pymoose_Neutral_getChildren(instance, index);
+        PyGILState_Release(gstate);
+        PyObject * pyret = PyTuple_New((Py_ssize_t)children.size());
+        for (unsigned int ii = 0; ii < children.size(); ++ ii){
+            if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, (PyObject*)children[ii])){
+                free(pyret);
+                pyret = NULL;
+                break;
+            }
+        }
+        return pyret;        
     }
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args)
     {
