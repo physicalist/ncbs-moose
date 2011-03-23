@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:50:26 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 16:27:44 2011 (+0530)
+// Last-Updated: Wed Mar 23 17:12:39 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 317
+//     Update #: 334
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -57,6 +57,7 @@ extern void mpiTests();
 extern void processTests(Shell *);
 extern void regressionTests();
 extern unsigned int getNumCores();
+extern char shortType(string type);
 
 using namespace std;
 using namespace pymoose;
@@ -370,23 +371,41 @@ vector<Id> pymoose_Neutral::getChildren(unsigned int index=0)
     return children;
 }
 
-const map<string, string>& getArgMap()
+const map<string, string>& pymoose::getArgMap()
 {
     static map<string, string> argmap;
     if (argmap.empty()){
-        string isSingleThreaded(getenv("SINGLETHREADED"));
-        string isInfinite(getenv("INFINITE"));
-        string numCores(getenv("NUMCORES"));
-        string numNodes(getenv("NUMNODES"));
-        argmap.insert(pair<string, string>("SINGLETHREADED", isSingleThreaded));
-        argmap.insert(pair<string, string>("INFINITE", isInfinite));
-        argmap.insert(pair<string, string>("NUMNODES", numNodes));
-        argmap.insert(pair<string, string>("NUMCORES", numCores));        
+        char * isSingleThreaded = getenv("SINGLETHREADED");
+        if (isSingleThreaded != NULL){
+            argmap.insert(pair<string, string>("SINGLETHREADED", string(isSingleThreaded)));
+        }
+        else {
+            argmap.insert(pair<string, string>("SINGLETHREADED", "0"));
+        }
+        char * isInfinite = getenv("INFINITE");
+        if (isInfinite != NULL){
+         argmap.insert(pair<string, string>("INFINITE", string(isInfinite)));
+        }
+        else {
+            argmap.insert(pair<string, string>("INFINITE", "0"));
+        }   
+        char * numCores = getenv("NUMCORES");
+        if (numCores != NULL){
+            argmap.insert(pair<string, string>("NUMCORES", string(numCores)));
+        } else {
+            argmap.insert(pair<string, string>("NUMCORES", "1"));        
+        }
+        char * numNodes = getenv("NUMNODES");
+        if (numNodes != NULL){
+            argmap.insert(pair<string, string>("NUMNODES", string(numNodes)));
+        } else {
+            argmap.insert(pair<string, string>("NUMNODES", "1"));
+        }
     }
     return argmap;
 }
 
-Shell& getShell()
+Shell& pymoose::getShell()
 {
     static Shell* shell = NULL;
     if (shell){

@@ -11,7 +11,9 @@ HEADERS = pymoose.h \
 	moosemodule.h \
 
 
-OBJ = moosemodule.o pymoose_Neutral.o
+OBJ = moosemodule.o \
+	pymoose_Neutral.o \
+
 
 $(TARGET): $(OBJ) $(HEADERS)
 	$(LD) -r -o $(TARGET) $(OBJ)

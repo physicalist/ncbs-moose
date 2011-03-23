@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Wed Mar 23 10:10:45 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 10:42:32 2011 (+0530)
+// Last-Updated: Wed Mar 23 17:04:53 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 39
+//     Update #: 41
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -29,6 +29,10 @@
 // 
 
 // Code:
+#include <string>
+#include <map>
+
+using namespace std;
 
 char shortType(string name)
 {
