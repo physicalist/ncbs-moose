@@ -8,7 +8,7 @@
 **********************************************************************/
 #ifndef _SRC_FINFO_H
 #define _SRC_FINFO_H
-
+#include <typeinfo>
 /**
  * This set of classes define Message Sources. Their main job is to supply 
  * a type-safe send operation, and to provide typechecking for it.
@@ -110,6 +110,12 @@ template < class T > class SrcFinfo1: public SrcFinfo
 			e.element()->tsend( q, getBindIndex(), p, temp, target );
 			delete[] temp;
 		}
+    string rttiType()
+    {
+        string type = typeid(T).name();
+        cout << "SrcFinfo::rttiType" << type << endl;
+        return type;
+    }
 	private:
 };
 

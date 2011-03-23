@@ -81,6 +81,15 @@ template < class T, class L, class F > class LookupValueFinfo: public LookupValu
 				indexPart, returnValue );
 		}
 
+    string rttiType()
+    {
+        string type;
+        type += typeid(F).name();
+        type += ", ";
+        type += typeid(L).name();
+        cout << "######### " << typeid(*this).name() << ": " << type << endl;
+        return type;
+    }
 	private:
 		DestFinfo* set_;
 		DestFinfo* get_;
@@ -124,6 +133,15 @@ template < class T, class L, class F > class ReadOnlyLookupValueFinfo: public Lo
 				indexPart, returnValue );
 		}
 
+    string rttiType()
+    {
+        string type;
+        type += typeid(F).name();
+        type += ", ";
+        type += typeid(L).name();
+        cout << "########## " << typeid(*this).name() << ": " << type << endl;
+        return type;
+    }
 	private:
 		DestFinfo* get_;
 };

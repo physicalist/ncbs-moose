@@ -75,6 +75,11 @@ template < class T, class F > class ValueFinfo: public ValueFinfoBase
 			Field< F > sg( tgt.objId() );
 			return sg.innerStrGet( tgt.objId(), field, returnValue );
 		}
+    string rttiType()
+    {
+        cout << "############## " << typeid(*this).name() << ": " << typeid(F).name() << endl;
+        return typeid(F).name();
+    }
 	private:
 };
 
@@ -113,6 +118,12 @@ template < class T, class F > class ReadOnlyValueFinfo: public ValueFinfoBase
 			return sg.innerStrGet( tgt.objId(), field, returnValue );
 		}
 
+    string rttiType()
+    {
+        string type = typeid(F).name();
+        cout << "########## " << typeid(*this).name() << ": "<< type << endl;
+        return type;
+    }
 	private:
 };
 
@@ -170,6 +181,11 @@ template < class T, class F > class UpValueFinfo: public ValueFinfoBase
 			return sg.innerStrGet( tgt.objId(), field, returnValue );
 		}
 
+    string rttiType()
+    {
+        cout << "################ " << typeid(*this).name() << ": " << typeid(F).name() << endl;
+        return typeid(F).name();
+    }
 	private:
 };
 

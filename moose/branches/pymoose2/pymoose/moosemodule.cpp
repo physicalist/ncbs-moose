@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Mar 21 18:06:56 2011 (+0530)
+// Last-Updated: Mon Mar 21 19:33:27 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 1868
+//     Update #: 1890
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -339,9 +339,7 @@ extern "C" {
     static PyObject * _pymoose_Neutral_getFieldNames(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_getChildren(PyObject * dummy, PyObject *args);
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args);
-    // static PyObject * initShell(PyObject * dummy, PyObject * args, PyObject * kwdict);
     static Shell * getShell();
-    // static void initEnvironment();
     /**
      * Method definitions.
      */
@@ -587,10 +585,12 @@ extern "C" {
 
     static PyObject * _pymoose_Neutral_getattr(PyObject * dummy, PyObject * args)
     {
+        PyGILState_STATE gstate;
         PyObject * obj = NULL;
         const char * field = NULL;
+        const char * ftype = NULL;
         const int index = 0;
-        if (!PyArg_ParseTuple(args, "Os|i", &obj, &field, &index)){
+        if (!PyArg_ParseTuple(args, "Os|is", &obj, &field, &index, &ftype)){
             return NULL;
         }
         pymoose_Neutral * instance = reinterpret_cast<pymoose_Neutral*>(obj);
@@ -599,17 +599,22 @@ extern "C" {
             return NULL;
         }
         string field_str(field);
-        PyGILState_STATE gstate;
-        gstate = PyGILState_Ensure();
-        string ftype = pymoose_Neutral_getFieldType(instance, field_str);
-        cout << "_pymoose_Neutral_getattr " << ftype << endl;
-        char _ftype = shorttype(ftype);
-        if (!_ftype){
+        string ftype_str;
+        if (ftype){
+            ftype_str = string(ftype);
+        } else {
+            gstate = PyGILState_Ensure();
+            ftype_str = pymoose_Neutral_getFieldType(instance, field_str);
             PyGILState_Release(gstate);
+        }
+        cout << "_pymoose_Neutral_getattr " << ftype_str << endl;
+        char _ftype = shorttype(ftype_str);
+        if (!_ftype){
             PyErr_SetString(PyExc_AttributeError, "Invalid field name.");
             return NULL;
         }
-        void * ret = pymoose_Neutral_getField(instance, index, field_str, _ftype );
+        gstate = PyGILState_Ensure();
+        void * ret = pymoose_Neutral_getField(instance, index, field_str, _ftype);
         PyGILState_Release(gstate);
         if (!ret){
             PyErr_SetString(PyExc_RuntimeError, "pymoose_Neutral_getField returned NULL");
@@ -694,7 +699,7 @@ extern "C" {
                 break;
             default:
                 {
-                    PyErr_SetString(PyExc_TypeError, string("Invalid field type: " + ftype).c_str());
+                    PyErr_SetString(PyExc_TypeError, string("Invalid field type: " + ftype_str).c_str());
                     pyret = NULL;
                 }
         }

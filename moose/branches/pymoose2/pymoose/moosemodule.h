@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 17 15:29:04 2011 (+0530)
+// Last-Updated: Tue Mar 22 15:37:45 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 115
+//     Update #: 122
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -34,32 +34,13 @@
 #include <string>
 class Shell;
 class Id;
+class pymoose_Neutral;
 
-namespace pymoose{
+extern "C" {
+} //!extern "C"
 
-/**
- * Base of the whole PyMoose class hierarchy.
- */
-class PyMooseBase
-{
-  public:
-    PyMooseBase();
-    virtual ~PyMooseBase();    
-}; // ! class PyMooseBase
 
-/**
- * Wraps Neutral.
- */
-class pymoose_Neutral: public PyMooseBase
-{
-  public:
-    pymoose_Neutral(Id id);
-    virtual ~pymoose_Neutral();
-    const Id* id_;
-};
-
-} // namespace pymoose
+#endif // _MOOSEMODULE_H
 
 // 
 // moosemodule.h ends here
-#endif // _MOOSEMODULE_H
