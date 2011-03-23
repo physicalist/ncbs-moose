@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:50:26 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 14:36:40 2011 (+0530)
+// Last-Updated: Wed Mar 23 16:27:44 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 294
+//     Update #: 317
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -114,7 +114,7 @@ void * pymoose_Neutral::getField(string fname, char &ftype, unsigned int index)
      return (void *) ret;                                               
     
     
-    string type = getFieldType(fieldName);
+    string type = getFieldType(fname);
     ftype = shortType(type);
     switch(ftype){
         case 'c': {
@@ -311,7 +311,7 @@ int pymoose_Neutral::setField(string fname, void * value, unsigned int index)
  */
 vector<string> pymoose_Neutral::getFieldNames(string ftypeType)
 {
-    string className = Field<string>::get(ObjeId(id_, 0), "class");
+    string className = Field<string>::get(ObjId(id_, 0), "class");
     string classInfoPath("/classes/" + className);
     Id classId(classInfoPath);
     unsigned int numFinfos = Field<unsigned int>::get(ObjId(classId,0), "num_" + ftypeType);
@@ -322,7 +322,7 @@ vector<string> pymoose_Neutral::getFieldNames(string ftypeType)
 #endif // !NDEBUG
     Id fieldId(classInfoPath + "/" + ftypeType);
     vector<string> fields;
-    if (fieldId() != Id()){
+    if (fieldId != Id()){
         for (unsigned int ii = 0; ii < numFinfos; ++ii){
             string fieldName = Field<string>::get(ObjId(fieldId, ii), "name");
 #ifndef NDEBUG       
@@ -386,7 +386,7 @@ const map<string, string>& getArgMap()
     return argmap;
 }
 
-const Shell& getShell()
+Shell& getShell()
 {
     static Shell* shell = NULL;
     if (shell){
@@ -400,22 +400,21 @@ const Shell& getShell()
     long myNode = 0;
     string arg;
 
-    arg = getArgMap()["SINGLETHREADED"];    
-    if (!arg.empty()){
-        istringstream(arg) >> isSingleThreaded;
+    map<string, string>::const_iterator it = getArgMap().find("SINGLETHREADED");    
+    if (it != getArgMap().end()){
+        istringstream(it->second) >> isSingleThreaded;
     }
-    arg = getArgMap()["NUMCORES"];
-    if (arg.empty()){
-        arg = getNumCores();
+    it = getArgMap().find("NUMCORES");
+    if ((it == getArgMap().end()) || it->second.empty()){
+        numCores = getNumCores();
     }
-    istringstream(arg) >> numCores;
-    arg = getArgMap()["NUMNODES"];
-    if (!arg.empty()){
-        istringstream(arg) >> numNodes;
+    it = getArgMap().find("NUMNODES");
+    if (it != getArgMap().end()){
+        istringstream(it->second) >> numNodes;
     }
-    arg = getArgMap()["INFINITE"];
-    if (!arg.empty()){
-        istringstream(arg) >> isInfinite;
+    it = getArgMap().find("INFINITE");
+    if (it != getArgMap().end()){
+        istringstream(it->second) >> isInfinite;
     }
 
     // Do MPI Initialization

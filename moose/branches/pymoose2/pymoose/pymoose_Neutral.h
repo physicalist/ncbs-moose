@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:49:33 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 11:42:38 2011 (+0530)
+// Last-Updated: Wed Mar 23 15:59:55 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 139
+//     Update #: 140
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -105,33 +105,6 @@ class pymoose_Neutral: public PyMooseBase
     */
     Id id_;
 };
-
-/**
-   Returns a global static map created using environment
-   variables/command line arguments.  Equivalent to Property utility
-   in earlier moose.  This will be used by getShell to access global
-   parameters.
-
-   Currently, it uses environment variables to populate the map. The
-   following environment values are recognized:
-
-   NUMNODES -- number of nodes in case of parallel simulation.
-
-   NUMCORES -- number of cores on this node
-
-   SINGLETHREADED -- 1 if this MOOSE should run in a single thread, 0
-   if it is to run mutithreaded mode.
-
-   INFINITE -- this is for testing.
-   
-
-   
-*/
-// const map<string, string>* getArgMap();
-// /**
-//    Initialized and returns a reference to the Shell.
-// */
-// const Shell& getShell();
 
 } // ! namespace pymoose
 

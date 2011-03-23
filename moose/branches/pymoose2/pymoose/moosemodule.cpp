@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 15:28:27 2011 (+0530)
+// Last-Updated: Wed Mar 23 16:32:14 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 2172
+//     Update #: 2231
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -42,25 +42,28 @@
 // Code:
 
 #include <Python.h>
-
-#include <typeinfo>
-#include "moosemodule.h"
-#include "../basecode/header.h"
-#include "../basecode/ObjId.h"
-#include "../basecode/DataId.h"
+#include <map>
 
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
-
+#include <iostream>
+#include "../basecode/header.h"
+#include "../basecode/ObjId.h"
+#include "../basecode/DataId.h"
 #include "../basecode/ReduceBase.h"
 #include "../basecode/ReduceMax.h"
-#include "Shell.h"
 #include "../utility/strutil.h"
+#include "../utility/utility.h"
 #include "../scheduling/Tick.h"
 #include "../scheduling/TickMgr.h"
 #include "../scheduling/TickPtr.h"
 #include "../scheduling/Clock.h"
+#include "../shell/Shell.h"
+
+#include "moosemodule.h"
+#include "pymoose.h"
+#include "pymoose_Neutral.h"
 
 extern void nonMpiTests(Shell *);
 extern void mpiTests();
@@ -71,6 +74,12 @@ extern unsigned int getNumCores();
 using namespace std;
 using namespace pymoose;
 
+extern const map<string, string>& getArgMap();
+
+static int isSingleThreaded = 0;
+static int isInfinite = 0;
+static int numNodes = 1;
+static int numCores = 1;
 
 char finfotype(string ftype)
 {
@@ -85,11 +94,30 @@ char finfotype(string ftype)
     return typemap[ftype];
 }
 
+void setup_runtime_env(){
+    const map<string, string>& argmap = getArgMap();
+    map<string, string>::const_iterator it;
+    it = argmap.find("SINGLETHREADED");
+    if (it != argmap.end()){
+        istringstream(it->second) >> isSingleThreaded;
+    }
+    it = argmap.find("INFINITE");
+    if (it != argmap.end()){
+        istringstream(it->second) >> isInfinite;
+    }
+    it = argmap.find("NUMCORES");
+    if (it != argmap.end()){
+        istringstream(it->second) >> numCores;
+    }
+    it = argmap.find("NUMNODES");
+    if (it != argmap.end()){
+        istringstream(it->second) >> numNodes;
+    }
+}
 // 
 // C wrappers for C++ classes
 // This is used by Python
 extern "C" {
-    static Shell * __shell = NULL;
     static PyObject * MooseError;
     static PyObject * SingleThreaded;
     static PyObject * NumNodes;
@@ -138,17 +166,13 @@ extern "C" {
         PyObject *moose_module = Py_InitModule("_moose", MooseMethods);
         if (moose_module == NULL)
             return;
-        int isSingleThreaded, isInfinite, numNodes, numCores;
         MooseError = PyErr_NewException("moose.error", NULL, NULL);
         Py_INCREF(MooseError);
         PyModule_AddObject(moose_module, "error", MooseError);
         PyGILState_STATE gstate;
         gstate = PyGILState_Ensure();
-        __shell = &getShell();
-        istringstream(getArgMap()["SINGLETHREADED"]) >> isSingleThreaded;
-        isInfinite = istringstream(getArgMap()["INFINITE"]) >> isInfinite;
-        istringstream(getArgMap()["NUMCORES"]) >> numCores;
-        istringstream(getArgMap()["NUMNODES"]) >> numNodes;
+        getShell();
+        setup_runtime_env();
         PyGILState_Release(gstate);
         SingleThreaded = PyInt_FromLong(isSingleThreaded);
         Py_INCREF(SingleThreaded);
@@ -212,7 +236,7 @@ extern "C" {
         
         PyGILState_STATE gstate;
         gstate = PyGILState_Ensure();
-        pymoose_Neutral * obj = pymoose_Neutral(trimmed_path, trimmed_type, vec_dims);
+        pymoose_Neutral * obj = new pymoose_Neutral(trimmed_path, trimmed_type, vec_dims);
         PyGILState_Release(gstate);
         PyObject * ret = (PyObject *)(obj);
         return ret;
@@ -308,7 +332,7 @@ extern "C" {
         switch(ftype){
             case 'c':
                 {
-                    pyret = PyPy_BuildValue("c", *((char*)ret));
+                    pyret = Py_BuildValue("c", *((char*)ret));
                     delete (char*)ret;
                 }
                 break;
@@ -483,7 +507,7 @@ extern "C" {
                     vector <string>& val = *((vector<string>*)ret);
                     PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
                     for (unsigned int ii = 0; ii < val.size(); ++ ii ){
-                        PyObject * entry = PyString_FromString(val[ii]);
+                        PyObject * entry = PyString_FromString(val[ii].c_str());
                         if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
                             free(pyret);
                             pyret = NULL;
@@ -519,7 +543,7 @@ extern "C" {
                 pyret = Py_None;                
             default:
                 {
-                    PyErr_SetString(PyExc_TypeError, string("Invalid field type: " + ftype_str).c_str());
+                    PyErr_SetString(PyExc_TypeError, "Invalid field.");
                     pyret = NULL;
                 }
         }
@@ -851,7 +875,7 @@ extern "C" {
                 break;
             }                
             case 'C': {
-                delete (vector <char>) value_ptr;
+                delete (vector <char>*) value_ptr;
                 break;
             }                
             case 'v': {
@@ -912,15 +936,14 @@ extern "C" {
     {
         PyObject * obj = NULL;
         char * ftype;
-        char typec;
         if (!PyArg_ParseTuple(args, "O|s", &obj, &ftype)){
             return NULL;
         }else if ( !ftype || (strlen(ftype) == 0)){
             PyErr_SetString(PyExc_ValueError, "Field type must be a character or string");
             return NULL;
         }
-        ftype_str = string(ftype);
-        if ((ftype_str != 'srcFinfo') && (ftype_str != 'destFinfo') && (ftype_str != 'valueFinfo') && (ftype_str != 'lookupFinfo') && (ftype_str != 'sharedFinfo')){
+        string ftype_str = string(ftype);
+        if ((ftype_str != "srcFinfo") && (ftype_str != "destFinfo") && (ftype_str != "valueFinfo") && (ftype_str != "lookupFinfo") && (ftype_str != "sharedFinfo")){
             PyErr_SetString(PyExc_ValueError, "Invalid finfo type specified. Valid values are: srcFinfo, destFinfo, valueFinfo, lookupFinfo, sharedFinfo");
             return NULL;
         }

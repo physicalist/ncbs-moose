@@ -14,7 +14,7 @@ HEADERS = pymoose.h \
 OBJ = moosemodule.o pymoose_Neutral.o
 
 $(TARGET): $(OBJ) $(HEADERS)
-	$(LD) -r -o $(TARGET) $(OBJ) $(HEADERS)
+	$(LD) -r -o $(TARGET) $(OBJ)
 
 clean: 
 	-rm -f *.o
