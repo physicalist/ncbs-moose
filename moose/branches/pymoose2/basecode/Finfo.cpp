@@ -105,7 +105,9 @@ vector< string > Finfo::dest( ) const
 // Default virtual functions.
 string Finfo::rttiType() const
 {
-	return typeid( *this ).name();
+    string type = typeid( *this ).name();
+    cout << "Finfo::rttiType() - " << type << endl;
+    return type;
 }
 
 vector< string > Finfo::innerSrc() const

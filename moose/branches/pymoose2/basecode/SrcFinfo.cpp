@@ -64,3 +64,4 @@ void SrcFinfo0::sendTo( const Eref& e, const ProcInfo* p,
 	Qinfo q( e.index(), 0, 1 );
 	e.element()->tsend( q, getBindIndex(), p, 0, target );
 }
+
