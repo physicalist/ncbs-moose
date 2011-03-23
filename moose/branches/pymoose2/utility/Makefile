@@ -6,6 +6,8 @@ TARGET = utility.o
 
 OBJ = \
 	strutil.o	\
+	types.o 	\
+
 
 HEADERS = \
 	strutil.h \

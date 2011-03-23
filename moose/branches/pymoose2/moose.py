@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Sat Mar 12 14:02:40 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Mar 21 17:15:49 2011 (+0530)
+# Last-Updated: Wed Mar 23 17:35:17 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 84
+#     Update #: 88
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,10 +52,10 @@ class Neutral(object):
         return _moose._pymoose_Neutral_path(self.__ptr)
     path = property(__get_path)
     def __get_class(self):
-        return _moose._pymoose_Neutral_getattr(self.__ptr, 'class', 'string')
+        return _moose._pymoose_Neutral_getattr(self.__ptr, 'class')
     className = property(__get_class)
     def __get_name(self):
-        return _moose._pymoose_Neutral_getattr(self.__ptr, 'name', 'string')
+        return _moose._pymoose_Neutral_getattr(self.__ptr, 'name')
     name = property(__get_name)
     def _getattr(self, fname, index=0):
         return _moose._pymoose_Neutral_getattr(self.__ptr, fname, index)
@@ -71,7 +71,7 @@ class Neutral(object):
             ret[-1].__ptr = child
         return ret                       
 
-    def getFieldNames(self, ftype='v'):
+    def getFieldNames(self, ftype='valueFinfo'):
         return _moose._pymoose_Neutral_getFieldNames(self.__ptr, ftype)
 
 class IntFire(Neutral):
@@ -82,7 +82,7 @@ class IntFire(Neutral):
         return self._getattr('Vm', index)
 
     def setVm(self, value, index=0):
-        return self._setattr('Vm', 'f', value, index)
+        return self._setattr('Vm', value, index)
     
         
 # 

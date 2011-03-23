@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:49:33 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 16:28:18 2011 (+0530)
+// Last-Updated: Wed Mar 23 17:02:34 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 150
+//     Update #: 154
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -46,7 +46,7 @@ class PyMooseBase
     PyMooseBase();
     virtual ~PyMooseBase();    
 }; // ! class PyMooseBase
-
+const std::map<std::string, std::string>& getArgMap();
 Shell& getShell();
 } // ! namespace pymoose
 

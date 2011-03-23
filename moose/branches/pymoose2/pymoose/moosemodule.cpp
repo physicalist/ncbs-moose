@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 16:32:14 2011 (+0530)
+// Last-Updated: Wed Mar 23 17:27:10 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 2231
+//     Update #: 2245
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -74,7 +74,7 @@ extern unsigned int getNumCores();
 using namespace std;
 using namespace pymoose;
 
-extern const map<string, string>& getArgMap();
+extern const map<string, string>& pymoose::getArgMap();
 
 static int isSingleThreaded = 0;
 static int isInfinite = 0;
@@ -95,7 +95,7 @@ char finfotype(string ftype)
 }
 
 void setup_runtime_env(){
-    const map<string, string>& argmap = getArgMap();
+    const map<string, string>& argmap = pymoose::getArgMap();
     map<string, string>::const_iterator it;
     it = argmap.find("SINGLETHREADED");
     if (it != argmap.end()){
@@ -113,6 +113,16 @@ void setup_runtime_env(){
     if (it != argmap.end()){
         istringstream(it->second) >> numNodes;
     }
+    cout << "ENVIRONMENT: " << endl
+         << "SINGLETHREADED = " << isSingleThreaded << endl
+         << "INFINITE = " << isInfinite << endl
+         << "NUMCORES = " << numCores << endl
+         << "NUMNODES = " << numNodes << endl;
+}
+
+pymoose_Neutral * pymoose_Neutral_new(string path, string type, vector<unsigned int> dims)
+{
+    return new pymoose_Neutral(path, type, dims);
 }
 // 
 // C wrappers for C++ classes
@@ -166,7 +176,8 @@ extern "C" {
         PyObject *moose_module = Py_InitModule("_moose", MooseMethods);
         if (moose_module == NULL)
             return;
-        MooseError = PyErr_NewException("moose.error", NULL, NULL);
+        char moose_err[] = "moose.error";
+        MooseError = PyErr_NewException(moose_err, NULL, NULL);
         Py_INCREF(MooseError);
         PyModule_AddObject(moose_module, "error", MooseError);
         PyGILState_STATE gstate;
@@ -236,7 +247,7 @@ extern "C" {
         
         PyGILState_STATE gstate;
         gstate = PyGILState_Ensure();
-        pymoose_Neutral * obj = new pymoose_Neutral(trimmed_path, trimmed_type, vec_dims);
+        pymoose_Neutral * obj = pymoose_Neutral_new(trimmed_path, trimmed_type, vec_dims);
         PyGILState_Release(gstate);
         PyObject * ret = (PyObject *)(obj);
         return ret;
