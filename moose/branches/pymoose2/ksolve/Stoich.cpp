@@ -156,13 +156,25 @@ void Stoich::reinit( const Eref& e, ProcPtr p )
 /**
  * Handles incoming messages representing influx of molecules
  */
-void Stoich::port( const Eref& e, ProcPtr p, vector< double > mol )
+void Stoich::influx( DataId port, vector< double > mol )
 {
+	/*
 	assert( mol.size() == inPortEnd_ - inPortStart_ );
 	unsigned int j = 0;
 	for ( unsigned int i = inPortStart_; i < inPortEnd_; ++i ) {
 		S_[i] += mol[j++];
 	}
+	*/
+}
+
+void Stoich::handleAvailableMols( DataId port, vector< Id > mols )
+{
+	;
+}
+
+void Stoich::handleMatchedMols( DataId port, vector< Id > mols )
+{
+	;
 }
 
 //////////////////////////////////////////////////////////////
