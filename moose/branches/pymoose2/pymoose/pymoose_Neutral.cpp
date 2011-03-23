@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:50:26 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 11:45:16 2011 (+0530)
+// Last-Updated: Wed Mar 23 14:36:40 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 293
+//     Update #: 294
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -298,7 +298,7 @@ int pymoose_Neutral::setField(string fname, void * value, unsigned int index)
         }         
         default:
             return 0;            
-    };
+    }
     return 1;
 #undef SET_FIELD    
 }
