@@ -6,10 +6,15 @@ TARGET = pymoose.o
 CXXFLAGS += -I../basecode -I../msg -I../shell
 .PHONY: clean
 
-OBJ = moosemodule.o
+HEADERS = pymoose.h \
+	pymoose_Neutral.h \
+	moosemodule.h \
 
-$(TARGET): $(OBJ)
-	$(LD) -r -o $(TARGET) $(OBJ) 
+
+OBJ = moosemodule.o pymoose_Neutral.o
+
+$(TARGET): $(OBJ) $(HEADERS)
+	$(LD) -r -o $(TARGET) $(OBJ) $(HEADERS)
 
 clean: 
 	-rm -f *.o

@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:50:26 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 11:18:49 2011 (+0530)
+// Last-Updated: Wed Mar 23 11:45:16 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 279
+//     Update #: 293
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -44,11 +44,13 @@
 #include "../basecode/ReduceBase.h"
 #include "../basecode/ReduceMax.h"
 #include "Shell.h"
-#include "../utility/strutil.h"
+#include "../utility/utility.h"
 #include "../scheduling/Tick.h"
 #include "../scheduling/TickMgr.h"
 #include "../scheduling/TickPtr.h"
 #include "../scheduling/Clock.h"
+
+#include "pymoose_Neutral.h"
 
 extern void nonMpiTests(Shell *);
 extern void mpiTests();
@@ -75,17 +77,17 @@ pymoose_Neutral::pymoose_Neutral(string path, string type, vector<unsigned int> 
     // If object does not exist, create new
     if ((id_ == Id()) && (path != "/") && (path != "/root")){
         string parent_path;
-        if (path[0] != "/"){
+        if (path[0] != '/'){
             parent_path = getShell().getCwe().path();
         }
         size_t pos = path.rfind("/");
-        string name, parent_path;
+        string name;
         if (pos != string::npos){
             name = path.substr(pos+1);
             parent_path += "/";
             parent_path += path.substr(0, pos+1);
         }
-        id_ = getShell().doCreate(type, Id(parent_path), name, dims);
+        id_ = getShell().doCreate(string(type), Id(parent_path), string(name), vector<unsigned int>(dims));
     }
 }
 
@@ -103,12 +105,14 @@ Id pymoose_Neutral::id()
     return id_;
 }
 
-void * pymoose_Neutral::getField(string fieldName, char &ftype, unsigned int index)
+void * pymoose_Neutral::getField(string fname, char &ftype, unsigned int index)
 {
     // The GET_FIELD macro is just a short-cut
-#define GET_FIELD(TYPE) (TYPE * ret = new TYPE();       \
-                         * ret = Field<TYPE>::get(ObjId(id_, index), fname); \
-                         return (void *) ret;)
+#define GET_FIELD(TYPE) \
+    TYPE * ret = new TYPE();                                           \
+     * ret = Field<TYPE>::get(ObjId(id_, index), fname);                \
+     return (void *) ret;                                               
+    
     
     string type = getFieldType(fieldName);
     ftype = shortType(type);
@@ -191,9 +195,9 @@ void * pymoose_Neutral::getField(string fieldName, char &ftype, unsigned int ind
 int pymoose_Neutral::setField(string fname, void * value, unsigned int index)
 {
 #define SET_FIELD(TYPE) \
-    (TYPE c_val = *((TYPE *)value); \
-    Field<TYPE>::set(ObjId(id_, index), fname, c_val); \
-    )
+    TYPE c_val = *((TYPE *)value); \
+    Field<TYPE>::set(ObjId(id_, index), fname, c_val); 
+    
     char ftype = shortType(getFieldType(fname));
     switch(ftype){
         case 'c': {
@@ -333,7 +337,7 @@ vector<string> pymoose_Neutral::getFieldNames(string ftypeType)
 string pymoose_Neutral::getFieldType(string fieldName)
 {
     string fieldType;
-    string className = Field<string>::get(ObjeId(id_, 0), "class");
+    string className = Field<string>::get(ObjId(id_, 0), "class");
     string classInfoPath("/classes/" + className);
     Id classId(classInfoPath);
     assert(classId != Id());
