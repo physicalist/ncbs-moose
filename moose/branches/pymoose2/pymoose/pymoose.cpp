@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:50:26 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Mar 22 17:32:08 2011 (+0530)
+// Last-Updated: Wed Mar 23 11:18:49 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 192
+//     Update #: 279
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -103,95 +103,200 @@ Id pymoose_Neutral::id()
     return id_;
 }
 
-void * pymoose_Neutral::getField(unsigned int index, string fieldName, char ftype)
+void * pymoose_Neutral::getField(string fieldName, char &ftype, unsigned int index)
 {
+    // The GET_FIELD macro is just a short-cut
+#define GET_FIELD(TYPE) (TYPE * ret = new TYPE();       \
+                         * ret = Field<TYPE>::get(ObjId(id_, index), fname); \
+                         return (void *) ret;)
+    
+    string type = getFieldType(fieldName);
+    ftype = shortType(type);
     switch(ftype){
-        case 'c':
-            {
-                char * ret = new char();
-                *ret = Field< char >::get(ObjId(id_, index), fname);
-                return (void*)ret;
-            }
-        case 'i':
-            {
-                long* ret = new long();
-                * ret = Field< int >::get(ObjId(id_, index), fname);
-                return (void*)ret;
-            }
-        case 'f':
-            {
-                double * ret = new double();
-                *ret = Field< double >::get(ObjId(id_, index), fname);
-                return (void*) ret;
-            }
-        case 's':
-            {
-                string val = Field< string >::get(ObjId(id_, index), fname);
-                string * ret = new string(val);
-                return (void*)ret;
-            }
-            break;
-        case 'u':
-            {
-                unsigned long * ret = new unsigned long();
-                *ret = Field<unsigned int>::get(ObjId(id_, index), fname);
-                return (void*)ret;
-            }
-            break;
-        case 'v':
-            {
-                vector<int>* ret = new vector<int>();
-                *ret = Field< vector<int> >::get(ObjId((*(instance->id_)), index), string(fname));
-                return (void*)ret;
-            }
-        case 'w':
-            {
-                vector<double>* ret = new vector<double>();
-                *ret = Field< vector<double> >::get(ObjId(id_, index), string(fname));
-                return (void*)ret;
-            }
-        case 'y': // element type - Ids
-            {
-                vector <Id>* ret = new vector<Id>();
-                *ret = Field< vector<Id> >::get(ObjId(id_, index), "children");
-                return (void*) ret;
-            }
+        case 'c': {
+            GET_FIELD(char)
+        }
+        case 'i': {
+            GET_FIELD(int)
+        }
+        case 'j': {
+            GET_FIELD(short)
+        }
+        case 'l': {
+            GET_FIELD(long)
+        }
+        case 'u': {
+            GET_FIELD(unsigned int)
+        }
+        case 'k': {
+            GET_FIELD(unsigned long)
+        }
+        case 'f': {
+            GET_FIELD(float)
+        }
+        case 'd': {
+            GET_FIELD(double)
+        }
+        case 's': {
+            GET_FIELD(string)
+        }
+        case 'I': {
+            GET_FIELD(Id)
+        }
+        case 'O': {
+            GET_FIELD(ObjId)
+        }
+        case 'D': {
+            GET_FIELD(DataId)
+        }
+        case 'v': {
+            GET_FIELD(vector <int>)
+        }
+        case 'w': {
+            GET_FIELD(vector <short>)
+        }
+        case 'L': {
+            GET_FIELD(vector <long>)
+        }
+        case 'U': {
+            GET_FIELD(vector <unsigned int>)
+        }
+        case 'K': {
+            GET_FIELD(vector <unsigned long>)
+        }
+        case 'F': {
+            GET_FIELD(vector <float>)
+        }
+        case 'x': {
+            GET_FIELD(vector <double>)
+        }
+        case 'S': {
+            GET_FIELD(vector <string>)
+        }
+        case 'J': {
+            GET_FIELD(vector <Id>)
+        }
+        case 'P': {
+            GET_FIELD(vector <ObjId>)
+        }
+        case 'E': {
+            GET_FIELD(vector <DataId>)
+        }
         default:
             return NULL;
-    }     
+    }
+#undef GET_FIELD    
 }
 
-int pymoose_Neutral::setField(unsigned int index, string fname, char ftype, void * value)
+int pymoose_Neutral::setField(string fname, void * value, unsigned int index)
 {
+#define SET_FIELD(TYPE) \
+    (TYPE c_val = *((TYPE *)value); \
+    Field<TYPE>::set(ObjId(id_, index), fname, c_val); \
+    )
+    char ftype = shortType(getFieldType(fname));
     switch(ftype){
-        case 'c':
-            {
-                char  c_val = *((char*)value);
-                Field<char>::set(ObjId(id_, index), fname, c_val);
-                break;
-            }                
-        case 'i':
-            {
-                int c_val = *((int*)value);
-                Field<int>::set(ObjId(id_, index), fname, c_val);
-                break;
-            }
-        case 'f':
-            {
-                double c_val = *((double*)value);
-                Field<double>::set(ObjId(id_, index), fname, c_val);
-                break;
-            }
-        case 's':
-            {
-                char * c_val = *((char**)value);
-                Field< string >::set(ObjId(id_, index), string(fname), string(c_val));
-                break;
-            }
+        case 'c': {
+            SET_FIELD(char)
+            break;
+        }                
+        case 'i': {
+            SET_FIELD(int)
+            break;
+        }
+        case 'j': {
+            SET_FIELD(short)
+            break;
+        }                
+        case 'l': {
+            SET_FIELD(long)
+            break;
+        }                
+        case 'u': {
+            SET_FIELD(unsigned int)
+            break;
+        }                
+        case 'k': {
+            SET_FIELD(unsigned long)
+            break;
+        }                
+        case 'f': {
+            SET_FIELD(float)
+            break;
+        }                
+        case 'd': {
+            SET_FIELD(double)
+            break;
+        }                
+        case 's': {
+            SET_FIELD(string)
+            break;
+        }                
+        case 'I': {
+            SET_FIELD(Id)
+            break;
+        }                
+        case 'O': {
+            SET_FIELD(ObjId)
+            break;
+        }                
+        case 'D': {
+            SET_FIELD(DataId)
+            break;
+        }                
+        case 'C': {
+            SET_FIELD(vector <char>)
+            break;
+        }                
+        case 'v': {
+            SET_FIELD(vector <int>)
+            break;
+        }                
+        case 'w': {
+            SET_FIELD(vector <short>)
+            break;
+        }                
+        case 'L': {
+            SET_FIELD(vector <long>)
+            break;
+        }                
+        case 'U': {
+            SET_FIELD(vector <unsigned int>)
+            break;
+        }                
+        case 'K': {
+            SET_FIELD(vector <unsigned long>)
+            break;
+        }                
+        case 'F': {
+            SET_FIELD(vector <float>)
+            break;
+        }                
+        case 'x': {
+            SET_FIELD(vector <double>)
+            break;
+        }                
+        case 'S': {
+            SET_FIELD(vector <string>)
+            break;
+        }                
+        case 'J': {
+            SET_FIELD(vector <Id>)
+            break;
+        }                
+        case 'P': {
+            SET_FIELD(vector <ObjId>)
+            break;
+        }                
+        case 'E': {
+            SET_FIELD(vector <DataId>)
+            break;
+        }         
         default:
             return 0;            
     };
-    return 1;    
+    return 1;
+#undef SET_FIELD    
 }
 /**
    Return a list containing the names of fields for a specified finfo
