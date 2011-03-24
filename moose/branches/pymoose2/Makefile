@@ -135,8 +135,7 @@ endif
 
 # Libraries are defined below. For now we do not use threads.
 SUBLIBS = 
-LIBS =	-lm -lpthread
-#LIBS = 	-lm
+LIBS = 	-ldl -lm
 #ifeq ($(BUILD),thread)
 #LIBS += -lpthread
 #endif

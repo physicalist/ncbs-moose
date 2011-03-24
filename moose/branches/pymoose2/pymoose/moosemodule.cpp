@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 17:27:10 2011 (+0530)
+// Last-Updated: Thu Mar 24 16:16:29 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 2245
+//     Update #: 2303
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -180,11 +180,8 @@ extern "C" {
         MooseError = PyErr_NewException(moose_err, NULL, NULL);
         Py_INCREF(MooseError);
         PyModule_AddObject(moose_module, "error", MooseError);
-        PyGILState_STATE gstate;
-        gstate = PyGILState_Ensure();
-        getShell();
         setup_runtime_env();
-        PyGILState_Release(gstate);
+        PyMooseShell::getInstance().getShell();
         SingleThreaded = PyInt_FromLong(isSingleThreaded);
         Py_INCREF(SingleThreaded);
         PyModule_AddObject(moose_module, "SINGLETHREADED", SingleThreaded);
@@ -244,11 +241,7 @@ extern "C" {
         if (vec_dims.empty()){
             vec_dims.push_back(1);
         }
-        
-        PyGILState_STATE gstate;
-        gstate = PyGILState_Ensure();
-        pymoose_Neutral * obj = pymoose_Neutral_new(trimmed_path, trimmed_type, vec_dims);
-        PyGILState_Release(gstate);
+        pymoose_Neutral * obj = new pymoose_Neutral(trimmed_path, trimmed_type, vec_dims);
         PyObject * ret = (PyObject *)(obj);
         return ret;
     }
@@ -261,10 +254,9 @@ extern "C" {
                 return NULL;
         }
         pymoose_Neutral * instance = reinterpret_cast<pymoose_Neutral*> (object);
-        PyGILState_STATE gstate;
-        gstate = PyGILState_Ensure();
+        
         delete instance;
-        PyGILState_Release(gstate);
+        
         Py_RETURN_NONE;
     }
     // 2011-03-23 15:09:19 (+0530)
@@ -280,10 +272,8 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
             return NULL;
         }
-        PyGILState_STATE gstate;
-        gstate = PyGILState_Ensure();
         unsigned int id = instance->id().value();
-        PyGILState_Release(gstate);
+        
         PyObject * ret = Py_BuildValue("I", id);
         return ret;
     }
@@ -302,11 +292,7 @@ extern "C" {
             return NULL;
         }
 
-        PyGILState_STATE gstate;
-        gstate = PyGILState_Ensure();
         string path = instance->id().path();
-        PyGILState_Release(gstate);
-
         PyObject * ret = Py_BuildValue("s", path.c_str());
         return ret;
     }
@@ -315,7 +301,6 @@ extern "C" {
      */
     static PyObject * _pymoose_Neutral_getattr(PyObject * dummy, PyObject * args)
     {
-        PyGILState_STATE gstate;
         PyObject * obj = NULL;
         const char * field = NULL;
         char ftype;
@@ -329,9 +314,9 @@ extern "C" {
             return NULL;
         }
         string field_str(field);
-        gstate = PyGILState_Ensure();
+        
         void * ret = instance->getField(field_str, ftype, index);
-        PyGILState_Release(gstate);
+        
         if (!ret){
             PyErr_SetString(PyExc_RuntimeError, "pymoose_Neutral_getField returned NULL");
             return NULL;
@@ -396,10 +381,10 @@ extern "C" {
                 break;
             case 'I':
                 {
-                    gstate = PyGILState_Ensure();                    
+                                        
                     pyret = (PyObject*)(new pymoose_Neutral(*((Id*)ret)));
                     delete (Id*)ret;
-                    PyGILState_Release(gstate);
+                    
                 }
                 break;
             case 'O':
@@ -534,9 +519,9 @@ extern "C" {
                     vector<Id>& val = *((vector<Id>*) ret);
                     PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
                     for (unsigned int ii = 0; ii < ((vector<Id>*)ret)->size(); ++ ii){
-                        gstate = PyGILState_Ensure();
+                        
                         pymoose_Neutral * entry = new pymoose_Neutral(val[ii]);
-                        PyGILState_Release(gstate);
+                        
                         if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, (PyObject*)entry)){
                             free(pyret);
                             pyret = NULL;
@@ -566,7 +551,6 @@ extern "C" {
      */
     static PyObject * _pymoose_Neutral_setattr(PyObject * dummy, PyObject * args)
     {
-        PyGILState_STATE gstate;
         
         PyObject * obj = NULL;
         PyObject * value;
@@ -582,9 +566,8 @@ extern "C" {
         }
         string field_str(field);
         void * value_ptr = NULL;
-        gstate = PyGILState_Ensure();
         char ftype = shortType(instance->getFieldType(field_str));
-        PyGILState_Release(gstate);
+        
         if (!ftype){
             PyErr_SetString(PyExc_AttributeError, "Field not valid.");
         }
@@ -659,7 +642,7 @@ extern "C" {
                 }
             case 'I':
                 {
-                    gstate = PyGILState_Ensure();
+                    
                     Id * id = new Id();
                     pymoose_Neutral* val_obj = reinterpret_cast<pymoose_Neutral*>(value);
                     if (!val_obj){
@@ -668,7 +651,7 @@ extern "C" {
                     }
                     * id = val_obj->id();
                     value_ptr = (void*)id;
-                    PyGILState_Release(gstate);
+                    
                 }
             case 'O':
                 {
@@ -788,7 +771,7 @@ extern "C" {
             case 'S':
                 {
                     if (!PySequence_Check(value)){
-                        PyErr_SetString(PyExc_TypeError, "For setting vector<int> field, specified value must be a sequence." );
+                        PyErr_SetString(PyExc_TypeError, "For setting vector<string> field, specified value must be a sequence." );
                         return NULL;
                     }
                     Py_ssize_t length = PySequence_Length(value);
@@ -803,22 +786,27 @@ extern "C" {
             case 'J':
                 {
                     if (!PySequence_Check(value)){
-                        PyErr_SetString(PyExc_TypeError, "For setting vector<int> field, specified value must be a sequence." );
+                        PyErr_SetString(PyExc_TypeError, "For setting vector<Id> field, specified value must be a sequence." );
                         return NULL;
                     }
                     Py_ssize_t length = PySequence_Length(value);
-                    gstate = PyGILState_Ensure();
+                    
                     vector<Id> * vec = new vector<Id>();
+                    
                     for (unsigned int ii = 0; ii < length; ++ii){
-                        pymoose_Neutral* val_obj = reinterpret_cast<pymoose_Neutral*>(value);
+                        pymoose_Neutral* val_obj = reinterpret_cast<pymoose_Neutral*>(PySequence_GetItem(value, ii));
                         if (!val_obj){
-                            PyErr_SetString(PyExc_TypeError, "Could not cast value to pymoose_Neutral.");
+                            stringstream msg;
+                            msg << "Could not cast value at index " << ii << " to pymoose_Neutral *.";
+                            PyErr_SetString(PyExc_TypeError, msg.str().c_str());
                             delete vec;
                             return NULL;
                         }
+                        
+                        
                         vec->push_back(val_obj->id());
-                    }
-                    PyGILState_Release(gstate);
+                        
+                  }
                     value_ptr = (void*)vec;
                     break;
                 }
@@ -836,8 +824,8 @@ extern "C" {
             default:
                 break;
         }
-        gstate = PyGILState_Ensure();
         int ret = instance->setField(field, value_ptr, index);
+        
         switch(ftype){
             case 'c': {
                 delete (char*)value_ptr;
@@ -934,7 +922,6 @@ extern "C" {
             default:
                 break;
         }
-        PyGILState_Release(gstate);
         if (ret){
             Py_RETURN_NONE;
         } else {
@@ -964,10 +951,9 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
             return NULL;
         }
-        PyGILState_STATE gstate;
-        gstate = PyGILState_Ensure();
+        
         vector<string> fieldNames = instance->getFieldNames(ftype_str);
-        PyGILState_Release(gstate);
+        
         PyObject * pyret = PyTuple_New((Py_ssize_t)fieldNames.size());
         for (unsigned int ii = 0; ii < fieldNames.size(); ++ ii ){
             PyObject * fname = PyString_FromString(fieldNames[ii].c_str());
@@ -996,13 +982,14 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
             return NULL;
         }
-        PyGILState_STATE gstate;
-        gstate = PyGILState_Ensure();
         vector<Id> children = instance->getChildren(index);
-        PyGILState_Release(gstate);
+        
         PyObject * pyret = PyTuple_New((Py_ssize_t)children.size());
         for (unsigned int ii = 0; ii < children.size(); ++ ii){
-            if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, (PyObject*)(new pymoose_Neutral(children[ii])))){
+            
+            pymoose_Neutral * child = new pymoose_Neutral(children[ii]);
+            
+            if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, (PyObject*)(child))){
                 free(pyret);
                 pyret = NULL;
                 break;
@@ -1022,10 +1009,8 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
             return NULL;
         }
-        PyGILState_STATE gstate;
-        gstate = PyGILState_Ensure();
         instance->destroy();
-        PyGILState_Release(gstate);
+        
         Py_DECREF(obj);
         Py_RETURN_NONE;
     }
@@ -1039,7 +1024,6 @@ int main(int argc, char* argv[])
     }
     cout << endl;
     Py_SetProgramName(argv[0]);
-    PyEval_InitThreads();
     Py_Initialize();
     init_moose();
     return 0;
