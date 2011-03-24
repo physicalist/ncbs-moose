@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:50:26 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 17:12:39 2011 (+0530)
+// Last-Updated: Thu Mar 24 17:07:17 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 334
+//     Update #: 384
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -51,11 +51,33 @@
 #include "../scheduling/Clock.h"
 
 #include "pymoose_Neutral.h"
+extern void testSync();
+extern void testAsync();
+extern void testSyncArray( unsigned int size, unsigned int numThreads,
+	unsigned int method );
+extern void testShell();
+extern void testScheduling();
+extern void testSchedulingProcess();
+extern void testBuiltins();
+extern void testBuiltinsProcess();
 
+extern void testMpiScheduling();
+extern void testMpiBuiltins();
+extern void testMpiShell();
+extern void testMsg();
+extern void testMpiMsg();
+extern void testKinetics();
 extern void nonMpiTests(Shell *);
 extern void mpiTests();
-extern void processTests(Shell *);
-extern void regressionTests();
+extern void processTests( Shell* );
+extern void initMsgManagers();
+extern void destroyMsgManagers();
+extern void speedTestMultiNodeIntFireNetwork( 
+	unsigned int size, unsigned int runsteps );
+#ifdef DO_UNIT_TESTS
+void regressionTests();
+#endif
+bool benchmarkTests( int argc, char** argv );
 extern unsigned int getNumCores();
 extern char shortType(string type);
 
@@ -79,7 +101,7 @@ pymoose_Neutral::pymoose_Neutral(string path, string type, vector<unsigned int> 
     if ((id_ == Id()) && (path != "/") && (path != "/root")){
         string parent_path;
         if (path[0] != '/'){
-            parent_path = getShell().getCwe().path();
+            parent_path = PyMooseShell::getInstance().getShell().getCwe().path();
         }
         size_t pos = path.rfind("/");
         string name;
@@ -88,12 +110,13 @@ pymoose_Neutral::pymoose_Neutral(string path, string type, vector<unsigned int> 
             parent_path += "/";
             parent_path += path.substr(0, pos+1);
         }
-        id_ = getShell().doCreate(string(type), Id(parent_path), string(name), vector<unsigned int>(dims));
+        id_ = PyMooseShell::getInstance().getShell().doCreate(string(type), Id(parent_path), string(name), vector<unsigned int>(dims));
     }
 }
 
 pymoose_Neutral::~pymoose_Neutral()
 {
+    cout << "pymoose_Neutral::~pymoose_Neutral()." << endl;
 }
 
 int pymoose_Neutral::destroy()
@@ -405,12 +428,9 @@ const map<string, string>& pymoose::getArgMap()
     return argmap;
 }
 
-Shell& pymoose::getShell()
+PyMooseShell* PyMooseShell::instance_ = 0;
+PyMooseShell::PyMooseShell()
 {
-    static Shell* shell = NULL;
-    if (shell){
-        return *shell;
-    }
     // Set up the system parameters
     long isSingleThreaded = 0;
     long numCores = 1;
@@ -455,10 +475,10 @@ Shell& pymoose::getShell()
     dims.push_back(1);
     Element * shellE = new Element(shellId, Shell::initCinfo(), "root", dims, 1);
     Id clockId = Id::nextId();
-    shell = reinterpret_cast<Shell*>(shellId.eref().data());
-    shell->setShellElement(shellE);
-    shell->setHardware(isSingleThreaded, numCores, numNodes, myNode);
-    shell->loadBalance();
+    shell_ = reinterpret_cast<Shell*>(shellId.eref().data());
+    shell_->setShellElement(shellE);
+    shell_->setHardware(isSingleThreaded, numCores, numNodes, myNode);
+    shell_->loadBalance();
     
     // Initialize the system objects
 
@@ -481,7 +501,7 @@ Shell& pymoose::getShell()
     /// Sets up the Elements that represent each class of Msg.
     Msg::initMsgManagers();
     
-    shell->connectMasterMsg();
+    shell_->connectMasterMsg();
     
     Shell::adopt( shellId, clockId );
     Shell::adopt( shellId, classMasterId );
@@ -489,11 +509,60 @@ Shell& pymoose::getShell()
     Cinfo::makeCinfoElements( classMasterId );
     
     while ( isInfinite ) // busy loop for debugging under gdb and MPI.
-        ;        
-    return *shell;        
+        ;
+    // The following are copied from main.cpp: main()
+    //------------------------------------
+    // This was failing in pymoose - not sure about the initialization constraints
+    // nonMpiTests( shell_ ); // These tests do not need the process loop.
+    
+    if (!shell_->isSingleThreaded())
+        shell_->launchThreads();
+    if ( shell_->myNode() == 0 ) {
+#ifdef DO_UNIT_TESTS
+        // mpiTests();
+        // processTests( shell_ );
+        // regressionTests();
+#endif
+        // The following commented out for pymoose
+        //--------------------------------------------------
+        // These are outside unit tests because they happen in optimized
+        // mode, using a command-line argument. As soon as they are done
+        // the system quits, in order to estimate timing.
+        // if ( benchmarkTests( argc, argv ) || quitFlag )
+        //     shell->doQuit();
+        // else 
+        //     shell->launchParser(); // Here we set off a little event loop to poll user input. It deals with the doQuit call too.
+    }
 }
 
+PyMooseShell::~PyMooseShell()
+{
+    cout << "In ~PyMooseShell()" << endl;
+    if (!shell_->isSingleThreaded())
+        shell_->joinThreads();
+    Id(0).destroy();
+    Id(1).destroy();
+    Id(2).destroy();
+    destroyMsgManagers();
+#ifdef USE_MPI
+    MPI_Finalize();
+#endif
+    cout << "Finished ~PyMooseShell()" << endl;            
+}
 
+Shell& PyMooseShell::getShell()
+{
+    assert(shell_ != NULL);
+    return *shell_;
+}
+
+PyMooseShell& PyMooseShell::getInstance()
+{
+    if (!instance_)
+        instance_ = new PyMooseShell();
+
+    return * instance_;
+}
 
 // 
 // pymoose.cpp ends here
