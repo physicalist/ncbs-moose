@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:49:33 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 24 16:17:02 2011 (+0530)
+// Last-Updated: Thu Mar 24 18:02:07 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 164
+//     Update #: 166
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -59,6 +59,7 @@ class PyMooseShell
 {
   public:
     static PyMooseShell& getInstance();
+    static void finalize();
     Shell& getShell();
   private:
     PyMooseShell();

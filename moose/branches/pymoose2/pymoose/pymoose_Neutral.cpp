@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:50:26 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 24 17:07:17 2011 (+0530)
+// Last-Updated: Thu Mar 24 18:06:21 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 384
+//     Update #: 385
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -116,7 +116,6 @@ pymoose_Neutral::pymoose_Neutral(string path, string type, vector<unsigned int> 
 
 pymoose_Neutral::~pymoose_Neutral()
 {
-    cout << "pymoose_Neutral::~pymoose_Neutral()." << endl;
 }
 
 int pymoose_Neutral::destroy()
@@ -428,7 +427,7 @@ const map<string, string>& pymoose::getArgMap()
     return argmap;
 }
 
-PyMooseShell* PyMooseShell::instance_ = 0;
+PyMooseShell* PyMooseShell::instance_ = NULL;
 PyMooseShell::PyMooseShell()
 {
     // Set up the system parameters
@@ -511,8 +510,6 @@ PyMooseShell::PyMooseShell()
     while ( isInfinite ) // busy loop for debugging under gdb and MPI.
         ;
     // The following are copied from main.cpp: main()
-    //------------------------------------
-    // This was failing in pymoose - not sure about the initialization constraints
     // nonMpiTests( shell_ ); // These tests do not need the process loop.
     
     if (!shell_->isSingleThreaded())
@@ -564,5 +561,9 @@ PyMooseShell& PyMooseShell::getInstance()
     return * instance_;
 }
 
+void PyMooseShell::finalize()
+{
+    delete instance_;
+}
 // 
 // pymoose.cpp ends here
