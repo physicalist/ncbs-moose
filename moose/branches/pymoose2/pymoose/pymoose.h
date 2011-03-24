@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:49:33 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 24 18:02:07 2011 (+0530)
+// Last-Updated: Thu Mar 24 19:28:39 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 166
+//     Update #: 176
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -46,29 +46,9 @@ class PyMooseBase
     PyMooseBase();
     virtual ~PyMooseBase();    
 }; // ! class PyMooseBase
-
-/**
-   This class is an attempt to work around module unloading
-   limitations in Python 2.X.
-
-   In particular, we want a static singletion instance of this class,
-   whose destructor will do the cleanup (like pthreads join and
-   MPI_Finalize).
- */
-class PyMooseShell
-{
-  public:
-    static PyMooseShell& getInstance();
-    static void finalize();
-    Shell& getShell();
-  private:
-    PyMooseShell();
-    ~PyMooseShell();
-    Shell * shell_;
-    static PyMooseShell * instance_;
-};
-const std::map<std::string, std::string>& getArgMap();
 Shell& getShell();
+void finalize();
+const std::map<std::string, std::string>& getArgMap();
 } // ! namespace pymoose
 
 #endif // !_PYMOOSE_H

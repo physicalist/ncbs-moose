@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 24 18:05:27 2011 (+0530)
+// Last-Updated: Thu Mar 24 19:46:35 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 2309
+//     Update #: 2320
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -81,18 +81,6 @@ static int isInfinite = 0;
 static int numNodes = 1;
 static int numCores = 1;
 
-char finfotype(string ftype)
-{
-    static map<string, char> typemap;
-    if (typemap.empty()){
-        typemap["srcFinfo"] = 's';
-        typemap["destFinfo"] = 'd';
-        typemap["valueFindo"] = 'v';
-        typemap["lookupFinfo"] = 'l';
-        typemap["sharedFinfo"] = 'x';
-    }
-    return typemap[ftype];
-}
 
 void setup_runtime_env(){
     const map<string, string>& argmap = pymoose::getArgMap();
@@ -120,10 +108,6 @@ void setup_runtime_env(){
          << "NUMNODES = " << numNodes << endl;
 }
 
-pymoose_Neutral * pymoose_Neutral_new(string path, string type, vector<unsigned int> dims)
-{
-    return new pymoose_Neutral(path, type, dims);
-}
 // 
 // C wrappers for C++ classes
 // This is used by Python
@@ -181,9 +165,8 @@ extern "C" {
         Py_INCREF(MooseError);
         PyModule_AddObject(moose_module, "error", MooseError);
         setup_runtime_env();
-        PyMooseShell::getInstance().getShell();
-        assert (Py_AtExit(PyMooseShell::finalize) == 0);
-                
+        getShell();
+        assert (Py_AtExit(&pymoose::finalize) == 0);                
         SingleThreaded = PyInt_FromLong(isSingleThreaded);
         Py_INCREF(SingleThreaded);
         PyModule_AddObject(moose_module, "SINGLETHREADED", SingleThreaded);
