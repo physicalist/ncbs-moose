@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:50:26 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 24 18:06:21 2011 (+0530)
+// Last-Updated: Thu Mar 24 20:34:10 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 385
+//     Update #: 417
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -101,7 +101,7 @@ pymoose_Neutral::pymoose_Neutral(string path, string type, vector<unsigned int> 
     if ((id_ == Id()) && (path != "/") && (path != "/root")){
         string parent_path;
         if (path[0] != '/'){
-            parent_path = PyMooseShell::getInstance().getShell().getCwe().path();
+            parent_path = getShell().getCwe().path();
         }
         size_t pos = path.rfind("/");
         string name;
@@ -109,8 +109,10 @@ pymoose_Neutral::pymoose_Neutral(string path, string type, vector<unsigned int> 
             name = path.substr(pos+1);
             parent_path += "/";
             parent_path += path.substr(0, pos+1);
+        } else {
+            name = path;
         }
-        id_ = PyMooseShell::getInstance().getShell().doCreate(string(type), Id(parent_path), string(name), vector<unsigned int>(dims));
+        id_ = getShell().doCreate(string(type), Id(parent_path), string(name), vector<unsigned int>(dims));
     }
 }
 
@@ -427,143 +429,137 @@ const map<string, string>& pymoose::getArgMap()
     return argmap;
 }
 
-PyMooseShell* PyMooseShell::instance_ = NULL;
-PyMooseShell::PyMooseShell()
+Shell& pymoose::getShell()
 {
-    // Set up the system parameters
-    long isSingleThreaded = 0;
-    long numCores = 1;
-    long numNodes = 1;
-    long isInfinite = 0;
-    long myNode = 0;
-    string arg;
+    static Shell * shell_ = NULL;
+    if (shell_ == NULL)
+    {
+     
+        // Set up the system parameters
+        long isSingleThreaded = 0;
+        long numCores = 1;
+        long numNodes = 1;
+        long isInfinite = 0;
+        long myNode = 0;
+        string arg;
 
-    map<string, string>::const_iterator it = getArgMap().find("SINGLETHREADED");    
-    if (it != getArgMap().end()){
-        istringstream(it->second) >> isSingleThreaded;
-    }
-    it = getArgMap().find("NUMCORES");
-    if ((it == getArgMap().end()) || it->second.empty()){
-        numCores = getNumCores();
-    }
-    it = getArgMap().find("NUMNODES");
-    if (it != getArgMap().end()){
-        istringstream(it->second) >> numNodes;
-    }
-    it = getArgMap().find("INFINITE");
-    if (it != getArgMap().end()){
-        istringstream(it->second) >> isInfinite;
-    }
+        map<string, string>::const_iterator it = getArgMap().find("SINGLETHREADED");    
+        if (it != getArgMap().end()){
+            istringstream(it->second) >> isSingleThreaded;
+        }
+        it = getArgMap().find("NUMCORES");
+        if ((it == getArgMap().end()) || it->second.empty()){
+            numCores = getNumCores();
+        }
+        it = getArgMap().find("NUMNODES");
+        if (it != getArgMap().end()){
+            istringstream(it->second) >> numNodes;
+        }
+        it = getArgMap().find("INFINITE");
+        if (it != getArgMap().end()){
+            istringstream(it->second) >> isInfinite;
+        }
 
-    // Do MPI Initialization
-    // Not yet sure what should be passed on in argv
+        // Do MPI Initialization
+        // Not yet sure what should be passed on in argv
 #ifdef USE_MPI
-    int argc = 0;
-    char ** argv = NULL;
-    MPI_Init_thread( &argc, &argv, MPI_THREAD_SERIALIZED, &provided );
-    MPI_Comm_size( MPI_COMM_WORLD, &numNodes );
-    MPI_Comm_rank( MPI_COMM_WORLD, &myNode );
-    if ( provided < MPI_THREAD_SERIALIZED && myNode == 0 ) {
-        cout << "Warning: This MPI implementation does not like multithreading: " << provided << "\n";
-    }    
+        int argc = 0;
+        char ** argv = NULL;
+        MPI_Init_thread( &argc, &argv, MPI_THREAD_SERIALIZED, &provided );
+        MPI_Comm_size( MPI_COMM_WORLD, &numNodes );
+        MPI_Comm_rank( MPI_COMM_WORLD, &myNode );
+        if ( provided < MPI_THREAD_SERIALIZED && myNode == 0 ) {
+            cout << "Warning: This MPI implementation does not like multithreading: " << provided << "\n";
+        }    
 #endif
-    Msg::initNull();
-    // Initialize the shell
-    Id shellId;
-    vector <unsigned int> dims;
-    dims.push_back(1);
-    Element * shellE = new Element(shellId, Shell::initCinfo(), "root", dims, 1);
-    Id clockId = Id::nextId();
-    shell_ = reinterpret_cast<Shell*>(shellId.eref().data());
-    shell_->setShellElement(shellE);
-    shell_->setHardware(isSingleThreaded, numCores, numNodes, myNode);
-    shell_->loadBalance();
+        Msg::initNull();
+        // Initialize the shell
+        Id shellId;
+        vector <unsigned int> dims;
+        dims.push_back(1);
+        Element * shellE = new Element(shellId, Shell::initCinfo(), "root", dims, 1);
+        Id clockId = Id::nextId();
+        shell_ = reinterpret_cast<Shell*>(shellId.eref().data());
+        shell_->setShellElement(shellE);
+        shell_->setHardware(isSingleThreaded, numCores, numNodes, myNode);
+        shell_->loadBalance();
     
-    // Initialize the system objects
+        // Initialize the system objects
 
-    new Element(clockId, Clock::initCinfo(), "clock", dims, 1);
-    Id tickId( 2 );
-    assert(tickId() != 0);
-    assert( tickId.value() == 2 );
-    assert( tickId()->getName() == "tick" ) ;
+        new Element(clockId, Clock::initCinfo(), "clock", dims, 1);
+        Id tickId( 2 );
+        assert(tickId() != 0);
+        assert( tickId.value() == 2 );
+        assert( tickId()->getName() == "tick" ) ;
     
-    Id classMasterId( 3 );
+        Id classMasterId( 3 );
     
-    new Element( classMasterId, Neutral::initCinfo(), "classes", dims, 1 );
+        new Element( classMasterId, Neutral::initCinfo(), "classes", dims, 1 );
     
-    assert ( shellId == Id() );
-    assert( clockId == Id( 1 ) );
-    assert( tickId == Id( 2 ) );
-    assert( classMasterId == Id( 3 ) );
+        assert ( shellId == Id() );
+        assert( clockId == Id( 1 ) );
+        assert( tickId == Id( 2 ) );
+        assert( classMasterId == Id( 3 ) );
 
 
-    /// Sets up the Elements that represent each class of Msg.
-    Msg::initMsgManagers();
+        /// Sets up the Elements that represent each class of Msg.
+        Msg::initMsgManagers();
     
-    shell_->connectMasterMsg();
+        shell_->connectMasterMsg();
     
-    Shell::adopt( shellId, clockId );
-    Shell::adopt( shellId, classMasterId );
+        Shell::adopt( shellId, clockId );
+        Shell::adopt( shellId, classMasterId );
     
-    Cinfo::makeCinfoElements( classMasterId );
+        Cinfo::makeCinfoElements( classMasterId );
     
-    while ( isInfinite ) // busy loop for debugging under gdb and MPI.
-        ;
-    // The following are copied from main.cpp: main()
-    // nonMpiTests( shell_ ); // These tests do not need the process loop.
+        while ( isInfinite ) // busy loop for debugging under gdb and MPI.
+            ;
+        // The following are copied from main.cpp: main()
+        // nonMpiTests( shell_ ); // These tests do not need the process loop.
     
-    if (!shell_->isSingleThreaded())
-        shell_->launchThreads();
-    if ( shell_->myNode() == 0 ) {
+        if (!shell_->isSingleThreaded())
+            shell_->launchThreads();
+        if ( shell_->myNode() == 0 ) {
 #ifdef DO_UNIT_TESTS
-        // mpiTests();
-        // processTests( shell_ );
-        // regressionTests();
+            // mpiTests();
+            // processTests( shell_ );
+            // regressionTests();
 #endif
-        // The following commented out for pymoose
-        //--------------------------------------------------
-        // These are outside unit tests because they happen in optimized
-        // mode, using a command-line argument. As soon as they are done
-        // the system quits, in order to estimate timing.
-        // if ( benchmarkTests( argc, argv ) || quitFlag )
-        //     shell->doQuit();
-        // else 
-        //     shell->launchParser(); // Here we set off a little event loop to poll user input. It deals with the doQuit call too.
-    }
-}
-
-PyMooseShell::~PyMooseShell()
-{
-    cout << "In ~PyMooseShell()" << endl;
-    if (!shell_->isSingleThreaded())
-        shell_->joinThreads();
-    Id(0).destroy();
-    Id(1).destroy();
-    Id(2).destroy();
-    destroyMsgManagers();
-#ifdef USE_MPI
-    MPI_Finalize();
-#endif
-    cout << "Finished ~PyMooseShell()" << endl;            
-}
-
-Shell& PyMooseShell::getShell()
-{
-    assert(shell_ != NULL);
+            // The following commented out for pymoose
+            //--------------------------------------------------
+            // These are outside unit tests because they happen in optimized
+            // mode, using a command-line argument. As soon as they are done
+            // the system quits, in order to estimate timing.
+            // if ( benchmarkTests( argc, argv ) || quitFlag )
+            //     shell->doQuit();
+            // else 
+            //     shell->launchParser(); // Here we set off a little event loop to poll user input. It deals with the doQuit call too.
+        }
+    } // ! if (shell_ == NULL)
     return *shell_;
 }
 
-PyMooseShell& PyMooseShell::getInstance()
+void pymoose::finalize()
 {
-    if (!instance_)
-        instance_ = new PyMooseShell();
+    cout << "In pymoose_finalize()" << endl;
+    if (!getShell().isSingleThreaded()){
+        cout << "Joining threads." << endl;
+        getShell().joinThreads();
+    }
+    cout << "Destroying Id(0)." << endl;
+    Id().destroy();
+    cout << "Destroying Id(1)." << endl;
+    Id(1).destroy();
+    cout << "Destroying Id(2)." << endl;
+    Id(2).destroy();
+    cout << "Destroying msgmanagers." << endl; 
+    destroyMsgManagers();
+#ifdef USE_MPI
+    cout << "Befor MPI Finalize." << endl; 
+    MPI_Finalize();
+#endif
+    cout << "Finished pymoose_finalize()" << endl;            
 
-    return * instance_;
-}
-
-void PyMooseShell::finalize()
-{
-    delete instance_;
 }
 // 
 // pymoose.cpp ends here
