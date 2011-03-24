@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 24 16:16:29 2011 (+0530)
+// Last-Updated: Thu Mar 24 18:05:27 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 2303
+//     Update #: 2309
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -182,6 +182,8 @@ extern "C" {
         PyModule_AddObject(moose_module, "error", MooseError);
         setup_runtime_env();
         PyMooseShell::getInstance().getShell();
+        assert (Py_AtExit(PyMooseShell::finalize) == 0);
+                
         SingleThreaded = PyInt_FromLong(isSingleThreaded);
         Py_INCREF(SingleThreaded);
         PyModule_AddObject(moose_module, "SINGLETHREADED", SingleThreaded);
