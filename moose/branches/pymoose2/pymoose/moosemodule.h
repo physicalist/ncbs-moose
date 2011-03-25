@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 11:33:52 2011 (+0530)
+// Last-Updated: Fri Mar 25 23:43:35 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 123
+//     Update #: 135
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -32,7 +32,20 @@
 #define _MOOSEMODULE_H
 
 #include <string>
+#include "../basecode/Id.h"
 extern "C" {
+    typedef struct {
+        PyObject_HEAD
+        Id _id;
+    } _Neutral;
+    typedef struct {
+        PyObject_HEAD
+        ObjId _id;
+    } _ObjId;
+    typedef struct {
+        PyObject_HEAD
+        DataId _id;
+    } _DataId;
 } //!extern "C"
 
 

@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Mar 25 17:36:33 2011 (+0530)
+// Last-Updated: Sat Mar 26 01:07:00 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 2432
+//     Update #: 2565
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -80,7 +80,7 @@ static int isSingleThreaded = 0;
 static int isInfinite = 0;
 static int numNodes = 1;
 static int numCores = 1;
-
+static int myNode = 0;
 
 void setup_runtime_env(){
     const map<string, string>& argmap = pymoose::getArgMap();
@@ -113,12 +113,13 @@ void setup_runtime_env(){
 // This is used by Python
 extern "C" {
     static PyObject * MooseError;
-    static PyObject * SingleThreaded;
-    static PyObject * NumNodes;
-    static PyObject * NumCores;
-    static PyObject * MyNode;
-    static PyObject * Infinite;
-    
+    static void _pymoose_Neutral_dealloc(_Neutral * self);
+    static PyObject * _pymoose_Neutral_repr(_Neutral * self);
+    static int _pymoose_Neutral_init(_Neutral * self, PyObject * args, PyObject * kwargs);
+
+    ////////////////////////////////////////////////
+    // static functions to be accessed from Python
+    ////////////////////////////////////////////////
     static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_delete(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args);
@@ -142,7 +143,6 @@ extern "C" {
     static PyObject * _pymoose_loadModel(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_setCwe(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_getCwe(PyObject * dummy, PyObject * args);
-    
     /**
      * Method definitions.
      */
@@ -181,35 +181,77 @@ extern "C" {
         {NULL, NULL, 0, NULL}        /* Sentinel */
     };
 
+    ///////////////////////////////////////////////
+    // Type defs for PyObject of Neutral
+    ///////////////////////////////////////////////
+    static PyTypeObject NeutralType = { 
+        PyObject_HEAD_INIT(0)               /* tp_head */
+        0,                                  /* tp_internal */
+        "moose.Neutral",                  /* tp_name */
+        sizeof(_Neutral),                    /* tp_basicsize */
+        0,                                  /* tp_itemsize */
+        (destructor)_pymoose_Neutral_dealloc,                    /* tp_dealloc */
+        0,                                  /* tp_print */
+        0,                                  /* tp_getattr */
+        0,                                  /* tp_setattr */
+        0,                                  /* tp_compare */
+        (reprfunc)_pymoose_Neutral_repr,                        /* tp_repr */
+        0,                                  /* tp_as_number */
+        0,                                  /* tp_as_sequence */
+        0,                                  /* tp_as_mapping */
+        0,                                  /* tp_hash */
+        0,                                  /* tp_call */
+        0,                                  /* tp_str */
+        PyObject_GenericGetAttr,            /* tp_getattro */
+        PyObject_GenericSetAttr,            /* tp_setattro */
+        0,                                  /* tp_as_buffer */
+        Py_TPFLAGS_DEFAULT,
+        "",
+        0,                                  /* tp_traverse */
+        0,                                  /* tp_clear */
+        0,                                  /* tp_richcompare */
+        0,                                  /* tp_weaklistoffset */
+        0,                                  /* tp_iter */
+        0,                                  /* tp_iternext */
+        0,                                  /* tp_methods */
+        0,                    /* tp_members */
+        0,                                  /* tp_getset */
+        0,                                  /* tp_base */
+        0,                                  /* tp_dict */
+        0,                                  /* tp_descr_get */
+        0,                                  /* tp_descr_set */
+        0,                                  /* tp_dictoffset */
+        (initproc) _pymoose_Neutral_init,                       /* tp_init */
+        PyType_GenericAlloc,                /* tp_alloc */
+        PyType_GenericNew,                  /* tp_new */
+        _PyObject_Del,                      /* tp_free */
+    };
 
     /* module initialization */
     PyMODINIT_FUNC init_moose()
     {
-        PyObject *moose_module = Py_InitModule("_moose", MooseMethods);
+        PyObject *moose_module = Py_InitModule3("_moose", MooseMethods, "MOOSE = Multiscale Object-Oriented Simulation Environment.");
         if (moose_module == NULL)
             return;
         char moose_err[] = "moose.error";
         MooseError = PyErr_NewException(moose_err, NULL, NULL);
         Py_INCREF(MooseError);
         PyModule_AddObject(moose_module, "error", MooseError);
+        NeutralType.tp_new = PyType_GenericNew;
+        NeutralType.tp_free = _PyObject_Del;
+        if (PyType_Ready(&NeutralType) < 0)
+            return;
+        Py_INCREF(&NeutralType);
+        PyModule_AddObject(moose_module, "Neutral", (PyObject*)&NeutralType);
+        
         setup_runtime_env();
         getShell();
         assert (Py_AtExit(&pymoose::finalize) == 0);                
-        SingleThreaded = PyInt_FromLong(isSingleThreaded);
-        Py_INCREF(SingleThreaded);
-        PyModule_AddObject(moose_module, "SINGLETHREADED", SingleThreaded);
-        NumCores = PyInt_FromLong(isSingleThreaded);
-        Py_INCREF(NumCores);
-        PyModule_AddObject(moose_module, "NUMCORES", NumCores);
-        NumNodes = PyInt_FromLong(numCores);
-        Py_INCREF(NumNodes);
-        PyModule_AddObject(moose_module, "NUMNODES", NumNodes);
-        MyNode = PyInt_FromLong(numNodes);
-        Py_INCREF(MyNode);
-        PyModule_AddObject(moose_module, "MYNODE", MyNode);
-        Infinite = PyInt_FromLong(isInfinite);
-        Py_INCREF(Infinite);
-        PyModule_AddObject(moose_module, "INFINITE", Infinite);
+        PyModule_AddIntConstant(moose_module, "SINGLETHREADED", isSingleThreaded);
+        PyModule_AddIntConstant(moose_module, "NUMCORES", numCores);
+        PyModule_AddIntConstant(moose_module, "NUMNODES", numNodes);
+        PyModule_AddIntConstant(moose_module, "MYNODE", myNode);
+        PyModule_AddIntConstant(moose_module, "INFINITE", isInfinite);
         
     }
 
@@ -1147,6 +1189,91 @@ extern "C" {
         return ret;
     }
 
+    static PyObject * _pymoose_Neutral_repr(_Neutral * self)
+    {
+        return PyString_FromFormat("%lu", self->_id.value());
+    }
+    static void _pymoose_Neutral_dealloc(_Neutral * self)
+    {
+        self->ob_type->tp_free((PyObject *)self);
+    }
+
+    static int _pymoose_Neutral_init(_Neutral * self, PyObject * args, PyObject * kwds)
+    {
+        static char * kwlist[] = {"type", "path", "dims"};
+        char * path, *type;
+        PyObject * dims = NULL;
+        PyObject * src = NULL;
+        // if (PyDict_Type.tp_init((PyObject *)self, args, kwds) < 0)
+        //     return -1;
+        
+        if (!PyArg_ParseTupleAndKeywords(args, kwds, "ss|O", kwlist, &type, &path, &dims)){
+            if (!PyArg_ParseTuple(args, "O", &src)){
+                return -1;
+            } 
+            _Neutral * src_cast = reinterpret_cast<_Neutral*>(src);
+            if (!src_cast){
+                PyErr_SetString(PyExc_TypeError, "Could not cast passed object to _Neutral.");
+                return -1;
+            }
+            self->_id = src_cast->_id;
+            return 0;
+        }
+        
+        string trimmed_path(path);
+        trimmed_path = trim(trimmed_path);
+        size_t length = trimmed_path.length();
+        if (length <= 0){
+            PyErr_SetString(PyExc_ValueError, "path must be non-empty string.");
+            return -1;
+        }
+        string trimmed_type = trim(string(type));
+        if (trimmed_type.length() <= 0){
+            PyErr_SetString(PyExc_ValueError, "type must be non-empty string.");
+            return -1;
+        }        
+
+        //  paths ending with '/' should raise exception
+        if ((length > 1) && (trimmed_path[length - 1] == '/')){
+            PyErr_SetString(PyExc_ValueError, "Non-root path must not end with '/'");
+            return -1;
+        }
+        vector <unsigned int> vec_dims;
+        if (dims!= NULL && PySequence_Check(dims)){
+            Py_ssize_t len = PySequence_Length(dims);
+            for (Py_ssize_t ii = 0; ii < len; ++ ii){
+                PyObject* dim = PySequence_GetItem(dims, ii);
+                long dim_value = PyInt_AsLong(dim);
+                if (dim_value == -1 && PyErr_Occurred()){
+                    return -1;
+                }
+                vec_dims.push_back((unsigned int)dim_value);
+            }                
+        }
+        if (vec_dims.empty()){
+            vec_dims.push_back(1);
+        }
+        self->_id = Id(path);
+        // If object does not exist, create new
+        if ((self->_id == Id()) && (trimmed_path != "/") && (trimmed_path != "/root")){
+            string parent_path;
+            if (trimmed_path[0] != '/'){
+                parent_path = getShell().getCwe().path();
+            }
+            size_t pos = trimmed_path.rfind("/");
+            string name;
+            if (pos != string::npos){
+                name = trimmed_path.substr(pos+1);
+                parent_path += "/";
+                parent_path += trimmed_path.substr(0, pos+1);
+            } else {
+                name = trimmed_path;
+            }
+            self->_id = getShell().doCreate(string(type), Id(parent_path), string(name), vector<unsigned int>(vec_dims));
+        } 
+        return 0;            
+    }// ! _pymoose_Neutral_init
+    
     
 } // end extern "C"
 
