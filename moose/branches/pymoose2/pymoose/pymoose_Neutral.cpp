@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:50:26 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Mar 25 13:42:02 2011 (+0530)
+// Last-Updated: Fri Mar 25 17:49:31 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 442
+//     Update #: 444
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -342,14 +342,14 @@ vector<string> pymoose_Neutral::getFieldNames(string ftypeType)
     unsigned int numFinfos = Field<unsigned int>::get(ObjId(classId,0), "num_" + ftypeType);
 #ifndef NDEBUG
     cout << "vector<string> pymoose_Neutral::getFieldNames(string ftypeType): "
-         << "class: " << classInfoPath
+         << "class: " << classInfoPath << endl
          << "numFinfos of type: " << ftypeType << " = " << numFinfos << endl;
 #endif // !NDEBUG
     Id fieldId(classInfoPath + "/" + ftypeType);
     vector<string> fields;
     if (fieldId != Id()){
         for (unsigned int ii = 0; ii < numFinfos; ++ii){
-            string fieldName = Field<string>::get(ObjId(fieldId, ii), "name");
+            string fieldName = Field<string>::get(ObjId(fieldId, DataId(0, ii)), "name");
 #ifndef NDEBUG       
             cout << "vector<string> pymoose_Neutral::getFieldNames(string ftypeType): "
                  << "field[" << ii << "] = " << fieldName << endl;
