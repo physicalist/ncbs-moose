@@ -1,52 +1,102 @@
--*- mode: compilation; default-directory: "~/src/pymoose2/" -*-
-Compilation started at Fri Mar 25 16:51:24
+import sys
+import unittest
+import uuid
 
-make pymoose BUILD=debug
-make[1]: Entering directory `/home/subha/src/pymoose2/basecode'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/basecode'
-make[1]: Entering directory `/home/subha/src/pymoose2/msg'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/msg'
-make[1]: Entering directory `/home/subha/src/pymoose2/shell'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/shell'
-make[1]: Entering directory `/home/subha/src/pymoose2/biophysics'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/biophysics'
-make[1]: Entering directory `/home/subha/src/pymoose2/randnum'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/randnum'
-make[1]: Entering directory `/home/subha/src/pymoose2/scheduling'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/scheduling'
-make[1]: Entering directory `/home/subha/src/pymoose2/builtins'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/builtins'
-make[1]: Entering directory `/home/subha/src/pymoose2/kinetics'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/kinetics'
-make[1]: Entering directory `/home/subha/src/pymoose2/ksolve'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/ksolve'
-make[1]: Entering directory `/home/subha/src/pymoose2/regressionTests'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/regressionTests'
-make[1]: Entering directory `/home/subha/src/pymoose2/utility'
-make[1]: Nothing to be done for `default'.
-make[1]: Leaving directory `/home/subha/src/pymoose2/utility'
-make[1]: Entering directory `/home/subha/src/pymoose2/pymoose'
-g++ -g -pthread -Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER -DUSE_GSL -DPYMOOSE -fPIC -fno-strict-aliasing -I/usr/include/python2.6  -I../basecode -I../msg -I../shell   -c -o moosemodule.o moosemodule.cpp
-moosemodule.cpp: In function ‘PyObject* _pymoose_setCwe(PyObject*, PyObject*)’:
-moosemodule.cpp:1133: warning: deprecated conversion from string constant to ‘char*’
-g++ -g -pthread -Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER -DUSE_GSL -DPYMOOSE -fPIC -fno-strict-aliasing -I/usr/include/python2.6  -I../basecode -I../msg -I../shell   -c -o pymoose_Neutral.o pymoose_Neutral.cpp
-ld -r -o pymoose.o moosemodule.o pymoose_Neutral.o 
-make[1]: Leaving directory `/home/subha/src/pymoose2/pymoose'
-All Libs compiled
-g++ -shared  -g -pthread -Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER -DUSE_GSL -DPYMOOSE -fPIC -fno-strict-aliasing -I/usr/include/python2.6  -o _moose.so basecode/basecode.o msg/msg.o shell/shell.o biophysics/biophysics.o randnum/randnum.o scheduling/scheduling.o builtins/builtins.o kinetics/kinetics.o ksolve/ksolve.o regressionTests/rt.o utility/utility.o  pymoose/pymoose.o -ldl -lm -L/usr/lib -lgsl -lgslcblas -lpython2.6 
-make -C pymoose
-make[1]: Entering directory `/home/subha/src/pymoose2/pymoose'
-make[1]: `pymoose.o' is up to date.
-make[1]: Leaving directory `/home/subha/src/pymoose2/pymoose'
+try:
+    import moose
+except ImportError:
+    print 'Please include the directory containing moose.py and _moose.so in your PYTHONPATH environmental variable.'
+    sys.exit(1)
 
-Compilation finished at Fri Mar 25 16:51:31
+class PyMooseNeutral(unittest.TestCase):
+    def __init__(self, *args):
+        unittest.TestCase.__init__(self, *args)
+        self.valueFinfos = ['name',                            
+                            'me',
+                            'parent',
+                            'children',
+                            'path',
+                            'class',
+                            'linearSize',
+                            'dimensions',
+                            'fieldDimension',
+                            'msgIn',
+                            'msgOut',
+                            'this']
+        self.lookupFinfos = [] #['msgSrc', 'msgDest'] # not clear what category these finfos belong to!
+        self.srcFinfos = ['childMsg']
+        self.destFinfos = ['parentMsg',
+                           'set_this',
+                           'get_this',
+                           'set_name',
+                           'get_name',
+                           'get_me',
+                           'get_parent',
+                           'get_children',
+                           'get_path',
+                           'get_class',
+                           'get_linearSize',
+                           'get_dimensions',
+                           'set_fieldDimension',
+                           'get_fieldDimension',
+                           'get_msgOut',
+                           'get_msgIn',
+                           'get_msgSrc',
+                           'get_msgDest']
+        self.sharedFinfos = []
+    
+    def setUp(self):        
+        self.testObj = moose.Neutral('neutral%d' % (uuid.uuid4().int))
+        self.valueFinfos.sort()
+        self.lookupFinfos.sort()
+        self.srcFinfos.sort()
+        self.destFinfos.sort()
+        self.sharedFinfos.sort()
+        
+    def testFields(self):
+        srcFields = sorted(list(self.testObj.getFieldNames('srcFinfo')))
+        self.assertEqual(len(self.srcFinfos), len(srcFields))        
+        for ii in range(len(self.srcFinfos)):
+            self.assertEqual(self.srcFinfos[ii], srcFields[ii])
+            
+        destFields = sorted(list(self.testObj.getFieldNames('destFinfo')))
+        print destFields
+        self.assertEqual(len(self.destFinfos), len(destFields))        
+        for ii in range(len(self.destFinfos)):
+            self.assertEqual(self.destFinfos[ii], destFields[ii])
+
+        valueFields = sorted(list(self.testObj.getFieldNames('valueFinfo')))
+        self.assertEqual(len(self.valueFinfos), len(valueFields))        
+        for ii in range(len(self.valueFinfos)):
+            self.assertEqual(self.valueFinfos[ii], valueFields[ii])
+        
+        lookupFields = sorted(list(self.testObj.getFieldNames('lookupFinfo')))
+        self.assertEqual(len(self.lookupFinfos), len(lookupFields))        
+        for ii in range(len(self.lookupFinfos)):
+            self.assertEqual(self.lookupFinfos[ii], lookupFields[ii])
+    
+        sharedFields = sorted(list(self.testObj.getFieldNames('sharedFinfo')))
+        self.assertEqual(len(self.sharedFinfos), len(sharedFields))        
+        for ii in range(len(self.sharedFinfos)):
+            self.assertEqual(self.sharedFinfos[ii], sharedFields[ii])
+
+    def testNew(self):
+        a_path = 'neutral%d' % (uuid.uuid4().int)
+        b_path = a_path + '/b'
+        c_path = '/neutral%d' % (uuid.uuid4().int)
+        d_path = c_path + '/d'
+        a = moose.Neutral(a_path)
+        b = moose.Neutral(b_path)
+        c = moose.Neutral(c_path)
+        d = moose.Neutral(d_path)
+        self.assertEqual(a.path, '/' + a_path)
+        self.assertEqual(b.path, '/' + b_path)
+        self.assertEqual(c.path, c_path)
+        self.assertEqual(d.path, d_path)
+        self.assertEqual(b.name, 'b')
+        self.assertEqual(d.name, 'd')
+        self.assertRaises(ValueError, moose.Neutral, 'test/')
+        
+
+if __name__ == '__main__':
+    unittest.main()
