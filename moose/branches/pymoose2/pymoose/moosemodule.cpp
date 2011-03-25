@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 24 19:46:35 2011 (+0530)
+// Last-Updated: Fri Mar 25 13:40:39 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 2320
+//     Update #: 2430
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -121,13 +121,30 @@ extern "C" {
     
     static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_delete(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_id(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_path(PyObject* dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_setattr(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_getattr(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_getFieldNames(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_Neutral_getChildren(PyObject * dummy, PyObject *args);
-    static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_connect(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_copy(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_move(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_Neutral_syncDataHandler(PyObject * dummy, PyObject * args);
+    // The following are global functions
+    static PyObject * _pymoose_useClock(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_setClock(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_start(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_reinit(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_stop(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_reinit(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_reinit(PyObject * dummy, PyObject * args);    
+    static PyObject * _pymoose_isRunning(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_loadModel(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_setCwe(PyObject * dummy, PyObject * args);
+    static PyObject * _pymoose_getCwe(PyObject * dummy, PyObject * args);
+    
     /**
      * Method definitions.
      */
@@ -150,6 +167,19 @@ extern "C" {
          "get list of children"},
         {"_pymoose_Neutral_destroy", _pymoose_Neutral_destroy, METH_VARARGS,
          "destroy the underlying moose element"},
+        {"_pymoose_Neutral_connect", _pymoose_Neutral_connect, METH_VARARGS, "Connect another object via a message."},
+        {"_pymoose_Neutral_copy", _pymoose_Neutral_copy, METH_VARARGS, "Copy the current element to a target."},
+        {"_pymoose_Neutral_move", _pymoose_Neutral_move, METH_VARARGS, "Move the current element"},
+        {"_pymoose_Neutral_syncDataHandler", _pymoose_Neutral_syncDataHandler, METH_VARARGS, "?"},
+        {"_pymoose_useClock", _pymoose_useClock, METH_VARARGS, "Schedule objects on a specified clock"},
+        {"_pymoose_setClock", _pymoose_setClock, METH_VARARGS, "Set the dt of a clock."},
+        {"_pymoose_start", _pymoose_start, METH_VARARGS, "Start simulation"},
+        {"_pymoose_reinit", _pymoose_reinit, METH_VARARGS, "Reinitialize simulation"},
+        {"_pymoose_stop", _pymoose_stop, METH_VARARGS, "Stop simulation"},
+        {"_pymoose_isRunning", _pymoose_isRunning, METH_VARARGS, ""},
+        {"_pymoose_loadModel", _pymoose_loadModel, METH_VARARGS, ""},
+        {"_pymoose_getCwe", _pymoose_getCwe, METH_VARARGS, "Get the current working element."},
+        {"_pymoose_setCwe", _pymoose_setCwe, METH_VARARGS, "Set the current working element."},
         {NULL, NULL, 0, NULL}        /* Sentinel */
     };
 
@@ -999,7 +1029,134 @@ extern "C" {
         Py_DECREF(obj);
         Py_RETURN_NONE;
     }
+    
+    static PyObject * _pymoose_Neutral_connect(PyObject * dummy, PyObject * args)
+    {
+        PyObject * srcPtr = NULL;
+        PyObject * destPtr = NULL;
+        unsigned int srcIndex=0, destIndex=0, srcDataIndex=0, destDataIndex=0;
+        char * srcField, * destField, * msgType;
+
+        if(!PyArg_ParseTuple(args, "OsOss|iiii", &srcPtr, &srcField, &destPtr, &destField, &msgType, &srcIndex, &destIndex, &srcDataIndex, &destDataIndex)){
+            return NULL;
+        }
+        pymoose_Neutral * src = reinterpret_cast<pymoose_Neutral*>(srcPtr);
+        pymoose_Neutral * dest = reinterpret_cast<pymoose_Neutral*>(destPtr);
+        bool ret = src->connect(string(srcField), *dest, string(destField), string(msgType), srcIndex, destIndex, srcDataIndex, destDataIndex);
+        if (!ret){
+            PyErr_SetString(PyExc_NameError, "connect failed: check field names and type compatibility.");
+            return NULL;
+        }
+        return Py_BuildValue("i", ret);
+    }
+    static PyObject * _pymoose_Neutral_copy(PyObject * dummy, PyObject * args)
+    {
+        PyErr_SetString(PyExc_NotImplementedError, "Not implemented");
+        return NULL;
+    }
+    static PyObject * _pymoose_Neutral_move(PyObject * dummy, PyObject * args)
+    {
+        PyErr_SetString(PyExc_NotImplementedError, "Not implemented");
+        return NULL;
+    }
+    static PyObject * _pymoose_Neutral_syncDataHandler(PyObject * dummy, PyObject * args)
+    {
+        PyErr_SetString(PyExc_NotImplementedError, "Not implemented");
+        return NULL;
+    }
+    // The following are global functions
+    static PyObject * _pymoose_useClock(PyObject * dummy, PyObject * args)
+    {
+        char * path, * field;
+        unsigned int tick;
+        if(!PyArg_ParseTuple(args, "ssI", &path, &field, &tick)){
+            return NULL;
+        }
+        pymoose::getShell().doUseClock(string(path), string(field), tick);
+        Py_RETURN_NONE;
+    }
+    static PyObject * _pymoose_setClock(PyObject * dummy, PyObject * args)
+    {
+        unsigned int tick;
+        double dt;
+        if(!PyArg_ParseTuple(args, "Id", &tick, &dt)){
+            return NULL;
+        }
+        if (dt < 0){
+            PyErr_SetString(PyExc_ValueError, "dt must be positive.");
+            return NULL;
+        }
+        pymoose::getShell().doSetClock(tick, dt);
+        Py_RETURN_NONE;
+    }
+    static PyObject * _pymoose_start(PyObject * dummy, PyObject * args)
+    {
+        double runtime;
+        if(!PyArg_ParseTuple(args, "d", &runtime)){
+            return NULL;
+        }
+        if (runtime <= 0.0){
+            PyErr_SetString(PyExc_ValueError, "simulation runtime must be positive.");
+            return NULL;
+        }
+        pymoose::getShell().doStart(runtime);
+        Py_RETURN_NONE;
+    }
+    static PyObject * _pymoose_reinit(PyObject * dummy, PyObject * args)
+    {
+        pymoose::getShell().doReinit();
+        Py_RETURN_NONE;
+    }
+    static PyObject * _pymoose_stop(PyObject * dummy, PyObject * args)
+    {
+        pymoose::getShell().doStop();
+        Py_RETURN_NONE;
+    }
+    static PyObject * _pymoose_isRunning(PyObject * dummy, PyObject * args)
+    {
+        return Py_BuildValue("i", pymoose::getShell().isRunning());
+    }
+    
+    static PyObject * _pymoose_loadModel(PyObject * dummy, PyObject * args)
+    {
+        char * fname, * modelpath;
+        if(!PyArg_ParseTuple(args, "ss", &fname, &modelpath)){
+            return NULL;
+        }
+        pymoose_Neutral* model = new pymoose_Neutral(pymoose::getShell().doLoadModel(string(fname), string(modelpath)));
+        return reinterpret_cast<PyObject*>(model);
+    }
+
+    static PyObject * _pymoose_setCwe(PyObject * dummy, PyObject * args)
+    {
+        PyObject * element = NULL;
+        char * path = "/";
+        Id id;
+        if(PyArg_ParseTuple(args, "s", &path)){
+            id = Id(string(path));
+        } else if (!PyArg_ParseTuple(args, "O", &element)){
+            return NULL;
+        }
+        id = (reinterpret_cast<pymoose_Neutral*>(element))->id();
+        pymoose::getShell().setCwe(id);
+        Py_RETURN_NONE;
+    }
+
+    static PyObject * _pymoose_getCwe(PyObject * dummy, PyObject * args)
+    {
+        Id id = pymoose::getShell().getCwe();
+        PyObject * ret = reinterpret_cast<PyObject*>(new pymoose_Neutral(id));
+        return ret;
+    }
+
+    
 } // end extern "C"
+
+
+
+//////////////////////////////////////////////
+// Main function
+//////////////////////////////////////////////
 
 
 int main(int argc, char* argv[])

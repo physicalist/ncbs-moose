@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:49:33 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 23 15:59:55 2011 (+0530)
+// Last-Updated: Fri Mar 25 13:38:47 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 140
+//     Update #: 145
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -98,7 +98,11 @@ class pymoose_Neutral: public PyMooseBase
        Returns a list of Ids of all the children of the object at
        specified index.
     */
-    vector<Id> getChildren(unsigned int index);    
+    vector<Id> getChildren(unsigned int index);
+    /**
+       addmsg equivalent
+    */
+    bool connect(string sourceField, pymoose_Neutral& dest, string destField, string msgType, unsigned int srcIndex, unsigned int destIndex, unsigned int srcDataIndex, unsigned int destDataIndex);
   protected:
     /**
        id_ is the sole reference to MOOSE elements.
