@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Fri Mar 11 09:50:26 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Mar 24 20:34:10 2011 (+0530)
+// Last-Updated: Fri Mar 25 13:42:02 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 417
+//     Update #: 442
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -395,6 +395,17 @@ vector<Id> pymoose_Neutral::getChildren(unsigned int index=0)
     return children;
 }
 
+bool pymoose_Neutral::connect(string srcField, pymoose_Neutral& dest, string destField, string msgType,
+                              unsigned int srcIndex, unsigned int destIndex,
+                              unsigned int srcDataIndex, unsigned int destDataIndex)
+{
+    ObjId srcObj(id_, DataId(srcIndex, srcDataIndex));
+    ObjId destObj(dest.id(), DataId(destIndex, destDataIndex));
+    return (pymoose::getShell().doAddMsg(msgType, srcObj, srcField, destObj, destField) != Msg::badMsg);
+}
+////////////////////////////////////////////////////////////////////////////////////////
+// Stand-alone utility functions follow.
+////////////////////////////////////////////////////////////////////////////////////////
 const map<string, string>& pymoose::getArgMap()
 {
     static map<string, string> argmap;
