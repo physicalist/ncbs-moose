@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Mar 25 13:40:39 2011 (+0530)
+// Last-Updated: Fri Mar 25 17:36:33 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 2430
+//     Update #: 2432
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -138,8 +138,6 @@ extern "C" {
     static PyObject * _pymoose_start(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_reinit(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_stop(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_reinit(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_reinit(PyObject * dummy, PyObject * args);    
     static PyObject * _pymoose_isRunning(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_loadModel(PyObject * dummy, PyObject * args);
     static PyObject * _pymoose_setCwe(PyObject * dummy, PyObject * args);
