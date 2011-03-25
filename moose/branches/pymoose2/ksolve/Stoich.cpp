@@ -84,6 +84,17 @@ const Cinfo* Stoich::initCinfo()
 			new ProcOpFunc< Stoich >( &Stoich::reinit ) );
 
 		//////////////////////////////////////////////////////////////
+		// FieldElementFinfo defintion for Ports.
+		//////////////////////////////////////////////////////////////
+		static FieldElementFinfo< Stoich, Port > portFinfo( "port",
+			"Sets up field Elements for ports",
+			Port::initCinfo(),
+			&Stoich::getPort,
+			&Stoich::setNumPorts,
+			&Stoich::getNumPorts
+		);
+
+		//////////////////////////////////////////////////////////////
 		// SharedMsg Definitions
 		//////////////////////////////////////////////////////////////
 		static Finfo* procShared[] = {
@@ -99,6 +110,7 @@ const Cinfo* Stoich::initCinfo()
 		&nVarMols,		// Value
 		&path,			// Value
 		&plugin,		// SrcFinfo
+		&portFinfo,		// FieldElementFinfo
 		&proc,			// SharedFinfo
 	};
 
@@ -222,6 +234,23 @@ string Stoich::getPath( const Eref& e, const Qinfo* q ) const
 unsigned int Stoich::getNumVarMols() const
 {
 	return numVarMols_;
+}
+
+Port* Stoich::getPort( unsigned int i )
+{
+	assert( i < ports_.size() );
+	return &ports_[i];
+}
+
+unsigned int Stoich::getNumPorts() const
+{
+	return ports_.size();
+}
+
+void Stoich::setNumPorts( unsigned int num )
+{
+	assert( num < 10000 );
+	ports_.resize( num );
 }
 
 //////////////////////////////////////////////////////////////
