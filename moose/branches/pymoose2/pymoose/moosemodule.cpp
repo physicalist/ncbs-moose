@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Sat Mar 26 01:07:00 2011 (+0530)
+// Last-Updated: Sat Mar 26 19:19:30 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 2565
+//     Update #: 2781
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -107,45 +107,50 @@ void setup_runtime_env(){
          << "NUMCORES = " << numCores << endl
          << "NUMNODES = " << numNodes << endl;
 }
+string getFieldType(ObjId id, string fieldName)
+{
+    string fieldType;
+    string className = Field<string>::get(id, "class");
+    string classInfoPath("/classes/" + className);
+    Id classId(classInfoPath);
+    assert(classId != Id());
+    static vector<string> finfotypes;
+    if (finfotypes.empty()){
+        finfotypes.push_back("srcFinfo");
+        finfotypes.push_back("destFinfo");
+        finfotypes.push_back("valueFinfo");
+        finfotypes.push_back("lookupFinfo");
+        finfotypes.push_back("sharedFinfo");        
+    }
+
+    for (unsigned jj = 0; jj < finfotypes.size(); ++ jj){
+        unsigned int numFinfos = Field<unsigned int>::get(ObjId(classId, 0), "num_" + finfotypes[jj]);
+        Id fieldId(classId.path() + "/" + finfotypes[jj]);
+        for (unsigned int ii = 0; ii < numFinfos; ++ii){
+            string _fieldName = Field<string>::get(ObjId(fieldId, DataId(0, ii)), "name");
+            if (fieldName == _fieldName){
+                fieldType = Field<string>::get(ObjId(fieldId, DataId(0, ii)), "type");
+                return fieldType;
+            }
+        }
+    }
+    return fieldType;        
+}
 
 // 
 // C wrappers for C++ classes
 // This is used by Python
 extern "C" {
-    static PyObject * MooseError;
-    static void _pymoose_Neutral_dealloc(_Neutral * self);
-    static PyObject * _pymoose_Neutral_repr(_Neutral * self);
-    static int _pymoose_Neutral_init(_Neutral * self, PyObject * args, PyObject * kwargs);
-
-    ////////////////////////////////////////////////
-    // static functions to be accessed from Python
-    ////////////////////////////////////////////////
-    static PyObject * _pymoose_Neutral_new(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_delete(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_id(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_path(PyObject* dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_setattr(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_getattr(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_getFieldNames(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_getChildren(PyObject * dummy, PyObject *args);
-    static PyObject * _pymoose_Neutral_connect(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_copy(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_move(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_Neutral_syncDataHandler(PyObject * dummy, PyObject * args);
-    // The following are global functions
-    static PyObject * _pymoose_useClock(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_setClock(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_start(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_reinit(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_stop(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_isRunning(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_loadModel(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_setCwe(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_getCwe(PyObject * dummy, PyObject * args);
+    static PyMethodDef NeutralMethods[] = {
+        {"getField", (PyCFunction)_pymoose_Neutral_getField, METH_VARARGS,
+         "get specified attribute of the element."},
+        {"_pymoose_Neutral_destroy", (PyCFunction)_pymoose_Neutral_destroy, METH_VARARGS,
+         "destroy the underlying moose element"},
+        {NULL, NULL, 0, NULL},        /* Sentinel */        
+    };
     /**
      * Method definitions.
-     */
+     */    
     static PyMethodDef MooseMethods[] = {
         {"_pymoose_Neutral_new", _pymoose_Neutral_new, METH_VARARGS,
          "Create a new MOOSE element."},
@@ -155,16 +160,12 @@ extern "C" {
          "return integer representation of the id of the element."},
         {"_pymoose_Neutral_path", _pymoose_Neutral_path, METH_VARARGS,
          "return path of the element."},
-        {"_pymoose_Neutral_getattr", _pymoose_Neutral_getattr, METH_VARARGS,
-         "get specified attribute of the element."},
         {"_pymoose_Neutral_setattr", _pymoose_Neutral_setattr, METH_VARARGS,
          "set specified attribute of the element."},
         {"_pymoose_Neutral_getFieldNames", _pymoose_Neutral_getFieldNames, METH_VARARGS,
          "get the list field-names."},
         {"_pymoose_Neutral_getChildren", _pymoose_Neutral_getChildren, METH_VARARGS,
          "get list of children"},
-        {"_pymoose_Neutral_destroy", _pymoose_Neutral_destroy, METH_VARARGS,
-         "destroy the underlying moose element"},
         {"_pymoose_Neutral_connect", _pymoose_Neutral_connect, METH_VARARGS, "Connect another object via a message."},
         {"_pymoose_Neutral_copy", _pymoose_Neutral_copy, METH_VARARGS, "Copy the current element to a target."},
         {"_pymoose_Neutral_move", _pymoose_Neutral_move, METH_VARARGS, "Move the current element"},
@@ -213,7 +214,7 @@ extern "C" {
         0,                                  /* tp_weaklistoffset */
         0,                                  /* tp_iter */
         0,                                  /* tp_iternext */
-        0,                                  /* tp_methods */
+        NeutralMethods,                     /* tp_methods */
         0,                    /* tp_members */
         0,                                  /* tp_getset */
         0,                                  /* tp_base */
@@ -226,6 +227,8 @@ extern "C" {
         PyType_GenericNew,                  /* tp_new */
         _PyObject_Del,                      /* tp_free */
     };
+
+#define Neutral_Check(v) (Py_TYPE(v) == &NeutralType)
 
     /* module initialization */
     PyMODINIT_FUNC init_moose()
@@ -352,254 +355,94 @@ extern "C" {
         return ret;
     }
     /**
-       Get a specified field. Redone on: 2011-03-23 14:42:03 (+0530)
+       Get a specified field. Re-done on: 2011-03-23 14:42:03 (+0530)
+
+       I wonder how to cleanly do this. The Id - ObjId dichotomy is
+       really ugly. When you don't pass an index, it is just treated
+       as 0. Then what is the point of having Id separately? ObjId
+       would been just fine!
      */
-    static PyObject * _pymoose_Neutral_getattr(PyObject * dummy, PyObject * args)
+    static PyObject * _pymoose_Neutral_getField(_Neutral * self, PyObject * args)
     {
-        PyObject * obj = NULL;
         const char * field = NULL;
         char ftype;
-        unsigned int index = 0;
-        if (!PyArg_ParseTuple(args, "Os|i", &obj, &field, &index)){
+        if (!PyArg_ParseTuple(args, "s", &field)){
             return NULL;
         }
-        pymoose_Neutral * instance = reinterpret_cast<pymoose_Neutral*>(obj);
-        if (!instance){
-            PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
-            return NULL;
-        }
+        PyObject * ret;
         string field_str(field);
+        // The GET_FIELD macro is just a short-cut to reduce typing
+        // TYPE is the full type string for the field. TYPEC is the corresponding Python Py_BuildValue format character.
+#define GET_FIELD(TYPE, TYPEC)                                          \
+        {ret = Py_BuildValue(#TYPEC, Field<TYPE>::get(self->_id, string(field))); break;}
         
-        void * ret = instance->getField(field_str, ftype, index);
-        
-        if (!ret){
-            PyErr_SetString(PyExc_RuntimeError, "pymoose_Neutral_getField returned NULL");
-            return NULL;
-        } else if (!ftype){
-            PyErr_SetString(PyExc_RuntimeError, "Invalid field type.");
-            return NULL;
+#define GET_VECFIELD(TYPE, TYPEC) \
+        {                                                               \
+                vector<TYPE> val = Field< vector<TYPE> >::get(self->_id, string(field)); \
+                ret = PyTuple_New((Py_ssize_t)val.size());              \
+                for (unsigned int ii = 0; ii < val.size(); ++ ii ){     \
+                        PyObject * entry = Py_BuildValue(#TYPEC, val[ii]); \
+                        if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ \
+                            free(ret);                                  \
+                            ret = NULL;                                 \
+                            break;                                      \
+                        }                                               \
+                }                                                       \
+                break;                                                  \
         }
-        PyObject * pyret = NULL;
+        
+        string type = getFieldType(self->_id, string(field));
+        ftype = shortType(type);
         switch(ftype){
-            case 'c':
-                {
-                    pyret = Py_BuildValue("c", *((char*)ret));
-                    delete (char*)ret;
-                }
+            case 'c': GET_FIELD(char, c)
+            case 'i': GET_FIELD(int, i)
+            case 'h': GET_FIELD(short, h)
+            case 'l': GET_FIELD(long, l)        
+            case 'I': GET_FIELD(unsigned int, I)
+            case 'k': GET_FIELD(unsigned long, k)
+            case 'f': GET_FIELD(float, f)
+            case 'd': GET_FIELD(double, d)
+            case 's': {
+                string _s = Field<string>::get(self->_id, string(field));
+                ret = Py_BuildValue("s", _s.c_str());
                 break;
-            case 'i':
-                {
-                    pyret = PyInt_FromLong((long)(*((int*)ret)));                    
-                    delete (int*)ret;
-                }
-                break;
-            case 'j':
-                {
-                    pyret = PyInt_FromLong((long)(*((short*)ret)));                    
-                    delete (short*)ret;
-                }
-            case 'l':
-                {
-                    pyret = PyLong_FromLong(*((long*)ret));
-                    delete (long*)ret;
-                }
-                break;
-            case 'u':
-                {
-                    pyret = PyLong_FromUnsignedLong((unsigned long)(*((unsigned int*)ret)));
-                    delete (unsigned int*)ret;
-                }
-                break;                
-            case 'k': 
-                {
-                    pyret = PyLong_FromUnsignedLong(*((unsigned long*)ret));
-                    delete (unsigned long*)ret;
-                }
-                break;                
-            case 'f':
-                {
-                    pyret = PyFloat_FromDouble((double)(*((float*)ret)));
-                    delete (double*)ret;
-                }
-                break;
-            case 'd':
-                {
-                    pyret = PyFloat_FromDouble(*((double*)ret));
-                    delete (double*)ret;
-                }
-                break;
-            case 's':
-                {
-                    pyret = PyString_FromString(((string*)ret)->c_str());
-                    delete (string*)ret;
-                }
-                break;
-            case 'I':
-                {
-                                        
-                    pyret = (PyObject*)(new pymoose_Neutral(*((Id*)ret)));
-                    delete (Id*)ret;
-                    
-                }
-                break;
-            case 'O':
-                cout << "Getting ObjId field not implemented yet." << endl;
-                pyret = Py_None;
-            case 'D':
-                cout << "Getting DataId field not implemented yet." << endl;
-                pyret = Py_None;                
-            case 'v':
-                {
-                    vector <int>& val = *((vector<int>*)ret);
-                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (unsigned int ii = 0; ii < val.size(); ++ ii ){
-                        PyObject * entry = PyInt_FromLong((long)val[ii]);
-                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
-                            free(pyret);
-                            pyret = NULL;
-                            break;
-                        }                        
-                    }
-                }
-                delete (vector<int>*)ret;
-                break;
-            case 'w':
-                {
-                    vector<short>& val = *((vector<short> *) ret);
-                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (unsigned int ii = 0; ii < val.size(); ++ ii){
-                        PyObject * entry = PyInt_FromLong((long)val[ii]);                        
-                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
-                            free(pyret);
-                            pyret = NULL;
-                            break;
-                        }
-                    }
-                }
-                delete (vector<short>*)ret;
-                break;
-            case 'L':
-                {
-                    vector <long>& val = *((vector<long>*)ret);
-                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (unsigned int ii = 0; ii < val.size(); ++ ii ){
-                        PyObject * entry = PyLong_FromLong(val[ii]);
-                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
-                            free(pyret);
-                            pyret = NULL;
-                            break;
-                        }                        
-                    }
-                }
-                delete (vector<long>*)ret;
-                break;
-            case 'U':
-                {
-                    vector <unsigned int>& val = *((vector<unsigned int>*)ret);
-                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (unsigned int ii = 0; ii < val.size(); ++ ii ){
-                        PyObject * entry = PyLong_FromUnsignedLong((unsigned long)val[ii]);
-                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
-                            free(pyret);
-                            pyret = NULL;
-                            break;
-                        }                        
-                    }
-                }
-                delete (vector<unsigned int>*)ret;
-                break;
-            case 'K':
-                {
-                    vector <unsigned long>& val = *((vector<unsigned long>*)ret);
-                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (unsigned int ii = 0; ii < val.size(); ++ ii ){
-                        PyObject * entry = PyLong_FromUnsignedLong((unsigned long)val[ii]);
-                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
-                            free(pyret);
-                            pyret = NULL;
-                            break;
-                        }                        
-                    }
-                }
-                delete (vector<unsigned long>*)ret;
-                break;
-            case 'F':
-                {
-                    vector <float>& val = *((vector<float>*)ret);
-                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (unsigned int ii = 0; ii < val.size(); ++ ii ){
-                        PyObject * entry = PyFloat_FromDouble((double)val[ii]);
-                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
-                            free(pyret);
-                            pyret = NULL;
-                            break;
-                        }                        
-                    }
-                }
-                delete (vector<float>*)ret;
-                break;
-            case 'x':
-                {
-                    vector <double>& val = *((vector<double>*)ret);
-                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (unsigned int ii = 0; ii < val.size(); ++ ii ){
-                        PyObject * entry = PyFloat_FromDouble(val[ii]);
-                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
-                            free(pyret);
-                            pyret = NULL;
-                            break;
-                        }                        
-                    }
-                }
-                delete (vector<double>*)ret;
-                break;
-            case 'S':
-                {
-                    vector <string>& val = *((vector<string>*)ret);
-                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (unsigned int ii = 0; ii < val.size(); ++ ii ){
-                        PyObject * entry = PyString_FromString(val[ii].c_str());
-                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, entry)){
-                            free(pyret);
-                            pyret = NULL;
-                            break;
-                        }                        
-                    }
-                }
-                delete (vector<string>*)ret;
-                break;
-                
-            case 'J':
-                {
-                    vector<Id>& val = *((vector<Id>*) ret);
-                    PyObject * pyret = PyTuple_New((Py_ssize_t)val.size());
-                    for (unsigned int ii = 0; ii < ((vector<Id>*)ret)->size(); ++ ii){
-                        
-                        pymoose_Neutral * entry = new pymoose_Neutral(val[ii]);
-                        
-                        if (!entry || PyTuple_SetItem(pyret, (Py_ssize_t)ii, (PyObject*)entry)){
-                            free(pyret);
-                            pyret = NULL;
-                            break;
-                        }
-                    }                    
-                }
-                delete (vector<Id>*)ret;
-                break;
-            case 'P':
-                cout << "Getting ObjId field not implemented yet." << endl;
-                pyret = Py_None;
-            case 'E':
-                cout << "Getting DataId field not implemented yet." << endl;
-                pyret = Py_None;                
+            }
+                    // case 'I': {
+                    //     GET_FIELD(Id)
+                    // }
+                    // case 'O': {
+                    //     GET_FIELD(ObjId)
+                    // }
+                    // case 'D': {
+                    //     GET_FIELD(DataId)
+                    // }
+            case 'v': GET_VECFIELD(int, i)
+            case 'w': GET_VECFIELD(short, h)
+            case 'L': GET_VECFIELD(long, l)        
+            case 'U': GET_VECFIELD(unsigned int, I)        
+            case 'K': GET_VECFIELD(unsigned long, k)        
+            case 'F': GET_VECFIELD(float, f)        
+            case 'D': GET_VECFIELD(double, d)        
+            case 'S': {                                                 
+                vector<string> val = Field< vector<string> >::get(self->_id, string(field)); 
+                ret = PyTuple_New((Py_ssize_t)val.size());              
+                for (unsigned int ii = 0; ii < val.size(); ++ ii ){     
+                    PyObject * entry = Py_BuildValue("s", val[ii].c_str()); 
+                    if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ 
+                        free(ret);                                  
+                        ret = NULL;                                 
+                        break;                                      
+                    }                                               
+                }                                                       
+                break;                                                  
+            }
             default:
-                {
-                    PyErr_SetString(PyExc_TypeError, "Invalid field.");
-                    pyret = NULL;
-                }
+                PyErr_SetString(PyExc_TypeError, "Unrecognized field type.");
+                ret = NULL;            
         }
-        Py_INCREF(pyret);
-        return pyret;        
+#undef GET_FIELD    
+#undef GET_VECFIELD        
+        return ret;        
     }
     /**
        Set a specified field. Redone on 2011-03-23 14:41:45 (+0530)
@@ -1052,23 +895,6 @@ extern "C" {
         }
         return pyret;        
     }
-    // 2011-03-23 15:14:11 (+0530)
-    static PyObject * _pymoose_Neutral_destroy(PyObject * dummy, PyObject * args)
-    {
-        PyObject * obj = NULL;
-        if (!PyArg_ParseTuple(args, "O", &obj)){
-            return NULL;
-        }
-        pymoose_Neutral * instance = reinterpret_cast<pymoose_Neutral *>(obj);
-        if (!instance){
-            PyErr_SetString(PyExc_TypeError, "Argument cannot be cast to pymoose_Neutral pointer.");
-            return NULL;
-        }
-        instance->destroy();
-        
-        Py_DECREF(obj);
-        Py_RETURN_NONE;
-    }
     
     static PyObject * _pymoose_Neutral_connect(PyObject * dummy, PyObject * args)
     {
@@ -1189,15 +1015,37 @@ extern "C" {
         return ret;
     }
 
+    ///////////////////////////////////////////////////////////////////
+    // New set of functions for native Python data type
+    ///////////////////////////////////////////////////////////////////
     static PyObject * _pymoose_Neutral_repr(_Neutral * self)
     {
-        return PyString_FromFormat("%lu", self->_id.value());
+        return PyString_FromFormat("<Neutral: Id=%u, Data:=%u, Field=%u>", self->_id.id.value(), self->_id.dataId.data(), self->_id.dataId.field());
     }
+    
     static void _pymoose_Neutral_dealloc(_Neutral * self)
     {
-        self->ob_type->tp_free((PyObject *)self);
+        PyObject_Del(self);
     }
 
+    // 2011-03-23 15:14:11 (+0530)
+    // 2011-03-26 17:02:19 (+0530)
+    //
+    // 2011-03-26 19:14:34 (+0530) - This IS UGLY! Destroying one
+    // ObjId will destroy the containing element and invalidate all
+    // the other ObjId with the same Id.
+    static PyObject * _pymoose_Neutral_destroy(_Neutral * self, PyObject * args)
+    {
+        PyObject * obj = NULL;
+        if (!PyArg_ParseTuple(args, ":destroy")){
+            return NULL;
+        }
+        self->_id.id.destroy();        
+        Py_DECREF(obj);
+        Py_RETURN_NONE;
+    }
+
+    
     static int _pymoose_Neutral_init(_Neutral * self, PyObject * args, PyObject * kwds)
     {
         static char * kwlist[] = {"type", "path", "dims"};
@@ -1273,6 +1121,23 @@ extern "C" {
         } 
         return 0;            
     }// ! _pymoose_Neutral_init
+
+    static PyObject * _pymoose_Neutral_getFieldType(_Neutral * self, PyObject * args)
+    {
+        char * fieldName = NULL;
+        if (!PyArg_ParseTuple(args, "s", &fieldName)){
+            return NULL;
+        }
+        string typeStr = getFieldType(self->_id.id, string(fieldName));
+        if (typeStr.length() <= 0){
+            PyErr_SetString(PyExc_ValueError, "Empty string for field type. Field name may be incorrect.");
+            return NULL;
+        }
+        PyObject * type = PyString_FromString(typeStr.c_str());
+        return type;
+    }  // ! _pymoose_Neutral_getFieldType
+
+    
     
     
 } // end extern "C"
