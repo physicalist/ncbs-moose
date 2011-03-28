@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Mar 28 17:13:47 2011 (+0530)
+// Last-Updated: Tue Mar 29 00:15:05 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 224
+//     Update #: 236
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -73,10 +73,12 @@ extern "C" {
     static PyObject * _pymoose_Neutral_getPath(_Neutral * self, PyObject * args);
     static PyObject * _pymoose_Neutral_syncDataHandler(_Neutral * self, PyObject * args);
     /* Neutral functions to allow part of sequence protocol */
-    static Py_ssize_t * _pymoose_Neutral_getLength(_Neutral * self);
+    static Py_ssize_t _pymoose_Neutral_getLength(_Neutral * self);
     static PyObject * _pymoose_Neutral_getItem(_Neutral * self, Py_ssize_t index);
-    static PyObject * _pymoose_Neutral_getSlice(_Neutral * self, Py_ssize_t start, Py_ssize_t end);
-    static PyObject * _pymoose_Neutral_richCompare(_Neutral * self, PyObject * args, int op);
+    static PyObject * _pymoose_Neutral_getSlice(_Neutral * self, PyObject * args);    
+    static PyObject * _pymoose_Neutral_getShape(_Neutral * self, PyObject * args);    
+    static int _pymoose_Neutral_richCompare(_Neutral * self, PyObject * args, int op);
+    static int _pymoose_Neutral_contains(_Neutral * self, PyObject * args);
     ///////////////////////////////////////////
     // Methods for Element class
     ///////////////////////////////////////////
@@ -88,11 +90,11 @@ extern "C" {
     static PyObject * _pymoose_Element_setField(_Element * self, PyObject * args);
     static PyObject * _pymoose_Element_getFieldNames(_Element * self, PyObject * args);
     static PyObject * _pymoose_Element_getFieldType(_Element * self, PyObject * args);
-    static PyObject * _pymoose_Element_getDataIndex(_Element * self);
-    static PyObject * _pymoose_Element_getFieldIndex(_Element * self);
+    static PyObject * _pymoose_Element_getDataIndex(_Element * self, PyObject * args);
+    static PyObject * _pymoose_Element_getFieldIndex(_Element * self, PyObject * args);
     static PyObject * _pymoose_Element_getId(_Element * self, PyObject * args);
     static PyObject * _pymoose_Element_connect(_Element * self, PyObject * args);
-    static PyObject * _pymoose_Element_richCompare(_Element * self, PyObject * args, int op);
+    static int _pymoose_Element_richCompare(_Element * self, PyObject * args, int op);
     
     ////////////////////////////////////////////////
     // static functions to be accessed from Python
