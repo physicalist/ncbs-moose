@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Mar 29 00:56:59 2011 (+0530)
+// Last-Updated: Tue Mar 29 01:21:38 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 3377
+//     Update #: 3382
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -550,10 +550,10 @@ extern "C" {
         unsigned int id = 0, data = 0, field = 0;
         PyObject * neutral;
         static char * kwlist[] = {"id", "dataIndex", "fieldIndex"};
-        if (PyArg_ParseTuple(args, "II|I", kwlist, &id, &data, &field)){
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, "II|I", kwlist, &id, &data, &field)){
             self->_id = ObjId(Id(id), DataId(data, field));
             return 0;
-        } else if (PyArg_ParseTuple(args, "OI|I", kwlist, &neutral, &data, &field)){
+        } else if (PyArg_ParseTupleAndKeywords(args, kwargs, "OI|I", kwlist, &neutral, &data, &field)){
             if (!Neutral_Check(neutral)){
                 PyErr_SetString(PyExc_TypeError, "Element.__init__(self, id, dataindex, fieldindex=0) or Element.__init__(self, Neutral, dataIndex, fieldIndex=0)");
                 return -1;
@@ -567,7 +567,7 @@ extern "C" {
     
     static PyObject * _pymoose_Element_repr(_Element * self)
     {
-        return PyString_FromFormat("<Neutral: Id=%u, Data:=%u, Field=%u>", self->_id.id.value(), self->_id.dataId.data(), self->_id.dataId.field());
+        return PyString_FromFormat("<Neutral: Id=%u, Data=%u, Field=%u>", self->_id.id.value(), self->_id.dataId.data(), self->_id.dataId.field());
     } // !  _pymoose_Element_repr
     static PyObject * _pymoose_Element_str(_Element * self)
     {
