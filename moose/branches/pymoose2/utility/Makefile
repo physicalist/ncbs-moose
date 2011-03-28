@@ -7,6 +7,7 @@ TARGET = utility.o
 OBJ = \
 	strutil.o	\
 	types.o 	\
+	setupenv.o	\
 
 
 HEADERS = \
