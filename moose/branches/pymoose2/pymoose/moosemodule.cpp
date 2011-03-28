@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Mar 28 18:47:54 2011 (+0530)
+// Last-Updated: Tue Mar 29 00:56:59 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 3265
+//     Update #: 3377
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -94,7 +94,22 @@ extern "C" {
          "?"},
         {"getPath", (PyCFunction)_pymoose_Neutral_getPath, METH_VARARGS,
          "The path of this Neutral object."},
+        {"getShape", (PyCFunction)_pymoose_Neutral_getShape, METH_VARARGS,
+         "Get the shape of the Neutral object as a tuple."},
         {NULL, NULL, 0, NULL},        /* Sentinel */        
+    };
+
+    static PySequenceMethods NeutralSequenceMethods = {
+        (lenfunc)_pymoose_Neutral_getLength, // sq_length
+        0, //sq_concat
+        0, //sq_repeat
+        (ssizeargfunc)_pymoose_Neutral_getItem, //sq_item
+        (ssizessizeargfunc)_pymoose_Neutral_getSlice, // getslice
+        0, //sq_ass_item
+        0, // setslice
+        (objobjproc)_pymoose_Neutral_contains, // sq_contains
+        0, // sq_inplace_concat
+        0 // sq_inplace_repeat
     };
     static PyMethodDef ElementMethods[] = {
         {"getFieldType", (PyCFunction)_pymoose_Element_getFieldType, METH_VARARGS,
@@ -114,6 +129,10 @@ extern "C" {
          "returned. If no argument is passed, all fields are returned."},
         {"connect", (PyCFunction)_pymoose_Element_connect, METH_VARARGS,
          "Connect another object via a message."},
+        {"getDataIndex", (PyCFunction)_pymoose_Element_getDataIndex, METH_VARARGS,
+         "Get the index of this Element in the containing Neutral object."},
+        {"getFieldIndex", (PyCFunction)_pymoose_Element_getFieldIndex, METH_VARARGS,
+         "Get the index of this object as a field."},
         {NULL, NULL, 0, NULL},        /* Sentinel */        
     };
     /**
@@ -150,11 +169,11 @@ extern "C" {
         0,                                  /* tp_compare */
         (reprfunc)_pymoose_Neutral_repr,                        /* tp_repr */
         0,                                  /* tp_as_number */
-        0,                                  /* tp_as_sequence */
+        &NeutralSequenceMethods,             /* tp_as_sequence */
         0,                                  /* tp_as_mapping */
         0,                                  /* tp_hash */
         0,                                  /* tp_call */
-        (strfunc)_pymoose_Neutral_str,                                  /* tp_str */
+        (reprfunc)_pymoose_Neutral_str,               /* tp_str */
         PyObject_GenericGetAttr,            /* tp_getattro */
         PyObject_GenericSetAttr,            /* tp_setattro */
         0,                                  /* tp_as_buffer */
@@ -162,7 +181,7 @@ extern "C" {
         "",
         0,                                  /* tp_traverse */
         0,                                  /* tp_clear */
-        _pymoose_Neutral_richCompare,       /* tp_richcompare */
+        (richcmpfunc)_pymoose_Neutral_richCompare,       /* tp_richcompare */
         0,                                  /* tp_weaklistoffset */
         0,                                  /* tp_iter */
         0,                                  /* tp_iternext */
@@ -174,7 +193,7 @@ extern "C" {
         0,                                  /* tp_descr_get */
         0,                                  /* tp_descr_set */
         0,                                  /* tp_dictoffset */
-        (initproc) _pymoose_Neutral_init,                       /* tp_init */
+        (initproc) _pymoose_Neutral_init,   /* tp_init */
         PyType_GenericAlloc,                /* tp_alloc */
         PyType_GenericNew,                  /* tp_new */
         _PyObject_Del,                      /* tp_free */
@@ -202,15 +221,15 @@ extern "C" {
         0,                                  /* tp_as_mapping */
         0,                                  /* tp_hash */
         0,                                  /* tp_call */
-        _pymoose_Element_str,               /* tp_str */
+        (reprfunc)_pymoose_Element_str,               /* tp_str */
         PyObject_GenericGetAttr,            /* tp_getattro */
         PyObject_GenericSetAttr,            /* tp_setattro */
         0,                                  /* tp_as_buffer */
         Py_TPFLAGS_DEFAULT,
-        "",
+        "Individual moose object contained in an array-type object.",
         0,                                  /* tp_traverse */
         0,                                  /* tp_clear */
-        _pymoose_Element_richCompare,       /* tp_richcompare */
+        (richcmpfunc)_pymoose_Element_richCompare,       /* tp_richcompare */
         0,                                  /* tp_weaklistoffset */
         0,                                  /* tp_iter */
         0,                                  /* tp_iternext */
@@ -271,17 +290,21 @@ extern "C" {
     
     static int _pymoose_Neutral_init(_Neutral * self, PyObject * args, PyObject * kwds)
     {
-        static char * kwlist[] = {"type", "path", "dims"};
-        char * path, *type;
+        static char * kwlist[] = {"path", "dims", "type"};
+        char * path, * type = "Neutral";
         PyObject * dims = NULL;
         PyObject * src = NULL;
         // if (PyDict_Type.tp_init((PyObject *)self, args, kwds) < 0)
         //     return -1;
         
-        if (!PyArg_ParseTupleAndKeywords(args, kwds, "ss|O", kwlist, &type, &path, &dims)){
+        if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|Os", kwlist, &path, &dims, &type)){
             if (!PyArg_ParseTuple(args, "O", &src)){
                 return -1;
-            } 
+            }
+            if (!Neutral_Check(src)){
+                PyErr_SetString(PyExc_TypeError, "Neutral.__init__(path, dims, type) or Neutral.__init__(other_Neutral)");
+                return -1;
+            }
             _Neutral * src_cast = reinterpret_cast<_Neutral*>(src);
             if (!src_cast){
                 PyErr_SetString(PyExc_TypeError, "Could not cast passed object to _Neutral.");
@@ -324,6 +347,7 @@ extern "C" {
         if (vec_dims.empty()){
             vec_dims.push_back(1);
         }
+        cout << "Dimensions " << vec_dims.size() << endl;
         self->_id = Id(path);
         // If object does not exist, create new
         if ((self->_id == Id()) && (trimmed_path != "/") && (trimmed_path != "/root")){
@@ -341,6 +365,7 @@ extern "C" {
                 name = trimmed_path;
             }
             self->_id = getShell().doCreate(string(type), Id(parent_path), string(name), vector<unsigned int>(vec_dims));
+            cout << "Created object of type " << type << endl;
         } 
         return 0;            
     }// ! _pymoose_Neutral_init
@@ -372,7 +397,7 @@ extern "C" {
     } // !  _pymoose_Neutral_repr
     static PyObject * _pymoose_Neutral_str(_Neutral * self)
     {
-        return PyString_FromFormat("%ss", Id::id2str(self->_id).c_str());
+        return PyString_FromFormat("%s", Id::id2str(self->_id).c_str());
     } // !  _pymoose_Neutral_str
 
     // 2011-03-23 15:09:19 (+0530)
@@ -417,19 +442,22 @@ extern "C" {
     /** Subset of sequence protocol functions */
     static Py_ssize_t _pymoose_Neutral_getLength(_Neutral * self)
     {
-        vector< unsigned int> dims = Field< vector <unsigned int> >::get(self->_id, "dimensions");
+        vector< unsigned int> dims = Field< vector <unsigned int> >::get(ObjId(self->_id, 0), "dimensions");
         if (dims.empty()){
-            return (Py_ssize_t)0;
+            return (Py_ssize_t)1; // this is a bug in basecode - dimension 1 is returned as an empty vector
         } else {
             return (Py_ssize_t)dims[0];
         }
     }
-    static PyObject * _pymoose_Neutral_getShape(_Neutral * self)
+    static PyObject * _pymoose_Neutral_getShape(_Neutral * self, PyObject * args)
     {
+        if (!PyArg_ParseTuple(args, ":getShape")){
+            return NULL;
+        }
         vector< unsigned int> dims = Field< vector <unsigned int> >::get(self->_id, "dimensions");
         PyObject * ret = PyTuple_New((Py_ssize_t)dims.size());
         for (unsigned int ii = 0; ii < dims.size(); ++ii){
-                if (PyTuple_SetItem((Py_ssize_t)ii, Py_BuildValue("I", dims[ii]))){
+            if (PyTuple_SetItem(ret, (Py_ssize_t)ii, Py_BuildValue("I", dims[ii]))){
                         return NULL;
                 }
         }
@@ -450,8 +478,12 @@ extern "C" {
         Py_INCREF(ret);
         return ret;
     }
-    static PyObject * _pymoose_Neutral_getSlice(_Neutral * self, Py_ssize_t start, Py_ssize_t end)
+    static PyObject * _pymoose_Neutral_getSlice(_Neutral * self, PyObject * args)
     {
+        Py_ssize_t start, end;
+        if (!PyArg_ParseTuple(args, "ii", &start, &end)){
+            return NULL;
+        }
         Py_ssize_t len = _pymoose_Neutral_getLength(self);
         while (start < 0){
             start += len;
@@ -468,12 +500,13 @@ extern "C" {
             _Element * value = new _Element();
             value->_id = ObjId(self->_id, ii);
             if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)value)){
-                free(ret);
+                Py_DECREF(ret);
                 return NULL;
             }
         }
         return ret;
     }
+    
     static int _pymoose_Neutral_richCompare(_Neutral * self, PyObject * args, int op)
     {
         PyObject * other;
@@ -487,15 +520,27 @@ extern "C" {
         } else if (op == Py_LT){
             return (self->_id < ((_Neutral*)other)->_id);
         } else if (op == Py_GT) {
-            return ((_Neutral*)other)->_id < self->_id);
+            return (((_Neutral*)other)->_id < self->_id);
         } else if (op == Py_LE){
             return ((self->_id < ((_Neutral*)other)->_id) || (self->_id == ((_Neutral*)other)->_id));
         } else if (op == Py_GE){
             return ((((_Neutral*)other)->_id < self->_id) || (self->_id == ((_Neutral*)other)->_id));
-        }        
+        } else {
+            return 0;
+        }
     }
     
-
+    static int _pymoose_Neutral_contains(_Neutral * self, PyObject * args)
+    {
+        PyObject * obj = NULL;
+        if (!PyArg_ParseTuple(args, "O:asSequence", &obj)){
+            return 0;
+        }
+        if (!Element_Check(obj)){
+            return 0;
+        }
+        return (((_Element*)obj)->_id.id == self->_id);
+    }
     /////////////////////////////////////////////////////
     // Element functions.
     /////////////////////////////////////////////////////
@@ -508,7 +553,11 @@ extern "C" {
         if (PyArg_ParseTuple(args, "II|I", kwlist, &id, &data, &field)){
             self->_id = ObjId(Id(id), DataId(data, field));
             return 0;
-        } else if (PyArg_ParseTuple(args, "OO|I", kwlist, &neutral, &data, &field)){
+        } else if (PyArg_ParseTuple(args, "OI|I", kwlist, &neutral, &data, &field)){
+            if (!Neutral_Check(neutral)){
+                PyErr_SetString(PyExc_TypeError, "Element.__init__(self, id, dataindex, fieldindex=0) or Element.__init__(self, Neutral, dataIndex, fieldIndex=0)");
+                return -1;
+            }
             self->_id = ObjId(((_Neutral*)neutral)->_id, DataId(data, field));
             return 0;
         } else {
@@ -588,7 +637,7 @@ extern "C" {
                 for (unsigned int ii = 0; ii < val.size(); ++ ii ){     \
                         PyObject * entry = Py_BuildValue(#TYPEC, val[ii]); \
                         if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ \
-                            free(ret);                                  \
+                            Py_DECREF(ret);                             \
                             ret = NULL;                                 \
                             break;                                      \
                         }                                               \
@@ -625,7 +674,7 @@ extern "C" {
                 for (unsigned int ii = 0; ii < val.size(); ++ ii ){     
                     PyObject * entry = Py_BuildValue("s", val[ii].c_str()); 
                     if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ 
-                        free(ret);                                  
+                        Py_DECREF(ret);                                  
                         ret = NULL;                                 
                         break;                                      
                     }                                               
@@ -770,12 +819,12 @@ extern "C" {
         for (unsigned int ii = 0; ii < ret.size(); ++ ii ){
             PyObject * fname = PyString_FromString(ret[ii].c_str());
             if (!fname){
-                free(pyret);
+                Py_DECREF(pyret);
                 pyret = NULL;
                 break;
             }
             if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, fname)){
-                free(pyret);
+                Py_DECREF(pyret);
                 pyret = NULL;
                 break;
             }
@@ -803,6 +852,17 @@ extern "C" {
             return NULL;
         }
         return Py_BuildValue("i", ret);
+    }
+
+    static int _pymoose_Element_richCompare(_Element * self, PyObject * other, int op)
+    {
+        if (op == Py_EQ){
+            return (self->_id == ((_Element*)other)->_id);
+        } else if (op == Py_NE){
+            return !(self->_id == ((_Element*)other)->_id);
+        } else {
+            return 0;
+        }
     }
 
     ////////////////////////////////////////////
@@ -932,8 +992,22 @@ extern "C" {
         return ret;
     }
 
-
-    
+    static PyObject * _pymoose_Element_getDataIndex(_Element * self, PyObject * args)
+    {
+        if (!PyArg_ParseTuple(args, ":getDataIndex")){
+            return NULL;
+        }
+        PyObject * ret = Py_BuildValue("I", self->_id.dataId.data());
+        return ret;
+    }
+    static PyObject * _pymoose_Element_getFieldIndex(_Element * self, PyObject * args)
+    {
+        if (!PyArg_ParseTuple(args, ":getFieldIndex")){
+            return NULL;
+        }
+        PyObject * ret = Py_BuildValue("I", self->_id.dataId.field());
+        return ret;
+    } 
     
     
     
