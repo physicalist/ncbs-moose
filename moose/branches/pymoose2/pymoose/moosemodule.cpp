@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Mar 29 11:13:11 2011 (+0530)
+// Last-Updated: Tue Mar 29 18:38:29 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 3424
+//     Update #: 3426
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -498,7 +498,7 @@ extern "C" {
         }
         PyObject * ret = PyTuple_New((Py_ssize_t)(end - start));
         for (unsigned int ii = start; ii < end; ++ii){
-            _Element * value = new _Element();
+            _Element * value = PyObject_New(_Element, &ElementType);
             value->_id = ObjId(self->_id, ii);
             if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)value)){
                 Py_DECREF(ret);
