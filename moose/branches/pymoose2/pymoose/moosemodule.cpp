@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Mar 29 01:21:38 2011 (+0530)
+// Last-Updated: Tue Mar 29 11:13:11 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 3382
+//     Update #: 3424
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -177,8 +177,8 @@ extern "C" {
         PyObject_GenericGetAttr,            /* tp_getattro */
         PyObject_GenericSetAttr,            /* tp_setattro */
         0,                                  /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT,
-        "",
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+        "Neutral object of moose. Which can act as an array object.",
         0,                                  /* tp_traverse */
         0,                                  /* tp_clear */
         (richcmpfunc)_pymoose_Neutral_richCompare,       /* tp_richcompare */
@@ -195,8 +195,8 @@ extern "C" {
         0,                                  /* tp_dictoffset */
         (initproc) _pymoose_Neutral_init,   /* tp_init */
         PyType_GenericAlloc,                /* tp_alloc */
-        PyType_GenericNew,                  /* tp_new */
-        _PyObject_Del,                      /* tp_free */
+        0,                  /* tp_new */
+        0,                      /* tp_free */
     };
 
 #define Neutral_Check(v) (Py_TYPE(v) == &NeutralType)
@@ -225,7 +225,7 @@ extern "C" {
         PyObject_GenericGetAttr,            /* tp_getattro */
         PyObject_GenericSetAttr,            /* tp_setattro */
         0,                                  /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
         "Individual moose object contained in an array-type object.",
         0,                                  /* tp_traverse */
         0,                                  /* tp_clear */
@@ -243,8 +243,8 @@ extern "C" {
         0,                                  /* tp_dictoffset */
         (initproc) _pymoose_Element_init,   /* tp_init */
         PyType_GenericAlloc,                /* tp_alloc */
-        PyType_GenericNew,                  /* tp_new */
-        _PyObject_Del,                      /* tp_free */
+        0,                  /* tp_new */
+        0,                      /* tp_free */
     };
 
 #define Element_Check(v) (Py_TYPE(v) == &ElementType)
@@ -442,7 +442,7 @@ extern "C" {
     /** Subset of sequence protocol functions */
     static Py_ssize_t _pymoose_Neutral_getLength(_Neutral * self)
     {
-        vector< unsigned int> dims = Field< vector <unsigned int> >::get(ObjId(self->_id, 0), "dimensions");
+        vector< unsigned int> dims = Field< vector <unsigned int> >::get(ObjId(self->_id), "dimensions");
         if (dims.empty()){
             return (Py_ssize_t)1; // this is a bug in basecode - dimension 1 is returned as an empty vector
         } else {
@@ -455,6 +455,9 @@ extern "C" {
             return NULL;
         }
         vector< unsigned int> dims = Field< vector <unsigned int> >::get(self->_id, "dimensions");
+        if (dims.empty()){
+            dims.push_back(1);
+        }
         PyObject * ret = PyTuple_New((Py_ssize_t)dims.size());
         for (unsigned int ii = 0; ii < dims.size(); ++ii){
             if (PyTuple_SetItem(ret, (Py_ssize_t)ii, Py_BuildValue("I", dims[ii]))){
@@ -472,11 +475,9 @@ extern "C" {
             PyErr_SetString(PyExc_IndexError, "Index out of bounds.");
             return NULL;
         }
-        _Element * elem = new _Element();
-        elem->_id = ObjId(self->_id, index);
-        PyObject * ret = (PyObject *)elem;
-        Py_INCREF(ret);
-        return ret;
+        _Element * ret = PyObject_New(_Element, &ElementType);
+        ret->_id = ObjId(self->_id, index);
+        return (PyObject*)ret;
     }
     static PyObject * _pymoose_Neutral_getSlice(_Neutral * self, PyObject * args)
     {
@@ -550,10 +551,10 @@ extern "C" {
         unsigned int id = 0, data = 0, field = 0;
         PyObject * neutral;
         static char * kwlist[] = {"id", "dataIndex", "fieldIndex"};
-        if (PyArg_ParseTupleAndKeywords(args, kwargs, "II|I", kwlist, &id, &data, &field)){
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, "I|II", kwlist, &id, &data, &field)){
             self->_id = ObjId(Id(id), DataId(data, field));
             return 0;
-        } else if (PyArg_ParseTupleAndKeywords(args, kwargs, "OI|I", kwlist, &neutral, &data, &field)){
+        } else if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|II", kwlist, &neutral, &data, &field)){
             if (!Neutral_Check(neutral)){
                 PyErr_SetString(PyExc_TypeError, "Element.__init__(self, id, dataindex, fieldindex=0) or Element.__init__(self, Neutral, dataIndex, fieldIndex=0)");
                 return -1;
@@ -571,7 +572,8 @@ extern "C" {
     } // !  _pymoose_Element_repr
     static PyObject * _pymoose_Element_str(_Element * self)
     {
-        return PyString_FromFormat("<Neutral: Id=%u, Data:=%u, Field=%u>", self->_id.id.value(), self->_id.dataId.data(), self->_id.dataId.field());
+        assert(self);
+        return PyString_FromFormat("<Neutral: Id=%u, Data=%u, Field=%u>", self->_id.id.value(), self->_id.dataId.data(), self->_id.dataId.field());
     } // !  _pymoose_Element_str
     
     static void _pymoose_Element_dealloc(_Element * self)
@@ -628,7 +630,13 @@ extern "C" {
         // The GET_FIELD macro is just a short-cut to reduce typing
         // TYPE is the full type string for the field. TYPEC is the corresponding Python Py_BuildValue format character.
 #define GET_FIELD(TYPE, TYPEC)                                          \
-        {ret = Py_BuildValue(#TYPEC, Field<TYPE>::get(self->_id, string(field))); break;}
+        { \
+            cout << "Getting value for field " << field << " type: " << #TYPE << " typecode " << #TYPEC << endl; \
+            TYPE value = Field<TYPE>::get(self->_id, string(field));    \
+            cout << " value = " << value << endl;                       \
+            ret = Py_BuildValue(#TYPEC, value);                         \            
+            break;                                                      \
+        }                                                               \
         
 #define GET_VECFIELD(TYPE, TYPEC) \
         {                                                               \
@@ -643,7 +651,7 @@ extern "C" {
                         }                                               \
                 }                                                       \
                 break;                                                  \
-        }
+        }                                                               \
         
         string type = getFieldType(self->_id, string(field));
         ftype = shortType(type);
@@ -793,7 +801,10 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, "The specified field type is not valid.");
             return NULL;
         }
-    }
+#undef SET_FIELD
+#undef SET_VECFIELD        
+    } // _pymoose_Neutral_setField
+    
     // 2011-03-23 15:28:26 (+0530)
     static PyObject * _pymoose_Element_getFieldNames(_Element * self, PyObject *args)
     {
