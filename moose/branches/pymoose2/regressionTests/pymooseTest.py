@@ -60,7 +60,6 @@ class TestNeutral(unittest.TestCase):
             self.assertEqual(self.srcFinfos[ii], srcFields[ii])
             
         destFields = sorted(list(self.testObj.getFieldNames('destFinfo')))
-        print destFields
         self.assertEqual(len(self.destFinfos), len(destFields))        
         for ii in range(len(self.destFinfos)):
             self.assertEqual(self.destFinfos[ii], destFields[ii])
@@ -80,6 +79,7 @@ class TestNeutral(unittest.TestCase):
         for ii in range(len(self.sharedFinfos)):
             self.assertEqual(self.sharedFinfos[ii], sharedFields[ii])
 
+
     def testNew(self):
         a_path = 'neutral%d' % (uuid.uuid4().int)
         b_path = a_path + '/b'
@@ -97,6 +97,18 @@ class TestNeutral(unittest.TestCase):
         self.assertEqual(d.name, 'd')
         self.assertRaises(ValueError, moose.Neutral, 'test/')
         
+class TestPyMooseGlobals(unittest.TestCase):
+    def setUp(self):
+        self.src1 = moose.Neutral('/neutral%d' % (uuid.uuid4().int))
+        self.dest1 = moose.Neutral('/neutral%d' % (uuid.uuid4().int))
 
+    def testCopy(self):
+        newname = 'neutral%d' % (uuid.uuid4().int)
+        print self.src1, self.src1.className, self.dest1, self.dest1.className
+        newobj = moose.copy(self.src1, self.dest1, newname, 3, True)
+        self.assertEqual(newobj.path, self.dest1.path + "/" + newname)
+        self.assertEqual(len(newobj), 3)
+        
+        
 if __name__ == '__main__':
     unittest.main()

@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 30 11:27:09 2011 (+0530)
+// Last-Updated: Wed Mar 30 16:07:12 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 3435
+//     Update #: 3497
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -83,55 +83,78 @@ extern int myNode;
 // C wrappers for C++ classes
 // This is used by Python
 extern "C" {
-    static PyMethodDef NeutralMethods[] = {
-        // {"init", (PyCFunction)_pymoose_Neutral_init, METH_VARARGS,
-        //  "Initialize a Neutral object."},
-        {"destroy", (PyCFunction)_pymoose_Neutral_destroy, METH_VARARGS,
+    static PyMethodDef IdMethods[] = {
+        // {"init", (PyCFunction)_pymoose_Id_init, METH_VARARGS,
+        //  "Initialize a Id object."},
+        {"destroy", (PyCFunction)_pymoose_Id_destroy, METH_VARARGS,
          "destroy the underlying moose element"},
-        {"getId", (PyCFunction)_pymoose_Neutral_getId, METH_VARARGS,
+        {"getId", (PyCFunction)_pymoose_Id_getId, METH_VARARGS,
          "return integer representation of the id of the element."},
-        {"syncDataHandler", (PyCFunction)_pymoose_Neutral_syncDataHandler, METH_VARARGS,
+        {"syncDataHandler", (PyCFunction)_pymoose_Id_syncDataHandler, METH_VARARGS,
          "?"},
-        {"getPath", (PyCFunction)_pymoose_Neutral_getPath, METH_VARARGS,
-         "The path of this Neutral object."},
-        {"getShape", (PyCFunction)_pymoose_Neutral_getShape, METH_VARARGS,
-         "Get the shape of the Neutral object as a tuple."},
+        {"getPath", (PyCFunction)_pymoose_Id_getPath, METH_VARARGS,
+         "The path of this Id object."},
+        {"getShape", (PyCFunction)_pymoose_Id_getShape, METH_VARARGS,
+         "Get the shape of the Id object as a tuple."},
         {NULL, NULL, 0, NULL},        /* Sentinel */        
     };
 
-    static PySequenceMethods NeutralSequenceMethods = {
-        (lenfunc)_pymoose_Neutral_getLength, // sq_length
+    static PySequenceMethods IdSequenceMethods = {
+        (lenfunc)_pymoose_Id_getLength, // sq_length
         0, //sq_concat
         0, //sq_repeat
-        (ssizeargfunc)_pymoose_Neutral_getItem, //sq_item
-        (ssizessizeargfunc)_pymoose_Neutral_getSlice, // getslice
+        (ssizeargfunc)_pymoose_Id_getItem, //sq_item
+        (ssizessizeargfunc)_pymoose_Id_getSlice, // getslice
         0, //sq_ass_item
         0, // setslice
-        (objobjproc)_pymoose_Neutral_contains, // sq_contains
+        (objobjproc)_pymoose_Id_contains, // sq_contains
         0, // sq_inplace_concat
         0 // sq_inplace_repeat
     };
-    static PyMethodDef ElementMethods[] = {
-        {"getFieldType", (PyCFunction)_pymoose_Element_getFieldType, METH_VARARGS,
+
+    // static PyGetSetDef Id_getsetters[] = {
+    //     {"path",
+    //      (getter)_pymoose_Id_getPath, NULL,
+    //      "path of the element in the MOOSE object tree.",
+    //      NULL},
+    //     {"dimensions",
+    //      (getter)_pymoose_Id_getDimensions, NULL,
+    //      "dimensions of the object as tuple.",
+    //     NULL},
+    //     {"shape",
+    //      (getter)_pymoose_Id_getDimensions, NULL,
+    //      "dimensions of the object as tuple.",
+    //     NULL},
+    //     {"className",
+    //      (getter)_pymoose_Id_getClass, NULL,
+    //      "MOOSE class name of this object.",
+    //     NULL}
+    //     {"fieldNames",
+    //      (getter)_pymoose_Id_getField, NULL,
+        
+    //     {NULL},
+    // };
+    static PyMethodDef ObjIdMethods[] = {
+        {"getFieldType", (PyCFunction)_pymoose_ObjId_getFieldType, METH_VARARGS,
          "Get the string representation of the type of this field."},        
-        {"getField", (PyCFunction)_pymoose_Element_getField, METH_VARARGS,
+        {"getField", (PyCFunction)_pymoose_ObjId_getField, METH_VARARGS,
          "Get specified attribute of the element."},
-        {"setField", (PyCFunction)_pymoose_Element_setField, METH_VARARGS,
+        {"setField", (PyCFunction)_pymoose_ObjId_setField, METH_VARARGS,
          "Set specified attribute of the element."},
-        {"getId", (PyCFunction)_pymoose_Element_getId, METH_VARARGS,
+        {"getId", (PyCFunction)_pymoose_ObjId_getId, METH_VARARGS,
          "return integer representation of the id of the element. This will be"
          "an ObjId represented as a 3-tuple"},
-        {"getFieldNames", (PyCFunction)_pymoose_Element_getFieldNames, METH_VARARGS,
+        {"getFieldNames", (PyCFunction)_pymoose_ObjId_getFieldNames, METH_VARARGS,
          "Returns a tuple containing the field-names."
          "\n"
          "If one of 'valueFinfo', 'lookupFinfo', 'srcFinfo', 'destFinfo' or"
          "'sharedFinfo' is specified, then only fields of that type are"
          "returned. If no argument is passed, all fields are returned."},
-        {"connect", (PyCFunction)_pymoose_Element_connect, METH_VARARGS,
+        {"connect", (PyCFunction)_pymoose_ObjId_connect, METH_VARARGS,
          "Connect another object via a message."},
-        {"getDataIndex", (PyCFunction)_pymoose_Element_getDataIndex, METH_VARARGS,
-         "Get the index of this Element in the containing Neutral object."},
-        {"getFieldIndex", (PyCFunction)_pymoose_Element_getFieldIndex, METH_VARARGS,
+        {"getDataIndex", (PyCFunction)_pymoose_ObjId_getDataIndex, METH_VARARGS,
+         "Get the index of this ObjId in the containing Id object."},
+        {"getFieldIndex", (PyCFunction)_pymoose_ObjId_getFieldIndex, METH_VARARGS,
          "Get the index of this object as a field."},
         {NULL, NULL, 0, NULL},        /* Sentinel */        
     };
@@ -139,53 +162,53 @@ extern "C" {
      * Method definitions.
      */    
     static PyMethodDef MooseMethods[] = {
-        {"copy", _pymoose_copy, METH_VARARGS, "Copy a Neutral object to a target."},
-        {"move", _pymoose_move, METH_VARARGS, "Move a Neutral object to a destination."},
-        {"useClock", _pymoose_useClock, METH_VARARGS, "Schedule objects on a specified clock"},
-        {"setClock", _pymoose_setClock, METH_VARARGS, "Set the dt of a clock."},
-        {"start", _pymoose_start, METH_VARARGS, "Start simulation"},
-        {"reinit", _pymoose_reinit, METH_VARARGS, "Reinitialize simulation"},
-        {"stop", _pymoose_stop, METH_VARARGS, "Stop simulation"},
-        {"isRunning", _pymoose_isRunning, METH_VARARGS, "True if the simulation is currently running."},
-        {"loadModel", _pymoose_loadModel, METH_VARARGS, "Load model from a file to a specified path."},
-        {"getCwe", _pymoose_getCwe, METH_VARARGS, "Get the current working element."},
-        {"setCwe", _pymoose_setCwe, METH_VARARGS, "Set the current working element."},
+        {"copy", (PyCFunction)_pymoose_copy, METH_VARARGS|METH_KEYWORDS, "Copy a Id object to a target."},
+        {"move", (PyCFunction)_pymoose_move, METH_VARARGS, "Move a Id object to a destination."},
+        {"useClock", (PyCFunction)_pymoose_useClock, METH_VARARGS, "Schedule objects on a specified clock"},
+        {"setClock", (PyCFunction)_pymoose_setClock, METH_VARARGS, "Set the dt of a clock."},
+        {"start", (PyCFunction)_pymoose_start, METH_VARARGS, "Start simulation"},
+        {"reinit", (PyCFunction)_pymoose_reinit, METH_VARARGS, "Reinitialize simulation"},
+        {"stop", (PyCFunction)_pymoose_stop, METH_VARARGS, "Stop simulation"},
+        {"isRunning", (PyCFunction)_pymoose_isRunning, METH_VARARGS, "True if the simulation is currently running."},
+        {"loadModel", (PyCFunction)_pymoose_loadModel, METH_VARARGS, "Load model from a file to a specified path."},
+        {"getCwe", (PyCFunction)_pymoose_getCwe, METH_VARARGS, "Get the current working element."},
+        {"setCwe", (PyCFunction)_pymoose_setCwe, METH_VARARGS, "Set the current working element."},
         {NULL, NULL, 0, NULL}        /* Sentinel */
     };
 
     ///////////////////////////////////////////////
-    // Type defs for PyObject of Neutral
+    // Type defs for PyObject of Id
     ///////////////////////////////////////////////
-    static PyTypeObject NeutralType = { 
+    static PyTypeObject IdType = { 
         PyObject_HEAD_INIT(0)               /* tp_head */
         0,                                  /* tp_internal */
-        "moose.Neutral",                  /* tp_name */
-        sizeof(_Neutral),                    /* tp_basicsize */
+        "moose.Id",                  /* tp_name */
+        sizeof(_Id),                    /* tp_basicsize */
         0,                                  /* tp_itemsize */
-        (destructor)_pymoose_Neutral_dealloc,                    /* tp_dealloc */
+        (destructor)_pymoose_Id_dealloc,                    /* tp_dealloc */
         0,                                  /* tp_print */
         0,                                  /* tp_getattr */
         0,                                  /* tp_setattr */
         0,                                  /* tp_compare */
-        (reprfunc)_pymoose_Neutral_repr,                        /* tp_repr */
+        (reprfunc)_pymoose_Id_repr,                        /* tp_repr */
         0,                                  /* tp_as_number */
-        &NeutralSequenceMethods,             /* tp_as_sequence */
+        &IdSequenceMethods,             /* tp_as_sequence */
         0,                                  /* tp_as_mapping */
         0,                                  /* tp_hash */
         0,                                  /* tp_call */
-        (reprfunc)_pymoose_Neutral_str,               /* tp_str */
+        (reprfunc)_pymoose_Id_str,               /* tp_str */
         PyObject_GenericGetAttr,            /* tp_getattro */
         PyObject_GenericSetAttr,            /* tp_setattro */
         0,                                  /* tp_as_buffer */
         Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-        "Neutral object of moose. Which can act as an array object.",
+        "Id object of moose. Which can act as an array object.",
         0,                                  /* tp_traverse */
         0,                                  /* tp_clear */
-        (richcmpfunc)_pymoose_Neutral_richCompare,       /* tp_richcompare */
+        (richcmpfunc)_pymoose_Id_richCompare,       /* tp_richcompare */
         0,                                  /* tp_weaklistoffset */
         0,                                  /* tp_iter */
         0,                                  /* tp_iternext */
-        NeutralMethods,                     /* tp_methods */
+        IdMethods,                     /* tp_methods */
         0,                    /* tp_members */
         0,                                  /* tp_getset */
         0,                                  /* tp_base */
@@ -193,35 +216,36 @@ extern "C" {
         0,                                  /* tp_descr_get */
         0,                                  /* tp_descr_set */
         0,                                  /* tp_dictoffset */
-        (initproc) _pymoose_Neutral_init,   /* tp_init */
+        (initproc) _pymoose_Id_init,   /* tp_init */
         PyType_GenericAlloc,                /* tp_alloc */
         0,                  /* tp_new */
         0,                      /* tp_free */
     };
 
-#define Neutral_Check(v) (Py_TYPE(v) == &NeutralType)
+#define Id_Check(v) (Py_TYPE(v) == &IdType)
+#define Id_SubtypeCheck(v) (PyType_IsSubtype(Py_TYPE(v),&IdType))
 
     ///////////////////////////////////////////////
-    // Type defs for PyObject of Element
+    // Type defs for PyObject of ObjId
     ///////////////////////////////////////////////
-    static PyTypeObject ElementType = { 
+    static PyTypeObject ObjIdType = { 
         PyObject_HEAD_INIT(0)               /* tp_head */
         0,                                  /* tp_internal */
-        "moose.Element",                  /* tp_name */
-        sizeof(_Element),                    /* tp_basicsize */
+        "moose.ObjId",                  /* tp_name */
+        sizeof(_ObjId),                    /* tp_basicsize */
         0,                                  /* tp_itemsize */
-        (destructor)_pymoose_Element_dealloc,                    /* tp_dealloc */
+        (destructor)_pymoose_ObjId_dealloc,                    /* tp_dealloc */
         0,                                  /* tp_print */
         0,                                  /* tp_getattr */
         0,                                  /* tp_setattr */
         0,                                  /* tp_compare */
-        (reprfunc)_pymoose_Element_repr,                        /* tp_repr */
+        (reprfunc)_pymoose_ObjId_repr,                        /* tp_repr */
         0,                                  /* tp_as_number */
         0,                                  /* tp_as_sequence */
         0,                                  /* tp_as_mapping */
         0,                                  /* tp_hash */
         0,                                  /* tp_call */
-        (reprfunc)_pymoose_Element_str,               /* tp_str */
+        (reprfunc)_pymoose_ObjId_str,               /* tp_str */
         PyObject_GenericGetAttr,            /* tp_getattro */
         PyObject_GenericSetAttr,            /* tp_setattro */
         0,                                  /* tp_as_buffer */
@@ -229,11 +253,11 @@ extern "C" {
         "Individual moose object contained in an array-type object.",
         0,                                  /* tp_traverse */
         0,                                  /* tp_clear */
-        (richcmpfunc)_pymoose_Element_richCompare,       /* tp_richcompare */
+        (richcmpfunc)_pymoose_ObjId_richCompare,       /* tp_richcompare */
         0,                                  /* tp_weaklistoffset */
         0,                                  /* tp_iter */
         0,                                  /* tp_iternext */
-        ElementMethods,                     /* tp_methods */
+        ObjIdMethods,                     /* tp_methods */
         0,                    /* tp_members */
         0,                                  /* tp_getset */
         0,                                  /* tp_base */
@@ -241,13 +265,14 @@ extern "C" {
         0,                                  /* tp_descr_get */
         0,                                  /* tp_descr_set */
         0,                                  /* tp_dictoffset */
-        (initproc) _pymoose_Element_init,   /* tp_init */
+        (initproc) _pymoose_ObjId_init,   /* tp_init */
         PyType_GenericAlloc,                /* tp_alloc */
         0,                  /* tp_new */
         0,                      /* tp_free */
     };
 
-#define Element_Check(v) (Py_TYPE(v) == &ElementType)
+#define ObjId_Check(v) (Py_TYPE(v) == &ObjIdType)
+#define ObjId_SubtypeCheck(v) (Py_TYPE(v) == &ObjIdType)
     
 
     /* module initialization */
@@ -260,18 +285,20 @@ extern "C" {
         MooseError = PyErr_NewException(moose_err, NULL, NULL);
         Py_INCREF(MooseError);
         PyModule_AddObject(moose_module, "error", MooseError);
-        NeutralType.tp_new = PyType_GenericNew;
-        NeutralType.tp_free = _PyObject_Del;
-        if (PyType_Ready(&NeutralType) < 0)
+        IdType.ob_type = &PyType_Type;
+        IdType.tp_new = PyType_GenericNew;
+        IdType.tp_free = _PyObject_Del;
+        if (PyType_Ready(&IdType) < 0)
             return;
-        Py_INCREF(&NeutralType);
-        PyModule_AddObject(moose_module, "Neutral", (PyObject*)&NeutralType);
-        ElementType.tp_new = PyType_GenericNew;
-        ElementType.tp_free = _PyObject_Del;
-        if (PyType_Ready(&ElementType) < 0)
+        Py_INCREF(&IdType);
+        PyModule_AddObject(moose_module, "Id", (PyObject*)&IdType);
+        ObjIdType.ob_type = &PyType_Type;
+        ObjIdType.tp_new = PyType_GenericNew;
+        ObjIdType.tp_free = _PyObject_Del;
+        if (PyType_Ready(&ObjIdType) < 0)
             return;
-        Py_INCREF(&ElementType);
-        PyModule_AddObject(moose_module, "Element", (PyObject*)&ElementType);
+        Py_INCREF(&ObjIdType);
+        PyModule_AddObject(moose_module, "ObjId", (PyObject*)&ObjIdType);
         
         setup_runtime_env(true);
         getShell();
@@ -285,13 +312,13 @@ extern "C" {
     }
     
     //////////////////////////////////////////////////
-    // Neutral functions
+    // Id functions
     //////////////////////////////////////////////////
     
-    static int _pymoose_Neutral_init(_Neutral * self, PyObject * args, PyObject * kwds)
+    static int _pymoose_Id_init(_Id * self, PyObject * args, PyObject * kwds)
     {
-        static char * kwlist[] = {"path", "dims", "type"};
-        char * path, * type = "Neutral";
+        static char * kwlist[] = {"path", "dims", "type", NULL};
+        char * path, * type = "Id";
         PyObject * dims = NULL;
         PyObject * src = NULL;
         // if (PyDict_Type.tp_init((PyObject *)self, args, kwds) < 0)
@@ -301,13 +328,13 @@ extern "C" {
             if (!PyArg_ParseTuple(args, "O", &src)){
                 return -1;
             }
-            if (!Neutral_Check(src)){
-                PyErr_SetString(PyExc_TypeError, "Neutral.__init__(path, dims, type) or Neutral.__init__(other_Neutral)");
+            if (!Id_Check(src)){
+                PyErr_SetString(PyExc_TypeError, "Id.__init__(path, dims, type) or Id.__init__(other_Id)");
                 return -1;
             }
-            _Neutral * src_cast = reinterpret_cast<_Neutral*>(src);
+            _Id * src_cast = reinterpret_cast<_Id*>(src);
             if (!src_cast){
-                PyErr_SetString(PyExc_TypeError, "Could not cast passed object to _Neutral.");
+                PyErr_SetString(PyExc_TypeError, "Could not cast passed object to _Id.");
                 return -1;
             }
             self->_id = src_cast->_id;
@@ -347,7 +374,6 @@ extern "C" {
         if (vec_dims.empty()){
             vec_dims.push_back(1);
         }
-        cout << "Dimensions " << vec_dims.size() << endl;
         self->_id = Id(path);
         // If object does not exist, create new
         if ((self->_id == Id()) && (trimmed_path != "/") && (trimmed_path != "/root")){
@@ -365,15 +391,14 @@ extern "C" {
                 name = trimmed_path;
             }
             self->_id = getShell().doCreate(string(type), Id(parent_path), string(name), vector<unsigned int>(vec_dims));
-            cout << "Created object of type " << type << endl;
         } 
         return 0;            
-    }// ! _pymoose_Neutral_init
+    }// ! _pymoose_Id_init
 
-    static void _pymoose_Neutral_dealloc(_Neutral * self)
+    static void _pymoose_Id_dealloc(_Id * self)
     {
         PyObject_Del(self);
-    } // ! _pymoose_Neutral_dealloc
+    } // ! _pymoose_Id_dealloc
     
     // 2011-03-23 15:14:11 (+0530)
     // 2011-03-26 17:02:19 (+0530)
@@ -382,7 +407,7 @@ extern "C" {
     // ObjId will destroy the containing element and invalidate all
     // the other ObjId with the same Id.
     // 2011-03-28 13:44:49 (+0530)
-    static PyObject * _pymoose_Neutral_destroy(_Neutral * self, PyObject * args)
+    static PyObject * _pymoose_Id_destroy(_Id * self, PyObject * args)
     {
         if (!PyArg_ParseTuple(args, ":destroy")){
             return NULL;
@@ -391,19 +416,19 @@ extern "C" {
         Py_DECREF((PyObject*)self);
         Py_RETURN_NONE;
     }
-    static PyObject * _pymoose_Neutral_repr(_Neutral * self)
+    static PyObject * _pymoose_Id_repr(_Id * self)
     {
-        return PyString_FromFormat("<Neutral: Id=%u>", self->_id.value());
-    } // !  _pymoose_Neutral_repr
-    static PyObject * _pymoose_Neutral_str(_Neutral * self)
+        return PyString_FromFormat("<Id: Id=%u>", self->_id.value());
+    } // !  _pymoose_Id_repr
+    static PyObject * _pymoose_Id_str(_Id * self)
     {
         return PyString_FromFormat("%s", Id::id2str(self->_id).c_str());
-    } // !  _pymoose_Neutral_str
+    } // !  _pymoose_Id_str
 
     // 2011-03-23 15:09:19 (+0530)
-    static PyObject* _pymoose_Neutral_getId(_Neutral * self, PyObject * args)
+    static PyObject* _pymoose_Id_getId(_Id * self, PyObject * args)
     {
-        if (!PyArg_ParseTuple(args, ":Neutral.id")){
+        if (!PyArg_ParseTuple(args, ":Id.id")){
             return NULL;
         }
         unsigned int id = self->_id.value();        
@@ -413,26 +438,26 @@ extern "C" {
     /**
        Not to be redone. 2011-03-23 14:42:48 (+0530)
      */
-    static PyObject * _pymoose_Neutral_getPath(_Neutral * self, PyObject * args)
+    static PyObject * _pymoose_Id_getPath(_Id * self, PyObject * args)
     {
         PyObject * obj = NULL;
-        if (!PyArg_ParseTuple(args, ":Neutral.path", &obj)){
+        if (!PyArg_ParseTuple(args, ":Id.path", &obj)){
             return NULL;
         }
         string path = self->_id.path();
         PyObject * ret = Py_BuildValue("s", path.c_str());
         return ret;
     }
-    static PyObject * _pymoose_Neutral_syncDataHandler(_Neutral * self, PyObject * args)
+    static PyObject * _pymoose_Id_syncDataHandler(_Id * self, PyObject * args)
     {
         char * sizeField;
         PyObject * target;
         if(!PyArg_ParseTuple(args, "sO", &sizeField, &target)){
             return NULL;
         }
-        _Neutral * tgt = reinterpret_cast<_Neutral*>(target);
+        _Id * tgt = reinterpret_cast<_Id*>(target);
         if (!tgt){
-            PyErr_SetString(PyExc_TypeError, "Could not cast target to Neutral object");
+            PyErr_SetString(PyExc_TypeError, "Could not cast target to Id object");
             return NULL;
         }
         getShell().doSyncDataHandler(self->_id, string(sizeField), tgt->_id);
@@ -440,7 +465,7 @@ extern "C" {
     }
 
     /** Subset of sequence protocol functions */
-    static Py_ssize_t _pymoose_Neutral_getLength(_Neutral * self)
+    static Py_ssize_t _pymoose_Id_getLength(_Id * self)
     {
         vector< unsigned int> dims = Field< vector <unsigned int> >::get(ObjId(self->_id), "dimensions");
         if (dims.empty()){
@@ -449,7 +474,7 @@ extern "C" {
             return (Py_ssize_t)dims[0];
         }
     }
-    static PyObject * _pymoose_Neutral_getShape(_Neutral * self, PyObject * args)
+    static PyObject * _pymoose_Id_getShape(_Id * self, PyObject * args)
     {
         if (!PyArg_ParseTuple(args, ":getShape")){
             return NULL;
@@ -466,26 +491,26 @@ extern "C" {
         }
         return ret;
     }
-    static PyObject * _pymoose_Neutral_getItem(_Neutral * self, Py_ssize_t index)
+    static PyObject * _pymoose_Id_getItem(_Id * self, Py_ssize_t index)
     {
         if (index < 0){
-            index += _pymoose_Neutral_getLength(self);
+            index += _pymoose_Id_getLength(self);
         }
-        if ((index < 0) || (index >= _pymoose_Neutral_getLength(self))){
+        if ((index < 0) || (index >= _pymoose_Id_getLength(self))){
             PyErr_SetString(PyExc_IndexError, "Index out of bounds.");
             return NULL;
         }
-        _Element * ret = PyObject_New(_Element, &ElementType);
+        _ObjId * ret = PyObject_New(_ObjId, &ObjIdType);
         ret->_id = ObjId(self->_id, index);
         return (PyObject*)ret;
     }
-    static PyObject * _pymoose_Neutral_getSlice(_Neutral * self, PyObject * args)
+    static PyObject * _pymoose_Id_getSlice(_Id * self, PyObject * args)
     {
         Py_ssize_t start, end;
         if (!PyArg_ParseTuple(args, "ii", &start, &end)){
             return NULL;
         }
-        Py_ssize_t len = _pymoose_Neutral_getLength(self);
+        Py_ssize_t len = _pymoose_Id_getLength(self);
         while (start < 0){
             start += len;
         }
@@ -498,7 +523,7 @@ extern "C" {
         }
         PyObject * ret = PyTuple_New((Py_ssize_t)(end - start));
         for (unsigned int ii = start; ii < end; ++ii){
-            _Element * value = PyObject_New(_Element, &ElementType);
+            _ObjId * value = PyObject_New(_ObjId, &ObjIdType);
             value->_id = ObjId(self->_id, ii);
             if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)value)){
                 Py_DECREF(ret);
@@ -508,82 +533,82 @@ extern "C" {
         return ret;
     }
     
-    static int _pymoose_Neutral_richCompare(_Neutral * self, PyObject * args, int op)
+    static int _pymoose_Id_richCompare(_Id * self, PyObject * args, int op)
     {
         PyObject * other;
         if (!PyArg_ParseTuple(args, "O", &other)){
             return 0;
         }
         if (op == Py_EQ){
-            return (self->_id == ((_Neutral*)other)->_id);
+            return (self->_id == ((_Id*)other)->_id);
         } else if (op == Py_NE) {
-            return (self->_id != ((_Neutral*)other)->_id);
+            return (self->_id != ((_Id*)other)->_id);
         } else if (op == Py_LT){
-            return (self->_id < ((_Neutral*)other)->_id);
+            return (self->_id < ((_Id*)other)->_id);
         } else if (op == Py_GT) {
-            return (((_Neutral*)other)->_id < self->_id);
+            return (((_Id*)other)->_id < self->_id);
         } else if (op == Py_LE){
-            return ((self->_id < ((_Neutral*)other)->_id) || (self->_id == ((_Neutral*)other)->_id));
+            return ((self->_id < ((_Id*)other)->_id) || (self->_id == ((_Id*)other)->_id));
         } else if (op == Py_GE){
-            return ((((_Neutral*)other)->_id < self->_id) || (self->_id == ((_Neutral*)other)->_id));
+            return ((((_Id*)other)->_id < self->_id) || (self->_id == ((_Id*)other)->_id));
         } else {
             return 0;
         }
     }
     
-    static int _pymoose_Neutral_contains(_Neutral * self, PyObject * args)
+    static int _pymoose_Id_contains(_Id * self, PyObject * args)
     {
         PyObject * obj = NULL;
         if (!PyArg_ParseTuple(args, "O:asSequence", &obj)){
             return 0;
         }
-        if (!Element_Check(obj)){
+        if (!ObjId_Check(obj)){
             return 0;
         }
-        return (((_Element*)obj)->_id.id == self->_id);
+        return (((_ObjId*)obj)->_id.id == self->_id);
     }
     /////////////////////////////////////////////////////
-    // Element functions.
+    // ObjId functions.
     /////////////////////////////////////////////////////
 
-    static int _pymoose_Element_init(_Element * self, PyObject * args, PyObject * kwargs)
+    static int _pymoose_ObjId_init(_ObjId * self, PyObject * args, PyObject * kwargs)
     {
         unsigned int id = 0, data = 0, field = 0;
         PyObject * neutral;
-        static char * kwlist[] = {"id", "dataIndex", "fieldIndex"};
+        static char * kwlist[] = {"id", "dataIndex", "fieldIndex", NULL};
         if (PyArg_ParseTupleAndKeywords(args, kwargs, "I|II", kwlist, &id, &data, &field)){
             self->_id = ObjId(Id(id), DataId(data, field));
             return 0;
         } else if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|II", kwlist, &neutral, &data, &field)){
-            if (!Neutral_Check(neutral)){
-                PyErr_SetString(PyExc_TypeError, "Element.__init__(self, id, dataindex, fieldindex=0) or Element.__init__(self, Neutral, dataIndex, fieldIndex=0)");
+            if (!Id_Check(neutral)){
+                PyErr_SetString(PyExc_TypeError, "ObjId.__init__(self, id, dataindex, fieldindex=0) or ObjId.__init__(self, Id, dataIndex, fieldIndex=0)");
                 return -1;
             }
-            self->_id = ObjId(((_Neutral*)neutral)->_id, DataId(data, field));
+            self->_id = ObjId(((_Id*)neutral)->_id, DataId(data, field));
             return 0;
         } else {
             return -1;
         }        
     }
     
-    static PyObject * _pymoose_Element_repr(_Element * self)
+    static PyObject * _pymoose_ObjId_repr(_ObjId * self)
     {
-        return PyString_FromFormat("<Neutral: Id=%u, Data=%u, Field=%u>", self->_id.id.value(), self->_id.dataId.data(), self->_id.dataId.field());
-    } // !  _pymoose_Element_repr
-    static PyObject * _pymoose_Element_str(_Element * self)
+        return PyString_FromFormat("<Id: Id=%u, Data=%u, Field=%u>", self->_id.id.value(), self->_id.dataId.data(), self->_id.dataId.field());
+    } // !  _pymoose_ObjId_repr
+    static PyObject * _pymoose_ObjId_str(_ObjId * self)
     {
         assert(self);
-        return PyString_FromFormat("<Neutral: Id=%u, Data=%u, Field=%u>", self->_id.id.value(), self->_id.dataId.data(), self->_id.dataId.field());
-    } // !  _pymoose_Element_str
+        return PyString_FromFormat("<Id: Id=%u, Data=%u, Field=%u>", self->_id.id.value(), self->_id.dataId.data(), self->_id.dataId.field());
+    } // !  _pymoose_ObjId_str
     
-    static void _pymoose_Element_dealloc(_Element * self)
+    static void _pymoose_ObjId_dealloc(_ObjId * self)
     {
         PyObject_Del(self);
-    } // ! _pymoose_Element_dealloc
+    } // ! _pymoose_ObjId_dealloc
 
-    static PyObject* _pymoose_Element_getId(_Element * self, PyObject * args)
+    static PyObject* _pymoose_ObjId_getId(_ObjId * self, PyObject * args)
     {
-        if (!PyArg_ParseTuple(args, ":Element.getId")){
+        if (!PyArg_ParseTuple(args, ":ObjId.getId")){
             return NULL;
         }
         unsigned int id = self->_id.id.value();
@@ -592,7 +617,7 @@ extern "C" {
     }
 
 
-    static PyObject * _pymoose_Element_getFieldType(_Element * self, PyObject * args)
+    static PyObject * _pymoose_ObjId_getFieldType(_ObjId * self, PyObject * args)
     {
         char * fieldName = NULL;
         if (!PyArg_ParseTuple(args, "s", &fieldName)){
@@ -605,7 +630,7 @@ extern "C" {
         }
         PyObject * type = PyString_FromString(typeStr.c_str());
         return type;
-    }  // ! _pymoose_Neutral_getFieldType
+    }  // ! _pymoose_Id_getFieldType
 
     /**
        2011-03-28 13:59:41 (+0530)
@@ -617,7 +642,7 @@ extern "C" {
        as 0. Then what is the point of having Id separately? ObjId
        would been just fine!
      */
-    static PyObject * _pymoose_Element_getField(_Element * self, PyObject * args)
+    static PyObject * _pymoose_ObjId_getField(_ObjId * self, PyObject * args)
     {
         const char * field = NULL;
         char ftype;
@@ -629,10 +654,8 @@ extern "C" {
         // TYPE is the full type string for the field. TYPEC is the corresponding Python Py_BuildValue format character.
 #define GET_FIELD(TYPE, TYPEC)                                          \
         { \
-            cout << "Getting value for field " << field << " type: " << #TYPE << " typecode " << #TYPEC << endl; \
             TYPE value = Field<TYPE>::get(self->_id, string(field));    \
-            cout << " value = " << value << endl;                       \
-            ret = Py_BuildValue(#TYPEC, value);                         \            
+            ret = Py_BuildValue(#TYPEC, value);                         \
             break;                                                      \
         }                                                               \
         
@@ -698,7 +721,7 @@ extern "C" {
     /**
        Set a specified field. Redone on 2011-03-23 14:41:45 (+0530)
      */
-    static PyObject * _pymoose_Element_setField(_Element * self, PyObject * args)
+    static PyObject * _pymoose_ObjId_setField(_ObjId * self, PyObject * args)
     {
         
 #define SET_FIELD(TYPE, TYPEC)                          \
@@ -802,10 +825,10 @@ extern "C" {
         }
 #undef SET_FIELD
 #undef SET_VECFIELD        
-    } // _pymoose_Neutral_setField
+    } // _pymoose_Id_setField
     
     // 2011-03-23 15:28:26 (+0530)
-    static PyObject * _pymoose_Element_getFieldNames(_Element * self, PyObject *args)
+    static PyObject * _pymoose_ObjId_getFieldNames(_ObjId * self, PyObject *args)
     {
         char * ftype = NULL;
         if (!PyArg_ParseTuple(args, "|s", &ftype)){
@@ -820,7 +843,6 @@ extern "C" {
             static char * fieldTypes[] = {"valueFinfo", "srcFinfo", "destFinfo", "lookupFinfo", "sharedFinfo", 0};
             char ** a;
             for (a = &fieldTypes[0]; *a; ++a){
-                printf("%p %s\n", a, *a);
                 vector<string> fields = getFieldNames(self->_id, string(*a));
                 ret.insert(ret.end(), fields.begin(), fields.end());
             }            
@@ -851,7 +873,7 @@ extern "C" {
     // getChildren is not required as it can be accessed as getField("children")
 
     // 2011-03-28 10:51:52 (+0530)
-    static PyObject * _pymoose_Element_connect(_Element * self, PyObject * args)
+    static PyObject * _pymoose_ObjId_connect(_ObjId * self, PyObject * args)
     {
         PyObject * destPtr = NULL;
         char * srcField, * destField, * msgType;
@@ -859,7 +881,7 @@ extern "C" {
         if(!PyArg_ParseTuple(args, "sOss", &srcField, &destPtr, &destField, &msgType)){
             return NULL;
         }
-        _Element * dest = reinterpret_cast<_Element*>(destPtr);
+        _ObjId * dest = reinterpret_cast<_ObjId*>(destPtr);
         bool ret = (getShell().doAddMsg(msgType, self->_id, string(srcField), dest->_id, string(destField)) != Msg::badMsg);
         if (!ret){
             PyErr_SetString(PyExc_NameError, "connect failed: check field names and type compatibility.");
@@ -868,32 +890,58 @@ extern "C" {
         return Py_BuildValue("i", ret);
     }
 
-    static int _pymoose_Element_richCompare(_Element * self, PyObject * other, int op)
+    static int _pymoose_ObjId_richCompare(_ObjId * self, PyObject * other, int op)
     {
         if (op == Py_EQ){
-            return (self->_id == ((_Element*)other)->_id);
+            return (self->_id == ((_ObjId*)other)->_id);
         } else if (op == Py_NE){
-            return !(self->_id == ((_Element*)other)->_id);
+            return !(self->_id == ((_ObjId*)other)->_id);
         } else {
             return 0;
         }
     }
 
+    static PyObject * _pymoose_ObjId_getDataIndex(_ObjId * self, PyObject * args)
+    {
+        if (!PyArg_ParseTuple(args, ":getDataIndex")){
+            return NULL;
+        }
+        PyObject * ret = Py_BuildValue("I", self->_id.dataId.data());
+        return ret;
+    }
+    static PyObject * _pymoose_ObjId_getFieldIndex(_ObjId * self, PyObject * args)
+    {
+        if (!PyArg_ParseTuple(args, ":getFieldIndex")){
+            return NULL;
+        }
+        PyObject * ret = Py_BuildValue("I", self->_id.dataId.field());
+        return ret;
+    } 
     ////////////////////////////////////////////
     // The following are global functions
     ////////////////////////////////////////////
 
     
-    static PyObject * _pymoose_copy(PyObject * dummy, PyObject * args)
+    static PyObject * _pymoose_copy(PyObject * dummy, PyObject * args, PyObject * kwargs)
     {
         PyObject * src, *dest;
         char * newName;
-        unsigned int num, copyExtMsgs;
-        if (!PyArg_ParseTuple(args, "OOsii", &src, &dest, &newName, &num, &copyExtMsgs)){
+        char * kwlist[] = {"src", "dest", "name", "n", "copyMsg", NULL};
+        unsigned int num=1, copyExtMsgs=1;
+        if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOs|II", kwlist, &src, &dest, &newName, &num, &copyExtMsgs)){
             return NULL;
         }
-        _Neutral * tgt = new _Neutral();
-        tgt->_id = getShell().doCopy(((_Neutral*)src)->_id, ((_Neutral*)dest)->_id, string(newName), num, copyExtMsgs);
+        if (!Id_SubtypeCheck(src)){
+            PyErr_SetString(PyExc_TypeError, "Source must be instance of Id.");
+            return NULL;
+        } else if (!Id_SubtypeCheck(dest)){
+            PyErr_SetString(PyExc_TypeError, "Destination must be instance of Id.");
+            return NULL;
+        }
+        
+        _Id * tgt = PyObject_New(_Id, &IdType);
+        
+        tgt->_id = getShell().doCopy(((_Id*)src)->_id, ((_Id*)dest)->_id, string(newName), num, copyExtMsgs);
         PyObject * ret = (PyObject*)tgt;
         Py_INCREF(ret);
         return ret;            
@@ -907,7 +955,7 @@ extern "C" {
         if (!PyArg_ParseTuple(args, "OO", &src, &dest)){
             return NULL;
         }
-        getShell().doMove(((_Neutral*)src)->_id, ((_Neutral*)dest)->_id);
+        getShell().doMove(((_Id*)src)->_id, ((_Id*)dest)->_id);
         Py_RETURN_NONE;
     }
 
@@ -916,7 +964,7 @@ extern "C" {
     {
         char * path, * field;
         unsigned int tick;
-        if(!PyArg_ParseTuple(args, "ssI", &path, &field, &tick)){
+        if(!PyArg_ParseTuple(args, "Iss", &tick, &path, &field)){
             return NULL;
         }
         getShell().doUseClock(string(path), string(field), tick);
@@ -971,7 +1019,7 @@ extern "C" {
             return NULL;
         }
         
-        _Neutral * model = new _Neutral();
+        _Id * model = new _Id();
         model->_id = getShell().doLoadModel(string(fname), string(modelpath));
         PyObject * ret = reinterpret_cast<PyObject*>(model);
         Py_INCREF(ret);
@@ -986,7 +1034,7 @@ extern "C" {
         if(PyArg_ParseTuple(args, "s", &path)){
             id = Id(string(path));
         } else if (PyArg_ParseTuple(args, "O", &element)){
-            id = (reinterpret_cast<_Neutral*>(element))->_id;
+            id = (reinterpret_cast<_Id*>(element))->_id;
         } else {
             return NULL;
         }
@@ -999,29 +1047,13 @@ extern "C" {
         if (!PyArg_ParseTuple(args, ":getCwe")){
             return NULL;
         }
-        _Neutral * cwe = new _Neutral();
+        _Id * cwe = (_Id*)PyObject_New(_Id, &IdType);
         cwe->_id = getShell().getCwe();        
-        PyObject * ret = reinterpret_cast<PyObject*>(cwe);
+        PyObject * ret = (PyObject*)cwe;
         Py_INCREF(ret);
         return ret;
     }
 
-    static PyObject * _pymoose_Element_getDataIndex(_Element * self, PyObject * args)
-    {
-        if (!PyArg_ParseTuple(args, ":getDataIndex")){
-            return NULL;
-        }
-        PyObject * ret = Py_BuildValue("I", self->_id.dataId.data());
-        return ret;
-    }
-    static PyObject * _pymoose_Element_getFieldIndex(_Element * self, PyObject * args)
-    {
-        if (!PyArg_ParseTuple(args, ":getFieldIndex")){
-            return NULL;
-        }
-        PyObject * ret = Py_BuildValue("I", self->_id.dataId.field());
-        return ret;
-    } 
     
     
     
