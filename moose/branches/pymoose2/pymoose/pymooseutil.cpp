@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Sat Mar 26 22:41:37 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Mar 28 16:50:15 2011 (+0530)
+// Last-Updated: Wed Mar 30 11:35:33 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 54
+//     Update #: 61
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -278,14 +278,17 @@ string getFieldType(ObjId id, string fieldName)
 vector<string> getFieldNames(ObjId id, string finfoType)
 {
     vector <string> ret;
-    string className = Field<string>::get(id, "class");
-    Id classId(className);
-    unsigned int numFinfos = Field<unsigned int>::get(ObjId(classId, 0), "num_" + finfoType);
+    string className = Field<string>::get(id, "class");    
+    Id classId("/classes/" + className);
+    assert(classId != Id());
+    unsigned int numFinfos = Field<unsigned int>::get(ObjId(classId), "num_" + finfoType);
     Id fieldId(classId.path() + "/" + finfoType);
+    assert(fieldId != Id());
     for (unsigned int ii = 0; ii < numFinfos; ++ii){
         string fieldName = Field<string>::get(ObjId(fieldId, DataId(0, ii)), "name");
         ret.push_back(fieldName);
     }
+    return ret;
 }
 
 // 
