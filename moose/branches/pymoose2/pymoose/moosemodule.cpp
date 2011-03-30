@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Mar 29 18:38:29 2011 (+0530)
+// Last-Updated: Wed Mar 30 11:27:09 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 3426
+//     Update #: 3435
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -587,9 +587,7 @@ extern "C" {
             return NULL;
         }
         unsigned int id = self->_id.id.value();
-        unsigned int data = self->_id.dataId.data();
-        unsigned int field = self->_id.dataId.field();
-        PyObject * ret = Py_BuildValue("(III)", id, data, field);
+        PyObject * ret = Py_BuildValue("(I)", id);
         return ret;
     }
 
@@ -740,6 +738,7 @@ extern "C" {
         char * field;
         int ret = 0;
         if (!PyArg_ParseTuple(args, "sO", &field,  &value)){
+            cout << "Here" << endl;
             return NULL;
         }
         char ftype = shortType(getFieldType(self->_id, string(field)));
@@ -819,16 +818,20 @@ extern "C" {
         vector<string> ret;
         if (ftype_str == ""){
             static char * fieldTypes[] = {"valueFinfo", "srcFinfo", "destFinfo", "lookupFinfo", "sharedFinfo", 0};
-            for (char ** a = &fieldTypes[0]; *a; ++a){
+            char ** a;
+            for (a = &fieldTypes[0]; *a; ++a){
+                printf("%p %s\n", a, *a);
                 vector<string> fields = getFieldNames(self->_id, string(*a));
                 ret.insert(ret.end(), fields.begin(), fields.end());
             }            
         } else {
             ret = getFieldNames(self->_id, ftype_str);
         }
+        cout << "getFieldNames: ret.size() = " << ret.size() << endl;
+        
         PyObject * pyret = PyTuple_New((Py_ssize_t)ret.size());
         for (unsigned int ii = 0; ii < ret.size(); ++ ii ){
-            PyObject * fname = PyString_FromString(ret[ii].c_str());
+            PyObject * fname = Py_BuildValue("s", ret[ii].c_str());
             if (!fname){
                 Py_DECREF(pyret);
                 pyret = NULL;
