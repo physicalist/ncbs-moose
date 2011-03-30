@@ -8,7 +8,7 @@ except ImportError:
     print 'Please include the directory containing moose.py and _moose.so in your PYTHONPATH environmental variable.'
     sys.exit(1)
 
-class PyMooseNeutral(unittest.TestCase):
+class TestNeutral(unittest.TestCase):
     def __init__(self, *args):
         unittest.TestCase.__init__(self, *args)
         self.valueFinfos = ['name',                            
