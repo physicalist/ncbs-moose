@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Wed Mar 23 10:10:45 2011 (+0530)
 // Version: 
-// Last-Updated: Sat Mar 26 18:18:11 2011 (+0530)
+// Last-Updated: Thu Mar 31 12:33:23 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 44
+//     Update #: 48
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -34,6 +34,10 @@
 
 using namespace std;
 
+/**
+   returns a single character code for a given string representation of data type.
+   Mostly follows Python/C API's PyArg_ParseTuple convention.
+*/
 char shortType(string name)
 {
     static map<string, char> typemap;
@@ -47,9 +51,9 @@ char shortType(string name)
         typemap.insert(pair<string, char>("float", 'f'));
         typemap.insert(pair<string, char>("double", 'd'));
         typemap.insert(pair<string, char>("string", 's'));
-        typemap.insert(pair<string, char>("Id", 'I'));
-        typemap.insert(pair<string, char>("ObjId", 'O'));
-        typemap.insert(pair<string, char>("DataId", 'D'));
+        typemap.insert(pair<string, char>("Id", 'x'));
+        typemap.insert(pair<string, char>("ObjId", 'y'));
+        typemap.insert(pair<string, char>("DataId", 'z'));
         typemap.insert(pair<string, char>("vector<char>", 'C'));
         typemap.insert(pair<string, char>("vector<int>", 'v'));
         typemap.insert(pair<string, char>("vector<short>", 'w'));
@@ -59,9 +63,9 @@ char shortType(string name)
         typemap.insert(pair<string, char>("vector<float>", 'F'));
         typemap.insert(pair<string, char>("vector<double>", 'D'));
         typemap.insert(pair<string, char>("vector<string>", 'S'));
-        typemap.insert(pair<string, char>("vector<Id>", 'J'));
-        typemap.insert(pair<string, char>("vector<ObjId>", 'P'));
-        typemap.insert(pair<string, char>("vector<DataId", 'E'));
+        typemap.insert(pair<string, char>("vector<Id>", 'X'));
+        typemap.insert(pair<string, char>("vector<ObjId>", 'Y'));
+        typemap.insert(pair<string, char>("vector<DataId", 'Z'));
     }
     return typemap[name];
 }

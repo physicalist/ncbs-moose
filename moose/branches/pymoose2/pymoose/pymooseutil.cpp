@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Sat Mar 26 22:41:37 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 30 11:35:33 2011 (+0530)
+// Last-Updated: Thu Mar 31 15:32:53 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 61
+//     Update #: 63
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -266,12 +266,13 @@ string getFieldType(ObjId id, string fieldName)
         Id fieldId(classId.path() + "/" + finfotypes[jj]);
         for (unsigned int ii = 0; ii < numFinfos; ++ii){
             string _fieldName = Field<string>::get(ObjId(fieldId, DataId(0, ii)), "name");
-            if (fieldName == _fieldName){
+            if (fieldName == _fieldName){                
                 fieldType = Field<string>::get(ObjId(fieldId, DataId(0, ii)), "type");
                 return fieldType;
             }
         }
     }
+    cerr << "Error: No such field: " << fieldName << endl;
     return fieldType;        
 }
 
