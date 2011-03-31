@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Mar 30 16:07:12 2011 (+0530)
+// Last-Updated: Thu Mar 31 15:30:20 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 3497
+//     Update #: 3577
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -318,7 +318,7 @@ extern "C" {
     static int _pymoose_Id_init(_Id * self, PyObject * args, PyObject * kwds)
     {
         static char * kwlist[] = {"path", "dims", "type", NULL};
-        char * path, * type = "Id";
+        char * path, * type = "Neutral";
         PyObject * dims = NULL;
         PyObject * src = NULL;
         // if (PyDict_Type.tp_init((PyObject *)self, args, kwds) < 0)
@@ -484,10 +484,12 @@ extern "C" {
             dims.push_back(1);
         }
         PyObject * ret = PyTuple_New((Py_ssize_t)dims.size());
+        Py_XINCREF(ret);        
         for (unsigned int ii = 0; ii < dims.size(); ++ii){
             if (PyTuple_SetItem(ret, (Py_ssize_t)ii, Py_BuildValue("I", dims[ii]))){
-                        return NULL;
-                }
+                Py_XDECREF(ret);
+                return NULL;
+            }
         }
         return ret;
     }
@@ -522,11 +524,12 @@ extern "C" {
             return NULL;
         }
         PyObject * ret = PyTuple_New((Py_ssize_t)(end - start));
+        Py_XINCREF(ret);        
         for (unsigned int ii = start; ii < end; ++ii){
             _ObjId * value = PyObject_New(_ObjId, &ObjIdType);
             value->_id = ObjId(self->_id, ii);
             if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)value)){
-                Py_DECREF(ret);
+                Py_XDECREF(ret);
                 return NULL;
             }
         }
@@ -666,7 +669,7 @@ extern "C" {
                 for (unsigned int ii = 0; ii < val.size(); ++ ii ){     \
                         PyObject * entry = Py_BuildValue(#TYPEC, val[ii]); \
                         if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ \
-                            Py_DECREF(ret);                             \
+                            Py_XDECREF(ret);                             \
                             ret = NULL;                                 \
                             break;                                      \
                         }                                               \
@@ -675,7 +678,20 @@ extern "C" {
         }                                                               \
         
         string type = getFieldType(self->_id, string(field));
+        if (type.empty()){
+            string msg = "No such field on object ";
+            msg += self->_id.id.path() + ": ";
+            msg += field;
+            PyErr_SetString(PyExc_AttributeError, msg.c_str());
+            return NULL;
+        }
         ftype = shortType(type);
+        if (!ftype){
+            string msg = "Type ";
+            msg += type + " is not handled yet.";
+            PyErr_SetString(PyExc_NotImplementedError, msg.c_str());
+            return NULL;
+        }
         switch(ftype){
             case 'c': GET_FIELD(char, c)
             case 'i': GET_FIELD(int, i)
@@ -690,6 +706,25 @@ extern "C" {
                 ret = Py_BuildValue("s", _s.c_str());
                 break;
             }
+            case 'x':
+                {                    
+                    Id value = Field<Id>::get(self->_id, string(field));
+                    PyObject * ret = (PyObject*)PyObject_New(_Id, &IdType);
+                    ((_Id*)ret)->_id = value;
+                    break;
+                }
+            case 'y':
+                {
+                    ObjId value = Field<ObjId>::get(self->_id, string(field));
+                    PyObject * ret = (PyObject*)PyObject_New(_ObjId, &ObjIdType);
+                    ((_ObjId*)ret)->_id = value;
+                    break;
+                }
+            case 'z':
+                {
+                    PyErr_SetString(PyExc_NotImplementedError, "DataId handling not implemented in PyMoose yet.");
+                    return NULL;
+                }
             case 'v': GET_VECFIELD(int, i)
             case 'w': GET_VECFIELD(short, h)
             case 'L': GET_VECFIELD(long, l)        
@@ -699,18 +734,57 @@ extern "C" {
             case 'D': GET_VECFIELD(double, d)        
             case 'S': {                                                 
                 vector<string> val = Field< vector<string> >::get(self->_id, string(field)); 
-                ret = PyTuple_New((Py_ssize_t)val.size());              
+                ret = PyTuple_New((Py_ssize_t)val.size());
                 for (unsigned int ii = 0; ii < val.size(); ++ ii ){     
                     PyObject * entry = Py_BuildValue("s", val[ii].c_str()); 
                     if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ 
-                        Py_DECREF(ret);                                  
+                        Py_XDECREF(ret);                                  
                         ret = NULL;                                 
                         break;                                      
                     }                                               
                 }                                                       
                 break;                                                  
             }
+            case 'X': // vector<Id>
+                {
+                    vector<Id> value = Field< vector <Id> >::get(self->_id, string(field));
+                    PyObject * ret = PyTuple_New((Py_ssize_t)value.size());
+                    for (unsigned int ii = 0; ii < value.size(); ++ii){
+                        _Id * entry = PyObject_New(_Id, &IdType);
+                        if (!entry){
+                            Py_XDECREF(ret);
+                            return NULL;
+                        }
+                        entry->_id = value[ii];
+                        if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)entry)){
+                            Py_XDECREF(ret);
+                            return NULL;
+                        }
+                        cout << "Id: " << entry->_id << endl;
+                    }
+                    break;
+                }
+            case 'Y': // vector<ObjId>
+                {
+                    vector<ObjId> value = Field< vector <ObjId> >::get(self->_id, string(field));
+                    PyObject * ret = PyTuple_New(value.size());
+                    for (unsigned int ii = 0; ii < value.size(); ++ii){
+                        _ObjId * entry = PyObject_New(_ObjId, &ObjIdType);                       
+                        if (!entry){
+                            Py_XDECREF(ret);
+                            return NULL;
+                        }
+                        entry->_id = value[ii];
+                        if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)entry)){
+                            Py_XDECREF(ret);
+                            return NULL;
+                        }
+                    }
+                    break;
+                }
+                
             default:
+                cout << type << " " << ftype << endl;
                 PyErr_SetString(PyExc_TypeError, "Unrecognized field type.");
                 ret = NULL;            
         }
@@ -789,6 +863,31 @@ extern "C" {
                     }
                     break;
                 }
+            case 'x': // Id
+                {
+                    if (value){
+                        ret = Field<Id>::set(self->_id, string(field), ((_Id*)value)->_id);
+                    } else {
+                        PyErr_SetString(PyExc_ValueError, "Null pointer passed as Id value.");
+                        return NULL;
+                    }
+                    break;
+                }
+            case 'y': // ObjId
+                {
+                    if (value){
+                        ret = Field<ObjId>::set(self->_id, string(field), ((_ObjId*)value)->_id);
+                    } else {
+                        PyErr_SetString(PyExc_ValueError, "Null pointer passed as Id value.");
+                        return NULL;
+                    }
+                    break;
+                }
+            case 'z': // DataId
+                {
+                    PyErr_SetString(PyExc_NotImplementedError, "DataId handling not implemented in PyMoose yet.");
+                    return NULL;
+                }
             case 'v': SET_VECFIELD(int, i)
             case 'w': SET_VECFIELD(short, h)
             case 'L': SET_VECFIELD(long, l)
@@ -855,12 +954,12 @@ extern "C" {
         for (unsigned int ii = 0; ii < ret.size(); ++ ii ){
             PyObject * fname = Py_BuildValue("s", ret[ii].c_str());
             if (!fname){
-                Py_DECREF(pyret);
+                Py_XDECREF(pyret);
                 pyret = NULL;
                 break;
             }
             if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, fname)){
-                Py_DECREF(pyret);
+                Py_XDECREF(pyret);
                 pyret = NULL;
                 break;
             }
@@ -943,7 +1042,6 @@ extern "C" {
         
         tgt->_id = getShell().doCopy(((_Id*)src)->_id, ((_Id*)dest)->_id, string(newName), num, copyExtMsgs);
         PyObject * ret = (PyObject*)tgt;
-        Py_INCREF(ret);
         return ret;            
     }
 
@@ -1022,7 +1120,6 @@ extern "C" {
         _Id * model = new _Id();
         model->_id = getShell().doLoadModel(string(fname), string(modelpath));
         PyObject * ret = reinterpret_cast<PyObject*>(model);
-        Py_INCREF(ret);
         return ret;
     }
 
@@ -1050,7 +1147,6 @@ extern "C" {
         _Id * cwe = (_Id*)PyObject_New(_Id, &IdType);
         cwe->_id = getShell().getCwe();        
         PyObject * ret = (PyObject*)cwe;
-        Py_INCREF(ret);
         return ret;
     }
 
