@@ -45,7 +45,7 @@ class TestNeutral(unittest.TestCase):
                            'get_msgDest']
         self.sharedFinfos = []
     
-    def setUp(self):        
+    def setUp(self):
         self.testObj = moose.Neutral('neutral%d' % (uuid.uuid4().int))
         self.valueFinfos.sort()
         self.lookupFinfos.sort()
