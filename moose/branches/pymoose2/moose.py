@@ -38,7 +38,7 @@ class MooseMeta(type):
         print "Creating class %s using NeutralMeta" % (name)
         id = _moose.Id('/classes/' + name, [1], 'Neutral')
         fields = id.getFieldNames('valueFinfo')
-        super(MooseMeta, cls).__init__(name, bases
+        super(MooseMeta, cls).__init__(name, bases)
 
 
 
@@ -47,7 +47,7 @@ class Neutral(object):
         try:
             className = kwargs['type']
         except KeyError:
-            kwargs['type'] = 'Neutral'            
+            kwargs['type'] = 'Neutral'
         self._id = _moose.Id(*args, **kwargs)
 
     def getFieldNames(self, ftype=''):
