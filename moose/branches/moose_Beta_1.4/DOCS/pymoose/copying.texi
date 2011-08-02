@@ -1,0 +1,3 @@
+@node Copying, , , Top
+@chapter Copying this document
+@insertcopying
