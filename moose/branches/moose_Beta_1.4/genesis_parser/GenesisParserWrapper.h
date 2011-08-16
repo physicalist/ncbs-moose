@@ -121,4 +121,5 @@ class GenesisParserWrapper: public myFlexLexer
 		string printbuf_;
 		string fieldValue_;
 };
+void do_quit( int argc, const char** const argv, Id s );
 #endif // _GENESIS_PARSER_WRAPPER_H
