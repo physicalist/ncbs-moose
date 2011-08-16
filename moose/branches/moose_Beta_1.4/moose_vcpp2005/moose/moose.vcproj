@@ -63,7 +63,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies="gsl_d.lib cblas_d.lib Ws2_32.lib iconv.lib libxml2.lib bzip2.lib zlib.lib libsbml.lib"
+				AdditionalDependencies="gsl_d.lib cblas_d.lib Ws2_32.lib iconv.lib libxml2.lib bzip2.lib zlib.lib libsbmlD.lib"
 				ShowProgress="2"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\external\lib\GnuWin32\lib;..\..\external\lib\gsl\lib;..\..\external\lib;&quot;..\..\external\lib\OpenSceneGraph-2.8.2\lib&quot;;..\..\external\lib\boost_1_40\lib;&quot;..\..\external\lib\iconv-1.9.2.win32&quot;;&quot;..\..\external\lib\libsbml-3.4.1\lib&quot;;&quot;..\..\external\lib\libxml2-2.7.6.win32\lib&quot;"
@@ -2593,22 +2593,6 @@
 				</File>
 				<File
 					RelativePath="..\..\signeur\SigNeur.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="neuroML_IO"
-				>
-				<File
-					RelativePath="..\..\neuroML_IO\Cable.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\neuroML_IO\NeuromlReader.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\neuroML_IO\NeuromlWriter.h"
 					>
 				</File>
 			</Filter>
