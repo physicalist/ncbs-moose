@@ -333,7 +333,8 @@ string SbmlReader::getAnnotation( Reaction* reaction,map<string,EnzymeInfo> &enz
 						//cout << "nodename:" << nodeName << endl;
 						string nodeValue;
 						if (greatGrandChildNode.getNumChildren() == 1 ){
-							nodeValue = greatGrandChildNode.getChild(0).toXMLString();
+							//nodeValue = greatGrandChildNode.getChild(0).toXMLString();
+							nodeValue = greatGrandChildNode.getChild(0).getCharacters();
 							/*
 							XMLNode final = greatGrandChildNode.getChild(0);
 							if (final.isText()){

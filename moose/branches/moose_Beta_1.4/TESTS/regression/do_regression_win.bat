@@ -8,10 +8,6 @@ set NEARDIFF=.\neardiff
 
 IF EXIST regression.out  ERASE regression.out
 
-IF EXIST test.plot ERASE test.plot
-%MOOSE%  -p NeuroML_Reader moose_NeuroML_reader.g >> regression.out 2>&1
-%NEARDIFF% moose_NeuroMLReader.plot test.plot 5.0e-3
-ECHO NeuroML_Read
 
 IF EXIST test.plot ERASE test.plot
 
