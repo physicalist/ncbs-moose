@@ -41,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\gl\src;..\..\signeur;..\..\robots;..\..\randnum;..\..\utility;..\..\shell;..\..\scheduling;..\..\parallel;..\..\neuroML_IO;..\..\sbml_IO;..\..\device;..\..\maindir;..\..\ksolve;..\..\kinetics;..\..\hsolve;..\..\genesis_parser;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..;..\..\external\include\GnuWin32\include;..\..\external\include\gsl\include;..\..\external\include\neuroML;&quot;..\..\external\include\libxml2-2.7.6.win32\include&quot;;&quot;..\..\external\include\iconv-1.9.2.win32\include&quot;;&quot;..\..\external\include\libsbml-3.4.1\include&quot;;&quot;..\..\external\include\OpenSceneGraph-2.8.2\include&quot;;..\..\external\include\boost_1_40\"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;DO_UNIT_TESTS;USE_GENESIS_PARSER;USE_GSL;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_WIN32;USE_NEUROML;USE_GL;USE_SBML"
+				AdditionalIncludeDirectories="..\..\gl\src;..\..\signeur;..\..\robots;..\..\randnum;..\..\utility;..\..\shell;..\..\scheduling;..\..\parallel;..\..\sbml_IO;..\..\device;..\..\maindir;..\..\ksolve;..\..\kinetics;..\..\hsolve;..\..\genesis_parser;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..;..\..\external\include\GnuWin32\include;..\..\external\include\gsl\include;&quot;..\..\external\include\libxml2-2.7.6.win32\include&quot;;&quot;..\..\external\include\iconv-1.9.2.win32\include&quot;;&quot;..\..\external\include\libsbml-3.4.1\&quot;;&quot;..\..\external\include\OpenSceneGraph-2.8.2\include&quot;;..\..\external\include\boost_1_40\"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;DO_UNIT_TESTS;USE_GENESIS_PARSER;USE_GSL;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_WIN32;USE_GL;USE_SBML"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -63,10 +63,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies="gsl_d.lib cblas_d.lib Ws2_32.lib iconv.lib libxml2.lib bzip2.lib zlib.lib libsbml.lib libneuroml.lib"
+				AdditionalDependencies="gsl_d.lib cblas_d.lib Ws2_32.lib iconv.lib libxml2.lib bzip2.lib zlib.lib libsbml.lib"
 				ShowProgress="2"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\external\lib\GnuWin32\lib;..\..\external\lib\gsl\lib;..\..\external\lib;&quot;..\..\external\lib\OpenSceneGraph-2.8.2\lib&quot;;..\..\external\lib\boost_1_40\lib;&quot;..\..\external\lib\libsbml-3.4.1\lib&quot;"
+				AdditionalLibraryDirectories="..\..\external\lib\GnuWin32\lib;..\..\external\lib\gsl\lib;..\..\external\lib;&quot;..\..\external\lib\OpenSceneGraph-2.8.2\lib&quot;;..\..\external\lib\boost_1_40\lib;&quot;..\..\external\lib\iconv-1.9.2.win32&quot;;&quot;..\..\external\lib\libsbml-3.4.1\lib&quot;;&quot;..\..\external\lib\libxml2-2.7.6.win32\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				RandomizedBaseAddress="2"
@@ -353,6 +353,14 @@
 				</File>
 				<File
 					RelativePath="..\..\biophysics\StochSynchan.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\biophysics\STPNMDAChan.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\biophysics\STPSynChan.cpp"
 					>
 				</File>
 				<File
@@ -1653,6 +1661,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\device\Efield.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\device\PIDController.cpp"
 					>
 				</File>
@@ -1756,22 +1768,6 @@
 							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 						/>
 					</FileConfiguration>
-				</File>
-			</Filter>
-			<Filter
-				Name="neuroML_IO"
-				>
-				<File
-					RelativePath="..\..\neuroML_IO\Cable.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\neuroML_IO\NeuromlReader.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\neuroML_IO\NeuromlWriter.cpp"
-					>
 				</File>
 			</Filter>
 			<Filter
@@ -1905,6 +1901,14 @@
 				</File>
 				<File
 					RelativePath="..\..\biophysics\StochSynInfo.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\biophysics\STPNMDAChan.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\biophysics\STPSynChan.h"
 					>
 				</File>
 				<File
@@ -2541,6 +2545,10 @@
 				>
 				<File
 					RelativePath="..\..\device\DiffAmp.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\device\Efield.h"
 					>
 				</File>
 				<File
