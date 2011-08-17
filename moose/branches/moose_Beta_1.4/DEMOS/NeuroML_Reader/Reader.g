@@ -26,7 +26,7 @@ add_plot  { target }/Soma_0 Vm { outfile }
 if ( ! USE_SOLVER )
 	setfield { target } method "ee"
 end
-
+/*
 //=====================================
 //  Vis object
 //=====================================
@@ -39,7 +39,7 @@ setfield /gl0 threshold 0.0015
 setfield /gl0 sync off
 
 useclock /gl0 3
-
+*/
 reset
 step {SIMLENGTH} -time
 
