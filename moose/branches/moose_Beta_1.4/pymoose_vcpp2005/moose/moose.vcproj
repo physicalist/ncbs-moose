@@ -103,7 +103,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="D:\Softwares\swigwin-1.3.39\swig  -modern -python -c++ -o $(ProjectDir)\$(InputName)_wrap.cxx  $(ProjectDir)\..\..\pymoose\moose.i "
+				CommandLine="C:\Users\user\Downloads\softwares\swigwin-2.0.4\swig  -modern -python -c++ -o $(ProjectDir)\..\..\pymoose\$(InputName)_wrap.cxx  $(ProjectDir)\..\..\pymoose\moose.i "
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -123,8 +123,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="..\..\gl\src;..\..\sbml_IO;..\..\neuroML_IO;..\..\device;..\..\scheduling;..\..\maindir;..\..\hsolve;..\..\utility;..\..\kinetics;..\..\ksolve;..\..\genesis_parser;..\..\shell;..\..\randnum;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..\pymoose;..\..;&quot;$(PYTHON_INCLUDE)&quot;;..\..\external\include\gsl\include;&quot;..\..\external\include\libsbml-3.4.1\include&quot;;&quot;..\..\external\include\libxml2-2.7.6.win32\include&quot;;..\..\external\include\neuroML\include\;&quot;..\..\external\include\iconv-1.9.2.win32\include&quot;;&quot;..\..\external\include\OpenSceneGraph-2.8.2\include&quot;;..\..\external\include\boost_1_40"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;USE_GENESIS_PARSER;USE_GSL;USE_GL;USE_SBML;USE_NEUROML;snprintf=_snprintf_s;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;PYMOOSE"
+				AdditionalIncludeDirectories="..\..\sbml_IO;..\..\device;..\..\scheduling;..\..\maindir;..\..\hsolve;..\..\utility;..\..\kinetics;..\..\ksolve;..\..\genesis_parser;..\..\shell;..\..\randnum;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..\pymoose;..\..;&quot;$(PYTHON_INCLUDE)&quot;;..\..\external\include\gsl\include;&quot;..\..\external\include\libsbml-3.4.1\&quot;;&quot;..\..\external\include\libxml2-2.7.6.win32\include&quot;;&quot;..\..\external\include\iconv-1.9.2.win32\include&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;USE_GENESIS_PARSER;USE_GSL;USE_SBML;snprintf=_snprintf_s;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;PYMOOSE"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -147,10 +147,11 @@
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
 				AdditionalOptions="/VERBOSE"
-				AdditionalDependencies="gsl.lib cblas.lib zlib.lib bzip2.lib libsbml.lib iconv.lib libxml2.lib libneuroml.lib ws2_32.lib Vfw32.lib $(PYTHON_LIB)"
+				AdditionalDependencies="gsl.lib cblas.lib zlib.lib bzip2.lib libsbml.lib iconv.lib libxml2.lib ws2_32.lib Vfw32.lib $(PYTHON_LIB)"
+				ShowProgress="0"
 				OutputFile="_moose.pyd"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;..\..\external\lib\libxml2-2.7.6.win32\lib&quot;;&quot;..\..\external\lib\iconv-1.9.2.win32\lib&quot;;..\..\external\lib\GnuWin32\lib;..\..\external\lib\MPICH2\lib;&quot;..\..\external\lib\libsbml-3.4.1\lib&quot;;..\..\external\lib\gsl\lib;..\..\external\lib;&quot;..\..\external\lib\OpenSceneGraph-2.8.2\lib&quot;;..\..\external\lib\boost_1_40\lib"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;..\..\external\lib\libxml2-2.7.6.win32\lib&quot;;&quot;..\..\external\lib\iconv-1.9.2.win32\&quot;;..\..\external\lib\GnuWin32\lib;&quot;..\..\external\lib\libsbml-3.4.1\lib&quot;;..\..\external\lib\gsl\lib;..\..\external\lib"
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
@@ -353,6 +354,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\biophysics\NMDAChan.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\biophysics\RandomSpike.cpp"
 					>
 				</File>
@@ -366,6 +371,14 @@
 				</File>
 				<File
 					RelativePath="..\..\biophysics\StochSynchan.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\biophysics\STPNMDAChan.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\biophysics\STPSynChan.cpp"
 					>
 				</File>
 				<File
@@ -1525,6 +1538,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\..\pymoose\moose.i"
+					>
+				</File>
+				<File
 					RelativePath="..\..\pymoose\moose_wrap.cxx"
 					>
 				</File>
@@ -1575,10 +1592,6 @@
 							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 						/>
 					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\pymoose\NMDAChan.cpp"
-					>
 				</File>
 				<File
 					RelativePath="..\..\pymoose\NormalRng.cpp"
@@ -1673,11 +1686,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\pymoose\pyGLcell.cpp"
+					RelativePath="..\..\pymoose\pyEfield.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\pymoose\pyGLview.cpp"
+					RelativePath="..\..\pymoose\pyInterpol2D.cpp"
 					>
 				</File>
 				<File
@@ -1690,6 +1703,18 @@
 				</File>
 				<File
 					RelativePath="..\..\pymoose\PyMooseUtil.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\pyNMDAChan.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\pySTPNMDAChan.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\pySTPSynChan.cpp"
 					>
 				</File>
 				<File
@@ -1849,6 +1874,10 @@
 							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 						/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\StochSpikeGen.cpp"
+					>
 				</File>
 				<File
 					RelativePath="..\..\pymoose\StochSynchan.cpp"
@@ -2523,6 +2552,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\..\device\Efield.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\device\PIDController.cpp"
 					>
 					<FileConfiguration
@@ -2604,26 +2637,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="gl"
-				>
-				<Filter
-					Name="src"
-					>
-					<File
-						RelativePath="..\..\gl\src\GLcell.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\gl\src\GLshape.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\gl\src\GLview.cpp"
-						>
-					</File>
-				</Filter>
-			</Filter>
-			<Filter
 				Name="sbml_IO"
 				>
 				<File
@@ -2632,22 +2645,6 @@
 				</File>
 				<File
 					RelativePath="..\..\sbml_IO\SbmlWriter.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="neuroML_IO"
-				>
-				<File
-					RelativePath="..\..\neuroML_IO\Cable.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\neuroML_IO\NeuromlReader.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\neuroML_IO\NeuromlWriter.cpp"
 					>
 				</File>
 			</Filter>
@@ -2729,6 +2726,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\pymoose\NMDAChan.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\biophysics\RandomSpike.h"
 					>
 				</File>
@@ -2746,6 +2747,14 @@
 				</File>
 				<File
 					RelativePath="..\..\biophysics\StochSynInfo.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\biophysics\STPNMDAChan.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\biophysics\STPSynChan.h"
 					>
 				</File>
 				<File
@@ -3297,6 +3306,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\pymoose\Efield.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\pymoose\Enzyme.h"
 					>
 				</File>
@@ -3357,6 +3370,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\pymoose\Interpol2D.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\pymoose\IntFire.h"
 					>
 				</File>
@@ -3410,10 +3427,6 @@
 				</File>
 				<File
 					RelativePath="..\..\pymoose\Neutral.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\pymoose\NMDAChan.h"
 					>
 				</File>
 				<File
@@ -3481,11 +3494,23 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\pymoose\StochSpikeGen.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\pymoose\StochSynchan.h"
 					>
 				</File>
 				<File
 					RelativePath="..\..\pymoose\Stoich.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\STPNMDAChan.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\STPSynChan.h"
 					>
 				</File>
 				<File
@@ -3681,6 +3706,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\device\Efield.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\device\PIDController.h"
 					>
 				</File>
@@ -3718,50 +3747,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="gl"
-				>
-				<Filter
-					Name="src"
-					>
-					<File
-						RelativePath="..\..\gl\src\AckPickData.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\gl\src\Constants.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\gl\src\GLcell.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\gl\src\GLcellProcData.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\gl\src\GLcellResetData.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\gl\src\GLshape.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\gl\src\GLshapeData.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\gl\src\GLview.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\gl\src\GLviewResetData.h"
-						>
-					</File>
-				</Filter>
-			</Filter>
-			<Filter
 				Name="sbml_IO"
 				>
 				<File
@@ -3773,22 +3758,6 @@
 					>
 				</File>
 			</Filter>
-			<Filter
-				Name="neuroML_IO"
-				>
-				<File
-					RelativePath="..\..\neuroML_IO\Cable.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\neuroML_IO\NeuromlReader.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\neuroML_IO\NeuromlWriter.h"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -3796,10 +3765,6 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
-		<File
-			RelativePath="..\..\pymoose\moose.i"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
