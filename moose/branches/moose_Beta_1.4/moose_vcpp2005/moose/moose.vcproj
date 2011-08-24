@@ -41,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\gl\src;..\..\signeur;..\..\robots;..\..\randnum;..\..\utility;..\..\shell;..\..\scheduling;..\..\parallel;..\..\sbml_IO;..\..\device;..\..\maindir;..\..\ksolve;..\..\kinetics;..\..\hsolve;..\..\genesis_parser;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..;..\..\external\include\GnuWin32\include;..\..\external\include\gsl\include;&quot;..\..\external\include\libxml2-2.7.6.win32\include&quot;;&quot;..\..\external\include\iconv-1.9.2.win32\include&quot;;&quot;..\..\external\include\libsbml-3.4.1\&quot;;&quot;..\..\external\include\OpenSceneGraph-2.8.2\include&quot;;..\..\external\include\boost_1_40\"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;DO_UNIT_TESTS;USE_GENESIS_PARSER;USE_GSL;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_WIN32;USE_GL;USE_SBML"
+				AdditionalIncludeDirectories="..\..\signeur;..\..\robots;..\..\randnum;..\..\utility;..\..\shell;..\..\scheduling;..\..\parallel;..\..\sbml_IO;..\..\device;..\..\maindir;..\..\ksolve;..\..\kinetics;..\..\hsolve;..\..\genesis_parser;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..;..\..\external\include\GnuWin32\include;..\..\external\include\gsl\include;&quot;..\..\external\include\libxml2-2.7.6.win32\include&quot;;&quot;..\..\external\include\iconv-1.9.2.win32\include&quot;;&quot;..\..\external\include\libsbml-3.4.1\&quot;;&quot;..\..\external\include\OpenSceneGraph-2.8.2\include&quot;;..\..\external\include\boost_1_40\"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;DO_UNIT_TESTS;USE_GENESIS_PARSER;USE_GSL;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_WIN32;USE_SBML"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -125,8 +125,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="3"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="..\..\signeur;..\..\robots;..\..\randnum;..\..\utility;..\..\shell;..\..\scheduling;..\..\parallel;..\..\neuroML_IO;..\..\sbml_IO;..\..\device;..\..\maindir;..\..\ksolve;..\..\kinetics;..\..\hsolve;..\..\genesis_parser;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..;&quot;D:\Program Files\MPICH2\include&quot;;&quot;C:\Program Files\GnuWin32\include&quot;;&quot;D:\DOWNLOADS\gsl-1.11-windows-binaries\gsl\include&quot;;&quot;D:\sbml\libsbml-3.3.2\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;USE_GENESIS_PARSER;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_WIN32;USE_GSL;USE_SBML;USE_NEUROML;USE_GL"
+				AdditionalIncludeDirectories="..\..\signeur;..\..\robots;..\..\randnum;..\..\utility;..\..\shell;..\..\scheduling;..\..\parallel;..\..\sbml_IO;..\..\device;..\..\maindir;..\..\ksolve;..\..\kinetics;..\..\hsolve;..\..\genesis_parser;..\..\external\include;..\..\example;..\..\element;..\..\connections;..\..\builtins;..\..\biophysics;..\..\basecode;..\..;..\..\external\include\GnuWin32\include;..\..\external\include\gsl\include;&quot;..\..\external\include\libsbml-3.4.1&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;YY_NO_UNISTD_H;YYSTYPE_IS_DECLARED;USE_GENESIS_PARSER;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0;_WIN32;USE_GSL;USE_SBML"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -148,12 +148,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				UseLibraryDependencyInputs="false"
-				AdditionalDependencies="gsl_d.lib cblas_d.lib Ws2_32.lib libneuroml.lib libsbml.lib"
-				AdditionalLibraryDirectories="..\..\external\lib\GnuWin32\lib;..\..\external\lib\gsl\lib;..\..\external\lib;&quot;..\..\external\lib\OpenSceneGraph-2.8.2\lib&quot;;..\..\external\lib\boost_1_40\lib;&quot;..\..\external\lib\libsbml-3.3.2\lib&quot;"
+				UseLibraryDependencyInputs="true"
+				AdditionalDependencies="gsl.lib cblas.lib Ws2_32.lib  iconv.lib libxml2.lib bzip2.lib zlib.lib libsbml.lib"
+				ShowProgress="2"
+				AdditionalLibraryDirectories="..\..\external\lib\GnuWin32\lib;..\..\external\lib\gsl\lib;..\..\external\lib;&quot;..\..\external\lib\iconv-1.9.2.win32&quot;;&quot;..\..\external\lib\libxml2-2.7.6.win32\lib&quot;;&quot;..\..\external\lib\libsbml-3.4.1\lib&quot;"
 				SubSystem="0"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
+				RandomizedBaseAddress="2"
+				DataExecutionPrevention="2"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -1771,22 +1773,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="gl"
-				>
-				<File
-					RelativePath="..\..\gl\src\GLcell.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\gl\src\GLshape.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\gl\src\GLview.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="sbml_IO"
 				>
 				<File
@@ -2593,46 +2579,6 @@
 				</File>
 				<File
 					RelativePath="..\..\signeur\SigNeur.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="gl"
-				>
-				<File
-					RelativePath="..\..\gl\src\AckPickData.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\gl\src\Constants.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\gl\src\GLcell.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\gl\src\GLcellProcData.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\gl\src\GLcellResetData.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\gl\src\GLshape.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\gl\src\GLshapeData.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\gl\src\GLview.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\gl\src\GLviewResetData.h"
 					>
 				</File>
 			</Filter>
