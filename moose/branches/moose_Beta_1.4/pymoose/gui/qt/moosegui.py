@@ -534,7 +534,7 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(self.newPlotWindowAction, QtCore.SIGNAL('triggered(bool)'), self.addPlotWindow)
         self.firstTimeWizardAction = QtGui.QAction(self.tr('FirstTime Configuration Wizard'), self)
         self.connect(self.firstTimeWizardAction, QtCore.SIGNAL('triggered(bool)'), self.startFirstTimeWizard)
-        self.resetSettingsAction = QtGui.QAction(self.tr('Reset Settings'), self)
+        self.resetSettingsAction = QtGui.QAction(self.tr('Reset GUI Settings'), self)
         self.connect(self.resetSettingsAction, QtCore.SIGNAL('triggered()'), self.resetSettings)
 
         # Actions to switch the command line between python and genesis mode.
@@ -618,8 +618,8 @@ class MainWindow(QtGui.QMainWindow):
         menu.addAction(self.MichaelisMentenDemoAction)
         menu.addAction(self.squidDemoAction)
         menu.addAction(self.IzhikevichDemoAction)
-        menu.addAction(self.glCellDemoAction)
-        menu.addAction(self.glViewDemoAction)
+        #menu.addAction(self.glCellDemoAction)
+        #menu.addAction(self.glViewDemoAction)
         return menu
         
     def makeMenu(self):
