@@ -27,14 +27,15 @@ class Textitem(QtGui.QGraphicsTextItem):
 			
 		self.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
 		self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable)
-		self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, 1) 
+		#self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, 1) 
 		if config.QT_MINOR_VERSION >= 6:
 		 	self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, 1) 
 		#~ self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, 1) 
-	def itemChange(self, change, value):
-		if change == QtGui.QGraphicsItem.ItemPositionChange:
-			self.positionChange.emit(self)
-       		return QtGui.QGraphicsItem.itemChange(self, change, value)
+	if config.QT_MINOR_VERSION >= 6:
+		def itemChange(self, change, value):
+			if change == QtGui.QGraphicsItem.ItemPositionChange:
+				self.positionChange.emit(self)
+       			return QtGui.QGraphicsItem.itemChange(self, change, value)
 	
 	def mouseDoubleClickEvent(self, event):
 		self.emit(QtCore.SIGNAL("qgtextDoubleClick(PyQt_PyObject)"),self.mooseObj_)
