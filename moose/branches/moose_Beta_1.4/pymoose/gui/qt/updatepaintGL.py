@@ -58,7 +58,7 @@ class updatepaintGL(PyGLWidget):
 		glLightfv(GL_LIGHT0, GL_SPECULAR, specular0)
 		glLightfv(GL_LIGHT0, GL_AMBIENT, ambient0)
 	self.renderAxis()	#draws 3 axes at origin
-	
+
 	for obj in self.sceneObjects:
 	    obj.render()
 	    
@@ -109,7 +109,7 @@ class updatepaintGL(PyGLWidget):
     	#***cellName = moosepath in the GL canvas***
 	an=moose.Neutral(cellName)
 	all_ch=an.childList 					#all children
-	ch = self.get_childrenOfField(all_ch,'Compartment')	#compartments only
+        ch = self.get_childrenOfField(all_ch,'Compartment')	#compartments only
 	l_coords = []
 	for i in range(0,len(ch),1):
     	    	x=float(mc.getField(ch[i],'x'))*(1e+04)
@@ -183,6 +183,8 @@ class updatepaintGL(PyGLWidget):
 	    			if self.viz==1:
 					self.vizObjects.append(compartmentLine)
 					self.vizObjectNames.append(l_coords[i][7])	    		
+
+    
 
     def drawAllCells(self, style = 2, cellCentre=[0.0,0.0,0.0], cellAngle=[0.0,0.0,0.0,0.0]):
         an=moose.Neutral('/')						#moose root children
