@@ -100,7 +100,10 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.isInRotation_  = False
 	
 	#additions by chaitanya
-	
+	self.xpan = 0.0
+        self.ypan = 0.0
+        self.zpan = 0.0
+
 	self.lights = 1			#lights	
 	self.ctrlPressed = False 	#default no control pressed
 	self.selectedObjects =Group(self)		#each line is a scene object.
@@ -259,10 +262,12 @@ class PyGLWidget(QtOpenGL.QGLWidget):
     def wheelEvent(self, _event):
         # Use the mouse wheel to zoom in/out
         d =  float(_event.delta()) / 200.0 * self.radius_
-	self.translate([0.0, 0.0, d])
-        self.updateGL()
-        _event.accept()
-	#print self.z_d
+        if ((self.zpan+d) <= (self.near_+3) and (self.zpan+d) >= -1*(self.far_-10)):
+            self.translate([0.0, 0.0, d])
+            self.zpan = self.zpan + d
+            self.updateGL()
+            _event.accept()
+        print self.zpan
 
     def mousePressEvent(self, _event):
         self.last_point_2D_ = _event.pos()
@@ -316,6 +321,10 @@ class PyGLWidget(QtOpenGL.QGLWidget):
             up     = math.tan(fovy / 2.0 * math.pi / 180.0) * n
             right  = aspect * up
 
+            self.xpan += 2.0 * dx / w * right / n * z
+            self.ypan += -2.0 * dy / h * up / n * z
+
+
             self.translate( [2.0 * dx / w * right / n * z,
                              -2.0 * dy / h * up / n * z,
                              0.0] )
@@ -366,27 +375,34 @@ class PyGLWidget(QtOpenGL.QGLWidget):
 	Key press callback.
 	"""
 	key = str(ev.text()).upper()
-		
 	if (ev.modifiers() & QtCore.Qt.ControlModifier):
 	    self.ctrlPressed = True	
 	elif (ev.key() == QtCore.Qt.Key_Up):
 		self.translate([0.0, 0.25, 0.0])
+                self.ypan += 0.25
 		self.updateGL()
 	elif (ev.key() == QtCore.Qt.Key_Down):
 		self.translate([0.0, -0.25, 0.0])
+                self.ypan += -0.25
 		self.updateGL()
 	elif (ev.key() == QtCore.Qt.Key_Left):
 		self.translate([-0.25, 0.0, 0.0])
+                self.xpan += -0.25
 		self.updateGL()
 	elif (ev.key() == QtCore.Qt.Key_Right):
 		self.translate([0.25, 0.0, 0.0])
+                self.xpan += 0.25
 		self.updateGL()
 	elif (ev.key() == QtCore.Qt.Key_Plus)or(ev.key() == QtCore.Qt.Key_PageUp)or(ev.key()==QtCore.Qt.Key_Period):
-		self.translate([0.0, 0.0, 0.75])
+            if ((self.zpan+0.75) <= self.near_+3):
+                self.translate([0.0, 0.0, 0.75])
+                self.zpan += 0.75
 		self.updateGL()
 	elif (ev.key() == QtCore.Qt.Key_Minus)or(ev.key() == QtCore.Qt.Key_PageDown)or(ev.key()==QtCore.Qt.Key_Comma):
-		self.translate([0.0, 0.0, -0.75])
-		self.updateGL()
+             if ((self.zpan-0.75) >= -1*(self.far_-10)):
+        	self.translate([0.0, 0.0, -0.75])
+                self.zpan += -0.75
+                self.updateGL()
 	elif (ev.key() == QtCore.Qt.Key_A):
 		self.rotate([1.0, 0.0, 0.0],2.0)
 		self.updateGL()
@@ -516,23 +532,44 @@ class PyGLWidget(QtOpenGL.QGLWidget):
 	"""
 	Creates the XYZ axis in the 0 coordinate, just for reference.
 	"""
+        glViewport(0,0,self.width()/8,self.height()/8)
+        self.translate([-1*self.xpan,-1*self.ypan,-1*self.zpan])
+        glMatrixMode(GL_MODELVIEW)
+
 	# XYZ axis
-	glLineWidth(1)
+	glLineWidth(2)
 	glDisable(GL_LIGHTING)
 	glBegin(GL_LINES)
 	glColor(1, 0, 0)	#Xaxis, Red color
 	glVertex3f(0, 0, 0)
-	glVertex3f(1, 0, 0)
+	glVertex3f(0.15, 0, 0)
 	glColor(0, 1, 0)	#Yaxis, Green color
 	glVertex3f(0, 0, 0)
-	glVertex3f(0, 1, 0)
+	glVertex3f(0, 0.15, 0)
 	glColor(0, 0, 1)	#Zaxis, Blue color
 	glVertex3f(0, 0, 0)
-	glVertex3f(0, 0, 1)
+	glVertex3f(0, 0, 0.15)
 	glEnd()
-	glEnable(GL_LIGHTING)
-	glLineWidth(1)	
+
+        glLineWidth(1)	
     
+        glutInit()
+        glColor(1,0,0)
+        glRasterPos3f(0.16, 0.0, 0.0)
+        glutBitmapCharacter(GLUT_BITMAP_8_BY_13,88)#ascii x
+        glColor(0,1,0)
+        glRasterPos3f(0.0, 0.16, 0.0)
+        glutBitmapCharacter(GLUT_BITMAP_8_BY_13,89)#ascii y
+        glColor(0,0,1)
+        glRasterPos3f(0.0, 0.0, 0.16)
+        glutBitmapCharacter(GLUT_BITMAP_8_BY_13,90)#ascii z
+
+        glEnable(GL_LIGHTING)
+
+        self.translate([self.xpan,self.ypan,self.zpan])
+        glViewport(0,0,self.width(),self.height())
+
+
 
 #===============================================================================
 #
