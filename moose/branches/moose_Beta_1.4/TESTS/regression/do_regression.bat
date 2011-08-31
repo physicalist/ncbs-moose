@@ -10,7 +10,7 @@ set misc = 0
 if ( $mpi ) then
 	set MOOSE = 'mpirun -n 1 ../../moose'
 else
-	set MOOSE = '../../moose'
+	set MOOSE = '/usr/bin/moose'
 endif
 
 # nearDiff is a function to see if two data files are within 
