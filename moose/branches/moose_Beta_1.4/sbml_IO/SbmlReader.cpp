@@ -315,12 +315,21 @@ string SbmlReader::getAnnotation( Reaction* reaction,map<string,EnzymeInfo> &enz
 		//cout<<"num of children :"<< num_children << endl;
 		for( unsigned int child_no = 0; child_no < num_children; child_no++ )
 		{
-			XMLNode childNode = annotationNode->getChild( child_no );
+			XMLNode& childNode = annotationNode->getChild( child_no );
 			unsigned int num_grand_children = childNode.getNumChildren();
-			//cout << "child no " << child_no << ": name:" << childNode.getName() << "has num_grand_children =" << num_grand_children << endl; 
+			//cout << "child no " << child_no << " : name:" << childNode.getName() << " has num_grand_children =" << num_grand_children << endl; 
 			for( unsigned int gchild_no = 0; gchild_no < num_grand_children; gchild_no++ )
 			{
-				XMLNode &grandChildNode = childNode.getChild( gchild_no );
+				XMLNode& grandChildNode = childNode.getChild( gchild_no );
+				/*if (grandChildNode.isEOF()){
+					cout << "EOF" << endl;
+					continue;
+				}
+				string prefix(grandChildNode.getPrefix());
+				string name(grandChildNode.getName());
+				 cout << prefix << "-----" << name << endl;
+				 if (!prefix.empty() && !name.empty() && !strcmp(prefix.c_str(), string("moose").c_str()) && !strcmp(name.c_str(), string("EnzymaticReaction").c_str() ))
+				*/
 				if ( grandChildNode.getPrefix() == "moose" && grandChildNode.getName() == "EnzymaticReaction" )
 				{	
 					unsigned int num_ggchildren = grandChildNode.getNumChildren();
