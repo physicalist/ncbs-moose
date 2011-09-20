@@ -74,13 +74,17 @@ void SbmlWriter::write( string filepath,Id location )
 	}
 	if ( i == extensions.end() )
 		filepath += ".xml";
-	SBMLDocument* sbmlDoc = 0;
+	SBMLDocument sbmlDoc(2, 4);
   	bool SBMLok = false;
-	sbmlDoc = createModel( fName ); 
-  	SBMLok  = validateModel( sbmlDoc );
+	cout<<"before createModel: "<< fName << endl;
+	createModel( fName, sbmlDoc ); 
+	cout<<"after createModel"<<endl;
+  	SBMLok  = validateModel( &sbmlDoc );
+	cout<<"after validate"<<endl;
 	if ( SBMLok ) 
-		writeModel( sbmlDoc, filepath );
-    	delete sbmlDoc;
+		writeModel( &sbmlDoc, filepath );
+	cout<<"after writemodel"<<endl;
+    //	delete sbmlDoc;
 	if ( !SBMLok ) {
 		cerr << "Errors encountered " << endl;
 		return ;
@@ -88,6 +92,7 @@ void SbmlWriter::write( string filepath,Id location )
 #else
 	cout << "This version does not have SBML support." << endl;
 #endif
+	cout<<"exiting sbmlWriter::write"<<endl;
 }
 
 #ifdef USE_SBML
@@ -95,11 +100,12 @@ void SbmlWriter::write( string filepath,Id location )
  * Create an SBML model in the SBML Level 2 Version 4 Specification.
  */
 
-SBMLDocument* SbmlWriter::createModel( string filename )
+void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 {
-	SBMLDocument* sbmlDoc = new SBMLDocument();
- 	model_ = sbmlDoc->createModel();
+	cout<<"createmodel"<<endl;
+	model_ = sbmlDoc.createModel();
   	model_->setId( filename );
+	//cout<<"filename "<<filename<<endl;
 	//model_->setMetaId( filename );
 	//model_->setName( filename );
 
@@ -146,6 +152,7 @@ SBMLDocument* SbmlWriter::createModel( string filename )
 	static const Finfo* sizeFinfo = kincomptCinfo->findFinfo( "size" );
 	static const Finfo* dimensionFinfo = kincomptCinfo->findFinfo( "numDimensions" );
 	Eref comptEl;
+	//Id comptID;
 	vector< Id > compts;
 	vector< Id > kinSpecies;
 	vector< Id >::iterator itr;
@@ -164,23 +171,32 @@ SBMLDocument* SbmlWriter::createModel( string filename )
 		compts.push_back( kinetics ); 
 		flag = false;
 	}
-	//iterating through the compartments	
+	cout<<"iterating through the compartments"<<endl;	
+	//for ( unsigned int i=0; i<compts.size(); i++ ) 
 	for ( itr = compts.begin(); itr != compts.end(); itr++ ) 
 	{
 		string parentCompt;	
 		ostringstream cid;	
 		comptEl = ( *itr )();
+		//comptID = compts[ i ];
+		cout << "Before create compartment" << endl;
+		//printf("model address: %p\n", model_);
 		::Compartment* compt = model_->createCompartment();
-		string comptName = comptEl.name();
+		//string comptName = compts[ i ].eref().name();
+		std::string comptName = comptEl.name();
+		cout << "Compartment name: " << comptName << endl;
 		cid << comptEl.id().id() << "_"<< comptEl.id().index();
+		//cid << comptID.id() << "_"<< comptID.index();
 		comptName = nameString( comptName ); 
 		comptName =  changeName( comptName,cid.str() );
 		string newcomptName = idBeginWith( comptName ); 
 		compt->setId( newcomptName );		
 		double size;
                	get< double >( comptEl, sizeFinfo, size );
+				//get< double >( compts[ i ].eref(), sizeFinfo, size );
 		unsigned int numD;
 		get< unsigned int >( comptEl, dimensionFinfo, numD );
+		//get< unsigned int >( compts[ i ].eref(), dimensionFinfo, numD );
 		compt->setSpatialDimensions( numD );
 		if ( numD == 3 )		
 			compt->setSize( size*1e3 );
@@ -190,6 +206,7 @@ SBMLDocument* SbmlWriter::createModel( string filename )
 		outcompt.clear();
 		if ( flag ){
 			targets( comptEl,"outside",outcompt );
+			//targets( compts[ i ].eref(),"outside",outcompt );
 			if ( outcompt.size() > 1 )
 			cerr << "Warning: SbmlWriter: Too many outer compartments for " << newcomptName << ". Ignoring all but one.\n";
 			if ( outcompt.size() >= 1 ) {
@@ -210,8 +227,9 @@ SBMLDocument* SbmlWriter::createModel( string filename )
 		vector< Id > molecs;
 		vector< Id >::iterator mitr;
 		string comptPath = comptEl.id().path();
+		//string comptPath = comptID.path();
 		wildcardFind( comptPath + "/#[TYPE=Molecule]", molecs );
-		//iterating through the Molecules
+		//cout<<"//iterating through the Molecules"<<endl;
 		for ( mitr = molecs.begin(); mitr != molecs.end(); mitr++ ) 
 		{		
 			moleEl = ( *mitr )();	
@@ -436,7 +454,7 @@ SBMLDocument* SbmlWriter::createModel( string filename )
 		} //end reaction
 	} //end compartment
  	
-	return sbmlDoc;
+	//return sbmlDoc;
 
 }
 /*
