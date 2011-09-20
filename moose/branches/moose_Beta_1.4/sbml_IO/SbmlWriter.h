@@ -25,7 +25,7 @@ class SbmlWriter
 		~SbmlWriter() {;}
 		void write( string filename,Id location );
 #ifdef USE_SBML
-		SBMLDocument* createModel( string filename );
+		void createModel( string filename, SBMLDocument& doc );
 		bool validateModel( SBMLDocument* sbmlDoc );
 		bool writeModel( const SBMLDocument* sbmlDoc, const string& filename );
 
