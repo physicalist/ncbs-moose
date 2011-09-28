@@ -74,17 +74,13 @@ void SbmlWriter::write( string filepath,Id location )
 	}
 	if ( i == extensions.end() )
 		filepath += ".xml";
-	SBMLDocument sbmlDoc(2, 4);
-  	bool SBMLok = false;
-	cout<<"before createModel: "<< fName << endl;
-	createModel( fName, sbmlDoc ); 
-	cout<<"after createModel"<<endl;
-  	SBMLok  = validateModel( &sbmlDoc );
-	cout<<"after validate"<<endl;
+	bool SBMLok = false;
+	SBMLDocument sbmlDoc(2,4);
+  	createModel( fName, sbmlDoc ); 
+	SBMLok  = validateModel( &sbmlDoc );
 	if ( SBMLok ) 
 		writeModel( &sbmlDoc, filepath );
-	cout<<"after writemodel"<<endl;
-    //	delete sbmlDoc;
+	//	delete sbmlDoc;
 	if ( !SBMLok ) {
 		cerr << "Errors encountered " << endl;
 		return ;
@@ -93,6 +89,7 @@ void SbmlWriter::write( string filepath,Id location )
 	cout << "This version does not have SBML support." << endl;
 #endif
 	cout<<"exiting sbmlWriter::write"<<endl;
+	//sbmlDoc.~SBMLDocument();
 }
 
 #ifdef USE_SBML
@@ -102,45 +99,15 @@ void SbmlWriter::write( string filepath,Id location )
 
 void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 {
-	cout<<"createmodel"<<endl;
 	model_ = sbmlDoc.createModel();
-  	model_->setId( filename );
-	//cout<<"filename "<<filename<<endl;
-	//model_->setMetaId( filename );
-	//model_->setName( filename );
-
-	/* set model history */
-
-        /* ModelHistory * h = new ModelHistory();
-	ModelCreator *c = new ModelCreator();
-	c->setFamilyName( "Bhalla" );
-	c->setGivenName( "Upi" );
-	c->setEmail( "bhalla@ncbs.res.in" );
-	c->setOrganisation( "National Centre for Biological Sciences" );
-	h->addCreator( c );
-	Date * date = new Date( "2006-10-18T16:39:27" );
-	Date * date2 = new Date( "2009-03-11T09:39:00-02:00" );
-	time_t ctime =  time( 0 );
-	struct tm *time = localtime( &ctime );
-	Date * date3 = new Date(
-		static_cast< unsigned int >( 1900+time->tm_year ),
-		static_cast< unsigned int >( time->tm_mon ),
-		static_cast< unsigned int >( time->tm_mday ),
-		static_cast< unsigned int >( time->tm_hour ),
-		static_cast< unsigned int >( time->tm_min ),
-		static_cast< unsigned int >( time->tm_sec ) );
-	//cout<<"date 3 is :"<<date3->getDateAsString()<<endl;
-	//setDateAsString(date3);
-	h->setCreatedDate( date );
-	h->setModifiedDate( date2);
-	model_->setModelHistory( h ); */
-
+	model_->setId( filename );
+	   
 	UnitDefinition* unitdef;
  	Unit* unit;
 	//Create an UnitDefinition object for "substance".  
 	unitdef = model_->createUnitDefinition();
  	unitdef->setId( "substance" );
-        // Create individual unit objects that will be put inside
+    // Create individual unit objects that will be put inside
   	// the UnitDefinition to compose "substance".
 	unit = unitdef->createUnit();
 	unit->setKind( UNIT_KIND_MOLE );
@@ -152,7 +119,6 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 	static const Finfo* sizeFinfo = kincomptCinfo->findFinfo( "size" );
 	static const Finfo* dimensionFinfo = kincomptCinfo->findFinfo( "numDimensions" );
 	Eref comptEl;
-	//Id comptID;
 	vector< Id > compts;
 	vector< Id > kinSpecies;
 	vector< Id >::iterator itr;
@@ -171,32 +137,24 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 		compts.push_back( kinetics ); 
 		flag = false;
 	}
-	cout<<"iterating through the compartments"<<endl;	
-	//for ( unsigned int i=0; i<compts.size(); i++ ) 
+	//iterating through the compartments	
 	for ( itr = compts.begin(); itr != compts.end(); itr++ ) 
 	{
 		string parentCompt;	
 		ostringstream cid;	
 		comptEl = ( *itr )();
-		//comptID = compts[ i ];
-		cout << "Before create compartment" << endl;
-		//printf("model address: %p\n", model_);
 		::Compartment* compt = model_->createCompartment();
-		//string comptName = compts[ i ].eref().name();
 		std::string comptName = comptEl.name();
-		cout << "Compartment name: " << comptName << endl;
+		//cout << "Compartment name: " << comptName << endl;
 		cid << comptEl.id().id() << "_"<< comptEl.id().index();
-		//cid << comptID.id() << "_"<< comptID.index();
 		comptName = nameString( comptName ); 
 		comptName =  changeName( comptName,cid.str() );
 		string newcomptName = idBeginWith( comptName ); 
 		compt->setId( newcomptName );		
 		double size;
-               	get< double >( comptEl, sizeFinfo, size );
-				//get< double >( compts[ i ].eref(), sizeFinfo, size );
+        get< double >( comptEl, sizeFinfo, size );
 		unsigned int numD;
 		get< unsigned int >( comptEl, dimensionFinfo, numD );
-		//get< unsigned int >( compts[ i ].eref(), dimensionFinfo, numD );
 		compt->setSpatialDimensions( numD );
 		if ( numD == 3 )		
 			compt->setSize( size*1e3 );
@@ -206,7 +164,6 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 		outcompt.clear();
 		if ( flag ){
 			targets( comptEl,"outside",outcompt );
-			//targets( compts[ i ].eref(),"outside",outcompt );
 			if ( outcompt.size() > 1 )
 			cerr << "Warning: SbmlWriter: Too many outer compartments for " << newcomptName << ". Ignoring all but one.\n";
 			if ( outcompt.size() >= 1 ) {
@@ -218,7 +175,7 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 				string newoutName = idBeginWith( outName );
 				compt->setOutside( newoutName );
 			}
-		}
+		} 
 		// Create the Species objects inside the Model object. 
 		static const Cinfo* moleculeCinfo = initMoleculeCinfo();	
 		static const Finfo* nInitFinfo = moleculeCinfo->findFinfo( "nInit" );	
@@ -227,9 +184,8 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 		vector< Id > molecs;
 		vector< Id >::iterator mitr;
 		string comptPath = comptEl.id().path();
-		//string comptPath = comptID.path();
 		wildcardFind( comptPath + "/#[TYPE=Molecule]", molecs );
-		//cout<<"//iterating through the Molecules"<<endl;
+		//iterating through the Molecules
 		for ( mitr = molecs.begin(); mitr != molecs.end(); mitr++ ) 
 		{		
 			moleEl = ( *mitr )();	
@@ -300,20 +256,20 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 			wildcardFind( molecPath + "/#[TYPE=Enzyme]", enzms );
 			printEnzymes( enzms );
 			
-		
-		} //end molecule
+		//delete sp;
+		}  //end molecule
 		static const Cinfo* reactionCinfo = initReactionCinfo();
 		static const Finfo* kbFinfo = reactionCinfo->findFinfo( "kb" );	
 		static const Finfo* kfFinfo = reactionCinfo->findFinfo( "kf" );	
 		Eref rectnEl;
-		vector< Id > reaction;
+		vector< Id > reaction_vec;
 		vector< Id >::iterator ritr;
 		vector< Eref > rct;
 		vector< Eref > pdt;				
-		wildcardFind(comptPath + "/#[TYPE=Reaction]", reaction);
+		wildcardFind(comptPath + "/#[TYPE=Reaction]", reaction_vec);
 
 		//iterating through the Reactions
-		for ( ritr = reaction.begin(); ritr != reaction.end(); ritr++ )
+		for ( ritr = reaction_vec.begin(); ritr != reaction_vec.end(); ritr++ )
 		{
 			rectnEl = ( *ritr )();	
 			ostringstream rtnId;	
@@ -451,16 +407,16 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 				para->setUnits( unit );
 				para->setValue( pvalue );
 			}
+			//delete reaction;
 		} //end reaction
 	} //end compartment
- 	
+ 
 	//return sbmlDoc;
-
 }
 /*
 *   Finds Parent 
 */
-string SbmlWriter::getParentFunc(Eref p)
+ string SbmlWriter::getParentFunc(Eref p)
 {	
 	string parentName;
 	ostringstream parentId;
@@ -481,6 +437,7 @@ void SbmlWriter::printParameters( KineticLaw* kl,string k,double kvalue,string u
 	para->setId( k );
 	para->setValue( kvalue );
 	para->setUnits( unit );
+	//delete para;
 }
 /*
 *  get Enzyme  for annotation
@@ -1009,7 +966,7 @@ bool SbmlWriter::isType( Eref object, const string& type )
 */
 bool SbmlWriter::validateModel( SBMLDocument* sbmlDoc )
 {
-	  if ( !sbmlDoc )
+	if ( !sbmlDoc )
 	  {
 	    cerr << "validateModel: given a null SBML Document" << endl;
 	    return false;
@@ -1079,8 +1036,7 @@ bool SbmlWriter::validateModel( SBMLDocument* sbmlDoc )
 			      validationMessages = oss.str(); 
 		    }
 	  }
-
-	  if ( noProblems )
+	 if ( noProblems )
 	    return true;
 	  else
 	  {
@@ -1111,8 +1067,7 @@ bool SbmlWriter::validateModel( SBMLDocument* sbmlDoc )
 			   << " in model '" << sbmlDoc->getModel()->getId() << "'." << endl;
 		    }
 		    cout << endl << validationMessages;
-
-		    return ( numConsistencyErrors == 0 && numValidationErrors == 0 );
+			return ( numConsistencyErrors == 0 && numValidationErrors == 0 );
 	  }
 }
 #endif // USE_SBML

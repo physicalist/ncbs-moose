@@ -1,5 +1,6 @@
 #ifndef _pymoose_HHGate2D_cpp
 #define _pymoose_HHGate2D_cpp
+#include "Interpol2D.h"
 #include "HHGate2D.h"
 using namespace pymoose;
 const std::string HHGate2D::className_ = "HHGate2D";
