@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Sep 22 20:25:14 2011 (+0530)
+// Last-Updated: Wed Sep 28 17:19:38 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 4276
+//     Update #: 4283
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -66,7 +66,7 @@ extern const map<string, string>& getArgMap();
 extern Shell& getShell();
 extern void finalize();
 extern void setup_runtime_env(bool verbose);
-extern string getFieldType(ObjId oid, string fieldName, string finfoType="");
+extern pair<string, string> getFieldType(ObjId oid, string fieldName, string finfoType="");
 extern vector<string> getFieldNames(ObjId oid, string fieldType);
 
 extern void nonMpiTests(Shell *);
@@ -657,7 +657,7 @@ extern "C" {
         if (finfoType != NULL){
             finfoTypeStr = finfoType;
         }
-        string typeStr = getFieldType(self->oid_, string(fieldName), finfoTypeStr);
+        string typeStr = getFieldType(self->oid_, string(fieldName), finfoTypeStr).first;
         if (typeStr.length() <= 0){
             PyErr_SetString(PyExc_ValueError, "Empty string for field type. Field name may be incorrect.");
             return NULL;
@@ -722,11 +722,11 @@ extern "C" {
         if (!ftype){
             if ( type.second != "fieldElementFinfo" ){
                 string msg = "Type ";
-                msg += type + " is not handled yet.";
+                msg += type.first + " is not handled yet.";
                 PyErr_SetString(PyExc_NotImplementedError, msg.c_str());
                 return NULL;
             } else {
-                // TODO - finish it
+                // TODO - finish it once fieldElement design is stabilized.
                 // Id fieldElementId = Id(self->oid_.id.path() + "/" +  
             }
         }
@@ -840,7 +840,7 @@ extern "C" {
         if (!PyArg_ParseTuple(args, "sO:_pymoose_ObjId_setField", &field,  &value)){
             return NULL;
         }
-        char ftype = shortType(getFieldType(self->oid_, string(field)));
+        char ftype = shortType(getFieldType(self->oid_, string(field)).first);
         
         if (!ftype){
             PyErr_SetString(PyExc_AttributeError, "Field not valid.");
@@ -1102,7 +1102,7 @@ extern "C" {
         if (!fieldName){ // not a string, raises TypeError
             return NULL;
         }
-        string type = getFieldType(self->oid_, string(fieldName), "destFinfo");
+        string type = getFieldType(self->oid_, string(fieldName), "destFinfo").first;
         if (type.empty()){
             error << "No such function field available";
             PyErr_SetString(PyExc_ValueError, error.str().c_str());
