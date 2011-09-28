@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Sat Mar 26 22:41:37 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Sep 22 16:35:28 2011 (+0530)
+// Last-Updated: Wed Sep 28 17:13:28 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 217
+//     Update #: 220
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -302,7 +302,7 @@ pair<string, string> getFieldType(ObjId id, string fieldName, string finfoType)
     string classInfoPath("/classes/" + className);
     Id classId(classInfoPath);
     if (classId == Id()){
-        return fieldType;
+        return pair<string, string>(fieldType, finfoType);
     }
     size_t count = 1;
     size_t jj = 0;

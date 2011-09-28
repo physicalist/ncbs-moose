@@ -1,0 +1,7 @@
+
+* Fix Single Element constructor - 
+  an integer passed as a second parameter is used as dataIndex. This
+  is valid for dataIndex>0 only if we are referring to an already
+  existing ArrayElement with more than dataIndex Data Elements.
+
+* Fix SynChan/synapse access.
