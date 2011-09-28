@@ -27,7 +27,7 @@
 #include "KineticHub.h"
 #include "Kintegrator.h"
 #include "MathFunc.h"
-//#include "Mg_block.h"
+#include "Mg_block.h"
 #include "Neutral.h"
 
 #include "RandGenerator.h"
@@ -45,6 +45,13 @@
 #include "CaConc.h"
 
 #include "Tick.h"
+
+#include "STPSynChan.h"
+#include "STPNMDAChan.h"
+#include "NMDAChan.h"
+#include "Efield.h"
+#include "Interpol2D.h"
+
 #ifdef USE_GL
 #include "GLcell.h"
 #include "GLview.h"
