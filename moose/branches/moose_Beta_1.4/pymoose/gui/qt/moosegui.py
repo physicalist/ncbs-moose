@@ -125,9 +125,11 @@ class MainWindow(QtGui.QMainWindow):
         # print self.demosDir
         # if not self.demosDir:
         #     self.demosDir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Please select pymoose demos directory'))
-        self.resize(800, 600)
+        #self.resize(800, 600)
         self.setDockOptions(self.AllowNestedDocks | self.AllowTabbedDocks | self.ForceTabbedDocks | self.AnimatedDocks)        
         self.setDockNestingEnabled(True)
+
+        self.setContextMenuPolicy(Qt.NoContextMenu)
         
         #add_chait
         self.mainCentralWidget = QtGui.QWidget(self)
@@ -139,6 +141,7 @@ class MainWindow(QtGui.QMainWindow):
         self.horizontalLayout.addWidget(self.centralVizPanel)
         self.centralVizPanel.setViewMode(self.centralVizPanel.TabbedView)
         self.centralVizPanel.setBackground(QtGui.QBrush(QtGui.QImage('QMdiBackground.png')))
+        #self.centralVizPanel.setStyleSheet("QWidget{background-color: white;}")
 
         self.centralPanel = QtGui.QMdiArea(self)
         self.horizontalLayout.addWidget(self.centralPanel)
@@ -1042,14 +1045,15 @@ class MainWindow(QtGui.QMainWindow):
     	#print currentVizSetting
         
         viz.setColorMap(*currentVizSetting[:5])							#assign regular colormap
-        
+        # print viz.modelview_matrix_
+        # viz.defaultTranslate()
         QtCore.QObject.connect(viz,QtCore.SIGNAL("compartmentSelected(QString)"),self.pickCompartment)
-        #viz.translate([0.0,0.0,-6.0])
         self.vizs.append(viz)
         
         self.newDia.hide() 	#pressed OK button, so close the dialog
         self.connect(vizWindow, QtCore.SIGNAL('subWindowClosed()'), self.decrementSubWindowCount)
         self.centralVizPanel.setActiveSubWindow(vizWindow)
+        
         vizWindow.show()
         #print vizWindow.width()
         #print vizWindow.height()
@@ -1177,6 +1181,8 @@ class MainWindow(QtGui.QMainWindow):
                 viz.drawNewCell(cellName=moose.Cell(ch[0]).path,style = 2)
                 viz.setColorMap(cMap=os.path.join(str(self.settings.value(config.KEY_GL_COLORMAP).toString()),'jet'))
                 QtCore.QObject.connect(viz,QtCore.SIGNAL("compartmentSelected(QString)"),self.pickCompartment)
+                #print viz.modelview_matrix_
+                viz.defaultTranslate()
                 self.vizs.append(viz)
                 vizWindow.show()
                 vizWindow.showMaximized()

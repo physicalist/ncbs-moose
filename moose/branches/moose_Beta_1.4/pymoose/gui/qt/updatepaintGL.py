@@ -39,8 +39,17 @@ class updatepaintGL(PyGLWidget):
 
     def setSelectionMode(self,mode):	
 	self.selectionMode = mode	
-	
+
     def render(self):
+        if (self.defaultPosVal==0):
+            self.translate([0.5,-0.5,-30.0])
+            self.rotate([1.0, 0.0, 0.0],-7.0)
+            self.rotate([0.0, 1.0, 0.0],-7.0)
+            self.xpan = 0.5
+            self.ypan = -0.5
+            self.zpan = -30.0
+            self.defaultPosVal = 1
+
 	if self.lights:
 		glMatrixMode(GL_MODELVIEW)
 		glEnable(GL_LIGHTING)
