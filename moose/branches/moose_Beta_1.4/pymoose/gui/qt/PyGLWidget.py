@@ -93,7 +93,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.near_   = 1.0		#0.1
         self.far_    = 500.0
         self.fovy_   = 4.0
-        self.radius_ = 10.0
+        self.radius_ = 7.0
         self.last_point_2D_ = QtCore.QPoint()
         self.last_point_ok_ = False
         self.last_point_3D_ = [1.0, 0.0, 0.0]
@@ -110,7 +110,8 @@ class PyGLWidget(QtOpenGL.QGLWidget):
 	self.sceneObjects = []		#scene objects, abstraction depends on the selection mode.
 	self.sceneObjectNames = []	#names of the scene objects being drawn
 	self.selectionMode = 0 		#select compartments by default =1 selects compartments.
-	
+
+	self.defaultPosVal = 0
 	#viz parameters
 	self.viz=0
 	self.vizObjectNames=[]
@@ -135,10 +136,10 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.set_projection( self.near_, self.far_, self.fovy_ );
         self.updateGL()
 
+
     def paintGL(self):
          
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
         glMatrixMode(GL_MODELVIEW)
         glLoadMatrixd(self.modelview_matrix_)
 
@@ -267,7 +268,15 @@ class PyGLWidget(QtOpenGL.QGLWidget):
             self.zpan = self.zpan + d
             self.updateGL()
             _event.accept()
-        print self.zpan
+        #print self.zpan
+
+    def defaultTranslate(self):
+        
+        self.reset_view()
+        self.translate([0.0, 0.0,-50.0])
+        self.rotate([1.0, 0.0, 0.0],-2.0)
+        self.updateGL()
+
 
     def mousePressEvent(self, _event):
         self.last_point_2D_ = _event.pos()
@@ -542,26 +551,26 @@ class PyGLWidget(QtOpenGL.QGLWidget):
 	glBegin(GL_LINES)
 	glColor(1, 0, 0)	#Xaxis, Red color
 	glVertex3f(0, 0, 0)
-	glVertex3f(0.15, 0, 0)
+	glVertex3f(0.10, 0, 0)
 	glColor(0, 1, 0)	#Yaxis, Green color
 	glVertex3f(0, 0, 0)
-	glVertex3f(0, 0.15, 0)
+	glVertex3f(0, 0.10, 0)
 	glColor(0, 0, 1)	#Zaxis, Blue color
 	glVertex3f(0, 0, 0)
-	glVertex3f(0, 0, 0.15)
+	glVertex3f(0, 0, 0.10)
 	glEnd()
 
         glLineWidth(1)	
     
         glutInit()
         glColor(1,0,0)
-        glRasterPos3f(0.16, 0.0, 0.0)
+        glRasterPos3f(0.11, 0.0, 0.0)
         glutBitmapCharacter(GLUT_BITMAP_8_BY_13,88)#ascii x
         glColor(0,1,0)
-        glRasterPos3f(0.0, 0.16, 0.0)
+        glRasterPos3f(0.0, 0.11, 0.0)
         glutBitmapCharacter(GLUT_BITMAP_8_BY_13,89)#ascii y
         glColor(0,0,1)
-        glRasterPos3f(0.0, 0.0, 0.16)
+        glRasterPos3f(0.0, 0.0, 0.11)
         glutBitmapCharacter(GLUT_BITMAP_8_BY_13,90)#ascii z
 
         glEnable(GL_LIGHTING)
