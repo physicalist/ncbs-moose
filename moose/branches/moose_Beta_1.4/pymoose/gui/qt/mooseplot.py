@@ -55,7 +55,7 @@ from PyQt4.Qwt5.anynumpy import *
 import config
 import moose
 import os
-
+import sys
 class MoosePlot(Qwt.QwtPlot):
     """Handler for plots in MOOSE gui"""
     plot_index = 0
@@ -226,8 +226,10 @@ class MoosePlot(Qwt.QwtPlot):
             tabLen = len(table)
             if tabLen == 0:
                 continue
-            ydata = array(table.table)           
+            
+            ydata = array(table)
             xdata = linspace(0, currentTime, tabLen)
+            
             #~ harsha:for Genesis first element had some invalid number which when ploted had a different result so eliminating
             #~ curve.setData(xdata, ydata)            
             curve.setData(xdata[2:tabLen:1],ydata[2:tabLen:1])
@@ -248,7 +250,7 @@ class MoosePlot(Qwt.QwtPlot):
             self.tableCurveMap[table] = curve
             curve.attach(self)
         if len(table) > 0:
-            yy = array(table.table)
+            yy = array(table)
             xx = linspace(0.0, self.xmin, len(yy))
             curve.setData(xx, yy)
 
