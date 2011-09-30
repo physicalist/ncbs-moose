@@ -126,6 +126,7 @@ class MainWindow(QtGui.QMainWindow):
         # if not self.demosDir:
         #     self.demosDir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Please select pymoose demos directory'))
         #self.resize(800, 600)
+        self.setWindowState(Qt.WindowMaximized)
         self.setDockOptions(self.AllowNestedDocks | self.AllowTabbedDocks | self.ForceTabbedDocks | self.AnimatedDocks)        
         self.setDockNestingEnabled(True)
 
@@ -1491,6 +1492,6 @@ if __name__ == '__main__':
 	firstTimeWizard.connect(firstTimeWizard, QtCore.SIGNAL('accepted()'), mainWin.updatePaths)
         firstTimeWizard.show()
     mainWin.show()
-    mainWin.setWindowState(Qt.WindowMaximized)
+    #mainWin.setWindowState(Qt.WindowMaximized)
     app.exec_()
 	
