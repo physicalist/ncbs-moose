@@ -1,0 +1,340 @@
+/**********************************************************************
+** This program is part of 'MOOSE', the
+** Messaging Object Oriented Simulation Environment.
+**           Copyright (C) 2003-2010 Upinder S. Bhalla. and NCBS
+** It is made available under the terms of the
+** GNU Lesser General Public License version 2.1
+** See the file COPYING.LIB for the full notice.
+**********************************************************************/
+
+#ifndef _STOICH_H
+#define _STOICH_H
+
+class Stoich
+{
+	public: 
+		Stoich();
+		~Stoich();
+
+		//////////////////////////////////////////////////////////////////
+		// Field assignment stuff
+		//////////////////////////////////////////////////////////////////
+
+		void setOneWay( bool v );
+		bool getOneWay() const;
+		unsigned int getNumVarPools() const;
+
+		void setPath( const Eref& e, const Qinfo* q, string v );
+		string getPath( const Eref& e, const Qinfo* q ) const;
+
+		unsigned int getNumMeshEntries() const;
+
+		Port* getPort( unsigned int i );
+		unsigned int getNumPorts() const;
+		void setNumPorts( unsigned int num );
+
+		unsigned int numCompartments() const;
+		double getCompartmentVolume( short i ) const;
+		void setCompartmentVolume( short comptIndex, double v );
+
+		//////////////////////////////////////////////////////////////////
+		// Dest funcs
+		//////////////////////////////////////////////////////////////////
+
+		/**
+		 * Handles incoming messages representing influx of molecules
+ 		 */
+		void influx( DataId port, vector< double > mol );
+
+		/**
+		 * Scans through incoming and self molecule list, matching up Ids
+		 * to use in the port. Sets up the data structures to do so.
+		 * Sends out a message indicated the selected subset.
+		 */
+		void handleAvailableMolsAtPort( DataId port, vector< SpeciesId > mols );
+
+		/**
+		 * Scans through incoming and self molecule list, checking that
+		 * all match. Sets up the data structures for the port.
+		 */
+		void handleMatchedMolsAtPort( DataId port, vector< SpeciesId > mols );
+
+		//////////////////////////////////////////////////////////////////
+		// Model traversal and building functions
+		//////////////////////////////////////////////////////////////////
+		void allocateObjMap( const vector< Id >& elist );
+		void allocateModel( const vector< Id >& elist );
+		void zombifyModel( const Eref& e, const vector< Id >& elist );
+		void zombifyChemMesh( Id compt );
+
+		unsigned int convertIdToReacIndex( Id id ) const;
+		unsigned int convertIdToPoolIndex( Id id ) const;
+		unsigned int convertIdToFuncIndex( Id id ) const;
+		unsigned int convertIdToComptIndex( Id id ) const;
+
+		const double* S( unsigned int meshIndex ) const;
+		double* varS( unsigned int meshIndex );
+		const double* Sinit( unsigned int meshIndex ) const;
+		double* getY( unsigned int meshIndex );
+
+		//////////////////////////////////////////////////////////////////
+		// Compute functions
+		//////////////////////////////////////////////////////////////////
+
+		/**
+		 * Reinitializes all variables and rates. This function may also do 
+		 * reallocation, so it must be called in a thread-safe manner
+		 * by whatever object directly handles the process calls.
+		 */
+		void innerReinit();
+
+		/**
+		 * Update the v_ vector for individual reaction velocities. Uses
+		 * hooks into the S_ vector for its arguments.
+		 */
+		void updateV( unsigned int meshIndex, vector< double >& v );
+
+		/**
+		 * Update all the function-computed molecule terms. These are not
+		 * integrated, but their values may be used by molecules that will
+		 * be integrated using the solver.
+		 * Uses hooks into the S_ vector for arguments other than t.
+		 */
+		void updateFuncs( double t, unsigned int meshIndex );
+
+		void updateRates( vector< double>* yprime, double dt, 
+			unsigned int meshIndex, vector< double >& v );
+
+		/**
+		 * Update diffusion terms for all molecules on specified meshIndex.
+		 * The stencil says how to weight diffusive flux from various offset
+		 * indices with respect to the current meshIndex.
+		 * The first entry of the stencil is the index offset.
+		 * The second entry of the stencil is the scale factor, including
+		 * coeffs of that term and 1/dx^2.
+		 * For example, in the Method Of Lines with second order stencil
+		 * in one dimension we have:
+		 * du/dt = (u_-1 - 2u + u_+1) / dx^2
+		 * The scale factor for u_-1 is then 1/dx^2. Index offset is -1.
+		 * The scale factor for u is then -2/dx^2. Index offset is 0.
+		 * The scale factor for u_+1 is then 1/dx^2. Index offset is +1.
+		 */
+		void updateDiffusion( unsigned int meshIndex, 
+			const vector< const Stencil* >& stencil);
+
+		/**
+		 * Clear out the flux matrix, that is the matrix of all diffusive
+		 * and port-related influx and efflux from each mesh location for
+		 * each molecule. This should be called after the timestep for
+		 * numerical integration but before any of the flux updates
+		 * (such as updateDiffusion).
+		 */
+		void clearFlux();
+		void clearFlux( unsigned int meshIndex );
+
+#ifdef USE_GSL
+		static int gslFunc( double t, const double* y, double* yprime, void* s );
+		int innerGslFunc( double t, const double* y, double* yprime,
+			unsigned int meshIndex );
+#endif // USE_GSL
+
+
+		//////////////////////////////////////////////////////////////////
+		static const Cinfo* initCinfo();
+	protected:
+		bool useOneWay_;
+		string path_;
+
+		/**
+		 * 
+		 * S_ is the array of molecules. Stored as n, number of molecules
+		 * per mesh entry. 
+		 * The array looks like n = S_[meshIndex][poolIndex]
+		 * The meshIndex specifies which spatial mesh entry to use.
+		 * The poolIndex specifies which molecular species pool to use.
+		 * We choose the poolIndex as the right-hand index because we need
+		 * to be able to pass the entire block of pools around for 
+		 * integration.
+		 * The first numVarPools_ in the poolIndex are state variables and
+		 * are integrated using the ODE solver. 
+		 * The last numEfflux_ molecules within numVarPools are those that
+		 * go out to another solver. They are also integrated by the ODE
+		 * solver, so that at the end of dt each has exactly as many
+		 * molecules as diffused away.
+		 * The next numBufPools_ are fixed but can be changed by the script.
+		 * The next numFuncPools_ are computed using arbitrary functions of
+		 * any of the molecule levels, and the time.
+		 * The functions evaluate _before_ the ODE. 
+		 * The functions should not cascade as there is no guarantee of
+		 * execution order.
+		 */
+		vector< vector< double > > S_;
+
+		/**
+		 * Sinit_ specifies initial conditions at t = 0. Whenever the reac
+		 * system is rebuilt or reinited, all S_ values become set to Sinit.
+		 * Also used for buffered molecules as the fixed values of these
+		 * molecules.
+		 * The array looks like Sinit_[meshIndex][poolIndex]
+		 */
+		vector< vector< double > > Sinit_;
+
+		/**
+		 * y_ is working memory. It maps onto S_, but stores only the 
+		 * variable molecules (up to numVarPools).
+		 * Has to be distinct from S because GSL uses this and swaps it
+		 * back and forth with a distinct buffer.
+		 * The array looks like y_[meshIndex][poolIndex]
+		 */
+		vector< vector< double > > y_;
+
+		/**
+		 * Summed external flux terms for each meshpoint and each pool. 
+		 * These are in units of d#/dt and add onto whatever form of 
+		 * numerical integration (or stochastic calculation) is in play.
+		 * Note that these terms are constant for the entire duration of
+		 * one clock tick, so it represents a first order Euler integration.
+		 * The clock tick has to be set with this recognized.
+		 */
+		vector< vector< double > > flux_;
+
+		/**
+		 * Vector of diffusion constants, one per VarPool.
+		 */
+		vector< double > diffConst_;
+
+		/**
+		 * Vector of indices for non-zero diffusion constants. Later.
+		vector< unsigned int > indexOfDiffusingPools_;
+		 */
+
+		/**
+		 * Lookup from each molecule to its parent compartment index
+		 * compartment_.size() == number of distinct pools == max poolIndex
+		 */
+		vector< short > compartment_;
+
+		/**
+		 * Lookup from each molecule to its Species identifer
+		 * This will eventually be tied into an ontology reference.
+		 */
+		vector< SpeciesId > species_;
+
+		/**
+		 * Size of each compartment. Only need as many of these as there
+		 * are distinct compartments, usually 1 or 2.
+		 */
+		vector< double > compartmentSize_;
+
+		/**
+		 * Number of meshEntries on this solver. Equal to first index of S_.
+		 */
+		unsigned int numMeshEntries_;
+
+		/**
+		* v_ holds the rates of each reaction. This is working memory and
+		* is reused for the calculations for each meshEntry. But we need
+		* a separate one for each thread, so let's make it temporary.
+		vector< double > v_;
+		*/
+
+		/// The RateTerms handle the update operations for reaction rate v_
+		vector< RateTerm* > rates_;
+
+		/// The FuncTerms handle mathematical ops on mol levels.
+		vector< FuncTerm* > funcs_;
+
+		/// N_ is the stoichiometry matrix.
+		KinSparseMatrix N_;
+
+
+		/**
+		 * totPortSize_: The sum of all port entries
+		 */
+		unsigned int totPortSize_;
+
+		/**
+		 * Maps Ids to objects in the S_, RateTerm, and FuncTerm vectors.
+		 * There will be holes in this map, but look up is very fast.
+		 * The calling Id must know what it wants to find: all it
+		 * gets back is an integer.
+		 * The alternative is to have multiple maps, but that is slower.
+		 * Assume no arrays. Each Pool/reac etc must be a unique
+		 * Element. Later we'll deal with diffusion.
+		 */
+		vector< unsigned int > objMap_;
+		/**
+		 * Minor efficiency: We will usually have a set of objects that are
+		 * nearly contiguous in the map. May as well start with the first of
+		 * them.
+		 */
+		unsigned int objMapStart_;
+		
+		/**
+		 * Number of variable molecules that the solver deals with.
+		 *
+		 */
+		unsigned int numVarPools_;
+		unsigned int numVarPoolsBytes_;
+		/**
+		 * Number of buffered molecules
+		 */
+		unsigned int numBufPools_;
+		/**
+		 * Number of molecules whose values are computed by functions
+		 */
+		unsigned int numFuncPools_;
+
+		/**
+		 * Number of reactions in the solver model. This includes 
+		 * conversion reactions A + B <---> C
+		 * enzyme reactions E + S <---> E.S ---> E + P
+		 * and MM enzyme reactions rate = E.S.kcat / ( Km + S )
+		 * The enzyme reactions count as two reaction steps.
+		 */
+		unsigned int numReac_;
+
+		/**
+		 * The Ports are interfaces to other solvers by way of a spatial
+		 * junction between the solver domains. They manage 
+		 * the info about which molecules exchange, 
+		 * They are also the connection point for the messages that 
+		 * handle the port data transfer.
+		 * Each Port connects to exactly one other solver.
+		 */
+		vector< Port > ports_;
+};
+
+class StoichThread
+{
+	public:
+		StoichThread()
+			: s_( 0 ), p_( 0 ), meshIndex_( 0 )
+		{;}
+
+		void set( Stoich* s, const ProcInfo* p, unsigned int m )
+		{
+			s_ = s;
+			p_ = p;
+			meshIndex_ = m;
+		}
+
+		Stoich* stoich() const {
+			return s_;
+		}
+
+		const ProcInfo* procInfo() const {
+			return p_;
+		}
+
+		unsigned int meshIndex() const {
+			return meshIndex_;
+		}
+	
+	private:
+		Stoich* s_;
+		const ProcInfo* p_;
+		unsigned int meshIndex_;
+};
+
+#endif	// _STOICH_H
