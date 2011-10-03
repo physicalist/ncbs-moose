@@ -80,7 +80,6 @@ void SbmlWriter::write( string filepath,Id location )
 	SBMLok  = validateModel( &sbmlDoc );
 	if ( SBMLok ) 
 		writeModel( &sbmlDoc, filepath );
-	//	delete sbmlDoc;
 	if ( !SBMLok ) {
 		cerr << "Errors encountered " << endl;
 		return ;
@@ -88,8 +87,7 @@ void SbmlWriter::write( string filepath,Id location )
 #else
 	cout << "This version does not have SBML support." << endl;
 #endif
-	cout<<"exiting sbmlWriter::write"<<endl;
-	//sbmlDoc.~SBMLDocument();
+	cout<<"exiting from sbmlWriter::write"<<endl;
 }
 
 #ifdef USE_SBML
@@ -113,7 +111,7 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 	unit->setKind( UNIT_KIND_MOLE );
 	unit->setExponent( 1 );
 	unit->setScale( -6 );
-
+	
 	// Create a string for the identifier of the compartment.  
 	static const Cinfo* kincomptCinfo = initKinComptCinfo();
 	static const Finfo* sizeFinfo = kincomptCinfo->findFinfo( "size" );
@@ -256,7 +254,6 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 			wildcardFind( molecPath + "/#[TYPE=Enzyme]", enzms );
 			printEnzymes( enzms );
 			
-		//delete sp;
 		}  //end molecule
 		static const Cinfo* reactionCinfo = initReactionCinfo();
 		static const Finfo* kbFinfo = reactionCinfo->findFinfo( "kb" );	
@@ -392,8 +389,8 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 			// Create local Parameter objects inside the KineticLaw object. 
 			para = kl->createParameter();
 			para->setId( kfparm.str() );
-			string unit=parmUnit( rct_order-1 );
-			para->setUnits( unit );
+			string punit=parmUnit( rct_order-1 );
+			para->setUnits( punit );
 			double rvalue,pvalue;
 			const double m = Molecule::NA * 1e-6;
 			rvalue = kf *(pow(m,rct_order-1));
@@ -403,11 +400,10 @@ void SbmlWriter::createModel( string filename, SBMLDocument& sbmlDoc )
 				pvalue = kb * (pow(m,pdt_order-1));
 				para = kl->createParameter();
 				para->setId( kbparm.str() );
-				string unit=parmUnit( pdt_order-1 );
-				para->setUnits( unit );
+				string punit=parmUnit( pdt_order-1 );
+				para->setUnits( punit );
 				para->setValue( pvalue );
 			}
-			//delete reaction;
 		} //end reaction
 	} //end compartment
  
@@ -437,7 +433,6 @@ void SbmlWriter::printParameters( KineticLaw* kl,string k,double kvalue,string u
 	para->setId( k );
 	para->setValue( kvalue );
 	para->setUnits( unit );
-	//delete para;
 }
 /*
 *  get Enzyme  for annotation
@@ -936,6 +931,7 @@ bool SbmlWriter::writeModel( const SBMLDocument* sbmlDoc, const string& filename
 	  	cerr << "Failed to write \"" << filename << "\"" << endl;
 	  	return false;
   	  }
+	  
 }
 /*
 *  finds out the number of messages added to an object
@@ -1069,6 +1065,7 @@ bool SbmlWriter::validateModel( SBMLDocument* sbmlDoc )
 		    cout << endl << validationMessages;
 			return ( numConsistencyErrors == 0 && numValidationErrors == 0 );
 	  }
+	 
 }
 #endif // USE_SBML
 
