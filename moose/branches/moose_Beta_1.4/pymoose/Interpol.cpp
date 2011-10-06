@@ -158,7 +158,8 @@ TableIterator* Interpol::__iter__()
 }
 int Interpol::__len__()
 {
-    return __get_xdivs()+1;    
+  int len = __get_xdivs();
+  return len == 0? 0: len+1;
 }
 
 int Interpol::__get_calcMode() const
@@ -215,7 +216,7 @@ void Interpol::pop()
 {
     set(id_(), "pop");
 }
-vector<double> Interpol::__get_table()
+const vector<double>& Interpol::__get_table()
 {    
     return PyMooseBase::getContext()->getTableVector(id_);
 }
