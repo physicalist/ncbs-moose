@@ -28,10 +28,10 @@ SetCompressor /SOLID lzma
 !include "Include\ConfirmAdmin.nsh"
 
 ; Name of program
-Name "Moose Beta 1.2.0"
+Name "Moose Beta 1.4.0"
 
 ; The file to write
-OutFile "moose-beta-1.2.0.exe"
+OutFile "moose-beta-1.4.0.exe"
 
 ; The default installation directory
 InstallDir $PROGRAMFILES\MOOSE
@@ -89,7 +89,7 @@ Function Splash
 	Push $0
 	
 	SetOutPath $TEMP
-	File /oname=spltmp.bmp "Graphics\beta-1.2.0.bmp"
+	File /oname=spltmp.bmp "Graphics\beta-1.4.0.bmp"
 	advsplash::show 1000 600 400 -1 $TEMP\spltmp
 	Pop $0	; $0 has '1' if the user closed the splash screen early,
 			; '0' if everything closed normally, and '-1' if some error occurred.
@@ -158,10 +158,11 @@ Section
 	StrCpy $1 \
 		"This installer will work if you have the following software installed: $\n\
 			$\n\
-			    - Python 2.5 (preferably not any other) $\n\
+			    - Python 2.6 (preferably not any other) $\n\
 			    - Numpy 1.0 or higher $\n\
 			    - PyQt 4 or higher $\n\
 			    - PyQwt5 $\n\
+				- PyOpenGL 3.0 $\n\
 			$\n\
 		You can install the above manually, or download the MOOSE installer which will $\n\
 		install these for you. $\n\
@@ -182,10 +183,11 @@ Section "Prerequisites"
 	StrCpy $0 \
 		"MOOSE needs the following software to be installed: $\n\
 			$\n\
-			    - Python 2.5 $\n\
+			    - Python 2.6 $\n\
 			    - Numpy 1.2.0 $\n\
 			    - PyQt 4.4 $\n\
 			    - PyQwt 5.1 $\n\
+				- PyOpenGL 3.0.1 $\n\
 			$\n\
 		The full installation will take around 220 MB of space on your disk. $\n\
 		Do you wish to install these before installing MOOSE?"
@@ -198,14 +200,14 @@ Section "Prerequisites"
 	
 	; Extract, execute and delete immediately (to reduce working space requirement).
 	; PYTHON
-	!define installer "python-2.5.2.msi"
+	!define installer "python-2.6.6.msi"
 	File "Extra\${installer}"
 	ExecWait '"msiexec" /i "$1\${installer}"'
 	Delete "$1\${installer}"
 	!undef installer
 	
 	; NUMPY
-	!define installer "numpy-1.2.0-win32-superpack-python2.5.exe"
+	!define installer "numpy-1.3.0-win32-superpack-python2.6.exe"
 	File "Extra\${installer}"
 	ExecWait "$1\${installer}"
 	Delete "$1\${installer}"
@@ -213,14 +215,21 @@ Section "Prerequisites"
 	!undef installer
 	
 	; PYQT
-	!define installer "PyQt-Py2.5-gpl-4.4.3-1.exe"
+	!define installer "PyQt-Py2.6-gpl-4.5.4-1.exe"
 	File "Extra\${installer}"
 	ExecWait "$1\${installer}"
 	Delete "$1\${installer}"
 	!undef installer
 	
 	; PYQWT
-	!define installer "PyQwt5.1.0-Python2.5-PyQt4.4.3-NumPy1.2.0-1.exe"
+	!define installer "PyQwt5.2.0-Python2.6-PyQt4.5.4-NumPy1.3.0-1.exe"
+	File "Extra\${installer}"
+	ExecWait "$1\${installer}"
+	Delete "$1\${installer}"
+	!undef installer
+	
+	; PyOpenGL
+	!define installer "PyOpenGL-3.0.1.win32.exe"
 	File "Extra\${installer}"
 	ExecWait "$1\${installer}"
 	Delete "$1\${installer}"
@@ -325,6 +334,12 @@ Section "Uninstall"
 	*/
 	
 	StrCpy $1 \
+		"PyOpenGL was installed along with MOOSE during the MOOSE installation."
+	StrCpy $2 ""
+	${un.UninstallIfExists} "PyOpenGL-3.0.1" "numpy-py2.5" $2 "1" $1
+	Pop $1
+	
+	StrCpy $1 \
 		"PyQwt was installed along with MOOSE during the MOOSE installation."
 	ReadRegStr $2 \
 		HKLM \
@@ -345,8 +360,8 @@ Section "Uninstall"
 	RMDir /r "$2\PyQt4"
 	; This directory also gets left over. This is because the actual installation
 	; directory for PyQt is:
-	;	C:\Python2.5\Lib\site-packages\PyQt4
-	; but we pass it C:\Python2.5, as read from the registry. Here we delete this
+	;	C:\Python2.6\Lib\site-packages\PyQt4
+	; but we pass it C:\Python2.6, as read from the registry. Here we delete this
 	; dir, but another possiblity is to append the extra part to the inst-dir
 	; parameter passed to the uninstallation function above.
 	RMDir /r "$2\Lib\site-packages\PyQt4"
