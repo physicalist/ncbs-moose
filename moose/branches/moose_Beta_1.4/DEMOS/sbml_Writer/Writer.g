@@ -18,7 +18,7 @@ setclock 1 {SIMDT}
 setclock 2 {IODT}
 
 include acc88.g //genesis file is read into moose
-writeSBML { infile } { target }  //write xml file
+writeSBML { infile } { target }   //write xml file
 
 init_plots { SIMLENGTH } { IOCLOCK } { IODT }
 

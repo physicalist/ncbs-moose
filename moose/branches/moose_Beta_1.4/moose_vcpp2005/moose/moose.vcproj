@@ -63,8 +63,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseLibraryDependencyInputs="true"
-				AdditionalDependencies="gsl_d.lib cblas_d.lib Ws2_32.lib iconv.lib libxml2.lib bzip2.lib zlib.lib libsbmlD.lib"
-				ShowProgress="2"
+				AdditionalDependencies="gsl_d.lib cblas_d.lib Ws2_32.lib iconv.lib bzip2.lib zlib.lib libxml2.lib libsbmlD.lib"
+				ShowProgress="1"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\external\lib\GnuWin32\lib;..\..\external\lib\gsl\lib;..\..\external\lib;&quot;..\..\external\lib\iconv-1.9.2.win32&quot;;&quot;..\..\external\lib\libsbml-3.4.1\lib&quot;;&quot;..\..\external\lib\libxml2-2.7.6.win32\lib&quot;"
 				GenerateDebugInformation="true"
