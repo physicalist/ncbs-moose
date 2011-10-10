@@ -159,7 +159,7 @@ Section
 		"This installer will work if you have the following software installed: $\n\
 			$\n\
 			    - Python 2.6 (preferably not any other) $\n\
-			    - Numpy 1.0 or higher $\n\
+			    - Numpy 1.2 or higher $\n\
 			    - PyQt 4 or higher $\n\
 			    - PyQwt5 $\n\
 				- PyOpenGL 3.0 $\n\
@@ -336,7 +336,7 @@ Section "Uninstall"
 	StrCpy $1 \
 		"PyOpenGL was installed along with MOOSE during the MOOSE installation."
 	StrCpy $2 ""
-	${un.UninstallIfExists} "PyOpenGL-3.0.1" "numpy-py2.5" $2 "1" $1
+	${un.UninstallIfExists} "PyOpenGL-3.0.1" "PyOpenGL-py2.6" $2 "1" $1
 	Pop $1
 	
 	StrCpy $1 \
@@ -354,7 +354,7 @@ Section "Uninstall"
 		HKLM \
 		"SOFTWARE\PyQt4\Py2.5\InstallPath" \
 		""
-	${un.UninstallIfExists} "PyQt 4.4" "PyQt GPL v4.4.3 for Python v2.5" $2 "1" $1
+	${un.UninstallIfExists} "PyQt 4.4" "PyQt GPL v4.5.4 for Python v2.6" $2 "1" $1
 	; This directory was actually created by the PyQwt (not PyQt) installer and not
 	; cleaned up properly, so deleting it here:
 	RMDir /r "$2\PyQt4"
@@ -370,13 +370,13 @@ Section "Uninstall"
 	StrCpy $1 \
 		"Numpy was installed along with MOOSE during the MOOSE installation."
 	StrCpy $2 ""
-	${un.UninstallIfExists} "Numpy 1.2.0" "numpy-py2.5" $2 "1" $1
+	${un.UninstallIfExists} "Numpy 1.2.0" "numpy-py2.6" $2 "1" $1
 	Pop $1
 	
 	StrCpy $1 \
 		"Python was installed along with MOOSE during the MOOSE installation."
 	StrCpy $2 ""
-	${un.UninstallIfExists} "Python 2.5" "{6B976ADF-8AE8-434E-B282-A06C7F624D2F}" $2 "1" $1
+	${un.UninstallIfExists} "Python 2.6" "{6151cf20-0bd8-4023-a4a0-6a86dcfe58e5}" $2 "1" $1
 	Pop $1	
 !endif	; IncludeExtras
 	
