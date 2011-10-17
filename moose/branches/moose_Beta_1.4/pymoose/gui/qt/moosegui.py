@@ -92,8 +92,11 @@ from glwizard import MooseGLWizard
 from firsttime import FirstTimeWizard
 #from layout import Screen
 import layout
+from layout import Widgetvisibility
 from updatepaintGL import *
 from vizParasDialogue import *
+#from electrodeParasDialog import *
+#from mooseelectrodes import *
 
 
 def makeClassList(parent=None, mode=MooseGlobals.MODE_ADVANCED):
@@ -126,11 +129,17 @@ class MainWindow(QtGui.QMainWindow):
         # if not self.demosDir:
         #     self.demosDir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Please select pymoose demos directory'))
         #self.resize(800, 600)
-        self.setWindowState(Qt.WindowMaximized)
-        self.setDockOptions(self.AllowNestedDocks | self.AllowTabbedDocks | self.ForceTabbedDocks | self.AnimatedDocks)        
+        #self.setWindowState(Qt.WindowMaximized)
+        self.setDockOptions(  self.AnimatedDocks | self.AllowNestedDocks |self.AllowTabbedDocks  ) # self.ForceTabbedDocks | 
         self.setDockNestingEnabled(True)
-
+        self.setTabPosition(Qt.LeftDockWidgetArea,QtGui.QTabWidget.North)
+        
         self.setContextMenuPolicy(Qt.NoContextMenu)
+
+        self.statusBar = QtGui.QStatusBar(self)
+        self.statusBar.setObjectName('statusBar')
+        self.setStatusBar(self.statusBar)
+        
         
         #add_chait
         self.mainCentralWidget = QtGui.QWidget(self)
@@ -141,10 +150,15 @@ class MainWindow(QtGui.QMainWindow):
         self.centralVizPanel = QtGui.QMdiArea(self)
         self.horizontalLayout.addWidget(self.centralVizPanel)
         self.centralVizPanel.setViewMode(self.centralVizPanel.TabbedView)
+        
+#        self.centralVizPanel.setBackground(QtGui.QBrush(QtGui.QImage('background.png').scaled(self.centralVizPanel.size(),Qt.KeepAspectRatio)))
         self.centralVizPanel.setBackground(QtGui.QBrush(QtGui.QImage('QMdiBackground.png')))
-        #self.centralVizPanel.setStyleSheet("QWidget{background-color: white;}")
 
+        self.centralVizPanel.setStatusTip('To load a model, Menu >File >Load Model or Ctrl+L')
+        self.centralVizPanel.setWhatsThis('This is MOOSE. To load a model, Menu >File >Load Model or Ctrl+L')
         self.centralPanel = QtGui.QMdiArea(self)
+        self.centralPanel.setStatusTip('Plot Window. Drag field from Editor to plot. Click and drag area to zoom in. Esc to zoom out. To add new Plot Windows, Menu >View >New Plot Window')
+        self.centralPanel.setWhatsThis('Plot Window. Drag field from Editor to plot. Click and drag area to zoom in. Esc to zoom out. To add new Plot Windows, Menu >View >New Plot Window')
         self.horizontalLayout.addWidget(self.centralPanel)
         
         # The following are for holding transient selections from
@@ -157,7 +171,7 @@ class MainWindow(QtGui.QMainWindow):
         # plots is a list of available MoosePlot widgets.
         self.plots = []
         self.plotWindows = []
-        
+
         self.vizs = []		#add_chait
         self.vizWindows = []	#add_chait
         
@@ -189,10 +203,9 @@ class MainWindow(QtGui.QMainWindow):
                      QtCore.SIGNAL('itemClicked(QTreeWidgetItem *, int)'),
                      self.setCurrentElement)
         
-        
 	
         # By default, we show information about MOOSE in the central widget
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
+        #sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
         
         # tablePlotMap is a maps all currently available tables to the
         # plot widgets they belong to.
@@ -224,6 +237,7 @@ class MainWindow(QtGui.QMainWindow):
         #add_chait
         self.createSimulationToolbar()
         self.loadLayout()
+        
 
     def createSimulationToolbar(self):
         self.simToolbar = QtGui.QToolBar(self)
@@ -238,7 +252,9 @@ class MainWindow(QtGui.QMainWindow):
         self.runTimeEditToolbar = QtGui.QLineEdit(self.simToolbar)
         self.runTimeEditToolbar.setText('%1.3e' % (MooseHandler.runtime))
         self.runTimeEditToolbar.setGeometry(100,0,80,30)
-        
+        self.runTimeEditToolbar.setStatusTip('Set run time for the simulation')
+        self.runTimeEditToolbar.setWhatsThis('Set run time for the simulation')
+
         self.currentTimeLabelToolbar = QtGui.QLabel(self.simToolbar)
         self.currentTimeLabelToolbar.setText(' Current Time :')
         self.currentTimeLabelToolbar.setGeometry(190,0,100,30)
@@ -248,36 +264,57 @@ class MainWindow(QtGui.QMainWindow):
         self.currentTimeEditToolbar.setGeometry(300,0,50,30)
         
         self.runButtonToolbar = QtGui.QToolButton(self.simToolbar)
-        self.runButtonToolbar.setText('Run')
-        #self.runButtonToolbar.setIcon(QtGui.QIcon("run1.png"))
-        self.runButtonToolbar.setGeometry(360,0,80,30)
-#        print self.runButton.size()
-       # self.simToolbar.addSeparator()
+        self.runButtonToolbar.setToolTip('Run')
+        self.runButtonToolbar.setIcon(QtGui.QIcon("run.png"))
+        self.runButtonToolbar.setGeometry(360,0,50,30)
+        self.runButtonToolbar.setEnabled(0)
+        self.runButtonToolbar.setStatusTip('Run to start simulation')
+        self.runButtonToolbar.setWhatsThis('Run to start simulation')
 
         self.continueButtonToolbar = QtGui.QToolButton(self.simToolbar)
-        self.continueButtonToolbar.setText('Continue')
-        #self.continueButtonToolbar.setIcon(QtGui.QIcon("continue.png"))
-        self.continueButtonToolbar.setGeometry(450,0,80,30)
+        self.continueButtonToolbar.setToolTip('Continue')
+        self.continueButtonToolbar.setIcon(QtGui.QIcon("continue.png"))
+        self.continueButtonToolbar.setGeometry(410,0,50,30)
+        self.continueButtonToolbar.setEnabled(0)
+        self.continueButtonToolbar.setStatusTip('Continue simulation')
+        self.continueButtonToolbar.setWhatsThis('Continue simulation')
 
         self.resetButtonToolbar = QtGui.QToolButton(self.simToolbar)
-        self.resetButtonToolbar.setText('Reset')
-        self.resetButtonToolbar.setGeometry(540,0,80,30)
+        self.resetButtonToolbar.setToolTip('Reset')
+        self.resetButtonToolbar.setIcon(QtGui.QIcon("reset.png"))
+        self.resetButtonToolbar.setGeometry(460,0,50,30)
+        self.resetButtonToolbar.setEnabled(0)
+        self.resetButtonToolbar.setStatusTip('Reset simulation')
+        self.resetButtonToolbar.setWhatsThis('Reset simulation')
+        
+        self.whatsThisAction  = QtGui.QWhatsThis.createAction(self.simToolbar)
+        self.whatsThisButtonToolbar = QtGui.QToolButton(self.simToolbar)
+        self.whatsThisButtonToolbar.setToolTip('Whats this?')
+        self.whatsThisButtonToolbar.setIcon(QtGui.QIcon('help.png'))
+        self.whatsThisButtonToolbar.setGeometry(510,0,50,30)
 
 #        self.stopButtonToolbar = QtGui.QToolButton(self.simToolbar)
 #        self.stopButtonToolbar.setText('Stop')
 #        self.stopButtonToolbar.setGeometry(630,0,80,30)
 #        self.stopButtonToolbar.setEnabled(False)
-
-        self.connect(self.runButtonToolbar, QtCore.SIGNAL('clicked()'), self.resetAndRunSlot1)
-        self.connect(self.continueButtonToolbar, QtCore.SIGNAL('clicked()'), self._runSlot1)
+                
+        self.connect(self.runButtonToolbar, QtCore.SIGNAL('clicked()'), self.resetAndRunSlot) #1
+        self.connect(self.continueButtonToolbar, QtCore.SIGNAL('clicked()'), self._runSlot) #1
         self.connect(self.resetButtonToolbar,QtCore.SIGNAL('clicked()'),self._resetSlot)
+        self.connect(self.runTimeEditToolbar,QtCore.SIGNAL('textEdited(QString)'),self.simulationToolbarTextChanged)
+        self.connect(self.whatsThisButtonToolbar,QtCore.SIGNAL('clicked()'),self.whatsThisAction,QtCore.SLOT('trigger()'))
 
         self.simToolbar.show()
         self.simToolbar.setMinimumHeight(30)
 #        print self.simToolbar.size()
         self.addToolBar(Qt.TopToolBarArea,self.simToolbar)
+                      
+    def simulationToolbarTextChanged(self,text):
+        self.runtimeText.setText(text)
+                                            
+    def controlDockTextChanged(self,text):
+        self.runTimeEditToolbar.setText(text)
 
-    
     def makeConnectionPopup(self):
         """Create a dialog to connect moose objects via messages."""
         self.connectionDialog = QtGui.QDialog(self)
@@ -295,7 +332,7 @@ class MainWindow(QtGui.QMainWindow):
         destObjLabel = QtGui.QLabel(self.tr('Selected Destination'))        
         destFieldLabel = QtGui.QLabel(self.tr('Target Field'), self.connectionDialog)
         self.destFieldComboBox = QtGui.QComboBox(self.connectionDialog)
-
+                                            
         self.sourceObjText = QtGui.QLineEdit(self.connectionDialog)
         self.destObjText = QtGui.QLineEdit(self.connectionDialog)
 
@@ -364,9 +401,9 @@ class MainWindow(QtGui.QMainWindow):
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.commandLineDock)
         self.commandLineDock.setObjectName('MooseCommandLine')
         #add_chait
-        self.commandLineDock.setMaximumHeight(180)
-        self.commandLineDock.setMinimumWidth(1000)
-        #self.commandLineDock.setSizePolicy(QtGui.QSizePolicy.MaximumExpanding, QtGui.QSizePolicy.MinimumExpanding)
+        self.commandLineDock.setStatusTip('Moose Shell. Create and manipulate moose objects using python')
+        self.commandLineDock.setWhatsThis('Moose Shell. Create and manipulate moose objects using python')
+        self.commandLineDock.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
         self.commandLineDock.setFeatures(QtGui.QDockWidget.DockWidgetClosable)
         return self.commandLineDock
 
@@ -428,13 +465,17 @@ class MainWindow(QtGui.QMainWindow):
         	             self.sceneLayout.updateItemSlot)
 
         self.objFieldEditPanel.setWidget(self.objFieldEditor)
-        self.objFieldEditPanel.setWindowTitle(self.tr(obj.name))
+        self.objFieldEditPanel.setWindowTitle('Editor - '+self.tr(obj.name))
         self.objFieldEditPanel.raise_()
 	self.objFieldEditPanel.show()
         #add_chait
         self.objFieldEditPanel.setMinimumWidth(320)
+        self.objFieldEditPanel.setMaximumWidth(330)
+        self.objFieldEditPanel.setMinimumHeight(180)
         self.objFieldEditPanel.setFeatures(QtGui.QDockWidget.DockWidgetClosable)
-        
+        self.objFieldEditPanel.setStatusTip('Editor. Drag field into plot window to plot or select plot from drop-down in column 3. Edit field values in column 2.') 
+        self.objFieldEditPanel.setWhatsThis('Editor. Drag field into plot window to plot or select plot from drop-down in column 3. Edit field values in column 2.') 
+
     def closeObjectEditorPanel(self,status):
         self.showObjectEditorAction.setChecked(status)
 
@@ -520,6 +561,8 @@ class MainWindow(QtGui.QMainWindow):
         self.connectionDialogAction = QtGui.QAction(self.tr('&Connect elements'), self)
 	self.connect(self.connectionDialogAction, QtCore.SIGNAL('triggered()'), self.makeConnectionPopup)
 
+        #self.addElectrodesDialogAction = QtGui.QAction(self.tr('&Insert Electode'),self)
+        #self.connect(self.addElectrodesDialogAction, QtCore.SIGNAL('triggered()'),self.addElectrodesPopup)
         # Actions for file menu
         self.loadModelAction = QtGui.QAction(self.tr('Load Model'), self)
         self.loadModelAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+L')))
@@ -672,6 +715,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.editModelMenu = QtGui.QMenu(self.tr('&Edit'), self)
         self.editModelMenu.addAction(self.connectionDialogAction)
+        #self.editModelMenu.addAction(self.addElectrodesDialogAction)
         
 		
         #self.plotMenu = QtGui.QMenu(self.tr('&Plot Settings'), self)
@@ -784,6 +828,8 @@ class MainWindow(QtGui.QMainWindow):
 	self.mooseTreePanel.setWidget(self.modelTreeWidget)
         config.LOGGER.debug('createMooseTreePanel - end')
         #self.ForceTabbedDocks
+        self.mooseTreePanel.setStatusTip('Moose Tree. Double click on object to open its properties in Editor')
+        self.mooseTreePanel.setWhatsThis('Moose Tree. Double click on object to open its properties in Editor')
         self.makeObjectFieldEditor(self.modelTreeWidget.currentItem().getMooseObject())
         
     def createGLClientDock(self):
@@ -817,6 +863,8 @@ class MainWindow(QtGui.QMainWindow):
         # self.resetButton = QtGui.QPushButton(self.tr('Reset'), self.controlPanel)
         self.runButton = QtGui.QPushButton(self.tr('Run'), self.controlPanel)
         self.continueButton = QtGui.QPushButton(self.tr('Continue'), self.controlPanel)
+        self.runButton.setEnabled(0)
+        self.continueButton.setEnabled(0)
         self.simdtLabel = QtGui.QLabel(self.tr('Simulation timestep (second):'), self.controlPanel)
         self.simdtLabel.setWordWrap(True)
         self.plotdtLabel = QtGui.QLabel(self.tr('Plotting timestep (second):'), self.controlPanel)
@@ -826,7 +874,7 @@ class MainWindow(QtGui.QMainWindow):
         self.plotdtText = QtGui.QLineEdit('%1.3e' % (MooseHandler.plotdt), self)
         #self.gldtText = QtGui.QLineEdit('%1.3e' % (MooseHandler.gldt), self.controlPanel)
         # self.overlayCheckBox = QtGui.QCheckBox(self.tr('Overlay plots'), self.controlPanel)
-        
+        self.connect(self.runtimeText,QtCore.SIGNAL('textEdited(QString)'),self.controlDockTextChanged)
         self.connect(self.runButton, QtCore.SIGNAL('clicked()'), self.resetAndRunSlot)
         self.connect(self.continueButton, QtCore.SIGNAL('clicked()'), self._runSlot)
         layout.addWidget(self.simdtLabel, 0,0)
@@ -845,11 +893,14 @@ class MainWindow(QtGui.QMainWindow):
         self.controlPanel.setLayout(layout)
         self.controlDock.setWidget(self.controlPanel)
         self.controlDock.hide()#add_chait
+        self.controlDock.setStatusTip('Simulation Control. Load model to activate Run/Continue')
+        self.controlDock.setWhatsThis('Simulation Control. Load model to activate Run/Continue')
 
     def addPlotWindow(self):
         title = self.tr('Plot %d' % (len(self.plots)))
         plotWindow = MoosePlotWindow()
         plotWindow.setToolTip('Drag field from editor into the plot window to plot')
+
         plotWindow.setWindowTitle(title)
         plotWindow.setObjectName(title)
         plot = MoosePlot(plotWindow)
@@ -877,6 +928,36 @@ class MainWindow(QtGui.QMainWindow):
         self.currentPlotWindow = plotWindow
         return plotWindow
        
+    def addElectrodesPopup(self):        
+        self.newElectodeDia = QtGui.QDialog(self)       
+        self.electrodeDialog = Electrode_dialog()        
+        self.electrodeDialog.setupUi(self.newElectodeDia)        
+        self.newElectodeDia.show()                
+        self.connect(self.electrodeDialog.okayPushButton, QtCore.SIGNAL('clicked()'),self.newElectrode)#        
+    
+    def newElectrode(self):        
+        baseLevel = float(self.electrodeDialog.baseLevelEdit.text())        
+        firstLevel = float(self.electrodeDialog.firstLevelEdit.text())        
+        secondLevel = float(self.electrodeDialog.secondLevelEdit.text())        
+        firstDelay = float(self.electrodeDialog.firstDelayEdit.text())        
+        secondDelay = float(self.electrodeDialog.secondDelayEdit.text())        
+        firstWidth = float(self.electrodeDialog.firstWidthEdit.text())        
+        secondWidth = float(self.electrodeDialog.secondWidthEdit.text())        
+        clampOption = self.electrodeDialog.electrodeSelectionCombo.currentIndex()        
+        #print baseLevel,firstLevel,secondLevel,firstDelay,secondDelay,firstWidth,secondWidth,clampOption        
+        paramDict = { 'baseLevel':baseLevel,'firstLevel':firstLevel,'secondLevel':secondLevel,'firstDelay':firstDelay,'secondDelay':secondDelay,'firstWidth':firstWidth,'secondWidth':secondWidth}        #print paramDict.values(), clampOption        
+        self.electrodeCompartment = '/mit/soma'        
+        if clampOption:            
+            print 'Voltage Clamp at compartment'            
+            wateva = mooseElectrodes()            
+            wateva.voltageClamp(paramDict,moose.Neutral(self.electrodeCompartment))        
+        else:            
+            print 'Current Clamp at compartment'            
+            wateva = mooseElectrodes()            
+            wateva.currentClamp(paramDict,moose.Neutral(self.electrodeCompartment))        
+            self.newElectodeDia.hide()        
+            self.modelTreeWidget.recreateTree()    
+
     def addGLWindow(self):   #add_chait
         self.newDia = QtGui.QDialog(self)	
         self.vizDialogue = Ui_Dialog()
@@ -993,12 +1074,12 @@ class MainWindow(QtGui.QMainWindow):
 		
     
     def resetVizDialogSettings(self):	#add_chait
-	self.vizDialogue.variable.setText("Vm")
-	self.vizDialogue.moosepath.setText("")
+        self.vizDialogue.variable.setText("Vm")
+        self.vizDialogue.moosepath.setText("")
         self.vizDialogue.vizMinVal.setText("-0.1")
         self.vizDialogue.vizMaxVal.setText("0.07")
         self.vizDialogue.variable_2.setText("")
-	self.vizDialogue.moosepath_2.setText("")
+        self.vizDialogue.moosepath_2.setText("")
         self.vizDialogue.vizMinVal_2.setText("")
         self.vizDialogue.vizMaxVal_2.setText("")
         self.vizDialogue.colorMapComboBox.setCurrentIndex(0)
@@ -1010,37 +1091,34 @@ class MainWindow(QtGui.QMainWindow):
         vizWindow = newGLSubWindow()
         vizWindow.setWindowTitle(title)
         vizWindow.setObjectName(title)
-        
         self.centralVizPanel.addSubWindow(vizWindow)
         viz = updatepaintGL(parent=vizWindow)
         viz.setObjectName(title)
         vizWindow.setWidget(viz)
-        
         viz.viz=1	#turn on visualization mode
-	vizStyle = self.vizDialogue.styleComboBox.currentIndex()
+        vizStyle = self.vizDialogue.styleComboBox.currentIndex()
 	
-	if self.vizDialogue.specificCompartmentName.text()!='':					#if no compartment name selected, default is soma
+        if self.vizDialogue.specificCompartmentName.text()!='':					#if no compartment name selected, default is soma
        		viz.specificCompartmentName = str(self.vizDialogue.specificCompartmentName.text())	#else pick name from user ip text box
 	
-	if vizStyle==3:    									#grid view case
-		numberOfCellsDrawn = 0								#as yet drawn = 0, used as a counter
-		sideSquare = self.nearestSquare(self.vizDialogue.vizCells.count())		#get the side of the square
-		for yAxis in range(sideSquare):							#Yaxis - columns
-			for xAxis in range(sideSquare):						#Xaxis - fill rows first
-				if numberOfCellsDrawn < self.vizDialogue.vizCells.count(): 	#finished drawing all cells?
-					viz.drawNewCell(cellName=str(self.vizDialogue.vizCells.item(numberOfCellsDrawn).text()),cellCentre=[xAxis*0.5,yAxis*0.5,0.0],style = vizStyle)
-					numberOfCellsDrawn += 1					#increase number of cells drawn
-			
-       		if self.vizDialogue.variable_2.text()!='':					#field2 to represented as radius of the compartment
-       			currentVizSetting_2 = [float(str(self.vizDialogue.vizMinVal_2.text())),float(str(self.vizDialogue.vizMaxVal_2.text())),str(self.vizDialogue.moosepath_2.text()),str(self.vizDialogue.variable_2.text())]
-       			viz.setColorMap_2(*currentVizSetting_2[:4])				#set the colormap equivalent of radius
-			viz.gridRadiusViz=1							#viz using both radius and color - 2 fields
-		else:										
-			viz.gridRadiusViz=0							#no 2nd field selected, just viz using colors - not radius
+        if vizStyle==3:                                     #grid view case            
+            numberOfCellsDrawn = 0                              #as yet drawn = 0, used as a counter            
+            sideSquare = self.nearestSquare(self.vizDialogue.vizCells.count())      #get the side of the square            
+            for yAxis in range(sideSquare):                         #Yaxis - columns                
+                for xAxis in range(sideSquare):                     #Xaxis - fill rows first                    
+                    if numberOfCellsDrawn < self.vizDialogue.vizCells.count():  #finished drawing all cells?                        
+                        viz.drawNewCell(cellName=str(self.vizDialogue.vizCells.item(numberOfCellsDrawn).text()),cellCentre=[xAxis*0.5,yAxis*0.5,0.0],style = vizStyle)                        
+                        numberOfCellsDrawn += 1                 #increase number of cells drawn                                        
+                        if self.vizDialogue.variable_2.text()!='':                  #field2 to represented as radius of the compartment                    
+                            currentVizSetting_2 = [float(str(self.vizDialogue.vizMinVal_2.text())),float(str(self.vizDialogue.vizMaxVal_2.text())),str(self.vizDialogue.moosepath_2.text()),str(self.vizDialogue.variable_2.text())]                    
+                            viz.setColorMap_2(*currentVizSetting_2[:4])             #set the colormap equivalent of radius                    
+                            viz.gridRadiusViz=1                         #viz using both radius and color - 2 fields            
+                        else:                                                       
+                            viz.gridRadiusViz=0                         #no 2nd field selected, just viz using colors - not radius
 
-	else:
-    		for index in xrange(self.vizDialogue.vizCells.count()):				#non-grid view case
-        		viz.drawNewCell(cellName=str(self.vizDialogue.vizCells.item(index).text()),style = vizStyle)
+        else:            
+            for index in xrange(self.vizDialogue.vizCells.count()):             #non-grid view case                
+                viz.drawNewCell(cellName=str(self.vizDialogue.vizCells.item(index).text()),style = vizStyle)
         
         currentVizSetting = [float(str(self.vizDialogue.vizMinVal.text())),float(str(self.vizDialogue.vizMaxVal.text())),str(self.vizDialogue.moosepath.text()),str(self.vizDialogue.variable.text()),os.path.join(str(self.settings.value(config.KEY_GL_COLORMAP).toString()),str(self.vizDialogue.colorMapComboBox.itemText(self.vizDialogue.colorMapComboBox.currentIndex())))]						#color map inputs from user
     	#print currentVizSetting
@@ -1066,8 +1144,8 @@ class MainWindow(QtGui.QMainWindow):
    
     def pickCompartment(self,path):	#path is a QString type moosepath
         SelectedChild = self.modelTreeWidget.pathToTreeChild(path)
-    	self.modelTreeWidget.setCurrentItem(SelectedChild)				#select the corresponding moosetree
-	self.makeObjectFieldEditor(SelectedChild.getMooseObject())		#update the corresponding property
+        self.modelTreeWidget.setCurrentItem(SelectedChild)				#select the corresponding moosetree
+        self.makeObjectFieldEditor(SelectedChild.getMooseObject())		#update the corresponding property
 
     def nearestSquare(self, n):	#add_chait
     	i = 1
@@ -1101,11 +1179,10 @@ class MainWindow(QtGui.QMainWindow):
     def addLayoutWindow(self):
     	centralWindowsize =  self.centralVizPanel.size()
         self.sceneLayout = layout.LayoutWidget(centralWindowsize)
-	self.connect(self.sceneLayout, QtCore.SIGNAL("itemDoubleClicked(PyQt_PyObject)"), self.makeObjectFieldEditor)
+        self.connect(self.sceneLayout, QtCore.SIGNAL("itemDoubleClicked(PyQt_PyObject)"), self.makeObjectFieldEditor)
         self.centralVizPanel.addSubWindow(self.sceneLayout)
-	self.centralVizPanel.tileSubWindows()
+        self.centralVizPanel.tileSubWindows()
         self.sceneLayout.show()
-    
 
     def decrementSubWindowCount(self):
         if self._visiblePlotWindowCount > 0:
@@ -1143,30 +1220,43 @@ class MainWindow(QtGui.QMainWindow):
         layout.addWidget(targetTree)
         layout.addWidget(targetPanel)
         self.connect(targetTree, QtCore.SIGNAL('itemClicked(QTreeWidgetItem *, int)'), lambda item, column: targetText.setText(item.getMooseObject().path))
-	if fileDialog.exec_():
-	    fileNames = fileDialog.selectedFiles()
-	    fileFilter = fileDialog.selectedFilter()
-	    fileType = self.mooseHandler.fileExtensionMap[str(fileFilter)]
-	    directory = fileDialog.directory() # Potential bug: if user types the whole file path, does it work? - no but gives error message
-	    for fileName in fileNames: 
+        if fileDialog.exec_():
+            fileNames = fileDialog.selectedFiles()
+            fileFilter = fileDialog.selectedFilter()
+            fileType = self.mooseHandler.fileExtensionMap[str(fileFilter)]
+            directory = fileDialog.directory() # Potential bug: if user types the whole file path, does it work? - no but gives error message
+            for fileName in fileNames: 
                 modeltype  = self.mooseHandler.loadModel(str(fileName), str(fileType), str(targetText.text()))
-		if modeltype == MooseHandler.type_kkit:
-		    self.addLayoutWindow()
-                print 'Loaded model',  fileName, 'of type', modeltype
-            self.populateKKitPlots()
-            self.populateDataPlots()
-            self.updateDefaultTimes(modeltype)
+                if modeltype == MooseHandler.type_kkit:
+                    try:
+                        self.addLayoutWindow()
+                    except Widgetvisibility:
+                        print 'No kkit layout for: %s' % (str(fileName))
+                    self.populateKKitPlots()
+                self.populateDataPlots()
+                self.updateDefaultTimes(modeltype)
             self.modelTreeWidget.recreateTree()
-        
-        self.checkModelType()
-        
+            self.enableControlButtons()
+            self.checkModelType()
+            print 'Loaded model',  fileName, 'of type', modeltype
+
+    def enableControlButtons(self):
+        self.runButton.setEnabled(1)
+        self.continueButton.setEnabled(1)
+        self.runButtonToolbar.setEnabled(1)
+        self.continueButtonToolbar.setEnabled(1)
+        self.resetButtonToolbar.setEnabled(1)
+
     #add_chait
     def checkModelType(self):
-        an=moose.Neutral('/')						#moose root children
-	all_ch=an.childList 	
+        an=moose.Neutral('/')                       #moose root children
+        all_ch=an.childList     
         ch = self.get_childrenOfField(all_ch,'Cell')
         if ch :#if has cell type child elements.
             #loaded model is a cell model, plot the cells in the 
+            self.statusBar.showMessage('Loaded a Neural Model')
+            self.centralVizPanel.setStatusTip('Up-Down-Right-Left arrow keys to pan model. Click and drag to rotate. Scroll to zoom. Click on compartment to open properties in Editor. To visualize more cells Menu >View >New GL Window')
+            self.centralVizPanel.setWhatsThis('Up-Down-Right-Left arrow keys to pan model. Click and drag to rotate. Scroll to zoom. Click on compartment to open properties in Editor. To visualize more cells Menu >View >New GL Window')
             if len(ch)==1:
                 #only the single cell models to be visualized
                 title = self.tr('GL %d' % (len(self.vizs)))
@@ -1190,7 +1280,10 @@ class MainWindow(QtGui.QMainWindow):
                 self._visiblePlotWindowCount += 1
                 self.currentPlotWindow = vizWindow
                 return vizWindow
-   
+        else:
+            self.statusBar.showMessage('Loaded a KKit Model')
+            self.centralVizPanel.setStatusTip('Double click on item to open properties in Editor. < > keys to zoom. Click and draw rectangle (Rubberband tool) to multi-select. Click and drag to move')
+            self.centralVizPanel.setWhatsThis('Double click on item to open properties in Editor. < > keys to zoom. Click and draw rectangle (Rubberband tool) to multi-select. Click and drag to move')
 
     def resetSettings(self):
         self.settingsReset = True
@@ -1263,36 +1356,7 @@ class MainWindow(QtGui.QMainWindow):
         self.mooseHandler.doRun(runtime)
         #harsha: only after the model is run, saving the plot is enabled,otherwise there will be nothing to save
         self.saveTablePlotsAction.setEnabled(1)
-    #add_chait
-    def resetAndRunSlot1(self): #horrible way of doing it. because of simulation toolbar.
-        self._resetSlot()
-        self._runSlot1()
-
-    #add_chait    
-    def _runSlot1(self):#bad way of doing it. but works just fine. (this is because of the simulation toolbar)
-        """Run the simulation.
-
-        """
- 
-        if self.autoHideAction.isChecked():
-            if self.commandLineDock.isVisible():
-                self.commandLineDock.setVisible(False)
-            if self.mooseClassesPanel.isVisible():
-                self.mooseClassesPanel.setVisible(False)
-            # if self.glClientDock.isVisible():
-            #     self.glClientDock.setVisible(False)
-            if hasattr(self, 'objFieldEditPanel') and self.objFieldEditPanel.isVisible():
-                self.objFieldEditPanel.setVisible(False)
-            self.showRightBottomDocksAction.setChecked(False)
-        try:
-            runtime = float(str(self.runTimeEditToolbar.text()))
-        except ValueError:
-            runtime = MooseHandler.runtime
-            self.runtimeText.setText(str(runtime))
-        self.updatePlots(runtime)
-        self.mooseHandler.doRun(runtime)
-        #harsha: only after the model is run, saving the plot is enabled,otherwise there will be nothing to save
-        self.saveTablePlotsAction.setEnabled(1)
+    
               
     def resetAndRunSlot(self):
         self._resetSlot()
@@ -1412,7 +1476,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def populateKKitPlots(self):
         graphs = self.mooseHandler.getKKitGraphs()
+        currentTime = self.mooseHandler.getCurrentTime()
         for graph in graphs:
+            self.plots[0].xmin = currentTime
             self.plots[0].addTable(graph)
             config.LOGGER.info('Adding plot ' + graph.path)
         self.plots[0].replot()
@@ -1421,8 +1487,13 @@ class MainWindow(QtGui.QMainWindow):
             if len(self.plots) == 1:
                 self.addPlotWindow()
             for graph in moregraphs:
+                self.plots[1].xmin = currentTime
                 self.plots[1].addTable(graph)
             self.plots[1].replot()
+        self.currentTimeEditToolbar.setText(str(currentTime))
+
+        # harsha enable save plot after pre-running genesis model
+        self.saveTablePlotsAction.setEnabled(1)
 
     def populateDataPlots(self):
         """Create plots for all Table objects in /data element"""
@@ -1462,6 +1533,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def browseDocumentation(self):
         QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_DOC_URL)))
+        #QtGui.QDesktopServices.openUrl(QtCore.QUrl("documentation.pdf"))
 
     def openBugsPage(self):
         QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_REPORT_BUG_URL)))
@@ -1483,7 +1555,7 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     icon = QtGui.QIcon('moose_icon.png')
     app.setWindowIcon(icon)
-
+#    computerProps = app.desktop()
     QtCore.QObject.connect(app, QtCore.SIGNAL('lastWindowClosed()'), app, QtCore.SLOT('quit()'))
     mainWin = MainWindow()
     if not config.get_settings().contains(config.KEY_FIRSTTIME):
@@ -1492,6 +1564,7 @@ if __name__ == '__main__':
 	firstTimeWizard.connect(firstTimeWizard, QtCore.SIGNAL('accepted()'), mainWin.updatePaths)
         firstTimeWizard.show()
     mainWin.show()
-    #mainWin.setWindowState(Qt.WindowMaximized)
+    mainWin.setWindowState(Qt.WindowMaximized)
+#    mainWin.resize(computerProps.width(),computerProps.height())
     app.exec_()
 	

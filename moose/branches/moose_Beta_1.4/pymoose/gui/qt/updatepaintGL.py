@@ -119,6 +119,8 @@ class updatepaintGL(PyGLWidget):
 	an=moose.Neutral(cellName)
 	all_ch=an.childList 					#all children
         ch = self.get_childrenOfField(all_ch,'Compartment')	#compartments only
+
+
 	l_coords = []
 	for i in range(0,len(ch),1):
     	    	x=float(mc.getField(ch[i],'x'))*(1e+04)
