@@ -1690,6 +1690,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\pymoose\pyGslIntegrator.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\pymoose\pyInterpol2D.cpp"
 					>
 				</File>
@@ -1707,6 +1711,10 @@
 				</File>
 				<File
 					RelativePath="..\..\pymoose\pyNMDAChan.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\pySteadyState.cpp"
 					>
 				</File>
 				<File
@@ -1808,6 +1816,10 @@
 							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 						/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\Sched0.h"
+					>
 				</File>
 				<File
 					RelativePath="..\..\pymoose\SigNeur.cpp"
@@ -3338,6 +3350,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\pymoose\GslIntegrator.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\pymoose\GssaStoich.h"
 					>
 				</File>
@@ -3491,6 +3507,10 @@
 				</File>
 				<File
 					RelativePath="..\..\pymoose\SpikeGen.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pymoose\SteadyState.h"
 					>
 				</File>
 				<File

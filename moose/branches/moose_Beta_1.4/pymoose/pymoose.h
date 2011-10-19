@@ -51,6 +51,8 @@
 #include "NMDAChan.h"
 #include "Efield.h"
 #include "Interpol2D.h"
+#include "SteadyState.h"
+#include "GslIntegrator.h"
 
 #ifdef USE_GL
 #include "GLcell.h"
