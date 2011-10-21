@@ -125,7 +125,6 @@ OBJ = PyMooseBase.o \
 	HHGate2D.o	\
 	SteadyState.o	\
 	GslIntegrator.o	\
-	InterSolverFlux.o	\
 	Adaptor.o	\
 	SigNeur.o	\
 	Leakage.o	\
@@ -206,7 +205,6 @@ HEADERS=PyMooseUtil.h \
 	HHGate2D.h	\
 	SteadyState.h	\
 	GslIntegrator.h	\
-	InterSolverFlux.h	\
 	../randnum/randnum.h	\
 	../randnum/Probability.h	\
 	../randnum/Binomial.h	\
