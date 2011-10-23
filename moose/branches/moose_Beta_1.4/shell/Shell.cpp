@@ -2218,7 +2218,7 @@ void Shell::writeSbml( const Conn* c, string filename, string location, int chil
 		return;
 	}
 	sw.write( filename, loc );
-	cout<<"from shell:: write"<<endl;
+	//cout<<"from shell:: write"<<endl;
 #else
 	cerr << "Error: writeSbml: This MOOSE is not built with SBML compatibility.\n";
 #endif
