@@ -1540,8 +1540,8 @@ class MainWindow(QtGui.QMainWindow):
         self.objFieldEditPanel.setWindowTitle(mooseObject.name)
 
     def browseDocumentation(self):
-        QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_DOC_URL)))
-        #QtGui.QDesktopServices.openUrl(QtCore.QUrl("documentation.pdf"))
+        #QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_DOC_URL)))
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl("documentation.pdf"))
 
     def openBugsPage(self):
         QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_REPORT_BUG_URL)))
