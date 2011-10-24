@@ -60,7 +60,7 @@ import xml.sax.saxutils as saxutils
 from PyQt4 import QtCore
 import moose
 import config
-from glclient import GLClient
+#from glclient import GLClient
 
 
 class MooseXMLHandler(saxhandler.ContentHandler):
