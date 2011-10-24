@@ -88,7 +88,7 @@ from mooseshell import MooseShell
 from moosehandler import MooseHandler
 from mooseplot import MoosePlot, MoosePlotWindow
 from plotconfig import PlotConfig
-from glwizard import MooseGLWizard
+#from glwizard import MooseGLWizard
 from firsttime import FirstTimeWizard
 #from layout import Screen
 import layout
