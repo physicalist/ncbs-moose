@@ -163,6 +163,7 @@ Section
 			    - PyQt 4 or higher $\n\
 			    - PyQwt5 $\n\
 				- PyOpenGL 3.0 $\n\
+				- Matplotlib 1.0.1 $\n\
 			$\n\
 		You can install the above manually, or download the MOOSE installer which will $\n\
 		install these for you. $\n\
@@ -188,6 +189,7 @@ Section "Prerequisites"
 			    - PyQt 4.4 $\n\
 			    - PyQwt 5.1 $\n\
 				- PyOpenGL 3.0.1 $\n\
+				- Matplotlib 1.0.1 $\n\
 			$\n\
 		The full installation will take around 220 MB of space on your disk. $\n\
 		Do you wish to install these before installing MOOSE?"
@@ -230,6 +232,13 @@ Section "Prerequisites"
 	
 	; PyOpenGL
 	!define installer "PyOpenGL-3.0.1.win32.exe"
+	File "Extra\${installer}"
+	ExecWait "$1\${installer}"
+	Delete "$1\${installer}"
+	!undef installer
+	
+	; Matplotlib
+	!define installer "matplotlib-1.0.1.win32-py2.6.exe"
 	File "Extra\${installer}"
 	ExecWait "$1\${installer}"
 	Delete "$1\${installer}"
@@ -332,6 +341,11 @@ Section "Uninstall"
 	Retrieve returned value by popping stack:
 		Pop $my_var
 	*/
+	StrCpy $1 \
+		"Matplotlib was installed along with MOOSE during the MOOSE installation."
+	StrCpy $2 ""
+	${un.UninstallIfExists} "Matplotlib-1.0.1" "matplotlib-py2.6" $2 "1" $1
+	Pop $1
 	
 	StrCpy $1 \
 		"PyOpenGL was installed along with MOOSE during the MOOSE installation."
