@@ -25,7 +25,7 @@
 
 TARGET=pymoose.o
 CXXFLAGS+=-fno-strict-aliasing -I/usr/local/include -I.. -I../basecode -I../connections -I../maindir -I../genesis_parser  -I../shell -I../element -I../scheduling -I../biophysics -I../hsolve -I../kinetics -I../ksolve -I../builtins -I../utility -I../randnum -I../robots -I../device
-LIBS += -L/usr/lib -lpython2.7
+LIBS += -L/usr/lib -lpython2.6
 
 ifdef USE_NUMPY
 CXXFLAGS+=-I/usr/lib/python2.6/site-packages/numpy/core/include -DUSE_NUMPY
@@ -48,7 +48,7 @@ ifeq ($(OSTYPE),Darwin)
 	CXXFLAGS+=-bundle -fno-common /usr/bin/python -flat_namespace -undefined suppress -I/Library/Frameworks/Python.framework/Versions/2.6/include/python2.6
 	export LDFLAGS+=-bundle -fno-common -L/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/config/
 else # this is for unix like systems - change /usr/include/Python2.6 to the directory where Python.h is located
-	CXXFLAGS +=-I/usr/include/python2.7
+	CXXFLAGS +=-I/usr/include/python2.6
 	export LDFLAGS+=-shared
 endif
 

@@ -63,7 +63,7 @@ class FirstTimeWizard(QtGui.QWizard):
             self._glclientPath = '/usr/bin/glclient'
         self._colormapPath = str(config.get_settings().value(config.KEY_GL_COLORMAP).toString())
         if not self._colormapPath:
-            self._colormapPath = '/usr/share/moose1.4/colormaps/rainbow2'
+            self._colormapPath = '/usr/share/moose1.4/moosegui/oglfunc/colors'
         self.addPage(self._createIntroPage())
         self.addPage(self._createDemosPage())
         #self.addPage(self._createGLClientPage())
