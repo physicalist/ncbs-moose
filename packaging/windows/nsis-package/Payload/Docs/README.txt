@@ -1,4 +1,4 @@
-This is the MOOSE Beta 1.2.0 release
+This is the MOOSE Beta 1.4.0 release
 
 MOOSE is the base and numerical core for large, detailed simulations including
 Computational Neuroscience and Systems Biology. 
@@ -31,6 +31,7 @@ Prototype Steady State solver to obtain steady states for chemical kinetics.
 
 Technical data:
 Authors: Upinder S. Bhalla, Niraj Dudani, Subhasis Ray, Raamesh Deshpande
+GUI: Chaitanya, Harsha Rani
 Programming and Release support: Siji George.
 Web page: Harsha Rani.
 All authors are at the National Centre for Biological Sciences, Bangalore, 
@@ -40,7 +41,7 @@ Language: C++, Python.
 Source available at SourceForge. Licence: LGPL. However, due to the
 	terms of the GPL-licensed GSL, the effective license of the
 	package as a whole is GPL.
-Binaries available: Linux (32 and 64-bit), Solaris, Windows (32 bit), 
+Binaries available: Linux (32 and 64-bit), Windows (32 bit), 
 There is also a tarball for those who wish to compile
 
 Please refer to the mirrored MOOSE websites for current information and
@@ -48,5 +49,6 @@ for a subversion code repository:
 http://moose.ncbs.res.in
 http://moose.sourceforge.net
 
-Please look at the RELEASE_NOTES for updates and changes compared to the first
+Please look at the RELEASE_NOTES for updates and changes compared to the last
 release. The earlier release notes are in the DOCS directory.
+
