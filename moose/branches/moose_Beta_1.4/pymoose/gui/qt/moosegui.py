@@ -65,7 +65,7 @@ from PyQt4 import QtCore, QtGui
 from PyQt4.Qt import Qt
 
 import config
-from glclientgui import GLClientGUI
+#from glclientgui import GLClientGUI
 # The following line is for ease in development environment. Normal
 # users will have moose.py and _moose.so installed in some directory
 # in PYTHONPATH.  If you have these two files in /usr/local/moose, you
@@ -152,7 +152,7 @@ class MainWindow(QtGui.QMainWindow):
         self.centralVizPanel.setViewMode(self.centralVizPanel.TabbedView)
         
 #        self.centralVizPanel.setBackground(QtGui.QBrush(QtGui.QImage('background.png').scaled(self.centralVizPanel.size(),Qt.KeepAspectRatio)))
-        self.centralVizPanel.setBackground(QtGui.QBrush(QtGui.QImage('QMdiBackground.png')))
+        self.centralVizPanel.setBackground(QtGui.QBrush(QtGui.QImage(os.path.join(config.KEY_HOME_DIR,'QMdiBackground.png'))))
 
         self.centralVizPanel.setStatusTip('To load a model, Menu >File >Load Model or Ctrl+L')
         self.centralVizPanel.setWhatsThis("<font color='black'> To load a model, Menu >File >Load Model or Ctrl+L </font>")
@@ -265,7 +265,7 @@ class MainWindow(QtGui.QMainWindow):
         
         self.runButtonToolbar = QtGui.QToolButton(self.simToolbar)
         self.runButtonToolbar.setToolTip("<font color='black'> Run </font>")
-        self.runButtonToolbar.setIcon(QtGui.QIcon("run.png"))
+        self.runButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,"run.png")))
         self.runButtonToolbar.setGeometry(360,0,50,30)
         self.runButtonToolbar.setEnabled(0)
         self.runButtonToolbar.setStatusTip('Run to start simulation')
@@ -273,7 +273,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.continueButtonToolbar = QtGui.QToolButton(self.simToolbar)
         self.continueButtonToolbar.setToolTip("<font color='black'> Continue </font>")
-        self.continueButtonToolbar.setIcon(QtGui.QIcon("continue.png"))
+        self.continueButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,"continue.png")))
         self.continueButtonToolbar.setGeometry(410,0,50,30)
         self.continueButtonToolbar.setEnabled(0)
         self.continueButtonToolbar.setStatusTip('Continue simulation')
@@ -281,7 +281,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.resetButtonToolbar = QtGui.QToolButton(self.simToolbar)
         self.resetButtonToolbar.setToolTip("<font color='black'> Reset </font>")
-        self.resetButtonToolbar.setIcon(QtGui.QIcon("reset.png"))
+        self.resetButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,"reset.png")))
         self.resetButtonToolbar.setGeometry(460,0,50,30)
         self.resetButtonToolbar.setEnabled(0)
         self.resetButtonToolbar.setStatusTip('Reset simulation')
@@ -290,7 +290,7 @@ class MainWindow(QtGui.QMainWindow):
         self.whatsThisAction  = QtGui.QWhatsThis.createAction(self.simToolbar)
         self.whatsThisButtonToolbar = QtGui.QToolButton(self.simToolbar)
         self.whatsThisButtonToolbar.setToolTip("<font color='black'> Whats this? </font>")
-        self.whatsThisButtonToolbar.setIcon(QtGui.QIcon('help.png'))
+        self.whatsThisButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,'help.png')))
         self.whatsThisButtonToolbar.setGeometry(510,0,50,30)
 
 #        self.stopButtonToolbar = QtGui.QToolButton(self.simToolbar)
@@ -832,18 +832,18 @@ class MainWindow(QtGui.QMainWindow):
         self.mooseTreePanel.setWhatsThis("<font color='black'> Moose Tree. Double click on object to open its properties in Property Editor </font>")
         self.makeObjectFieldEditor(self.modelTreeWidget.currentItem().getMooseObject())
         
-    def createGLClientDock(self):
-        config.LOGGER.debug('createGLClientDock - start')
-        self.glClientWidget = GLClientGUI(self)
-        config.LOGGER.debug('createGLClientDock - 1')
-        self.glClientDock = QtGui.QDockWidget('GL Client', self)
-        config.LOGGER.debug('createGLClientDock - 2')
-        self.glClientDock.setObjectName(self.tr('GLClient'))
-        config.LOGGER.debug('createGLClientDock - 3')
-        self.glClientDock.setWidget(self.glClientWidget)
-        config.LOGGER.debug('createGLClientDock - 4')
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.glClientDock)
-        config.LOGGER.debug('createGLClientDock - end')
+    # def createGLClientDock(self):
+    #     config.LOGGER.debug('createGLClientDock - start')
+    #     self.glClientWidget = GLClientGUI(self)
+    #     config.LOGGER.debug('createGLClientDock - 1')
+    #     self.glClientDock = QtGui.QDockWidget('GL Client', self)
+    #     config.LOGGER.debug('createGLClientDock - 2')
+    #     self.glClientDock.setObjectName(self.tr('GLClient'))
+    #     config.LOGGER.debug('createGLClientDock - 3')
+    #     self.glClientDock.setWidget(self.glClientWidget)
+    #     config.LOGGER.debug('createGLClientDock - 4')
+    #     self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.glClientDock)
+    #     config.LOGGER.debug('createGLClientDock - end')
 
     def createControlDock(self):
         config.LOGGER.debug('Making control panel')
@@ -1541,7 +1541,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def browseDocumentation(self):
         #QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_DOC_URL)))
-        QtGui.QDesktopServices.openUrl(QtCore.QUrl("documentation.pdf"))
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl(os.path.join(config.KEY_HOME_DIR,"documentation.pdf")))
 
     def openBugsPage(self):
         QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_REPORT_BUG_URL)))
@@ -1561,7 +1561,8 @@ class MainWindow(QtGui.QMainWindow):
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    icon = QtGui.QIcon('moose_icon.png')
+    config.KEY_HOME_DIR = str(str(config).split()[3][1:-12])
+    icon = QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,'moose_icon.png'))
     app.setWindowIcon(icon)
 #    computerProps = app.desktop()
     QtCore.QObject.connect(app, QtCore.SIGNAL('lastWindowClosed()'), app, QtCore.SLOT('quit()'))
