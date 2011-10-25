@@ -293,6 +293,7 @@ Section "Start Menu Shortcuts"
 	SetShellVarContext all
 	CreateDirectory "$SMPROGRAMS\MOOSE"
 	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moose.exe" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE GUI.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moosegui\moosegui.py" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Demos.lnk" "$INSTDIR\Demos" "" "$INSTDIR\Demos" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Regression Tests.lnk" "$INSTDIR\RegressionTests" "" "$INSTDIR\RegressionTests" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Documentation.lnk" "$INSTDIR\Docs" "" "$INSTDIR\Docs" 0
