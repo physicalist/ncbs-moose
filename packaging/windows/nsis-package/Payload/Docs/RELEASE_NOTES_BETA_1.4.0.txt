@@ -1,0 +1,22 @@
+This is MOOSE beta 1.4.0. At this point MOOSE has been used in several large
+network and multiscale research simulations and this beta release is primarily
+one for refinement of the current code framework. This beta release sees
+many GUI developments including:
+Run-time visualization and interaction GUI for cell models in 3D
+Run-time visualization and interaction GUI for signaling models
+Improved layout of the GUI, with a convenient Simulation Control Toolbar.
+This beta release also has simulator core object developments including:
+Efield object used in simulating field and EEG electrodes, ported from GENESIS
+PulseGen enhanced with arbitrary numbers of levels, delays, and width.
+Classes added to support stochastic synapses with short-term plasticity.
+Hsolve updates for better single-neuron and network modeling.
+
+Major contributors to this beta release are
+GUI work: Chaitanya, Harsha Rani
+Code base: Subhasis Ray, Niraj Dudani
+Release management: Siji George.
+
+This is likely to be the final beta release, and following this MOOSE will
+switch over to a new code base which supports multithreading and MPI.
+Thus the next development cycle will be a release-candidate whose main
+focus will be to replicate the current features on the new code base.
