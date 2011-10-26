@@ -84,7 +84,50 @@ RequestExecutionLevel admin
 !insertmacro MUI_UNPAGE_FINISH
 
 !insertmacro MUI_LANGUAGE "English"
+Function AddToPythonPath
+Exch $0
+Push $1
+ReadRegStr $1 HKCU "Environment" "PYTHONPATH"
+		StrCmp $1 "" AddToPythonPath_doit
+			StrCpy $0 "$1;$0"
+			Goto AddToPythonPath_doit
+		AddToPythonPath_doit:
+			WriteRegStr HKCU "Environment" "PYTHONPATH" $0
+			SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+		Pop $1
+		Pop $0
+FunctionEnd
 
+Function un.RemoveFromPythonPath
+	Exch $0
+	Push $1
+	Push $2
+	Push $3
+	Push $4
+	StrLen $2 $0
+	ReadRegStr $1 HKCU "Environment" "PYTHONPATH"
+	Push $1
+	Push $0
+	Call un.StrStr ; Find $0 in $1
+	Pop $0 ; pos of our dir
+	IntCmp $0 -1 unRemoveFromPythonPath_done
+	; else, it is in path
+	StrCpy $3 $1 $0 ; $3 now has the part of the path before our dir
+	IntOp $2 $2 + $0 ; $2 now contains the pos after our dir in the path (';')
+	IntOp $2 $2 + 1 ; $2 now containts the pos after our dir and the semicolon.
+	StrLen $0 $1
+	StrCpy $1 $1 $0 $2
+	StrCpy $3 "$3$1"
+	WriteRegStr HKCU "Environment" "PYTHONPATH" $3
+	SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+
+		unRemoveFromPythonPath_done:
+			Pop $4
+			Pop $3
+			Pop $2
+			Pop $1
+			Pop $0
+FunctionEnd
 Function Splash
 	Push $0
 	
@@ -281,6 +324,10 @@ Section "moose"
 	; registry.
 	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR"  
 	
+	# Add the Python module directories to PYTHONPATH.
+	Push "$INSTDIR"
+	Call AddToPythonPath
+	
 	Pop $0
 SectionEnd
 
@@ -293,7 +340,7 @@ Section "Start Menu Shortcuts"
 	SetShellVarContext all
 	CreateDirectory "$SMPROGRAMS\MOOSE"
 	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moose.exe" 0
-	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE GUI.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moosegui\moosegui.py" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE GUI.lnk" "$INSTDIR\moosegui\moosegui.py" "" "$INSTDIR\moosegui\moosegui.py" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Demos.lnk" "$INSTDIR\Demos" "" "$INSTDIR\Demos" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Regression Tests.lnk" "$INSTDIR\RegressionTests" "" "$INSTDIR\RegressionTests" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Documentation.lnk" "$INSTDIR\Docs" "" "$INSTDIR\Docs" 0
@@ -301,7 +348,10 @@ Section "Start Menu Shortcuts"
 	CreateShortCut "$SMPROGRAMS\MOOSE\Report Bugs.lnk" "$INSTDIR\Docs\Report Bugs.url" "" "$INSTDIR\Docs\Report Bugs.url" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 SectionEnd
-
+Section "Desktop Shortcuts"
+	SetShellVarContext all
+	CreateShortCut "$DESKTOP\MOOSEGUI.lnk" "$INSTDIR\moosegui\moosegui.py" "" "$INSTDIR\Docs\moose_logo.png" 0
+SectionEnd
 Function un.onInit
 	Call un.ConfirmAdmin
 FunctionEnd
@@ -410,8 +460,13 @@ Section "Uninstall"
 	; registry.
 	${un.EnvVarUpdate} $3 "PATH" "R" "HKLM" "$INSTDIR"   
 	
+	# Remove the Python module directories from PYTHONPATH.
+	Push "$INSTDIR"
+	Call un.RemoveFromPythonPath
+	
 	; Remove directories used
 	RMDir /r "$SMPROGRAMS\MOOSE"
+	RMDir "$DESKTOP\MOOSEGUI.lnk"
 	
 	; The installation directory can be deleted like this:
 	
