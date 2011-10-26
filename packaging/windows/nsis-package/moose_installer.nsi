@@ -84,6 +84,7 @@ RequestExecutionLevel admin
 !insertmacro MUI_UNPAGE_FINISH
 
 !insertmacro MUI_LANGUAGE "English"
+
 Function AddToPythonPath
 Exch $0
 Push $1
@@ -350,7 +351,7 @@ Section "Start Menu Shortcuts"
 SectionEnd
 Section "Desktop Shortcuts"
 	SetShellVarContext all
-	CreateShortCut "$DESKTOP\MOOSEGUI.lnk" "$INSTDIR\moosegui\moosegui.py" "" "$INSTDIR\Docs\moose_logo.png" 0
+	CreateShortCut "$DESKTOP\MOOSEGUI.lnk" "$INSTDIR\moosegui\moosegui.py" "" "$INSTDIR\moosegui\moose_icon.png" 0
 SectionEnd
 Function un.onInit
 	Call un.ConfirmAdmin
@@ -467,6 +468,7 @@ Section "Uninstall"
 	; Remove directories used
 	RMDir /r "$SMPROGRAMS\MOOSE"
 	RMDir "$DESKTOP\MOOSEGUI.lnk"
+	
 	
 	; The installation directory can be deleted like this:
 	
