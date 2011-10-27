@@ -325,6 +325,14 @@ Section "moose"
 	; registry.
 	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR"  
 	
+	; read Python Install path
+	ReadRegStr $2 \
+		HKLM \
+		"SOFTWARE\PYTHON" \
+		"InstallPath"
+	; updating the PATH environment variable in the registry.
+	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$2"
+	
 	# Add the Python module directories to PYTHONPATH.
 	Push "$INSTDIR"
 	Call AddToPythonPath
