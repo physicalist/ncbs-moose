@@ -326,16 +326,15 @@ Section "moose"
 	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR"  
 	
 	; read Python Install path
-	ReadRegStr $2 \
-		HKLM \
-		"SOFTWARE\PYTHON" \
-		"InstallPath"
+	ReadRegStr $2 HKLM "SOFTWARE\PYTHON\PythonCore\2.6\InstallPath" ""
+		
 	; updating the PATH environment variable in the registry.
-	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$2"
+	${EnvVarUpdate} $0 "PATH" "A" "HKLM" $2
 	
 	# Add the Python module directories to PYTHONPATH.
 	Push "$INSTDIR"
 	Call AddToPythonPath
+	
 	
 	Pop $0
 SectionEnd
@@ -348,8 +347,8 @@ FunctionEnd
 Section "Start Menu Shortcuts"
 	SetShellVarContext all
 	CreateDirectory "$SMPROGRAMS\MOOSE"
-	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moose.exe" 0
-	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE GUI.lnk" "$INSTDIR\moosegui\moosegui.py" "" "$INSTDIR\moosegui\moosegui.py" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE-SHELL.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moose.exe" 0
+	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE-GUI.lnk" "$INSTDIR\moosegui.py" "" "$INSTDIR\moosegui.py" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Demos.lnk" "$INSTDIR\Demos" "" "$INSTDIR\Demos" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Regression Tests.lnk" "$INSTDIR\RegressionTests" "" "$INSTDIR\RegressionTests" 0
 	CreateShortCut "$SMPROGRAMS\MOOSE\Documentation.lnk" "$INSTDIR\Docs" "" "$INSTDIR\Docs" 0
@@ -359,7 +358,7 @@ Section "Start Menu Shortcuts"
 SectionEnd
 Section "Desktop Shortcuts"
 	SetShellVarContext all
-	CreateShortCut "$DESKTOP\MOOSEGUI.lnk" "$INSTDIR\moosegui\moosegui.py" "" "$INSTDIR\moosegui\moose_icon.png" 0
+	CreateShortCut "$DESKTOP\MOOSEGUI.lnk" "$INSTDIR\moosegui.py" "" "$INSTDIR\moose_icon.png" 0
 SectionEnd
 Function un.onInit
 	Call un.ConfirmAdmin
