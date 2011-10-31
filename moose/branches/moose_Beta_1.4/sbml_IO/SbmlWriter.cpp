@@ -87,7 +87,7 @@ void SbmlWriter::write( string filepath,Id location )
 #else
 	cout << "This version does not have SBML support." << endl;
 #endif
-	cout<<"exiting from sbmlWriter::write"<<endl;
+	
 }
 
 #ifdef USE_SBML
