@@ -267,7 +267,7 @@ class MainWindow(QtGui.QMainWindow):
         self.runButtonToolbar.setToolTip("<font color='black'> Run </font>")
         self.runButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,"run.png")))
         self.runButtonToolbar.setGeometry(360,0,50,30)
-        self.runButtonToolbar.setEnabled(0)
+        self.runButtonToolbar.setEnabled(1)
         self.runButtonToolbar.setStatusTip('Run to start simulation')
         self.runButtonToolbar.setWhatsThis("<font color='black'> Run to start simulation </font>")
 
@@ -275,7 +275,7 @@ class MainWindow(QtGui.QMainWindow):
         self.continueButtonToolbar.setToolTip("<font color='black'> Continue </font>")
         self.continueButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,"continue.png")))
         self.continueButtonToolbar.setGeometry(410,0,50,30)
-        self.continueButtonToolbar.setEnabled(0)
+        self.continueButtonToolbar.setEnabled(1)
         self.continueButtonToolbar.setStatusTip('Continue simulation')
         self.continueButtonToolbar.setWhatsThis("<font color='black'> Continue simulation </font>")
 
@@ -283,7 +283,7 @@ class MainWindow(QtGui.QMainWindow):
         self.resetButtonToolbar.setToolTip("<font color='black'> Reset </font>")
         self.resetButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,"reset.png")))
         self.resetButtonToolbar.setGeometry(460,0,50,30)
-        self.resetButtonToolbar.setEnabled(0)
+        self.resetButtonToolbar.setEnabled(1)
         self.resetButtonToolbar.setStatusTip('Reset simulation')
         self.resetButtonToolbar.setWhatsThis("<font color='black'> Reset simulation </font>")
         
