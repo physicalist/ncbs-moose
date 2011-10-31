@@ -1,1 +1,1 @@
-from moose.neuroml.NeuroML_reader import NeuroML
+from .NeuroML_reader import NeuroML
