@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Jun 17 12:20:38 2011 (+0530)
+# Last-Updated: Wed Nov  2 16:49:03 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2656
+#     Update #: 2671
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -876,7 +876,7 @@ class MainWindow(QtGui.QMainWindow):
         self.simdtText = QtGui.QLineEdit('%1.3e' % (MooseHandler.simdt), self.controlPanel)
         self.plotdtText = QtGui.QLineEdit('%1.3e' % (MooseHandler.plotdt), self)
         #self.gldtText = QtGui.QLineEdit('%1.3e' % (MooseHandler.gldt), self.controlPanel)
-        # self.overlayCheckBox = QtGui.QCheckBox(self.tr('Overlay plots'), self.controlPanel)
+        self.overlayCheckBox = QtGui.QCheckBox(self.tr('Overlay plots'), self.controlPanel)
         self.connect(self.runtimeText,QtCore.SIGNAL('textEdited(QString)'),self.controlDockTextChanged)
         self.connect(self.runButton, QtCore.SIGNAL('clicked()'), self.resetAndRunSlot)
         self.connect(self.continueButton, QtCore.SIGNAL('clicked()'), self._runSlot)
@@ -886,7 +886,7 @@ class MainWindow(QtGui.QMainWindow):
         layout.addWidget(self.plotdtText, 1, 1)
         #layout.addWidget(self.gldtLabel, 2, 0)
         #layout.addWidget(self.gldtText, 2, 1)
-        # layout.addWidget(self.overlayCheckBox, 3, 0)
+        layout.addWidget(self.overlayCheckBox, 3, 0)
         layout.addWidget(self.runtimeLabel, 4, 0)
         layout.addWidget(self.runtimeText, 4, 1)
         layout.addWidget(self.updateTimeLabel, 5, 0)
@@ -1342,11 +1342,15 @@ class MainWindow(QtGui.QMainWindow):
             self.updateTimeText.setText(str(updateInterval))
         #self.mooseHandler.doReset(simdt, plotdt, gldt,updateInterval)
         self.mooseHandler.doReset(simdt, plotdt, updateInterval)
+        plots = set()
         for table, plot in self.tablePlotMap.items():
             print 'Clearing plot', table.name
             table.clear()
-            # plot.setOverlay(self.overlayCheckBox.isChecked())
-            plot.reset()
+            plots.add(plot)
+            
+        for plot in plots:
+            plot.setOverlay(self.overlayCheckBox.isChecked())
+            plot.reset(self.mooseHandler.runcount)
                     
 
     def _runSlot(self):
@@ -1517,6 +1521,7 @@ class MainWindow(QtGui.QMainWindow):
         tables = self.mooseHandler.getDataTables()
         for table in tables:
             self.plots[0].addTable(table)
+            self.tablePlotMap[table] = self.plots[0]
             config.LOGGER.info('Added plot ' + table.path)
         self.plots[0].replot()
 

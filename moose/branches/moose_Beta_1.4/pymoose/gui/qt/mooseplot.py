@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Jul  5 21:35:09 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Jun 17 12:39:59 2011 (+0530)
+# Last-Updated: Wed Nov  2 16:39:33 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 615
+#     Update #: 722
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -79,6 +79,7 @@ class MoosePlot(Qwt.QwtPlot):
         Qwt.QwtPlot.__init__(self, *args)
         self.plotNo = MoosePlot.plot_index
         MoosePlot.plot_index = MoosePlot.plot_index + 1
+        self.runcount = 0
         self.setAcceptDrops(True)
         self.curveIndex = 0
         self.setCanvasBackground(Qt.white)
@@ -220,37 +221,50 @@ class MoosePlot(Qwt.QwtPlot):
 
     def updatePlot(self, currentTime):
         config.LOGGER.debug('update: %g' % (currentTime))
-        if currentTime > self.xmin:
-            self.xmin = currentTime
+        self.xmin = currentTime
         for curve, table in self.curveTableMap.items():
             tabLen = len(table)
-            if tabLen == 0:
+            if tabLen < 2:
                 continue
             ydata = array(table)           
             xdata = linspace(0, currentTime, tabLen)
             #~ harsha:for Genesis first element had some invalid number which when ploted had a different result so eliminating
             #~ curve.setData(xdata, ydata)            
             curve.setData(xdata[2:tabLen:1],ydata[2:tabLen:1])
-            
+        self.replot()
         self.clearZoomStack()
+        self.zoomer.setZoomBase()
+        
 
-    def addTable(self, table, curve_name=None):
+    def addTable(self, table):
+        print 'addTable', table.path, self.runcount
+        new_curve = None
+        curve = None
+        curve_name = table.name
         try:
-            curve = self.tableCurveMap[table]
+            if self.overlay:
+                curve = self.tableCurveMap.pop(table)                
+                curve.setTitle('%s # %d' % (table.name, self.runcount))
+                print 'Setting old curve name to:', curve.title()
+                new_curve = Qwt.QwtPlotCurve(curve_name)
+            else:
+                curve = self.tableCurveMap[table]
         except KeyError:
             print 'Adding table ', table.path
-            if curve_name is None:
-                curve_name = table.name
-            curve = Qwt.QwtPlotCurve(curve_name)
-            curve.setPen(MoosePlot.colors[self.curveIndex])
+            new_curve = Qwt.QwtPlotCurve(curve_name)
+        if new_curve:
+            new_curve.setPen(MoosePlot.colors[self.curveIndex])
             self.curveIndex = (self.curveIndex + 1) % len(MoosePlot.colors)
-            self.curveTableMap[curve] = table
-            self.tableCurveMap[table] = curve
-            curve.attach(self)
-        if len(table) > 0:
+            self.curveTableMap[new_curve] = table
+            self.tableCurveMap[table] = new_curve
+            new_curve.attach(self)
+        if len(table) > 2:
             yy = array(table)
             xx = linspace(0.0, self.xmin, len(yy))
-            curve.setData(xx, yy)
+            if new_curve:
+                new_curve.setData(xx, yy)
+            else:
+                curve.setData(xx, yy)
 
     def removeTable(self, table):
         try:
@@ -263,19 +277,19 @@ class MoosePlot(Qwt.QwtPlot):
     def setOverlay(self, overlay):
         self.overlay = overlay
 
-    def reset(self):
+    def reset(self, runcount):
+        print 'Resetting curves'
+        self.runcount = runcount
+        tables = self.tableCurveMap.keys()
         if not self.overlay:
-            self.updatePlot(0)
-            return
-        table_list = []
-        try:
-            while self.tableCurveMap:
-                (table, curve) = self.tableCurveMap.popitem()
-                self.curveTableMap.pop(curve)
-                table_list.append(table)
-        except KeyError:
-            pass
-        for table in table_list:
+            self.clear()
+        else:
+            for curve, table in self.curveTableMap.items():
+                title = '%s # %d' % (table.name, self.runcount)
+                curve.setTitle(title)
+        self.tableCurveMap.clear()
+        self.curveTableMap.clear()
+        for table in tables:
             self.addTable(table)
 
     def detachItems(self):
