@@ -157,8 +157,8 @@ class MainWindow(QtGui.QMainWindow):
         self.centralVizPanel.setStatusTip('To load a model, Menu >File >Load Model or Ctrl+L')
         self.centralVizPanel.setWhatsThis("<font color='black'> To load a model, Menu >File >Load Model or Ctrl+L </font>")
         self.centralPanel = QtGui.QMdiArea(self)
-        self.centralPanel.setStatusTip('Plot Window. Drag field from Property Editor to plot. Click and drag area to zoom in. Esc to zoom out. To add new Plot Windows, Menu >View >New Plot Window')
-        self.centralPanel.setWhatsThis("<font color='black'> Plot Window. Drag field from Property Editor to plot. Click and drag area to zoom in. Esc to zoom out. To add new Plot Windows, Menu >View >New Plot Window </font>")
+        self.centralPanel.setStatusTip('Plot Window. Ctrl+H to toggle overlay. Drag field from Property Editor to plot. Click and drag area to zoom in. Esc to zoom out. To add new Plot Windows, Menu >View >New Plot Window')
+        self.centralPanel.setWhatsThis("<font color='black'> Plot Window. Ctrl+H to toggle overlay. Drag field from Property Editor to plot. Click and drag area to zoom in. Esc to zoom out. To add new Plot Windows, Menu >View >New Plot Window </font>")
         self.horizontalLayout.addWidget(self.centralPanel)
         
         # The following are for holding transient selections from
@@ -211,6 +211,7 @@ class MainWindow(QtGui.QMainWindow):
         # plot widgets they belong to.
         self.tablePlotMap = {}
         self.currentPlotWindow = None
+        self.currentVizWindow = None
         # Start with a default number of plot widgets
         self._visiblePlotWindowCount = 0
         for ii in range(MainWindow.default_plot_count):
@@ -564,6 +565,12 @@ class MainWindow(QtGui.QMainWindow):
         self.connectionDialogAction = QtGui.QAction(self.tr('&Connect elements'), self)
 	self.connect(self.connectionDialogAction, QtCore.SIGNAL('triggered()'), self.makeConnectionPopup)
 
+        self.overlayAction = QtGui.QAction(self.tr('&Overlay Active Plot'),self)
+        self.overlayAction.setCheckable(True)
+        self.overlayAction.setChecked(False)
+        self.overlayAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+H')))
+        self.connect(self.overlayAction,QtCore.SIGNAL('triggered(bool)'),self.toggleOverlay)
+
         #self.addElectrodesDialogAction = QtGui.QAction(self.tr('&Insert Electode'),self)
         #self.connect(self.addElectrodesDialogAction, QtCore.SIGNAL('triggered()'),self.addElectrodesPopup)
         # Actions for file menu
@@ -718,6 +725,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.editModelMenu = QtGui.QMenu(self.tr('&Edit'), self)
         self.editModelMenu.addAction(self.connectionDialogAction)
+        self.editModelMenu.addAction(self.overlayAction)
         #self.editModelMenu.addAction(self.addElectrodesDialogAction)
         
 		
@@ -876,7 +884,7 @@ class MainWindow(QtGui.QMainWindow):
         self.simdtText = QtGui.QLineEdit('%1.3e' % (MooseHandler.simdt), self.controlPanel)
         self.plotdtText = QtGui.QLineEdit('%1.3e' % (MooseHandler.plotdt), self)
         #self.gldtText = QtGui.QLineEdit('%1.3e' % (MooseHandler.gldt), self.controlPanel)
-        self.overlayCheckBox = QtGui.QCheckBox(self.tr('Overlay plots'), self.controlPanel)
+        #self.overlayCheckBox = QtGui.QCheckBox(self.tr('Overlay plots'), self.controlPanel)
         self.connect(self.runtimeText,QtCore.SIGNAL('textEdited(QString)'),self.controlDockTextChanged)
         self.connect(self.runButton, QtCore.SIGNAL('clicked()'), self.resetAndRunSlot)
         self.connect(self.continueButton, QtCore.SIGNAL('clicked()'), self._runSlot)
@@ -886,7 +894,7 @@ class MainWindow(QtGui.QMainWindow):
         layout.addWidget(self.plotdtText, 1, 1)
         #layout.addWidget(self.gldtLabel, 2, 0)
         #layout.addWidget(self.gldtText, 2, 1)
-        layout.addWidget(self.overlayCheckBox, 3, 0)
+        #layout.addWidget(self.overlayCheckBox, 3, 0)
         layout.addWidget(self.runtimeLabel, 4, 0)
         layout.addWidget(self.runtimeText, 4, 1)
         layout.addWidget(self.updateTimeLabel, 5, 0)
@@ -902,7 +910,7 @@ class MainWindow(QtGui.QMainWindow):
     def addPlotWindow(self):
         title = self.tr('Plot %d' % (len(self.plots)))
         plotWindow = MoosePlotWindow()
-        plotWindow.setToolTip("<font color='black'> Drag field from Property Editor into the plot window to plot </font>")
+        plotWindow.setToolTip("<font color='black'> Drag field from Property Editor into the plot window to plot. Ctrl+H to toggle overlay </font>")
 
         plotWindow.setWindowTitle(title)
         plotWindow.setObjectName(title)
@@ -1144,7 +1152,7 @@ class MainWindow(QtGui.QMainWindow):
         #vizWindow.setFixed
         vizWindow.showMaximized()
         self._visiblePlotWindowCount += 1
-        self.currentPlotWindow = vizWindow
+        self.currentVizWindow = vizWindow
         return vizWindow
    
     def pickCompartment(self,path):	#path is a QString type moosepath
@@ -1294,7 +1302,7 @@ class MainWindow(QtGui.QMainWindow):
                 vizWindow.show()
                 vizWindow.showMaximized()
                 self._visiblePlotWindowCount += 1
-                self.currentPlotWindow = vizWindow
+                self.currentVizWindow = vizWindow
                 self.loadModelAction.setEnabled(0) #to prevent multiple loads
                 return vizWindow
         else:
@@ -1349,7 +1357,7 @@ class MainWindow(QtGui.QMainWindow):
             plots.add(plot)
             
         for plot in plots:
-            plot.setOverlay(self.overlayCheckBox.isChecked())
+            #plot.setOverlay(self.overlayCheckBox.isChecked())
             plot.reset(self.mooseHandler.runcount)
                     
 
@@ -1468,6 +1476,14 @@ class MainWindow(QtGui.QMainWindow):
                 plot.showSelectedCurves(not hide)
                 break
 
+    def toggleOverlay(self,hold):
+        activePlot = self.currentPlotWindow            
+        plotName = activePlot.objectName()
+        for plot in self.plots:
+            print plot.objectName(), 'overlay', hold
+            if plot.objectName() == plotName:
+                plot.setOverlay(hold)
+
     def showAllPlots(self):
         for plot in self.plots:
             plot.showAllCurves()
@@ -1489,6 +1505,11 @@ class MainWindow(QtGui.QMainWindow):
     def setCurrentPlotWindow(self, subWindow):
         if subWindow:
             self.currentPlotWindow = subWindow.widget()
+            activePlot = self.currentPlotWindow            
+            plotName = activePlot.objectName()
+            for plot in self.plots:
+                if plot.objectName() == plotName:
+                    self.overlayAction.setChecked(plot.overlay)
 
     def startGLWizard(self):
         self.glWizard = MooseGLWizard(self, self.mooseHandler)
