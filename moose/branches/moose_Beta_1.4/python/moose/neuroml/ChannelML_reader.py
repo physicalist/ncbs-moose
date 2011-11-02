@@ -22,6 +22,8 @@ class ChannelML():
             self.readChannelML(channel,params,channelml_element.attrib['units'])
         for synapse in channelml_element.findall('.//{'+self.cml+'}synapse_type'):
             self.readSynapseML(synapse,channelml_element.attrib['units'])
+        for ionConc in channelml_element.findall('.//{'+self.cml+'}ion_concentration'):
+            self.readIonConcML(ionConc,channelml_element.attrib['units'])
 
     def readSynapseML(self,synapseElement,units="SI units"):
         if units == 'Physiological Units': # see pg 219 (sec 13.2) of Book of Genesis
@@ -49,6 +51,7 @@ class ChannelML():
     def readChannelML(self,channelElement,params={},units="SI units"):
         ## I first calculate all functions assuming a consistent system of units.
         ## While filling in the A and B tables, I just convert to SI.
+        ## Also convert gmax and Erev.
         if units == 'Physiological Units': # see pg 219 (sec 13.2) of Book of Genesis
             Vfactor = 1e-3 # V from mV
             Tfactor = 1e-3 # s from ms
@@ -67,8 +70,8 @@ class ChannelML():
         else:
             moosechannel = moose.HHChannel2D('/library/'+channelElement.attrib['name'])
         if IVrelation.attrib['cond_law']=="ohmic":
-            moosechannel.Gbar = float(IVrelation.attrib['default_gmax'])
-            moosechannel.Ek = float(IVrelation.attrib['default_erev'])
+            moosechannel.Gbar = float(IVrelation.attrib['default_gmax']) * Gfactor
+            moosechannel.Ek = float(IVrelation.attrib['default_erev']) * Vfactor
             moosechannel.addField('ion')
             moosechannel.setField('ion',IVrelation.attrib['ion'])
             if concdep is not None:
@@ -93,7 +96,7 @@ class ChannelML():
             VMIN_here = VMIN
             VMAX_here = VMAX
             NDIVS_here = NDIVS
-        offset = channelElement.find('./{'+self.cml+'}offset')
+        offset = IVrelation.find('./{'+self.cml+'}offset')
         if offset is None: vNegOffset = 0.0
         else: vNegOffset = float(offset.attrib['value'])
         
@@ -241,9 +244,11 @@ class ChannelML():
         ionSpecies = ionConcElement.find('./{'+self.cml+'}ion_species')
         if ionSpecies is not None:
             if not 'ca' in ionSpecies.attrib['name']:
-                print "Sorry, I cannot handle non Ca ion pools. Exiting ..."
+                print "Sorry, I cannot handle non-Ca-ion pools. Exiting ..."
                 sys.exit(1)
-        caPool = moose.CaConc('/library/'+ionConcElement.attrib['name'])
+        capoolName = ionConcElement.attrib['name']
+        print "loading Ca pool :",capoolName
+        caPool = moose.CaConc('/library/'+capoolName)
         poolModel = ionConcElement.find('./{'+self.cml+'}decaying_pool_model')
         caPool.CaBasal = float(poolModel.attrib['resting_conc']) * concfactor
         caPool.Ca_base = float(poolModel.attrib['resting_conc']) * concfactor

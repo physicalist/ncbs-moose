@@ -144,8 +144,16 @@ class MorphML():
                         passive = True
                 #print "Loading mechanism ", mechanismname
                 ## ONLY creates channel if at least one parameter (like gmax) is specified in the xml
-                ## (Neuroml does not allow you to specify all default values.).
-                for parameter in mechanism.findall(".//{"+self.bio+"}parameter"):
+                ## Neuroml does not allow you to specify all default values.
+                ## However, granule cell example in neuroconstruct has Ca ion pool without
+                ## a parameter, applying default values to all compartments!
+                mech_params = mechanism.findall(".//{"+self.bio+"}parameter")
+                ## if no params, apply all default values to all compartments
+                if len(mech_params) == 0:
+                    for compartment in self.cellDictByCableId[cellname][1].values():
+                        self.set_compartment_param(compartment,None,'default',mechanismname)  
+                ## if params are present, apply params to specified cable/compartment groups
+                for parameter in mech_params:
                     parametername = parameter.attrib['name']
                     if passive==True:
                         if passive and parametername in ['gmax']:
@@ -167,7 +175,8 @@ class MorphML():
                              'Ek', Efactor*float(parameter.attrib["value"]), self.bio, mechanismname)
                         elif parametername in ['depth']: # has to be type Ion Concentration!
                             self.set_group_compartment_param(cell, cellname, parameter,\
-                             'thick', self.length_factor*float(parameter.attrib["value"]), self.bio, mechanismname)
+                             'thick', self.length_factor*float(parameter.attrib["value"]),\
+                             self.bio, mechanismname)
                         else:
                             print "Yo programmer of morphml import! You left out parameter ",\
                              parametername, " in mechanism ",mechanismname
@@ -231,28 +240,43 @@ class MorphML():
             #spikegen = moose.SpikeGen(compartment.path+'/'+value+'_spikegen') # value contains name of synapse i.e. synapse_type
             #compartment.connect("VmSrc",spikegen,"Vm")
             pass
-        elif mechanismname is not None and not (name in ['thick']): # should not be an Ion Concentration
+        elif mechanismname is not None:
+            ## if mechanism is not present in compartment, deep copy from library
             if not self.context.exists(compartment.path+'/'+mechanismname):
                 ## if channel does not exist in library load it from xml file
                 if not self.context.exists("/library/"+mechanismname):
                     cmlR = ChannelML()
                     cmlR.readChannelMLFromFile(mechanismname+'.xml')
-                libchannel = moose.HHChannel("/library/"+mechanismname)
-                channel = moose.HHChannel(libchannel,mechanismname,compartment) # deep copies the library channel under the compartment
-                channel.connect('channel',compartment,'channel')
+                neutralObj = moose.Neutral("/library/"+mechanismname)
+                if 'Conc' in neutralObj.className: # Ion concentration pool
+                    libcaconc = moose.CaConc("/library/"+mechanismname)
+                    caconc = moose.CaConc(libcaconc,mechanismname,compartment) # deep copies the library caconc under the compartment
+                    ## CaConc connections are made later using connect_CaConc()
+                    ## JUST Default value of thick WILL NOT DO - HAVE TO SET B based on this thick!
+                    caconc.B = 1 / (2*FARADAY) / (math.pi*compartment.diameter*compartment.length * caconc.thick)
+                    # I am using a translation from Neuron, hence this method. In Genesis, gmax / (surfacearea*thick) is set as value of B!
+                elif 'HHChannel2D' in neutralObj.className : ## HHChannel2D
+                    libchannel = moose.HHChannel2D("/library/"+mechanismname)
+                    channel = moose.HHChannel2D(libchannel,mechanismname,compartment) # deep copies the library channel under the compartment
+                    channel.connect('channel',compartment,'channel')
+                elif 'HHChannel' in neutralObj.className : ## HHChannel
+                    libchannel = moose.HHChannel("/library/"+mechanismname)
+                    channel = moose.HHChannel(libchannel,mechanismname,compartment) # deep copies the library channel under the compartment
+                    channel.connect('channel',compartment,'channel')
+            ## if mechanism is present in compartment, just wrap it
             else:
-                channel = moose.HHChannel(compartment.path+'/'+mechanismname) # wraps existing channel
+                neutralObj = moose.Neutral(compartment.path+'/'+mechanismname)
+                if 'Conc' in neutralObj.className: # Ion concentration pool
+                    caconc = moose.CaConc(compartment.path+'/'+mechanismname) # wraps existing channel
+                elif 'HHChannel2D' in neutralObj.className : ## HHChannel2D
+                    channel = moose.HHChannel2D(compartment.path+'/'+mechanismname) # wraps existing channel
+                elif 'HHChannel' in neutralObj.className : ## HHChannel
+                    channel = moose.HHChannel(compartment.path+'/'+mechanismname) # wraps existing channel
             if name == 'Gbar':
                 channel.Gbar = value*math.pi*compartment.diameter*compartment.length
             elif name == 'Ek':
                 channel.Ek = value
-        elif mechanismname is not None: # Ion Concentration
-            if not self.context.exists(compartment.path+'/'+mechanismname):
-                libcaconc = moose.CaConc("/library/"+mechanismname)
-                caconc = moose.CaConc(libcaconc,mechanismname,compartment) # deep copies the library channel under the compartment
-            else:
-                caconc = moose.CaConc(compartment.path+'/'+mechanismname) # wraps existing channel
-            if name == 'thick':
+            elif name == 'thick':
                 caconc.thick = value ## JUST THIS WILL NOT DO - HAVE TO SET B based on this thick!
                 caconc.B = 1 / (2*FARADAY) / (math.pi*compartment.diameter*compartment.length * value)
                 # I am using a translation from Neuron, hence this method. In Genesis, gmax / (surfacearea*thick) is set as value of B!
