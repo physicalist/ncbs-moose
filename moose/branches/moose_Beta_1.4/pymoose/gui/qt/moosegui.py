@@ -1272,7 +1272,7 @@ class MainWindow(QtGui.QMainWindow):
             self.statusBar.showMessage('Loaded a Neural Model')
             self.centralVizPanel.setStatusTip('Click on compartment to open properties in Property Editor. Use arrow keys to pan model. Click and drag to rotate. Scroll to zoom. To visualize more cells Menu >View >New GL Window')
             self.centralVizPanel.setWhatsThis("<font color='black'> Click on compartment to open properties in Property Editor. Use arrow keys to pan model. Click and drag to rotate. Scroll to zoom. To visualize more cells Menu >View >New GL Window </font>")
-            if len(ch)==1:
+            if len(ch)!=0:
                 #only the single cell models to be visualized
                 title = self.tr('GL %d' % (len(self.vizs)))
                 vizWindow = newGLSubWindow()
@@ -1284,7 +1284,8 @@ class MainWindow(QtGui.QMainWindow):
                 vizWindow.setWidget(viz)
         
                 viz.viz=1	#turn on visualization mode
-                viz.drawNewCell(cellName=moose.Cell(ch[0]).path,style = 2)
+                for i in ch:
+                    viz.drawNewCell(cellName=moose.Cell(i).path,style = 2)
                 viz.setColorMap(cMap=os.path.join(str(self.settings.value(config.KEY_GL_COLORMAP).toString()),'jet'))
                 QtCore.QObject.connect(viz,QtCore.SIGNAL("compartmentSelected(QString)"),self.pickCompartment)
                 #print viz.modelview_matrix_
