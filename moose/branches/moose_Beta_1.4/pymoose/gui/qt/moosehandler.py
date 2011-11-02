@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jan 28 15:08:29 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Feb 25 11:18:27 2011 (+0530)
+# Last-Updated: Wed Nov  2 16:22:58 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 868
+#     Update #: 872
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -141,7 +141,7 @@ class MooseHandler(QtCore.QObject):
         self._portPathMap = {}
         self._pathPortMap = defaultdict(set)
         self._portServerMap = {}
-
+        self.runcount = -1
     def getCurrentTime(self):
         clock = moose.ClockJob('/sched/cj')
         return clock.currentTime
@@ -312,6 +312,7 @@ class MooseHandler(QtCore.QObject):
         #MooseHandler.gldt = gldt
         MooseHandler.plotupdate_dt = plotupdate_dt
         self._context.reset()
+        self.runcount += 1
 
     def doRun(self, time):
         """Just runs the simulation. 
