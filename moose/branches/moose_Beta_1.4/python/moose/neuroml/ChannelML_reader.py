@@ -47,14 +47,18 @@ class ChannelML():
         moosesynapse.setField('mgblock','False')
       
     def readChannelML(self,channelElement,params={},units="SI units"):
+        ## I first calculate all functions assuming a consistent system of units.
+        ## While filling in the A and B tables, I just convert to SI.
         if units == 'Physiological Units': # see pg 219 (sec 13.2) of Book of Genesis
             Vfactor = 1e-3 # V from mV
             Tfactor = 1e-3 # s from ms
-            Gfactor = 1e1 # S/m^2 from mS/cm^2        
+            Gfactor = 1e1 # S/m^2 from mS/cm^2  
+            concfactor = 1e6 # Mol = mol/m^-3 from mol/cm^-3      
         else:
             Vfactor = 1.0
             Tfactor = 1.0
             Gfactor = 1.0
+            concfactor = 1.0
         print "loading channel :",channelElement.attrib['name']
         IVrelation = channelElement.find('./{'+self.cml+'}current_voltage_relation')
         concdep = IVrelation.find('./{'+self.cml+'}conc_dependence')
@@ -81,9 +85,10 @@ class ChannelML():
         impl_prefs = channelElement.find('./{'+self.cml+'}impl_prefs')
         if impl_prefs is not None:
             table_settings = impl_prefs.find('./{'+self.cml+'}table_settings')
-            VMIN_here = float(table_settings.attrib['min_v'])
-            VMAX_here = float(table_settings.attrib['max_v'])
-            NDIVS_here = int(table_settings.attrib['table_divisions'])
+            ## some problem here... disable
+            VMIN_here = VMIN#float(table_settings.attrib['min_v'])
+            VMAX_here = VMAX#float(table_settings.attrib['max_v'])
+            NDIVS_here = NDIVS#int(table_settings.attrib['table_divisions'])
         else:
             VMIN_here = VMIN
             VMAX_here = VMAX
@@ -162,13 +167,16 @@ class ChannelML():
                 else:
                     self.make_cml_function(steady_state, 'inf')
 
-                v = VMIN_here - vNegOffset
+                ## while calculating, use the units used in xml defn,
+                ## while filling in table, I convert to SI units.
+                v = VMIN_here/Vfactor - vNegOffset
                 for i in range(NDIVS_here+1):
                     inf = self.inf(v)
                     tau = self.tau(v)
-                    moosegate.A[i] = inf/tau
-                    moosegate.B[i] = 1.0/tau
-                    v = v + dv
+                    ## convert to SI before writing to table
+                    moosegate.A[i] = inf/tau / Tfactor
+                    moosegate.B[i] = 1.0/tau / Tfactor
+                    v = v + dv/Vfactor
             
             ## Ca dependent channel
             else:
@@ -176,19 +184,21 @@ class ChannelML():
                 ## ymin, ymax and ydivs are not exposed.
                 ## Setting them creates new and useless attributes within python HHGate2D without warning!
                 ## Hence use runG to set these via Genesis command
+                ## UNITS: while calculating, use the units used in xml defn,
+                ##        while filling in table, I convert to SI units.
                 self.context.runG("setfield "+moosegate.path+"/A"+\
                     #" ydivs "+str(CaNDIVS)+\ # these get overridden by the number of values in the table
-                    " ymin "+concdep.attrib['min_conc']+\
-                    " ymax "+concdep.attrib['max_conc'])
+                    " ymin "+str(float(concdep.attrib['min_conc'])*concfactor)+\
+                    " ymax "+str(float(concdep.attrib['max_conc'])*concfactor))
                 self.context.runG("setfield "+moosegate.path+"/B"+\
                     #" ydivs "+str(CaNDIVS)+\ # these get overridden by the number of values in the table
-                    " ymin "+concdep.attrib['min_conc']+\
-                    " ymax "+concdep.attrib['max_conc'])
+                    " ymin "+str(float(concdep.attrib['min_conc'])*concfactor)+\
+                    " ymax "+str(float(concdep.attrib['max_conc'])*concfactor))
                 ## for Ca dep channel, I expect only generic alpha and beta functions
                 ## these have already been made above
                 ftableA = open("CaDepA.dat","w")
                 ftableB = open("CaDepB.dat","w")
-                v = VMIN_here - vNegOffset
+                v = VMIN_here/Vfactor - vNegOffset
                 CaMIN = float(concdep.attrib['min_conc'])
                 CaMAX = float(concdep.attrib['max_conc'])
                 CaNDIVS = 100
@@ -196,13 +206,14 @@ class ChannelML():
                 for i in range(NDIVS_here+1):
                     Ca = CaMIN
                     for j in range(CaNDIVS+1):
-                        alpha = self.alpha(v,Ca)
+                        ## convert to SI before writing to table
+                        alpha = self.alpha(v,Ca)/Tfactor
                         ftableA.write(str(alpha)+" ")
-                        ftableB.write(str(alpha+self.beta(v,Ca))+" ")
+                        ftableB.write(str(alpha+self.beta(v,Ca)/Tfactor)+" ")
                         Ca += dCa
                     ftableA.write("\n")
                     ftableB.write("\n")
-                    v += dv
+                    v += dv/Vfactor
                 ftableA.close()
                 ftableB.close()
 

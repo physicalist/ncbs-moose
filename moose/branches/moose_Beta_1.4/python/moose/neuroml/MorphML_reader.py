@@ -4,6 +4,7 @@ import moose
 import sys, math
 
 from moose_utils import *
+from ChannelML_reader import *
 
 class MorphML():
 
@@ -232,6 +233,10 @@ class MorphML():
             pass
         elif mechanismname is not None and not (name in ['thick']): # should not be an Ion Concentration
             if not self.context.exists(compartment.path+'/'+mechanismname):
+                ## if channel does not exist in library load it from xml file
+                if not self.context.exists("/library/"+mechanismname):
+                    cmlR = ChannelML()
+                    cmlR.readChannelMLFromFile(mechanismname+'.xml')
                 libchannel = moose.HHChannel("/library/"+mechanismname)
                 channel = moose.HHChannel(libchannel,mechanismname,compartment) # deep copies the library channel under the compartment
                 channel.connect('channel',compartment,'channel')

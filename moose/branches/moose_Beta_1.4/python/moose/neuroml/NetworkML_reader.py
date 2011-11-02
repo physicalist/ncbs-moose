@@ -3,6 +3,8 @@ from neuroml_utils import * # tweak_model()
 import string
 import moose
 from moose_utils import * # for underscorize()
+from MorphML_reader import *
+from ChannelML_reader import *
 import sys
 
 class NetworkML():
@@ -62,6 +64,11 @@ class NetworkML():
             cellname = population.attrib["cell_type"]
             populationname = population.attrib["name"]
             print "loading", populationname
+            ## if channel does not exist in library load it from xml file
+            if not self.context.exists('/library/'+cellname):
+                mmlR = MorphML()
+                cellDict = mmlR.readMorphMLFromFile(cellname+'.morph.xml')
+                self.cellSegmentDict.update(cellDict)
             libcell = moose.Cell('/library/'+cellname)
             self.populationDict[populationname] = (cellname,{})
             for instance in population.findall(".//{"+nml_ns+"}instance"):
@@ -249,6 +256,10 @@ class NetworkML():
             syn.setDelay(syn.numSynapses-1, delay) # seconds
 
     def make_new_synapse(self, syn_name, postcomp, syn_name_full):
+        ## if channel does not exist in library load it from xml file
+        if not self.context.exists('/library/'+syn_name):
+            cmlR = ChannelML()
+            cmlR.readChannelMLFromFile(syn_name+'.xml')
         synid = self.context.deepCopy(self.context.pathToId('/library/'+syn_name),postcomp.id,syn_name_full)
         syn = moose.SynChan(synid)
         #### connect the post compartment to the synapse
