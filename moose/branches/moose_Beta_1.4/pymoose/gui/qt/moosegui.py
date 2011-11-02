@@ -1374,10 +1374,9 @@ class MainWindow(QtGui.QMainWindow):
             runtime = MooseHandler.runtime
             self.runtimeText.setText(str(runtime))
         self.mooseHandler.doRun(runtime)
-        self.updatePlots(runtime)
+        self.updatePlots(self.mooseHandler.getCurrentTime())
         #harsha: only after the model is run, saving the plot is enabled,otherwise there will be nothing to save
         self.saveTablePlotsAction.setEnabled(1)
-    
               
     def resetAndRunSlot(self):
         self._resetSlot()
@@ -1400,8 +1399,8 @@ class MainWindow(QtGui.QMainWindow):
                     oldplot.removeTable(table)
                 except KeyError:
                     pass
-                #plot.addTable(table)
-                plot.addTable(table, tokens[-2] + '_' + tokens[-1])
+                plot.addTable(table)
+                #plot.addTable(table, tokens[-2] + '_' + tokens[-1])
                 plot.replot()
                 self.tablePlotMap[table] = plot
                 
