@@ -12,12 +12,12 @@ class NeuroML():
         self.context = moose.PyMooseBase.getContext()
 
     def readNeuroMLFromFile(self,filename):
-        print "Reading file ... ", filename
+        print "Loading neuroml file ... ", filename
         tree = ET.parse(filename)
         root_element = tree.getroot()
         self.lengthUnits = root_element.attrib['lengthUnits']
 
-        print "Loading channels and synapses into MOOSE /library ..."
+        #print "Loading channels and synapses into MOOSE /library ..."
         cmlR = ChannelML()
         for channels in root_element.findall('.//{'+neuroml_ns+'}channels'):
             self.channelUnits = channels.attrib['units']
@@ -31,7 +31,7 @@ class NeuroML():
             for ionConc in channels.findall('.//{'+cml_ns+'}ion_concentration'):
                 cmlR.readIonConcML(ionConc,units=self.channelUnits)
 
-        print "Loading cell definitions into MOOSE /library ..."
+        #print "Loading cell definitions into MOOSE /library ..."
         mmlR = MorphML()
         self.cellsDict = {}
         for cells in root_element.findall('.//{'+neuroml_ns+'}cells'):
@@ -39,7 +39,7 @@ class NeuroML():
                 cellDict = mmlR.readMorphML(cell,params={},lengthUnits=self.lengthUnits)
                 self.cellsDict.update(cellDict)
 
-        print "Loading individual cells into MOOSE root ... "
+        #print "Loading individual cells into MOOSE root ... "
         nmlR = NetworkML()
         self.populationDict, self.projectionDict = \
             nmlR.readNetworkML(root_element,self.cellsDict,params={},lengthUnits=self.lengthUnits)
