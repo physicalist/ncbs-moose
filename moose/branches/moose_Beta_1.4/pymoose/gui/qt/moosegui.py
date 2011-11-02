@@ -1480,8 +1480,8 @@ class MainWindow(QtGui.QMainWindow):
         activePlot = self.currentPlotWindow            
         plotName = activePlot.objectName()
         for plot in self.plots:
-            print plot.objectName(), 'overlay', hold
             if plot.objectName() == plotName:
+                print plot.objectName(), 'overlay', hold
                 plot.setOverlay(hold)
 
     def showAllPlots(self):
