@@ -221,9 +221,9 @@ class MainWindow(QtGui.QMainWindow):
         #self.setCentralWidget(self.centralPanel)
         self.setCentralWidget(self.mainCentralWidget)
         
-        self.centralPanel.tileSubWindows()
+        #self.centralPanel.tileSubWindows()
         self.connect(self.centralPanel, QtCore.SIGNAL('subWindowActivated(QMdiSubWindow *)'), self.setCurrentPlotWindow)
-
+        self.centralPanel.setViewMode(self.centralPanel.TabbedView)
 	# We connect the double-click event on the class-list to
         # insertion of moose object in model tree.
         self.connect(self.mooseClassesWidget, 
@@ -526,21 +526,24 @@ class MainWindow(QtGui.QMainWindow):
 
         self.tabbedViewAction = QtGui.QAction(self.tr('Tabbed view'), self)
         self.tabbedViewAction.setCheckable(True)
-        self.tabbedViewAction.setChecked(False)
+        self.tabbedViewAction.setChecked(True)
         self.connect(self.tabbedViewAction, QtCore.SIGNAL('triggered(bool)'), self.switchTabbedView)
 
         self.tilePlotWindowsAction = QtGui.QAction(self.tr('Tile Plots'), self)
 	self.tilePlotWindowsAction.setCheckable(True)
 	self.connect(self.tilePlotWindowsAction, QtCore.SIGNAL('triggered(bool)'), self.centralPanel.tileSubWindows)
+	self.connect(self.tilePlotWindowsAction, QtCore.SIGNAL('triggered(bool)'), self.switchSubWindowView)
         self.cascadePlotWindowsAction = QtGui.QAction(self.tr('Cascade Plots'), self)
         self.cascadePlotWindowsAction.setCheckable(True)
 	self.connect(self.cascadePlotWindowsAction, QtCore.SIGNAL('triggered(bool)'), self.centralPanel.cascadeSubWindows)
-        
+	self.connect(self.cascadePlotWindowsAction, QtCore.SIGNAL('triggered(bool)'), self.switchSubWindowView)
+
         self.subWindowLayoutActionGroup = QtGui.QActionGroup(self)
         self.subWindowLayoutActionGroup.addAction(self.tilePlotWindowsAction)
         self.subWindowLayoutActionGroup.addAction(self.cascadePlotWindowsAction)
+        self.subWindowLayoutActionGroup.addAction(self.tabbedViewAction)
         self.subWindowLayoutActionGroup.setExclusive(True)
-        self.tilePlotWindowsAction.setChecked(True)
+        self.tilePlotWindowsAction.setChecked(False)
         self.togglePlotWindowsAction = QtGui.QAction(self.tr('Plot windows'), self)
         self.togglePlotWindowsAction.setCheckable(True)
         self.togglePlotWindowsAction.setChecked(True)
@@ -1173,7 +1176,12 @@ class MainWindow(QtGui.QMainWindow):
             self.centralPanel.setViewMode(self.centralPanel.TabbedView)
         else:
             self.centralPanel.setViewMode(self.centralPanel.SubWindowView)
-            
+    
+    def switchSubWindowView(self, checked):
+        if checked:
+            self.centralPanel.setViewMode(self.centralPanel.SubWindowView)
+        else:
+            self.centralPanel.setViewMode(self.centralPanel.TabbedView)        
         
     def showObjectEditor(self,checked):
         self.objFieldEditPanel.setVisible(checked)
