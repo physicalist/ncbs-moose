@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Jul  5 21:35:09 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Nov  2 16:39:33 2011 (+0530)
+# Last-Updated: Wed Nov  2 16:56:07 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 722
+#     Update #: 724
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -220,7 +220,6 @@ class MoosePlot(Qwt.QwtPlot):
                 scaleDraw.enableComponent(Qwt.QwtAbstractScaleDraw.Backbone, False)
 
     def updatePlot(self, currentTime):
-        config.LOGGER.debug('update: %g' % (currentTime))
         self.xmin = currentTime
         for curve, table in self.curveTableMap.items():
             tabLen = len(table)

@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Wed Jan 20 15:24:05 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Nov  2 16:49:03 2011 (+0530)
+# Last-Updated: Wed Nov  2 16:54:31 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2671
+#     Update #: 2674
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -1373,8 +1373,8 @@ class MainWindow(QtGui.QMainWindow):
         except ValueError:
             runtime = MooseHandler.runtime
             self.runtimeText.setText(str(runtime))
-        self.updatePlots(runtime)
         self.mooseHandler.doRun(runtime)
+        self.updatePlots(runtime)
         #harsha: only after the model is run, saving the plot is enabled,otherwise there will be nothing to save
         self.saveTablePlotsAction.setEnabled(1)
     
