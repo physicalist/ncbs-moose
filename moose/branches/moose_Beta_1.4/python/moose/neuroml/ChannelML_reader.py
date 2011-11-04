@@ -89,13 +89,15 @@ class ChannelML():
         if impl_prefs is not None:
             table_settings = impl_prefs.find('./{'+self.cml+'}table_settings')
             ## some problem here... disable
-            VMIN_here = VMIN#float(table_settings.attrib['min_v'])
-            VMAX_here = VMAX#float(table_settings.attrib['max_v'])
-            NDIVS_here = NDIVS#int(table_settings.attrib['table_divisions'])
+            VMIN_here = float(table_settings.attrib['min_v'])
+            VMAX_here = float(table_settings.attrib['max_v'])
+            NDIVS_here = int(table_settings.attrib['table_divisions'])
+            dv_here = (VMAX_here - VMIN_here) / NDIVS_here
         else:
             VMIN_here = VMIN
             VMAX_here = VMAX
             NDIVS_here = NDIVS
+            dv_here = dv
         offset = IVrelation.find('./{'+self.cml+'}offset')
         if offset is None: vNegOffset = 0.0
         else: vNegOffset = float(offset.attrib['value'])
@@ -179,7 +181,7 @@ class ChannelML():
                     ## convert to SI before writing to table
                     moosegate.A[i] = inf/tau / Tfactor
                     moosegate.B[i] = 1.0/tau / Tfactor
-                    v = v + dv/Vfactor
+                    v = v + dv_here/Vfactor
             
             ## Ca dependent channel
             else:
@@ -216,7 +218,7 @@ class ChannelML():
                         Ca += dCa
                     ftableA.write("\n")
                     ftableB.write("\n")
-                    v += dv/Vfactor
+                    v += dv_here/Vfactor
                 ftableA.close()
                 ftableB.close()
 
@@ -291,8 +293,10 @@ class ChannelML():
                 return kwargs['rate'] / ( 1 + exp((v-kwargs['midpoint'])/kwargs['scale']) )
         elif fn_type == 'exp_linear':
             def fn(self,v):
-                return kwargs['rate'] * ((v-kwargs['midpoint'])/kwargs['scale']) \
-                    / ( 1 - exp((kwargs['midpoint']-v)/kwargs['scale']) )
+                if v-kwargs['midpoint'] == 0.0: return kwargs['rate']
+                else:
+                    return kwargs['rate'] * ((v-kwargs['midpoint'])/kwargs['scale']) \
+                        / ( 1 - exp((kwargs['midpoint']-v)/kwargs['scale']) )
         elif fn_type == 'generic':
             ## python cannot evaluate the ternary operator ?:, so evaluate explicitly
             ## for security purposes eval() is not allowed any __builtins__
