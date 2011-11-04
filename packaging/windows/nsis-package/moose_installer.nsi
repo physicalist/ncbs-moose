@@ -358,7 +358,7 @@ Section "Start Menu Shortcuts"
 SectionEnd
 Section "Desktop Shortcuts"
 	SetShellVarContext all
-	CreateShortCut "$DESKTOP\MOOSEGUI.lnk" "$INSTDIR\moosegui.py" "" "$INSTDIR\moose_icon.png" 0
+	CreateShortCut "$DESKTOP\MOOSE.lnk" "$INSTDIR\moosegui.py" "" "$INSTDIR\moose_icon.ico" 0
 SectionEnd
 Function un.onInit
 	Call un.ConfirmAdmin
@@ -474,7 +474,8 @@ Section "Uninstall"
 	
 	; Remove directories used
 	RMDir /r "$SMPROGRAMS\MOOSE"
-	RMDir "$DESKTOP\MOOSEGUI.lnk"
+	Delete "$DESKTOP\MOOSE.lnk"
+
 	
 	
 	; The installation directory can be deleted like this:
