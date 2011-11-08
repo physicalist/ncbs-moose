@@ -53,13 +53,13 @@ def connect_CaConc(compartment_list):
                 if neutralwrap.className == 'HHChannel':
                     channel = moose.HHChannel(child)
                     ### If 'ion' field is not present, the Shell returns '0', cribs and prints out a message but it does not throw an exception
-                    if channel.getField('ion') == 'Ca':
+                    if channel.getField('ion') in ['Ca','ca']:
                         channel.connect('IkSrc',caconc,'current')
                         #print 'Connected ',channel.path
                 if neutralwrap.className == 'HHChannel2D':
                     channel = moose.HHChannel2D(child)
                     ### If 'ionDependency' field is not present, the Shell returns '0', cribs and prints out a message but it does not throw an exception
-                    if channel.getField('ionDependency') == 'Ca':
+                    if channel.getField('ionDependency') in ['Ca','ca']:
                         caconc.connect('concSrc',channel,'concen')
                         #print 'Connected ',channel.path
 
