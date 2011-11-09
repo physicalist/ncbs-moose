@@ -194,7 +194,7 @@ class MainWindow(QtGui.QMainWindow):
         # Connect the double-click event on modelTreeWidget items to
         # creation of the object editor.
         self.connect(self.modelTreeWidget, 
-                     QtCore.SIGNAL('itemDoubleClicked(QTreeWidgetItem *, int)'),
+                     QtCore.SIGNAL('itemClicked(QTreeWidgetItem *, int)'),
                      self.makeObjEditorFromTreeItem)
         self.connect(self.modelTreeWidget,
                      QtCore.SIGNAL('mooseObjectInserted(PyQt_PyObject)'),
@@ -413,6 +413,11 @@ class MainWindow(QtGui.QMainWindow):
         """Wraps makeObjectFieldEditor for use via a tree item"""
         obj = item.getMooseObject()
         self.makeObjectFieldEditor(obj)
+        if obj.className == 'Compartment': #update the selection in the visualization.
+            viz  = self.currentVizWindow.widget()
+            viz.selectedObjects.removeAll()
+            viz.selectedObjects.add(viz.sceneObjects[viz.sceneObjectNames.index(obj.path)])
+            viz.updateGL()
 
     def makeObjectFieldEditor(self, obj):
         """Creates a table-editor for a selected object."""
@@ -839,8 +844,8 @@ class MainWindow(QtGui.QMainWindow):
 	self.mooseTreePanel.setWidget(self.modelTreeWidget)
         config.LOGGER.debug('createMooseTreePanel - end')
         #self.ForceTabbedDocks
-        self.mooseTreePanel.setStatusTip('Moose Tree. Double click on object to open its properties in Property Editor')
-        self.mooseTreePanel.setWhatsThis("<font color='black'> Moose Tree. Double click on object to open its properties in Property Editor </font>")
+        self.mooseTreePanel.setStatusTip('Moose Tree. Select (click) object to open its properties in Property Editor')
+        self.mooseTreePanel.setWhatsThis("<font color='black'> Moose Tree. Select (click) on object to open its properties in Property Editor </font>")
         self.makeObjectFieldEditor(self.modelTreeWidget.currentItem().getMooseObject())
         
     # def createGLClientDock(self):
@@ -926,7 +931,7 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(plotWindow, QtCore.SIGNAL('subWindowClosed()'), self.decrementSubWindowCount)
         self.connect(plot,QtCore.SIGNAL('draggedAField(const QString&,const QString&)'),self.changeFieldPlotWidget)
         #harsha when new object added to plot, mooseTree shd be refresh
-        self.connect(plot,QtCore.SIGNAL('draggedAField(const QString&,const QString&)'),self.modelTreeWidget.recreateTree)
+        #self.connect(plot,QtCore.SIGNAL('draggedAField(const QString&,const QString&)'),self.modelTreeWidget.recreateTree)
         
         # self.plotWindows.append(plotWindow)
         self.centralPanel.setActiveSubWindow(plotWindow)
@@ -986,7 +991,7 @@ class MainWindow(QtGui.QMainWindow):
     
     def styleComboChange(self,a):	#add_chait
     	if a==3:
-    		self.vizDialogue.specificCompartmentName.setEnabled(True)
+#    		self.vizDialogue.specificCompartmentName.setEnabled(True)
     		self.vizDialogue.label_7.setEnabled(True)
     		self.vizDialogue.label_11.setEnabled(True)
     		self.vizDialogue.label_12.setEnabled(True)
@@ -997,7 +1002,7 @@ class MainWindow(QtGui.QMainWindow):
     		self.vizDialogue.vizMaxVal_2.setEnabled(True)
     		self.vizDialogue.vizMinVal_2.setEnabled(True)
     	elif a==0:
-    		self.vizDialogue.specificCompartmentName.setEnabled(True)
+#    		self.vizDialogue.specificCompartmentName.setEnabled(True)
     		self.vizDialogue.label_7.setEnabled(True)
     		self.vizDialogue.label_11.setEnabled(False)
     		self.vizDialogue.label_12.setEnabled(False)
@@ -1008,7 +1013,7 @@ class MainWindow(QtGui.QMainWindow):
     		self.vizDialogue.vizMaxVal_2.setEnabled(False)
     		self.vizDialogue.vizMinVal_2.setEnabled(False)
     	else:
-    		self.vizDialogue.specificCompartmentName.setEnabled(False)
+#    		self.vizDialogue.specificCompartmentName.setEnabled(False)
         	self.vizDialogue.label_7.setEnabled(False)
         	self.vizDialogue.label_11.setEnabled(False)
     		self.vizDialogue.label_12.setEnabled(False)
@@ -1111,8 +1116,8 @@ class MainWindow(QtGui.QMainWindow):
         viz.viz=1	#turn on visualization mode
         vizStyle = self.vizDialogue.styleComboBox.currentIndex()
 	
-        if self.vizDialogue.specificCompartmentName.text()!='':					#if no compartment name selected, default is soma
-       		viz.specificCompartmentName = str(self.vizDialogue.specificCompartmentName.text())	#else pick name from user ip text box
+#        if self.vizDialogue.specificCompartmentName.text()!='':					#if no compartment name selected, default is soma
+#       		viz.specificCompartmentName = str(self.vizDialogue.specificCompartmentName.text())	#else pick name from user ip text box
 	
         if vizStyle==3:                                     #grid view case            
             numberOfCellsDrawn = 0                              #as yet drawn = 0, used as a counter            

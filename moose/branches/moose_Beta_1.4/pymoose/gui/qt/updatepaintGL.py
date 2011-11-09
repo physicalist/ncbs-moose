@@ -111,8 +111,6 @@ class updatepaintGL(PyGLWidget):
 
 	self.updateGL()
     
-    def setSpecificCompartmentName(self,name):
-    	self.specificCompartmentName = name
 			
     def drawNewCell(self, cellName, style = 2,cellCentre=[0.0,0.0,0.0],cellAngle=[0.0,0.0,0.0,0.0]):	
     	#***cellName = moosepath in the GL canvas***
@@ -131,15 +129,12 @@ class updatepaintGL(PyGLWidget):
 	   	z0=float(mc.getField(ch[i],'z0'))*(1e+04)
 	   	d=float(mc.getField(ch[i],'diameter'))*(1e+04)
     	    	l_coords.append((x0,y0,z0,x,y,z,d,ch[i].path()))
-    	    	
+
     	if self.viz==1:				#fix
     		self.selectionMode=0
     		
-    	if (style==1) or (style==2):		#ensures soma is drawn as a sphere
-    		self.specificCompartmentName='soma'
-
 	if (self.selectionMode):		#self.selectionMode = 1,cells are pickable
-		newCell = cellStruct(self,l_coords,cellName,style,specificCompartmentName=self.specificCompartmentName)
+		newCell = cellStruct(self,l_coords,cellName,style)
 		newCell._centralPos = cellCentre
 		newCell.rotation = cellAngle
 		self.sceneObjectNames.append(cellName)
@@ -150,7 +145,7 @@ class updatepaintGL(PyGLWidget):
 			
 	else:					#self.selectionMode=0,comapartments are pickable
 		for i in range(0,len(l_coords),1):
-			if (moose.Compartment(ch[i]).name==self.specificCompartmentName):#drawing of the select compartment in style 0
+			if (l_coords[i][0] == l_coords[i][3] and l_coords[i][1] == l_coords[i][4] and l_coords[i][2] == l_coords[i][5]):
 				if style==0:
 					compartmentLine=somaDisk(self,l_coords[i],cellName)
 					compartmentLine._centralPos = cellCentre
@@ -195,7 +190,6 @@ class updatepaintGL(PyGLWidget):
 					self.vizObjects.append(compartmentLine)
 					self.vizObjectNames.append(l_coords[i][7])	    		
 
-    
 
     def drawAllCells(self, style = 2, cellCentre=[0.0,0.0,0.0], cellAngle=[0.0,0.0,0.0,0.0]):
         an=moose.Neutral('/')						#moose root children

@@ -117,7 +117,6 @@ class PyGLWidget(QtOpenGL.QGLWidget):
 	self.vizObjectNames=[]
 	self.vizObjects=[]
 
-    	self.specificCompartmentName = 'soma'
     	self.gridRadiusViz = 0
 	
     @QtCore.pyqtSlot()
@@ -528,11 +527,11 @@ class PyGLWidget(QtOpenGL.QGLWidget):
 	    if (nearestHit == None) or (near < nearestHit[0]):
 		nearestHit = [near, names[0]]
 	if names:	
-	    #print self.sceneObjectNames[names[0]]
+	    #print names,self.sceneObjectNames[names[0]]
 	    self.compartmentSelected.emit(str(self.sceneObjectNames[names[0]]))	#printing the cell path
 	    #self.compartmentSelected.emit(QtCore.SIGNAL('PyQt_PyObject'),self.sceneObjectNames[names[0]])
 	if nearestHit != None:
-	    return self.sceneObjects[nearestHit[1]]
+	    return self.sceneObjects[names[0]] #nearestHit[1]]
 
 	return nearestHit
 

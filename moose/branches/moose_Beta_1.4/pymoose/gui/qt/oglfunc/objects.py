@@ -21,7 +21,6 @@ from OpenGL.raw.GLUT import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from numpy import sqrt,arccos
-from moose import Compartment as mcc	#because of detecting soma.
 
 class BaseObject(object):
 	"""
@@ -123,7 +122,7 @@ class cellStruct(BaseObject):
 	"""
 	Class that defines a cellstructure.
 	"""
-	def __init__(self, parent,l_coords,cellName,style,specificCompartmentName,cropName=[]):
+	def __init__(self, parent,l_coords,cellName,style,cropName=[]):
 		"""
 		Constructor.
 		"""
@@ -131,7 +130,7 @@ class cellStruct(BaseObject):
 		self.daddy = cropName
 		
 		for i in range(0,len(l_coords),1):	
-			if (mcc(l_coords[i][7]).name==specificCompartmentName):	#moose.Compartment =mcc
+			if (l_coords[i][0] == l_coords[i][3] and l_coords[i][1] == l_coords[i][4] and l_coords[i][2] == l_coords[i][5]):
 				if style==0:	#simple disk model
 					compartmentLine = somaDisk(self,l_coords[i],cellName)
 					self.kids.append(compartmentLine)
@@ -187,7 +186,7 @@ class somaSphere(BaseObject):
 		super(somaSphere, self).__init__(parent)
 		#self.radius = (sqrt((l_coords[0]-l_coords[3])**2+(l_coords[1]-l_coords[4])**2+(l_coords[2]-l_coords[5])**2))/2
 		self.radius = l_coords[6]/2
-		self.centre = [(l_coords[0]+l_coords[3])/2,(l_coords[1]+l_coords[4])/2,(l_coords[2]+l_coords[5])/2]
+		self.centre = [l_coords[0],l_coords[1],l_coords[2]]
 		self.daddy  = cellName
 
 	def setCellParentProps(self,centralPos,rotation,r,g,b):
@@ -231,7 +230,7 @@ class somaDisk(BaseObject):
 		super(somaDisk, self).__init__(parent)
 		#self.radius = (sqrt((l_coords[0]-l_coords[3])**2+(l_coords[1]-l_coords[4])**2+(l_coords[2]-l_coords[5])**2))/2
 		self.radius = l_coords[6]/2
-		self.centre = [(l_coords[0]+l_coords[3])/2,(l_coords[1]+l_coords[4])/2,(l_coords[2]+l_coords[5])/2]
+		self.centre = [l_coords[0],l_coords[1],l_coords[2]]
 		self.daddy  = cellName
 
 	def setCellParentProps(self,centralPos,rotation,r,g,b):
@@ -276,7 +275,6 @@ class cCylinder(BaseObject):
 		self.l_coords = l_coords
 		self.daddy = cellName
 
-
 	def setCellParentProps(self,centralPos,rotation,r,g,b):
 		self._centralPos = centralPos	
 		self.rotation = rotation	
@@ -290,16 +288,16 @@ class cCylinder(BaseObject):
 		"""
 		x1,y1,z1,x2,y2,z2 = self.l_coords[:6]
 		radius = self.l_coords[6]/2
-		subdivisions = 20
+		subdivisions = 10
 		
 		vx = x2-x1
   		vy = y2-y1
   		vz = z2-z1
 
-  		if(vz == 0):
-      			vz = .0001
+  		if(vz == 0.0):
+			vz = .001
 
-  		v = sqrt( vx*vx + vy*vy + vz*vz )
+		v = sqrt( vx*vx + vy*vy + vz*vz )
  		ax = 57.2957795*arccos( vz/v )
   		if ( vz < 0.0 ):
       			ax = -ax
@@ -327,7 +325,7 @@ class cCylinder(BaseObject):
   		
   		gluQuadricOrientation(quadric,GLU_OUTSIDE)
   		#gluDisk( quadric, 0.0, radius, subdivisions, 1)
-  		gluSphere(gluNewQuadric(),radius, 20, 20)
+  		gluSphere(gluNewQuadric(),radius, 10, 10)
   		
   		glTranslate(*[i*-1 for i in self._centralPos[:3]])	#bring pen back to origin.
 		glRotate(*[i*-1 for i in self.rotation[:4]])		#bring back to original orientation
