@@ -2,7 +2,6 @@ from xml.etree import ElementTree as ET
 from neuroml_utils import * # tweak_model()
 import string
 import moose
-from moose_utils import * # for underscorize()
 from MorphML_reader import *
 from ChannelML_reader import *
 import sys
