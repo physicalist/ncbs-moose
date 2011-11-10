@@ -169,7 +169,7 @@ def setup_iclamp(compartment, name, delay1, width1, level1):
     pulsegen.firstDelay = delay1
     pulsegen.firstWidth = width1
     pulsegen.firstLevel = level1
-    pulsegen.secondDelay = 1e6
+    pulsegen.secondDelay = 1e6 # to avoid repeat
     pulsegen.secondLevel = 0.0
     pulsegen.secondWidth = 0.0
     pulsegen.connect('outputSrc',iclamp,'plusDest')
