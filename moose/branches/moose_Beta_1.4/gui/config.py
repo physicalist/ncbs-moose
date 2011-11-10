@@ -45,14 +45,6 @@
 
 # Code:
 
-GL_CLIENT_EXECUTABLE = 'glclient'
-GL_COLORMAP_DIR = 'colormaps'
-GL_COLORMAP_RAINBOW2 = 'rainbow2'
-GL_COLORMAP_HOT = 'hot'
-GL_COLORMAP_GREY = 'grey'
-GL_COLORMAP_REDHOT = 'redhot'
-GL_DEFAULT_COLORMAP = 'colormaps/rainbow2'
-GL_PORT = '9999'
 import os
 import sys
 import tempfile
@@ -63,23 +55,24 @@ from PyQt4 import QtGui, QtCore
 settings = None
 TEMPDIR = tempfile.gettempdir()
 KEY_FIRSTTIME = 'firsttime'
-# KEY_STATE_FILE = 'statefile'
-KEY_GL_COLORMAP = 'glclient/colormap'
-KEY_GL_PORT = 'glclient/port'
-KEY_GL_CLIENT_EXECUTABLE = 'glclient/executable'
-KEY_GL_BACKGROUND_COLOR = 'glclient/bgcolor'
 
-KEY_HOME_DIR = 'main'
-KEY_WINDOW_GEOMETRY = 'main/geometry'
-KEY_WINDOW_LAYOUT = 'main/layout'
-KEY_RUNTIME_AUTOHIDE = 'main/rtautohide'
-KEY_DEMOS_DIR = 'main/demosdir'
+KEY_HOME_DIR = os.path.abspath(__file__).rstrip('config.py')
+KEY_MAIN_DIR = os.path.abspath(os.path.join(KEY_HOME_DIR,'..'))
+KEY_ICON_DIR = os.path.join(KEY_HOME_DIR,'icons')
+KEY_DEMOS_DIR = os.path.join(KEY_MAIN_DIR,'DEMOS','pymoose')
+
+KEY_WINDOW_GEOMETRY = os.path.join(KEY_HOME_DIR,'geometry')
+KEY_WINDOW_LAYOUT = os.path.join(KEY_HOME_DIR,'layout')
+KEY_RUNTIME_AUTOHIDE = os.path.join(KEY_HOME_DIR,'rtautohide')
+KEY_GL_COLORMAP = os.path.join(KEY_HOME_DIR,'oglfunc','colors')
+
+KEY_GL_BACKGROUND_COLOR = 'glclient/bgcolor'
 
 QT_VERSION = str(QtCore.QT_VERSION_STR).split('.')
 QT_MAJOR_VERSION = int(QT_VERSION[0])
 QT_MINOR_VERSION = int(QT_VERSION[1])
 
-MOOSE_DOC_URL = 'http://moose.ncbs.res.in/content/view/5/6/'
+MOOSE_DOC_FILE = os.path.join(KEY_HOME_DIR,'documentation.pdf')
 MOOSE_REPORT_BUG_URL = 'http://sourceforge.net/tracker/?func=add&group_id=165660&atid=836272'
 
 def get_settings():
