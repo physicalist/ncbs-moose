@@ -125,9 +125,8 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(self.mooseHandler, QtCore.SIGNAL('updatePlots(float)'), self.updatePlots)
         self.settings = config.get_settings()        
         self.demosDir = str(self.settings.value(config.KEY_DEMOS_DIR).toString())
-        # print self.demosDir
-        # if not self.demosDir:
-        #     self.demosDir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Please select pymoose demos directory'))
+        if not self.demosDir: #if no previous value set default as in config.py
+            self.demosDir = config.KEY_DEMOS_DIR
         #self.resize(800, 600)
         #self.setWindowState(Qt.WindowMaximized)
         self.setDockOptions(  self.AnimatedDocks | self.AllowNestedDocks |self.AllowTabbedDocks  ) # self.ForceTabbedDocks | 
@@ -152,7 +151,7 @@ class MainWindow(QtGui.QMainWindow):
         self.centralVizPanel.setViewMode(self.centralVizPanel.TabbedView)
         
 #        self.centralVizPanel.setBackground(QtGui.QBrush(QtGui.QImage('background.png').scaled(self.centralVizPanel.size(),Qt.KeepAspectRatio)))
-        self.centralVizPanel.setBackground(QtGui.QBrush(QtGui.QImage(os.path.join(config.KEY_HOME_DIR,'QMdiBackground.png'))))
+        self.centralVizPanel.setBackground(QtGui.QBrush(QtGui.QImage(os.path.join(config.KEY_ICON_DIR,'QMdiBackground.png'))))
 
         self.centralVizPanel.setStatusTip('To load a model, Menu >File >Load Model or Ctrl+L')
         self.centralVizPanel.setWhatsThis("<font color='black'> To load a model, Menu >File >Load Model or Ctrl+L </font>")
@@ -266,7 +265,7 @@ class MainWindow(QtGui.QMainWindow):
         
         self.runButtonToolbar = QtGui.QToolButton(self.simToolbar)
         self.runButtonToolbar.setToolTip("<font color='black'> Run </font>")
-        self.runButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,"run.png")))
+        self.runButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_ICON_DIR,"run.png")))
         self.runButtonToolbar.setGeometry(360,0,50,30)
         self.runButtonToolbar.setEnabled(1)
         self.runButtonToolbar.setStatusTip('Run to start simulation')
@@ -274,7 +273,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.continueButtonToolbar = QtGui.QToolButton(self.simToolbar)
         self.continueButtonToolbar.setToolTip("<font color='black'> Continue </font>")
-        self.continueButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,"continue.png")))
+        self.continueButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_ICON_DIR,"continue.png")))
         self.continueButtonToolbar.setGeometry(410,0,50,30)
         self.continueButtonToolbar.setEnabled(1)
         self.continueButtonToolbar.setStatusTip('Continue simulation')
@@ -282,7 +281,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.resetButtonToolbar = QtGui.QToolButton(self.simToolbar)
         self.resetButtonToolbar.setToolTip("<font color='black'> Reset </font>")
-        self.resetButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,"reset.png")))
+        self.resetButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_ICON_DIR,"reset.png")))
         self.resetButtonToolbar.setGeometry(460,0,50,30)
         self.resetButtonToolbar.setEnabled(1)
         self.resetButtonToolbar.setStatusTip('Reset simulation')
@@ -291,7 +290,7 @@ class MainWindow(QtGui.QMainWindow):
         self.whatsThisAction  = QtGui.QWhatsThis.createAction(self.simToolbar)
         self.whatsThisButtonToolbar = QtGui.QToolButton(self.simToolbar)
         self.whatsThisButtonToolbar.setToolTip("<font color='black'> Whats this? </font>")
-        self.whatsThisButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,'help.png')))
+        self.whatsThisButtonToolbar.setIcon(QtGui.QIcon(os.path.join(config.KEY_ICON_DIR,'help.png')))
         self.whatsThisButtonToolbar.setGeometry(510,0,50,30)
 
 #        self.stopButtonToolbar = QtGui.QToolButton(self.simToolbar)
@@ -594,7 +593,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.newPlotWindowAction = QtGui.QAction(self.tr('New Plot Window'), self)
         self.connect(self.newPlotWindowAction, QtCore.SIGNAL('triggered(bool)'), self.addPlotWindow)
-        self.firstTimeWizardAction = QtGui.QAction(self.tr('FirstTime Configuration Wizard'), self)
+        self.firstTimeWizardAction = QtGui.QAction(self.tr('Path Configuration Wizard'), self)
         self.connect(self.firstTimeWizardAction, QtCore.SIGNAL('triggered(bool)'), self.startFirstTimeWizard)
         self.resetSettingsAction = QtGui.QAction(self.tr('Reset GUI Settings'), self)
         self.connect(self.resetSettingsAction, QtCore.SIGNAL('triggered()'), self.resetSettings)
@@ -1138,7 +1137,7 @@ class MainWindow(QtGui.QMainWindow):
             for index in xrange(self.vizDialogue.vizCells.count()):             #non-grid view case                
                 viz.drawNewCell(cellName=str(self.vizDialogue.vizCells.item(index).text()),style = vizStyle)
         
-        currentVizSetting = [float(str(self.vizDialogue.vizMinVal.text())),float(str(self.vizDialogue.vizMaxVal.text())),str(self.vizDialogue.moosepath.text()),str(self.vizDialogue.variable.text()),os.path.join(str(self.settings.value(config.KEY_GL_COLORMAP).toString()),str(self.vizDialogue.colorMapComboBox.itemText(self.vizDialogue.colorMapComboBox.currentIndex())))]						#color map inputs from user
+        currentVizSetting = [float(str(self.vizDialogue.vizMinVal.text())),float(str(self.vizDialogue.vizMaxVal.text())),str(self.vizDialogue.moosepath.text()),str(self.vizDialogue.variable.text()),os.path.join(config.KEY_GL_COLORMAP,str(self.vizDialogue.colorMapComboBox.itemText(self.vizDialogue.colorMapComboBox.currentIndex())))]						#color map inputs from user
     	#print currentVizSetting
         
         viz.setColorMap(*currentVizSetting[:5])							#assign regular colormap
@@ -1299,7 +1298,7 @@ class MainWindow(QtGui.QMainWindow):
                 viz.viz=1	#turn on visualization mode
                 for i in ch:
                     viz.drawNewCell(cellName=moose.Cell(i).path,style = 2)
-                viz.setColorMap(cMap=os.path.join(str(self.settings.value(config.KEY_GL_COLORMAP).toString()),'jet'))
+                viz.setColorMap(cMap=os.path.join(config.KEY_GL_COLORMAP,'jet'))
                 QtCore.QObject.connect(viz,QtCore.SIGNAL("compartmentSelected(QString)"),self.pickCompartment)
                 #print viz.modelview_matrix_
                 viz.defaultTranslate()
@@ -1579,8 +1578,7 @@ class MainWindow(QtGui.QMainWindow):
         self.objFieldEditPanel.setWindowTitle(mooseObject.name)
 
     def browseDocumentation(self):
-        #QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_DOC_URL)))
-        QtGui.QDesktopServices.openUrl(QtCore.QUrl(os.path.join(config.KEY_HOME_DIR,"documentation.pdf")))
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_DOC_FILE)))
 
     def openBugsPage(self):
         QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_REPORT_BUG_URL)))
@@ -1600,17 +1598,16 @@ class MainWindow(QtGui.QMainWindow):
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    config.KEY_HOME_DIR = str(str(config).split()[3][1:-12])
-    icon = QtGui.QIcon(os.path.join(config.KEY_HOME_DIR,'moose_icon.png'))
+    icon = QtGui.QIcon(os.path.join(config.KEY_ICON_DIR,'moose_icon.png'))
     app.setWindowIcon(icon)
 #    computerProps = app.desktop()
     QtCore.QObject.connect(app, QtCore.SIGNAL('lastWindowClosed()'), app, QtCore.SLOT('quit()'))
     mainWin = MainWindow()
-    if not config.get_settings().contains(config.KEY_FIRSTTIME):
-        firstTimeWizard = FirstTimeWizard()
-        firstTimeWizard.setModal(QtCore.Qt.ApplicationModal)
-	firstTimeWizard.connect(firstTimeWizard, QtCore.SIGNAL('accepted()'), mainWin.updatePaths)
-        firstTimeWizard.show()
+    # if not config.get_settings().contains(config.KEY_FIRSTTIME):
+    #     firstTimeWizard = FirstTimeWizard()
+    #     firstTimeWizard.setModal(QtCore.Qt.ApplicationModal)
+    #     firstTimeWizard.connect(firstTimeWizard, QtCore.SIGNAL('accepted()'), mainWin.updatePaths)
+    #     firstTimeWizard.show()
     mainWin.show()
     mainWin.setWindowState(Qt.WindowMaximized)
 #    mainWin.resize(computerProps.width(),computerProps.height())

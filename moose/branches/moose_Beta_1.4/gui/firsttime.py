@@ -57,13 +57,13 @@ class FirstTimeWizard(QtGui.QWizard):
         QtGui.QWizard.__init__(self, parent)
         self._pymooseDemosDir = str(config.get_settings().value(config.KEY_DEMOS_DIR).toString())
         if not self._pymooseDemosDir:
-            self._pymooseDemosDir = '/usr/share/doc/moose1.4/DEMOS/pymoose'
+            self._pymooseDemosDir = config.KEY_DEMOS_DIR
         # self._glclientPath = str(config.get_settings().value(config.KEY_GL_CLIENT_EXECUTABLE).toString())
         # if not self._glclientPath:
         #     self._glclientPath = '/usr/bin/glclient'
         self._colormapPath = str(config.get_settings().value(config.KEY_GL_COLORMAP).toString())
         if not self._colormapPath:
-            self._colormapPath = '/usr/share/moose1.4/moosegui/oglfunc/colors'
+            self._colormapPath = config.KEY_GL_COLORMAP
         self.addPage(self._createIntroPage())
         self.addPage(self._createDemosPage())
         #self.addPage(self._createGLClientPage())
