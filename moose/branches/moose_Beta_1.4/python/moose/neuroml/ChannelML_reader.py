@@ -27,14 +27,17 @@ class ChannelML():
             self.readIonConcML(ionConc,channelml_element.attrib['units'])
 
     def readSynapseML(self,synapseElement,units="SI units"):
-        if units == 'Physiological Units': # see pg 219 (sec 13.2) of Book of Genesis
+        if 'Physiological Units' in units: # see pg 219 (sec 13.2) of Book of Genesis
             Vfactor = 1e-3 # V from mV
             Tfactor = 1e-3 # s from ms
             Gfactor = 1e-3 # S from mS       
-        else:
+        elif 'SI Units' in units:
             Vfactor = 1.0
             Tfactor = 1.0
             Gfactor = 1.0
+        else:
+            print "wrong units", units,": exiting ..."
+            sys.exit(1)
         print "loading synapse :",synapseElement.attrib['name']
         moosesynapse = moose.SynChan('/library/'+synapseElement.attrib['name'])
         doub_exp_syn = synapseElement.find('./{'+self.cml+'}doub_exp_syn')
@@ -53,16 +56,19 @@ class ChannelML():
         ## I first calculate all functions assuming a consistent system of units.
         ## While filling in the A and B tables, I just convert to SI.
         ## Also convert gmax and Erev.
-        if units == 'Physiological Units': # see pg 219 (sec 13.2) of Book of Genesis
+        if 'Physiological Units' in units: # see pg 219 (sec 13.2) of Book of Genesis
             Vfactor = 1e-3 # V from mV
             Tfactor = 1e-3 # s from ms
             Gfactor = 1e1 # S/m^2 from mS/cm^2  
             concfactor = 1e6 # Mol = mol/m^-3 from mol/cm^-3      
-        else:
+        elif 'SI Units' in units:
             Vfactor = 1.0
             Tfactor = 1.0
             Gfactor = 1.0
             concfactor = 1.0
+        else:
+            print "wrong units", units,": exiting ..."
+            sys.exit(1)
         channel_name = channelElement.attrib['name']
         print "loading channel :", channel_name
         IVrelation = channelElement.find('./{'+self.cml+'}current_voltage_relation')
@@ -96,13 +102,13 @@ class ChannelML():
             NDIVS_here = int(table_settings.attrib['table_divisions'])
             dv_here = (VMAX_here - VMIN_here) / NDIVS_here
         else:
-            ## default VMIN and VMAX are in SI
-            ## convert to calculation units used by channel definition
-            ## while loading into tables, I'll convert back to SI
+            ## default VMIN, VMAX and dv are in SI
+            ## convert them to current calculation units used by channel definition
+            ## while loading into tables, convert them back to SI
             VMIN_here = VMIN/Vfactor
             VMAX_here = VMAX/Vfactor
             NDIVS_here = NDIVS
-            dv_here = dv
+            dv_here = dv/Vfactor
         offset = IVrelation.find('./{'+self.cml+'}offset')
         if offset is None: vNegOffset = 0.0
         else: vNegOffset = float(offset.attrib['value'])
@@ -144,11 +150,12 @@ class ChannelML():
                 moosegate = moose.HHGate(moosechannel.path+'/'+moosegates[num][1])
             else:
                 moosegate = moose.HHGate2D(moosechannel.path+'/'+moosegates[num][1])
-            moosegate.A.xmin = VMIN_here
-            moosegate.A.xmax = VMAX_here
+            ## set SI values inside MOOSE
+            moosegate.A.xmin = VMIN_here*Vfactor
+            moosegate.A.xmax = VMAX_here*Vfactor
             moosegate.A.xdivs = NDIVS_here
-            moosegate.B.xmin = VMIN_here
-            moosegate.B.xmax = VMAX_here
+            moosegate.B.xmin = VMIN_here*Vfactor
+            moosegate.B.xmax = VMAX_here*Vfactor
             moosegate.B.xdivs = NDIVS_here
           
             for transition in gate.findall('./{'+self.cml+'}transition'):
