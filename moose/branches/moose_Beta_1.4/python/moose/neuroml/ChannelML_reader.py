@@ -8,9 +8,10 @@ from neuroml_utils import *
 
 class ChannelML():
 
-    def __init__(self):
+    def __init__(self,temperature=32.0):
         self.cml='http://morphml.org/channelml/schema'
         self.context = moose.PyMooseBase.getContext()
+        self.temperature = temperature
 
     def readChannelMLFromFile(self,filename,params={}):
         """ specify params as a dict: e.g. temperature that you need to pass to channels """
@@ -62,13 +63,14 @@ class ChannelML():
             Tfactor = 1.0
             Gfactor = 1.0
             concfactor = 1.0
-        print "loading channel :",channelElement.attrib['name']
+        channel_name = channelElement.attrib['name']
+        print "loading channel :", channel_name
         IVrelation = channelElement.find('./{'+self.cml+'}current_voltage_relation')
         concdep = IVrelation.find('./{'+self.cml+'}conc_dependence')
         if concdep is None:
-            moosechannel = moose.HHChannel('/library/'+channelElement.attrib['name'])
+            moosechannel = moose.HHChannel('/library/'+channel_name)
         else:
-            moosechannel = moose.HHChannel2D('/library/'+channelElement.attrib['name'])
+            moosechannel = moose.HHChannel2D('/library/'+channel_name)
         if IVrelation.attrib['cond_law']=="ohmic":
             moosechannel.Gbar = float(IVrelation.attrib['default_gmax']) * Gfactor
             moosechannel.Ek = float(IVrelation.attrib['default_erev']) * Vfactor
@@ -94,29 +96,34 @@ class ChannelML():
             NDIVS_here = int(table_settings.attrib['table_divisions'])
             dv_here = (VMAX_here - VMIN_here) / NDIVS_here
         else:
-            VMIN_here = VMIN
-            VMAX_here = VMAX
+            ## default VMIN and VMAX are in SI
+            ## convert to calculation units used by channel definition
+            ## while loading into tables, I'll convert back to SI
+            VMIN_here = VMIN/Vfactor
+            VMAX_here = VMAX/Vfactor
             NDIVS_here = NDIVS
             dv_here = dv
         offset = IVrelation.find('./{'+self.cml+'}offset')
         if offset is None: vNegOffset = 0.0
         else: vNegOffset = float(offset.attrib['value'])
+        self.parameters = []
+        for parameter in channelElement.findall('.//{'+self.cml+'}parameter'):
+            self.parameters.append( (parameter.attrib['name'],float(parameter.attrib['value'])) )
         
         for num,gate in enumerate(gates):
             # if no q10settings tag, the q10factor remains 1.0
             # if present but no gate attribute, then set q10factor
             # if there is a gate attribute, then set it only if gate attrib matches gate name
             self.q10factor = 1.0
+            self.gate_name = gate.attrib['name']
             for q10settings in IVrelation.findall('./{'+self.cml+'}q10_settings'):
-                ## CELSIUS from neuro_utils.py
+                ## self.temperature from neuro_utils.py
                 if 'gate' in q10settings.attrib.keys():
-                    if q10settings.attrib['gate'] == gate.attrib['name']:
-                        self.q10factor = float(q10settings.attrib['q10_factor'])\
-                            **((CELSIUS-float(q10settings.attrib['experimental_temp']))/10.0)
+                    if q10settings.attrib['gate'] == self.gate_name:
+                        self.setQ10(q10settings)
                         break
                 else:
-                    self.q10factor = float(q10settings.attrib['q10_factor'])\
-                        **((CELSIUS-float(q10settings.attrib['experimental_temp']))/10.0)
+                    self.setQ10(q10settings)
 
             ## only if you create moosechannel.Xpower will the xGate be created, so do that first below
             ## I cannot use the below single-line list-based way of setting Xpower, etc.
@@ -158,10 +165,12 @@ class ChannelML():
             ## non Ca dependent channel
             if concdep is None:
                 time_course = gate.find('./{'+self.cml+'}time_course')
+                ## tau is divided by self.q10factor in make_function()
+                ## thus, it gets divided irrespective of <time_course> tag present or not.
                 if time_course is None:     # if time_course element is not present,
                                             # there have to be alpha and beta transition elements
                     self.make_function('tau','generic',\
-                        expr_string="1/(self.alpha(v)+self.beta(v))/self.q10factor")
+                        expr_string="1/(self.alpha(v)+self.beta(v))")
                 else:
                     self.make_cml_function(time_course, 'tau')
                 steady_state = gate.find('./{'+self.cml+'}steady_state')
@@ -174,14 +183,14 @@ class ChannelML():
 
                 ## while calculating, use the units used in xml defn,
                 ## while filling in table, I convert to SI units.
-                v = VMIN_here/Vfactor - vNegOffset
+                v = VMIN_here - vNegOffset
                 for i in range(NDIVS_here+1):
                     inf = self.inf(v)
                     tau = self.tau(v)
                     ## convert to SI before writing to table
                     moosegate.A[i] = inf/tau / Tfactor
                     moosegate.B[i] = 1.0/tau / Tfactor
-                    v = v + dv_here/Vfactor
+                    v += dv_here
             
             ## Ca dependent channel
             else:
@@ -203,7 +212,7 @@ class ChannelML():
                 ## these have already been made above
                 ftableA = open("CaDepA.dat","w")
                 ftableB = open("CaDepB.dat","w")
-                v = VMIN_here/Vfactor - vNegOffset
+                v = VMIN_here - vNegOffset
                 CaMIN = float(concdep.attrib['min_conc'])
                 CaMAX = float(concdep.attrib['max_conc'])
                 CaNDIVS = 100
@@ -212,13 +221,16 @@ class ChannelML():
                     Ca = CaMIN
                     for j in range(CaNDIVS+1):
                         ## convert to SI before writing to table
-                        alpha = self.alpha(v,Ca)/Tfactor
+                        ## in non-Ca channels, I put in q10factor into tau,
+                        ## which percolated to A and B
+                        ## Here, I do not calculate tau, so put q10factor directly into A and B.
+                        alpha = self.alpha(v,Ca)*self.q10factor/Tfactor
                         ftableA.write(str(alpha)+" ")
-                        ftableB.write(str(alpha+self.beta(v,Ca)/Tfactor)+" ")
+                        ftableB.write(str(alpha+self.beta(v,Ca)*self.q10factor/Tfactor)+" ")
                         Ca += dCa
                     ftableA.write("\n")
                     ftableB.write("\n")
-                    v += dv_here/Vfactor
+                    v += dv_here
                 ftableA.close()
                 ftableB.close()
 
@@ -229,6 +241,14 @@ class ChannelML():
                 self.context.runG("call "+moosegate.path+"/B load CaDepB.dat 0")
                 os.remove('CaDepA.dat')
                 os.remove('CaDepB.dat')
+
+    def setQ10(self,q10settings):
+        if 'q10_factor' in q10settings.attrib.keys():
+            self.q10factor = float(q10settings.attrib['q10_factor'])\
+                **((self.temperature-float(q10settings.attrib['experimental_temp']))/10.0)
+        elif 'fixed_q10' in q10settings.attrib.keys():
+            self.q10factor = float(q10settings.attrib['fixed_q10'])
+
 
     def readIonConcML(self, ionConcElement, units="SI units"):
         if units == 'Physiological Units': # see pg 219 (sec 13.2) of Book of Genesis
@@ -307,6 +327,10 @@ class ChannelML():
             def fn(self,v,ca=None):
                 expr_str = kwargs['expr_string']
                 allowed_locals['v'] = v
+                allowed_locals['celsius'] = self.temperature
+                allowed_locals['temp_adj_'+self.gate_name] = self.q10factor
+                for i,parameter in enumerate(self.parameters):
+                    allowed_locals[parameter[0]] = self.parameters[i][1]
                 if kwargs.has_key('concdep'):
                     concdep = kwargs['concdep']
                     ## ca should appear as neuroML defined 'variable_name' to eval()
