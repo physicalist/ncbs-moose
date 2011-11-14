@@ -156,8 +156,8 @@ class MainWindow(QtGui.QMainWindow):
         self.centralVizPanel.setStatusTip('To load a model, Menu >File >Load Model or Ctrl+L')
         self.centralVizPanel.setWhatsThis("<font color='black'> To load a model, Menu >File >Load Model or Ctrl+L </font>")
         self.centralPanel = QtGui.QMdiArea(self)
-        self.centralPanel.setStatusTip('Plot Window. Ctrl+H to toggle overlay. Drag field from Property Editor to plot. Click and drag area to zoom in. Esc to zoom out. To add new Plot Windows, Menu >View >New Plot Window')
-        self.centralPanel.setWhatsThis("<font color='black'> Plot Window. Ctrl+H to toggle overlay. Drag field from Property Editor to plot. Click and drag area to zoom in. Esc to zoom out. To add new Plot Windows, Menu >View >New Plot Window </font>")
+        self.centralPanel.setStatusTip('Plot Window. Ctrl+H to toggle overlay. Drag field from Property Editor to plot. Click and drag area to zoom in. Esc to zoom out. To add new Plot Windows, Menu >View >New Plot Window.')
+        self.centralPanel.setWhatsThis("<font color='black'> Plot Window. Ctrl+H to toggle overlay. Drag field from Property Editor to plot. Click and drag area to zoom in. Esc to zoom out. To add new Plot Windows, Menu >View >New Plot Window. To edit properties of each curve click on its legend </font>")
         self.horizontalLayout.addWidget(self.centralPanel)
         
         # The following are for holding transient selections from
@@ -555,8 +555,8 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(self.togglePlotWindowsAction, QtCore.SIGNAL('triggered(bool)'), self.setPlotWindowsVisible)
 
         # Action to configure plots
-        self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
-	self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.configurePlots)
+        #self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
+	#self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.configurePlots)
         self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Hide selected plots'), self)
         self.togglePlotVisibilityAction.setCheckable(True)
         self.togglePlotVisibilityAction.setChecked(False)
@@ -697,7 +697,7 @@ class MainWindow(QtGui.QMainWindow):
         self.viewMenu = QtGui.QMenu('&View', self)
         self.viewMenu.addAction(self.newPlotWindowAction)
         self.viewMenu.addAction(self.newGLWindowAction)	#add_chait
-        self.viewMenu.addAction(self.configurePlotAction)
+        #self.viewMenu.addAction(self.configurePlotAction)
         #self.viewMenu.addAction(self.togglePlotVisibilityAction)
         #self.viewMenu.addAction(self.showAllPlotsAction)
         self.viewMenu.addSeparator().setText(self.tr('Layout Plot Windows'))
@@ -875,6 +875,7 @@ class MainWindow(QtGui.QMainWindow):
         self.updateTimeLabel = QtGui.QLabel(self.tr('Update interval for plots & viz (second):'), self.controlPanel)
         self.updateTimeLabel.setWordWrap(True)
         self.updateTimeText = QtGui.QLineEdit('%1.3e' % (MooseHandler.plotupdate_dt), self.controlPanel)
+        self.updateTimeText.setToolTip('Decrease value to view the visualization in greater detail. Warning: Will take longer.')
         # self.resetButton = QtGui.QPushButton(self.tr('Reset'), self.controlPanel)
         self.runButton = QtGui.QPushButton(self.tr('Run'), self.controlPanel)
         self.continueButton = QtGui.QPushButton(self.tr('Continue'), self.controlPanel)
@@ -921,6 +922,7 @@ class MainWindow(QtGui.QMainWindow):
         plot = MoosePlot(plotWindow)
         plot.mooseHandler = self.mooseHandler
         plot.setObjectName(title)
+        self.connect(plot,QtCore.SIGNAL("legendClicked(QwtPlotItem *)"),self.configurePlots)
         plotWindow.setWidget(plot)
         self.plots.append(plot)
         if len(self.plots)>1:
@@ -1352,6 +1354,7 @@ class MainWindow(QtGui.QMainWindow):
         except ValueError:
             updateInterval = MooseHandler.plotupdate_dt
             self.updateTimeText.setText(str(updateInterval))
+        
         #self.mooseHandler.doReset(simdt, plotdt, gldt,updateInterval)
         self.mooseHandler.doReset(simdt, plotdt, updateInterval)
         plots = set()
@@ -1450,10 +1453,11 @@ class MainWindow(QtGui.QMainWindow):
         self.mooseHandler.setConnDest(path)
         self.mooseHandler.doConnect()
 
-    def configurePlots(self):
+    def configurePlots(self,curve):
         """Interactively allow the user to configure everything about
         the plots."""
         self.plotConfig.setVisible(True)
+        self.plotConfig.newLegendText.setText(curve.title().text())
         ret = self.plotConfig.exec_()
         # print ret, QtGui.QDialog.Accepted
         if ret == QtGui.QDialog.Accepted:
@@ -1463,15 +1467,15 @@ class MainWindow(QtGui.QMainWindow):
             attribute = self.plotConfig.getAttribute()
             activePlot = self.currentPlotWindow            
             plotName = activePlot.objectName() #windowTitle() # The window title is the plot name
-            # print 'configurePlots', plotName 
+            newLegendName = self.plotConfig.getNewLegend()
             for plot in self.plots:
                 # print 'plot.objectName:', plot.objectName(), 'plotName:', plotName
                 if plot.objectName() == plotName:
-                    plot.reconfigureSelectedCurves(pen, symbol, style, attribute)
+                    plot.reconfigureSelectedCurves(pen, symbol, style, attribute, newLegendName, curve)
                     break
 
     def togglePlotVisibility(self, hide):
-        print 'Currently selected to hide?', hide
+        print 'Current plot selected to hide?', hide
         activePlot = self.currentPlotWindow            
         plotName = activePlot.objectName()#windowTitle() # The window title is the plot name
         for plot in self.plots:
@@ -1578,7 +1582,7 @@ class MainWindow(QtGui.QMainWindow):
         self.objFieldEditPanel.setWindowTitle(mooseObject.name)
 
     def browseDocumentation(self):
-        QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_DOC_FILE)))
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QUrl.fromLocalFile(config.MOOSE_DOC_FILE)))
 
     def openBugsPage(self):
         QtGui.QDesktopServices.openUrl(QtCore.QUrl(QtCore.QString(config.MOOSE_REPORT_BUG_URL)))

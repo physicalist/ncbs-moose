@@ -138,10 +138,18 @@ class PlotConfig(QtGui.QDialog):
         self.currentLineColor = QtGui.QColor(Qt.black)
         self.currentSymbolPenColor = QtGui.QColor(Qt.black)
         self.currentSymbolFillColor = QtGui.QColor(Qt.black)
-        
+
         layout = QtGui.QGridLayout()
         
         row = 0
+        self.newLegendLabel = QtGui.QLabel(self.tr('Curve Name'), self) #add_chait, change legend name
+        layout.addWidget(self.newLegendLabel, row, 0)
+
+        self.newLegendText = QtGui.QLineEdit('',self)
+        layout.addWidget(self.newLegendText, row, 1)
+
+
+        row += 1
         self.styleLabel = QtGui.QLabel(self.tr('Curve Style'), self)
         layout.addWidget(self.styleLabel, row, 0)
 
@@ -297,6 +305,10 @@ class PlotConfig(QtGui.QDialog):
         pen.setStyle(self.penStyleMap[str(self.lineStyleCombo.currentText())])
         pen.setWidth(float(self.lineWidthText.text()))
         return pen
+
+    def getNewLegend(self): #add_chait, get legend name
+        name = self.newLegendText.text()
+        return name
 
     def getSymbol(self):
         """return a QwtSymbol object with the selected settings."""

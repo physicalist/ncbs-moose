@@ -89,8 +89,8 @@ class MoosePlot(Qwt.QwtPlot):
         self.tableCurveMap = {} # moose table -> curve
         self.overlay = False
         legend = Qwt.QwtLegend()
-        legend.setItemMode(Qwt.QwtLegend.CheckableItem)
-        self.insertLegend(legend, Qwt.QwtPlot.RightLegend)
+        legend.setItemMode(Qwt.QwtLegend.ClickableItem)#CheckableItem)
+        self.insertLegend(legend, Qwt.QwtPlot.BottomLegend)
         # self.setTitle('Plot %d' % (self.plotNo))
         mY = Qwt.QwtPlotMarker()
         mY.setLabelAlignment(Qt.AlignRight | Qt.AlignTop)
@@ -115,8 +115,8 @@ class MoosePlot(Qwt.QwtPlot):
         self.zoomer.setRubberBandPen(QtGui.QPen(Qt.black))
         self.zoomer.setTrackerPen(QtGui.QPen(Qt.black))
         self.mooseHandler = None
-	QtCore.QObject.connect(self, QtCore.SIGNAL("legendClicked(QwtPlotItem *)"), self.plotItemClicked)
-
+        #add_chait, commented below, calling same from moosegui.py
+	#QtCore.QObject.connect(self, QtCore.SIGNAL("legendChecked(QwtPlotItem *,bool)"), self.plotItemClicked)
 
     def clearZoomStack(self):
         """Auto scale and clear the zoom stack
@@ -126,17 +126,19 @@ class MoosePlot(Qwt.QwtPlot):
         self.replot()
         self.zoomer.setZoomBase()
 
-    def reconfigureSelectedCurves(self, pen, symbol, style, attribute):
+    def reconfigureSelectedCurves(self, pen, symbol, style, attribute,newLegendName,curve): 
+        #add_chait, newLegendName,curve (qwtlegentitem)
         """Reconfigure the selected curves to use pen for line and
         symbol for marking the data points."""
         print 'Reconfiguring slected plots'
         for item in self.itemList():
             widget = self.legend().find(item)
-            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
+            if isinstance(widget, Qwt.QwtLegendItem) and curve == item: #add_chait,quickfix to edit just the selected curve
                 item.setPen(pen)
                 item.setSymbol(symbol)
                 item.setStyle(style)
                 item.setCurveAttribute(attribute)
+                item.setTitle(newLegendName)
         self.replot()
 
     def fitSelectedPlots(self):
@@ -235,8 +237,7 @@ class MoosePlot(Qwt.QwtPlot):
         self.zoomer.setZoomBase()
         
 
-    def addTable(self, table):
-        print 'addTable', table.path, self.runcount
+    def addTable(self, table): 
         new_curve = None
         curve = None
         curve_name = table.name
@@ -296,8 +297,7 @@ class MoosePlot(Qwt.QwtPlot):
         self.curveTableMap.clear()
         QtGui.QwtPlotDict.detachItems(self)
 
-    def plotItemClicked(self,item):
-	
+    def plotItemClicked(self,item,value):
 	if(item.isVisible):
 		''' Initially all the item.isVisible is true'''
 		item.setVisible(not item.isVisible)
