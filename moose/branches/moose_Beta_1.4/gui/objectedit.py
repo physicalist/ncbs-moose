@@ -175,7 +175,11 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
             try:
                 field = ObjectFieldsModel.py_moose_fieldname_map[field]
             except KeyError:
-                pass
+                if field == 'name':
+                    pass
+                else:
+                    value = oldValue # invalid value, setback to the oldValue
+                    pass
             self.mooseObject.setField(field, value)
             if field == 'name':
                 self.emit(QtCore.SIGNAL('objectNameChanged(PyQt_PyObject)'), self.mooseObject)
@@ -288,7 +292,6 @@ class ObjectEditDelegate(QtGui.QItemDelegate):
             combobox.setEditable(False)
             self.index = index
             self.connect(combobox, QtCore.SIGNAL('currentIndexChanged( int )'), self.emitComboSelectionCommit)
-        
             # print 'create Combobox'
             return combobox
         return QtGui.QItemDelegate.createEditor(self, parent, option, index)

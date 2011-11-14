@@ -72,7 +72,7 @@ QT_VERSION = str(QtCore.QT_VERSION_STR).split('.')
 QT_MAJOR_VERSION = int(QT_VERSION[0])
 QT_MINOR_VERSION = int(QT_VERSION[1])
 
-MOOSE_DOC_FILE = os.path.join(KEY_HOME_DIR,'documentation.pdf')
+MOOSE_DOC_FILE = os.path.abspath(os.path.join(KEY_HOME_DIR,'documentation.pdf'))
 MOOSE_REPORT_BUG_URL = 'http://sourceforge.net/tracker/?func=add&group_id=165660&atid=836272'
 
 def get_settings():
