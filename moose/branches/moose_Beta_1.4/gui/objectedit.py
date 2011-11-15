@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun 30 11:18:34 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Nov 15 10:49:32 2011 (+0530)
+# Last-Updated: Tue Nov 15 10:53:37 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 513
+#     Update #: 514
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -310,7 +310,6 @@ class ObjectEditDelegate(QtGui.QItemDelegate):
                 ii = 0
             editor.setCurrentIndex(ii)
         else:
-            print 'AAA'
             QtGui.QItemDelegate.setEditorData(self, editor, index)
 
     def setModelData(self, editor, model, index):
