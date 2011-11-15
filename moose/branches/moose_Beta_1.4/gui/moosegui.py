@@ -387,7 +387,7 @@ class MainWindow(QtGui.QMainWindow):
         for child in self.findChildren(QtGui.QDockWidget):
             area = self.dockWidgetArea(child)
             if ( area == QtCore.Qt.BottomDockWidgetArea) or \
-                    (area == QtCore.Qt.RightDockWidgetArea):
+                    (area == QtCore.Qt.RightDockWidgetArea) or (area == QtCore.Qt.LeftDockWidgetArea):
                 child.setVisible(checked)
                 
         
@@ -503,7 +503,8 @@ class MainWindow(QtGui.QMainWindow):
         # self.glClientAction = self.glClientDock.toggleViewAction()
         # self.glClientAction.setChecked(False)
         self.mooseTreeAction = self.mooseTreePanel.toggleViewAction()
-        self.refreshMooseTreeAction = QtGui.QAction(self.tr('Refresh model tree'), self)
+        self.refreshMooseTreeAction = QtGui.QAction(self.tr('Refresh Element Tree'), self)
+        self.refreshMooseTreeAction.setShortcut(QtGui.QKeySequence(self.tr('F5')))
         self.connect(self.refreshMooseTreeAction, QtCore.SIGNAL('triggered(bool)'), self.modelTreeWidget.recreateTree)
         
         self.mooseClassesAction = self.mooseClassesPanel.toggleViewAction()
@@ -515,11 +516,11 @@ class MainWindow(QtGui.QMainWindow):
         self.mooseGLCellAction.setChecked(False)
         self.connect(self.mooseGLCellAction, QtCore.SIGNAL('triggered()'), self.createGLCellWidget)
 
-        self.autoHideAction = QtGui.QAction(self.tr('Autohide during simulation'), self)
-	self.autoHideAction.setCheckable(True)
-        self.autoHideAction.setChecked(config.get_settings().value(config.KEY_RUNTIME_AUTOHIDE).toBool())
+        #self.autoHideAction = QtGui.QAction(self.tr('Autohide during simulation'), self)
+	#self.autoHideAction.setCheckable(True)
+        #self.autoHideAction.setChecked(config.get_settings().value(config.KEY_RUNTIME_AUTOHIDE).toBool())
 
-        self.showRightBottomDocksAction = QtGui.QAction(self.tr('Right and Bottom Docks'), self)
+        self.showRightBottomDocksAction = QtGui.QAction(self.tr('Show All Docks'), self) #changed from justRight&bottom
 	self.showRightBottomDocksAction.setCheckable(True)
 	self.connect(self.showRightBottomDocksAction, QtCore.SIGNAL('triggered(bool)'), self.showRightBottomDocks)
         self.showRightBottomDocksAction.setChecked(False)
@@ -549,10 +550,10 @@ class MainWindow(QtGui.QMainWindow):
         self.subWindowLayoutActionGroup.addAction(self.tabbedViewAction)
         self.subWindowLayoutActionGroup.setExclusive(True)
         self.tilePlotWindowsAction.setChecked(False)
-        self.togglePlotWindowsAction = QtGui.QAction(self.tr('Plot windows'), self)
-        self.togglePlotWindowsAction.setCheckable(True)
-        self.togglePlotWindowsAction.setChecked(True)
-        self.connect(self.togglePlotWindowsAction, QtCore.SIGNAL('triggered(bool)'), self.setPlotWindowsVisible)
+        #self.togglePlotWindowsAction = QtGui.QAction(self.tr('Plot windows'), self)
+        #self.togglePlotWindowsAction.setCheckable(True)
+        #self.togglePlotWindowsAction.setChecked(True)
+        #self.connect(self.togglePlotWindowsAction, QtCore.SIGNAL('triggered(bool)'), self.setPlotWindowsVisible)
 
         # Action to configure plots
         #self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
@@ -603,9 +604,9 @@ class MainWindow(QtGui.QMainWindow):
         self.pythonModeAction = QtGui.QAction(self.tr('Python'), self.shellModeActionGroup)
 	self.pythonModeAction.setCheckable(True)
         self.pythonModeAction.setChecked(True)
-        self.genesisModeAction = QtGui.QAction(self.tr('GENESIS'), self.shellModeActionGroup)
-	self.genesisModeAction.setCheckable(True)
-        self.shellModeActionGroup.setExclusive(True)
+#        self.genesisModeAction = QtGui.QAction(self.tr('GENESIS'), self.shellModeActionGroup)
+#	self.genesisModeAction.setCheckable(True)
+#        self.shellModeActionGroup.setExclusive(True)
         self.connect(self.shellModeActionGroup, QtCore.SIGNAL('triggered(QAction*)'), self.changeShellMode)
         
         # Quit action
@@ -705,20 +706,19 @@ class MainWindow(QtGui.QMainWindow):
         self.viewMenu.addAction(self.tabbedViewAction)
         self.viewMenu.addAction(self.tilePlotWindowsAction)
         self.viewMenu.addAction(self.cascadePlotWindowsAction)
-        self.viewMenu.addAction(self.togglePlotWindowsAction)
+        #self.viewMenu.addAction(self.togglePlotWindowsAction)
 
         self.viewMenu.addSeparator()
         self.viewMenu.addAction(self.controlDockAction)
         # self.viewMenu.addAction(self.glClientAction)
-        self.viewMenu.addAction(self.mooseTreeAction)
-        self.viewMenu.addAction(self.refreshMooseTreeAction)
         self.viewMenu.addAction(self.mooseClassesAction)
         self.viewMenu.addAction(self.mooseShellAction)
-        self.viewMenu.addAction(self.autoHideAction)
-        self.viewMenu.addAction(self.showRightBottomDocksAction)
-
+        #self.viewMenu.addAction(self.autoHideAction)
         self.viewMenu.addAction(self.showObjectEditorAction)
-
+        self.viewMenu.addAction(self.mooseTreeAction)
+        self.viewMenu.addAction(self.refreshMooseTreeAction)
+        self.viewMenu.addSeparator()
+        self.viewMenu.addAction(self.showRightBottomDocksAction)
 
         self.runMenu = QtGui.QMenu(self.tr('&Run'), self)
         # self.runMenu.addAction(self.resetAction)
@@ -784,7 +784,7 @@ class MainWindow(QtGui.QMainWindow):
         layout_data = self.saveState()
         config.get_settings().setValue(config.KEY_WINDOW_GEOMETRY, QtCore.QVariant(geo_data))
         config.get_settings().setValue(config.KEY_WINDOW_LAYOUT, QtCore.QVariant(layout_data))
-        config.get_settings().setValue(config.KEY_RUNTIME_AUTOHIDE, QtCore.QVariant(self.autoHideAction.isChecked()))
+        #config.get_settings().setValue(config.KEY_RUNTIME_AUTOHIDE, QtCore.QVariant(self.autoHideAction.isChecked()))
         config.get_settings().setValue(config.KEY_DEMOS_DIR, QtCore.QVariant(self.demosDir))
                               
 
@@ -1373,16 +1373,16 @@ class MainWindow(QtGui.QMainWindow):
 
         """
         
-	if self.autoHideAction.isChecked():
-            if self.commandLineDock.isVisible():
-                self.commandLineDock.setVisible(False)
-            if self.mooseClassesPanel.isVisible():
-                self.mooseClassesPanel.setVisible(False)
-            # if self.glClientDock.isVisible():
-            #     self.glClientDock.setVisible(False)
-            if hasattr(self, 'objFieldEditPanel') and self.objFieldEditPanel.isVisible():
-                self.objFieldEditPanel.setVisible(False)
-            self.showRightBottomDocksAction.setChecked(False)
+	# if self.autoHideAction.isChecked():
+        #     if self.commandLineDock.isVisible():
+        #         self.commandLineDock.setVisible(False)
+        #     if self.mooseClassesPanel.isVisible():
+        #         self.mooseClassesPanel.setVisible(False)
+        #     # if self.glClientDock.isVisible():
+        #     #     self.glClientDock.setVisible(False)
+        #     if hasattr(self, 'objFieldEditPanel') and self.objFieldEditPanel.isVisible():
+        #         self.objFieldEditPanel.setVisible(False)
+        #     self.showRightBottomDocksAction.setChecked(False)
         try:
             runtime = float(str(self.runtimeText.text()))
         except ValueError:

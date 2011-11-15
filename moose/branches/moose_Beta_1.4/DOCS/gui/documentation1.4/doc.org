@@ -1,7 +1,10 @@
 #+title: Documentation of MooseGUI 
 #+author: C.H.Chaitanya, NCBS Bangalore http://moose.ncbs.res.in/ 
 
+#+LaTeX: \newpage
 * Getting Started
+
+
 
 ** Linux
 
@@ -17,6 +20,8 @@
 
   >python /home/user/moose1.4/gui/moosegui.py
 
+
+
 ** Windows
 
   For Windows systems, find the Moosegui icon on your desktop or find software Moose via Start Menu, and then click moosegui.
@@ -27,6 +32,7 @@
 
   >python c:\\Program Files (x86)\MOOSEgui\moosegui.py (64 bit)
 
+#+LaTeX: \newpage
 * MooseGUI layout
 
   #+ATTR_HTML: width = 60%
@@ -44,6 +50,7 @@
   9. Moose Classes Panel*
   
   *by default not shown at startup, to make them visible: In [[MooseGUI layout][Menu]]>View> and check on corresponding item to show  
+#+LaTeX: \newpage
 
 * Load Models
 
