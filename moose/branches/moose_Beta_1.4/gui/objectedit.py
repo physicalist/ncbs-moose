@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun 30 11:18:34 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Jun 10 11:24:14 2011 (+0530)
+# Last-Updated: Tue Nov 15 10:49:32 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 511
+#     Update #: 513
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -310,6 +310,7 @@ class ObjectEditDelegate(QtGui.QItemDelegate):
                 ii = 0
             editor.setCurrentIndex(ii)
         else:
+            print 'AAA'
             QtGui.QItemDelegate.setEditorData(self, editor, index)
 
     def setModelData(self, editor, model, index):
@@ -322,6 +323,7 @@ class ObjectEditView(QtGui.QTableView):
     """Extension of QTableView in order to automate update of the plot field when a field is dragged and dropped on a plot"""
     def __init__(self, *args):
         QtGui.QTableView.__init__(self, *args)
+        self.setEditTriggers(self.DoubleClicked | self.SelectedClicked | self.EditKeyPressed)
         
     def dataChanged(self, tl, br):
         QtGui.QTableView.dataChanged(self, tl, br)
