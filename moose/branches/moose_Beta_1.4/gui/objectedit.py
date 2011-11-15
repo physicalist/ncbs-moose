@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun 30 11:18:34 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Nov 15 10:53:37 2011 (+0530)
+# Last-Updated: Tue Nov 15 11:17:54 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 514
+#     Update #: 522
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -117,7 +117,6 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
         self.fieldPlotNameMap = {}
         try:
             className = 'moose.' + mooseObject.className
-            config.LOGGER.debug('Creating editor model for %s of class %s' % (mooseObject.path, className))
             classObject = eval(className)
             self.mooseObject = classObject(mooseObject.id)
 
@@ -126,7 +125,6 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
             return
 
         for fieldName in self.mooseObject.getFieldList(moose.FTYPE_VALUE):
-            config.LOGGER.debug('class: %s, python class: %s, path: %s, field: %s' % (self.mooseObject.className, self.mooseObject.__class__.__name__, self.mooseObject.path, fieldName))
             if (fieldName in ObjectFieldsModel.extra_fields) or (fieldName in ObjectFieldsModel.sys_fields):
                 continue
             if fieldName in ObjectFieldsModel.moose_py_fieldname_map.keys():
@@ -202,8 +200,7 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
             return self.tr('<html>' + moose.context.doc(self.mooseObject.className + '.' + str(field)).replace(chr(27) + '[1m', '<b>').replace(chr(27) + '[0m', '</b>') + '</html>') # This is to remove special characters used for pretty printing in terminals
         if index.column() == 0 and role == Qt.DisplayRole:
             ret = QtCore.QVariant(QtCore.QString(field))
-        elif index.column() == 1 and role == Qt.DisplayRole:
-            config.LOGGER.debug('Field: %s' % (field))
+        elif index.column() == 1 and (role == Qt.DisplayRole or role == Qt.EditRole):
             try:
                 field = ObjectFieldsModel.py_moose_fieldname_map[field]
             except KeyError:
@@ -280,17 +277,18 @@ class ObjectEditDelegate(QtGui.QItemDelegate):
     def createEditor(self, parent, option, index):
         """Override createEditor from parent class to show custom
         combo box for the plot column."""
-        # print 'Creating editor'
-        #QtGui.QAbstractItemView.openPersistentEditor(index)
+        widget = None
         if index.column() == 2:
             combobox = QtGui.QComboBox(parent)  
             combobox.addItems(index.model().plotNames)
             combobox.setEditable(False)
             self.index = index
             self.connect(combobox, QtCore.SIGNAL('currentIndexChanged( int )'), self.emitComboSelectionCommit)
-            # print 'create Combobox'
-            return combobox
-        return QtGui.QItemDelegate.createEditor(self, parent, option, index)
+            widget = combobox
+        else:
+            widget = QtGui.QItemDelegate.createEditor(self, parent, option, index)
+        widget.setFocusPolicy(Qt.StrongFocus)
+        return widget
 
     def emitComboSelectionCommit(self, index):
         if not isinstance(self.sender(), QtGui.QComboBox):
