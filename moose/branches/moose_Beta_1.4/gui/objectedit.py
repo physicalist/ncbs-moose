@@ -175,11 +175,7 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
             try:
                 field = ObjectFieldsModel.py_moose_fieldname_map[field]
             except KeyError:
-                if field == 'name':
-                    pass
-                else:
-                    value = oldValue # invalid value, setback to the oldValue
-                    pass
+                pass
             self.mooseObject.setField(field, value)
             if field == 'name':
                 self.emit(QtCore.SIGNAL('objectNameChanged(PyQt_PyObject)'), self.mooseObject)
