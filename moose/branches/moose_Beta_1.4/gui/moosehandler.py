@@ -101,8 +101,8 @@ class MooseHandler(QtCore.QObject):
         'neuroML/SBML(*.xml *.nml *.bz2 *.zip *.gz)': type_xml,
         'Python script(*.py)': type_python
         }
-    DEFAULT_SIMDT = 5.0e-5
-    DEFAULT_PLOTDT = 1.0e-4
+    DEFAULT_SIMDT = 2.5e-5
+    DEFAULT_PLOTDT = 2.5e-5
     #DEFAULT_GLDT = 50e-3
     DEFAULT_RUNTIME = 1.0
     DEFAULT_PLOTUPDATE_DT = 1e-1
