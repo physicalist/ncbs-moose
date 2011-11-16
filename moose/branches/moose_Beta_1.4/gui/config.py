@@ -52,6 +52,7 @@ import logging
 from PyQt4.Qt import Qt
 from PyQt4 import QtGui, QtCore
 
+moose_version = '1.4'
 settings = None
 TEMPDIR = tempfile.gettempdir()
 KEY_FIRSTTIME = 'firsttime'
@@ -59,7 +60,10 @@ KEY_FIRSTTIME = 'firsttime'
 KEY_HOME_DIR = os.path.abspath(__file__).rstrip('config.py')
 KEY_MAIN_DIR = os.path.abspath(os.path.join(KEY_HOME_DIR,'..'))
 KEY_ICON_DIR = os.path.join(KEY_HOME_DIR,'icons')
-KEY_DEMOS_DIR = os.path.join(KEY_MAIN_DIR,'DEMOS','pymoose')
+
+user_home = os.path.expanduser('~')
+user_moose_dir = os.path.join(user_home, 'moose%s' % (moose_version))    
+KEY_DEMOS_DIR = os.path.join(user_moose_dir,'DEMOS','pymoose')
 
 KEY_WINDOW_GEOMETRY = os.path.join(KEY_HOME_DIR,'geometry')
 KEY_WINDOW_LAYOUT = os.path.join(KEY_HOME_DIR,'layout')
