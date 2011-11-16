@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Nov 16 20:08:34 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Nov 16 21:03:05 2011 (+0530)
+# Last-Updated: Wed Nov 16 21:12:05 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 66
+#     Update #: 74
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -51,10 +51,13 @@ if __name__ == '__main__':
     # directory is not already present.
     user_home = os.path.expanduser('~')
     user_moose_conf_dir = os.path.join(user_home, '.moose')
+    user_moose_conf_file = os.path.join(user_moose_conf_dir, 'moose%s' % (moose_version))
     user_moose_dir = os.path.join(user_home, 'moose%s' % (moose_version))    
     if not os.path.lexists(user_moose_conf_dir):
         print 'Creating moose configuration directory:', user_moose_conf_dir
         os.mkdir(user_moose_conf_dir, 0755)
+        fd = os.open(user_moose_conf_file, os.O_WRONLY)
+        os.close(fd)
     if not os.path.lexists(user_moose_dir):
         print 'Creating local moose directory:', user_moose_dir
         os.mkdir(user_moose_dir, 0755)
