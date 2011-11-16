@@ -1,4 +1,4 @@
-Summary: Multiscale Object-Oriented Simulation Environment
+Summary:Multiscale Object-Oriented Simulation Environment
 Name: moose
 Version: 1.4
 Release: 0
@@ -24,13 +24,10 @@ MOOSE is the Multiscale Object-Oriented Simulation Environment.
 %setup -q
 
 %build
-make pymoose USE_NEUROML=1
-mv external/neuroML_src/libneuroml.so ./
-mv _moose.so _moose.so.tmp
-mv moose.py moose.py.tmp
+make pymoose
+mv python/moose/_moose.so _moose.so.tmp
 make clean
-make moose USE_NEUROML=1
-mv external/neuroML_src/libneuroml.a ./
+make moose
 g++ TESTS/regression/neardiff.cpp -o TESTS/regression/neardiff
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -40,16 +37,15 @@ mkdir -p "$RPM_BUILD_ROOT/usr/share/man/man1"
 mkdir -p "$RPM_BUILD_ROOT/usr/share/info"
 mkdir -p "$RPM_BUILD_ROOT/usr/share/moose1.4/lib"
 mkdir -p "$RPM_BUILD_ROOT/usr/share/moose1.4/py_stage"
-install -m 755 moosegui "$RPM_BUILD_ROOT/usr/bin/"
-install -s -m 755 moose "$RPM_BUILD_ROOT/usr/bin/moose-bin"
-install -s -m 644 _moose.so.tmp "$RPM_BUILD_ROOT/usr/share/moose1.4/py_stage/_moose.so"
-install -m 755 moose.py.tmp "$RPM_BUILD_ROOT/usr/share/moose1.4/py_stage/moose.py"
-install -m 755 pymoose/pymoose.py "$RPM_BUILD_ROOT/usr/share/moose1.4/py_stage/"
 cp -r DEMOS "$RPM_BUILD_ROOT/usr/share/doc/moose1.4/"
 cp -r TESTS "$RPM_BUILD_ROOT/usr/share/doc/moose1.4/"
 cp -r DOCS "$RPM_BUILD_ROOT/usr/share/doc/moose1.4/"
-cp -r pymoose/gui/qt "$RPM_BUILD_ROOT/usr/share/moose1.4/moosegui"
-cp -r gl/colormaps "$RPM_BUILD_ROOT/usr/share/moose1.4/colormaps/"
+cp -r gui "$RPM_BUILD_ROOT/usr/share/moose1.4/moosegui"
+cp -r DEMOS "$RPM_BUILD_ROOT/usr/share/moose1.4/"
+cp -r python/moose "$RPM_BUILD_ROOT/usr/share/moose1.4/py_stage/"
+install -m 755 moosegui "$RPM_BUILD_ROOT/usr/bin/"
+install -s -m 755 moose "$RPM_BUILD_ROOT/usr/bin/moose-bin"
+install -s -m 644 _moose.so.tmp "$RPM_BUILD_ROOT/usr/share/moose1.4/py_stage/moose/_moose.so"
 install -m 644 "DOCS/Beta-1.4/moose.1" "$RPM_BUILD_ROOT/usr/share/man/man1/"
 install -m 644 DOCS/pymoose/pymoose.info "$RPM_BUILD_ROOT/usr/share/info/pymoose.info"
 install -s -m 755 TESTS/regression/neardiff  "$RPM_BUILD_ROOT/usr/share/doc/moose1.4/TESTS/regression/"
@@ -92,6 +88,14 @@ then
 	rm -r /usr/share/doc/moose1.4
 fi
 rm /usr/bin/moosegui-bin
+if [ -d /usr/lib/python2.6/dist-packages/moose ];
+then
+	rm -r /usr/lib/python2.6/dist-packages/moose
+fi
+if [ -d /usr/lib/python2.5/site-packages/moose ];
+then
+	rm -r /usr/lib/python2.5/site-packages/moose
+fi
 if [ -f /usr/lib/python2.6/dist-packages/_moose.so ];
 then 
 	rm /usr/lib/python2.6/dist-packages/_moose.so
