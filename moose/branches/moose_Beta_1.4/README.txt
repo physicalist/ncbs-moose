@@ -5,9 +5,9 @@
  *		    Environment.
  *
  *		    This file is copied from the README for release 
- *		    moose-Beta 1.3.0. 
+ *		    moose-Beta 1.4.0. 
  * 
- * Created:         2010-08-03 18:44:03 (+0530)
+ * Created:         2010-11-17 18:44:03 (+0530)
  ********************************************************************/
 
 Look for documentation in the following locations (in current
@@ -35,14 +35,14 @@ Upgrades to neuronal solver.
 Quick start (Linux):
 
 Requirements:
-	python2.5(>=2.5),python-qt4(>=4.3.3),python-numpy(>=1.0.4),
+	python2.5(>=2.5),python-qt4(>=4.5),python-numpy(>=1.0.4),
 	python-qwt5-qt4
 
 DEMOS:
   - Upon installation Demos,Tests and documentation go into /usr/share/doc/ 
     and also your Home directory. If not found in the Home directory then copy
     it from /usr/share/doc using the following command:	
-	cp -r /usr/share/doc/moose1.3 ~/. 
+	cp -r /usr/share/doc/moose1.4 ~/. 
 
 GUI version of MOOSE:
   - To start the GUI version of MOOSE is to start a terminal and type
@@ -57,7 +57,7 @@ SHELL version of MOOSE:
   - To try out the Demos, you will need to start a terminal, change the directory
     to the location where you stored the demos:
 
-	cd ~/moose1.3/<demo-path>
+	cd ~/moose1.4/<demo-path>
 
     Finally, run a script, let's say 'Squid.g' like this:
 
@@ -82,6 +82,7 @@ Prototype Steady State solver to obtain steady states for chemical kinetics.
 
 Technical data:
 Authors: Upinder S. Bhalla, Niraj Dudani, Subhasis Ray, Raamesh Deshpande
+GUI work: Chaitanya, Harsha Rani
 Programming and Release support: Siji George.
 Web page: Harsha Rani.
 All authors are at the National Centre for Biological Sciences, Bangalore, 
