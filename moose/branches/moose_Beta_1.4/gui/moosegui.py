@@ -1611,4 +1611,4 @@ def main(args):
     mainWin.show()
     mainWin.setWindowState(Qt.WindowMaximized)
     app.exec_()
-	
+main(sys.argv)	
