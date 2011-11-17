@@ -36,7 +36,7 @@ import sys
 import shutil
 from distutils.dir_util import copy_tree
 
-from moosegui import main
+
 
 moose_version = '1.4'
 
@@ -59,15 +59,6 @@ if __name__ == '__main__':
             print 'Copied DEMOS and TESTS to local moose directory'
 
         if platform.system() == 'Linux' or platform.system() == 'Darwin':
-            ld_library_path = os.path.join(moose_dir, 'lib')
-            try:
-                ld_library_path = '%s:%s' % (ld_library_path, os.environ['LD_LIBRARY_PATH'])
-            except KeyError:
-                pass
-            os.environ['LD_LIBRARY_PATH'] = ld_library_path
-            python_module_path = '/usr/lib/python%d.%d/dist-packages' % (sys.version_info[0], sys.version_info[1])
-            if python_module_path not in sys.path:
-                sys.path.append(python_module_path)
             if not os.path.lexists(symlinkpath):
                 os.symlink(user_moose_dir, symlinkpath)
         # Create conf file only at the end
@@ -78,7 +69,20 @@ if __name__ == '__main__':
             fd.write('# moose%s' % moose_version)
             fd.close()
     # finally run the gui.
-    main(sys.argv)
+    if platform.system() == 'Linux' or platform.system() == 'Darwin':
+        ld_library_path = os.path.join(moose_dir, 'lib')
+        try:
+            ld_library_path = '%s:%s' % (ld_library_path, os.environ['LD_LIBRARY_PATH'])
+        except KeyError:
+            pass
+        os.environ['LD_LIBRARY_PATH'] = ld_library_path
+        python_module_path = '/usr/lib/python%d.%d/dist-packages' % (sys.version_info[0], sys.version_info[1])
+        if python_module_path not in sys.path:
+            sys.path.append(python_module_path)
+        os.system('python %s' % (os.path.join(sys.path[0], 'moosegui.py')))
+    else:
+        from moosegui import main
+        main(sys.argv)
     
     
 
