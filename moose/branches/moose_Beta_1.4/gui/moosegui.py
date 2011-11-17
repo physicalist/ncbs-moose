@@ -1251,6 +1251,7 @@ class MainWindow(QtGui.QMainWindow):
             fileType = self.mooseHandler.fileExtensionMap[str(fileFilter)]
             directory = fileDialog.directory() # Potential bug: if user types the whole file path, does it work? - no but gives error message
             self.statusBar.showMessage('Loading model, please wait')
+            app = QtCore.QCoreApplication.instance()
             app.setOverrideCursor(QtGui.QCursor(Qt.BusyCursor)) #shows a hourglass - or a busy/working arrow
             for fileName in fileNames: 
                 modeltype  = self.mooseHandler.loadModel(str(fileName), str(fileType), str(targetText.text()))
