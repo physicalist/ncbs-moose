@@ -2,7 +2,7 @@
 
 set mpi = 0
 set sbml = 1
-set neuroml = 1
+set neuroml = 0
 set neuronal = 1
 set kinetics = 1
 set misc = 0
