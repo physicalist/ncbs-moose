@@ -1,4 +1,24 @@
-This is the MOOSE Beta 1.4.0 release
+/*******************************************************************
+ * File:            README
+ * Description:     This file contains basic information regarding
+ *		    MOOSE, the Multiscale Object-Oriented Simulation
+ *		    Environment.
+ *
+ *		    This file is copied from the README for release 
+ *		    moose-Beta 1.4.0. 
+ * 
+ * Created:         2010-11-17 18:44:03 (+0530)
+ ********************************************************************/
+
+Look for documentation in the following locations (in current
+directory):
+
+1. README - (this file) contains basic information about MOOSE.
+
+2. INSTALL - contains detailed instruction on configuring and building
+	     moose from the source code.
+
+3. DOCS - a directory containining assorted documentation.
 
 MOOSE is the base and numerical core for large, detailed simulations including
 Computational Neuroscience and Systems Biology. 
@@ -15,8 +35,8 @@ Upgrades to neuronal solver.
 Quick start (Linux):
 
 Requirements:
-	python2.5(>=2.5),python-qt4(>=4.3.3),python-numpy(>=1.0.4),
-	python-qwt5-qt4,PyOpenGL 
+	python2.5(>=2.5),python-qt4(>=4.5),python-numpy(>=1.0.4),
+	python-qwt5-qt4
 
 DEMOS:
   - Upon installation Demos,Tests and documentation go into /usr/share/doc/ 
@@ -26,10 +46,10 @@ DEMOS:
 
 GUI version of MOOSE:
   - To start the GUI version of MOOSE is to start a terminal and type
-    'moosegui'.
-  - Once the GUI pops up, select a model (SBML or NeuroML or GENESIS SLI) to load,
+    'moosegui.py'.
+  - Once the GUI pops up, select a model (SBML or GENESIS SLI) to load,
     choose the objects you wish to plot, set the length of simulation and the
-    plot interval. Finally hit 'Run'.
+    plot interval. Finally hit 'Reset' and then 'Run'.
 
 SHELL version of MOOSE:
   - To start the shell version of MOOSE is to start a terminal, and type
@@ -62,6 +82,7 @@ Prototype Steady State solver to obtain steady states for chemical kinetics.
 
 Technical data:
 Authors: Upinder S. Bhalla, Niraj Dudani, Subhasis Ray, Raamesh Deshpande
+GUI work: Chaitanya, Harsha Rani
 Programming and Release support: Siji George.
 Web page: Harsha Rani.
 All authors are at the National Centre for Biological Sciences, Bangalore, 
@@ -71,7 +92,7 @@ Language: C++, Python.
 Source available at SourceForge. Licence: LGPL. However, due to the
 	terms of the GPL-licensed GSL, the effective license of the
 	package as a whole is GPL.
-Binaries available: Linux (32 and 64-bit), Windows (32 bit), 
+Binaries available: Linux (32 and 64-bit), Solaris, Windows (32 bit), 
 There is also a tarball for those who wish to compile
 
 Please refer to the mirrored MOOSE websites for current information and
@@ -79,6 +100,5 @@ for a subversion code repository:
 http://moose.ncbs.res.in
 http://moose.sourceforge.net
 
-Please look at the RELEASE_NOTES for updates and changes compared to the last
+Please look at the RELEASE_NOTES for updates and changes compared to the first
 release. The earlier release notes are in the DOCS directory.
-
