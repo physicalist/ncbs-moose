@@ -55,7 +55,7 @@ if __name__ == '__main__':
             os.mkdir(user_moose_dir, 0755)
             copy_tree(os.path.join(moose_dir, 'DEMOS'), os.path.join(user_moose_dir, 'DEMOS'))
             copy_tree(os.path.join(moose_dir, 'TESTS'), os.path.join(user_moose_dir, 'TESTS'))
-            shutil.copy(os.path.join(moose_dir, 'README'), user_moose_dir)
+            shutil.copy(os.path.join(moose_dir, 'README.txt'), user_moose_dir)
             print 'Copied DEMOS and TESTS to local moose directory'
 
         if platform.system() == 'Linux' or platform.system() == 'Darwin':
