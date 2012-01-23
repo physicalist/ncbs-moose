@@ -34,11 +34,11 @@ Name "Moose Beta 1.4.0"
 OutFile "moose-beta-1.4.0.exe"
 
 ; The default installation directory
-InstallDir $PROGRAMFILES\MOOSE
+InstallDir $PROGRAMFILES\moose1.4
 
 ; Registry key to check for directory (so if you install again, it will 
 ; overwrite the old one automatically)
-InstallDirRegKey HKLM "Software\MOOSE" "Install_Dir"
+InstallDirRegKey HKLM "Software\moose1.4" "Install_Dir"
 
 ; Request application privileges for Windows Vista and Windows 7
 RequestExecutionLevel admin
@@ -346,19 +346,19 @@ FunctionEnd
 ; Optional section (can be disabled by the user)
 Section "Start Menu Shortcuts"
 	SetShellVarContext all
-	CreateDirectory "$SMPROGRAMS\MOOSE"
-	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE-SHELL.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moose_icon.ico" 0
-	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE-GUI.lnk" "$INSTDIR\moosegui.py" "" "$INSTDIR\moose_icon.ico" 0
-	CreateShortCut "$SMPROGRAMS\MOOSE\Demos.lnk" "$INSTDIR\Demos" "" "$INSTDIR\Demos" 0
-	CreateShortCut "$SMPROGRAMS\MOOSE\Regression Tests.lnk" "$INSTDIR\RegressionTests" "" "$INSTDIR\RegressionTests" 0
-	CreateShortCut "$SMPROGRAMS\MOOSE\Documentation.lnk" "$INSTDIR\Docs" "" "$INSTDIR\Docs" 0
-	CreateShortCut "$SMPROGRAMS\MOOSE\MOOSE Website.lnk" "$INSTDIR\Docs\MOOSE Website.url" "" "$INSTDIR\Docs\MOOSE Website.url" 0
-	CreateShortCut "$SMPROGRAMS\MOOSE\Report Bugs.lnk" "$INSTDIR\Docs\Report Bugs.url" "" "$INSTDIR\Docs\Report Bugs.url" 0
-	CreateShortCut "$SMPROGRAMS\MOOSE\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
+	CreateDirectory "$SMPROGRAMS\Moose1.4"
+	CreateShortCut "$SMPROGRAMS\Moose1.4\MooseSHELL.lnk" "$INSTDIR\moose.exe" "" "$INSTDIR\moose_icon.ico" 0
+	CreateShortCut "$SMPROGRAMS\Moose1.4\MooseGUI.lnk" "$INSTDIR\gui\moosestart.py" "" "$INSTDIR\moose_icon.ico" 0
+	CreateShortCut "$SMPROGRAMS\Moose1.4\Demos.lnk" "$INSTDIR\DEMOS" "" "$INSTDIR\DEMOS" 0
+	CreateShortCut "$SMPROGRAMS\Moose1.4\Tests.lnk" "$INSTDIR\TESTS" "" "$INSTDIR\TESTS" 0
+	CreateShortCut "$SMPROGRAMS\Moose1.4\Documentation.lnk" "$INSTDIR\DOCS" "" "$INSTDIR\DOCS" 0
+	CreateShortCut "$SMPROGRAMS\Moose1.4\MOOSE Website.lnk" "$INSTDIR\DOCS\MOOSE Website.url" "" "$INSTDIR\DOCS\MOOSE Website.url" 0
+	CreateShortCut "$SMPROGRAMS\Moose1.4\Report Bugs.lnk" "$INSTDIR\DOCS\Report Bugs.url" "" "$INSTDIR\DOCS\Report Bugs.url" 0
+	CreateShortCut "$SMPROGRAMS\Moose1.4\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 SectionEnd
 Section "Desktop Shortcuts"
 	SetShellVarContext all
-	CreateShortCut "$DESKTOP\MOOSE.lnk" "$INSTDIR\moosegui.py" "" "$INSTDIR\moose_icon.ico" 0
+	CreateShortCut "$DESKTOP\MooseGUI.lnk" "$INSTDIR\gui\moosestart.py" "" "$INSTDIR\moose_icon.ico" 0
 SectionEnd
 Function un.onInit
 	Call un.ConfirmAdmin
@@ -473,8 +473,8 @@ Section "Uninstall"
 	Call un.RemoveFromPythonPath
 	
 	; Remove directories used
-	RMDir /r "$SMPROGRAMS\MOOSE"
-	Delete "$DESKTOP\MOOSE.lnk"
+	RMDir /r "$SMPROGRAMS\Moose1.4"
+	Delete "$DESKTOP\MooseGUI.lnk"
 
 	
 	
