@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Apr 10 11:38:18 2012 (+0530)
+// Last-Updated: Tue Apr 10 16:10:45 2012 (+0530)
 //           By: subha
-//     Update #: 604
+//     Update #: 606
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -131,8 +131,8 @@ extern "C" {
     // This should not be required or accessible to the user. Put here
     // for debugging threading issue.
     static PyObject * _pymoose_quit(PyObject * dummy);
-    static int defineClass(string class_name);
-    static void defineAllClasses();
+    static int defineClass(string class_name, string indent);
+    static int defineAllClasses();
     PyMODINIT_FUNC init_moose();
 
 
