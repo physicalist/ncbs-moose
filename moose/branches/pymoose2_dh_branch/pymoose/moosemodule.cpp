@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Apr 10 20:13:54 2012 (+0530)
+// Last-Updated: Tue Apr 10 20:23:29 2012 (+0530)
 //           By: subha
-//     Update #: 5494
+//     Update #: 5506
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -2317,27 +2317,33 @@ extern "C" {
         } else {
             new_class->tp_base = base_iter->second;
         }
-        if (PyType_Ready(new_class) < 0){
-            cerr << "Fatal error: Could not initialize class '" << class_name << "'" << endl;
-            return -1;
-        }
-        Py_INCREF(new_class);
-        // cout << class_name << ": tp_name " << new_class->tp_name << endl;
-        /* Will go through creating properties after checking with default implementation */
+        /*********************************************************
+         * TODO: descriptor for lookupFinfos.
+         * TODO: methods for destFinfos.
+         *********************************************************/
+        /* Can go through creating properties for valueFinfos after
+         * checking with default implementation */
         // unsigned int num_valueFinfos = Field<unigned int>::get(ObjId(class_id), "num_valueFinfos");
-        // unsigned int num_destFinfos = Field<unigned int>::get(ObjId(class_id), "num_destFinfos");
-        // unsigned int num_lookupFinfos = Field<unigned int>::get(ObjId(class_id), "num_lookupFinfos");
-
         // Id valueFinfoId("/classes/" + class_name + "/valueFinfo");
+        // unsigned int num_destFinfos = Field<unigned int>::get(ObjId(class_id), "num_destFinfos");
         // Id destFinfoId("/classes/" + class_name + "/destFinfos");
+        // TODO: go through destFinfos and create methods for them.
+        // unsigned int num_lookupFinfos = Field<unigned int>::get(ObjId(class_id), "num_lookupFinfos");
         // Id lookupFinfoId("/classes/" + class_name + "/lookupFinfos");
-        
+        // TODO: go through lookupFinfos and insert descriptors for them.
+        /* Creating properties for valueFinfos as below will be
+         * unnecessary expense for the sake of using pydoc */
         // for (int ii = 0; ii < num_valueFinfos; ++ii){
         //     ObjId valueFinfo = ObjId(valueFinfoId, DataId(0, ii, 0));
         //     string name = Field<string>::get(valueFinfo, "name");
         //     string docs = Field<string>::get(valueFinfo, "docs");
             
         // }
+        if (PyType_Ready(new_class) < 0){
+            cerr << "Fatal error: Could not initialize class '" << class_name << "'" << endl;
+            return -1;
+        }
+        Py_INCREF(new_class);
         
         defined_classes.insert(pair<string, PyTypeObject*> (class_name, new_class));        
         return 1;
