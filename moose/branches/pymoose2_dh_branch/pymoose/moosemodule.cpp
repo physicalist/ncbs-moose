@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Sun Apr  8 17:18:26 2012 (+0530)
+// Last-Updated: Tue Apr 10 11:37:48 2012 (+0530)
 //           By: subha
-//     Update #: 5367
+//     Update #: 5368
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -50,7 +50,7 @@
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
-
+#include <cstring>
 #include <iostream>
 
 #include "../basecode/header.h"
@@ -116,7 +116,7 @@ extern "C" {
     static int quitFlag = 0;
     static Id shellId;
     static PyObject * MooseError;
-    
+    static map<string, PyTypeObject *> defined_classes;
     ///////////////////////////////////
     // Python datatype checking macros
     ///////////////////////////////////
@@ -242,6 +242,11 @@ extern "C" {
         // cout << "In finalize() - Joined threads. Going to destroy Shell.\n";
         ns->destroy( shellId.eref(), 0, 0);
         // cout << "In finalize() - Destroyed Shell.\n";
+        for (map <string, PyTypeObject * >::iterator it = defined_classes.begin(); it != defined_classes.end(); ++it){
+            // free((void*)it->second->tp_name);
+            // free((void*)it->second->tp_doc);
+            Py_DECREF(it->second);
+        }
 
 #ifdef USE_MPI
         MPI_Finalize();
@@ -517,9 +522,9 @@ extern "C" {
     static int _pymoose_Id_init(_Id * self, PyObject * args, PyObject * kwds)
     {
         extern PyTypeObject IdType;
-        static const char * kwlist[] = {"path", "dims", "type", NULL};
-        char * path;
-        const char * type = "Neutral";
+        static char * kwlist[] = {"path", "dtype", "dims", NULL};
+        char * path = NULL;
+        char * type = "Neutral";
         PyObject * dims = NULL;
         PyObject * src = NULL;
         unsigned int id = 0;
@@ -527,20 +532,19 @@ extern "C" {
             self->id_ = Id(id);
             return 0;
         }
-        
+        PyErr_Clear();        
         if (PyArg_ParseTuple(args, "O:_pymoose_Id_init", &src) && Id_Check(src)){
             self->id_ = ((_Id*)src)->id_;
             return 0;
         }
-        if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|Os:_pymoose_Id_init", const_cast<char**>(kwlist), &path, &dims, &type)){
-            PyErr_SetString(PyExc_TypeError, "Invalid paramaters. Id.__init__ has the following signature: "
-                            "Id.__init__(path, dims, type) or Id.__init__(other_Id) or "
-                            "Id.__init__(id_value)");
+        PyErr_Clear();
+        if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sO:_pymoose_Id_init", kwlist, &path, &type, &dims)){
+            // PyErr_SetString(PyExc_TypeError, "Invalid paramaters. Id.__init__ has the following signature: "
+            //                 "Id.__init__(path, dims, type) or Id.__init__(other_Id) or "
+            //                 "Id.__init__(id_value)");
             return -1;
         }
-
         PyErr_Clear();
-
         string trimmed_path(path);
         trimmed_path = trim(trimmed_path);
         size_t length = trimmed_path.length();
@@ -798,13 +802,36 @@ extern "C" {
     {
         extern PyTypeObject ObjIdType;
         unsigned int id = 0, data = 0, field = 0, numFieldBits = 0;
-        PyObject * obj;
-        static const char * kwlist[] = {"id", "dataIndex", "fieldIndex", "numFieldBits", NULL};
-        if (PyArg_ParseTupleAndKeywords(args, kwargs, "I|III:_pymoose_ObjId_init", const_cast<char**>(kwlist), &id, &data, &field, &numFieldBits)){
+        PyObject * dims = NULL;
+        PyObject * obj = NULL;
+        static char * kwlist[] = {"id", "dataIndex", "fieldIndex", "numFieldBits", NULL};
+        static char * new_obj_kwlist [] = {"path", "dtype", "dims", NULL};
+        char * path = NULL, * type = NULL;
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, "I|III:_pymoose_ObjId_init", kwlist, &id, &data, &field, &numFieldBits)){
             self->oid_ = ObjId(Id(id), DataId(data, field, numFieldBits));
             return 0;
+        } else if (PyArg_ParseTupleAndKeywords(args, kwargs, "s|sO:_pymoose_ObjId_init", new_obj_kwlist, &path, &type, &dims)){
+            PyErr_Clear();
+            self->oid_ = ObjId(path);
+            if (ObjId::bad == self->oid_){
+                if (type == NULL){
+                    type = const_cast<char*>(((PyObject*)self)->ob_type->tp_name);
+                }
+                if (defined_classes.find(string(type)) == defined_classes.end()){
+                    PyErr_SetString(PyExc_TypeError, "Object does not exist and the specified type is not defined.");
+                    return -1;
+                }
+                // Create an object using _pymoose_Id_init_ method
+                // and use the id to create a ref to first entry
+                _Id * new_id = (_Id*)PyObject_New(_Id, &IdType);
+                _pymoose_Id_init(new_id, args, kwargs);
+                self->oid_ = ObjId(new_id->id_);
+                Py_DECREF(new_id);
+            }
+            return 0;            
         } else if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|III:_pymoose_ObjId_init", const_cast<char**>(kwlist), &obj, &data, &field, &numFieldBits)){
             PyErr_Clear();
+            // If first argument is an Id object, construct an ObjId out of it
             if (Id_Check(obj)){
                 self->oid_ = ObjId(((_Id*)obj)->id_, DataId(data, field, numFieldBits));
                 return 0;
@@ -2038,7 +2065,6 @@ extern "C" {
     static PyObject * _pymoose_getField(PyObject * dummy, PyObject * args)
     {
         PyObject * pyobj;
-        PyObject * ret;
         const char * field;
         const char * type;
         if (!PyArg_ParseTuple(args, "Oss:_pymoose_getfield", &pyobj, &field, &type)){
