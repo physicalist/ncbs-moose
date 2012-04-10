@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Apr 10 11:37:48 2012 (+0530)
+// Last-Updated: Tue Apr 10 13:34:30 2012 (+0530)
 //           By: subha
-//     Update #: 5368
+//     Update #: 5385
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -124,7 +124,7 @@ extern "C" {
 #define Id_Check(v) (Py_TYPE(v) == &IdType)
 #define Id_SubtypeCheck(v) (PyType_IsSubtype(Py_TYPE(v),&IdType))
 #define ObjId_Check(v) (Py_TYPE(v) == &ObjIdType)
-#define ObjId_SubtypeCheck(v) (Py_TYPE(v) == &ObjIdType)
+#define ObjId_SubtypeCheck(v) (PyType_IsSubtype(Py_TYPE(v), &ObjIdType))
     
     // Creates the Shell * out of shellId
 #define ShellPtr reinterpret_cast<Shell*>(shellId.eref().data())    
@@ -477,7 +477,7 @@ extern "C" {
         "moose.ObjId",                  /* tp_name */
         sizeof(_ObjId),                    /* tp_basicsize */
         0,                                  /* tp_itemsize */
-        (destructor)_pymoose_ObjId_dealloc,                    /* tp_dealloc */
+        0,           /* tp_dealloc */
         0,                                  /* tp_print */
         0,                                  /* tp_getattr */
         0,                                  /* tp_setattr */
@@ -2228,6 +2228,75 @@ extern "C" {
         Py_RETURN_NONE;
     }
 
+    void defineAllClasses()
+    {
+        static vector <Id> classes(Field< vector<Id> >::get(ObjId("/classes"), "children"));
+        for (unsigned int ii = 0; ii < classes.size(); ++ii){
+            defineClass(Field<string>::get(classes[ii], "name"));
+        }
+        // for (map <string, PyTypeObject * >::iterator it = defined_classes.begin(); it != defined_classes.end(); ++it){
+        //     cout << "map: " << it->first << ", " << it->second->tp_name << endl;
+        // }
+    }
+    // An attempt to define classes dynamically
+    // http://stackoverflow.com/questions/8066438/how-to-dynamically-create-a-derived-type-in-the-python-c-api gives a clue
+    int defineClass(string class_name)
+    {
+        if (defined_classes.find(class_name) != defined_classes.end()){
+            return 0;
+        }
+        Id class_id("/classes/" + class_name);
+        if (class_id == Id()){
+#ifndef NDEBUG
+            cout << "_pymoose_defineClass: Unknown class_name " << class_name << endl;
+#endif
+            return -1;
+        }
+        string baseclass = Field<string>::get(ObjId(class_id), "baseClass");
+        // If base class has not already been define, define it
+        // first. We don't want to do the recursion unnecessarily
+        // (avoid too many function calls and deep recursion), hence
+        // check in the set.
+        map<string, PyTypeObject*>::iterator base_iter = defined_classes.find(baseclass);
+        if (base_iter == defined_classes.end() baseclass != "none"){
+                defineClass(baseclass);            
+        } 
+
+        PyTypeObject * new_class = (PyTypeObject*)PyType_Type.tp_alloc(&PyType_Type, 0);
+        new_class->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+        string str = class_name;
+        new_class->tp_name = (char *)calloc(str.length()+1, sizeof(char));
+        strncpy(const_cast<char*>(new_class->tp_name), str.c_str(), str.length()+1);
+        str = Field<string>::get(ObjId(class_id), "docs");
+        new_class->tp_doc = (char *)calloc(str.length()+1, sizeof(char));
+        strncpy(const_cast<char*>(new_class->tp_doc), str.c_str(), str.length()+1);
+        new_class->ob_type = &PyType_Type;
+        new_class->tp_new = PyType_GenericNew;
+        new_class->tp_free = _PyObject_Del;
+        if (base_iter == defined_classes.end()){
+            new_class->tp_base = &ObjIdType;
+        }
+        Py_INCREF(new_class);
+        // cout << class_name << ": tp_name " << new_class->tp_name << endl;
+        /* Will go through creating properties after checking with default implementation */
+        // unsigned int num_valueFinfos = Field<unigned int>::get(ObjId(class_id), "num_valueFinfos");
+        // unsigned int num_destFinfos = Field<unigned int>::get(ObjId(class_id), "num_destFinfos");
+        // unsigned int num_lookupFinfos = Field<unigned int>::get(ObjId(class_id), "num_lookupFinfos");
+
+        // Id valueFinfoId("/classes/" + class_name + "/valueFinfo");
+        // Id destFinfoId("/classes/" + class_name + "/destFinfos");
+        // Id lookupFinfoId("/classes/" + class_name + "/lookupFinfos");
+        
+        // for (int ii = 0; ii < num_valueFinfos; ++ii){
+        //     ObjId valueFinfo = ObjId(valueFinfoId, DataId(0, ii, 0));
+        //     string name = Field<string>::get(valueFinfo, "name");
+        //     string docs = Field<string>::get(valueFinfo, "docs");
+            
+        // }
+        
+        defined_classes.insert(pair<string, PyTypeObject*> (class_name, new_class));        
+        return 1;
+    }
     /////////////////////////////////////////////////////////////////////
     // Method definitions for MOOSE module
     /////////////////////////////////////////////////////////////////////    
@@ -2329,7 +2398,18 @@ extern "C" {
         PyModule_AddIntConstant(moose_module, "INFINITE", isInfinite);
         PyModule_AddStringConstant(moose_module, "__version__", ShellPtr->doVersion().c_str());
         PyModule_AddStringConstant(moose_module, "VERSION", ShellPtr->doVersion().c_str());
-        PyModule_AddStringConstant(moose_module, "SVN_REVISION", ShellPtr->doRevision().c_str());        
+        PyModule_AddStringConstant(moose_module, "SVN_REVISION", ShellPtr->doRevision().c_str());
+        PyGILState_STATE gstate;
+        gstate = PyGILState_Ensure();
+
+        defineAllClasses();
+        for (map < string, PyTypeObject * >::iterator it = defined_classes.begin(); it != defined_classes.end(); ++it){
+             // cout << it->first << "--"
+             //     << it->second->tp_name << endl;
+            PyModule_AddObject(moose_module, it->second->tp_name, (PyObject*)it->second);
+        }
+        /* Release the thread. No Python API allowed beyond this point. */
+        PyGILState_Release(gstate);
     } //! init_moose
     
 } // end extern "C"
