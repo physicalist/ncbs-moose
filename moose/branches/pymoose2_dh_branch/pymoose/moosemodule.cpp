@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Apr 10 13:34:30 2012 (+0530)
+// Last-Updated: Tue Apr 10 17:04:12 2012 (+0530)
 //           By: subha
-//     Update #: 5385
+//     Update #: 5443
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -386,7 +386,7 @@ extern "C" {
         "moose.Id",                  /* tp_name */
         sizeof(_Id),                    /* tp_basicsize */
         0,                                  /* tp_itemsize */
-        (destructor)_pymoose_Id_dealloc,                    /* tp_dealloc */
+        0,                    /* tp_dealloc */
         0,                                  /* tp_print */
         0,                                  /* tp_getattr */
         0,                                  /* tp_setattr */
@@ -810,27 +810,45 @@ extern "C" {
         if (PyArg_ParseTupleAndKeywords(args, kwargs, "I|III:_pymoose_ObjId_init", kwlist, &id, &data, &field, &numFieldBits)){
             self->oid_ = ObjId(Id(id), DataId(data, field, numFieldBits));
             return 0;
-        } else if (PyArg_ParseTupleAndKeywords(args, kwargs, "s|sO:_pymoose_ObjId_init", new_obj_kwlist, &path, &type, &dims)){
-            PyErr_Clear();
+        }
+        PyErr_Clear();
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, "s|sO:_pymoose_ObjId_init", new_obj_kwlist, &path, &type, &dims)){
             self->oid_ = ObjId(path);
             if (ObjId::bad == self->oid_){
                 if (type == NULL){
                     type = const_cast<char*>(((PyObject*)self)->ob_type->tp_name);
+                    cout << "Type is: " << type << endl;
                 }
                 if (defined_classes.find(string(type)) == defined_classes.end()){
                     PyErr_SetString(PyExc_TypeError, "Object does not exist and the specified type is not defined.");
                     return -1;
                 }
+                if (dims == NULL){
+                    dims = Py_BuildValue("(i)", 1);
+                }
                 // Create an object using _pymoose_Id_init_ method
                 // and use the id to create a ref to first entry
                 _Id * new_id = (_Id*)PyObject_New(_Id, &IdType);
-                _pymoose_Id_init(new_id, args, kwargs);
+                PyObject * newkwargs = PyDict_New();
+                PyDict_SetItemString(newkwargs, "path", PyString_FromString(path));
+                PyDict_SetItemString(newkwargs, "dtype", PyString_FromString(type));
+                PyDict_SetItemString(newkwargs, "dims", dims);
+                PyObject * newargs = PyTuple_New(0);
+                if (_pymoose_Id_init(new_id, newargs, newkwargs) < 0)
+                {
+                    Py_DECREF(newkwargs);
+                    Py_DECREF(newargs);
+                    return -1;
+                }
+                Py_DECREF(newkwargs);
+                Py_DECREF(newargs);
                 self->oid_ = ObjId(new_id->id_);
                 Py_DECREF(new_id);
             }
             return 0;            
-        } else if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|III:_pymoose_ObjId_init", const_cast<char**>(kwlist), &obj, &data, &field, &numFieldBits)){
-            PyErr_Clear();
+        }
+        PyErr_Clear();
+        if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|III:_pymoose_ObjId_init", const_cast<char**>(kwlist), &obj, &data, &field, &numFieldBits)){
             // If first argument is an Id object, construct an ObjId out of it
             if (Id_Check(obj)){
                 self->oid_ = ObjId(((_Id*)obj)->id_, DataId(data, field, numFieldBits));
@@ -851,7 +869,7 @@ extern "C" {
                 return -1;
             }            
         } else {
-            PyErr_SetString(PyExc_TypeError, "Unrecognized parameters.");
+            // PyErr_SetString(PyExc_TypeError, "Unrecognized parameters.");
             return -1;
         }        
     }
@@ -2228,20 +2246,24 @@ extern "C" {
         Py_RETURN_NONE;
     }
 
-    void defineAllClasses()
+    int defineAllClasses()
     {
         static vector <Id> classes(Field< vector<Id> >::get(ObjId("/classes"), "children"));
         for (unsigned int ii = 0; ii < classes.size(); ++ii){
-            defineClass(Field<string>::get(classes[ii], "name"));
+            if (defineClass(Field<string>::get(classes[ii], "name"), "") < 0){
+                return -1;
+            }
         }
+        return 0;
         // for (map <string, PyTypeObject * >::iterator it = defined_classes.begin(); it != defined_classes.end(); ++it){
         //     cout << "map: " << it->first << ", " << it->second->tp_name << endl;
         // }
     }
     // An attempt to define classes dynamically
     // http://stackoverflow.com/questions/8066438/how-to-dynamically-create-a-derived-type-in-the-python-c-api gives a clue
-    int defineClass(string class_name)
+    int defineClass(string class_name, string indent="")
     {
+        cout << indent << class_name << endl;
         if (defined_classes.find(class_name) != defined_classes.end()){
             return 0;
         }
@@ -2253,13 +2275,16 @@ extern "C" {
             return -1;
         }
         string baseclass = Field<string>::get(ObjId(class_id), "baseClass");
+        cout << indent << " <-" << baseclass << endl;
         // If base class has not already been define, define it
         // first. We don't want to do the recursion unnecessarily
         // (avoid too many function calls and deep recursion), hence
         // check in the set.
         map<string, PyTypeObject*>::iterator base_iter = defined_classes.find(baseclass);
-        if (base_iter == defined_classes.end() baseclass != "none"){
-                defineClass(baseclass);            
+        if (base_iter == defined_classes.end() && baseclass != "none"){
+            if (defineClass(baseclass, indent+" ") < 0){
+                return -1;
+            }
         } 
 
         PyTypeObject * new_class = (PyTypeObject*)PyType_Type.tp_alloc(&PyType_Type, 0);
@@ -2273,8 +2298,15 @@ extern "C" {
         new_class->ob_type = &PyType_Type;
         new_class->tp_new = PyType_GenericNew;
         new_class->tp_free = _PyObject_Del;
+        new_class->tp_init = (initproc)_pymoose_ObjId_init;
         if (base_iter == defined_classes.end()){
             new_class->tp_base = &ObjIdType;
+        } else {
+            new_class->tp_base = base_iter->second;
+        }
+        if (PyType_Ready(new_class) < 0){
+            cerr << "Fatal error: Could not initialize class '" << class_name << "'" << endl;
+            return -1;
         }
         Py_INCREF(new_class);
         // cout << class_name << ": tp_name " << new_class->tp_name << endl;
@@ -2402,7 +2434,10 @@ extern "C" {
         PyGILState_STATE gstate;
         gstate = PyGILState_Ensure();
 
-        defineAllClasses();
+        if (defineAllClasses() < 0){
+            PyErr_SetString(PyExc_RuntimeError, "defineAllClasses failed to define MOOSE classes.");
+            PyGILState_Release(gstate);
+        }
         for (map < string, PyTypeObject * >::iterator it = defined_classes.begin(); it != defined_classes.end(); ++it){
              // cout << it->first << "--"
              //     << it->second->tp_name << endl;
