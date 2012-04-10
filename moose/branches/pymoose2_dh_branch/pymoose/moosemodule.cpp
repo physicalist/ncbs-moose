@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Apr 10 19:39:11 2012 (+0530)
+// Last-Updated: Tue Apr 10 20:13:54 2012 (+0530)
 //           By: subha
-//     Update #: 5458
+//     Update #: 5494
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -821,7 +821,7 @@ extern "C" {
                         base = base->tp_base;
                     }
                     type = const_cast<char*>(base->tp_name);
-                    cout << "Type is: " << type << endl;
+                    // cout << "Type is: " << type << endl;
                 }
                 if (defined_classes.find(string(type)) == defined_classes.end()){
                     PyErr_SetString(PyExc_TypeError, "Object does not exist and the specified type is not defined.");
@@ -1044,8 +1044,8 @@ extern "C" {
                 }
             case 'z':
                 {
-                    cout << "DataId handling not implemented in PyMoose yet." << endl;
-                    Py_RETURN_NONE;
+                    PyErr_SetString(PyExc_NotImplementedError, "DataId handling not implemented yet.");
+                    return NULL;
                 }
             case 'v': GET_VECFIELD(int, i)
             case 'w': GET_VECFIELD(short, h)
@@ -1144,8 +1144,17 @@ extern "C" {
         }
         char ftype = shortType(getFieldType(self->oid_, string(field), "valueFinfo"));
         if (!ftype){
+            // If it is instance of a MOOSE built-in class then throw
+            // error (to avoid silently creating new attributes due to
+            // typos). Otherwise, it must have been subclassed in
+            // Python. Then we allow normal Pythonic behaviour and
+            // consider such mistakes user's responsibility.
+            string class_name = ((PyTypeObject*)PyObject_Type((PyObject*)self))->tp_name;            
+            if (defined_classes.find(class_name) == defined_classes.end()){
+                return PyObject_GenericSetAttr((PyObject*)self, PyString_FromString(field), value);
+            }
             ostringstream msg;
-            msg << "'moose.ObjId' object has no attribute '" << field << "'" << endl;
+            msg << "'" << class_name << "' class has no field '" << field << "'" << endl;
             PyErr_SetString(PyExc_AttributeError, msg.str().c_str());
             return -1;
         }
@@ -1227,6 +1236,7 @@ extern "C" {
                         ret = Field<Id>::set(self->oid_, string(field), ((_Id*)value)->id_);
                     } else {
                         PyErr_SetString(PyExc_ValueError, "Null pointer passed as Id value.");
+                        return -1;
                     }
                     break;
                 }
@@ -1236,12 +1246,14 @@ extern "C" {
                         ret = Field<ObjId>::set(self->oid_, string(field), ((_ObjId*)value)->oid_);
                     } else {
                         PyErr_SetString(PyExc_ValueError, "Null pointer passed as Id value.");
+                        return -1;
                     }
                     break;
                 }
             case 'z': // DataId
                 {
-                    cout << "DataId handling not implemented in PyMoose yet." << endl;                    
+                    PyErr_SetString(PyExc_NotImplementedError, "DataId handling not implemented yet.");
+                    return -1;
                 }
             case 'v': 
                 {
@@ -1367,9 +1379,9 @@ extern "C" {
                 break;
         }
         if (ret == -1){
-            PyErr_SetString(PyExc_AttributeError, "Field is not defined.");
-        } else {
-            ret = 0;
+            ostringstream msg;
+            msg <<  "Failed to set field '"  << field << "'";
+            PyErr_SetString(PyExc_AttributeError,msg.str().c_str());
         }
         return ret;
     } // _pymoose_ObjId_setattro
@@ -1391,8 +1403,8 @@ extern "C" {
         vector< string > argType;
         tokenize(type, ",", argType);
         if (argType.size() != 2){
-            cout << "Error: _pymoose_ObjId_getLookupField can handle only single level lookup fields." << endl;
-            Py_RETURN_NONE;
+            PyErr_SetString(PyExc_TypeError, "_pymoose_ObjId_getLookupField can handle only single level lookup fields.");
+            return NULL;
         }
         char key_type_code = shortType(argType[0]);
         char value_type_code = shortType(argType[1]);
@@ -1482,8 +1494,8 @@ extern "C" {
         vector< string > argType;
         tokenize(type, ",", argType);
         if (argType.size() != 2){
-            cout << "Error: _pymoose_ObjId_setLookupField can  handle only single level lookup fields." << endl;
-            Py_RETURN_NONE;
+            PyErr_SetString(PyExc_TypeError,"_pymoose_ObjId_setLookupField can  handle only single level lookup fields.");
+            return NULL;
         }
         char key_type_code = shortType(argType[0]);
         char value_type_code = shortType(argType[1]);
@@ -1587,8 +1599,7 @@ extern "C" {
         } else if (argType.size() >= maxArgs) {
             error << "_pymoose_ObjId_setDestField: number of arguments to this function exceeds the implemented maximum=" << (maxArgs - 1)
                   << ".\nExpected arguments: " << type;
-            cout << "Error: " << error << endl;
-            Py_RETURN_NONE;
+            PyErr_SetString(PyExc_ValueError, error.str().c_str());
         }
         ostringstream argstream;
         for (size_t ii = 0; ii < argType.size(); ++ii){
@@ -2254,7 +2265,7 @@ extern "C" {
     {
         static vector <Id> classes(Field< vector<Id> >::get(ObjId("/classes"), "children"));
         for (unsigned int ii = 0; ii < classes.size(); ++ii){
-            if (defineClass(Field<string>::get(classes[ii], "name"), "") < 0){
+            if (defineClass(Field<string>::get(classes[ii], "name")) < 0){
                 return -1;
             }
         }
@@ -2265,28 +2276,26 @@ extern "C" {
     }
     // An attempt to define classes dynamically
     // http://stackoverflow.com/questions/8066438/how-to-dynamically-create-a-derived-type-in-the-python-c-api gives a clue
-    int defineClass(string class_name, string indent="")
+    int defineClass(string class_name)
     {
-        cout << indent << class_name << endl;
         if (defined_classes.find(class_name) != defined_classes.end()){
             return 0;
         }
         Id class_id("/classes/" + class_name);
         if (class_id == Id()){
-#ifndef NDEBUG
-            cout << "_pymoose_defineClass: Unknown class_name " << class_name << endl;
-#endif
+            ostringstream err;
+            err << "_pymoose_defineClass: Unknown class_name '" << class_name << "'";
+            PyErr_SetString(PyExc_RuntimeError, err.str().c_str());
             return -1;
         }
         string baseclass = Field<string>::get(ObjId(class_id), "baseClass");
-        cout << indent << " <-" << baseclass << endl;
         // If base class has not already been defined, define it
         // first. We don't want to do the recursion unnecessarily
         // (avoid too many function calls and deep recursion), hence
         // check in the set.
         map<string, PyTypeObject*>::iterator base_iter = defined_classes.find(baseclass);
         if (base_iter == defined_classes.end() && baseclass != "none"){
-            if (defineClass(baseclass, indent+" ") < 0){
+            if (defineClass(baseclass) < 0){
                 return -1;
             }
         } 
