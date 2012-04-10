@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Apr 10 17:04:12 2012 (+0530)
+// Last-Updated: Tue Apr 10 19:39:11 2012 (+0530)
 //           By: subha
-//     Update #: 5443
+//     Update #: 5458
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -816,7 +816,11 @@ extern "C" {
             self->oid_ = ObjId(path);
             if (ObjId::bad == self->oid_){
                 if (type == NULL){
-                    type = const_cast<char*>(((PyObject*)self)->ob_type->tp_name);
+                    PyTypeObject * base = ((PyObject*)self)->ob_type;
+                    while (defined_classes.find(base->tp_name) == defined_classes.end()){
+                        base = base->tp_base;
+                    }
+                    type = const_cast<char*>(base->tp_name);
                     cout << "Type is: " << type << endl;
                 }
                 if (defined_classes.find(string(type)) == defined_classes.end()){
@@ -2276,7 +2280,7 @@ extern "C" {
         }
         string baseclass = Field<string>::get(ObjId(class_id), "baseClass");
         cout << indent << " <-" << baseclass << endl;
-        // If base class has not already been define, define it
+        // If base class has not already been defined, define it
         // first. We don't want to do the recursion unnecessarily
         // (avoid too many function calls and deep recursion), hence
         // check in the set.
