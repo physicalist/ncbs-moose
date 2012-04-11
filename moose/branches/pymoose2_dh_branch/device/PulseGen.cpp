@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Feb 20 01:41:12 2012 (+0530)
 // Version: 
-// Last-Updated: Tue Mar  6 16:13:13 2012 (+0530)
+// Last-Updated: Thu Mar  8 12:07:06 2012 (+0530)
 //           By: Subhasis Ray
-//     Update #: 163
+//     Update #: 164
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -137,6 +137,7 @@ const Cinfo* PulseGen::initCinfo()
                              );
 
     static Finfo* pulseGenFinfos[] = {
+        &output,
         &firstLevel,
         &firstWidth,
         &firstDelay,
