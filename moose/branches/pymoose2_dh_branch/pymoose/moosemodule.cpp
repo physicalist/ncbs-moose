@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Apr 11 15:57:53 2012 (+0530)
+// Last-Updated: Wed Apr 11 20:06:12 2012 (+0530)
 //           By: subha
-//     Update #: 5896
+//     Update #: 5925
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -495,15 +495,23 @@ extern "C" {
     ///////////////////////////////////////////////
 
     static PyMethodDef ObjId_setDestField = {"setDestField", (PyCFunction)_pymoose_ObjId_setDestField, METH_VARARGS,
-                                       "Set a function field (DestFinfo). This should not be accessed directly. A python"
-                                       " member method should be wrapping it for each DestFinfo in each MOOSE"
-                                       " class. When used directly, it takes the form:\n"
-                                       " {ObjId}.setDestField({destFinfoName}, {arg1},{arg2}, ... , {argN})\n"
-                                       " where destFinfoName is the string representing the name of the"
-                                       " DestFinfo refering to the target function, arg1, ..., argN are the"
-                                       " arguments to be passed to the target function."
-                                       " Return True on success, False on failure."};
-
+                                             "Set a function field (DestFinfo). This should not be accessed directly. A python"
+                                             " member method should be wrapping it for each DestFinfo in each MOOSE"
+                                             " class. When used directly, it takes the form:\n"
+                                             " {ObjId}.setDestField({destFinfoName}, {arg1},{arg2}, ... , {argN})\n"
+                                             " where destFinfoName is the string representing the name of the"
+                                             " DestFinfo refering to the target function, arg1, ..., argN are the"
+                                             " arguments to be passed to the target function."
+                                             " Return True on success, False on failure."};
+    static PyMethodDef _setDestFieldWrapper = {"setDestField", (PyCFunction)_pymoose_ObjId_setDestField, METH_VARARGS,
+                                               "Set a function field (DestFinfo). This should not be accessed directly. A python"
+                                               " member method should be wrapping it for each DestFinfo in each MOOSE"
+                                               " class. When used directly, it takes the form:\n"
+                                               " {ObjId}.setDestField({destFinfoName}, {arg1},{arg2}, ... , {argN})\n"
+                                               " where destFinfoName is the string representing the name of the"
+                                               " DestFinfo refering to the target function, arg1, ..., argN are the"
+                                               " arguments to be passed to the target function."
+                                               " Return True on success, False on failure."};
     static PyMethodDef ObjIdMethods[] = {
         {"getFieldType", (PyCFunction)_pymoose_ObjId_getFieldType, METH_VARARGS,
          "Get the string representation of the type of this field."},        
@@ -1635,7 +1643,18 @@ extern "C" {
         return ret;        
     }// _pymoose_ObjId_setLookupField
 
-    // static PyObject * _innerSetDestField(_ObjId * self, const char * fieldName, Py
+    static PyObject * setDestField(PyObject *self, PyObject * args)
+    {
+        return _pymoose_ObjId_setDestField(self, args);
+    }
+
+    static PyMethodDef setDestFieldMethod = {
+        "_setDestField",
+        (PyCFunction)setDestField,
+        METH_VARARGS,
+        "Set a destination field.",
+    };
+    
     static PyObject * _pymoose_ObjId_setDestField(PyObject * self, PyObject * args)
     {
                 
@@ -2442,52 +2461,7 @@ extern "C" {
     {
         // Create methods for destFinfos. The tp_dict is initialized by
         // PyType_Ready. So we insert the dynamically generated
-        // methods after that.
-        static PyObject * setter = NULL;
-        static PyObject * functools_module = NULL;
-        static PyObject * partial = NULL;
-        // Try to import functools module is not already imported
-        if (functools_module == NULL){
-            cout << "Importing functools." << endl;
-            PyObject * modname = PyString_FromString("functools");
-            if (modname){
-                functools_module = PyImport_Import(modname);
-                // Py_XDECREF(modname);
-            } else {
-                cerr << "Fatal error: could not convert string to PyObject to generate module name 'functools'." << endl;
-                return -1;
-            }
-            if(functools_module == NULL){
-                cerr << "Fatal error: could not import functools module." << endl;
-                return -1;
-            }
-            // Try to get reference to partial() functions unless already created
-            if (partial == NULL){
-                partial = PyDict_GetItemString(PyModule_GetDict(functools_module), "partial");
-            }
-            if(partial == NULL){
-                cerr << "Fatal error: 'partial()' method is NULL!" << endl;
-                return -1;
-            }
-            if (!PyCallable_Check(partial)){
-                cerr << "Fatal error: functools.partial is not callable!" << endl;
-                Py_XDECREF(partial);
-                partial = NULL;
-                return -1;
-            }
-            if (setter == NULL){
-                setter = PyDict_GetItemString(ObjIdType.tp_dict, "setDestField");
-            }
-            if (setter == NULL){
-                cerr << "Fatal error: could not retrieve setDestField member from dict of ObjId class." << endl;
-                return -1;
-            }
-            if(!PyCallable_Check(setter)){
-                cerr << "Fatal error: setter is NULL." << endl;                
-                setter = NULL;
-                return -1;
-            }
-        }
+        // methods after that.        
         string class_name = string(pyclass->tp_name);
         unsigned int num_destFinfos = Field<unsigned int>::get(ObjId(class_id), "num_destFinfo");
         Id destFinfoId("/classes/" + class_name + "/destFinfo");
@@ -2506,9 +2480,13 @@ extern "C" {
 #ifndef NDEBUG
                 cout << "Ignoring " << class_name << "." << destFinfo_name << endl;
 #endif
+                // not sure what to do about destFinfos that take no args.
                 continue;
-            }
-            
+            }            
+            // Here we create a lambda expression and get the Python
+            // interpreter to make a function for us.
+            ostringstream funcdefstring;
+            funcdefstring << "lambda self, ";
             PyObject * args = PyTuple_New(2);
             if (args == NULL){
                 cerr << "Fatal error: could not create args tuple." << endl;
