@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Apr 11 15:42:13 2012 (+0530)
+// Last-Updated: Wed Apr 11 21:58:12 2012 (+0530)
 //           By: subha
-//     Update #: 611
+//     Update #: 613
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -66,7 +66,6 @@ extern "C" {
     static int _pymoose_Id_init(_Id * self, PyObject * args, PyObject * kwargs);
     static long _pymoose_Id_hash(_Id * self, PyObject * args);
     
-    static void _pymoose_Id_dealloc(_Id * self);
     static PyObject * _pymoose_Id_repr(_Id * self);
     static PyObject * _pymoose_Id_str(_Id * self);
     static PyObject * _pymoose_Id_delete(_Id * self, PyObject * args);
@@ -84,7 +83,6 @@ extern "C" {
     ///////////////////////////////////////////
     static int _pymoose_ObjId_init(_ObjId * self, PyObject * args, PyObject * kwargs);
     static long _pymoose_ObjId_hash(_ObjId * self, PyObject * args);
-    static void _pymoose_ObjId_dealloc(_ObjId * self);
     static PyObject * _pymoose_ObjId_repr(_ObjId * self);
     // static PyObject * _pymoose_ObjId_str(_ObjId * self);
     static PyObject * _pymoose_ObjId_getattro(_ObjId * self, PyObject * attr);
@@ -131,9 +129,9 @@ extern "C" {
     // This should not be required or accessible to the user. Put here
     // for debugging threading issue.
     static PyObject * _pymoose_quit(PyObject * dummy);
-    int defineClass(string class_name);
-    int define_destFinfos(PyTypeObject * pyclass, Id class_id);
-    static int defineAllClasses();
+    int defineClass(PyObject * module, string class_name);
+    int define_destFinfos(PyObject* module, PyTypeObject * pyclass, Id class_id);
+    static int defineAllClasses(PyObject* module);
      
     PyMODINIT_FUNC init_moose();
 
