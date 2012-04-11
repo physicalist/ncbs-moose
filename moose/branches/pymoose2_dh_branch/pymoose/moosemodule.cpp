@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Apr 11 22:29:32 2012 (+0530)
-//           By: subha
-//     Update #: 6031
+// Last-Updated: Thu Apr 12 00:10:35 2012 (+0530)
+//           By: Subhasis Ray
+//     Update #: 6068
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -338,33 +338,6 @@ extern "C" {
         return 0;
     }
 
-    /**
-       Return the data type of the field. Look up a field of specified
-       finfoType with given fieldName.  Return empty string on failure
-       (either there is no field of name {fieldName} or {finfoType} is not a
-       correct type of finfo, or no field of {finfoType} with name
-       {fieldName} exists.
-    */
-    // string getFieldType(ObjId id, string fieldName, string finfoType)
-    // {
-    //     string fieldType = "";
-    //     string className = Field<string>::get(id, "class");
-    //     string classInfoPath("/classes/" + className);
-    //     Id classId(classInfoPath);
-    //     assert (classId != Id());
-    //     unsigned int numFinfos = Field<unsigned int>::get(ObjId(classId, 0), "num_" + finfoType);
-    //     Id fieldId(classId.path() + "/" + finfoType);
-    //     for (unsigned int ii = 0; ii < numFinfos; ++ii){
-    //         string _fieldName = Field<string>::get(ObjId(fieldId, DataId(0, ii, 0)), "name");
-    //         if (fieldName == _fieldName){                
-    //             fieldType = Field<string>::get(ObjId(fieldId, DataId(0, ii, 0)), "type");
-    //             return fieldType;
-    //         }
-    //     }
-    //     // cerr << "Error: No field named '" << fieldName << "' of type '" << finfoType << "'" << endl;
-    //     return fieldType;
-    // }
-
     pair < string, string > getFieldFinfoTypePair(string className, string fieldName)
     {
         for (const char ** finfoType = getFinfoTypes(); *finfoType; ++finfoType){
@@ -379,10 +352,9 @@ extern "C" {
     /**
        Return a vector of field names of specified finfo type.
     */
-    vector<string> getFieldNames(ObjId id, string finfoType)
+    vector<string> getFieldNames(string className, string finfoType)
     {
         vector <string> ret;
-        string className = Field<string>::get(id, "class");    
         Id classId("/classes/" + className);
         assert(classId != Id());
         unsigned int numFinfos = Field<unsigned int>::get(ObjId(classId), "num_" + finfoType);
@@ -539,7 +511,8 @@ extern "C" {
          "----------"
          "fieldName : string\n"
          "\tName of the lookupfield.\n"
-         "key : appropriate type for key of the lookupfield.\n"         
+         "key : appropriate type for key of the lookupfield (as in the dict getFieldDict).\n"
+         "\tKey for the look-up."
         },
         {"setLookupField", (PyCFunction)_pymoose_ObjId_setLookupField, METH_VARARGS,
          "Set a lookup field value based on key."},
@@ -1223,6 +1196,7 @@ extern "C" {
             return NULL;
         }
         if (_pymoose_ObjId_setattro(self, field, value) == -1){
+            cout << "Error happened" << endl;
             return NULL;
         }
         Py_RETURN_NONE;
@@ -1847,13 +1821,14 @@ extern "C" {
         }
         string ftype_str = (ftype != NULL)? string(ftype): "";
         vector<string> ret;
+        string className = Field<string>::get(self->oid_, "class");
         if (ftype_str == ""){
             for (const char **a = getFinfoTypes(); *a; ++a){
-                vector<string> fields = getFieldNames(self->oid_, string(*a));
+                vector<string> fields = getFieldNames(className, string(*a));
                 ret.insert(ret.end(), fields.begin(), fields.end());
             }            
         } else {
-            ret = getFieldNames(self->oid_, ftype_str);
+            ret = getFieldNames(className, ftype_str);
         }
         
         PyObject * pyret = PyTuple_New((Py_ssize_t)ret.size());
@@ -1962,7 +1937,24 @@ extern "C" {
     ////////////////////////////////////////////
     // Module functions
     ////////////////////////////////////////////
-
+    
+    static PyObject * _pymoose_getFieldNames(PyObject * dummy, PyObject * args)
+    {
+        char * className = NULL;
+        char * finfoType = "valueFinfo";
+        if (!PyArg_ParseTuple(args, "s|s", &className, &finfoType)){
+            return NULL;
+        }
+        vector <string> fieldNames = getFieldNames(className, finfoType);
+        PyObject * ret = PyTuple_New(fieldNames.size());
+        for (unsigned int ii = 0; ii < fieldNames.size(); ++ii){
+            if (PyTuple_SetItem(ret, ii, PyString_FromString(fieldNames[ii].c_str())) == -1){
+                Py_XDECREF(ret);
+                return NULL;
+            }
+        }
+        return ret;
+    }
     
     static PyObject * _pymoose_copy(PyObject * dummy, PyObject * args, PyObject * kwargs)
     {
@@ -2534,6 +2526,18 @@ extern "C" {
     // Method definitions for MOOSE module
     /////////////////////////////////////////////////////////////////////    
     static PyMethodDef MooseMethods[] = {
+        {"getFieldNames", (PyCFunction)_pymoose_getFieldNames, METH_VARARGS,
+         "getFieldNames(className, finfoType='valueFinfo')\n"
+         "\n"
+         "Get a tuple containing the name of all the fields of `finfoType` kind.\n"
+         "\n"
+         "Parameters\n"
+         "----------\n"
+         "className : string\n"
+         "\tName of the class to look up.\n"
+         "finfoType : string\n"
+         "\tThe kind of field (`valueFinfo`, `srcFinfo`, `destFinfo`, `lookupFinfo`, etc.)."
+        },
         {"copy", (PyCFunction)_pymoose_copy, METH_VARARGS|METH_KEYWORDS, "Copy a Id object to a target."},
         {"move", (PyCFunction)_pymoose_move, METH_VARARGS, "Move a Id object to a destination."},
         {"delete", (PyCFunction)_pymoose_delete, METH_VARARGS, "Delete the moose object."},
@@ -2554,10 +2558,19 @@ extern "C" {
         // {"pwe", (PyCFunction)_pymoose_getCwe, METH_VARARGS, "Get the current working element. 'getCwe' is an alias of this function."},
         {"setCwe", (PyCFunction)_pymoose_setCwe, METH_VARARGS, "Set the current working element. 'ce' is an alias of this function"},
         // {"ce", (PyCFunction)_pymoose_setCwe, METH_VARARGS, "Set the current working element. setCwe is an alias of this function."},
-        {"getFieldDict", (PyCFunction)_pymoose_getFieldDict, METH_VARARGS, "Get dictionary of field names and types for specified class.\n"
-         " Parameters:\n"
-         "str className -- MOOSE class to find the fields of.\n"
-         "str finfoType -- (optional) Finfo type of the fields to find. If empty or not specified, all fields will be retrieved."
+        {"getFieldDict", (PyCFunction)_pymoose_getFieldDict, METH_VARARGS,
+         "getFieldDict(className, finfoType)\n"
+         "\n"
+         "Get dictionary of field names and types for specified class.\n"
+         " Parameters\n"
+         "-----------\n"
+         "className : str\n"
+         "\tMOOSE class to find the fields of.\n"
+         "finfoType : str (optional)\n"
+         "\tFinfo type of the fields to find. If empty or not specified, all"
+         " fields will be retrieved.\n"
+         "note: This behaviour is different from `getFieldNames` where only"
+         " `valueFinfo`s are returned when `finfoType` remains unspecified."
         },
         {"getField", (PyCFunction)_pymoose_getField, METH_VARARGS,
          "getField(ObjId, field, fieldtype) -- Get specified field of specified type from object Id."},
