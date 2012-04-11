@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Apr 10 20:23:29 2012 (+0530)
+// Last-Updated: Wed Apr 11 15:57:53 2012 (+0530)
 //           By: subha
-//     Update #: 5506
+//     Update #: 5896
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -117,6 +117,13 @@ extern "C" {
     static Id shellId;
     static PyObject * MooseError;
     static map<string, PyTypeObject *> defined_classes;
+    // Minimum number of arguments for setting destFinfo - 1-st
+    // the finfo name.
+    static Py_ssize_t minArgs = 1;
+    // Arbitrarily setting maximum on variable argument
+    // list. Read: http://www.swig.org/Doc1.3/Varargs.html to
+    // understand why
+    static Py_ssize_t maxArgs = 5;
     ///////////////////////////////////
     // Python datatype checking macros
     ///////////////////////////////////
@@ -270,17 +277,23 @@ extern "C" {
         return finfoTypes;
     }
 
-    /**
-       Return the data type of the field. Look up a field of specified
-       finfoType with given fieldName.  Return empty string on failure
-       (either there is no field of name {fieldName} or {finfoType} is not a
-       correct type of finfo, or no field of {finfoType} with name
-       {fieldName} exists.
-    */
-    string getFieldType(ObjId id, string fieldName, string finfoType)
+    /// get the field type for specified field
+    ///
+    /// Argument:
+    /// className -- class to look in
+    ///
+    /// fieldName -- field to look for
+    ///
+    /// finfoType -- finfo type to look in (can be valueFinfo,
+    /// destFinfo, srcFinfo, lookupFinfo etc.
+    ///
+    /// Return:
+    ///
+    /// string -- value of type field of the Finfo object. This is a
+    /// comma separated list of C++ template arguments    
+    string getFieldType(string className, string fieldName, string finfoType)
     {
         string fieldType = "";
-        string className = Field<string>::get(id, "class");
         string classInfoPath("/classes/" + className);
         Id classId(classInfoPath);
         assert (classId != Id());
@@ -290,17 +303,70 @@ extern "C" {
             string _fieldName = Field<string>::get(ObjId(fieldId, DataId(0, ii, 0)), "name");
             if (fieldName == _fieldName){                
                 fieldType = Field<string>::get(ObjId(fieldId, DataId(0, ii, 0)), "type");
-                return fieldType;
+                break;
             }
         }
-        // cerr << "Error: No field named '" << fieldName << "' of type '" << finfoType << "'" << endl;
-        return fieldType;
+        return fieldType;        
+    }
+    int parse_destFinfo_type(string className, string fieldName, vector<string> & typeVec)
+    {
+        string typestring = getFieldType(className, fieldName, "destFinfo");
+        if (typestring.empty()){
+#ifndef NDEBUG            
+            cout << "empty type for " << className << "." << fieldName << endl;
+#endif
+            return -1;
+        }
+        tokenize(typestring, ",", typeVec);
+        if (typeVec.size() > maxArgs){
+#ifndef NDEBUG
+            cout << "number of components in type beyond maxArgs: " << className << "." << fieldName << endl;
+#endif
+            return -1;
+        }
+        for (unsigned int ii = 0; ii < typeVec.size() ; ++ii){
+            char type_code = shortType(typeVec[ii]);
+            if (type_code == 0){
+#ifndef NDEBUG
+                cout << "Unknown type " << typeVec[ii] << endl;
+#endif
+                return -1;
+            }
+        }
+        return 0;
     }
 
-    pair < string, string > getFieldFinfoTypePair(ObjId id, string fieldName)
+    /**
+       Return the data type of the field. Look up a field of specified
+       finfoType with given fieldName.  Return empty string on failure
+       (either there is no field of name {fieldName} or {finfoType} is not a
+       correct type of finfo, or no field of {finfoType} with name
+       {fieldName} exists.
+    */
+    // string getFieldType(ObjId id, string fieldName, string finfoType)
+    // {
+    //     string fieldType = "";
+    //     string className = Field<string>::get(id, "class");
+    //     string classInfoPath("/classes/" + className);
+    //     Id classId(classInfoPath);
+    //     assert (classId != Id());
+    //     unsigned int numFinfos = Field<unsigned int>::get(ObjId(classId, 0), "num_" + finfoType);
+    //     Id fieldId(classId.path() + "/" + finfoType);
+    //     for (unsigned int ii = 0; ii < numFinfos; ++ii){
+    //         string _fieldName = Field<string>::get(ObjId(fieldId, DataId(0, ii, 0)), "name");
+    //         if (fieldName == _fieldName){                
+    //             fieldType = Field<string>::get(ObjId(fieldId, DataId(0, ii, 0)), "type");
+    //             return fieldType;
+    //         }
+    //     }
+    //     // cerr << "Error: No field named '" << fieldName << "' of type '" << finfoType << "'" << endl;
+    //     return fieldType;
+    // }
+
+    pair < string, string > getFieldFinfoTypePair(string className, string fieldName)
     {
         for (const char ** finfoType = getFinfoTypes(); *finfoType; ++finfoType){
-            string ftype = getFieldType(id, fieldName, string(*finfoType));
+            string ftype = getFieldType(className, fieldName, string(*finfoType));
             if (!ftype.empty()) {
                 return pair < string, string > (ftype, string(*finfoType));
             }
@@ -427,7 +493,17 @@ extern "C" {
     ///////////////////////////////////////////////
     // Python method lists for PyObject of ObjId
     ///////////////////////////////////////////////
-    
+
+    static PyMethodDef ObjId_setDestField = {"setDestField", (PyCFunction)_pymoose_ObjId_setDestField, METH_VARARGS,
+                                       "Set a function field (DestFinfo). This should not be accessed directly. A python"
+                                       " member method should be wrapping it for each DestFinfo in each MOOSE"
+                                       " class. When used directly, it takes the form:\n"
+                                       " {ObjId}.setDestField({destFinfoName}, {arg1},{arg2}, ... , {argN})\n"
+                                       " where destFinfoName is the string representing the name of the"
+                                       " DestFinfo refering to the target function, arg1, ..., argN are the"
+                                       " arguments to be passed to the target function."
+                                       " Return True on success, False on failure."};
+
     static PyMethodDef ObjIdMethods[] = {
         {"getFieldType", (PyCFunction)_pymoose_ObjId_getFieldType, METH_VARARGS,
          "Get the string representation of the type of this field."},        
@@ -456,15 +532,7 @@ extern "C" {
          "Get the index of this ObjId in the containing Id object."},
         {"getFieldIndex", (PyCFunction)_pymoose_ObjId_getFieldIndex, METH_VARARGS,
          "Get the index of this object as a field."},
-        {"setDestField", (PyCFunction)_pymoose_ObjId_setDestField, METH_VARARGS,
-         "Set a function field (DestFinfo). This should not be accessed directly. A python"
-         " member method should be wrapping it for each DestFinfo in each MOOSE"
-         " class. When used directly, it takes the form:\n"
-         " {ObjId}.setDestField({destFinfoName}, {arg1},{arg2}, ... , {argN})\n"
-         " where destFinfoName is the string representing the name of the"
-         " DestFinfo refering to the target function, arg1, ..., argN are the"
-         " arguments to be passed to the target function."
-         " Return True on success, False on failure."},
+        ObjId_setDestField,
         {NULL, NULL, 0, NULL},        /* Sentinel */        
     };
 
@@ -751,6 +819,7 @@ extern "C" {
             value->oid_ = ObjId(self->id_, ii);
             if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)value)){
                 Py_XDECREF(ret);
+                Py_XDECREF(value);
                 return NULL;
             }
         }
@@ -930,7 +999,7 @@ extern "C" {
         } else {
             finfoTypeStr = "valueFinfo";
         }
-        string typeStr = getFieldType(self->oid_, string(fieldName), finfoTypeStr);
+        string typeStr = getFieldType(Field<string>::get(self->oid_, "class"), string(fieldName), finfoTypeStr);
         if (typeStr.length() <= 0){
             PyErr_SetString(PyExc_ValueError, "Empty string for field type. Field name may be incorrect.");
             return NULL;
@@ -989,6 +1058,7 @@ extern "C" {
             for (unsigned int ii = 0; ii < val.size(); ++ ii ){         \
                 PyObject * entry = Py_BuildValue(#TYPEC, val[ii]);      \
                 if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ \
+                    Py_XDECREF(entry);                                  \
                     Py_XDECREF(ret);                                    \
                     ret = NULL;                                         \
                     break;                                              \
@@ -998,7 +1068,7 @@ extern "C" {
         }                                                               \
 
         
-        string type = getFieldType(self->oid_, string(field), "valueFinfo");
+        string type = getFieldType(Field<string>::get(self->oid_, "class"), string(field), "valueFinfo");
         if (type.empty()){
             return PyObject_GenericGetAttr((PyObject*)self, attr);
         }
@@ -1059,7 +1129,8 @@ extern "C" {
                 ret = PyTuple_New((Py_ssize_t)val.size());
                 for (unsigned int ii = 0; ii < val.size(); ++ ii ){     
                     PyObject * entry = Py_BuildValue("s", val[ii].c_str()); 
-                    if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ 
+                    if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){
+                        Py_XDECREF(entry);
                         Py_XDECREF(ret);                                  
                         ret = NULL;                                 
                         break;                                      
@@ -1079,6 +1150,7 @@ extern "C" {
                         }
                         entry->id_ = value[ii];
                         if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)entry)){
+                            Py_XDECREF(entry);
                             Py_XDECREF(ret);
                             return NULL;
                         }
@@ -1097,6 +1169,7 @@ extern "C" {
                         }
                         entry->oid_ = value[ii];
                         if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)entry)){
+                            Py_XDECREF(entry);
                             Py_XDECREF(ret);
                             return NULL;
                         }
@@ -1142,7 +1215,7 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, "Attribute name must be a string");
             return -1;
         }
-        char ftype = shortType(getFieldType(self->oid_, string(field), "valueFinfo"));
+        char ftype = shortType(getFieldType(Field<string>::get(self->oid_, "class"), string(field), "valueFinfo"));
         if (!ftype){
             // If it is instance of a MOOSE built-in class then throw
             // error (to avoid silently creating new attributes due to
@@ -1395,7 +1468,7 @@ extern "C" {
         if (!PyArg_ParseTuple(args, "sO:_pymoose_ObjId_getLookupField", &field,  &key)){
             return NULL;
         }
-        string type = getFieldType(self->oid_, string(field), "lookupFinfo");
+        string type = getFieldType(Field<string>::get(self->oid_, "class"), string(field), "lookupFinfo");
         if (type.empty()){
             PyErr_SetString(PyExc_AttributeError, "Field not valid.");
             return NULL;
@@ -1486,7 +1559,7 @@ extern "C" {
         if (!PyArg_ParseTuple(args, "sOO:_pymoose_ObjId_getLookupField", &field,  &key, &value)){
             return NULL;
         }
-        string type = getFieldType(self->oid_, string(field), "lookupFinfo");
+        string type = getFieldType(Field<string>::get(self->oid_, "class"), string(field), "lookupFinfo");
         if (type.empty()){
             PyErr_SetString(PyExc_AttributeError, "Field not valid.");
             return NULL;
@@ -1561,51 +1634,52 @@ extern "C" {
         }
         return ret;        
     }// _pymoose_ObjId_setLookupField
-    
-    static PyObject * _pymoose_ObjId_setDestField(_ObjId * self, PyObject * args)
+
+    // static PyObject * _innerSetDestField(_ObjId * self, const char * fieldName, Py
+    static PyObject * _pymoose_ObjId_setDestField(PyObject * self, PyObject * args)
     {
                 
-        // Minimum number of arguments for setting destFinfo - 1-st
-        // the finfo name.
-        Py_ssize_t minArgs = 1;
-        // Arbitrarily setting maximum on variable argument
-        // list. Read: http://www.swig.org/Doc1.3/Varargs.html to
-        // understand why
-        Py_ssize_t maxArgs = 5;
         PyObject * arglist[5] = {NULL, NULL, NULL, NULL, NULL};
         ostringstream error;
         error << "_pymoose_ObjId_setDestField: ";
+#ifndef NDEBUG
+        cout << "Received object of type:"
+             << ((PyTypeObject*)PyObject_Type(self))->tp_name << ". ";
+        if (PyString_Check(self)){
+            cout << "value: " << PyString_AsString(self) << endl;
+        } else if (ObjId_Check(self)){
+            cout << "object: " << Field<string>::get(((_ObjId*)self)->oid_, "name") << endl;
+        }
+#endif
         
         if (!PyArg_UnpackTuple(args, "setDestField", minArgs, maxArgs, &arglist[0], &arglist[1], &arglist[2], &arglist[3], arglist[4])){
             return NULL;
         }
+#ifndef NDEBUG
+        for (unsigned int ii = 0; ii < maxArgs; ++ii){
+            cout << "arg " << ii << ":"  << PyString_AsString(PyObject_Str(arglist[ii])) << ", ";
+        }
+        cout << endl;
+#endif
         char * fieldName = PyString_AsString(arglist[0]);
         if (!fieldName){ // not a string, raises TypeError
             return NULL;
         }
-        string type = getFieldType(self->oid_, string(fieldName), "destFinfo");
-        if (type.empty()){
-            error << "No such function field available";
-            PyErr_SetString(PyExc_ValueError, error.str().c_str());
-            return NULL;
-        }
         vector< string > argType;
-        tokenize(type, ",", argType);
-        if (argType.empty()){
-            error << "Error in determining the data type of the arguments: received: " << type
-                  << "Expected " << type;
-            PyErr_SetString(PyExc_RuntimeError, error.str().c_str());
+        if (parse_destFinfo_type(Field<string>::get(((_ObjId*)self)->oid_, "class"), string(fieldName), argType) < 0){
+            error << "Arguments not handled: " << fieldName << "(";
+            for (unsigned int ii = 0; ii < argType.size(); ++ii){
+                error << argType[ii] << ",";
+            }
+            error << ")";
+            PyErr_SetString(PyExc_TypeError, error.str().c_str());
             return NULL;
-        } else if (argType.size() >= maxArgs) {
-            error << "_pymoose_ObjId_setDestField: number of arguments to this function exceeds the implemented maximum=" << (maxArgs - 1)
-                  << ".\nExpected arguments: " << type;
-            PyErr_SetString(PyExc_ValueError, error.str().c_str());
         }
         ostringstream argstream;
         for (size_t ii = 0; ii < argType.size(); ++ii){
             PyObject * arg = arglist[ii+1];
             if ( arg == NULL){
-                bool ret = SetGet0::set(self->oid_, string(fieldName));
+                bool ret = SetGet0::set(((_ObjId*)self)->oid_, string(fieldName));
                 if (ret){
                     Py_RETURN_TRUE;
                 } else {
@@ -1662,52 +1736,52 @@ extern "C" {
                     // list as a single vector argument.
                 case 'v': 
                     {
-                        return _set_vector_destFinfo<int>(self, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<int>((_ObjId*)self, string(fieldName), ii, arg);
                         break;
                     }
                 case 'w': 
                     {
-                        return _set_vector_destFinfo<short>(self, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<short>((_ObjId*)self, string(fieldName), ii, arg);
                         break;
                     }
                 case 'L': //SET_VECFIELD(long, l)
                     {
-                        return _set_vector_destFinfo<long>(self, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<long>((_ObjId*)self, string(fieldName), ii, arg);
                         break;
                     }
                 case 'U'://SET_VECFIELD(unsigned int, I)
                     {
-                        return _set_vector_destFinfo<unsigned int>(self, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<unsigned int>((_ObjId*)self, string(fieldName), ii, arg);
                         break;
                     }
                 case 'K': //SET_VECFIELD(unsigned long, k)
                     {
-                        return _set_vector_destFinfo<unsigned long>(self, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<unsigned long>((_ObjId*)self, string(fieldName), ii, arg);
                         break;
                     }
                 case 'F': //SET_VECFIELD(float, f)
                     {
-                        return _set_vector_destFinfo<float>(self, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<float>((_ObjId*)self, string(fieldName), ii, arg);
                         break;
                     }
                 case 'D': //SET_VECFIELD(double, d)
                     {
-                        return _set_vector_destFinfo<double>(self, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<double>((_ObjId*)self, string(fieldName), ii, arg);
                         break;
                     }                
                 case 'S':
                     {
-                        return _set_vector_destFinfo<string>(self, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<string>((_ObjId*)self, string(fieldName), ii, arg);
                         break;
                     }
                 case 'X':
                     {
-                        return _set_vector_destFinfo<Id>(self, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<Id>((_ObjId*)self, string(fieldName), ii, arg);
                         break;
                     }
                 case 'Y':
                     {
-                        return _set_vector_destFinfo<ObjId>(self, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<ObjId>((_ObjId*)self, string(fieldName), ii, arg);
                     }
                 default:
                     {
@@ -1726,7 +1800,7 @@ extern "C" {
         }
         
         argstring = argstring.substr(0, argstring.length() - 1);        
-        bool ret = SetGet::strSet(self->oid_, string(fieldName), argstring);
+        bool ret = SetGet::strSet(((_ObjId*)self)->oid_, string(fieldName), argstring);
         if (ret){
             Py_RETURN_TRUE;
         } else {
@@ -1760,6 +1834,7 @@ extern "C" {
                 break;
             }
             if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, fname)){
+                Py_XDECREF(fname);
                 Py_XDECREF(pyret);
                 pyret = NULL;
                 break;
@@ -1779,7 +1854,8 @@ extern "C" {
         PyObject * ret = PyTuple_New((Py_ssize_t)val.size());
         for (unsigned int ii = 0; ii < val.size(); ++ ii ){            
             _Id * entry = PyObject_New(_Id, &IdType);
-            if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)entry)){ 
+            if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)entry)){
+                Py_XDECREF(entry);
                 Py_XDECREF(ret);                                  
                 ret = NULL;                                 
                 break;                                      
@@ -2087,8 +2163,10 @@ extern "C" {
             return NULL;
         }
         for (unsigned int ii = 0; ii < fields.size(); ++ ii){
-            if (PyDict_SetItemString(ret, fields[ii].c_str(), Py_BuildValue("s", types[ii].c_str())) == -1){
+            PyObject * value = Py_BuildValue("s", types[ii].c_str());
+            if (PyDict_SetItemString(ret, fields[ii].c_str(), value) == -1){
                 Py_XDECREF(ret);
+                Py_XDECREF(value);
                 return NULL;
             }
         }
@@ -2142,7 +2220,8 @@ extern "C" {
             for (unsigned int ii = 0; ii < value.size(); ++ ii ){     
                 PyObject * entry = Py_BuildValue("i", value[ii]); 
                 if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ 
-                    Py_XDECREF(ret);                                  
+                    Py_XDECREF(ret);
+                    Py_XDECREF(entry);
                     ret = NULL;                                 
                     break;                                      
                 }                                               
@@ -2155,6 +2234,7 @@ extern "C" {
                 PyObject * entry = Py_BuildValue("f", value[ii]); 
                 if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ 
                     Py_XDECREF(ret);                                  
+                    Py_XDECREF(entry);
                     ret = NULL;                                 
                     break;                                      
                 }                                               
@@ -2166,6 +2246,7 @@ extern "C" {
             for (unsigned int ii = 0; ii < value.size(); ++ ii ){     
                 PyObject * entry = Py_BuildValue("f", value[ii]); 
                 if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ 
+                    Py_XDECREF(entry);
                     Py_XDECREF(ret);                                  
                     ret = NULL;                                 
                     break;                                      
@@ -2178,6 +2259,7 @@ extern "C" {
             for (unsigned int ii = 0; ii < value.size(); ++ ii ){     
                 PyObject * entry = Py_BuildValue("s", value[ii].c_str()); 
                 if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ 
+                    Py_XDECREF(entry);
                     Py_XDECREF(ret);                                  
                     return NULL;                                 
                 }                                            
@@ -2190,6 +2272,7 @@ extern "C" {
                 _Id * entry = PyObject_New(_Id, &IdType);
                 entry->id_ = value[ii]; 
                 if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)entry)){ 
+                    Py_XDECREF(entry);
                     Py_XDECREF(ret);                                  
                     return NULL;                                 
                 }                                            
@@ -2203,6 +2286,7 @@ extern "C" {
                 entry->oid_ = value[ii]; 
                 if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)entry)){ 
                     Py_XDECREF(ret);                                  
+                    Py_XDECREF(entry);
                     return NULL;                                 
                 }                                            
             }
@@ -2246,6 +2330,7 @@ extern "C" {
             }
             entry->id_ = objects[ii];
             if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)entry)){
+                Py_XDECREF(entry);
                 Py_XDECREF(ret);
                 return NULL;
             }
@@ -2261,6 +2346,8 @@ extern "C" {
         Py_RETURN_NONE;
     }
 
+    /// Go through all elements under /classes and ask for defining a
+    /// Python class for it.
     int defineAllClasses()
     {
         static vector <Id> classes(Field< vector<Id> >::get(ObjId("/classes"), "children"));
@@ -2270,36 +2357,36 @@ extern "C" {
             }
         }
         return 0;
-        // for (map <string, PyTypeObject * >::iterator it = defined_classes.begin(); it != defined_classes.end(); ++it){
-        //     cout << "map: " << it->first << ", " << it->second->tp_name << endl;
-        // }
     }
+    
     // An attempt to define classes dynamically
-    // http://stackoverflow.com/questions/8066438/how-to-dynamically-create-a-derived-type-in-the-python-c-api gives a clue
+    // http://stackoverflow.com/questions/8066438/how-to-dynamically-create-a-derived-type-in-the-python-c-api
+    // gives a clue We pass class_name in stead of class_id because we
+    // have to recursively call this function using the base class
+    // string.
     int defineClass(string class_name)
-    {
+    {        
         if (defined_classes.find(class_name) != defined_classes.end()){
             return 0;
         }
         Id class_id("/classes/" + class_name);
         if (class_id == Id()){
             ostringstream err;
-            err << "_pymoose_defineClass: Unknown class_name '" << class_name << "'";
+            err << "defineClass: Unknown class_name '" << class_name << "'";
             PyErr_SetString(PyExc_RuntimeError, err.str().c_str());
             return -1;
         }
-        string baseclass = Field<string>::get(ObjId(class_id), "baseClass");
+        string baseclass_name = Field<string>::get(ObjId(class_id), "baseClass");
         // If base class has not already been defined, define it
         // first. We don't want to do the recursion unnecessarily
         // (avoid too many function calls and deep recursion), hence
         // check in the set.
-        map<string, PyTypeObject*>::iterator base_iter = defined_classes.find(baseclass);
-        if (base_iter == defined_classes.end() && baseclass != "none"){
-            if (defineClass(baseclass) < 0){
+        map<string, PyTypeObject*>::iterator base_iter = defined_classes.find(baseclass_name);
+        if (base_iter == defined_classes.end() && baseclass_name != "none"){
+            if (defineClass(baseclass_name) < 0){
                 return -1;
             }
-        } 
-
+        }
         PyTypeObject * new_class = (PyTypeObject*)PyType_Type.tp_alloc(&PyType_Type, 0);
         new_class->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
         string str = class_name;
@@ -2323,12 +2410,9 @@ extern "C" {
          *********************************************************/
         /* Can go through creating properties for valueFinfos after
          * checking with default implementation */
-        // unsigned int num_valueFinfos = Field<unigned int>::get(ObjId(class_id), "num_valueFinfos");
+        // unsigned int num_valueFinfos = Field<unsigned int>::get(ObjId(class_id), "num_valueFinfos");
         // Id valueFinfoId("/classes/" + class_name + "/valueFinfo");
-        // unsigned int num_destFinfos = Field<unigned int>::get(ObjId(class_id), "num_destFinfos");
-        // Id destFinfoId("/classes/" + class_name + "/destFinfos");
-        // TODO: go through destFinfos and create methods for them.
-        // unsigned int num_lookupFinfos = Field<unigned int>::get(ObjId(class_id), "num_lookupFinfos");
+        // unsigned int num_lookupFinfos = Field<unsigned int>::get(ObjId(class_id), "num_lookupFinfos");
         // Id lookupFinfoId("/classes/" + class_name + "/lookupFinfos");
         // TODO: go through lookupFinfos and insert descriptors for them.
         /* Creating properties for valueFinfos as below will be
@@ -2339,14 +2423,129 @@ extern "C" {
         //     string docs = Field<string>::get(valueFinfo, "docs");
             
         // }
+
+        // We need to call PyType_Ready in order to get the class'
+        // __dict__ initialized.
         if (PyType_Ready(new_class) < 0){
             cerr << "Fatal error: Could not initialize class '" << class_name << "'" << endl;
             return -1;
         }
-        Py_INCREF(new_class);
-        
+        if (define_destFinfos(new_class, class_id) < 0){
+            return -1;
+        }
         defined_classes.insert(pair<string, PyTypeObject*> (class_name, new_class));        
         return 1;
+    }
+
+    
+    int define_destFinfos(PyTypeObject * pyclass, Id class_id)
+    {
+        // Create methods for destFinfos. The tp_dict is initialized by
+        // PyType_Ready. So we insert the dynamically generated
+        // methods after that.
+        static PyObject * setter = NULL;
+        static PyObject * functools_module = NULL;
+        static PyObject * partial = NULL;
+        // Try to import functools module is not already imported
+        if (functools_module == NULL){
+            cout << "Importing functools." << endl;
+            PyObject * modname = PyString_FromString("functools");
+            if (modname){
+                functools_module = PyImport_Import(modname);
+                // Py_XDECREF(modname);
+            } else {
+                cerr << "Fatal error: could not convert string to PyObject to generate module name 'functools'." << endl;
+                return -1;
+            }
+            if(functools_module == NULL){
+                cerr << "Fatal error: could not import functools module." << endl;
+                return -1;
+            }
+            // Try to get reference to partial() functions unless already created
+            if (partial == NULL){
+                partial = PyDict_GetItemString(PyModule_GetDict(functools_module), "partial");
+            }
+            if(partial == NULL){
+                cerr << "Fatal error: 'partial()' method is NULL!" << endl;
+                return -1;
+            }
+            if (!PyCallable_Check(partial)){
+                cerr << "Fatal error: functools.partial is not callable!" << endl;
+                Py_XDECREF(partial);
+                partial = NULL;
+                return -1;
+            }
+            if (setter == NULL){
+                setter = PyDict_GetItemString(ObjIdType.tp_dict, "setDestField");
+            }
+            if (setter == NULL){
+                cerr << "Fatal error: could not retrieve setDestField member from dict of ObjId class." << endl;
+                return -1;
+            }
+            if(!PyCallable_Check(setter)){
+                cerr << "Fatal error: setter is NULL." << endl;                
+                setter = NULL;
+                return -1;
+            }
+        }
+        string class_name = string(pyclass->tp_name);
+        unsigned int num_destFinfos = Field<unsigned int>::get(ObjId(class_id), "num_destFinfo");
+        Id destFinfoId("/classes/" + class_name + "/destFinfo");
+
+        for (int ii = 0; ii < num_destFinfos; ++ii){
+            ObjId destFinfo(destFinfoId, DataId(0, ii, 0));
+            string destFinfo_name = Field<string>::get(destFinfo, "name");
+            cout << "Processing " << class_name << "::" << destFinfo_name << endl;
+            // get_{xyz} and set_{xyz} are internal destFinfos for
+            // accessing valueFinfos. Ignore them.
+            if (destFinfo_name.find("get_") == 0 || destFinfo_name.find("set_") == 0){
+                continue;
+            }
+            vector <string> arg_tokens;
+            if (parse_destFinfo_type(class_name, destFinfo_name, arg_tokens) < 0){
+#ifndef NDEBUG
+                cout << "Ignoring " << class_name << "." << destFinfo_name << endl;
+#endif
+                continue;
+            }
+            
+            PyObject * args = PyTuple_New(2);
+            if (args == NULL){
+                cerr << "Fatal error: could not create args tuple." << endl;
+                return -1;
+            }
+            if (PyTuple_SetItem(args, 0, setter) != 0){
+                cerr << "Fatal error:  could not create argument tuple." << endl;
+                Py_XDECREF(args);
+                return -1;
+            }
+            PyObject * name = PyString_FromString(destFinfo_name.c_str());
+            if (name == NULL){
+                cerr << "Fatal error: could not convert destFinfo name to PyString." << endl;
+                return -1;
+            }
+            if (PyTuple_SetItem(args, 1, name) != 0){
+                cerr << "Fatal error:  could not create argument tuple." << endl;
+                Py_XDECREF(args);
+                Py_XDECREF(name);
+                return -1;
+            }
+            PyObject * dest_func = PyObject_CallObject(partial, args);
+            if (dest_func == NULL){
+                cerr << "Fatal error: dest_func is NULL." << endl;
+                Py_XDECREF(args);
+                return -1;            
+            }
+
+            if (PyDict_SetItemString(pyclass->tp_dict, destFinfo_name.c_str(), dest_func) != 0){
+                cerr << "Fatal error: Failed to set destFinfo function attribute in class dict of '" << class_name << "'"  << endl;
+                Py_XDECREF(args);
+                return -1;
+            }
+            cout << class_name << " Added destField: " << destFinfo_name << endl;
+            Py_XDECREF(args);
+        } // ! for
+        return 0;
     }
     /////////////////////////////////////////////////////////////////////
     // Method definitions for MOOSE module

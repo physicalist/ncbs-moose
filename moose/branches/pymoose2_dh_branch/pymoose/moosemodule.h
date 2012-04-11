@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Apr 10 20:13:38 2012 (+0530)
+// Last-Updated: Wed Apr 11 15:42:13 2012 (+0530)
 //           By: subha
-//     Update #: 607
+//     Update #: 611
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -93,7 +93,7 @@ extern "C" {
     static PyObject * _pymoose_ObjId_setField(_ObjId * self, PyObject * args);
     static PyObject * _pymoose_ObjId_getLookupField(_ObjId * self, PyObject * args);
     static PyObject * _pymoose_ObjId_setLookupField(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_setDestField(_ObjId * self, PyObject * args);
+    static PyObject * _pymoose_ObjId_setDestField(PyObject * self, PyObject * args);
     static PyObject * _pymoose_ObjId_getFieldNames(_ObjId * self, PyObject * args);
     static PyObject * _pymoose_ObjId_getFieldType(_ObjId * self, PyObject * args);
     static PyObject * _pymoose_ObjId_getDataIndex(_ObjId * self, PyObject * args);
@@ -131,8 +131,10 @@ extern "C" {
     // This should not be required or accessible to the user. Put here
     // for debugging threading issue.
     static PyObject * _pymoose_quit(PyObject * dummy);
-    static int defineClass(string class_name);
+    int defineClass(string class_name);
+    int define_destFinfos(PyTypeObject * pyclass, Id class_id);
     static int defineAllClasses();
+     
     PyMODINIT_FUNC init_moose();
 
 
