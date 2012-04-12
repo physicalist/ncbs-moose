@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Apr 12 00:10:35 2012 (+0530)
-//           By: Subhasis Ray
-//     Update #: 6068
+// Last-Updated: Thu Apr 12 10:50:13 2012 (+0530)
+//           By: subha
+//     Update #: 6091
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -1196,7 +1196,6 @@ extern "C" {
             return NULL;
         }
         if (_pymoose_ObjId_setattro(self, field, value) == -1){
-            cout << "Error happened" << endl;
             return NULL;
         }
         Py_RETURN_NONE;
@@ -1207,8 +1206,6 @@ extern "C" {
     */
     static int  _pymoose_ObjId_setattro(_ObjId * self, PyObject * attr, PyObject * value)
     {
-        
-        int ret = -1;
         const char * field;
         if (PyString_Check(attr)){
             field = PyString_AsString(attr);
@@ -1232,6 +1229,7 @@ extern "C" {
             PyErr_SetString(PyExc_AttributeError, msg.str().c_str());
             return -1;
         }
+        int ret = 0;
         switch(ftype){
             case 'b':
                 {
@@ -1452,12 +1450,17 @@ extern "C" {
             default:                
                 break;
         }
-        if (ret == -1){
+        // MOOSE Field::set returns 1 for success 0 for
+        // failure. Python treats return value 0 from stters as
+        // success, anything else failure.
+        if (ret){
+            return 0;
+        } else {
             ostringstream msg;
             msg <<  "Failed to set field '"  << field << "'";
             PyErr_SetString(PyExc_AttributeError,msg.str().c_str());
+            return -1;
         }
-        return ret;
     } // _pymoose_ObjId_setattro
 
     static PyObject * _pymoose_ObjId_getLookupField(_ObjId * self, PyObject * args)
