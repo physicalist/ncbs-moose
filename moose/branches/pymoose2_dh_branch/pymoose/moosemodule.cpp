@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Apr 12 10:50:13 2012 (+0530)
+// Last-Updated: Thu Apr 12 14:36:13 2012 (+0530)
 //           By: subha
-//     Update #: 6091
+//     Update #: 6257
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -132,6 +132,7 @@ extern "C" {
 #define Id_SubtypeCheck(v) (PyType_IsSubtype(Py_TYPE(v),&IdType))
 #define ObjId_Check(v) (Py_TYPE(v) == &ObjIdType)
 #define ObjId_SubtypeCheck(v) (PyType_IsSubtype(Py_TYPE(v), &ObjIdType))
+#define LookupField_Check(v) (Py_TYPE(v) == &LookupFieldType)
     
     // Creates the Shell * out of shellId
 #define ShellPtr reinterpret_cast<Shell*>(shellId.eref().data())    
@@ -308,9 +309,9 @@ extern "C" {
         }
         return fieldType;        
     }
-    int parse_destFinfo_type(string className, string fieldName, vector<string> & typeVec)
+    int parse_Finfo_type(string className, string finfoType, string fieldName, vector<string> & typeVec)
     {
-        string typestring = getFieldType(className, fieldName, "destFinfo");
+        string typestring = getFieldType(className, fieldName, finfoType);
         if (typestring.empty()){
 // #ifndef NDEBUG            
 //             cout << "empty type for " << className << "." << fieldName << endl;
@@ -384,8 +385,107 @@ extern "C" {
         }
         return 1;
     }
-
     
+
+    ///////////////////////////////////////////////////
+    // Python method lists for PyObject of LookupField
+    ///////////////////////////////////////////////////
+    static PyMappingMethods LookupFieldMappingMethods = {
+        0,
+        (binaryfunc)_pymoose_LookupField_getItem,
+        (objobjargproc)_pymoose_LookupField_setItem,
+    };
+
+    static PyTypeObject LookupFieldType = { 
+        PyObject_HEAD_INIT(0)               /* tp_head */
+        0,                                  /* tp_internal */
+        "moose.LookupField",                  /* tp_name */
+        sizeof(_LookupField),                 /* tp_basicsize */
+        0,                                  /* tp_itemsize */
+        (destructor)_pymoose_LookupField_dealloc,       /* tp_dealloc */
+        0,                                  /* tp_print */
+        0,                                  /* tp_getattr */
+        0,                                  /* tp_setattr */
+        0,                                  /* tp_compare */
+        (reprfunc)_pymoose_LookupField_repr,                        /* tp_repr */
+        0,                                  /* tp_as_number */
+        0,             /* tp_as_sequence */
+        &LookupFieldMappingMethods,          /* tp_as_mapping */
+        (hashfunc)_pymoose_LookupField_hash,/* tp_hash */
+        0,                                  /* tp_call */
+        (reprfunc)_pymoose_LookupField_repr,               /* tp_str */
+        PyObject_GenericGetAttr,            /* tp_getattro */
+        PyObject_GenericSetAttr,            /* tp_setattro */
+        0,                                  /* tp_as_buffer */
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+        "LookupField type of moose. This acts like a dict.",
+        0,                                  /* tp_traverse */
+        0,                                  /* tp_clear */
+        0,       /* tp_richcompare */
+        0,                                  /* tp_weaklistoffset */
+        0,                                  /* tp_iter */
+        0,                                  /* tp_iternext */
+        0,                     /* tp_methods */
+        0,                    /* tp_members */
+        0,                                  /* tp_getset */
+        0,                                  /* tp_base */
+        0,                                  /* tp_dict */
+        0,                                  /* tp_descr_get */
+        0,                                  /* tp_descr_set */
+        0,                                  /* tp_dictoffset */
+        (initproc) _pymoose_LookupField_init,   /* tp_init */
+        PyType_GenericAlloc,                /* tp_alloc */
+        0,                  /* tp_new */
+        0,                      /* tp_free */
+    };
+
+    static int _pymoose_LookupField_init(_LookupField * self, PyObject * args)
+    {
+        PyObject * owner;
+        char * fieldName;
+        if (!PyArg_ParseTuple(args, "Os:_pymoose_LookupField_init", &owner, fieldName)){
+            Py_XDECREF(self);
+            return -1;
+        }
+        self->owner = ((_ObjId*)owner)->oid_;
+        size_t size = strlen(fieldName);
+        self->name = (char*)calloc(size+1, sizeof(char));
+        strncpy(self->name, fieldName, size);
+        self->name[size] = 0;
+        return 0;
+    }
+    
+    static PyObject * _pymoose_LookupField_getItem(_LookupField * self, PyObject * key)
+    {
+        return getLookupField(self->owner, self->name, key);
+    }
+
+    static int _pymoose_LookupField_setItem(_LookupField * self, PyObject * key, PyObject * value)
+    {
+        return setLookupField(self->owner, self->name, key, value);
+    }
+
+    /// Return the hash of the string `{objectpath}.{fieldName}`
+    static long _pymoose_LookupField_hash(_LookupField * self)
+    {
+        string fieldPath = Field<string>::get(self->owner, "path") + "." + self->name;
+        PyObject * path = PyString_FromString(fieldPath.c_str());
+        long hash = PyObject_Hash(path);
+        Py_XDECREF(path);
+        return hash;        
+    }
+    static PyObject * _pymoose_LookupField_repr(_LookupField * self)
+    {
+        string fieldPath = Field<string>::get(self->owner, "path") + "." + self->name;
+        return PyString_FromString(fieldPath.c_str());
+    }
+
+    static void _pymoose_LookupField_dealloc(_LookupField * self)
+    {
+        if (self->name != NULL){
+            free(self->name);
+        }
+    }
     ///////////////////////////////////////////////
     // Python method lists for PyObject of Id
     ///////////////////////////////////////////////
@@ -698,7 +798,7 @@ extern "C" {
         return 0;            
     }// ! _pymoose_Id_init
 
-    static long _pymoose_Id_hash(_Id * self, PyObject * args)
+    static long _pymoose_Id_hash(_Id * self)
     {
         return self->id_.value(); // hash is the same as the Id value
     }
@@ -956,7 +1056,7 @@ extern "C" {
        This function simple returns the python hash of the unique path
        of this object.
     */
-    static long _pymoose_ObjId_hash(_ObjId * self, PyObject * args)
+    static long _pymoose_ObjId_hash(_ObjId * self)
     {
         PyObject * path = Py_BuildValue("s", self->oid_.path().c_str());        
         long ret = PyObject_Hash(path);
@@ -1463,28 +1563,29 @@ extern "C" {
         }
     } // _pymoose_ObjId_setattro
 
-    static PyObject * _pymoose_ObjId_getLookupField(_ObjId * self, PyObject * args)
+    /// Inner function for looking up value from LookupField on object
+    /// with ObjId target.
+    ///
+    /// args should be a tuple (lookupFieldName, key)
+    PyObject * getLookupField(ObjId target, char * fieldName, PyObject * key)
     {
-        extern PyTypeObject ObjIdType;
-        PyObject * key;
-        char * field;
+        vector<string> type_vec;
+        if (parse_Finfo_type(Field<string>::get(target, "class"), "lookupFinfo", string(fieldName), type_vec) < 0){
+            ostringstream error;
+            error << "Cannot handle key type for LookupField `" << Field<string>::get(target, "class") << "." << fieldName << "`.";
+            PyErr_SetString(PyExc_TypeError, error.str().c_str());
+            return NULL;
+        }
+        if (type_vec.size() != 2){
+            ostringstream error;
+            error << "LookupField type signature should be <keytype>, <valuetype>. But for `"
+                  << Field<string>::get(target, "class") << "." << fieldName << "` got " << type_vec.size() << " components." ;
+            PyErr_SetString(PyExc_AssertionError, error.str().c_str());
+            return NULL;
+        }
         PyObject * ret = NULL;
-        if (!PyArg_ParseTuple(args, "sO:_pymoose_ObjId_getLookupField", &field,  &key)){
-            return NULL;
-        }
-        string type = getFieldType(Field<string>::get(self->oid_, "class"), string(field), "lookupFinfo");
-        if (type.empty()){
-            PyErr_SetString(PyExc_AttributeError, "Field not valid.");
-            return NULL;
-        }
-        vector< string > argType;
-        tokenize(type, ",", argType);
-        if (argType.size() != 2){
-            PyErr_SetString(PyExc_TypeError, "_pymoose_ObjId_getLookupField can handle only single level lookup fields.");
-            return NULL;
-        }
-        char key_type_code = shortType(argType[0]);
-        char value_type_code = shortType(argType[1]);
+        char key_type_code = shortType(type_vec[0]);
+        char value_type_code = shortType(type_vec[1]);
         void * value_ptr = NULL;
         if (value_type_code == 'x'){
             value_ptr = PyObject_New(_Id, &IdType);
@@ -1493,67 +1594,191 @@ extern "C" {
         }
         switch(key_type_code){
             case 'b': {
-                ret = lookup_value <bool> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <bool> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }
             case 'c': {
-                ret = lookup_value <char> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <char> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }
             case 'h': {
-                ret = lookup_value <short> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <short> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }            
             case 'H': {
-                ret = lookup_value <unsigned short> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <unsigned short> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }            
             case 'i': {
-                ret = lookup_value <int> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <int> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }            
             case 'I': {
-                ret = lookup_value <unsigned int> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <unsigned int> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }            
             case 'l': {
-                ret = lookup_value <long> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <long> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }                        
             case 'k': {
-                ret = lookup_value <unsigned long> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <unsigned long> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }                        
             case 'L': {
-                ret = lookup_value <long long> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <long long> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }                        
             case 'K': {
-                ret = lookup_value <unsigned long long> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <unsigned long long> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }                        
             case 'd': {
-                ret = lookup_value <double> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <double> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }                        
             case 'f': {
-                ret = lookup_value <float> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <float> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
+                break;
+            }
+            case 's': {
+                ret = lookup_value <string> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }
             case 'x': {
-                ret = lookup_value <Id> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <Id> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }
             case 'y': {
-                ret = lookup_value <ObjId> (self->oid_, string(field), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <ObjId> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
+                break;
+            }
+            case 'v': {
+                ret = lookup_value < vector <int> >(target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
+                break;
+            }
+            case 'w': {
+                ret = lookup_value < vector <short> >(target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
+                break;
+            }   
+            case 'U': {
+                ret = lookup_value < vector <unsigned int> >(target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
+                break;
+            }
+            case 'F': {
+                ret = lookup_value < vector <float> >(target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
+                break;
+            }                
+            case 'D': {
+                ret = lookup_value < vector <double> >(target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
+                break;
+            }                
+            case 'S': {
+                ret = lookup_value < vector <string> >(target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
+                break;
+            }                
+            default:
+                ostringstream error;
+                error << "Unhandled key type `" << type_vec[0] << "` for " << Field<string>::get(target, "class") << "." << fieldName;
+                PyErr_SetString(PyExc_TypeError, error.str().c_str());
+        }                
+        return ret;
+    }
+
+    
+    static PyObject * _pymoose_ObjId_getLookupField(_ObjId * self, PyObject * args)
+    {
+        extern PyTypeObject ObjIdType;
+        char * fieldName = NULL;
+        PyObject * key = NULL;
+        if (!PyArg_ParseTuple(args, "sO:_pymoose_ObjId_getLookupField", &fieldName,  &key)){
+            return NULL;
+        }
+        return getLookupField(self->oid_, fieldName, key);
+    } // _pymoose_ObjId_getLookupField
+
+    int setLookupField(ObjId target, char * fieldName, PyObject * key, PyObject * value)
+    {
+        vector<string> type_vec;
+        if (parse_Finfo_type(Field<string>::get(target, "class"), "lookupFinfo", string(fieldName), type_vec) < 0){
+            ostringstream error;
+            error << "Cannot handle key type for LookupField `" << Field<string>::get(target, "class") << "." << fieldName << "`.";
+            PyErr_SetString(PyExc_TypeError, error.str().c_str());
+            return -1;
+        }
+        if (type_vec.size() != 2){
+            ostringstream error;
+            error << "LookupField type signature should be <keytype>, <valuetype>. But for `"
+                  << Field<string>::get(target, "class") << "." << fieldName << "` got " << type_vec.size() << " components." ;
+            PyErr_SetString(PyExc_AssertionError, error.str().c_str());
+            return -1;
+        }
+        char key_type_code = shortType(type_vec[0]);
+        char value_type_code = shortType(type_vec[1]);
+        int ret = -1;
+        switch(key_type_code){
+            case 'b': {
+                ret = set_lookup_value <bool> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }
+            case 'c': {
+                ret = set_lookup_value <char> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }
+            case 'h': {
+                ret = set_lookup_value <short> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }            
+            case 'H': {
+                ret = set_lookup_value <unsigned short> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }            
+            case 'i': {
+                ret = set_lookup_value <int> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }            
+            case 'I': {
+                ret = set_lookup_value <unsigned int> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }            
+            case 'l': {
+                ret = set_lookup_value <long> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }                        
+            case 'k': {
+                ret = set_lookup_value <unsigned long> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }                        
+            case 'L': {
+                ret = set_lookup_value <long long> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }                        
+            case 'K': {
+                ret = set_lookup_value <unsigned long long> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }                        
+            case 'd': {
+                ret = set_lookup_value <double> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }                        
+            case 'f': {
+                ret = set_lookup_value <float> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }
+            case 'x': {
+                ret = set_lookup_value <Id> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                break;
+            }
+            case 'y': {
+                ret = set_lookup_value <ObjId> (target, string(fieldName), value_type_code, key_type_code, key, value);
                 break;
             }
             default:
                 PyErr_SetString(PyExc_TypeError, "invalid key type");
-        }                
-        return ret;
-    } // _pymoose_ObjId_getLookupField
-
+        }
+        return ret;        
+    }// setLookupField
+    
     static PyObject * _pymoose_ObjId_setLookupField(_ObjId * self, PyObject * args)
     {
         PyObject * key;
@@ -1563,80 +1788,10 @@ extern "C" {
         if (!PyArg_ParseTuple(args, "sOO:_pymoose_ObjId_getLookupField", &field,  &key, &value)){
             return NULL;
         }
-        string type = getFieldType(Field<string>::get(self->oid_, "class"), string(field), "lookupFinfo");
-        if (type.empty()){
-            PyErr_SetString(PyExc_AttributeError, "Field not valid.");
-            return NULL;
+        if ( setLookupField(self->oid_, field, key, value) == 0){
+            Py_RETURN_NONE;
         }
-        vector< string > argType;
-        tokenize(type, ",", argType);
-        if (argType.size() != 2){
-            PyErr_SetString(PyExc_TypeError,"_pymoose_ObjId_setLookupField can  handle only single level lookup fields.");
-            return NULL;
-        }
-        char key_type_code = shortType(argType[0]);
-        char value_type_code = shortType(argType[1]);
-        switch(key_type_code){
-            case 'b': {
-                ret = set_lookup_value <bool> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }
-            case 'c': {
-                ret = set_lookup_value <char> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }
-            case 'h': {
-                ret = set_lookup_value <short> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }            
-            case 'H': {
-                ret = set_lookup_value <unsigned short> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }            
-            case 'i': {
-                ret = set_lookup_value <int> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }            
-            case 'I': {
-                ret = set_lookup_value <unsigned int> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }            
-            case 'l': {
-                ret = set_lookup_value <long> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }                        
-            case 'k': {
-                ret = set_lookup_value <unsigned long> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }                        
-            case 'L': {
-                ret = set_lookup_value <long long> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }                        
-            case 'K': {
-                ret = set_lookup_value <unsigned long long> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }                        
-            case 'd': {
-                ret = set_lookup_value <double> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }                        
-            case 'f': {
-                ret = set_lookup_value <float> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }
-            case 'x': {
-                ret = set_lookup_value <Id> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }
-            case 'y': {
-                ret = set_lookup_value <ObjId> (self->oid_, string(field), value_type_code, key_type_code, key, value);
-                break;
-            }
-            default:
-                PyErr_SetString(PyExc_TypeError, "invalid key type");
-        }
-        return ret;        
+        return NULL;
     }// _pymoose_ObjId_setLookupField
 
     static PyObject * setDestField(PyObject *self, PyObject * args)
@@ -1674,7 +1829,7 @@ extern "C" {
             return NULL;
         }
         vector< string > argType;
-        if (parse_destFinfo_type(Field<string>::get(((_ObjId*)self)->oid_, "class"), string(fieldName), argType) < 0){
+        if (parse_Finfo_type(Field<string>::get(((_ObjId*)self)->oid_, "class"), "destFinfo", string(fieldName), argType) < 0){
             error << "Arguments not handled: " << fieldName << "(";
             for (unsigned int ii = 0; ii < argType.size(); ++ii){
                 error << argType[ii] << ",";
@@ -2484,7 +2639,7 @@ extern "C" {
                 continue;
             }
             vector <string> arg_tokens;
-            if (parse_destFinfo_type(class_name, destFinfo_name, arg_tokens) < 0){
+            if (parse_Finfo_type(class_name, "destFinfo", destFinfo_name, arg_tokens) < 0){
 // #ifndef NDEBUG
 //                 cout << "Ignoring " << class_name << "." << destFinfo_name << endl;
 // #endif
