@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Apr 11 21:58:12 2012 (+0530)
+// Last-Updated: Thu Apr 12 17:59:00 2012 (+0530)
 //           By: subha
-//     Update #: 613
+//     Update #: 835
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -60,11 +60,17 @@ extern "C" {
         ObjId oid_;
     } _ObjId;
 
+    typedef struct {
+        PyObject_HEAD
+        ObjId owner;
+        char * name;
+    } _LookupField;
+    
     //////////////////////////////////////////
     // Methods for Id class
     //////////////////////////////////////////
     static int _pymoose_Id_init(_Id * self, PyObject * args, PyObject * kwargs);
-    static long _pymoose_Id_hash(_Id * self, PyObject * args);
+    static long _pymoose_Id_hash(_Id * self);
     
     static PyObject * _pymoose_Id_repr(_Id * self);
     static PyObject * _pymoose_Id_str(_Id * self);
@@ -82,7 +88,7 @@ extern "C" {
     // Methods for ObjId class
     ///////////////////////////////////////////
     static int _pymoose_ObjId_init(_ObjId * self, PyObject * args, PyObject * kwargs);
-    static long _pymoose_ObjId_hash(_ObjId * self, PyObject * args);
+    static long _pymoose_ObjId_hash(_ObjId * self);
     static PyObject * _pymoose_ObjId_repr(_ObjId * self);
     // static PyObject * _pymoose_ObjId_str(_ObjId * self);
     static PyObject * _pymoose_ObjId_getattro(_ObjId * self, PyObject * attr);
@@ -100,6 +106,17 @@ extern "C" {
     static PyObject * _pymoose_ObjId_getId(_ObjId * self, PyObject * args);
     static PyObject * _pymoose_ObjId_connect(_ObjId * self, PyObject * args);
     static PyObject * _pymoose_ObjId_richCompare(_ObjId * self, PyObject * args, int op);
+
+    ////////////////////////////////////////////
+    // Methods for LookupField
+    ////////////////////////////////////////////
+    static int _pymoose_LookupField_init(_LookupField * self, PyObject * args);
+    static PyObject * _pymoose_LookupField_getItem(_LookupField * self, PyObject * key);
+    static int _pymoose_LookupField_setItem(_LookupField * self, PyObject * key, PyObject * value);
+    static long _pymoose_LookupField_hash(_LookupField * self);
+    static PyObject * _pymoose_LookupField_repr(_LookupField * self);
+    static void _pymoose_LookupField_dealloc(_LookupField * self);
+    
     
     ////////////////////////////////////////////////
     // static functions to be accessed from Python
@@ -129,6 +146,10 @@ extern "C" {
     // This should not be required or accessible to the user. Put here
     // for debugging threading issue.
     static PyObject * _pymoose_quit(PyObject * dummy);
+
+
+    static PyObject * getLookupField(ObjId oid, char * fieldName, PyObject * key);
+    static int setLookupField(ObjId oid, char * fieldName, PyObject * key, PyObject * value);
     int defineClass(PyObject * module, string class_name);
     int define_destFinfos(PyObject* module, PyTypeObject * pyclass, Id class_id);
     static int defineAllClasses(PyObject* module);
@@ -142,116 +163,123 @@ extern "C" {
     
 } //!extern "C"
 
-/// push_item functions convert a Python object to an appropriate C++
-/// object type and push it into a supplied vector.
-template <class A> inline bool pyobj_to_cpp(A& target, PyObject * item)
-{
-    return false;
-}
-template <> inline bool pyobj_to_cpp<int>(int& ref, PyObject * item)
-{
-    int v = PyInt_AsLong(item);
-    ref = v;
-    return true;
-}
-template <> inline bool pyobj_to_cpp<long>(long& ref, PyObject * item)
-{
-    long v = PyInt_AsLong(item);
-    ref = v;
-    return true;
-}
-template <> inline bool pyobj_to_cpp<short>(short& ref, PyObject * item)
-{
-    short v = PyInt_AsLong(item);
-    ref = v;
-    return true;
-}
-template <> inline bool pyobj_to_cpp<float>(float& ref, PyObject * item)
-{
-    float v = (float)PyFloat_AsDouble(item);
-    if ( v == -1.0 && PyErr_Occurred()){
-        PyErr_SetString(PyExc_TypeError, "Expected a sequence of floating point numbers.");
-        return false;
+#define PYSEQUENCE_TO_VECTOR(BASETYPE, SEQUENCE){                       \
+        Py_ssize_t length = PySequence_Length(SEQUENCE);            \
+        vector < BASETYPE > * RET;                                       \
+        BASETYPE * value;                                                \
+        RET = new vector<BASETYPE>();                            \
+        for (unsigned int ii = 0; ii < length; ++ii){               \
+            PyObject * item = PySequence_GetItem(SEQUENCE, ii);     \
+            if (item == NULL){                                      \
+                ostringstream error;                                \
+                error << "Item # " << ii << " is NULL";                 \
+                PyErr_SetString(PyExc_TypeError, error.str().c_str());  \
+            } else {                                                    \
+                value = (BASETYPE*)to_cpp< BASETYPE >(item);         \
+                if (value == NULL){                                     \
+                    PyErr_SetString(PyExc_TypeError, "Cannot handle sequence of type "#BASETYPE); \
+                } else {                                                \
+                    RET->push_back(*value);                             \
+                    delete value;                                       \
+                }                                                       \
+            }                                                           \
+        }                                                               \
+        return RET;                                                     \
     }
-    ref = v;
-    return true;
-}
-template <> inline bool pyobj_to_cpp<double>(double& ref, PyObject * item)
-{
-    double v = PyFloat_AsDouble(item);
-    if ( v == -1.0 && PyErr_Occurred()){
-        PyErr_SetString(PyExc_TypeError, "Expected a sequence of floating point numbers.");
-        return false;
-    }
-    ref = v;
-    return true;
-}
-template <> inline bool pyobj_to_cpp<string>(string& ref, PyObject * item)
-{
-    char* tmp = PyString_AsString(item);
-    if (tmp == NULL){
-        return false;
-    }
-    ref = string(tmp);
-    return true;
-}
-template <> inline bool pyobj_to_cpp<unsigned int>(unsigned int& ref, PyObject * item)
-{
-    unsigned int v = PyInt_AsUnsignedLongMask(item);
-    ref = v;
-    return true;
-}
-template <> inline bool pyobj_to_cpp<unsigned long>(unsigned long& ref, PyObject * item)
-{
-    unsigned long v = PyInt_AsUnsignedLongMask(item);
-    ref = v;
-    return true;
-}
 
-template <> inline bool pyobj_to_cpp<Id>(Id& ref, PyObject * item)
-{
-    _Id * value = (_Id*)item;
-    if (value != NULL){
-        ref = value->id_;
-        return true;
-    }
-    return false;
-}
 
-template <> inline bool pyobj_to_cpp<ObjId>(ObjId& ref, PyObject * item)
+/// Converts PyObject to C++ object
+/// Returns a pointer to the converted object. Deallocation is caller responsibility
+template <class A> void * to_cpp(PyObject * object)
 {
-    _ObjId * value = (_ObjId*)item;
-    if (value != NULL){
-        ref = value->oid_;
-        return true;
-    }
-    return false;
-}
-
-/// Convert a Python sequence to a C++ vector
-template <class A> bool pysequence_to_vector(vector <A> & store, PyObject * sequence)
-{
-    Py_ssize_t length = PySequence_Length(sequence);
-    A value;
-    for (unsigned int ii = 0; ii < length; ++ii){
-        PyObject * item = PySequence_GetItem(sequence, ii);
-        if (item == NULL){
-            ostringstream error;
-            error << "Item # " << ii << " is NULL";
-            PyErr_SetString(PyExc_TypeError, error.str().c_str());
-            return false;
-        }
-        if (pyobj_to_cpp<A>(value, item) == false){
-            ostringstream error;
-            error << "Cannot handle sequence of type " << typeid(A).name();
-            PyErr_SetString(PyExc_TypeError, error.str().c_str());
-            return false;
+    if (typeid(A) == typeid(int)){
+        int * ret = new int();
+        * ret = PyInt_AsLong(object);
+        return (void*)ret;
+    } else if (typeid(A) == typeid(long)){
+        long v = PyInt_AsLong(object);
+        long * ret = new long();
+        *ret = v;
+        return (void*)ret;
+    } else if (typeid(A) == typeid(short)){
+        short v = PyInt_AsLong(object);
+        short * ret = new short();
+        *ret = v;
+        return (void*)ret;
+    } else if (typeid(A) == typeid(float)){
+        float v = (float)PyFloat_AsDouble(object);
+        if ( v == -1.0 && PyErr_Occurred()){
+            PyErr_SetString(PyExc_TypeError, "Expected a sequence of floating point numbers.");
         } else {
-            store.push_back(value);
-        }            
+            float * ret = new float();
+            *ret = v;
+            return (void*)ret;
+        }
+    } else if (typeid(A) == typeid(double)){
+        double v = PyFloat_AsDouble(object);
+        if ( v == -1.0 && PyErr_Occurred()){
+            PyErr_SetString(PyExc_TypeError, "Expected a sequence of floating point numbers.");
+        } else {
+            double * ret = new double();
+            *ret = v;
+            return (void*)ret;
+        }
+    } else if (typeid(A) == typeid(string)) {
+        char* tmp = PyString_AsString(object);
+        if (tmp == NULL){
+            return NULL;
+        }        
+        string * ret = new string(tmp);
+        return (void*)ret;
+    } else if (typeid(A) == typeid(unsigned int)) {
+        unsigned int v = PyInt_AsUnsignedLongMask(object);
+        unsigned int * ret = new unsigned int();
+        *ret = v;
+        return (void*)ret;
+    } else if (typeid(A) == typeid(unsigned long)) {
+        unsigned long v = PyInt_AsUnsignedLongMask(object);
+        unsigned long * ret = new unsigned long();
+        *ret = v;
+        return (void*)ret;
+    } else if (typeid(A) == typeid(Id))
+    {
+        _Id * value = (_Id*)object;
+        if (value != NULL){
+            Id * ret = new Id();
+            * ret = value->id_;
+        return (void*)ret;
+        }
+    } else if (typeid(A) == typeid(ObjId)){
+        _ObjId * value = (_ObjId*)object;
+        if (value != NULL){
+            ObjId * ret = new ObjId();
+            * ret = value->oid_;
+            return (void*)ret;
+        }
+    } else if (typeid(A) == typeid(vector<int>)){
+        PYSEQUENCE_TO_VECTOR( int, object)
+    } else if (typeid(A) == typeid(vector<unsigned int>)){
+        PYSEQUENCE_TO_VECTOR( unsigned int, object)
+    } else if (typeid(A) == typeid(vector<short>)){
+        PYSEQUENCE_TO_VECTOR( short, object)
+    } else if (typeid(A) == typeid(vector<long>)){
+        PYSEQUENCE_TO_VECTOR( long, object)
+    } else if (typeid(A) == typeid(vector<unsigned long>)){
+        PYSEQUENCE_TO_VECTOR( unsigned long, object)
+    } else if (typeid(A) == typeid(vector<float>)){
+        PYSEQUENCE_TO_VECTOR( float, object)
+    } else if (typeid(A) == typeid(vector<double>)){
+        PYSEQUENCE_TO_VECTOR( double, object)
+    } else if (typeid(A) == typeid(vector<string>)){
+        PYSEQUENCE_TO_VECTOR( string, object)
+    } else if (typeid(A) == typeid(vector<ObjId>)){
+        PYSEQUENCE_TO_VECTOR( ObjId, object)        
+    } else if (typeid(A) == typeid(vector<Id>)){
+        PYSEQUENCE_TO_VECTOR( Id, object)
     }
-    return true;
+    return NULL;
 }
+
 /// Set a destinfo that takes a vector argument
 template <class A> inline PyObject* _set_vector_destFinfo(_ObjId* obj, string fieldName, int argIndex, PyObject * value)
 {
@@ -264,11 +292,12 @@ template <class A> inline PyObject* _set_vector_destFinfo(_ObjId* obj, string fi
         PyErr_SetString(PyExc_TypeError, "Can handle only single-argument functions with vector argument." );
         return NULL;
     }            
-    vector<A> _value;
-    if (!pysequence_to_vector(_value, value)){
+    vector<A> * _value = (vector <A> *)to_cpp < vector <A> >(value);
+    if (_value == NULL){
         return NULL;
     }
-    bool ret = SetGet1< vector < A > >::set(obj->oid_, fieldName, _value);
+    bool ret = SetGet1< vector < A > >::set(obj->oid_, fieldName, *_value);
+    delete _value;
     if (ret){
         Py_RETURN_TRUE;
     } else {
@@ -280,14 +309,14 @@ template <class A> inline PyObject* _set_vector_destFinfo(_ObjId* obj, string fi
 template <class KeyType> inline PyObject * lookup_value(const ObjId& oid, string fname, char value_type_code, char key_type_code, PyObject * key, void * value_ptr=NULL)
 {
     PyObject * ret = NULL;
-    KeyType cpp_key;
-    if (!pyobj_to_cpp<KeyType>(cpp_key, key)){
+    KeyType * cpp_key = (KeyType *)to_cpp<KeyType>(key);
+    if (cpp_key == NULL){
         return NULL;
     }
     string value_type_str = string(1, value_type_code);
     switch (value_type_code){
         case 'b': { // boolean is a special case that PyBuildValue does not handle
-            bool value = LookupField < KeyType, bool > ::get(oid, fname, cpp_key);
+            bool value = LookupField < KeyType, bool > ::get(oid, fname, *cpp_key);
             if (value){
                 Py_RETURN_TRUE;
             } else {
@@ -295,204 +324,142 @@ template <class KeyType> inline PyObject * lookup_value(const ObjId& oid, string
             }
         }
         case 'c': {
-            char value = LookupField < KeyType, char > ::get(oid, fname, cpp_key);
+            char value = LookupField < KeyType, char > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }            
         case 'h': {
-            short value = LookupField < KeyType, short > ::get(oid, fname, cpp_key);
+            short value = LookupField < KeyType, short > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }            
         case 'H': {
-            unsigned short value = LookupField < KeyType, unsigned short > ::get(oid, fname, cpp_key);
+            unsigned short value = LookupField < KeyType, unsigned short > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }            
         case 'i': {
-            int value = LookupField < KeyType, int > ::get(oid, fname, cpp_key);
+            int value = LookupField < KeyType, int > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }            
         case 'I': {
-            unsigned int value = LookupField < KeyType, unsigned int > ::get(oid, fname, cpp_key);
+            unsigned int value = LookupField < KeyType, unsigned int > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }            
         case 'l': {
-            long value = LookupField < KeyType, long > ::get(oid, fname, cpp_key);
+            long value = LookupField < KeyType, long > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }                        
         case 'k': {
-            unsigned long value = LookupField < KeyType, unsigned long > ::get(oid, fname, cpp_key);
+            unsigned long value = LookupField < KeyType, unsigned long > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
-        }                        
+        }
+#ifdef HAVE_LONG_LONG            
         case 'L': {
-            long long value = LookupField < KeyType, long long > ::get(oid, fname, cpp_key);
+            long long value = LookupField < KeyType, long long > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }                        
         case 'K': {
-            unsigned long long value = LookupField < KeyType, unsigned long long > ::get(oid, fname, cpp_key);
+            unsigned long long value = LookupField < KeyType, unsigned long long > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
-        }                        
+        }
+#endif
         case 'd': {
-            double value = LookupField < KeyType, double > ::get(oid, fname, cpp_key);
+            double value = LookupField < KeyType, double > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }                        
         case 'f': {
-            float value = LookupField < KeyType, float > ::get(oid, fname, cpp_key);
+            float value = LookupField < KeyType, float > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }
         case 'x': {
             assert(value_ptr != NULL);
-            ((_Id*)value_ptr)->id_ = LookupField < KeyType, Id > ::get(oid, fname, cpp_key);
+            ((_Id*)value_ptr)->id_ = LookupField < KeyType, Id > ::get(oid, fname, *cpp_key);
             ret = (PyObject*)value_ptr;
             break;
         }
         case 'y': {
             assert(value_ptr != NULL);
-            ((_ObjId*)value_ptr)->oid_ = LookupField < KeyType, Id > ::get(oid, fname, cpp_key);
+            ((_ObjId*)value_ptr)->oid_ = LookupField < KeyType, Id > ::get(oid, fname, *cpp_key);
             ret = (PyObject*)value_ptr;
             break;
         }
         default:
             PyErr_SetString(PyExc_TypeError, "invalid value type");
-            return NULL;
     }
+    delete cpp_key;
     return ret;
 }
+
 /// The circus with value_ptr is to allow Id, ObjId to be allocated.
-template <class KeyType> inline PyObject * set_lookup_value(const ObjId& oid, string fname, char value_type_code, char key_type_code, PyObject * key, PyObject * value_obj)
+template <class KeyType> inline int set_lookup_value(const ObjId& oid, string fname, char value_type_code, char key_type_code, PyObject * key, PyObject * value_obj)
 {
     bool success = false;
-    KeyType cpp_key;
-    if (!pyobj_to_cpp<KeyType>(cpp_key, key)){
-        return NULL;
+    KeyType *cpp_key = (KeyType*)to_cpp<KeyType>(key);
+    if (cpp_key == NULL){
+        return -1;
     }
+#define SET_LOOKUP_VALUE( TYPE )                                        \
+    {                                                                   \
+        TYPE * value = (TYPE*)to_cpp<TYPE>(value_obj);                 \
+            if (value){                                                 \
+                success = LookupField < KeyType, TYPE > ::set(oid, fname, *cpp_key, *value); \
+                delete value;                                           \
+                delete cpp_key;                                         \
+            }                                                           \
+            break;                                                      \
+    }
+    
     string value_type_str = string(1, value_type_code);
     switch (value_type_code){
-        case 'b': { // boolean is a special case that PyBuildValue does not handle
-            bool value;
-            if (!pyobj_to_cpp<bool>(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, bool > ::set(oid, fname, cpp_key, value);
-            break;
-        }
-        case 'c': {
-            char value;
-            if (!pyobj_to_cpp<char>(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, char > ::set(oid, fname, cpp_key, value);
-            break;
-        }            
-        case 'h': {
-            short value;
-            if (!pyobj_to_cpp<short>(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, short > ::set(oid, fname, cpp_key, value);
-            break;
-        }            
-        case 'H': {
-            unsigned short value;
-            if (!pyobj_to_cpp< unsigned short >(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, unsigned short > ::set(oid, fname, cpp_key, value);
-            break;
-        }            
-        case 'i': {
-            int value;
-            if (!pyobj_to_cpp< int >(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, int > ::set(oid, fname, cpp_key, value);
-            break;
-        }            
-        case 'I': {
-            unsigned int value;
-            if (!pyobj_to_cpp< unsigned int >(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, unsigned int > ::set(oid, fname, cpp_key, value);
-            break;
-        }            
-        case 'l': {
-            long value;
-            if (!pyobj_to_cpp< long >(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, long > ::set(oid, fname, cpp_key, value);
-            break;
-        }                        
-        case 'k': {
-            unsigned long value;
-            if (!pyobj_to_cpp< unsigned long >(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, unsigned long > ::set(oid, fname, cpp_key, value);
-            break;
-        }                        
-        case 'L': {
-            long long value;
-            if (!pyobj_to_cpp< long long >(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, long long > ::set(oid, fname, cpp_key, value);
-            break;
-        }                        
-        case 'K': {
-            unsigned long long value;
-            if (!pyobj_to_cpp< unsigned long long >(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, unsigned long long > ::set(oid, fname, cpp_key, value);
-            break;
-        }                        
-        case 'd': {
-            double value;
-            if (!pyobj_to_cpp< double >(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, double > ::set(oid, fname, cpp_key, value);
-            break;
-        }                        
-        case 'f': {
-            float value;
-            if (!pyobj_to_cpp< float >(value, value_obj)){
-                return NULL;
-            }
-            success = LookupField < KeyType, float > ::set(oid, fname, cpp_key, value);
-            break;
-        }
-        case 'x': {
-            assert(value_obj!=NULL);
-            Id value = ((_Id*)value_obj)->id_;
-            success = LookupField < KeyType, Id > ::set(oid, fname, cpp_key, value);
-            break;
-        }
-        case 'y': {
-            assert(value_obj!=NULL);
-            ObjId value = ((_ObjId*)value_obj)->oid_;
-            success = LookupField < KeyType, ObjId > ::set(oid, fname, cpp_key, value);
-            break;
-        }
+        case 'b':
+            SET_LOOKUP_VALUE(bool)        
+        case 'c':
+            SET_LOOKUP_VALUE(char)
+        case 'h':
+            SET_LOOKUP_VALUE(short)
+        case 'H':
+            SET_LOOKUP_VALUE(unsigned short)
+        case 'i':
+            SET_LOOKUP_VALUE(int)
+        case 'I':
+            SET_LOOKUP_VALUE(unsigned int)
+        case 'l':
+            SET_LOOKUP_VALUE(long)
+                    
+        case 'k': 
+            SET_LOOKUP_VALUE(unsigned long)
+#ifdef HAVE_LONG_LONG
+        case 'L':
+            SET_LOOKUP_VALUE(long long)
+        case 'K': 
+            SET_LOOKUP_VALUE(unsigned long long);
+#endif
+        case 'd':
+            SET_LOOKUP_VALUE(double)
+        case 'f': 
+            SET_LOOKUP_VALUE(float)
+        case 's':
+            SET_LOOKUP_VALUE(string)
+        case 'x':
+            SET_LOOKUP_VALUE(Id)
+        case 'y':
+            SET_LOOKUP_VALUE(ObjId)
         default:
             PyErr_SetString(PyExc_TypeError, "invalid value type");
-            return NULL;
     }
     if (success){
-        Py_RETURN_TRUE;
+        return 0;
     } else {
-        Py_RETURN_FALSE;
+        return -1;
     }
 }
 
