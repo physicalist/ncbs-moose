@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Apr 12 14:36:13 2012 (+0530)
+// Last-Updated: Thu Apr 12 20:52:13 2012 (+0530)
 //           By: subha
-//     Update #: 6257
+//     Update #: 6340
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -117,6 +117,8 @@ extern "C" {
     static Id shellId;
     static PyObject * MooseError;
     static map<string, PyTypeObject *> defined_classes;
+    static map<string, PyGetSetDef*  > lookup_finfo_map;
+    static map<string, vector< string > > lookup_finfo_name_map;
     // Minimum number of arguments for setting destFinfo - 1-st
     // the finfo name.
     static Py_ssize_t minArgs = 1;
@@ -239,6 +241,11 @@ extern "C" {
 
     void finalize()
     {
+        // Clear the memory for PyGetSetDef for LookupField s
+        for (map<string, PyGetSetDef *>::iterator it = lookup_finfo_map.begin(); it != lookup_finfo_map.end(); ++it){
+            free(it->second);
+        }
+        lookup_finfo_map.clear();
         // cout << "In finalize() - ready to quit\n";
         ShellPtr->doQuit();
         // cout << "In finalize() - quit from shell. Going to join threads.\n";
@@ -443,7 +450,7 @@ extern "C" {
     {
         PyObject * owner;
         char * fieldName;
-        if (!PyArg_ParseTuple(args, "Os:_pymoose_LookupField_init", &owner, fieldName)){
+        if (!PyArg_ParseTuple(args, "Os:_pymoose_LookupField_init", &owner, &fieldName)){
             Py_XDECREF(self);
             return -1;
         }
@@ -1688,7 +1695,6 @@ extern "C" {
     
     static PyObject * _pymoose_ObjId_getLookupField(_ObjId * self, PyObject * args)
     {
-        extern PyTypeObject ObjIdType;
         char * fieldName = NULL;
         PyObject * key = NULL;
         if (!PyArg_ParseTuple(args, "sO:_pymoose_ObjId_getLookupField", &fieldName,  &key)){
@@ -1784,7 +1790,6 @@ extern "C" {
         PyObject * key;
         PyObject * value;
         char * field;
-        PyObject * ret = NULL;
         if (!PyArg_ParseTuple(args, "sOO:_pymoose_ObjId_getLookupField", &field,  &key, &value)){
             return NULL;
         }
@@ -1794,10 +1799,10 @@ extern "C" {
         return NULL;
     }// _pymoose_ObjId_setLookupField
 
-    static PyObject * setDestField(PyObject *self, PyObject * args)
-    {
-        return _pymoose_ObjId_setDestField(self, args);
-    }
+    // static PyObject * setDestField(PyObject *self, PyObject * args)
+    // {
+    //     return _pymoose_ObjId_setDestField(self, args);
+    // }
 
     static PyObject * _pymoose_ObjId_setDestField(PyObject * self, PyObject * args)
     {
@@ -2587,7 +2592,6 @@ extern "C" {
         }
         /*********************************************************
          * TODO: descriptor for lookupFinfos.
-         * TODO: methods for destFinfos.
          *********************************************************/
         /* Can go through creating properties for valueFinfos after
          * checking with default implementation */
@@ -2607,6 +2611,9 @@ extern "C" {
 
         // We need to call PyType_Ready in order to get the class'
         // __dict__ initialized.
+        if (define_lookupFinfos(new_class) < 0){            
+            return -1;
+        }
         if (PyType_Ready(new_class) < 0){
             cerr << "Fatal error: Could not initialize class '" << class_name << "'" << endl;
             return -1;
@@ -2680,6 +2687,52 @@ extern "C" {
         } // ! for
         return 0;
     }
+
+    static PyObject * _create_lookupField(PyObject * self, void * closure)
+    {
+        if (!ObjId_SubtypeCheck(self)){
+            PyErr_SetString(PyExc_TypeError, "First argument must be an instance of ObjId");
+            return NULL;
+        }
+        char * name;
+        if (!PyArg_ParseTuple((PyObject *)closure, "s:_create_lookupField: expected a string in getter closure.", &name)){
+            return NULL;
+        }
+        PyObject * args = PyTuple_New(2);
+        PyTuple_SetItem(args, 0, self);
+        PyTuple_SetItem(args, 1, PyString_FromString(name));
+        _LookupField * ret = PyObject_New(_LookupField, &LookupFieldType);
+        if (_pymoose_LookupField_init(ret, args) == 0){
+            return (PyObject*)ret;
+        }
+        return NULL;
+    }
+    int define_lookupFinfos(PyTypeObject * pyclass)
+    {
+        string class_name = string(pyclass->tp_name);
+        if (lookup_finfo_map.find(class_name) != lookup_finfo_map.end()){
+            return 0;
+        }
+        Id class_id("/classes/" + class_name);
+        unsigned int num_lookupFinfos = Field<unsigned int>::get(ObjId(class_id), "num_lookupFinfo");
+        PyGetSetDef * lookupFinfos = (PyGetSetDef*)calloc((size_t)(num_lookupFinfos+1), sizeof(PyGetSetDef));
+        lookupFinfos[num_lookupFinfos] = PyGetSetDef();
+        Id lookupFinfoId("/classes/" + class_name + "/lookupFinfo");
+        for (unsigned int ii = 0; ii < num_lookupFinfos; ++ii){
+            ObjId lookupFinfo(lookupFinfoId, DataId(0, ii, 0));
+            string lookupFinfo_name = Field<string>::get(lookupFinfo, "name");
+            cout << "Defining " << class_name << "." << lookupFinfo_name << endl;
+            lookupFinfos[ii].name = const_cast<char*>(lookupFinfo_name.c_str());
+            lookupFinfos[ii].get = (getter)_create_lookupField;
+            PyObject * args = PyTuple_New(1);
+            PyTuple_SetItem(args, 0, PyString_FromString(lookupFinfo_name.c_str()));
+            lookupFinfos[ii].closure = (void*)args;
+        }
+        
+        lookup_finfo_map.insert(pair< string, PyGetSetDef* > (class_name, lookupFinfos));
+        pyclass->tp_getset = lookupFinfos;
+        return 0;
+    }
     /////////////////////////////////////////////////////////////////////
     // Method definitions for MOOSE module
     /////////////////////////////////////////////////////////////////////    
@@ -2746,11 +2799,6 @@ extern "C" {
         {NULL, NULL, 0, NULL}        /* Sentinel */
     };
 
-    /// For debugging
-    void test(){
-        cerr << "Hello" << endl;
-    }
-
 
     
     ///////////////////////////////////////////////////////////
@@ -2780,6 +2828,13 @@ extern "C" {
         Py_INCREF(&ObjIdType);
         PyModule_AddObject(moose_module, "ObjId", (PyObject*)&ObjIdType);
         
+        LookupFieldType.ob_type = &PyType_Type;
+        LookupFieldType.tp_new = PyType_GenericNew;
+        LookupFieldType.tp_free = _PyObject_Del;
+        if (PyType_Ready(&LookupFieldType) < 0)
+            return;
+        Py_INCREF(&LookupFieldType);
+        PyModule_AddObject(moose_module, "LookupField", (PyObject*)&LookupFieldType);
         // We convert the environment variables into c-like argv array
         vector<string> args = setup_runtime_env();
         int argc = args.size();

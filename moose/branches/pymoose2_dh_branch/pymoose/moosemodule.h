@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Apr 12 17:59:00 2012 (+0530)
+// Last-Updated: Thu Apr 12 19:48:11 2012 (+0530)
 //           By: subha
-//     Update #: 835
+//     Update #: 837
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -153,7 +153,8 @@ extern "C" {
     int defineClass(PyObject * module, string class_name);
     int define_destFinfos(PyObject* module, PyTypeObject * pyclass, Id class_id);
     static int defineAllClasses(PyObject* module);
-     
+    static int define_lookupFinfos(PyTypeObject * pyclass);
+    static PyObject * _create_lookupField(PyObject * self, void * closure);
     PyMODINIT_FUNC init_moose();
 
 
