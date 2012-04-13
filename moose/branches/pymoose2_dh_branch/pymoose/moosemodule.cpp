@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Apr 13 14:44:30 2012 (+0530)
+// Last-Updated: Fri Apr 13 18:24:03 2012 (+0530)
 //           By: subha
-//     Update #: 6472
+//     Update #: 6620
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -18,40 +18,40 @@
 
 // Commentary: 
 // 
-// 2011-03-10 Trying out direct access to Python API instead of going
-//            via SWIG. SWIG has this issue of creating huge files and
-//            the resulting binaries are also very large. Since we are
-//            not going to use any language but Python in the
-//            foreseeable future, we could as well try to avoid the
-//            bloat by coding directly with Python API.
-//
-
-// TODO:
-//
-// Port the low level API.
-//
-// May use the low level API in Python to create the high level API.
-//
-// Allow exceptions in MOOSE. 
+// 2011-03-10 
 
 // Change log:
 // 
-// 2011-03-10 Initial version. Starting coding directly with Python API.
-// 
+// 2011-03-10 Initial version. Starting coding directly with Python
+//            API.  Trying out direct access to Python API instead of
+//            going via SWIG. SWIG has this issue of creating huge
+//            files and the resulting binaries are also very
+//            large. Since we are not going to use any language but
+//            Python in the foreseeable future, we can avoid the bloat
+//            by coding directly with Python API.
+//
 // 2012-01-05 Much polished version. Handling destFinfos as methods in
-// Python class.
+//            Python class.
+//
+// 2012-04-13 Finished reimplementing the meta class system using
+//            Python/C API.
+//            Decided not to expose any lower level moose API.
+//
 
 // Code:
 
-//////////////////// Headers //////////////////////////////
+//////////////////////////// Headers ////////////////////////////////
+
 #include <Python.h>
+
+#include <cstring>
+#include <iostream>
 #include <map>
+
 
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
-#include <cstring>
-#include <iostream>
 
 #include "../basecode/header.h"
 #include "../basecode/Id.h"
@@ -64,14 +64,15 @@
 
 #include "moosemodule.h"
 
-//////////////////// Headers //////////////////////////////
-
 using namespace std;
+
+//////////////////////// External functions /////////////////////////
 
 extern void testSync();
 extern void testAsync();
-extern void testSyncArray( unsigned int size, unsigned int numThreads,
-	unsigned int method );
+extern void testSyncArray( unsigned int size,
+                           unsigned int numThreads,
+                           unsigned int method );
 extern void testShell();
 extern void testScheduling();
 extern void testSchedulingProcess();
@@ -99,13 +100,11 @@ extern void regressionTests();
 extern bool benchmarkTests( int argc, char** argv );
 extern int getNumCores();
 
-// 
-// C wrappers for C++ classes
-// This is used by Python
+// C-wrapper to be used by Python
 extern "C" {
-    //////////////////////
+    /////////////////////////////////////////////////////////////////
     // Module globals 
-    //////////////////////
+    /////////////////////////////////////////////////////////////////
     static int verbosity = 1;
     static int isSingleThreaded = 0;
     static int isInfinite = 0;
@@ -116,30 +115,37 @@ extern "C" {
     static int quitFlag = 0;
     static Id shellId;
     static PyObject * MooseError;
+
+    // Global store of defined MOOSE classes.
     static map<string, PyTypeObject *>& get_moose_classes()
     {
         static map<string, PyTypeObject *> defined_classes;
         return defined_classes;
     }
+
+    // Global storage for PyGetSetDef structs for LookupFields.
     static map<string, PyGetSetDef* >& get_lookupfinfos()
     {
         static map<string, PyGetSetDef*  > lookup_finfo_map;
         return lookup_finfo_map;
     }
 
-    // This stores 1 for initialized LookupField objects
+    // Global storage for every LookupField we create.
     static map<string, PyObject *>& get_inited_lookupfields()
     {
         static map<string, PyObject *> inited_lookupfields;
         return inited_lookupfields;
     }
+    
     // Minimum number of arguments for setting destFinfo - 1-st
     // the finfo name.
     static Py_ssize_t minArgs = 1;
-    // Arbitrarily setting maximum on variable argument
-    // list. Read: http://www.swig.org/Doc1.3/Varargs.html to
-    // understand why
-    static Py_ssize_t maxArgs = 5;
+    
+    // Arbitrarily setting maximum on variable argument list. Read:
+    // http://www.swig.org/Doc1.3/Varargs.html to understand why
+    static Py_ssize_t maxArgs = 10;
+
+    
     ///////////////////////////////////
     // Python datatype checking macros
     ///////////////////////////////////
@@ -150,12 +156,13 @@ extern "C" {
 #define ObjId_SubtypeCheck(v) (PyType_IsSubtype(Py_TYPE(v), &ObjIdType))
 #define LookupField_Check(v) (Py_TYPE(v) == &LookupFieldType)
     
-    // Creates the Shell * out of shellId
+    // Macro to create the Shell * out of shellId
 #define ShellPtr reinterpret_cast<Shell*>(shellId.eref().data())    
-    
-    //////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////
     // Helper routines
-    //////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
     
     /**
        Get the environment variables and set runtime environment based
@@ -253,29 +260,33 @@ extern "C" {
         }        
     } //! create_shell()
 
+    /**
+       Clean up after yourself.
+    */
     void finalize()
     {
-        // Clear the memory for PyGetSetDef for LookupField s
+        // Clear the memory for PyGetSetDef for LookupField. The key
+        // (name) was dynamically allocated using calloc.
         for (map<string, PyGetSetDef *>::iterator it = get_lookupfinfos().begin(); it != get_lookupfinfos().end(); ++it){
             free(it->second->name);
             Py_XDECREF(it->second->closure);
             free(it->second);
         }
         get_lookupfinfos().clear();
-        // cout << "In finalize() - ready to quit\n";
         ShellPtr->doQuit();
-        // cout << "In finalize() - quit from shell. Going to join threads.\n";
+        // Cleanup threads
         if (!ShellPtr->isSingleThreaded()){
             ShellPtr->joinThreads();
             Qinfo::freeMutex();
         }
+        // Destroy the Shell object
         Neutral* ns = reinterpret_cast<Neutral*>(shellId.element()->dataHandler()->data(0));
-        // cout << "In finalize() - Joined threads. Going to destroy Shell.\n";
         ns->destroy( shellId.eref(), 0, 0);
-        // cout << "In finalize() - Destroyed Shell.\n";
-        for (map <string, PyTypeObject * >::iterator it = get_moose_classes().begin(); it != get_moose_classes().end(); ++it){
-            // free((void*)it->second->tp_name);
-            // free((void*)it->second->tp_doc);
+        // Ready the MooseClass instances for gc.
+        for (map <string, PyTypeObject * >::iterator it = \
+                     get_moose_classes().begin();
+             it != get_moose_classes().end();
+             ++it){
             Py_DECREF(it->second);
         }
 
@@ -301,20 +312,22 @@ extern "C" {
         return finfoTypes;
     }
 
-    /// get the field type for specified field
-    ///
-    /// Argument:
-    /// className -- class to look in
-    ///
-    /// fieldName -- field to look for
-    ///
-    /// finfoType -- finfo type to look in (can be valueFinfo,
-    /// destFinfo, srcFinfo, lookupFinfo etc.
-    ///
-    /// Return:
-    ///
-    /// string -- value of type field of the Finfo object. This is a
-    /// comma separated list of C++ template arguments    
+    /**
+       get the field type for specified field
+    
+       Argument:
+       className -- class to look in
+       
+       fieldName -- field to look for
+       
+       finfoType -- finfo type to look in (can be valueFinfo,
+       destFinfo, srcFinfo, lookupFinfo etc.
+       
+       Return:
+       
+       string -- value of type field of the Finfo object. This is a
+       comma separated list of C++ template arguments
+    */
     string getFieldType(string className, string fieldName, string finfoType)
     {
         string fieldType = "";
@@ -332,28 +345,27 @@ extern "C" {
         }
         return fieldType;        
     }
+
+    /**
+       Parse the type field of Finfo objects.
+
+       The types field is a comma separated list of the template
+       arguments. We populate `typeVec` with the individual
+       type strings.
+     */
     int parse_Finfo_type(string className, string finfoType, string fieldName, vector<string> & typeVec)
     {
         string typestring = getFieldType(className, fieldName, finfoType);
         if (typestring.empty()){
-// #ifndef NDEBUG            
-//             cout << "empty type for " << className << "." << fieldName << endl;
-// #endif
             return -1;
         }
         tokenize(typestring, ",", typeVec);
         if (typeVec.size() > maxArgs){
-// #ifndef NDEBUG
-//             cout << "number of components in type beyond maxArgs: " << className << "." << fieldName << endl;
-// #endif
             return -1;
         }
         for (unsigned int ii = 0; ii < typeVec.size() ; ++ii){
             char type_code = shortType(typeVec[ii]);
             if (type_code == 0){
-// #ifndef NDEBUG
-//                 cout << "Unknown type " << typeVec[ii] << endl;
-// #endif
                 return -1;
             } else if (type_code == '_'){ // void - typeVec should be empty
                 typeVec.clear();
@@ -362,6 +374,9 @@ extern "C" {
         return 0;
     }
 
+    /**
+       Return a pair containing (field name, finfo type). 
+     */
     pair < string, string > getFieldFinfoTypePair(string className, string fieldName)
     {
         for (const char ** finfoType = getFinfoTypes(); *finfoType; ++finfoType){
@@ -393,9 +408,19 @@ extern "C" {
         return ret;
     }
 
-    int getFieldDict(Id classId, string finfoType, vector<string>& fieldNames, vector<string>&fieldTypes)
+    /**
+       Populate the `fieldNames` vector with names of the fields of
+       `finfoType` in the specified class.
+
+       Populate the `fieldTypes` vector with corresponding C++ data
+       type string (Finfo.type).
+     */
+    int getFieldDict(Id classId, string finfoType,
+                     vector<string>& fieldNames, vector<string>&fieldTypes)
     {
-        unsigned int numFinfos = Field<unsigned int>::get(ObjId(classId), "num_" + string(finfoType));
+        unsigned int numFinfos =
+                Field<unsigned int>::get(ObjId(classId),
+                                         "num_" + string(finfoType));
         Id fieldId(classId.path() + "/" + string(finfoType));
         if (fieldId == Id()){
             return 0;
@@ -413,27 +438,35 @@ extern "C" {
     // Metaclass
     ///////////////////////////////////////////////////
 
-    int _pymoose_MooseMeta_init(PyObject* self, PyObject* args, PyObject *kwargs) {
-        printf("before str\n");
-        PyObject_Str(self);
-        printf("after str\n");
+    int _pymoose_MooseClass_init(PyObject* self, PyObject* args, PyObject *kwargs) {
+        // May be we can move the destFinfo and lookupFinfo creation
+        // here. Problem is ObjId is statically defined. And this init
+        // method gets called only if a Python class sets its
+        // __metaclass__ to MooseClass.
+
+        // The only purpose of this is to avoid an assertion failure
+        // with Python debug version (something to do with the
+        // TP_FLAGS.
+        
+        // printf("before str\n");
+        // PyObject_Str(self);
+        // printf("after str\n");
         return 0;
     }
-    PyObject * _pymoose_MooseMetaType_getattro(PyObject * self, PyObject * name)
+    PyObject * _pymoose_MooseClass_getattro(PyObject * self, PyObject * name)
     {
-        printf("_pymoose_MooseMetaType_getattro\n");
+        // Again, this does not do much.
+        
+        // printf("_pymoose_MooseClass_getattro\n");
         return PyBaseObject_Type.tp_getattro(self, name);
     }
 
-    
-    // static PyMethodDef methods = {
-    //     {NULL, NULL, 0, NULL},};
-
+    // Meta class for extending MOOSE classes in Python.
     // See: http://mail.python.org/pipermail/python-dev/2009-July/090542.html
-    static PyTypeObject MooseMetaType = {
+    static PyTypeObject MooseClass = {
         PyObject_HEAD_INIT(0)               /* tp_head */
         0,                                  /* tp_internal */
-        "moose.MooseMeta",                  /* tp_name */
+        "moose.MooseClass",                  /* tp_name */
         0,                                  /* tp_basicsize */
         0,                                  /* tp_itemsize */
         0,                                  /* tp_dealloc */
@@ -448,7 +481,7 @@ extern "C" {
         0,                                  /* tp_hash */
         0,                                  /* tp_call */
         0,                                  /* tp_str */
-        _pymoose_MooseMetaType_getattro,    /* tp_getattro */
+        _pymoose_MooseClass_getattro,       /* tp_getattro */
         0,                                  /* tp_setattro */
         0,                                  /* tp_as_buffer */
         Py_TPFLAGS_DEFAULT,                 /* tp_flags */
@@ -467,7 +500,7 @@ extern "C" {
         0,                                  /* tp_descr_get */
         0,                                  /* tp_descr_set */
         0,                                  /* tp_dictoffset */
-        (initproc)_pymoose_MooseMeta_init,  /* tp_init */
+        (initproc)_pymoose_MooseClass_init, /* tp_init */
         0,                                  /* tp_alloc */
         0,                                  /* tp_new */
         0,                                  /* tp_free */        
@@ -476,6 +509,10 @@ extern "C" {
     ///////////////////////////////////////////////////
     // Python method lists for PyObject of LookupField
     ///////////////////////////////////////////////////
+
+    /**
+       The mapping methods make it act like a Python dictionary.
+    */
     static PyMappingMethods LookupFieldMappingMethods = {
         0,
         (binaryfunc)_pymoose_LookupField_getItem,
@@ -483,46 +520,46 @@ extern "C" {
     };
 
     static PyTypeObject LookupFieldType = { 
-        PyObject_HEAD_INIT(0)               /* tp_head */
-        0,                                  /* tp_internal */
-        "moose.LookupField",                  /* tp_name */
-        sizeof(_LookupField),                 /* tp_basicsize */
-        0,                                  /* tp_itemsize */
+        PyObject_HEAD_INIT(0)                           /* tp_head */
+        0,                                              /* tp_internal */
+        "moose.LookupField",                            /* tp_name */
+        sizeof(_LookupField),                           /* tp_basicsize */
+        0,                                              /* tp_itemsize */
         (destructor)_pymoose_LookupField_dealloc,       /* tp_dealloc */
-        0,                                  /* tp_print */
-        0,                                  /* tp_getattr */
-        0,                                  /* tp_setattr */
-        0,                                  /* tp_compare */
-        (reprfunc)_pymoose_LookupField_repr,                        /* tp_repr */
-        0,                                  /* tp_as_number */
-        0,             /* tp_as_sequence */
-        &LookupFieldMappingMethods,          /* tp_as_mapping */
-        (hashfunc)_pymoose_LookupField_hash,/* tp_hash */
-        0,                                  /* tp_call */
-        (reprfunc)_pymoose_LookupField_repr,               /* tp_str */
-        PyObject_GenericGetAttr,            /* tp_getattro */
-        PyObject_GenericSetAttr,            /* tp_setattro */
-        0,                                  /* tp_as_buffer */
+        0,                                              /* tp_print */
+        0,                                              /* tp_getattr */
+        0,                                              /* tp_setattr */
+        0,                                              /* tp_compare */
+        (reprfunc)_pymoose_LookupField_repr,            /* tp_repr */
+        0,                                              /* tp_as_number */
+        0,                                              /* tp_as_sequence */
+        &LookupFieldMappingMethods,                     /* tp_as_mapping */
+        (hashfunc)_pymoose_LookupField_hash,            /* tp_hash */
+        0,                                              /* tp_call */
+        (reprfunc)_pymoose_LookupField_repr,            /* tp_str */
+        PyObject_GenericGetAttr,                        /* tp_getattro */
+        PyObject_GenericSetAttr,                        /* tp_setattro */
+        0,                                              /* tp_as_buffer */
         Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
         "LookupField type of moose. This acts like a dict.",
-        0,                                  /* tp_traverse */
-        0,                                  /* tp_clear */
-        0,       /* tp_richcompare */
-        0,                                  /* tp_weaklistoffset */
-        0,                                  /* tp_iter */
-        0,                                  /* tp_iternext */
-        0,                     /* tp_methods */
-        0,                    /* tp_members */
-        0,                                  /* tp_getset */
-        0,                                  /* tp_base */
-        0,                                  /* tp_dict */
-        0,                                  /* tp_descr_get */
-        0,                                  /* tp_descr_set */
-        0,                                  /* tp_dictoffset */
-        (initproc) _pymoose_LookupField_init,   /* tp_init */
-        PyType_GenericAlloc,                /* tp_alloc */
-        0,                  /* tp_new */
-        0,                      /* tp_free */
+        0,                                              /* tp_traverse */
+        0,                                              /* tp_clear */
+        0,                                              /* tp_richcompare */
+        0,                                              /* tp_weaklistoffset */
+        0,                                              /* tp_iter */
+        0,                                              /* tp_iternext */
+        0,                                              /* tp_methods */
+        0,                                              /* tp_members */
+        0,                                              /* tp_getset */
+        0,                                              /* tp_base */
+        0,                                              /* tp_dict */
+        0,                                              /* tp_descr_get */
+        0,                                              /* tp_descr_set */
+        0,                                              /* tp_dictoffset */
+        (initproc) _pymoose_LookupField_init,           /* tp_init */
+        PyType_GenericAlloc,                            /* tp_alloc */
+        0,                                              /* tp_new */
+        0,                                              /* tp_free */
     };
 
     static int _pymoose_LookupField_init(_LookupField * self, PyObject * args)
@@ -737,7 +774,7 @@ extern "C" {
     // Type defs for PyObject of ObjId
     ///////////////////////////////////////////////
     PyTypeObject ObjIdType = { 
-        PyObject_HEAD_INIT(&MooseMetaType)  /* tp_head */
+        PyObject_HEAD_INIT(&MooseClass)  /* tp_head */
         0,                                  /* tp_internal */
         "moose.ObjId",                      /* tp_name */
         sizeof(_ObjId),                     /* tp_basicsize */
@@ -1066,10 +1103,20 @@ extern "C" {
         unsigned int id = 0, data = 0, field = 0, numFieldBits = 0;
         PyObject * dims = NULL;
         PyObject * obj = NULL;
-        static char * kwlist[] = {"id", "dataIndex", "fieldIndex", "numFieldBits", NULL};
-        static char * new_obj_kwlist [] = {"path", "dtype", "dims", NULL};
+        char _id[] = "id";
+        char _dataIndex[] = "dataIndex";
+        char _fieldIndex[] = "fieldIndex";
+        char _numFieldBits[] = "numFieldBits";
+        static char * kwlist[] = {_id, _dataIndex, _fieldIndex, _numFieldBits, NULL};
+        char _path[] = "path";
+        char _dtype[] = "dtype";
+        char _dims[] = "dims";
+        static char * new_obj_kwlist [] = {_path, _dtype, _dims, NULL};
         char * path = NULL, * type = NULL;
-        if (PyArg_ParseTupleAndKeywords(args, kwargs, "I|III:_pymoose_ObjId_init", kwlist, &id, &data, &field, &numFieldBits)){
+        if (PyArg_ParseTupleAndKeywords(args, kwargs,
+                                        "I|III:_pymoose_ObjId_init",
+                                        kwlist,
+                                        &id, &data, &field, &numFieldBits)){
             self->oid_ = ObjId(Id(id), DataId(data, field, numFieldBits));
             return 0;
         }
@@ -1891,25 +1938,10 @@ extern "C" {
         PyObject * arglist[5] = {NULL, NULL, NULL, NULL, NULL};
         ostringstream error;
         error << "_pymoose_ObjId_setDestField: ";
-// #ifndef NDEBUG
-//         cout << "Received object of type:"
-//              << ((PyTypeObject*)PyObject_Type(self))->tp_name << ". ";
-//         if (PyString_Check(self)){
-//             cout << "value: " << PyString_AsString(self) << endl;
-//         } else if (ObjId_Check(self)){
-//             cout << "object: " << Field<string>::get(((_ObjId*)self)->oid_, "name") << endl;
-//         }
-// #endif
         
         if (!PyArg_UnpackTuple(args, "setDestField", minArgs, maxArgs, &arglist[0], &arglist[1], &arglist[2], &arglist[3], arglist[4])){
             return NULL;
         }
-// #ifndef NDEBUG
-//         for (unsigned int ii = 0; ii < maxArgs; ++ii){
-//             cout << "arg " << ii << ":"  << PyString_AsString(PyObject_Str(arglist[ii])) << ", ";
-//         }
-//         cout << endl;
-// #endif
         char * fieldName = PyString_AsString(arglist[0]);
         if (!fieldName){ // not a string, raises TypeError
             return NULL;
@@ -2185,7 +2217,8 @@ extern "C" {
     static PyObject * _pymoose_getFieldNames(PyObject * dummy, PyObject * args)
     {
         char * className = NULL;
-        char * finfoType = "valueFinfo";
+        char _finfoType[] = "valueFinfo";
+        char * finfoType = _finfoType;
         if (!PyArg_ParseTuple(args, "s|s", &className, &finfoType)){
             return NULL;
         }
@@ -2695,9 +2728,6 @@ extern "C" {
         if (define_lookupFinfos(new_class) < 0){            
             return -1;
         }
-        for (PyGetSetDef * start = get_lookupfinfos()[class_name]; start->name; ++start){
-            cout << "class: " << class_name << " lookupfinfo:" <<  start->name << endl;
-        }
         if (PyType_Ready(new_class) < 0){
             cerr << "Fatal error: Could not initialize class '" << class_name << "'" << endl;
             return -1;
@@ -2817,12 +2847,10 @@ extern "C" {
         Id class_id("/classes/" + class_name);
         unsigned int num_lookupFinfos = Field<unsigned int>::get(ObjId(class_id), "num_lookupFinfo");
         PyGetSetDef * lookupFinfos = (PyGetSetDef*)calloc((size_t)(num_lookupFinfos+1), sizeof(PyGetSetDef));
-        // lookupFinfos[num_lookupFinfos] = PyGetSetDef();
         Id lookupFinfoId("/classes/" + class_name + "/lookupFinfo");
         for (unsigned int ii = 0; ii < num_lookupFinfos; ++ii){
             ObjId lookupFinfo(lookupFinfoId, DataId(0, ii, 0));
             string lookupFinfo_name = Field<string>::get(lookupFinfo, "name");
-            cout << "Defining " << class_name << "." << lookupFinfo_name << endl;
             lookupFinfos[ii].name = (char*)calloc(lookupFinfo_name.size() + 1, sizeof(char));
             strncpy(lookupFinfos[ii].name, const_cast<char*>(lookupFinfo_name.c_str()), lookupFinfo_name.size());
             lookupFinfos[ii].get = (getter)_get_lookupField;
@@ -2906,24 +2934,38 @@ extern "C" {
     ///////////////////////////////////////////////////////////
     // module initialization 
     ///////////////////////////////////////////////////////////
+    PyDoc_STRVAR(moose_module_documentation,
+"MOOSE = Multiscale Object-Oriented Simulation Environment.\n"
+"\n"
+"Moose is the core of a modern software platform for the simulation\n"
+"of neural systems ranging from subcellular components and\n"
+"biochemical reactions to complex models of single neurons, large\n"
+"networks, and systems-level processes.");
+    
+                 
     PyMODINIT_FUNC init_moose()
     {
-        PyObject *moose_module = Py_InitModule3("_moose", MooseMethods, "MOOSE = Multiscale Object-Oriented Simulation Environment.");
-        if (moose_module == NULL)
-            return;
         char moose_err[] = "moose.error";
+        char moose_type[] = "moose.MooseType";
+        PyObject *moose_module = Py_InitModule3("_moose",
+                                                MooseMethods,
+                                                moose_module_documentation);
+        if (moose_module == NULL){
+            return;
+        }
         MooseError = PyErr_NewException(moose_err, NULL, NULL);
-        Py_INCREF(MooseError);
-        PyModule_AddObject(moose_module, "error", MooseError);
-
-        // Add MooseMetaType
-        if(PyType_Ready(&MooseMetaType) < 0){
+        if (MooseError != NULL){
+            Py_INCREF(MooseError);
+            PyModule_AddObject(moose_module, "error", MooseError);
+        }
+        // Add MooseClass
+        if(PyType_Ready(&MooseClass) < 0){
             PyErr_Print();
             exit(-1);
         };
             
-        Py_INCREF(&MooseMetaType);
-        PyModule_AddObject(moose_module, "MooseMeta", (PyObject*)&MooseMetaType);
+        Py_INCREF(&MooseClass);
+        PyModule_AddObject(moose_module, moose_type, (PyObject*)&MooseClass);
 
         // Add Id type
         Py_TYPE(&IdType) = &PyType_Type;
@@ -2937,8 +2979,7 @@ extern "C" {
         PyModule_AddObject(moose_module, "Id", (PyObject*)&IdType);
 
         // Add ObjId type
-        Py_TYPE(&ObjIdType) = &MooseMetaType;
-        // ObjIdType.ob_type =  &MooseMetaType;
+        Py_TYPE(&ObjIdType) = &MooseClass;
         ObjIdType.tp_new = PyType_GenericNew;
         ObjIdType.tp_free = _PyObject_Del;
         if (PyType_Ready(&ObjIdType) < 0){
