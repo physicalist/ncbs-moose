@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Apr 13 18:16:04 2012 (+0530)
+// Last-Updated: Sat Apr 14 14:33:54 2012 (+0530)
 //           By: subha
-//     Update #: 838
+//     Update #: 854
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -64,58 +64,57 @@ extern "C" {
         PyObject_HEAD
         ObjId owner;
         char * name;
-    } _LookupField;
+    } _Field;
     
     //////////////////////////////////////////
     // Methods for Id class
     //////////////////////////////////////////
-    static int _pymoose_Id_init(_Id * self, PyObject * args, PyObject * kwargs);
-    static long _pymoose_Id_hash(_Id * self);
+    static int moose_Id_init(_Id * self, PyObject * args, PyObject * kwargs);
+    static long moose_Id_hash(_Id * self);
     
-    static PyObject * _pymoose_Id_repr(_Id * self);
-    static PyObject * _pymoose_Id_str(_Id * self);
-    static PyObject * _pymoose_Id_delete(_Id * self, PyObject * args);
-    static PyObject * _pymoose_Id_getValue(_Id * self, PyObject * args);
-    static PyObject * _pymoose_Id_getPath(_Id * self, PyObject * args);
+    static PyObject * moose_Id_repr(_Id * self);
+    static PyObject * moose_Id_str(_Id * self);
+    static PyObject * moose_Id_delete(_Id * self, PyObject * args);
+    static PyObject * moose_Id_getValue(_Id * self, PyObject * args);
+    static PyObject * moose_Id_getPath(_Id * self, PyObject * args);
     /* Id functions to allow part of sequence protocol */
-    static Py_ssize_t _pymoose_Id_getLength(_Id * self);
-    static PyObject * _pymoose_Id_getItem(_Id * self, Py_ssize_t index);
-    static PyObject * _pymoose_Id_getSlice(_Id * self, PyObject * args);    
-    static PyObject * _pymoose_Id_getShape(_Id * self, PyObject * args);    
-    static PyObject * _pymoose_Id_richCompare(_Id * self, PyObject * args, int op);
-    static int _pymoose_Id_contains(_Id * self, PyObject * args);
+    static Py_ssize_t moose_Id_getLength(_Id * self);
+    static PyObject * moose_Id_getItem(_Id * self, Py_ssize_t index);
+    static PyObject * moose_Id_getSlice(_Id * self, PyObject * args);    
+    static PyObject * moose_Id_getShape(_Id * self, PyObject * args);    
+    static PyObject * moose_Id_richCompare(_Id * self, PyObject * args, int op);
+    static int moose_Id_contains(_Id * self, PyObject * args);
     ///////////////////////////////////////////
     // Methods for ObjId class
     ///////////////////////////////////////////
-    static int _pymoose_ObjId_init(_ObjId * self, PyObject * args, PyObject * kwargs);
-    static long _pymoose_ObjId_hash(_ObjId * self);
-    static PyObject * _pymoose_ObjId_repr(_ObjId * self);
-    // static PyObject * _pymoose_ObjId_str(_ObjId * self);
-    static PyObject * _pymoose_ObjId_getattro(_ObjId * self, PyObject * attr);
-    static PyObject * _pymoose_ObjId_getField(_ObjId * self, PyObject * args);
-    static int _pymoose_ObjId_setattro(_ObjId * self, PyObject * attr, PyObject * value);
-    static PyObject * _pymoose_ObjId_setField(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_getLookupField(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_setLookupField(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_setDestField(PyObject * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_getFieldNames(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_getFieldType(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_getDataIndex(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_getFieldIndex(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_getNeighbors(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_getId(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_connect(_ObjId * self, PyObject * args);
-    static PyObject * _pymoose_ObjId_richCompare(_ObjId * self, PyObject * args, int op);
+    static int moose_ObjId_init(_ObjId * self, PyObject * args, PyObject * kwargs);
+    static long moose_ObjId_hash(_ObjId * self);
+    static PyObject * moose_ObjId_repr(_ObjId * self);
+    static PyObject * moose_ObjId_getattro(_ObjId * self, PyObject * attr);
+    static PyObject * moose_ObjId_getField(_ObjId * self, PyObject * args);
+    static int moose_ObjId_setattro(_ObjId * self, PyObject * attr, PyObject * value);
+    static PyObject * moose_ObjId_setField(_ObjId * self, PyObject * args);
+    static PyObject * moose_ObjId_getLookupField(_ObjId * self, PyObject * args);
+    static PyObject * moose_ObjId_setLookupField(_ObjId * self, PyObject * args);
+    static PyObject * moose_ObjId_setDestField(PyObject * self, PyObject * args);
+    static PyObject * moose_ObjId_getFieldNames(_ObjId * self, PyObject * args);
+    static PyObject * moose_ObjId_getFieldType(_ObjId * self, PyObject * args);
+    static PyObject * moose_ObjId_getDataIndex(_ObjId * self, PyObject * args);
+    static PyObject * moose_ObjId_getFieldIndex(_ObjId * self, PyObject * args);
+    static PyObject * moose_ObjId_getNeighbors(_ObjId * self, PyObject * args);
+    static PyObject * moose_ObjId_getId(_ObjId * self, PyObject * args);
+    static PyObject * moose_ObjId_connect(_ObjId * self, PyObject * args);
+    static PyObject * moose_ObjId_richCompare(_ObjId * self, PyObject * args, int op);
 
     ////////////////////////////////////////////
     // Methods for LookupField
     ////////////////////////////////////////////
-    static int _pymoose_LookupField_init(_LookupField * self, PyObject * args);
-    static PyObject * _pymoose_LookupField_getItem(_LookupField * self, PyObject * key);
-    static int _pymoose_LookupField_setItem(_LookupField * self, PyObject * key, PyObject * value);
-    static long _pymoose_LookupField_hash(_LookupField * self);
-    static PyObject * _pymoose_LookupField_repr(_LookupField * self);
-    static void _pymoose_LookupField_dealloc(_LookupField * self);
+    static int moose_Field_init(_Field * self, PyObject * args, PyObject * kwds);
+    static long moose_Field_hash(_Field * self);
+    static PyObject * moose_Field_repr(_Field * self);
+    static void moose_Field_dealloc(_Field * self);
+    static PyObject * moose_LookupField_getItem(_Field * self, PyObject * key);
+    static int moose_LookupField_setItem(_Field * self, PyObject * key, PyObject * value);
     
     
     ////////////////////////////////////////////////
@@ -124,28 +123,28 @@ extern "C" {
 
 
     // The following are global functions
-    static PyObject * _pymoose_useClock(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_setClock(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_start(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_reinit(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_stop(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_isRunning(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_exists(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_loadModel(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_setCwe(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_getCwe(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_copy(PyObject * dummy, PyObject * args, PyObject * kwargs);
-    static PyObject * _pymoose_move(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_delete(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_connect(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_getFieldDict(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_getField(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_syncDataHandler(PyObject * dummy, _Id * target);
-    static PyObject * _pymoose_seed(PyObject * dummy, PyObject * args);
-    static PyObject * _pymoose_wildcardFind(PyObject * dummy, PyObject * args);
+    static PyObject * moose_useClock(PyObject * dummy, PyObject * args);
+    static PyObject * moose_setClock(PyObject * dummy, PyObject * args);
+    static PyObject * moose_start(PyObject * dummy, PyObject * args);
+    static PyObject * moose_reinit(PyObject * dummy, PyObject * args);
+    static PyObject * moose_stop(PyObject * dummy, PyObject * args);
+    static PyObject * moose_isRunning(PyObject * dummy, PyObject * args);
+    static PyObject * moose_exists(PyObject * dummy, PyObject * args);
+    static PyObject * moose_loadModel(PyObject * dummy, PyObject * args);
+    static PyObject * moose_setCwe(PyObject * dummy, PyObject * args);
+    static PyObject * moose_getCwe(PyObject * dummy, PyObject * args);
+    static PyObject * moose_copy(PyObject * dummy, PyObject * args, PyObject * kwargs);
+    static PyObject * moose_move(PyObject * dummy, PyObject * args);
+    static PyObject * moose_delete(PyObject * dummy, PyObject * args);
+    static PyObject * moose_connect(PyObject * dummy, PyObject * args);
+    static PyObject * moose_getFieldDict(PyObject * dummy, PyObject * args);
+    static PyObject * moose_getField(PyObject * dummy, PyObject * args);
+    static PyObject * moose_syncDataHandler(PyObject * dummy, _Id * target);
+    static PyObject * moose_seed(PyObject * dummy, PyObject * args);
+    static PyObject * moose_wildcardFind(PyObject * dummy, PyObject * args);
     // This should not be required or accessible to the user. Put here
     // for debugging threading issue.
-    static PyObject * _pymoose_quit(PyObject * dummy);
+    static PyObject * moose_quit(PyObject * dummy);
 
 
     static PyObject * getLookupField(ObjId oid, char * fieldName, PyObject * key);
@@ -155,6 +154,7 @@ extern "C" {
     static int defineAllClasses(PyObject* module);
     static int define_lookupFinfos(PyTypeObject * pyclass);
     static PyObject * _get_lookupField(PyObject * self, void * closure);
+    static PyObject * _setDestField(ObjId oid, PyObject * args);
     PyMODINIT_FUNC init_moose();
 
 
@@ -282,7 +282,7 @@ template <class A> void * to_cpp(PyObject * object)
 }
 
 /// Set a destinfo that takes a vector argument
-template <class A> inline PyObject* _set_vector_destFinfo(_ObjId* obj, string fieldName, int argIndex, PyObject * value)
+template <class A> inline PyObject* _set_vector_destFinfo(ObjId obj, string fieldName, int argIndex, PyObject * value)
 {
     ostringstream error;
     if (!PySequence_Check(value)){                                  
@@ -297,7 +297,7 @@ template <class A> inline PyObject* _set_vector_destFinfo(_ObjId* obj, string fi
     if (_value == NULL){
         return NULL;
     }
-    bool ret = SetGet1< vector < A > >::set(obj->oid_, fieldName, *_value);
+    bool ret = SetGet1< vector < A > >::set(obj, fieldName, *_value);
     delete _value;
     if (ret){
         Py_RETURN_TRUE;
