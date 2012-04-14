@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Sat Apr 14 14:33:54 2012 (+0530)
-//           By: subha
-//     Update #: 854
+// Last-Updated: Sat Apr 14 23:01:16 2012 (+0530)
+//           By: Subhasis Ray
+//     Update #: 855
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -87,7 +87,7 @@ extern "C" {
     ///////////////////////////////////////////
     // Methods for ObjId class
     ///////////////////////////////////////////
-    static int moose_ObjId_init(_ObjId * self, PyObject * args, PyObject * kwargs);
+    static int moose_ObjId_init(PyObject * self, PyObject * args, PyObject * kwargs);
     static long moose_ObjId_hash(_ObjId * self);
     static PyObject * moose_ObjId_repr(_ObjId * self);
     static PyObject * moose_ObjId_getattro(_ObjId * self, PyObject * attr);

@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Sat Apr 14 17:54:19 2012 (+0530)
-//           By: subha
-//     Update #: 6907
+// Last-Updated: Sat Apr 14 23:18:16 2012 (+0530)
+//           By: Subhasis Ray
+//     Update #: 6929
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -383,7 +383,7 @@ extern "C" {
             return -1;
         }
         tokenize(typestring, ",", typeVec);
-        if (typeVec.size() > maxArgs){
+        if ((int)typeVec.size() > maxArgs){
             return -1;
         }
         for (unsigned int ii = 0; ii < typeVec.size() ; ++ii){
@@ -461,7 +461,9 @@ extern "C" {
     // Field Type definition
     //////////////////////////
 
-    
+    /**
+       Initialize field with ObjId and fieldName.
+    */
     static int moose_Field_init(_Field * self, PyObject * args, PyObject * kwargs)
     {        
         PyObject * owner;
@@ -476,16 +478,6 @@ extern "C" {
         strncpy(self->name, fieldName, size);
         return 0;
     }
-    
-    PyDoc_STRVAR(Field_init_documentation,
-                 "Initializer for Field objects.\n"
-                 "\n"
-                 "Parameters\n"
-                 "----------\n"
-                 "owner : ObjId\n"
-                 "\tThe object whose field this is.\n"
-                 "name : string\n"
-                 "\tName of this field.");
 
     /// Return the hash of the string `{objectpath}.{fieldName}`
     static long moose_Field_hash(_Field * self)
@@ -513,10 +505,11 @@ extern "C" {
         }
         ((PyObject*) self)->ob_type->tp_free(self);
     }
-
+    char _name[] = "name";
+    // PyDoc_STRVAR(moose_Field_name_documentation, "name of the field.")    
     static PyMemberDef moose_FieldMembers[] = {
-        {"name", T_STRING, offsetof(_Field, name), READONLY,
-         PyDoc_STR("name of the field.")},
+        {_name, T_STRING, offsetof(_Field, name), READONLY,
+        0},
     };
 
     PyDoc_STRVAR(moose_Field_documentation,
@@ -648,7 +641,7 @@ extern "C" {
     {
         // Again, this does not do much.
         
-        printf("moose_MooseClass_getattro\n");
+        cout << "moose_MooseClass_getattro:" << ((PyTypeObject*)self)->tp_name << ": " << PyString_AsString(name) << endl;
         return PyBaseObject_Type.tp_getattro(self, name);
     }
 
@@ -911,9 +904,13 @@ extern "C" {
     static int moose_Id_init(_Id * self, PyObject * args, PyObject * kwds)
     {
         extern PyTypeObject IdType;
-        static char * kwlist[] = {"path", "dtype", "dims", NULL};
+        char _path[] = "path";
+        char _dtype[] = "dtype";
+        char _dims[] = "dims";
+        static char * kwlist[] = {_path, _dtype, _dims, NULL};
         char * path = NULL;
-        char * type = "Neutral";
+        char _default_type[] = "Neutral";
+        char *type = _default_type;
         PyObject * dims = NULL;
         PyObject * src = NULL;
         unsigned int id = 0;
@@ -1184,7 +1181,7 @@ extern "C" {
     // ObjId functions.
     /////////////////////////////////////////////////////
 
-    static int moose_ObjId_init(_ObjId * self, PyObject * args, PyObject * kwargs)
+    static int moose_ObjId_init(PyObject * self, PyObject * args, PyObject * kwargs)
     {
         extern PyTypeObject ObjIdType;
         unsigned int id = 0, data = 0, field = 0, numFieldBits = 0;
@@ -1200,20 +1197,32 @@ extern "C" {
         char _dims[] = "dims";
         static char * new_obj_kwlist [] = {_path, _dtype, _dims, NULL};
         char * path = NULL, * type = NULL;
+        if (self && !ObjId_SubtypeCheck(self)){
+            ostringstream error;
+            error << "Expected an ObjId or subclass. Found "
+                  << self->ob_type->tp_name;            
+            PyErr_SetString(PyExc_TypeError, error.str().c_str());
+            return -1;
+        }
+        cout << "Instantiating type: " << self->ob_type->tp_name << endl;
+        _ObjId * instance = (_ObjId*)self;
         if (PyArg_ParseTupleAndKeywords(args, kwargs,
                                         "I|III:moose_ObjId_init",
                                         kwlist,
                                         &id, &data, &field, &numFieldBits)){
-            self->oid_ = ObjId(Id(id), DataId(data, field, numFieldBits));
+            instance->oid_ = ObjId(Id(id), DataId(data, field, numFieldBits));
             return 0;
         }
         PyErr_Clear();
         if (PyArg_ParseTupleAndKeywords(args, kwargs, "s|sO:moose_ObjId_init", new_obj_kwlist, &path, &type, &dims)){
-            self->oid_ = ObjId(path);
-            if (ObjId::bad == self->oid_){
+            instance->oid_ = ObjId(path);
+            if (ObjId::bad == instance->oid_){
                 if (type == NULL){
-                    PyTypeObject * base = ((PyObject*)self)->ob_type;
-                    while (get_moose_classes().find(base->tp_name) == get_moose_classes().end()){
+                    // No type specified, go through the class hierarchy
+                    PyTypeObject * base = self->ob_type;
+                    while ((base != &ObjIdType) &&
+                           (get_moose_classes().find(base->tp_name) ==
+                            get_moose_classes().end())){
                         base = base->tp_base;
                     }
                     type = const_cast<char*>(base->tp_name);
@@ -1242,7 +1251,7 @@ extern "C" {
                 }
                 Py_DECREF(newkwargs);
                 Py_DECREF(newargs);
-                self->oid_ = ObjId(new_id->id_);
+                instance->oid_ = ObjId(new_id->id_);
                 Py_DECREF(new_id);
             }
             return 0;            
@@ -1251,15 +1260,15 @@ extern "C" {
         if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|III:moose_ObjId_init", const_cast<char**>(kwlist), &obj, &data, &field, &numFieldBits)){
             // If first argument is an Id object, construct an ObjId out of it
             if (Id_Check(obj)){
-                self->oid_ = ObjId(((_Id*)obj)->id_, DataId(data, field, numFieldBits));
+                instance->oid_ = ObjId(((_Id*)obj)->id_, DataId(data, field, numFieldBits));
                 return 0;
             } else if (ObjId_Check(obj)){
-                self->oid_ = ((_ObjId*)obj)->oid_;
+                instance->oid_ = ((_ObjId*)obj)->oid_;
                 return 0;
             } else if (PyString_Check(obj)){
                 string path(PyString_AsString(obj));
-                self->oid_ = ObjId(path);
-                if (ObjId::bad == self->oid_){
+                instance->oid_ = ObjId(path);
+                if (ObjId::bad == instance->oid_){
                     PyErr_SetString(PyExc_ValueError, "Path does not match any existing object. Give an arrayelement compatible path to create a new object.");
                     return -1;
                 }
