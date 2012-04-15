@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Sat Apr 14 23:18:16 2012 (+0530)
+// Last-Updated: Sun Apr 15 08:18:08 2012 (+0530)
 //           By: Subhasis Ray
-//     Update #: 6929
+//     Update #: 6932
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -2802,12 +2802,14 @@ extern "C" {
             return -1;
         }
         string baseclass_name = Field<string>::get(ObjId(class_id), "baseClass");
+        cout << "defining " << class_name << ", baseclass " << baseclass_name << endl;
         // If base class has not already been defined, define it
         // first. We don't want to do the recursion unnecessarily
         // (avoid too many function calls and deep recursion), hence
         // check in the set.
         map<string, PyTypeObject*>::iterator base_iter = get_moose_classes().find(baseclass_name);
         if (base_iter == get_moose_classes().end() && baseclass_name != "none"){
+            cout << "defining baseclass " << baseclass_name << endl;
             if (defineClass(module, baseclass_name) < 0){
                 return -1;
             }
@@ -2824,6 +2826,7 @@ extern "C" {
         new_class->tp_free = _PyObject_Del;
         // new_class->tp_init = (initproc)moose_ObjId_init;
         new_class->ob_size = 0;
+        base_iter = get_moose_classes().find(baseclass_name);
         if (base_iter == get_moose_classes().end()){
             new_class->tp_base = &ObjIdType;
             Py_TYPE(new_class) = &MooseClass;
