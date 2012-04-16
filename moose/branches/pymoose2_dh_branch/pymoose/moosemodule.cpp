@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Apr 16 10:57:23 2012 (+0530)
-//           By: Subhasis Ray
-//     Update #: 6971
+// Last-Updated: Mon Apr 16 21:51:13 2012 (+0530)
+//           By: subha
+//     Update #: 7071
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -185,6 +185,7 @@ extern "C" {
     {
         const map<string, string>& argmap = getArgMap();
         vector<string> args;
+        args.push_back("moose");
         map<string, string>::const_iterator it;
         it = argmap.find("SINGLETHREADED");
         if (it != argmap.end()){
@@ -505,13 +506,6 @@ extern "C" {
         }
         ((PyObject*) self)->ob_type->tp_free(self);
     }
-    char _name[] = "name";
-    // PyDoc_STRVAR(moose_Field_name_documentation, "name of the field.")    
-    static PyMemberDef moose_FieldMembers[] = {
-        {_name, T_STRING, offsetof(_Field, name), READONLY,
-        0},
-    };
-
     PyDoc_STRVAR(moose_Field_documentation,
                  "Base class for MOOSE fields.\n"
                  "\n"
@@ -548,9 +542,9 @@ extern "C" {
         0,                                              /* tp_iter */
         0,                                              /* tp_iternext */
         0,                                              /* tp_methods */
-        moose_FieldMembers,                             /* tp_members */
+        0,                                              /* tp_members */
         0,                                              /* tp_getset */
-        0,                                   /* tp_base */
+        0,                                              /* tp_base */
         0,                                              /* tp_dict */
         0,                                              /* tp_descr_get */
         0,                                              /* tp_descr_set */
@@ -610,86 +604,6 @@ extern "C" {
                  "DestField is a method field.");
 
 
-    ///////////////////////////////////////////////////
-    // Metaclass
-    ///////////////////////////////////////////////////
-
-    PyObject * moose_MooseClass_new(PyTypeObject * subtype, PyObject * args, PyObject * kwargs)
-    {
-        PyObject * instance = subtype->tp_alloc(subtype, 1);
-        cout << "moose_MooseClass_new " << subtype->tp_name << PyObject_Str(args) << endl;
-        return instance;
-    }
-        
-    int moose_MooseClass_init(PyObject* self, PyObject* args, PyObject *kwargs) {
-        // May be we can move the destFinfo and lookupFinfo creation
-        // here. Problem is ObjId is statically defined. And this init
-        // method gets called only if a Python class sets its
-        // __metaclass__ to MooseClass.
-
-        // The only purpose of this is to avoid an assertion failure
-        // with Python debug version (something to do with the
-        // TP_FLAGS.
-        
-        printf("before str\n");
-        PyObject_Str(self);
-        printf("after str\n");
-        return 0;
-    }
-
-    PyObject * moose_MooseClass_getattro(PyObject * self, PyObject * name)
-    {
-        // Again, this does not do much.
-        
-        cout << "moose_MooseClass_getattro:" << ((PyTypeObject*)self)->tp_name << ": " << PyString_AsString(name) << endl;
-        return PyBaseObject_Type.tp_getattro(self, name);
-    }
-
-    // Meta class for extending MOOSE classes in Python.
-    // See: http://mail.python.org/pipermail/python-dev/2009-July/090542.html
-    static PyTypeObject MooseClass = {
-        PyObject_HEAD_INIT(0)               /* tp_head */
-        0,                                  /* tp_internal */
-        "moose.MooseClass",                  /* tp_name */
-        0,                                  /* tp_basicsize */
-        0,                                  /* tp_itemsize */
-        0,                                  /* tp_dealloc */
-        0,                                  /* tp_print */
-        0,                                  /* tp_getattr */
-        0,                                  /* tp_setattr */
-        0,                                  /* tp_compare */
-        0,                                  /* tp_repr */
-        0,                                  /* tp_as_number */
-        0,                                  /* tp_as_sequence */
-        0,                                  /* tp_as_mapping */
-        0,                                  /* tp_hash */
-        0,                                  /* tp_call */
-        0,                                  /* tp_str */
-        moose_MooseClass_getattro,       /* tp_getattro */
-        0,                                  /* tp_setattro */
-        0,                                  /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-        "Meta type for defining moose classes.", /* tp_doc */
-        0,                                  /* tp_traverse */
-        0,                                  /* tp_clear */
-        0,                                  /* tp_richcompare */
-        0,                                  /* tp_weaklistoffset */
-        0,                                  /* tp_iter */
-        0,                                  /* tp_iternext */
-        0,                                  /* tp_methods */
-        0,                                  /* tp_members */
-        0,                                  /* tp_getset */
-        &PyType_Type,                       /* tp_base */
-        0,                                  /* tp_dict */
-        0,                                  /* tp_descr_get */
-        0,                                  /* tp_descr_set */
-        0,                                  /* tp_dictoffset */
-        (initproc)moose_MooseClass_init, /* tp_init */
-        0,                                  /* tp_alloc */
-        0,                                  /* tp_new */
-        0,                                  /* tp_free */        
-    };
-
     ///////////////////////////////////////////////
     // Python method lists for PyObject of Id
     ///////////////////////////////////////////////
@@ -745,7 +659,7 @@ extern "C" {
         PyObject_GenericGetAttr,            /* tp_getattro */
         PyObject_GenericSetAttr,            /* tp_setattro */
         0,                                  /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE,
         "Id object of moose. Which can act as an array object.",
         0,                                  /* tp_traverse */
         0,                                  /* tp_clear */
@@ -874,7 +788,7 @@ extern "C" {
         (getattrofunc)moose_ObjId_getattro, /* tp_getattro */
         (setattrofunc)moose_ObjId_setattro, /* tp_setattro */
         0,                                  /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE,
         "Individual moose object contained in an array-type object.",
         0,                                  /* tp_traverse */
         0,                                  /* tp_clear */
@@ -2796,7 +2710,7 @@ extern "C" {
         }
         Id class_id("/classes/" + class_name);
         if (class_id == Id() ){
-            if (class_name == "ObjId" || class_name == "none"){
+            if (class_name == "moose.ObjId" || class_name == "none"){
                 return 0;
             }
             ostringstream err;
@@ -2817,21 +2731,17 @@ extern "C" {
         string str = class_name;
         new_class->tp_name = (char *)calloc(str.length()+1, sizeof(char));
         strncpy(const_cast<char*>(new_class->tp_name), str.c_str(), str.length()+1);
-        new_class->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+        new_class->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE;
         str = Field<string>::get(ObjId(class_id), "docs");
         new_class->tp_doc = (char *)calloc(str.length()+1, sizeof(char));
         strncpy(const_cast<char*>(new_class->tp_doc), str.c_str(), str.length()+1);
-        // new_class->tp_new = PyType_GenericNew;
-        // new_class->tp_free = _PyObject_Del;
-        // new_class->tp_init = (initproc)moose_ObjId_init;
-        // new_class->ob_size = 0;
         map<string, PyTypeObject*>::iterator base_iter = get_moose_classes().find(baseclass_name);
         if (base_iter == get_moose_classes().end()){
             new_class->tp_base = &ObjIdType;
-            Py_TYPE(new_class) = &PyType_Type;
         } else {
             new_class->tp_base = base_iter->second;
         }
+        new_class->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE;
         cout << "Base class of " << new_class->tp_name << ":" << new_class->tp_base->tp_name << endl;
         // Define all the lookupFields
         if (define_lookupFinfos(new_class) < 0){            
@@ -2841,6 +2751,9 @@ extern "C" {
         // Define the destFields
         if (define_destFinfos(module, new_class, class_id) < 0){
             return -1;
+        }
+        for(PyGetSetDef * p = get_destfinfos()[class_name]; p->name != NULL; ++p){
+            printf("%p: %s: destfinfo: %s\n", (void*)p, class_name.c_str(), p->name);
         }
         clock_t end = clock();
         
@@ -2902,8 +2815,15 @@ extern "C" {
         unsigned int num_destFinfos = Field<unsigned int>::get(ObjId(class_id),
                                                                "num_destFinfo");
         Id destFinfoId("/classes/" + class_name + "/destFinfo");
-        vector<PyGetSetDef> destfield_methoddefs;
-        
+        // We do not know the final number of user-accessible
+        // destFinfos as we have to ignore the destFinfos starting
+        // with get/set. So use a vector instead of C array.
+        PyGetSetDef * destfield_methoddefs = (PyGetSetDef*)calloc(num_destFinfos+1, sizeof(PyGetSetDef));
+        if (!destfield_methoddefs){
+            cerr << "moosemodule.cpp: define_destFinfos: Failed to allocate memory." << endl;
+            return -1;
+        }
+        int curr_index = 0;
         for (unsigned int ii = 0; ii < num_destFinfos; ++ii){
             ObjId destFinfo(destFinfoId, DataId(0, ii, 0));
             string destFinfo_name = Field<string>::get(destFinfo, "name");
@@ -2912,20 +2832,34 @@ extern "C" {
             if (destFinfo_name.find("get_") == 0 || destFinfo_name.find("set_") == 0){
                 continue;
             }
-            PyGetSetDef destFieldGetSet;
-            destFieldGetSet.name = (char*)calloc(destFinfo_name.size() + 1, sizeof(char));
-            strncpy(destFieldGetSet.name, const_cast<char*>(destFinfo_name.c_str()), destFinfo_name.size());
+            PyGetSetDef * destFieldGetSet = destfield_methoddefs + curr_index;
+            ++curr_index;
+            destFieldGetSet->name = (char*)calloc(destFinfo_name.size() + 1, sizeof(char));
+            strncpy(destFieldGetSet->name, const_cast<char*>(destFinfo_name.c_str()), destFinfo_name.size());
+            cout << "defining: " << class_name << ": " << destFieldGetSet->name << endl;
+                   
+
             string docs = Field<string>::get(destFinfo, "docs");
-            destFieldGetSet.doc = (char*)calloc(docs.length()+1, sizeof(char));
-            strncpy(destFieldGetSet.doc, docs.c_str(), docs.length());
-            destFieldGetSet.get = (getter)_get_destField;
+            destFieldGetSet->doc = (char*)calloc(docs.length()+1, sizeof(char));
+            strncpy(destFieldGetSet->doc, docs.c_str(), docs.length());
+            destFieldGetSet->get = (getter)_get_destField;
             PyObject * args = PyTuple_New(1);
             PyTuple_SetItem(args, 0, PyString_FromString(destFinfo_name.c_str()));
-            destFieldGetSet.closure = (void*)args;
-            destfield_methoddefs.push_back(destFieldGetSet);
+            destFieldGetSet->closure = (void*)args;
         } // ! for
-        PyGetSetDef * getsetdef_list = (PyGetSetDef*)calloc(destfield_methoddefs.size()+1, sizeof(PyGetSetDef));        
-        memcpy(getsetdef_list, &destfield_methoddefs[0], destfield_methoddefs.size() * sizeof(PyGetSetDef));
+        
+        // Resize the list to fit the actually defined number.
+        // One extra entry for the NULL terminator
+        // assert(curr_index <= num_destFinfos);
+        // destfield_methoddefs = (PyGetSetDef*)realloc(destfield_methoddefs, (curr_index+1)*sizeof(PyGetSetDef));
+        // if (!destfield_methoddefs){
+        //     cerr << "moosemodule.cpp: define_destFinfos: Failed to allocate memory." << endl;
+        //     return -1;
+        // }
+
+        // destfield_methoddefs[curr_index] = {NULL, NULL, NULL, NULL, NULL};        
+        get_destfinfos().insert(pair<string, PyGetSetDef *>(class_name, destfield_methoddefs));
+        pyclass->tp_getset = destfield_methoddefs;
         return 0;
     }
 
@@ -3078,33 +3012,41 @@ extern "C" {
                  
     PyMODINIT_FUNC init_moose()
     {
+        // First of all create the Shell.  We convert the environment
+        // variables into c-like argv array
+        vector<string> args = setup_runtime_env();
+        int argc = args.size();
+        char ** argv = (char**)calloc(args.size(), sizeof(char*));
+        for (int ii = 0; ii < argc; ++ii){
+            argv[ii] = (char*)(calloc(args[ii].length()+1, sizeof(char)));
+            strncpy(argv[ii], args[ii].c_str(), args[ii].length()+1);            
+        }
+        create_shell(argc, argv);
+        for (int ii = 1; ii < argc; ++ii){
+            free(argv[ii]);
+        }
+        // Now initialize the module
         char moose_err[] = "moose.error";
-        char moose_type[] = "moose.MooseType";
         PyObject *moose_module = Py_InitModule3("_moose",
                                                 MooseMethods,
                                                 moose_module_documentation);
         if (moose_module == NULL){
             return;
         }
+
+        int registered = Py_AtExit(&finalize);
+        if (registered != 0){
+            cerr << "Failed to register finalize() to be called at exit. " << endl;
+        }
+
         MooseError = PyErr_NewException(moose_err, NULL, NULL);
         if (MooseError != NULL){
             Py_INCREF(MooseError);
             PyModule_AddObject(moose_module, "error", MooseError);
         }
         
-        // Add MooseClass
-        Py_TYPE(&MooseClass) = &PyType_Type;    
-        if(PyType_Ready(&MooseClass) < 0){
-            PyErr_Print();
-            exit(-1);
-        };            
-        Py_INCREF(&MooseClass);
-        PyModule_AddObject(moose_module, moose_type, (PyObject*)&MooseClass);
-
         // Add Id type
         Py_TYPE(&IdType) = &PyType_Type;
-        IdType.tp_new = PyType_GenericNew;
-        IdType.tp_free = _PyObject_Del;
         if (PyType_Ready(&IdType) < 0){
             PyErr_Print();
             exit(-1);
@@ -3113,9 +3055,7 @@ extern "C" {
         PyModule_AddObject(moose_module, "Id", (PyObject*)&IdType);
 
         // Add ObjId type
-        // Py_TYPE(&ObjIdType) = &MooseClass;
-        ObjIdType.tp_new = PyType_GenericNew;
-        ObjIdType.tp_free = _PyObject_Del;
+        Py_TYPE(&ObjIdType) = &PyType_Type;
         if (PyType_Ready(&ObjIdType) < 0){
             PyErr_Print();
             exit(-1);
@@ -3124,27 +3064,19 @@ extern "C" {
         PyModule_AddObject(moose_module, "ObjId", (PyObject*)&ObjIdType);
 
         // Add Field type        
+        Py_TYPE(&moose_Field) = &PyType_Type;
         if (PyType_Ready(&moose_Field) < 0){
             PyErr_Print();
             exit(-1);
-        }        
+        }
 
         // Add LookupField type
-
-        moose_LookupField.tp_flags = Py_TPFLAGS_DEFAULT;
-        // moose_LookupField.tp_new = PyType_GenericNew;
-        // moose_LookupField.tp_free = _PyObject_Del;
-        // moose_LookupField.tp_init = (initproc)moose_ObjId_init;
+        Py_TYPE(&moose_LookupField) = &PyType_Type;        
+        moose_LookupField.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE;
         moose_LookupField.tp_base = &moose_Field;
         moose_LookupField.tp_name = "moose.LookupField";
-        // moose_LookupField.ob_size = sizeof(_Field);
-        // moose_LookupField.ob_type = &PyType_Type;
-        // moose_LookupField.tp_new = PyType_GenericNew;
-        // // moose_LookupField.tp_init = (initproc)moose_Field_init;
-        // moose_LookupField.tp_free = _PyObject_Del;
         moose_LookupField.tp_doc = LookupField_documentation;
-        moose_LookupField.tp_as_mapping = &LookupFieldMappingMethods;
-        
+        moose_LookupField.tp_as_mapping = &LookupFieldMappingMethods;        
         if (PyType_Ready(&moose_LookupField) < 0){
             PyErr_Print();
             exit(-1);
@@ -3153,37 +3085,19 @@ extern "C" {
         PyModule_AddObject(moose_module, "LookupField", (PyObject*)&moose_LookupField);
 
         // Add DestField type
-        moose_DestField.tp_flags = Py_TPFLAGS_DEFAULT;
-        // Py_TYPE(&moose_DestField) = &PyType_Type;
+        Py_TYPE(&moose_DestField) = &PyType_Type;
+        moose_DestField.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE;
         moose_DestField.tp_name = "moose.DestField";
-        // moose_DestField.tp_size = sizeof(_Field);
         moose_DestField.tp_base = &moose_Field;
-        // moose_DestField.tp_new = PyType_GenericNew;
-        // moose_DestField.tp_init = (initproc)moose_Field_init;
-        moose_DestField.tp_free = _PyObject_Del;
         moose_DestField.tp_call = moose_DestField_call;
         moose_DestField.tp_doc = DestField_documentation;
         if (PyType_Ready(&moose_DestField) < 0){
             PyErr_Print();
             exit(-1);
         }
-        
         Py_INCREF(&moose_DestField);
         PyModule_AddObject(moose_module, "DestField", (PyObject*)&moose_DestField);
-// We convert the environment variables into c-like argv array
-        vector<string> args = setup_runtime_env();
-        int argc = args.size();
-        char ** argv = (char**)calloc(args.size(), sizeof(char*));
-        for (unsigned ii = 0; ii < args.size(); ++ii){
-            argv[ii] = (char*)(calloc(args[ii].length()+1, sizeof(char)));
-            strncpy(argv[ii], args[ii].c_str(), args[ii].length()+1);            
-        }
-        create_shell(argc, argv);
         
-        int registered = Py_AtExit(&finalize);
-        if (registered != 0){
-            cerr << "Failed to register finalize() to be called at exit. " << endl;
-        }
         
         PyModule_AddIntConstant(moose_module, "SINGLETHREADED", isSingleThreaded);
         PyModule_AddIntConstant(moose_module, "NUMCORES", numCores);
