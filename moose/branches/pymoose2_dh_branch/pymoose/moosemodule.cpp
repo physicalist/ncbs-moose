@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Apr 17 03:41:46 2012 (+0530)
-//           By: Subhasis Ray
-//     Update #: 7334
+// Last-Updated: Wed Apr 18 14:44:20 2012 (+0530)
+//           By: subha
+//     Update #: 7540
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -453,22 +453,50 @@ extern "C" {
     //////////////////////////
     // Field Type definition
     //////////////////////////
-
+    static PyObject * moose_Field_new(PyTypeObject *type,
+                                      PyObject *args, PyObject *kwds)
+    {
+        static char _default_name[] = "uninitialized_field";
+        _Field *self;
+        self = (_Field*)type->tp_alloc(type, 0);
+        if (self != NULL){            
+            self->name = (char*)calloc(strlen(_default_name)+1, sizeof(char));
+            strncpy(self->name, _default_name, strlen(_default_name));
+            self->owner = ObjId::bad;
+        }
+        return (PyObject*)self;
+    }
     /**
        Initialize field with ObjId and fieldName.
     */
     static int moose_Field_init(_Field * self, PyObject * args, PyObject * kwargs)
-    {        
+    {
+        extern PyTypeObject ObjIdType;
         PyObject * owner;
         char * fieldName;
         if (!PyArg_ParseTuple(args, "Os:moose_Field_init", &owner, &fieldName)){
-            Py_XDECREF(self);
+            return -1;
+        }
+        if (fieldName == NULL){
+            PyErr_SetString(PyExc_ValueError, "fieldName cannot be NULL");
+            return -1;
+        }
+        if (owner == NULL){
+            PyErr_SetString(PyExc_ValueError, "owner cannot be NULL");
+            return -1;
+        }
+        if (!ObjId_SubtypeCheck(owner)){
+            PyErr_SetString(PyExc_TypeError, "Owner must be subtype of ObjId");
             return -1;
         }
         self->owner = ((_ObjId*)owner)->oid_;
         size_t size = strlen(fieldName);
-        self->name = (char*)calloc(size+1, sizeof(char));
-        strncpy(self->name, fieldName, size);
+        if (self->name != NULL){
+            char * tmp = self->name;            
+            self->name = (char*)calloc(size+1, sizeof(char));
+            strncpy(self->name, fieldName, size);
+            free(tmp);
+        }
         return 0;
     }
 
@@ -498,6 +526,7 @@ extern "C" {
         }
         ((PyObject*) self)->ob_type->tp_free(self);
     }
+    
     PyDoc_STRVAR(moose_Field_documentation,
                  "Base class for MOOSE fields.\n"
                  "\n"
@@ -543,7 +572,7 @@ extern "C" {
         0,                                              /* tp_dictoffset */
         (initproc)moose_Field_init,                     /* tp_init */
         0,                                              /* tp_alloc */
-        0,                                              /* tp_new */
+        moose_Field_new,                                /* tp_new */
         0,                                              /* tp_free */
     };
 
@@ -651,7 +680,7 @@ extern "C" {
         PyObject_GenericGetAttr,            /* tp_getattro */
         PyObject_GenericSetAttr,            /* tp_setattro */
         0,                                  /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
         "Id object of moose. Which can act as an array object.",
         0,                                  /* tp_traverse */
         0,                                  /* tp_clear */
@@ -662,7 +691,7 @@ extern "C" {
         IdMethods,                     /* tp_methods */
         0,                    /* tp_members */
         0,                                  /* tp_getset */
-        &PyBaseObject_Type,                                 /* tp_base */
+        0,                                 /* tp_base */
         0,                                  /* tp_dict */
         0,                                  /* tp_descr_get */
         0,                                  /* tp_descr_set */
@@ -769,7 +798,7 @@ extern "C" {
         0,                                  /* tp_print */
         0,                                  /* tp_getattr */
         0,                                  /* tp_setattr */
-        0,                                  /* tp_compare */
+        (cmpfunc)moose_ObjId_compare,       /* tp_compare */
         (reprfunc)moose_ObjId_repr,         /* tp_repr */
         0,                                  /* tp_as_number */
         0,                                  /* tp_as_sequence */
@@ -780,44 +809,159 @@ extern "C" {
         (getattrofunc)moose_ObjId_getattro, /* tp_getattro */
         (setattrofunc)moose_ObjId_setattro, /* tp_setattro */
         0,                                  /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
         "Individual moose object contained in an array-type object.",
         0,                                  /* tp_traverse */
         0,                                  /* tp_clear */
-        (richcmpfunc)moose_ObjId_richCompare,       /* tp_richcompare */
+        0,                                  /* tp_richcompare */
         0,                                  /* tp_weaklistoffset */
         0,                                  /* tp_iter */
         0,                                  /* tp_iternext */
-        ObjIdMethods,                     /* tp_methods */
-        0,                    /* tp_members */
+        ObjIdMethods,                       /* tp_methods */
+        0,                                  /* tp_members */
         0,                                  /* tp_getset */
         0,                                  /* tp_base */
         0,                                  /* tp_dict */
         0,                                  /* tp_descr_get */
         0,                                  /* tp_descr_set */
         0,                                  /* tp_dictoffset */
-        (initproc) moose_ObjId_init,   /* tp_init */
-        0,                /* tp_alloc */
-        0,                  /* tp_new */
-        0,                      /* tp_free */
+        (initproc) moose_ObjId_init,        /* tp_init */
+        0,                                  /* tp_alloc */
+        0,                                  /* tp_new */
+        0,                                  /* tp_free */
     };
 
 
     //////////////////////////////////////////////////
     // Id functions
     //////////////////////////////////////////////////
-    
-    static int moose_Id_init(_Id * self, PyObject * args, PyObject * kwds)
+
+    static int moose_Id_create(_Id * self, string path, PyObject * dims,
+                               char * type)
     {
-        extern PyTypeObject IdType;
+        if (type == NULL){
+            PyErr_SetString(PyExc_ValueError,
+                            "moose_Id_create: type cannot be NULL.");
+            return -1;
+        }        
+        string trimmed_type = trim(string(type));
+        if (trimmed_type.length() <= 0){
+            PyErr_SetString(PyExc_ValueError,
+                            "type must be non-empty string.");
+            return -1;
+        }        
+        string trimmed_path(path);
+        size_t length = trimmed_path.length();
+        
+        //  paths ending with '/' should raise exception
+        if ((length > 1) && (trimmed_path[length - 1] == '/')){
+            PyErr_SetString(PyExc_ValueError,
+                            "Non-root path must not end with '/'");
+            return -1;
+        }
+        // prepare the dimensions vector
+        vector <int> vec_dims;
+        Py_ssize_t num_dims = 1;
+        if (dims){
+            // First try to use it as a tuple of dimensions
+            if (PySequence_Check(dims)){
+                num_dims = PySequence_Length(dims);
+                for (Py_ssize_t ii = 0; ii < num_dims; ++ ii){
+                    PyObject* dim = PySequence_GetItem(dims, ii);
+                    long dim_value = PyInt_AsLong(dim);
+                    Py_XDECREF(dim);                    
+                    if ((dim_value == -1) && PyErr_Occurred()){
+                        return -1;
+                    }
+                    vec_dims.push_back((unsigned int)dim_value);
+                }
+            } else if (PyInt_Check(dims)){ // 1D array
+                num_dims = PyInt_AsLong(dims);
+                if (num_dims <= 0){
+                    num_dims = 1;
+                }
+            }
+        }        
+        if (vec_dims.empty()){
+            vec_dims.push_back(num_dims);
+        }
+        // object does not exist, create new
+        string parent_path;
+        string name;
+        size_t pos = trimmed_path.rfind("/");
+        if (pos != string::npos){
+            name = trimmed_path.substr(pos+1);
+            parent_path = trimmed_path.substr(0, pos);
+        } else {
+            name = trimmed_path;
+        }
+        // handle relative path
+        if (trimmed_path[0] != '/'){
+            string current_path = ShellPtr->getCwe().path();
+            if (current_path != "/"){
+                parent_path = current_path + "/" + parent_path;
+            } else {
+                parent_path = current_path + parent_path;
+            }
+        } else if (parent_path.empty()){
+            parent_path = "/";
+        }
+        Id parent_id(parent_path);
+        if (parent_id == Id() && parent_path != "/" && parent_path != "/root") {
+            string message = "Parent element does not exist: ";
+            message += parent_path;
+            PyErr_SetString(PyExc_ValueError, message.c_str());
+            return -1;
+        }
+        self->id_ = ShellPtr->doCreate(string(type),
+                                       parent_id,
+                                       string(name),
+                                       vector<int>(vec_dims));
+         
+        return 0;            
+    }
+    
+    static int moose_Id_init_from_path(_Id * self, PyObject * args, PyObject * kwargs)
+    {
         char _path[] = "path";
         char _dtype[] = "dtype";
         char _dims[] = "dims";
-        static char * kwlist[] = {_path, _dtype, _dims, NULL};
+        static char * kwlist[] = {_path, _dims, _dtype, NULL};
         char * path = NULL;
         char _default_type[] = "Neutral";
         char *type = _default_type;
         PyObject * dims = NULL;
+        if (!PyArg_ParseTupleAndKeywords(args,
+                                         kwargs,
+                                         "s|Os:moose_Id_init",
+                                         kwlist,
+                                         &path,
+                                         &dims,
+                                         &type)){
+            return -1;
+        }        
+        string trimmed_path(path);
+        trimmed_path = trim(trimmed_path);
+        size_t length = trimmed_path.length();
+        if (length <= 0){
+            PyErr_SetString(PyExc_ValueError,
+                            "path must be non-empty string.");
+            return -1;
+        }
+        self->id_ = Id(trimmed_path);
+        // Return already existing object
+        if (self->id_ != Id() ||
+            trimmed_path == "/" ||
+            trimmed_path == "/root"){
+            return 0;
+        }
+        return moose_Id_create(self, trimmed_path, dims,
+                               type);        
+    }    
+    
+    static int moose_Id_init(_Id * self, PyObject * args, PyObject * kwargs)
+    {
+        extern PyTypeObject IdType;
         PyObject * src = NULL;
         unsigned int id = 0;
         if (PyArg_ParseTuple(args, "I:moose_Id_init", &id)){
@@ -829,88 +973,8 @@ extern "C" {
             self->id_ = ((_Id*)src)->id_;
             return 0;
         }
-        PyErr_Clear();
-        if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sO:moose_Id_init", kwlist, &path, &type, &dims)){
-            // PyErr_SetString(PyExc_TypeError, "Invalid paramaters. Id.__init__ has the following signature: "
-            //                 "Id.__init__(path, dims, type) or Id.__init__(other_Id) or "
-            //                 "Id.__init__(id_value)");
-            return -1;
-        }
-        PyErr_Clear();
-        string trimmed_path(path);
-        trimmed_path = trim(trimmed_path);
-        size_t length = trimmed_path.length();
-        if (length <= 0){
-            PyErr_SetString(PyExc_ValueError, "path must be non-empty string.");
-            return -1;
-        }
-        string trimmed_type = trim(string(type));
-        if (trimmed_type.length() <= 0){
-            PyErr_SetString(PyExc_ValueError, "type must be non-empty string.");
-            return -1;
-        }        
-
-        //  paths ending with '/' should raise exception
-        if ((length > 1) && (trimmed_path[length - 1] == '/')){
-            PyErr_SetString(PyExc_ValueError, "Non-root path must not end with '/'");
-            return -1;
-        }
-        vector <int> vec_dims;
-        Py_ssize_t len = 1;
-        if (dims){
-            if (PySequence_Check(dims)){
-                len = PySequence_Length(dims);
-                for (Py_ssize_t ii = 0; ii < len; ++ ii){
-                    PyObject* dim = PySequence_GetItem(dims, ii);
-                    long dim_value = PyInt_AsLong(dim);
-                    if ((dim_value == -1) && PyErr_Occurred()){
-                        return -1;
-                    }
-                    vec_dims.push_back((unsigned int)dim_value);
-                }
-            } else if (PyInt_Check(dims)){
-                len = PyInt_AsLong(dims);
-                if (len <= 0){
-                    len = 1;
-                }
-            }
-        }
-        
-        if (vec_dims.empty()){
-            vec_dims.push_back(len);
-        }
-        self->id_ = Id(path);
-        // If object does not exist, create new
-        if ((self->id_ == Id()) && (trimmed_path != "/") && (trimmed_path != "/root")){
-            string parent_path;
-            string name;
-            size_t pos = trimmed_path.rfind("/");
-            if (pos != string::npos){
-                name = trimmed_path.substr(pos+1);
-                parent_path = trimmed_path.substr(0, pos);
-            } else {
-                name = trimmed_path;
-            }
-            if (trimmed_path[0] != '/'){
-                string current_path = ShellPtr->getCwe().path();
-                if (current_path != "/"){
-                    parent_path =  current_path + "/" + parent_path;
-                } else {
-                    parent_path = current_path + parent_path;
-                }
-            } else if (parent_path.empty()){
-                parent_path = "/";
-            }
-            Id parent_id(parent_path);
-            if (parent_id == Id() && parent_path != "/" && parent_path != "/root") {
-                string message = "Parent element does not exist: ";
-                message += parent_path;
-                PyErr_SetString(PyExc_ValueError, message.c_str());
-                return -1;
-            }
-            self->id_ = ShellPtr->doCreate(string(type), parent_id, string(name), vector<int>(vec_dims));
-        } 
-        return 0;            
+        PyErr_Clear();        
+        return moose_Id_init_from_path(self, args, kwargs);        
     }// ! moose_Id_init
 
     static long moose_Id_hash(_Id * self)
@@ -1087,7 +1151,7 @@ extern "C" {
     // ObjId functions.
     /////////////////////////////////////////////////////
 
-    static int _moose_ObjId_init_from_id(PyObject * self, PyObject * args, PyObject * kwargs)
+    static int moose_ObjId_init_from_id(PyObject * self, PyObject * args, PyObject * kwargs)
     {
         extern PyTypeObject ObjIdType;
         // The char arrays are to avoid deprecation warning
@@ -1124,7 +1188,8 @@ extern "C" {
         return -1;
     }
 
-    static int _moose_ObjId_init_from_path(PyObject * self, PyObject * args, PyObject * kwargs)
+    static int moose_ObjId_init_from_path(PyObject * self, PyObject * args,
+                                          PyObject * kwargs)
     {
         extern PyTypeObject ObjIdType;        
         PyObject * dims = NULL;
@@ -1133,13 +1198,25 @@ extern "C" {
         char _path[] = "path";
         char _dtype[] = "dtype";
         char _dims[] = "dims";
-        static char * kwlist [] = {_path, _dtype, _dims, NULL};
+        static char * kwlist [] = {_path, _dims, _dtype, NULL};
         _ObjId * instance = (_ObjId*)self;
-        if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                         "s|sO:moose_ObjId_init",
-                                         kwlist, &path, &type, &dims)){
+        if (kwargs == NULL){
+            if (!PyArg_ParseTuple(args,
+                                  "s|Os:moose_ObjId_init_from_path",
+                                  &path,
+                                  &dims,
+                                  &type)){
+                return -1;
+            }
+        } else if (!PyArg_ParseTupleAndKeywords(args,
+                                                kwargs,
+                                                "s|Os:moose_ObjId_init",
+                                                kwlist,
+                                                &path,
+                                                &dims,
+                                                &type)){
             return -1;
-        }
+        }        
         instance->oid_ = ObjId(path);
         if (!(ObjId::bad == instance->oid_)){
             return 0;
@@ -1162,17 +1239,6 @@ extern "C" {
         } else {
             basetype_str = type;
         }
-        if (get_moose_classes().find(basetype_str) ==
-            get_moose_classes().end()){
-            ostringstream error;
-            error << "Object with path `"
-                  << path << "` does not exist. "
-                    "Need a more specialized type than `"
-                  << basetype_str << "` to create a new object.";
-            PyErr_SetString(PyExc_TypeError,
-                            error.str().c_str());
-            return -1;
-        }
         if (dims == NULL){
             dims = Py_BuildValue("(i)", 1);
         }
@@ -1194,31 +1260,36 @@ extern "C" {
         return ret;            
     }
 
-    static int moose_ObjId_init(PyObject * self, PyObject * args, PyObject * kwargs)
+    static int moose_ObjId_init(PyObject * self, PyObject * args,
+                                PyObject * kwargs)
     {
         extern PyTypeObject ObjIdType;
-        char _path[] = "path";
-        char _dtype[] = "dtype";
-        char _dims[] = "dims";
-        char * path = NULL, * type = NULL;
         if (self && !ObjId_SubtypeCheck(self)){
             ostringstream error;
             error << "Expected an ObjId or subclass. Found "
                   << self->ob_type->tp_name;
-            Py_XDECREF(self);
             PyErr_SetString(PyExc_TypeError, error.str().c_str());
             return -1;
         }
         cout << "Instantiating type: " << self->ob_type->tp_name << endl;
-        if (_moose_ObjId_init_from_path(self, args, kwargs) == 0){
+        if (moose_ObjId_init_from_path(self, args, kwargs) == 0){
             return 0;
         }
         PyErr_Clear();
-        if (_moose_ObjId_init_from_id(self, args, kwargs) == 0){
+        if (moose_ObjId_init_from_id(self, args, kwargs) == 0){
             return 0;
         }
-        Py_XDECREF(self);
-        return -1;                
+        PyErr_SetString(PyExc_ValueError,
+                        "moose_ObjId_init: call should be __init__(path, dims, dtype) or"
+                        " __init__(id, dataIndex, fieldIndex, numFieldBits) where"
+                        "path is a string specifying target element path.\n"
+                        "dims is a tuple specifying dimensions along each axis (can be "
+                        "an integer for 1D objects). Default: (1,)\n"
+                        "dtype is a string specifying the MOOSE class name to be created.\n"
+                        "In the latter form, id can be an Id object or an integer and all the"
+                        " other parameters integers."
+                        );        
+        return -1;
     }
 
     /**
@@ -2242,22 +2313,24 @@ extern "C" {
         return Py_BuildValue("i", ret);
     }
 
-    static PyObject * moose_ObjId_richCompare(_ObjId * self, PyObject * other, int op)
+    static int moose_ObjId_compare(_ObjId * self, PyObject * other)
     {
         extern PyTypeObject ObjIdType;
         int ret;
-        if (!self || !other){
-            ret = 0;
+        if (self != NULL && other == NULL){
+            return 1;
+        } else if (self == NULL && other != NULL){
+            return -1;
         } else if (!ObjId_SubtypeCheck(other)){
-            ret = 0;
-        } else if (op == Py_EQ){
-            ret = (self->oid_ == ((_ObjId*)other)->oid_);
-        } else if (op == Py_NE){
-            ret = !(self->oid_ == ((_ObjId*)other)->oid_);
-        } else {
-            ret = 0;
+            ostringstream error;
+            error << "Cannot compare ObjId with "
+                  << other->ob_type->tp_name;
+            PyErr_SetString(PyExc_TypeError, error.str().c_str());
+            ret = -1;
         }
-        return Py_BuildValue("i", ret);
+        string l_path = Field<string>::get(self->oid_, "path");
+        string r_path = Field<string>::get(((_ObjId*)other)->oid_, "path");
+        return l_path.compare(r_path);
     }
 
     static PyObject * moose_ObjId_getDataIndex(_ObjId * self, PyObject * args)
@@ -2725,11 +2798,11 @@ extern "C" {
     {
         static vector <Id> classes(Field< vector<Id> >::get(ObjId("/classes"),
                                                             "children"));
-        for (unsigned int ii = 0; ii < classes.size(); ++ii){
-            if (!defineClass(module, Field<string>::get(classes[ii], "name"))){
-                return 0;
-            }
-        }
+        // for (unsigned int ii = 0; ii < classes.size(); ++ii){
+        //     if (!defineClass(module, Field<string>::get(classes[ii], "name"))){
+        //         return 0;
+        //     }
+        // }
         return 1;
     }
 
@@ -2767,6 +2840,7 @@ extern "C" {
         new_class->tp_flags = Py_TPFLAGS_DEFAULT |
                 Py_TPFLAGS_BASETYPE |
                 Py_TPFLAGS_HEAPTYPE;
+        new_class->ob_size = sizeof(_ObjId);        
         string str = "moose." + class_name;
         new_class->tp_name = (char *)calloc(str.length()+1,
                                             sizeof(char));
@@ -2783,23 +2857,34 @@ extern "C" {
         } else {
             new_class->tp_base = base_iter->second;
         }
-        cout << "Base class of " << new_class->tp_name << " set to:" << new_class->tp_base->tp_name << endl;
+        cout << "Base class of" << new_class->tp_name <<
+                " set to:" << new_class->tp_base->tp_name;
         // Define all the lookupFields
         if (!define_lookupFinfos(new_class, class_name)){            
             return 0;
         }
+        cout << "   ref count " << new_class->ob_refcnt << endl;
+        // for(PyGetSetDef * p = get_lookupfinfos()[class_name];
+        //     p->name != NULL;
+        //     ++p){
+        //     printf("    %p: %s: lookupfinfo: %s, refcount: %d\n",
+        //            (void*)p, class_name.c_str(), p->name,
+        //            ((PyObject*)p->closure)->ob_refcnt);
+        // }
+        
         clock_t start = clock();
         // Define the destFields
-        if (!define_destFinfos(module, new_class, class_name)){
-            return 0;
-        }
+        // if (!define_destFinfos(module, new_class, class_name)){
+        //     return 0;
+        // }
         // for(PyGetSetDef * p = get_destfinfos()[class_name]; p->name != NULL; ++p){
         //     printf("%p: %s: destfinfo: %s\n", (void*)p, class_name.c_str(), p->name);
         // }
         clock_t end = clock();
         
         if (PyType_Ready(new_class) < 0){
-            cerr << "Fatal error: Could not initialize class '" << class_name << "'" << endl;
+            cerr << "Fatal error: Could not initialize class '" << class_name
+                 << "'" << endl;
             return 0;
         }
         
@@ -3068,6 +3153,7 @@ extern "C" {
                  
     PyMODINIT_FUNC init_moose()
     {
+
         // First of all create the Shell.  We convert the environment
         // variables into c-like argv array
         vector<string> args = setup_runtime_env();
@@ -3077,6 +3163,7 @@ extern "C" {
             argv[ii] = (char*)(calloc(args[ii].length()+1, sizeof(char)));
             strncpy(argv[ii], args[ii].c_str(), args[ii].length()+1);            
         }
+        PyEval_InitThreads();
         create_shell(argc, argv);
         for (int ii = 1; ii < argc; ++ii){
             free(argv[ii]);
@@ -3102,7 +3189,8 @@ extern "C" {
         }
         
         // Add Id type
-        Py_TYPE(&IdType) = &PyType_Type;
+        // Py_TYPE(&IdType) = &PyType_Type; // unnecessary - filled in by PyType_Ready
+        IdType.tp_new = PyType_GenericNew;
         if (PyType_Ready(&IdType) < 0){
             PyErr_Print();
             exit(-1);
@@ -3111,7 +3199,8 @@ extern "C" {
         PyModule_AddObject(moose_module, "Id", (PyObject*)&IdType);
 
         // Add ObjId type
-        Py_TYPE(&ObjIdType) = &PyType_Type;
+        // Py_TYPE(&ObjIdType) = &PyType_Type; // unnecessary - filled in by PyType_Ready
+        ObjIdType.tp_new = PyType_GenericNew;
         if (PyType_Ready(&ObjIdType) < 0){
             PyErr_Print();
             exit(-1);
@@ -3120,19 +3209,23 @@ extern "C" {
         PyModule_AddObject(moose_module, "ObjId", (PyObject*)&ObjIdType);
 
         // Add Field type        
-        Py_TYPE(&moose_Field) = &PyType_Type;
+        // Py_TYPE(&moose_Field) = &PyType_Type; // unnecessary - filled in by PyType_Ready
         if (PyType_Ready(&moose_Field) < 0){
             PyErr_Print();
             exit(-1);
         }
+        Py_INCREF(&moose_Field);
+        PyModule_AddObject(moose_module, "Field", (PyObject*)&moose_Field);
 
         // Add LookupField type
-        Py_TYPE(&moose_LookupField) = &PyType_Type;        
-        moose_LookupField.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE;
+        // Py_TYPE(&moose_LookupField) = &PyType_Type;  // unnecessary - filled in by PyType_Ready
+        moose_LookupField.tp_flags = Py_TPFLAGS_DEFAULT;
         moose_LookupField.tp_base = &moose_Field;
         moose_LookupField.tp_name = "moose.LookupField";
         moose_LookupField.tp_doc = LookupField_documentation;
-        moose_LookupField.tp_as_mapping = &LookupFieldMappingMethods;        
+        moose_LookupField.tp_as_mapping = &LookupFieldMappingMethods;
+        moose_LookupField.tp_new = PyType_GenericNew;
+
         if (PyType_Ready(&moose_LookupField) < 0){
             PyErr_Print();
             exit(-1);
@@ -3141,12 +3234,13 @@ extern "C" {
         PyModule_AddObject(moose_module, "LookupField", (PyObject*)&moose_LookupField);
 
         // Add DestField type
-        Py_TYPE(&moose_DestField) = &PyType_Type;
-        moose_DestField.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE;
+        // Py_TYPE(&moose_DestField) = &PyType_Type; // unnecessary - filled in by PyType_Ready
+        moose_DestField.tp_flags = Py_TPFLAGS_DEFAULT;
         moose_DestField.tp_name = "moose.DestField";
         moose_DestField.tp_base = &moose_Field;
         moose_DestField.tp_call = moose_DestField_call;
         moose_DestField.tp_doc = DestField_documentation;
+        moose_DestField.tp_new = PyType_GenericNew;
         if (PyType_Ready(&moose_DestField) < 0){
             PyErr_Print();
             exit(-1);
