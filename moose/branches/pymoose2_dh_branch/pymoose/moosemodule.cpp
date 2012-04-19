@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Apr 19 14:55:02 2012 (+0530)
+// Last-Updated: Thu Apr 19 18:04:03 2012 (+0530)
 //           By: Subhasis Ray
-//     Update #: 7748
+//     Update #: 7802
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -489,17 +489,19 @@ extern "C" {
     //////////////////////////
     // Field Type definition
     //////////////////////////
-    static PyObject * moose_Field_new(PyTypeObject *type,
-                                      PyObject *args, PyObject *kwds)
-    {
-        _Field *self = NULL;
-        self = (_Field*)type->tp_alloc(type, 0);
-        if (self != NULL){            
-            self->name = NULL;
-            self->owner = ObjId::bad;
-        }        
-        return (PyObject*)self;
-    }
+    // Does not get called at all by PyObject_New. See:
+    // http://www.velocityreviews.com/forums/t344033-pyobject_new-not-running-tp_new-for-iterators.html
+    // static PyObject * moose_Field_new(PyTypeObject *type,
+    //                                   PyObject *args, PyObject *kwds)
+    // {
+    //     _Field *self = NULL;
+    //     self = (_Field*)type->tp_alloc(type, 0);
+    //     if (self != NULL){            
+    //         self->name = NULL;
+    //         self->owner = ObjId::bad;
+    //     }        
+    //     return (PyObject*)self;
+    // }
     /**
        Initialize field with ObjId and fieldName.
     */
@@ -529,9 +531,10 @@ extern "C" {
         strncpy(name, fieldName, size);
         char * tmp = self->name;
         self->name = name;
-        if (self->name != NULL){
-            free(tmp);
-        }
+        // The following causes a SIGABRT, don't know why.
+        // if (tmp != NULL){
+        //     free(tmp);
+        // }
         return 0;
     }
 
@@ -556,7 +559,8 @@ extern "C" {
 
     static void moose_Field_dealloc(_Field * self)
     {
-        if (self->name != NULL){
+        if (self->name != NULL && self->name[0] != '\0'){
+            cout << "deallocating " << self->name << endl;
             free(self->name);
         }
         ((PyObject*) self)->ob_type->tp_free(self);
@@ -607,7 +611,7 @@ extern "C" {
         0,                                              /* tp_dictoffset */
         (initproc)moose_Field_init,                     /* tp_init */
         0,                                              /* tp_alloc */
-        moose_Field_new,                                              /* tp_new */
+        0,                                              /* tp_new */
         0,                                              /* tp_free */
     };
 
@@ -676,7 +680,7 @@ extern "C" {
         0,                                              /* tp_dictoffset */
         (initproc)moose_Field_init,                     /* tp_init */
         0,                                              /* tp_alloc */
-        0,                                /* tp_new */
+        0,                       /* tp_new */
         0,                                              /* tp_free */
     };
 
@@ -692,12 +696,51 @@ extern "C" {
                                         newargs);
     }
 
-    static PyTypeObject moose_DestField = {
-        PyObject_HEAD_INIT(NULL)
-    };
-    PyDoc_STRVAR(DestField_documentation,
+    PyDoc_STRVAR(moose_DestField_documentation,
                  "DestField is a method field.");
 
+    static PyTypeObject moose_DestField = {
+        PyObject_HEAD_INIT(NULL)
+        0,                                              /* tp_internal */
+        "moose.DestField",                              /* tp_name */
+        sizeof(_Field),                                 /* tp_basicsize */
+        0,                                              /* tp_itemsize */
+        (destructor)moose_Field_dealloc,                /* tp_dealloc */
+        0,                                              /* tp_print */
+        0,                                              /* tp_getattr */
+        0,                                              /* tp_setattr */
+        0,                                              /* tp_compare */
+        (reprfunc)moose_Field_repr,                     /* tp_repr */
+        0,                                              /* tp_as_number */
+        0,                                              /* tp_as_sequence */
+        0,                                              /* tp_as_mapping */
+        (hashfunc)moose_Field_hash,                     /* tp_hash */
+        moose_DestField_call,                           /* tp_call */
+        (reprfunc)moose_Field_repr,                     /* tp_str */
+        0,                                              /* tp_getattro */
+        PyObject_GenericSetAttr,                        /* tp_setattro */
+        0,                                              /* tp_as_buffer */
+        Py_TPFLAGS_DEFAULT,
+        moose_DestField_documentation,
+        0,                                              /* tp_traverse */
+        0,                                              /* tp_clear */
+        0,                                              /* tp_richcompare */
+        0,                                              /* tp_weaklistoffset */
+        0,                                              /* tp_iter */
+        0,                                              /* tp_iternext */
+        0,                                              /* tp_methods */
+        0,                                              /* tp_members */
+        0,                                              /* tp_getset */
+        0,                                              /* tp_base */
+        0,                                              /* tp_dict */
+        0,                                              /* tp_descr_get */
+        0,                                              /* tp_descr_set */
+        0,                                              /* tp_dictoffset */
+        (initproc)moose_Field_init,                     /* tp_init */
+        0,                                              /* tp_alloc */
+        0,                       /* tp_new */
+        0,                                              /* tp_free */
+    };
 
     ///////////////////////////////////////////////
     // Python method lists for PyObject of Id
@@ -771,7 +814,7 @@ extern "C" {
         0,                                  /* tp_descr_set */
         0,                                  /* tp_dictoffset */
         (initproc) moose_Id_init,   /* tp_init */
-        PyType_GenericAlloc,                /* tp_alloc */
+        0,                /* tp_alloc */
         0,                  /* tp_new */
         0,                      /* tp_free */
     };
@@ -1093,7 +1136,7 @@ extern "C" {
         return ret;
     }
 
-
+    
     /////////////////////////////////////////////////////
     // ObjId functions.
     /////////////////////////////////////////////////////
@@ -2927,12 +2970,12 @@ extern "C" {
 
     /// Go through all elements under /classes and ask for defining a
     /// Python class for it.
-    int defineAllClasses(PyObject * module)
+    int defineAllClasses(PyObject * module_dict)
     {
         static vector <Id> classes(Field< vector<Id> >::get(ObjId("/classes"),
                                                             "children"));
         for (unsigned int ii = 0; ii < classes.size(); ++ii){
-            if (!defineClass(module, Field<string>::get(classes[ii], "name"))){
+            if (!defineClass(module_dict, Field<string>::get(classes[ii], "name"))){
                 return 0;
             }
         }
@@ -2945,7 +2988,7 @@ extern "C" {
     // have to recursively call this function using the base class
     // string.
     
-    int defineClass(PyObject * module, string class_name)
+    int defineClass(PyObject * module_dict, string class_name)
     {
         map <string, PyTypeObject * >::iterator existing =
                 get_moose_classes().find(class_name);
@@ -2965,11 +3008,12 @@ extern "C" {
         string baseclass_name = Field<string>::get(ObjId(class_id), "baseClass");
         cout << "defining " << class_name <<
                 ", baseclass " << baseclass_name << endl;
-        if (!defineClass(module, baseclass_name)){
+        if (!defineClass(module_dict, baseclass_name)){
             return 0;
         }
         PyTypeObject * new_class =
                 (PyTypeObject*)PyType_Type.tp_alloc(&PyType_Type, 0);
+        Py_TYPE(new_class) = NULL;
         new_class->tp_flags = Py_TPFLAGS_DEFAULT |
                 Py_TPFLAGS_BASETYPE |
                 Py_TPFLAGS_HEAPTYPE;
@@ -3001,20 +3045,19 @@ extern "C" {
         } else {
             new_class->tp_base = base_iter->second;
         }
-        cout << "Base class of" << new_class->tp_name <<
-                " set to:" << new_class->tp_base->tp_name << endl;
+        Py_INCREF(new_class->tp_base);
         // Define all the lookupFields
         if (!define_lookupFinfos(new_class, class_name)){            
             return 0;
         }
-        // cout << "   ref count " << new_class->ob_refcnt << endl;
-        // for(PyGetSetDef * p = get_lookupfinfos()[class_name];
-        //     p->name != NULL;
-        //     ++p){
-        //     printf("    %p: %s: lookupfinfo: %s, refcount: %d\n",
-        //            (void*)p, class_name.c_str(), p->name,
-        //            ((PyObject*)p->closure)->ob_refcnt);
-        // }
+        cout << "   ref count " << new_class->ob_refcnt << endl;
+        for(PyGetSetDef * p = get_lookupfinfos()[class_name];
+            p->name != NULL;
+            ++p){
+            printf("    %p: %s: lookupfinfo: %s, refcount: %d\n",
+                   (void*)p, class_name.c_str(), p->name,
+                   ((PyObject*)p->closure)->ob_refcnt);
+        }
         
         // clock_t start = clock();
         // // Define the destFields
@@ -3024,17 +3067,26 @@ extern "C" {
         // for(PyGetSetDef * p = get_destfinfos()[class_name]; p->name != NULL; ++p){
         //     printf("%p: %s: destfinfo: %s\n", (void*)p, class_name.c_str(), p->name);
         // }
-        // clock_t end = clock();
-        // Cannot do this for HEAPTYPE
-        // if (PyType_Ready(new_class) < 0){
-        //     cerr << "Fatal error: Could not initialize class '" << class_name
-        //          << "'" << endl;
-        //     return 0;
-        // }
-        
+        // clock_t end = clock();        
         // total_time +=  (end - start) * 1.0 / CLOCKS_PER_SEC;
+
+        // Cannot do this for HEAPTYPE ?? but pygobject.c does this in
+        // pygobject_register_class
+        if (PyType_Ready(new_class) < 0){
+            cerr << "Fatal error: Could not initialize class '" << class_name
+                 << "'" << endl;
+            return 0;
+        }
         get_moose_classes().insert(pair<string, PyTypeObject*> (class_name, new_class));
-        PyModule_AddObject(module, class_name.c_str(), (PyObject*)new_class);
+        Py_INCREF(new_class);
+        if (PyType_Ready(new_class) < 0){
+            cerr << "Error: Could not class '" << class_name
+                 << "' ready." << endl;
+            return 0;
+        }
+        cout << "Base class of" << new_class->tp_name <<
+                " set to:" << new_class->tp_base->tp_name << endl;
+        PyDict_SetItemString(module_dict, class_name.c_str(), (PyObject *)new_class);
         return 1;
     }
 
@@ -3077,7 +3129,7 @@ extern "C" {
     }
     
     
-    int define_destFinfos(PyObject * module, PyTypeObject * pyclass, string class_name)
+    int define_destFinfos(PyTypeObject * pyclass, string class_name)
     {
         // Create methods for destFinfos. The tp_dict is initialized by
         // PyType_Ready. So we insert the dynamically generated
@@ -3349,7 +3401,7 @@ extern "C" {
 
         // Add LookupField type
         // Py_TYPE(&moose_LookupField) = &PyType_Type;  // unnecessary - filled in by PyType_Ready        
-        moose_LookupField.tp_new = PyType_GenericNew;
+        // moose_LookupField.tp_new = PyType_GenericNew;
         if (PyType_Ready(&moose_LookupField) < 0){
             PyErr_Print();
             exit(-1);
@@ -3359,10 +3411,10 @@ extern "C" {
 
         // Add DestField type
         // Py_TYPE(&moose_DestField) = &PyType_Type; // unnecessary - filled in by PyType_Ready
-        moose_DestField.tp_flags = Py_TPFLAGS_DEFAULT;
-        moose_DestField.tp_call = moose_DestField_call;
-        moose_DestField.tp_doc = DestField_documentation;
-        moose_DestField.tp_new = PyType_GenericNew;
+        // moose_DestField.tp_flags = Py_TPFLAGS_DEFAULT;
+        // moose_DestField.tp_call = moose_DestField_call;
+        // moose_DestField.tp_doc = DestField_documentation;
+        // moose_DestField.tp_new = PyType_GenericNew;
         if (PyType_Ready(&moose_DestField) < 0){
             PyErr_Print();
             exit(-1);
@@ -3380,7 +3432,8 @@ extern "C" {
         PyModule_AddStringConstant(moose_module, "VERSION", ShellPtr->doVersion().c_str());
         PyModule_AddStringConstant(moose_module, "SVN_REVISION", ShellPtr->doRevision().c_str());
         clock_t start = clock();
-        if (!defineAllClasses(moose_module)){
+        PyObject * module_dict = PyModule_GetDict(moose_module);
+        if (!defineAllClasses(module_dict)){
             PyErr_Print();
             exit(-1);
         }

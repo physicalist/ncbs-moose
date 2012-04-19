@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Apr 17 12:44:55 2012 (+0530)
-//           By: subha
-//     Update #: 860
+// Last-Updated: Thu Apr 19 17:28:37 2012 (+0530)
+//           By: Subhasis Ray
+//     Update #: 861
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -149,9 +149,9 @@ extern "C" {
 
     static PyObject * getLookupField(ObjId oid, char * fieldName, PyObject * key);
     static int setLookupField(ObjId oid, char * fieldName, PyObject * key, PyObject * value);
-    int defineClass(PyObject * module, string class_name);
-    int define_destFinfos(PyObject* module, PyTypeObject * pyclass, string class_name);
-    static int defineAllClasses(PyObject* module);
+    int defineClass(PyObject * module_dict, string class_name);
+    int define_destFinfos(PyTypeObject * pyclass, string class_name);
+    static int defineAllClasses(PyObject* module_dict);
     static int define_lookupFinfos(PyTypeObject * pyclass, string class_name);
     static PyObject * moose_ObjId_get_lookupField_attr(PyObject * self, void * closure);
     static PyObject * moose_ObjId_get_destField_attr(PyObject * self, void * closure);
