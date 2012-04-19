@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Apr 18 18:58:12 2012 (+0530)
-//           By: subha
-//     Update #: 7700
+// Last-Updated: Thu Apr 19 14:55:02 2012 (+0530)
+//           By: Subhasis Ray
+//     Update #: 7748
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -145,10 +145,9 @@ extern "C" {
         return destfield_map;
     }
 
-    static map< string, PyObject * > get_inited_destfields()
+    static map< string, PyObject * >& get_inited_destfields()
     {
         static map<string, PyObject * > inited_destfields;
-        cout << "%%% " << inited_destfields.size() << ", " << (inited_destfields.begin() == inited_destfields.end()) << endl;
         return inited_destfields;
     }
     // Minimum number of arguments for setting destFinfo - 1-st
@@ -289,32 +288,42 @@ extern "C" {
         // Clear the memory for PyGetSetDef for LookupField. The key
         // (name) was dynamically allocated using calloc. So was the
         // docstring.
-        for (map<string, PyGetSetDef *>::iterator it = get_lookupfinfos().begin(); it != get_lookupfinfos().end(); ++it){
-            cout << it->first << ": ";
-            if (it->second == NULL){
-                continue;
+        for (map<string, PyGetSetDef *>::iterator it =
+                     get_lookupfinfos().begin();
+             it != get_lookupfinfos().end();
+             ++it){
+            cout << "class: " << it->first << endl;
+            for (PyGetSetDef * p = it->second;
+                 (p != NULL) && (p->name != NULL);
+                 ++p){
+                cout << '\t' << p->name << endl;
+                free(p->name);
+                if (p->doc){
+                    free(p->doc);
+                }
+                PyObject * closure = (PyObject*)p->closure;
+                if (closure){
+                    cout << " closure cnt " << closure->ob_refcnt << endl;
+                } else {
+                    cout << "closure null" << endl;
+                }
+                Py_XDECREF(p->closure);
             }
-            if (it->second->name){
-                cout << it->second->name << ": ";
+            if (it->second != NULL){
+                free(it->second);
             }
-            free(it->second->name);
-            free(it->second->doc);
-            cout << ((PyObject*)it->second->closure)->ob_refcnt << endl;
-            Py_XDECREF(it->second->closure);
-            free(it->second);
         }
         get_lookupfinfos().clear();
-        cout << "&&&" << get_inited_destfields().size() << endl;
-        cout << ")))" << (get_inited_destfields().begin() == get_inited_destfields().end())
-             << endl;
         for (map<string, PyObject *>::iterator it = get_inited_destfields().begin();
              it != get_inited_destfields().end();
              ++it){
-            cout << "decrefing" << it->first << endl;
             Py_XDECREF(it->second);
         }
         // Clear the memory for PyGetSetDef for DestField.
-        for (map<string, PyGetSetDef *>::iterator it = get_destfinfos().begin(); it != get_destfinfos().end(); ++it){
+        for (map<string, PyGetSetDef *>::iterator it =
+                     get_destfinfos().begin();
+             it != get_destfinfos().end();
+             ++it){
             if (it->second == NULL){
                 continue;
             }
@@ -2993,11 +3002,11 @@ extern "C" {
             new_class->tp_base = base_iter->second;
         }
         cout << "Base class of" << new_class->tp_name <<
-                " set to:" << new_class->tp_base->tp_name;
+                " set to:" << new_class->tp_base->tp_name << endl;
         // Define all the lookupFields
-        // if (!define_lookupFinfos(new_class, class_name)){            
-        //     return 0;
-        // }
+        if (!define_lookupFinfos(new_class, class_name)){            
+            return 0;
+        }
         // cout << "   ref count " << new_class->ob_refcnt << endl;
         // for(PyGetSetDef * p = get_lookupfinfos()[class_name];
         //     p->name != NULL;
@@ -3351,8 +3360,6 @@ extern "C" {
         // Add DestField type
         // Py_TYPE(&moose_DestField) = &PyType_Type; // unnecessary - filled in by PyType_Ready
         moose_DestField.tp_flags = Py_TPFLAGS_DEFAULT;
-        moose_DestField.tp_name = "moose.DestField";
-        moose_DestField.tp_base = &moose_Field;
         moose_DestField.tp_call = moose_DestField_call;
         moose_DestField.tp_doc = DestField_documentation;
         moose_DestField.tp_new = PyType_GenericNew;
