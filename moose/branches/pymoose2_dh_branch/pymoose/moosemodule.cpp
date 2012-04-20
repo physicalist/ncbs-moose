@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Apr 20 11:47:27 2012 (+0530)
+// Last-Updated: Fri Apr 20 12:25:29 2012 (+0530)
 //           By: Subhasis Ray
-//     Update #: 8078
+//     Update #: 8100
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -150,7 +150,6 @@ extern "C" {
     static Id shellId;
     static PyObject * MooseError;
 
-    static double total_time = 0.0;
     // Global store of defined MOOSE classes.
     static map<string, PyTypeObject *>& get_moose_classes()
     {
@@ -320,7 +319,7 @@ extern "C" {
              it != get_getsetdefs().end();
              ++it){
             vector <PyGetSetDef> &getsets = it->second;
-            for (unsigned int ii = 0; ii < getsets.size(); ++ii){
+            for (unsigned int ii = 0; ii < getsets.size()-1; ++ii){ // the -1 is for the empty sentinel entry
                 free(getsets[ii].name);
                 Py_XDECREF(getsets[ii].closure);
             }
@@ -943,6 +942,14 @@ extern "C" {
         char _default_type[] = "Neutral";
         char *type = _default_type;
         PyObject * dims = NULL;
+        if (kwargs == NULL && !PyArg_ParseTuple(args,
+                                                "s|Os:moose_Id_init",
+                                                &path,
+                                                &dims,
+                                                &type)){
+            return -1;
+        }
+        PyErr_Clear();
         if (!PyArg_ParseTupleAndKeywords(args,
                                          kwargs,
                                          "s|Os:moose_Id_init",
@@ -1274,23 +1281,21 @@ extern "C" {
         return ret;            
     }
         
-        PyDoc_STRVAR(moose_ObjId_init_documentation,
-                     "__init__(path, dims, dtype) or"
-                     " __init__(id, dataIndex, fieldIndex, numFieldBits)\n"
-                     "Initialize moose object\n"
-                     "Parameters\n"
-                     "----------\n"
-                     "path : string\n"
-                     "Target element path.\n"
-                     "dims : tuple or int\n"
-                     "dimensions along each axis (can be"
-                     " an integer for 1D objects). Default: (1,)\n"
-                     "dtype : string\n"
-                     "the MOOSE class name to be created.\n"
-                     "id : Id or integer\n"
-                     "id of an existing element.\n"
-                     ""
-                     );
+    PyDoc_STRVAR(moose_ObjId_init_documentation,
+                 "__init__(path, dims, dtype) or"
+                 " __init__(id, dataIndex, fieldIndex, numFieldBits)\n"
+                 "Initialize moose object\n"
+                 "Parameters\n"
+                 "----------\n"
+                 "path : string\n"
+                 "Target element path.\n"
+                 "dims : tuple or int\n"
+                 "dimensions along each axis (can be"
+                 " an integer for 1D objects). Default: (1,)\n"
+                 "dtype : string\n"
+                 "the MOOSE class name to be created.\n"
+                 "id : Id or integer\n"
+                 "id of an existing element.\n");
         
     static int moose_ObjId_init(PyObject * self, PyObject * args,
                                 PyObject * kwargs)
@@ -3094,7 +3099,6 @@ extern "C" {
             return 0;
         }
         // Define the destFields
-        clock_t start = clock();
         if (!define_destFinfos(class_name)){
             return 0;
         }
@@ -3354,7 +3358,7 @@ extern "C" {
                  
     PyMODINIT_FUNC init_moose()
     {
-
+        clock_t modinit_start = clock();
         PyGILState_STATE gstate;
         gstate = PyGILState_Ensure();
         // First of all create the Shell.  We convert the environment
@@ -3442,15 +3446,17 @@ extern "C" {
         PyModule_AddStringConstant(moose_module, "__version__", ShellPtr->doVersion().c_str());
         PyModule_AddStringConstant(moose_module, "VERSION", ShellPtr->doVersion().c_str());
         PyModule_AddStringConstant(moose_module, "SVN_REVISION", ShellPtr->doRevision().c_str());
-        clock_t start = clock();
         PyObject * module_dict = PyModule_GetDict(moose_module);
+        clock_t defclasses_start = clock();
         if (!defineAllClasses(module_dict)){
             PyErr_Print();
             exit(-1);
         }
-        clock_t end = clock();
-        cout << "Info: Time to define all MOOSE classes:" << (end - start) * 1.0 /CLOCKS_PER_SEC << endl;
+        clock_t defclasses_end = clock();
+        cout << "Info: Time to define moose classes:" << (defclasses_end - defclasses_start) * 1.0 /CLOCKS_PER_SEC << endl;
         PyGILState_Release(gstate);
+        clock_t modinit_end = clock();
+        cout << "Info: Time to initialize module:" << (modinit_end - modinit_start) * 1.0 /CLOCKS_PER_SEC << endl;
 
     } //! init_moose
     
