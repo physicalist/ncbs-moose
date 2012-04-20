@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Sat Mar 12 14:02:40 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Apr 20 13:13:15 2012 (+0530)
+# Last-Updated: Fri Apr 20 23:12:45 2012 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1801
+#     Update #: 1812
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -453,59 +453,13 @@ def arrayelement(path, className='Neutral'):
 # Wrappers for global functions
 ################################################################ 
 
-def copy(src, dest, name, n=1, toGlobal=False, copyExtMsg=False):
-    if isinstance(src, NeutralArray):
-        src = src.id_
-    if isinstance(dest, NeutralArray):
-        dest = dest.id_
-    new_id = copy(src, dest, name, n=n, toGlobal=toGlobal, copyExtMsg=copyExtMsg)
-    return new_id
 
-def move(src, dest):
-    if isinstance(src, NeutralArray):
-        src = src.id_
-    if isinstance(dest, NeutralArray):
-        dest = dest.id_
-    move(src, dest)
-
-def delete(target):
-    """Explicitly delete a MOOSE object. This will invalidate all
-    existing references. They will all point to the default root
-    object."""
-    if isinstance(target, NeutralArray):
-        target = target.id_
-    if not isinstance(target, Id):
-        raise TypeError('Only Id or Array objects can be deleted: received %s' % (target.__class__.__name__))
-    delete(target)
     
-def setCwe(element):
-    """Set present working element"""
-    if isinstance(element, NeutralArray):
-        _moose.setCwe(element.id_)
-    elif isinstance(element, Neutral):
-        _moose.setCwe(element.oid_)
-    else:
-        _moose.setCwe(element)
-
-def getCwe():
-    _id = _moose.getCwe()
-    obj = NeutralArray(_id)
-    return obj
-
 def pwe():
     """Print present working element. Convenience function for GENESIS
     users."""
     print _moose.getCwe().getPath()
     
-def connect(src, srcMsg, dest, destMsg, msgType='Single'):
-    """Connect src object's source field specified by srcMsg to
-    destMsg field of target object."""
-    if isinstance(src, Neutral):
-        src = src.oid_
-    if isinstance(dest, Neutral):
-        dest = dest.oid_
-    return src.connect(srcMsg, dest, destMsg, msgType)
-
 def le(element=None):
     """List elements. """
     if element is None:
