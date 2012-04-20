@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Apr 20 12:25:29 2012 (+0530)
+// Last-Updated: Fri Apr 20 23:19:06 2012 (+0530)
 //           By: Subhasis Ray
-//     Update #: 8100
+//     Update #: 8129
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -554,15 +554,14 @@ extern "C" {
         return PyString_FromString(fieldPath.str().c_str());
     }
 
-    static void moose_Field_dealloc(_Field * self)
-    {
-        cout << "deallocating " << self->name << endl;
-        // if (self->name != NULL && self->name[0] != '\0'){
-        //     cout << "deallocating " << self->name << endl;
-        //     free(self->name);
-        // }
-        // ((PyObject*) self)->ob_type->tp_free(self);
-    }
+    // static void moose_Field_dealloc(_Field * self)
+    // {
+    //     if (self->name != NULL && self->name[0] != '\0'){
+    //         cout << "deallocating " << self->name << endl;
+    //         free(self->name);
+    //     }
+    //     free(self);
+    // }
     
     PyDoc_STRVAR(moose_Field_documentation,
                  "Base class for MOOSE fields.\n"
@@ -647,7 +646,7 @@ extern "C" {
         "moose.LookupField",                                  /* tp_name */
         sizeof(_Field),                                 /* tp_basicsize */
         0,                                              /* tp_itemsize */
-        (destructor)moose_Field_dealloc,                /* tp_dealloc */
+        0,                /* tp_dealloc */
         0,                                              /* tp_print */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
@@ -726,7 +725,7 @@ extern "C" {
         "moose.DestField",                              /* tp_name */
         sizeof(_Field),                                 /* tp_basicsize */
         0,                                              /* tp_itemsize */
-        (destructor)moose_Field_dealloc,                /* tp_dealloc */
+        0,                /* tp_dealloc */
         0,                                              /* tp_print */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
@@ -965,7 +964,7 @@ extern "C" {
         if (length <= 0){
             PyErr_SetString(PyExc_ValueError,
                             "path must be non-empty string.");
-            return -1;
+            return -2;
         }
         self->id_ = Id(trimmed_path);
         // Return already existing object
@@ -983,6 +982,13 @@ extern "C" {
         extern PyTypeObject IdType;
         PyObject * src = NULL;
         unsigned int id = 0;
+        int ret =moose_Id_init_from_path(self, args, kwargs);
+        if (ret == 0){
+            return 0;
+        } else if (ret < -1){
+            return ret;
+        }
+        PyErr_Clear();
         if (PyArg_ParseTuple(args, "I:moose_Id_init", &id)){
             self->id_ = Id(id);
             return 0;
@@ -992,8 +998,7 @@ extern "C" {
             self->id_ = ((_Id*)src)->id_;
             return 0;
         }
-        PyErr_Clear();        
-        return moose_Id_init_from_path(self, args, kwargs);        
+        return -1;
     }// ! moose_Id_init
 
     static long moose_Id_hash(_Id * self)
@@ -1265,14 +1270,28 @@ extern "C" {
         // Create an object using moose_Id_init method
         // and use the id to create a ref to first entry
         _Id * new_id = (_Id*)PyObject_New(_Id, &IdType);
-        PyObject * newkwargs = PyDict_New();
-        PyDict_SetItemString(newkwargs, "path", PyString_FromString(path));
-        PyDict_SetItemString(newkwargs, "dtype", PyString_FromString(basetype_str.c_str()));
-        PyDict_SetItemString(newkwargs, "dims", dims);
-        PyObject * newargs = PyTuple_New(0);
-        
-        int ret = moose_Id_init(new_id, newargs, newkwargs);
-        Py_DECREF(newkwargs);
+        PyObject * newargs = PyTuple_New(3);
+        if (newargs == NULL){
+            return -1;
+        }
+        PyObject * pypath = PyString_FromString(path);
+        if (pypath == NULL){
+            return -1;
+        }
+        if (PyTuple_SetItem(newargs, 0, pypath)){
+            return -1;
+        }
+        if (PyTuple_SetItem(newargs, 1, dims)){
+            return -1;
+        }
+        PyObject * pybase = PyString_FromString(basetype_str.c_str());
+        if (pybase == NULL){
+            return -1;
+        }
+        if (PyTuple_SetItem(newargs, 2, pybase)){
+            return -1;
+        }        
+        int ret = moose_Id_init(new_id, newargs, NULL);
         Py_DECREF(newargs);
         if (ret == 0){
             instance->oid_ = ObjId(new_id->id_);
@@ -2764,8 +2783,12 @@ extern "C" {
     {
         PyObject * srcPtr = NULL, * destPtr = NULL;
         char * srcField = NULL, * destField = NULL, * msgType = NULL;
-        if(!PyArg_ParseTuple(args, "OsOss:moose_connect", &srcPtr, &srcField, &destPtr, &destField, &msgType)){
+        char default_msg_type[] = "Single";
+        if(!PyArg_ParseTuple(args, "OsOs|s:moose_connect", &srcPtr, &srcField, &destPtr, &destField, &msgType)){
             return NULL;
+        }
+        if (msgType == NULL){
+            msgType = default_msg_type;
         }
         _ObjId * dest = reinterpret_cast<_ObjId*>(destPtr);
         _ObjId * src = reinterpret_cast<_ObjId*>(srcPtr);
