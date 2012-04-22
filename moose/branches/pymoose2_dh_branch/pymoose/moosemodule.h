@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 17:11:06 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Apr 20 01:52:36 2012 (+0530)
+// Last-Updated: Sun Apr 22 22:42:25 2012 (+0530)
 //           By: Subhasis Ray
-//     Update #: 863
+//     Update #: 864
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -112,7 +112,6 @@ extern "C" {
     static int moose_Field_init(_Field * self, PyObject * args, PyObject * kwds);
     static long moose_Field_hash(_Field * self);
     static PyObject * moose_Field_repr(_Field * self);
-    static void moose_Field_dealloc(_Field * self);
     static PyObject * moose_LookupField_getItem(_Field * self, PyObject * key);
     static int moose_LookupField_setItem(_Field * self, PyObject * key, PyObject * value);
     
