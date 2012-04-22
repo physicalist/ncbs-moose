@@ -7,9 +7,9 @@
 // Copyright (C) 2010 Subhasis Ray, all rights reserved.
 // Created: Thu Mar 10 11:26:00 2011 (+0530)
 // Version: 
-// Last-Updated: Fri Apr 20 23:19:06 2012 (+0530)
+// Last-Updated: Sun Apr 22 23:48:48 2012 (+0530)
 //           By: Subhasis Ray
-//     Update #: 8129
+//     Update #: 8236
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -77,9 +77,11 @@
 
 #include <Python.h>
 #include <structmember.h> // This defines the type id macros like T_STRING
+#include "numpy/arrayobject.h"
 
-#include <cstring>
 #include <iostream>
+#include <typeinfo>
+#include <cstring>
 #include <map>
 #include <ctime>
 
@@ -345,6 +347,38 @@ extern "C" {
     } //! finalize()
 
 
+    /**
+       Return numpy typenum for specified type.
+    */
+    int get_npy_typenum(const type_info& ctype)
+    {
+        if (ctype == typeid(float)){
+            return NPY_FLOAT;
+        } else if (ctype == typeid(double)){
+            return NPY_DOUBLE;
+        } else if (ctype == typeid(int)){
+            return NPY_INT;
+        } else if (ctype == typeid(unsigned int)){
+            return NPY_UINT;
+        } else if (ctype == typeid(long)){
+            return NPY_LONG;
+        } else if (ctype == typeid(unsigned long)){
+            return NPY_ULONG;
+        } else if (ctype == typeid(short)){
+            return NPY_SHORT;
+        } else if (ctype == typeid(unsigned short)){
+            return NPY_USHORT;
+        } else if (ctype == typeid(char)){
+            return NPY_CHAR;
+        } else if (ctype == typeid(bool)){
+            return NPY_BOOL;
+        } else if (ctype == typeid(Id) || ctype == typeid(ObjId)){
+            return NPY_OBJECT;
+        } else {
+            cerr << "Cannot handle type: " << ctype.name() << endl;
+            return -1;
+        }
+    }
     /**
       Return list of available Finfo types.
       Place holder for static const to avoid static initialization issues.
@@ -1439,7 +1473,7 @@ extern "C" {
         }
         return moose_ObjId_getattro(self, attr);
     }
-    
+
     /**
        2011-03-28 13:59:41 (+0530)
        
@@ -1456,7 +1490,6 @@ extern "C" {
         extern PyTypeObject ObjIdType;
         const char * field;
         char ftype;
-        PyObject * ret;
         if(!ObjId_SubtypeCheck(self)){
             cerr << "Expected an ObjId or subclass. But found `" << ((PyObject*)self)->ob_type->tp_name << endl;
             return NULL;
@@ -1471,26 +1504,20 @@ extern "C" {
 #define GET_FIELD(TYPE, TYPEC)                                          \
         {                                                               \
             TYPE value = Field<TYPE>::get(self->oid_, string(field));   \
-            ret = Py_BuildValue(#TYPEC, value);                         \
-            break;                                                      \
-        }                                                               \
-        
-#define GET_VECFIELD(TYPE, TYPEC)                                       \
-        {                                                               \
-            vector<TYPE> val = Field< vector<TYPE> >::get(self->oid_, string(field)); \
-            ret = PyTuple_New((Py_ssize_t)val.size());                  \
-            for (unsigned int ii = 0; ii < val.size(); ++ ii ){         \
-                PyObject * entry = Py_BuildValue(#TYPEC, val[ii]);      \
-                if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){ \
-                    Py_XDECREF(entry);                                  \
-                    Py_XDECREF(ret);                                    \
-                    ret = NULL;                                         \
-                    break;                                              \
-                }                                                       \
-            }                                                           \
-            break;                                                      \
+            PyObject * ret = Py_BuildValue(#TYPEC, value);              \
+            return ret;                                                 \
         }                                                               \
 
+
+#define GET_VECFIELD(TYPE)                                              \
+        {                                                               \
+                vector<TYPE> val = Field< vector<TYPE> >::get(self->oid_, string(field)); \
+                npy_intp dims = val.size();                             \
+                PyArrayObject * ret = (PyArrayObject*)PyArray_SimpleNew(1, &dims, get_npy_typenum(typeid(TYPE))); \
+                char * ptr = PyArray_BYTES(ret);        \
+                memcpy(ptr, &(val[0]), val.size() * sizeof(TYPE));      \
+                return PyArray_Return(ret);                             \
+        }                                                               \
         
         string type = getFieldType(Field<string>::get(self->oid_, "class"), string(field), "valueFinfo");
         if (type.empty()){
@@ -1519,54 +1546,53 @@ extern "C" {
             case 'd': GET_FIELD(double, d)
             case 's': {
                 string _s = Field<string>::get(self->oid_, string(field));
-                ret = Py_BuildValue("s", _s.c_str());
-                break;
+                return Py_BuildValue("s", _s.c_str());
             }
             case 'x':
                 {                    
                     Id value = Field<Id>::get(self->oid_, string(field));
-                    ret = (PyObject*)PyObject_New(_Id, &IdType);
-                    ((_Id*)ret)->id_ = value;
-                    break;
+                    _Id * ret = PyObject_New(_Id, &IdType);
+                    ret->id_ = value;
+                    return (PyObject*)ret;
                 }
             case 'y':
                 {
                     ObjId value = Field<ObjId>::get(self->oid_, string(field));
-                    ret = (PyObject*)PyObject_New(_ObjId, &ObjIdType);
-                    ((_ObjId*)ret)->oid_ = value;
-                    break;
+                    _ObjId * ret = PyObject_New(_ObjId, &ObjIdType);
+                    ret->oid_ = value;
+                    return (PyObject*)ret;
                 }
             case 'z':
                 {
                     PyErr_SetString(PyExc_NotImplementedError, "DataId handling not implemented yet.");
                     return NULL;
                 }
-            case 'v': GET_VECFIELD(int, i)
-            case 'w': GET_VECFIELD(short, h)
-            case 'L': GET_VECFIELD(long, l)        
-            case 'U': GET_VECFIELD(unsigned int, I)        
-            case 'K': GET_VECFIELD(unsigned long, k)        
-            case 'F': GET_VECFIELD(float, f)        
-            case 'D': GET_VECFIELD(double, d)        
+            case 'D': GET_VECFIELD(double)
+            case 'F': GET_VECFIELD(float)
+            case 'v': GET_VECFIELD(int)
+            case 'L': GET_VECFIELD(long)
+            case 'K': GET_VECFIELD(unsigned long)
+            case 'U': GET_VECFIELD(unsigned int)
+            case 'w': GET_VECFIELD(short)
+            case 'C': GET_VECFIELD(char)
             case 'S': {                                                 
                 vector<string> val = Field< vector<string> >::get(self->oid_, string(field)); 
-                ret = PyTuple_New((Py_ssize_t)val.size());
+                PyObject * ret = PyTuple_New((Py_ssize_t)val.size());
                 
                 for (unsigned int ii = 0; ii < val.size(); ++ ii ){     
                     PyObject * entry = Py_BuildValue("s", val[ii].c_str()); 
                     if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, entry)){
                         Py_XDECREF(entry);
                         Py_XDECREF(ret);                                  
-                        ret = NULL;                                 
-                        break;                                      
+                        return NULL;                                
                     }                                               
                 }                                                       
-                break;                                                  
+                return ret;                                                  
             }
             case 'X': // vector<Id>
                 {
                     vector<Id> value = Field< vector <Id> >::get(self->oid_, string(field));
-                    ret = PyTuple_New((Py_ssize_t)value.size());
+                    PyObject * ret = PyTuple_New((Py_ssize_t)value.size());
                 
                     for (unsigned int ii = 0; ii < value.size(); ++ii){
                         _Id * entry = PyObject_New(_Id, &IdType);
@@ -1581,12 +1607,12 @@ extern "C" {
                             return NULL;
                         }
                     }
-                    break;
+                    return ret;
                 }
             case 'Y': // vector<ObjId>
                 {
                     vector<ObjId> value = Field< vector <ObjId> >::get(self->oid_, string(field));
-                    ret = PyTuple_New(value.size());
+                    PyObject * ret = PyTuple_New(value.size());
                 
                     for (unsigned int ii = 0; ii < value.size(); ++ii){
                         _ObjId * entry = PyObject_New(_ObjId, &ObjIdType);                       
@@ -1601,7 +1627,7 @@ extern "C" {
                             return NULL;
                         }
                     }
-                    break;
+                    return ret;
                 }
                 
             default:
@@ -1609,7 +1635,7 @@ extern "C" {
         }
 #undef GET_FIELD    
 #undef GET_VECFIELD
-        return ret;        
+        return NULL;        
     }
 
     /**
@@ -3417,7 +3443,8 @@ extern "C" {
             Py_INCREF(MooseError);
             PyModule_AddObject(moose_module, "error", MooseError);
         }
-        
+
+        import_array();
         // Add Id type
         // Py_TYPE(&IdType) = &PyType_Type; // unnecessary - filled in by PyType_Ready
         IdType.tp_new = PyType_GenericNew;

@@ -184,7 +184,7 @@ class TestNeighbors(unittest.TestCase):
         moose.connect(self.pulsegen, 'outputOut', self.compartment, 'injectMsg')
         
     def testNeighborDict(self):
-        print 'Testing neighbour dict ...'
+        print 'Testing neighbour dict ...',
         neighbors = self.compartment.neighborDict
         self.assertTrue(self.pulsegen.oid_ in [ n.oid_ for n in neighbors['injectMsg']])
         self.assertTrue(self.table.oid_ in [n.oid_ for n in neighbors['get_Im']])
@@ -192,7 +192,15 @@ class TestNeighbors(unittest.TestCase):
         self.assertTrue(self.compartment.oid_ in [n.oid_ for n in self.table.neighborDict['requestData']])
         print 'OK'
                       
-            
+class TestDestFinfo(unittest.TestCase):
+    def setUp(self):
+        self.nmda = moose.NMDAChan('nmda')
+        
+    def testDestFinfo(self):
+        print 'Testing calling DestField ...',
+        self.nmda.MgConcDest(2.0)
+        self.assertAlmostEqual(self.nmda.MgConc, 2.0)
+        print 'OK'
         
 if __name__ == '__main__':
     print 'PyMOOSE Regression Tests:'
