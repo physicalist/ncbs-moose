@@ -1,0 +1,28 @@
+#! /bin/sh
+
+
+set -e
+. /usr/share/debconf/confmodule
+
+case "$1" in 
+	configure)
+		PPATH=`python /usr/share/moose1.3/find_python_path.py`
+		mv /usr/share/moose1.3/py_stage/* $PPATH
+		ln -s /usr/share/moose1.3/moosegui/moosegui.py /usr/bin/moosegui
+		cp -R /usr/share/doc/moose1.3 $HOME
+		chgrp -R $USER $HOME/moose1.3
+		chown root /usr/share/moose1.3/moose.conf
+		mv /usr/share/moose1.3/moose.conf /etc/ld.so.conf.d
+		ldconfig
+	;;
+		abort-upgrade|abort-remove|abort-deconfigure)
+
+	;;
+
+	*)
+		echo "postinst called with unknown argument \`$1'" >&2
+		exit 0
+	;;
+esac
+
+exit 0
