@@ -1,0 +1,40 @@
+#!/bin/sh
+set -e
+if [ -d /usr/share/moose1.3 ];
+then
+	rm -r /usr/share/moose1.3
+fi
+if [ -d /usr/share/doc/moose1.3 ];
+then
+	rm -r /usr/share/doc/moose1.3
+fi
+rm /usr/bin/moosegui
+if [ -f /usr/lib/python2.6/dist-packages/_moose.so ];
+then 
+	rm /usr/lib/python2.6/dist-packages/_moose.so
+fi
+if [ -f /usr/lib/python2.6/dist-packages/moose.py ];
+then 
+	rm /usr/lib/python2.6/dist-packages/moose.py
+fi
+if [ -f /usr/lib/python2.6/dist-packages/moose.pyc ];
+then
+	rm /usr/lib/python2.6/dist-packages/moose.pyc
+fi
+if [ -f /usr/lib/python2.5/site-packages/_moose.so ];
+then 
+	rm /usr/lib/python2.5/site-packages/_moose.so
+fi
+if [ -f /usr/lib/python2.5/site-packages/moose.py ];
+then 
+	rm /usr/lib/python2.5/site-packages/moose.py
+fi
+if [ -f /usr/lib/python2.5/site-packages/moose.pyc ];
+then
+	rm /usr/lib/python2.5/site-packages/moose.pyc
+fi
+if [ -f /etc/ld.so.conf.d/moose.conf ];
+then
+	rm /etc/ld.so.conf.d/moose.conf
+fi
+ldconfig
