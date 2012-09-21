@@ -1,0 +1,88 @@
+Creator: Aditya Gilra, NCBS, Bangalore, India, adityag@ncbs.res.in
+Date: 20 Sep, 2012
+
+#I'm following instructions at:
+#http://developer.ubuntu.com/packaging/html/packaging-new-software.html
+#and
+#https://wiki.ubuntu.com/PackagingGuide/Complete
+
+These instructions are better than above:
+http://www.debian.org/doc/manuals/maint-guide/index.en.html
+
+Packaging for and on Ubuntu 10.04 64bit in a virtualbox virtual machine on pinni@ncbs.
+
+Get moose source from sourceforge using subversion (set proxy in ~/.subversion/servers)
+svn co https://moose.svn.sourceforge.net/svnroot/moose/moose/branches/buildQ/ ~/moose_src
+
+As per README, get dependencies:
+sudo apt-get install g++ make python-dev libgsl0-dev libpthread-stubs0-dev python-numpy libhdf5-serial-dev
+For the GUI:
+sudo apt-get install python-matplotlib python-qt4 python-qt4-gl
+
+In ~/moose_src,
+make BUILD=release
+confirm that gui runs with:
+export PYTHONPATH=$PYTHONPATH:/home/user/moose_src/python/
+python /home/user/moose_src/gui/MooseGUI.py
+
+
+--------------------- Create 'debian' directory in ~/moose_src from scratch: -----------
+
+From the instructions at:
+http://www.debian.org/doc/manuals/maint-guide/first.en.html
+
+Follow sec 2.7 setting up dh_make in above file, setting DEBEMAIL and DEBFULLNAME
+install dh-make and build-essential via synaptic
+As per sec 2.9, above
+cd ~/moose_src
+dh_make --native -p moose_2.0 -c lgpl2
+(Choose single binary when prompted)
+This creates a ~/moose_src/debian directory.
+
+------------------ Put in MOOSE specific information for packaging ----------------------
+
+svn checkout the Debian packaging scripts/files:
+svn co https://moose.svn.sourceforge.net/svnroot/moose/packaging/debian ~/moose_src/debian-ref
+ls debian-ref/* | grep -v rules | xargs cp -f -t debian/
+
+I copy all config files except 'rules'.
+'rules' copies moose files to debian/moose/usr/share, which is only created when dpkg-buildpackage completes.
+
+In ~/moose_src/debian/, you can
+edit 'copyright' file to put in author names, change package copyright also to lgpl2 etc.
+edit control, postinst and prerm files.
+IMPORTANT: In ~/moose_src/debian/control, set architecture to 'i386' or 'amd64' for 32-bit / 64-bit systems.
+
+------------------- Generate /debian/moose/usr/ etc and rudimetary .deb -----------------
+
+In ~/moose_src,
+dpkg-buildpackage -b -nc
+-b is for only binary package.
+-nc is to not clean and rebuild, since we built moose already.
+will create debian/moose and deeper directories and also ../*.deb files.
+
+[Without -nc, we get linking error, but can do `make BUILD=release` after `dpkg-buildpackage -b`.
+After this, again try `dpkg-buildpackage -nc -b`.]
+
+------------------- Now put in actual moose install files --------------------------------
+
+cp debian-ref/rules debian/
+
+`make install` does not install anything.
+So, you need to copy stuff :
+I added below lines to ~/moose_src/debian/rules which runs during dpkg-buildpackage.
+All things placed under debian/moose/usr will get copied onto /usr during .deb package install.
+## Since .svn folders hierarchically also get copied using cp -R, we do svn export
+mkdir debian/moose/usr/share/moose
+svn export python debian/moose/usr/share/moose/python
+svn export Docs debian/moose/usr/share/doc/moose
+svn export Demos debian/moose/usr/share/moose/Demos
+svn export gui debian/moose/usr/share/moose/gui
+cp README debian/moose/usr/share/moose/
+
+Finally, `dpkg-buildpackage -nc -b` to get ../moose*.deb package.
+
+------------------------------ Testing deb packages ---------------------------------------
+
+Install lintian via synaptic and use it on moose*.dsc and moose*.deb to check for certain errors.
+
