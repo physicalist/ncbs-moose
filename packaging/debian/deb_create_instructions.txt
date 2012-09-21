@@ -43,49 +43,39 @@ This creates a ~/moose_src/debian directory.
 
 svn checkout the Debian packaging scripts/files:
 svn co https://moose.svn.sourceforge.net/svnroot/moose/packaging/debian ~/moose_src/debian-ref
-ls debian-ref/* | grep -v rules | xargs cp -f -t debian/
-
-I copy all config files except 'rules'.
-'rules' copies moose files to debian/moose/usr/share, which is only created when dpkg-buildpackage completes.
+## This is a neat way to copy all files except rules, not needed now, but kept as a reference.
+#ls debian-ref/* | grep -v rules | xargs cp -f -t debian/
+## copy all the config files
+cp debian-ref/* debian/
 
 In ~/moose_src/debian/, you can
 edit 'copyright' file to put in author names, change package copyright also to lgpl2 etc.
 edit control, postinst and prerm files.
 IMPORTANT: In ~/moose_src/debian/control, set architecture to 'i386' or 'amd64' for 32-bit / 64-bit systems.
 
-------------------- Generate /debian/moose/usr/ etc and rudimetary .deb -----------------
+------------------- Generate /debian/moose/usr/ etc and .deb package ---------------------
 
 In ~/moose_src,
-dpkg-buildpackage -b -nc
+dpkg-buildpackage -b
 -b is for only binary package.
--nc is to not clean before build, since we built moose already.
 will create debian/moose and deeper directories and also ../*.deb files.
 
-[Without -nc, we get linking error, but can do `make BUILD=release` after `dpkg-buildpackage -b`.
-After this, again try `dpkg-buildpackage -nc -b`.]
+------------------------------ Packaging tips ---------------------------------------------
 
-------------------- Now put in actual moose install files --------------------------------
+Note that dpkg-buildpackage calls a lot of dh_* scripts. Read their manpages to see what they do.
+You can call these individually yourself too for testing.
 
-cp debian-ref/rules debian/
+I've set BUILD=release in debian/rules, and also unexported LD_FLAGS which dpkg-buildpackage sets initially [else these flags cause moose to fail linking during build].
 
-`make install` does not install anything.
-So, you need to copy stuff :
-I added below lines to ~/moose_src/debian/rules which runs during dpkg-buildpackage.
-All things placed under debian/moose/usr will get copied onto /usr during .deb package install.
-## Since .svn folders hierarchically also get copied using cp -R, we do svn export
-mkdir debian/moose/usr/share/moose
-svn export python debian/moose/usr/share/moose/python
-svn export Docs debian/moose/usr/share/doc/moose
-svn export Demos debian/moose/usr/share/moose/Demos
-svn export gui debian/moose/usr/share/moose/gui
-cp README debian/moose/usr/share/moose/
+fakeroot debian/rules binary
+I've modified rules so that for binary target, it copies all required/installable moose files into debian/tmp.
 
-Since new files have been added, -nc option (no clean) cannot be used.
-In ~/moose_src:
-dpkg-buildpackage -b
-This gives linking error.
-So `make BUILD=release`.
-Finally, `dpkg-buildpackage -nc -b` to get ../moose*.deb package.
+dh_install
+Refer manpage of dh_install (man dh_install).
+To install files that 'make install' does not, first copy them to debian/tmp as above,
+then specify the source files/folders and destinations in 'debian/moose.install' as I have done .
+
+[use `dpkg-buildpackage -s -nc` to not clean before build, but useless as it won't make .deb package]
 
 ------------------------------ Testing deb packages ---------------------------------------
 
