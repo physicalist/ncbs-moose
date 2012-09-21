@@ -13,8 +13,9 @@ BUILD=release
 unexport LDFLAGS
 
 %:
-	dh  $@
-
-binary:
+	## putting copying of moose files in wildcard target. This copies twice for build and binary targets.
+	## If I put a separate binary: target, then this target's code i.e. dh $@ is not excuted.
+	## Ideally, I should have some check here, do only if 'binary' target, but copying twice isn't too slow.
 	debian/copy_moose_install_files
+	dh  $@
 
