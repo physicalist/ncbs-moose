@@ -35,8 +35,8 @@ Follow sec 2.7 setting up dh_make in above file, setting DEBEMAIL and DEBFULLNAM
 install dh-make and build-essential via synaptic
 As per sec 2.9, above
 cd ~/moose_src
-dh_make --native -p moose_2.0 -c lgpl2
-(Choose single binary when prompted)
+dh_make --native -s -p moose_2.0 -c lgpl2
+[Set version number and licence (lgpl2) above.]
 This creates a ~/moose_src/debian directory.
 
 ------------------ Put in MOOSE specific information for packaging ----------------------
@@ -58,7 +58,7 @@ IMPORTANT: In ~/moose_src/debian/control, set architecture to 'i386' or 'amd64' 
 In ~/moose_src,
 dpkg-buildpackage -b -nc
 -b is for only binary package.
--nc is to not clean and rebuild, since we built moose already.
+-nc is to not clean before build, since we built moose already.
 will create debian/moose and deeper directories and also ../*.deb files.
 
 [Without -nc, we get linking error, but can do `make BUILD=release` after `dpkg-buildpackage -b`.
@@ -80,9 +80,17 @@ svn export Demos debian/moose/usr/share/moose/Demos
 svn export gui debian/moose/usr/share/moose/gui
 cp README debian/moose/usr/share/moose/
 
+Since new files have been added, -nc option (no clean) cannot be used.
+In ~/moose_src:
+dpkg-buildpackage -b
+This gives linking error.
+So `make BUILD=release`.
 Finally, `dpkg-buildpackage -nc -b` to get ../moose*.deb package.
 
 ------------------------------ Testing deb packages ---------------------------------------
+
+list contents of the .deb package:
+dpkg-deb -c ~/moose_2.0_amd64.deb
 
 Install lintian via synaptic and use it on moose*.dsc and moose*.deb to check for certain errors.
 

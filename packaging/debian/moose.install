@@ -1,0 +1,4 @@
+debian/tmp/python /usr/share/moose/
+debian/tmp/Demos /usr/share/moose/Demos
+debian/tmp/docmoose /usr/share/doc/moose
+debian/tmp/gui /usr/share/moose/gui
