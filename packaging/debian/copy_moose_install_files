@@ -1,19 +1,11 @@
-if [ -d debian/moose/usr/share/moose/python ]; then
-	rm -Rf debian/moose/usr/share/moose/python
+#!/bin/sh
+if [ -d debian/tmp ]; then
+	rm -Rf debian/tmp
 fi
-if [ -d debian/moose/usr/share/moose/Demos ]; then
-	rm -Rf debian/moose/usr/share/moose/Demos
-fi
-if [ -d debian/moose/usr/share/moose/gui ]; then
-	rm -Rf debian/moose/usr/share/moose/gui
-fi
-if [ -d debian/moose/usr/share/doc/moose ]; then
-	rm -Rf debian/moose/usr/share/doc/moose
-fi
-mkdir debian/moose/usr/share/moose
-svn export python debian/moose/usr/share/moose/python
-svn export Demos debian/moose/usr/share/moose/Demos
-svn export Docs debian/moose/usr/share/doc/moose
-svn export gui debian/moose/usr/share/moose/gui
-cp README debian/moose/usr/share/doc/moose/
+mkdir debian/tmp
+svn export python debian/tmp/python
+svn export Demos debian/tmp/Demos
+svn export Docs debian/tmp/docmoose
+svn export gui debian/tmp/gui
+cp README debian/tmp/docmoose/
 
