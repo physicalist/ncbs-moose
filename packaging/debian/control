@@ -1,0 +1,21 @@
+Source: moose
+Section: Science
+Priority: optional
+Maintainer: Aditya Gilra <adityag@ncbs.res.in>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.3
+Homepage: http://moose.ncbs.res.in/
+
+Package: moose
+Architecture: amd64
+Depends: python2.6(>=2.6),python-qt4(>=4.7),python-numpy(>=1.3.0),libc6(>=2.10.1),libgcc1,python-matplotlib,python-qt4-gl,${shlibs:Depends}, ${misc:Depends}
+Description: MOOSE is the Multiscale Object-Oriented Simulation Environment.
+ It is the base and numerical core for large, detailed simulations including
+ Computational Neuroscience and Systems Biology.
+ .
+ MOOSE spans the range from single molecules to subcellular networks, from
+ single cells to neuronal networks, and to still larger systems. It is
+ backwards-compatible with GENESIS, and forward compatible with Python
+ and XML-based model definition standards like SBML and MorphML. It supports
+ transparent parallelization, that is, it can run models on a cluster with no
+ user effort required to parallelize them.
