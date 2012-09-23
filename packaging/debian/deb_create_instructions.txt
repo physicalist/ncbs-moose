@@ -43,8 +43,6 @@ This creates a ~/moose_src/debian directory.
 
 svn checkout the Debian packaging scripts/files:
 svn co https://moose.svn.sourceforge.net/svnroot/moose/packaging/debian ~/moose_src/debian-ref
-## This is a neat way to copy all files except rules, not needed now, but kept as a reference.
-#ls debian-ref/* | grep -v rules | xargs cp -f -t debian/
 ## copy all the config files
 cp debian-ref/* debian/
 
@@ -68,14 +66,15 @@ You can call these individually yourself too for testing.
 I've set BUILD=release in debian/rules, and also unexported LD_FLAGS which dpkg-buildpackage sets initially [else these flags cause moose to fail linking during build].
 
 fakeroot debian/rules binary
-I've modified rules so that for binary target, it copies all required/installable moose files into debian/tmp.
+I've modified rules so that for binary target, it copies (via script copy_moose_install_files) all required/installable moose files into debian/tmp as needed for dh_install below.
+UPDATE: I updated Makefile install target to install all files (called by dh_auto_install). There are no extra files to install (thus dh_install presently does nothing). If needed, you could use as indicated here.
 
 dh_install
 Refer manpage of dh_install (man dh_install).
 To install files that 'make install' does not, first copy them to debian/tmp as above,
 then specify the source files/folders and destinations in 'debian/moose.install' as I have done .
 
-[use `dpkg-buildpackage -s -nc` to not clean before build, but useless as it won't make .deb package]
+[Use `dpkg-buildpackage -s -nc` to not clean before build. But if you change rules, Makefile, etc., dpkg-buildpackage will not realize it. You need to remove the -nc and recompile from beginning :( !]
 
 ------------------------------ Testing deb packages ---------------------------------------
 

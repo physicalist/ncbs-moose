@@ -20,10 +20,10 @@ set -e
 
 case "$1" in
     configure)
-	pydistpkg_dir=`python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"`
-	mv /usr/share/moose/python/moose $pydistpkg_dir/
-	ln -s /usr/share/moose/gui/MooseGUI.py /usr/bin/moosegui
-	chmod a+x /usr/bin/moosegui
+	#pydistpkg_dir=`python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"`
+	#mv /usr/share/moose/python/moose $pydistpkg_dir/
+	#ln -s /usr/share/moose/gui/MooseGUI.py /usr/bin/moosegui
+	#chmod a+x /usr/bin/moosegui
 
     ;;
 
