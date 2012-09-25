@@ -59,17 +59,19 @@ nano ~/.subversion/servers and in the last [global] sections, set http-proxy- ho
 (reset it back if you won't need to set proxy where you use the liveUSB/DVD).
 svn co https://moose.svn.sourceforge.net/svnroot/moose/moose/branches/buildQ moose_src
 Inside /home/moose/moose_src, run: make BUILD=release (default is debug)
-With this, after booting from liveCD, you can still svn update gui and Demos in place without needing to recompile.
-As root: cp -R /home/moose/moose_src/python/moose /usr/lib/python2.7/dist-packages/
-Somehow the desktop does not get the PYTHONPATH environment variable from ~/.bashrc .
-So desktop icons will not work by just setting PYTHONPATH in .bashrc .
-Instead as root: cp -R /home/moose/moose_src/python/moose /usr/lib/python2.7/dist-packages
+then, sudo make install , which will copy the python modules and create main menu entries.
+##With this, after booting from liveCD, you can still svn update gui and Demos in place without needing to recompile.
+##As root: cp -R /home/moose/moose_src/python/moose /usr/lib/python2.7/dist-packages/
+##Somehow the desktop does not get the PYTHONPATH environment variable from ~/.bashrc .
+##So desktop icons will not work by just setting PYTHONPATH in .bashrc .
+##Instead as root: cp -R /home/moose/moose_src/python/moose /usr/lib/python2.7/dist-packages
 (Forums claim that /etc/skel gets loaded into /home/ubuntu on login using liveCD/USB,
 so user customizations are lost, but my experience is that if you build with the GUI, /home/moose is retained).
 But updating moose source or python.moose code will require recompile/sudo copying. 
 
 As moose: cp /home/moose/moose_src/gui/*.desktop /home/moose/Desktop/
-Warning: In the MooseGUI.desktop, write /home/moose/... not ~/... . Icon images, etc don't display with ~/ .
+The moosegui and squiddemo desktop files now point to the system-installed moose in /usr/share/moose.
+##Warning: In the MooseGUI.desktop, write /home/moose/... not ~/... . Icon images, etc don't display with ~/ .
 
 Also installed openjdk-6-jre and icedtea-plugin (holder for icedtea-6-plugin) for java applets in firefox.
 
