@@ -20,10 +20,12 @@ set -e
 
 case "$1" in
     configure)
-	#pydistpkg_dir=`python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"`
-	#mv /usr/share/moose/python/moose $pydistpkg_dir/
-	#ln -s /usr/share/moose/gui/MooseGUI.py /usr/bin/moosegui
-	#chmod a+x /usr/bin/moosegui
+    	pydistpkg_dir=`python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"`
+    	install_prefix=/usr
+    	## byte compile the module, gui, Demos (since, later running as user cannot create .pyc in root-owned dirs)
+	python -c "import compileall; compileall.compile_dir('$pydistpkg_dir/moose',force=1)"
+	python -c "import compileall; compileall.compile_dir('$install_prefix/share/moose/gui',force=1)"
+	python -c "import compileall; compileall.compile_dir('$install_prefix/share/moose/Demos',force=1)"
 
     ;;
 
