@@ -76,6 +76,8 @@ then specify the source files/folders and destinations in 'debian/moose.install'
 
 [Use `dpkg-buildpackage -s -nc` to not clean before build. But if you change rules, Makefile, etc., dpkg-buildpackage will not realize it. You need to remove the -nc and recompile from beginning :( !]
 
+dh_pysupport will copy moose module over to /usr/share/pyshared/. In postinst, it will also set triggers to byte-compile + register this, and also byte-compile gui, Demos etc. In any case, I've put in my own commands to byte-compile in postinst.
+
 ------------------------------ Testing deb packages ---------------------------------------
 
 list contents of the .deb package:
