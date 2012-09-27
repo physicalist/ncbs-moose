@@ -9,7 +9,12 @@ Date: 20 Sep, 2012
 These instructions are better than above:
 http://www.debian.org/doc/manuals/maint-guide/index.en.html
 
-Packaging for and on Ubuntu 10.04 64bit in a virtualbox virtual machine on pinni@ncbs.
+Packaging for and on Ubuntu 10.04/12.04 64bit in a virtualbox virtual machine on pinni@ncbs. Not sure if updating to the latest updates for the OS will make moose deb package more restrictive. Hence not updating. But could there be security issues?
+
+For setting the proxy for the system, and setting up synaptic, subversion read the initial parts of the LiveCD customization instructions, that inform how to set up moose on a fresh install.
+https://moose.svn.sourceforge.net/svnroot/moose/packaging/UbuntuLiveCD_customization.txt
+It seems that Ubuntu Software Center does not honour the system proxy.
+So above document gives command line workarounds for the same.
 
 Get moose source from sourceforge using subversion (set proxy in ~/.subversion/servers)
 svn co https://moose.svn.sourceforge.net/svnroot/moose/moose/branches/buildQ/ ~/moose_src
@@ -43,8 +48,8 @@ This creates a ~/moose_src/debian directory.
 
 svn checkout the Debian packaging scripts/files:
 svn co https://moose.svn.sourceforge.net/svnroot/moose/packaging/debian ~/moose_src/debian-ref
-## copy all the config files
-cp debian-ref/* debian/
+## copy all the config files ignoring the .svn files
+rsync --exclude=.svn debian-ref/* debian/
 
 In ~/moose_src/debian/, you can
 edit 'copyright' file to put in author names, change package copyright also to lgpl2 etc.

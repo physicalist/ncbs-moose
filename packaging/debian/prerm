@@ -37,6 +37,14 @@ case "$1" in
 	then 
             rm -R $pydistpkg_dir/moose
 	fi
+	if [ -f $HOME/Desktop/MooseGUI.desktop ];
+	then 
+	    rm $HOME/Desktop/MooseGUI.desktop
+	fi
+	if [ -f $HOME/Desktop/HHSquidDemo.desktop ];
+	then 
+	    rm $HOME/Desktop/HHSquidDemo.desktop
+	fi
 
     ;;
 

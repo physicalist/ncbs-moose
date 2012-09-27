@@ -24,10 +24,15 @@ case "$1" in
     	install_prefix=/usr
     	ln -s -f $install_prefix/share/moose/gui/MooseGUI.py $install_prefix/bin/moosegui
     	## byte compile the module, gui, Demos (since, later running as user cannot create .pyc in root-owned dirs)
-    	## actually dh_pysupport puts in byte compile instructions later at the end of this file, so skip these:
-	#python -c "import compileall; compileall.compile_dir('$pydistpkg_dir/moose',force=1)"
-	#python -c "import compileall; compileall.compile_dir('$install_prefix/share/moose/gui',force=1)"
-	#python -c "import compileall; compileall.compile_dir('$install_prefix/share/moose/Demos',force=1)"
+    	## actually dh_pysupport puts in byte compile instructions later at the end of this file, but those do not seem to work, so put these ones in:
+	python -c "import compileall; compileall.compile_dir('$pydistpkg_dir/moose',force=1)"
+	python -c "import compileall; compileall.compile_dir('$install_prefix/share/moose/gui',force=1)"
+	python -c "import compileall; compileall.compile_dir('$install_prefix/share/moose/Demos',force=1)"
+	## copy the .desktop files to the user's desktop too to get icons
+	## $HOME refers to home of the user who sudo installs the deb package, not root.
+	cp $install_prefix/share/moose/gui/MooseGUI.desktop $HOME/Desktop/
+	cp $install_prefix/share/moose/gui/HHSquidDemo.desktop $HOME/Desktop/
+	
 
     ;;
 
