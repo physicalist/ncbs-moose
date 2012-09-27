@@ -37,12 +37,14 @@ You can even exit from the console and double-click package manager -- will work
 
 Dependencies for moose:
 Always first apt-get update (to get latest list of packages), then install/upgrade.
-apt-get install g++ swig subversion libgsl0-dev python-dev python-numpy
-(./configure, make and sudo make install : libSBML from sourceforge for 'make use_libSBML=1'; off by default.
+apt-get install subversion
+svn help (this creates ~/.subversion/servers)
+set proxy at the end of the ~/.subversion/servers files in the [global] section at the end.
+sudo apt-get install g++ make python-dev libgsl0-dev libpthread-stubs0-dev python-numpy libhdf5-serial-dev
+(Also ./configure, make and sudo make install : libSBML from sourceforge for 'make use_libSBML=1'; off by default.
 requires libxml2 and libxml2-dev via apt-get / synaptic.)
-for the gui:
-apt-get install python-qt4
-apt-get install python-qt4-gl python-pygraphviz python-matplotlib
+For the GUI:
+sudo apt-get install python-matplotlib python-qt4 python-qt4-gl
 (these require universe/multiverse repositories enabled, see above.)
 
 Adding user below retains that user in the liveCD and that user comes up as the default user in the liveCD.
