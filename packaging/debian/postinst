@@ -30,9 +30,16 @@ case "$1" in
 	python -c "import compileall; compileall.compile_dir('$install_prefix/share/moose/Demos',force=1)"
 	## copy the .desktop files to the user's desktop too to get icons
 	## $HOME refers to home of the user who sudo installs the deb package, not root.
+	## But $USER is root, so get the basename of $HOME to get username
+	username=`basename $HOME`
 	cp $install_prefix/share/moose/gui/MooseGUI.desktop $HOME/Desktop/
-	cp $install_prefix/share/moose/gui/HHSquidDemo.desktop $HOME/Desktop/
-	
+	chmod a+x $$HOME/Desktop/MooseGUI.desktop
+	chown $username $HOME/Desktop/MooseGUI.desktop
+	chgrp $username $HOME/Desktop/MooseGUI.desktop
+	cp $install_prefix/share/moose/gui/MooseSquidAxon.desktop $HOME/Desktop/
+	chmod a+x $HOME/Desktop/MooseSquidAxon.desktop
+	chgrp $username $HOME/Desktop/MooseSquidAxon.desktop
+	chown $username $HOME/Desktop/MooseSquidAxon.desktop
 
     ;;
 
