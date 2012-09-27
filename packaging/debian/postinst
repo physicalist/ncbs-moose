@@ -33,13 +33,14 @@ case "$1" in
 	## But $USER is root, so get the basename of $HOME to get username
 	username=`basename $HOME`
 	cp $install_prefix/share/moose/gui/MooseGUI.desktop $HOME/Desktop/
-	chmod a+x $$HOME/Desktop/MooseGUI.desktop
-	chown $username $HOME/Desktop/MooseGUI.desktop
-	chgrp $username $HOME/Desktop/MooseGUI.desktop
+	## important to use quotes below, else $HOME returns some 5digitnumberHOME!
+	chmod a+x "$HOME/Desktop/MooseGUI.desktop"
+	chown $username "$HOME/Desktop/MooseGUI.desktop"
+	chgrp $username "$HOME/Desktop/MooseGUI.desktop"
 	cp $install_prefix/share/moose/gui/MooseSquidAxon.desktop $HOME/Desktop/
-	chmod a+x $HOME/Desktop/MooseSquidAxon.desktop
-	chgrp $username $HOME/Desktop/MooseSquidAxon.desktop
-	chown $username $HOME/Desktop/MooseSquidAxon.desktop
+	chmod a+x "$HOME/Desktop/MooseSquidAxon.desktop"
+	chgrp $username "$HOME/Desktop/MooseSquidAxon.desktop"
+	chown $username "$HOME/Desktop/MooseSquidAxon.desktop"
 
     ;;
 
