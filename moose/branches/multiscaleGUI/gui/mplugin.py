@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Oct  2 17:33:08 2012 (+0530)
+# Last-Updated: Tue Oct  2 17:58:51 2012 (+0530)
 #           By: subha
-#     Update #: 19
+#     Update #: 22
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -50,14 +50,18 @@ class MoosePlugin(object):
     def __init__(self):
 	pass
 
-    def down(self):
+    def getPreviousPlugin(self):
 	"""Returns the plugin object that the gui is supposed to
 	switch to when going to a smaller scale."""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
-    def up(self):
+    def getNextPlugin(self):
 	"""Returns the plugin object that the gui is supposed to
 	switch to when going to a larger scale."""
+	raise NotImplementedError('method must be reimplemented in subclass')
+
+    def getAllAllowedPlugins(self):
+	"""Return a list of plugins that are valid transitions from this plugin"""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
     def getEditorWidget(self):
