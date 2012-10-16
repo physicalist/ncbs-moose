@@ -9,7 +9,9 @@
 
 #include "header.h"
 // #include "ReduceFinfo.h"
+#ifndef USE_CHARMPP
 #include "../shell/Shell.h"
+#endif
 #include <time.h>
 #ifdef WIN32	      // True for Visual C++ compilers
 	#include <Windows.h>  // for Win32 Sleep function
@@ -21,10 +23,12 @@
 #endif
 */
 
+const BindIndex Qinfo::DirectAdd = -1;
+
+#ifndef USE_CHARMPP
 // Declaration of static fields
 bool Qinfo::isSafeForStructuralOps_ = 0;
 bool Qinfo::parserPending_ = 0;
-const BindIndex Qinfo::DirectAdd = -1;
 vector< double > Qinfo::q0_( 1000, 0.0 );
 
 vector< vector< double > > Qinfo::dBuf_;
@@ -55,6 +59,7 @@ vector< unsigned int > Qinfo::blockSize_;
 
 static const unsigned int QinfoSizeInDoubles = 
 			1 + ( sizeof( Qinfo ) - 1 ) / sizeof( double );
+#endif
 
 
 /// Default dummy Qinfo creation.
@@ -68,21 +73,39 @@ Qinfo::Qinfo()
 {;}
 
 Qinfo::Qinfo( const ObjId& src, 
-	BindIndex bindIndex, ThreadId threadNum,
-	unsigned int dataIndex, unsigned int dataSize )
+	BindIndex bindIndex, 
+        ThreadId threadNum,
+#ifdef USE_CHARMPP
+        ElementContainer *container,
+#endif
+	unsigned int dataIndex, 
+        unsigned int dataSize )
 	:	
 		src_( src ),
 		msgBindIndex_( bindIndex ),
 		threadNum_( threadNum ),
+#ifdef USE_CHARMPP
+                container_(container),
+#endif
 		dataIndex_( dataIndex ),
 		dataSize_( dataSize )
 {;}
 
-Qinfo::Qinfo( const Qinfo* orig, ThreadId threadNum )
+Qinfo::Qinfo( const Qinfo* orig, 
+#ifndef USE_CHARMPP
+              ThreadId threadNum
+#else
+              ThreadId threadNum,
+              ElementContainer *container
+#endif
+              )
 	:	
 		src_( orig->src_ ),
 		msgBindIndex_( orig->msgBindIndex_ ),
 		threadNum_( threadNum ),
+#ifdef USE_CHARMPP
+                container_(container), 
+#endif
 		dataIndex_( orig->dataIndex_ ),
 		dataSize_( orig->dataSize_ )
 {;}
@@ -97,6 +120,7 @@ bool Qinfo::execThread( Id id, unsigned int dataIndex ) const
 }
 */
 
+#ifndef USE_CHARMPP
 /**
  * This is called within barrier1 of the ProcessLoop. It isn't
  * thread-safe, relies on the location of the call to achieve safety.
@@ -719,10 +743,12 @@ bool Qinfo::addToStructuralQ() const
 		}
 	return ret;
 }
+#endif
 
 /// Static func
 void Qinfo::initMutex()
 {
+#ifndef USE_CHARMPP
 	qMutex_ = new pthread_mutex_t;
 	pMutex_ = new pthread_mutex_t;
 	int ret = pthread_mutex_init( qMutex_, NULL );
@@ -732,11 +758,13 @@ void Qinfo::initMutex()
 	qCond_ = new pthread_cond_t;
 	ret = pthread_cond_init( qCond_, NULL );
 	assert( ret == 0 );
+#endif
 }
 
 /// Static func
 void Qinfo::freeMutex()
 {
+#ifndef USE_CHARMPP
 	int ret = pthread_mutex_destroy( qMutex_ );
 	assert( ret == 0 );
 	pthread_mutex_unlock( pMutex_ );
@@ -747,8 +775,10 @@ void Qinfo::freeMutex()
 	delete qMutex_;
 	delete pMutex_;
 	delete qCond_;
+#endif
 }
 
+#ifndef USE_CHARMPP
 /// Static func
 void Qinfo::emptyAllQs()
 {
@@ -893,3 +923,4 @@ void Qinfo::clearReduceQ( unsigned int numThreads )
 		reduceQ_[j].resize( 0 );
 	}
 }
+#endif

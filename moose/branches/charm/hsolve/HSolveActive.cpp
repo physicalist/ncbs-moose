@@ -321,6 +321,9 @@ void HSolveActive::sendValues( ProcPtr info ) {
         ZombieCaConc::concOut()->send(
 			caConcId_[ i ].eref(),
 			info->threadIndexInGroup,
+#ifdef USE_CHARMPP
+                        info->container,
+#endif
 			ca_[ i ]
 		);
 }

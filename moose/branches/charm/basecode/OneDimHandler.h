@@ -14,10 +14,10 @@
  * This class manages the data part of Elements. It handles a one-
  * dimensional array.
  */
+class TestAsync;
 class OneDimHandler: public BlockHandler
 {
-	friend void testOneDimHandler();
-	friend void testFieldDataHandler();
+	friend class TestAsync;
 	public:
 
 		OneDimHandler( const DinfoBase* dinfo, 

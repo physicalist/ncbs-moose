@@ -9,6 +9,8 @@
 #ifndef _GROUP_H
 #define _GROUP_H
 
+namespace moose {
+
 class Group
 {
 	public: 
@@ -16,5 +18,7 @@ class Group
 		static const Cinfo* initCinfo();
 	private:
 };
+
+}
 
 #endif // _GROUP_H

@@ -106,10 +106,10 @@ moose.start(100e-3)
 soma.inject = 0.0
 # Run for 500 ms
 moose.start(500e-3)
-clock = moose.Clock('/clock') # Get a handle to the global clock
-pylab.plot(pylab.linspace(0, clock.currentTime, len(axon_Vm.vec)), axon_Vm.vec, label='Vm of axon')
-pylab.legend()
-pylab.show()
+#clock = moose.Clock('/clock') # Get a handle to the global clock
+#pylab.plot(pylab.linspace(0, clock.currentTime, len(axon_Vm.vec)), axon_Vm.vec, label='Vm of axon')
+#pylab.legend()
+#pylab.show()
 
 # 
 # compartmental_neuron.py ends here

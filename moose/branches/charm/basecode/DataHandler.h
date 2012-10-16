@@ -10,11 +10,11 @@
 #ifndef _DATA_HANDLER_H
 #define _DATA_HANDLER_H
 
-typedef struct {
+struct DimInfo {
 	unsigned int size;
 	unsigned short depth;
 	bool isRagged;
-} DimInfo;
+};
 
 /**
  * This class manages the data part of Elements. This includes
@@ -246,6 +246,7 @@ class DataHandler
 		 * threading check. However, it does NOT pass DataId::any.
 		 */
 		virtual bool execThread( ThreadId thread, DataId di ) const = 0;
+
 /////////////////////////////////////////////////////////////////////////
 // Function to go through entire dataset applying specified operations
 // in a thread-safe manner.

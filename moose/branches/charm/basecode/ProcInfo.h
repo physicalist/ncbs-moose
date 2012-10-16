@@ -1,3 +1,5 @@
+#ifndef MOOSE_PROC_INFO_H
+#define MOOSE_PROC_INFO_H
 /**********************************************************************
 ** This program is part of 'MOOSE', the
 ** Messaging Object Oriented Simulation Environment.
@@ -7,33 +9,50 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#ifdef USE_CHARMPP
+class ElementContainer;
+#endif
+
 class ProcInfo
 {
 	public:
 		ProcInfo() 
-			: dt( 1.0 ), currTime( 0.0 ), numThreads( 1 ), threadId( 0 ),
-//				outQid( 0 ), 
+			:       dt( 1.0 ), currTime( 0.0 ), 
+                                threadId( 0 ),
 				threadIndexInGroup( 0 ), 
+                                numThreads( 1 ), 
 				numThreadsInGroup( 1 ), 
 				nodeIndexInGroup( 0 ),
 				numNodesInGroup( 1 ), 
 				groupId( 0 ),
 				procIndex( 0 ),
+#ifdef USE_CHARMPP
+                                container(NULL)
+#else
+//				outQid( 0 ), 
 				isMpiThread( 0 ),
 				barrier1( 0 ),
 				barrier2( 0 )
+#endif
 			{;}
+
+
 		double dt;
 		double currTime;
-		unsigned int numThreads; // Includes the mpiThread, if any
 		unsigned int threadId;
-//		Qid outQid;	// Index of outQ to use.
 		unsigned int threadIndexInGroup;
+		unsigned int numThreads; // Includes the mpiThread, if any
+//		Qid outQid;	// Index of outQ to use.
 		unsigned int numThreadsInGroup; // compute threads
 		unsigned int nodeIndexInGroup;
 		unsigned int numNodesInGroup;
 		unsigned int groupId;
 		unsigned int procIndex; // Look up for this Proc on Shell::getProc
+
+#ifdef USE_CHARMPP
+                ElementContainer *container;
+                unsigned int nElementContainers;
+#else
 		bool isMpiThread;
 		FuncBarrier* barrier1;
 		FuncBarrier* barrier2;
@@ -51,7 +70,10 @@ class ProcInfo
 			return threadIndexInGroup == 
 				( ( id.value() + dataIndex ) % numThreadsInGroup );
 		}
-#ifndef NDEBUG    
+#endif // USE_CHARMPP
+
+
+#if !defined NDEBUG && !defined USE_CHARMPP
     // This is for debugging. Is not thread safe.
     friend ostream& operator <<( ostream& s, const ProcInfo p ){        
         s << "Instance of class ProcInfo"
@@ -71,3 +93,4 @@ class ProcInfo
 };
 
 typedef const ProcInfo* ProcPtr;
+#endif // MOOSE_PROC_INFO_H

@@ -34,39 +34,39 @@ static Finfo* efflux() {
 }
 
 
-const Cinfo* Port::initCinfo()
+const Cinfo* moose::Port::initCinfo()
 {
-		static ValueFinfo< Port, double > scaleOutRate(
+		static ValueFinfo< moose::Port, double > scaleOutRate(
 			"scaleOutRate",
 			"Scaling factor for outgoing rates. Applies to the RateTerms"
 			"controlled by this port. Represents a diffusion related term,"
 			"or the permeability of the port",
-			&Port::setScaleOutRate,
-			&Port::getScaleOutRate
+			&moose::Port::setScaleOutRate,
+			&moose::Port::getScaleOutRate
 		);
 
-		static ReadOnlyValueFinfo< Port, unsigned int > inStart(
+		static ReadOnlyValueFinfo< moose::Port, unsigned int > inStart(
 			"inStart",
 			"Start index to S_ vector into which incoming molecules should add.",
-			&Port::getInStart
+			&moose::Port::getInStart
 		);
 
-		static ReadOnlyValueFinfo< Port, unsigned int > inEnd(
+		static ReadOnlyValueFinfo< moose::Port, unsigned int > inEnd(
 			"inEnd",
 			"End index to S_ vector into which incoming molecules should add.",
-			&Port::getInEnd
+			&moose::Port::getInEnd
 		);
 
-		static ReadOnlyValueFinfo< Port, unsigned int > outStart(
+		static ReadOnlyValueFinfo< moose::Port, unsigned int > outStart(
 			"outStart",
 			"Start index to S_ vector from where outgoing molecules come.",
-			&Port::getOutStart
+			&moose::Port::getOutStart
 		);
 
-		static ReadOnlyValueFinfo< Port, unsigned int > outEnd(
+		static ReadOnlyValueFinfo< moose::Port, unsigned int > outEnd(
 			"outEnd",
 			"End index to S_ vector from where outgoing molecules come.",
-			&Port::getOutEnd
+			&moose::Port::getOutEnd
 		);
 
 		static DestFinfo handleAvailableMolsAtPort( "handleAvailableMolsAtPort",
@@ -134,15 +134,15 @@ const Cinfo* Port::initCinfo()
 		Neutral::initCinfo(),
 		portFinfos,
 		sizeof( portFinfos ) / sizeof ( Finfo* ),
-		new Dinfo< Port >()
+		new Dinfo< moose::Port >()
 	);
 
 	return &portCinfo;
 }
 
-static const Cinfo* portCinfo = Port::initCinfo();
+static const Cinfo* portCinfo = moose::Port::initCinfo();
 
-Port::Port()
+moose::Port::Port()
 	: 
 		inStart_( 0 ),
 		inEnd_( 0 ),
@@ -154,35 +154,35 @@ Port::Port()
 	;
 }
 
-Port::~Port()
+moose::Port::~Port()
 {;}
 
-void Port::setScaleOutRate( double v )
+void moose::Port::setScaleOutRate( double v )
 {
 	scaleOutRate_ = v;
 }
 
-double Port::getScaleOutRate() const
+double moose::Port::getScaleOutRate() const
 {
 	return scaleOutRate_;
 }
 
-unsigned int Port::getInStart() const
+unsigned int moose::Port::getInStart() const
 {
 	return inStart_;
 }
 
-unsigned int Port::getInEnd() const
+unsigned int moose::Port::getInEnd() const
 {
 	return inEnd_;
 }
 
-unsigned int Port::getOutStart() const
+unsigned int moose::Port::getOutStart() const
 {
 	return outStart_;
 }
 
-unsigned int Port::getOutEnd() const
+unsigned int moose::Port::getOutEnd() const
 {
 	return outEnd_;
 }
@@ -200,12 +200,12 @@ unsigned int Port::getOutEnd() const
  * (i.e., non-default) SpeciesId assigned, and those with a zero diffusion
  * constant.
  */
-void Port::assignPools( const vector< Id >& pools )
+void moose::Port::assignPools( const vector< Id >& pools )
 {
 	
 }
 
-void Port::findMatchingMolSpecies( const vector< SpeciesId >& other, 
+void moose::Port::findMatchingMolSpecies( const vector< SpeciesId >& other, 
 	vector< SpeciesId >& ret )
 {
 	ret.resize( 0 );

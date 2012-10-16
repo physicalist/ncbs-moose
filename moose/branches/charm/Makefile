@@ -99,7 +99,7 @@ USE_GSL = 1
 endif
 # Profiling mode:
 ifeq ($(BUILD),profile)
-CXXFLAGS  = -O3 -pg  -pthread -fpermissive -fno-strict-aliasing -fPIC -Wall -Wno-long-long -pedantic -DNDEBUG -DUSE_GENESIS_PARSER  
+CXXFLAGS  = -O3 -pg  -pthread -fpermissive -fno-strict-aliasing -fPIC -Wall -Wno-long-long -pedantic -DNDEBUG -DUSE_GENESIS_PARSER -DDO_UNIT_TESTS 
 USE_GSL = 1
 endif
 # Threading mode:
@@ -120,6 +120,12 @@ ifeq ($(BUILD),ompi)
 CXXFLAGS  = -O3 -pthread -Wall -Wno-long-long -pedantic -DNDEBUG -DUSE_GENESIS_PARSER
 USE_MPI = 1
 USE_GSL = 1
+endif
+
+ifeq ($(BUILD), charm++)
+USE_GSL = 1
+CXXFLAGS = -g -O0 -Wall -DUSE_CHARMPP -DUSE_GSL
+USE_CHARMPP = 1
 endif
 
 # optimised mode but with unit tests.
@@ -154,7 +160,7 @@ endif
 ifneq ($(SVN),0)
 SVN_REVISION=$(shell svnversion)
 ifneq ($(SVN_REVISION),export)
-CXXFLAGS+=-DSVN_REVISION=\"$(SVN_REVISION)\"
+#CXXFLAGS+=-DSVN_REVISION='\"'$(SVN_REVISION)'\"'
 endif
 endif
 
@@ -254,8 +260,18 @@ ifdef USE_MPI
 #	PARALLEL_DIR = parallel
 #	PARALLEL_LIB = parallel/parallel.o
 else
-	CXX = g++
+	CXX = g++ 
 #	CXX = CC	# Choose between Solaris CC and g++ on a Solaris machine
+endif
+
+ifdef USE_CHARMPP
+# set CHARM_PATH 
+        CHARM_PATH = $(HOME)/work/charm-soc/charm/net-linux
+        CXX = $(CHARM_PATH)/bin/charmc 
+        #INCPATH = -I./basecode -I./scheduling -I./msg -I./shell
+        LIBS += -lccs-client
+else 
+        CXX = g++ 
 endif
 
 ifdef USE_HDF5
@@ -265,10 +281,16 @@ endif
 
 LD = ld
 
-SUBDIR = \
+ifeq ($(BUILD), charm++)
+SUBDIR = charm
+else
+SUBDIR = 
+endif
+
+SUBDIR += \
+	shell \
 	basecode \
 	msg \
-	shell \
 	biophysics\
 	hsolve\
 	randnum\
@@ -287,7 +309,7 @@ SUBDIR = \
 
 
 # Used for 'make clean'
-CLEANSUBDIR = $(SUBDIR) $(PARALLEL_DIR) pymoose
+CLEANSUBDIR = $(SUBDIR) $(PARALLEL_DIR) pymoose charm
 
 OBJLIBS =	\
 	basecode/_basecode.o \
@@ -308,6 +330,7 @@ OBJLIBS =	\
 	manager/_manager.o \
 	$(SMOLDYN_LIB) \
 	$(SBML_LIB) \
+        charm/_moose_charm.o \
 
 export CXX
 export CXXFLAGS
@@ -363,9 +386,14 @@ basecode/_basecode_pymoose.o:
 	$(MAKE) -C basecode pymoose 
 	@echo "_basecode_pymoose.o built"
 libs:
+	@echo \
+        "#ifndef MOOSE_SVN_REVISION_H\n\
+        #define MOOSE_SVN_REVISION_H\n\
+        #define SVN_REVISION \"$(SVN_REVISION)\"\n\
+        #endif" > shell/svn_revision.h 
 	@(for i in $(SUBDIR) $(PARALLEL_DIR); do $(MAKE) -C $$i; done)
 	@echo "All Libs compiled"
 
 clean:
 	@(for i in $(CLEANSUBDIR) ; do $(MAKE) -C $$i clean;  done)
-	-rm -rf moose  core.* DOCS/html python/moose/*.so python/moose/*.pyc  
+	-rm -rf moose charmrun core.* DOCS/html python/moose/*.so python/moose/*.pyc  

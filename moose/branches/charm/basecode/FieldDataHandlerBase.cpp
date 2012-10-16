@@ -177,6 +177,7 @@ void FieldDataHandlerBase::process( const ProcInfo* p, Element* e, FuncId fid ) 
 	 */
 	unsigned int startIndex = 0;
 	unsigned int endIndex = localEntries();
+#ifndef USE_CHARMPP
 	if ( Shell::numProcessThreads() > 1 ) {
 		// Note that threadIndexInGroup is indexed from 1 up.
 		assert( p->threadIndexInGroup >= 1 );
@@ -186,6 +187,7 @@ void FieldDataHandlerBase::process( const ProcInfo* p, Element* e, FuncId fid ) 
 		endIndex = ( localEntries() * p ->threadIndexInGroup +
 			Shell::numProcessThreads() - 1 ) / Shell::numProcessThreads();
 	}
+#endif
 	const OpFunc* f = e->cinfo()->getOpFunc( fid );
 	const ProcOpFuncBase* pf = dynamic_cast< const ProcOpFuncBase* >( f );
 	assert( pf );

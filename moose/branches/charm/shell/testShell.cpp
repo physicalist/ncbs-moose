@@ -71,23 +71,23 @@ void testTreeTraversal()
 	////////////////////////////////////////////////////////////////
 	// Checking for own Ids
 	////////////////////////////////////////////////////////////////
-	ObjId me = Field< ObjId >::get( f3aa, "me" );
+	ObjId me = Field< ObjId >::get( ObjId(f3aa), "me" );
 	assert( me == ObjId( f3aa, 0 ) );
-	me = Field< ObjId >::get( f3ba, "me" );
+	me = Field< ObjId >::get( ObjId(f3ba), "me" );
 	assert( me == ObjId( f3ba, 0 ) );
-	me = Field< ObjId >::get( f2c, "me" );
+	me = Field< ObjId >::get( ObjId(f2c), "me" );
 	assert( me == ObjId( f2c, 0 ) );
 
 	////////////////////////////////////////////////////////////////
 	// Checking for parent Ids
 	////////////////////////////////////////////////////////////////
-	ObjId pa = Field< ObjId >::get( f3aa, "parent" );
+	ObjId pa = Field< ObjId >::get( ObjId(f3aa), "parent" );
 	assert( pa == ObjId( f2a, 0 ) );
-	pa = Field< ObjId >::get( f3ab, "parent" );
+	pa = Field< ObjId >::get( ObjId(f3ab), "parent" );
 	assert( pa == ObjId( f2a, 0 ) );
-	pa = Field< ObjId >::get( f2b, "parent" );
+	pa = Field< ObjId >::get( ObjId(f2b), "parent" );
 	assert( pa == ObjId( f1, 0 ) );
-	pa = Field< ObjId >::get( f1, "parent" );
+	pa = Field< ObjId >::get( ObjId(f1), "parent" );
 	assert( pa == ObjId( Id(), 0 ) );
 
 	cout << "." << flush;
@@ -95,22 +95,22 @@ void testTreeTraversal()
 	////////////////////////////////////////////////////////////////
 	// Checking for child Id lists
 	////////////////////////////////////////////////////////////////
-	vector< Id > kids = Field< vector< Id > >::get( f1, "children" );
+	vector< Id > kids = Field< vector< Id > >::get( ObjId(f1), "children" );
 	assert( kids.size() == 3 );
 	assert( kids[0] == f2a );
 	assert( kids[1] == f2b );
 	assert( kids[2] == f2c );
 
-	kids = Field< vector< Id > >::get( f2a, "children" );
+	kids = Field< vector< Id > >::get( ObjId(f2a), "children" );
 	assert( kids.size() == 2 );
 	assert( kids[0] == f3aa );
 	assert( kids[1] == f3ab );
 	
-	kids = Field< vector< Id > >::get( f2b, "children" );
+	kids = Field< vector< Id > >::get( ObjId(f2b), "children" );
 	assert( kids.size() == 1 );
 	assert( kids[0] == f3ba );
 
-	kids = Field< vector< Id > >::get( f2c, "children" );
+	kids = Field< vector< Id > >::get( ObjId(f2c), "children" );
 	assert( kids.size() == 0 );
 
 	cout << "." << flush;
@@ -118,22 +118,22 @@ void testTreeTraversal()
 	////////////////////////////////////////////////////////////////
 	// Checking path string generation.
 	////////////////////////////////////////////////////////////////
-	string path = Field< string >::get( f3aa, "path" );
+	string path = Field< string >::get( ObjId(f3aa), "path" );
 	assert( path == "/f1/f2a/f3aa" );
-	path = Field< string >::get( f3ab, "path" );
+	path = Field< string >::get( ObjId(f3ab), "path" );
 	assert( path == "/f1/f2a/f3ab" );
-	path = Field< string >::get( f3ba, "path" );
+	path = Field< string >::get( ObjId(f3ba), "path" );
 	assert( path == "/f1/f2b/f3ba" );
 
-	path = Field< string >::get( f2a, "path" );
-	assert( path == "/f1/f2a" );
-	path = Field< string >::get( f2b, "path" );
-	assert( path == "/f1/f2b" );
-	path = Field< string >::get( f2c, "path" );
-	assert( path == "/f1/f2c" );
-	path = Field< string >::get( f1, "path" );
+	path = Field< string >::get( ObjId(f2a), "path" );
+	assert( path == "/f1/f2a" ); 
+	path = Field< string >::get( ObjId(f2b), "path" );
+	assert( path == "/f1/f2b" ); 
+	path = Field< string >::get( ObjId(f2c), "path" );
+	assert( path == "/f1/f2c" ); 
+	path = Field< string >::get( ObjId(f1), "path" );
 	assert( path == "/f1" );
-	path = Field< string >::get( Id(), "path" );
+	path = Field< string >::get( ObjId(Id()), "path" );
 	assert( path == "/" );
 
 	cout << "." << flush;
@@ -273,11 +273,11 @@ void testMove()
 	Id f4b = shell->doCreate( "Neutral", f3, "f4b", dimensions );
 	verifyKids( f1, f2a, f2b, f3, f4a, f4b );
 
-	ObjId pa = Field< ObjId >::get( f4a, "parent" );
+	ObjId pa = Field< ObjId >::get( ObjId(f4a), "parent" );
 	assert( pa == ObjId( f3, 0 ) );
-	pa = Field< ObjId >::get( f2a, "parent" );
+	pa = Field< ObjId >::get( ObjId(f2a), "parent" );
 	assert( pa == ObjId( f1, 0 ) );
-	string path = Field< string >::get( f4a, "path" );
+	string path = Field< string >::get( ObjId(f4a), "path" );
 	assert( path == "/f1/f2a/f3/f4a" );
 	Neutral* f1data = reinterpret_cast< Neutral* >( f1.eref().data() );
 
@@ -296,7 +296,7 @@ void testMove()
 	shell->doMove( f4a, f1 );
 	//////////////////////////////////////////////////////////////////
 
-	pa = Field< ObjId >::get( f4a, "parent" );
+	pa = Field< ObjId >::get( ObjId(f4a), "parent" );
 	assert( pa == ObjId( f1, 0 ) );
 
 	kids = f1data->getChildren( f1.eref(), 0 );
@@ -311,9 +311,9 @@ void testMove()
 	//////////////////////////////////////////////////////////////////
 	shell->doMove( f2a, f4a );
 	//////////////////////////////////////////////////////////////////
-	pa = Field< ObjId >::get( f2a, "parent" );
+	pa = Field< ObjId >::get( ObjId(f2a), "parent" );
 	assert( pa == ObjId( f4a, 0 ) );
-	path = Field< string >::get( f4b, "path" );
+	path = Field< string >::get( ObjId(f4b), "path" );
 	assert( path == "/f1/f4a/f2a/f3/f4b" );
 
 	kids = f1data->getChildren( f1.eref(), 0 );
@@ -340,11 +340,11 @@ void testCopy()
 
 	verifyKids( f1, f2a, f2b, f3, f4a, f4b );
 
-	ObjId pa = Field< ObjId >::get( f3, "parent" );
+	ObjId pa = Field< ObjId >::get( ObjId(f3), "parent" );
 	assert( pa == ObjId( f2a, 0 ) );
-	pa = Field< ObjId >::get( f2a, "parent" );
+	pa = Field< ObjId >::get( ObjId(f2a), "parent" );
 	assert( pa == ObjId( f1, 0 ) );
-	string path = Field< string >::get( f3, "path" );
+	string path = Field< string >::get( ObjId(f3), "path" );
 	assert( path == "/f1/f2a/f3" );
 
 	//////////////////////////////////////////////////////////////////
@@ -1549,14 +1549,14 @@ void testSyncSynapseSize()
 
 	assert( syn->dataHandler()->totalEntries() == size * (size - 1 ) );
 
-	assert( Field< unsigned int >::get( neuronId, "linearSize" ) == size );
-	assert( Field< unsigned int >::get( synId, "linearSize" ) == size * (size - 1 ) );
+	assert( Field< unsigned int >::get( ObjId(neuronId), "linearSize" ) == size );
+	assert( Field< unsigned int >::get( ObjId(synId), "linearSize" ) == size * (size - 1 ) );
 
 	vector< unsigned int > udims =
-		Field< vector< unsigned int > >::get( neuronId, "objectDimensions" );
+		Field< vector< unsigned int > >::get( ObjId(neuronId), "objectDimensions" );
 	assert( udims.size() == 1 );
 	assert( udims[0] == size );
-	udims = Field< vector< unsigned int > >::get( synId, "objectDimensions" );
+	udims = Field< vector< unsigned int > >::get( ObjId(synId), "objectDimensions" );
 	assert( udims.size() == 2 );
 	assert( udims[0] == size );
 	assert( udims[1] == size - 1 );
@@ -1633,7 +1633,7 @@ void testGetMsgs()
 	////////////////////////////////////////////////////////////////
 
 	vector< ObjId > msgMgrs = 
-		Field< vector< ObjId > >::get( a1, "msgOut" );
+		Field< vector< ObjId > >::get( ObjId(a1), "msgOut" );
 	assert( msgMgrs.size() == 5 ); // 5 above.
 	for ( unsigned int i = 0; i < 5; ++i )
 		assert( Field< Id >::get( msgMgrs[i], "e1" ) == a1 );
@@ -1661,35 +1661,35 @@ void testGetMsgs()
 	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
 	assert( Field< Id >::get( msgMgrs[0], "e2" ) == a1 );
 
-	msgMgrs = Field< vector< ObjId > >::get( a2, "msgIn" );
+	msgMgrs = Field< vector< ObjId > >::get( ObjId(a2), "msgIn" );
 	assert( msgMgrs.size() == 2 ); // parent msg + input msg
 	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
 	assert( Field< Id >::get( msgMgrs[0], "e2" ) == a2 );
 	assert( Field< Id >::get( msgMgrs[1], "e1" ) == a1 );
 	assert( Field< Id >::get( msgMgrs[1], "e2" ) == a2 );
 
-	msgMgrs = Field< vector< ObjId > >::get( b2, "msgIn" );
+	msgMgrs = Field< vector< ObjId > >::get( ObjId(b2), "msgIn" );
 	assert( msgMgrs.size() == 2 ); // parent msg + input msg
 	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
 	assert( Field< Id >::get( msgMgrs[0], "e2" ) == b2 );
 	assert( Field< Id >::get( msgMgrs[1], "e1" ) == a1 );
 	assert( Field< Id >::get( msgMgrs[1], "e2" ) == b2 );
 
-	msgMgrs = Field< vector< ObjId > >::get( c2, "msgIn" );
+	msgMgrs = Field< vector< ObjId > >::get( ObjId(c2), "msgIn" );
 	assert( msgMgrs.size() == 2 ); // parent msg + input msg
 	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
 	assert( Field< Id >::get( msgMgrs[0], "e2" ) == c2 );
 	assert( Field< Id >::get( msgMgrs[1], "e1" ) == a1 );
 	assert( Field< Id >::get( msgMgrs[1], "e2" ) == c2 );
 
-	msgMgrs = Field< vector< ObjId > >::get( d2, "msgIn" );
+	msgMgrs = Field< vector< ObjId > >::get( ObjId(d2), "msgIn" );
 	assert( msgMgrs.size() == 2 ); // parent msg + input msg
 	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
 	assert( Field< Id >::get( msgMgrs[0], "e2" ) == d2 );
 	assert( Field< Id >::get( msgMgrs[1], "e1" ) == a1 );
 	assert( Field< Id >::get( msgMgrs[1], "e2" ) == d2 );
 
-	msgMgrs = Field< vector< ObjId > >::get( e2, "msgIn" );
+	msgMgrs = Field< vector< ObjId > >::get( ObjId(e2), "msgIn" );
 	assert( msgMgrs.size() == 2 ); // parent msg + input msg
 	assert( Field< Id >::get( msgMgrs[0], "e1" ) == Id() );
 	assert( Field< Id >::get( msgMgrs[0], "e2" ) == e2 );
@@ -1701,15 +1701,15 @@ void testGetMsgs()
 	// Check that the MsgSrcs are OK. 
 	////////////////////////////////////////////////////////////////
 	vector< Id > srcIds;
-	srcIds = LookupField< string, vector< Id > >::get( a2, "neighbours", "arg3" );
+	srcIds = LookupField< string, vector< Id > >::get( ObjId(a2), "neighbours", "arg3" );
 	assert( srcIds.size() == 1 );
 	assert( srcIds[0] == a1 );
 	srcIds.resize( 0 );
-	srcIds = LookupField< string, vector< Id > >::get( b2, "neighbours", "arg3" );
+	srcIds = LookupField< string, vector< Id > >::get( ObjId(b2), "neighbours", "arg3" );
 	assert( srcIds.size() == 1 );
 	assert( srcIds[0] == a1 );
 	srcIds.resize( 0 );
-	srcIds = LookupField< string, vector< Id > >::get( c2, "neighbours", "arg3" );
+	srcIds = LookupField< string, vector< Id > >::get( ObjId(c2), "neighbours", "arg3" );
 	assert( srcIds.size() == 1 );
 	assert( srcIds[0] == a1 );
 
@@ -1717,7 +1717,7 @@ void testGetMsgs()
 		ObjId( b1, 3 ), "output", ObjId( b2, 1 ), "arg3" );
 	assert( m6 != Msg::bad );
 	srcIds.resize( 0 );
-	srcIds = LookupField< string, vector< Id > >::get( b2, "neighbours", "arg3" );
+	srcIds = LookupField< string, vector< Id > >::get( ObjId(b2), "neighbours", "arg3" );
 	assert( srcIds.size() == 2 );
 	assert( srcIds[0] == a1 );
 	assert( srcIds[1] == b1 );
@@ -1727,7 +1727,7 @@ void testGetMsgs()
 	// Check that the MsgDests are OK. 
 	////////////////////////////////////////////////////////////////
 	vector< Id > destIds;
-	destIds = LookupField< string, vector< Id > >::get( a1, "neighbours", "output" );
+	destIds = LookupField< string, vector< Id > >::get( ObjId(a1), "neighbours", "output" );
 	assert( destIds.size() == 5 );
 	assert( destIds[0] == a2 );
 	assert( destIds[1] == b2 );
@@ -1735,7 +1735,7 @@ void testGetMsgs()
 	assert( destIds[3] == d2 );
 	assert( destIds[4] == e2 );
 	destIds.resize( 0 );
-	destIds = LookupField< string, vector< Id > >::get( b1, "neighbours", "output" );
+	destIds = LookupField< string, vector< Id > >::get( ObjId(b1), "neighbours", "output" );
 	assert( destIds.size() == 1 );
 	assert( destIds[0] == b2 );
 	cout << "." << flush;
@@ -1794,13 +1794,13 @@ void testShellMesh()
 	ret = Field< double >::set( pool, "n", testN );
 	assert( ret );
 	
-	unsigned int size = Field< unsigned int >::get( mesh, "localNumField");
+	unsigned int size = Field< unsigned int >::get( ObjId(mesh), "localNumField");
 	assert( size == 1000 );
 
-	size = Field< unsigned int >::get( pool, "linearSize" );
+	size = Field< unsigned int >::get( ObjId(pool), "linearSize" );
 	assert( size == 1 );
 	shell->handleReMesh( mesh );
-	size = Field< unsigned int >::get( pool, "linearSize" );
+	size = Field< unsigned int >::get( ObjId(pool), "linearSize" );
 	assert( size == 1000 );
 
 	vector< double > numMols;

@@ -8,6 +8,7 @@
 **********************************************************************/
 
 #include "header.h"
+#include "../charm/DirectQbufEntry.h"
 
 /**
  * This version is used when making zombies. We want to have a
@@ -308,6 +309,7 @@ Id Element::id() const
  * script-driven field access. The heavy-duty clock-driven function 
  * execution is dealt with by process and messages.
  */
+#ifndef USE_CHARMPP
 void Element::exec( const Qinfo* qi, const double* arg )
 	const
 {
@@ -342,10 +344,10 @@ void Element::exec( const Qinfo* qi, const double* arg )
 					f->op( Eref( elm, i.dataId() ), qi, data + offset );
 			}
 			*/
-		} else if ( ofid->oi.element()->dataHandler()->execThread( 
-			qi->threadNum(), ofid->oi.dataId ) ) {
-			f->op( ofid->oi.eref(), qi, arg + ObjFidSizeInDoubles );
-		}
+		} 
+                else if( ofid->oi.element()->dataHandler()->execThread(qi->threadNum(), ofid->oi.dataId ) ){
+                    f->op( ofid->oi.eref(), qi, arg + ObjFidSizeInDoubles );
+                }
 	} else {
 		assert( qi->bindIndex() < msgBinding_.size() );
 		vector< MsgFuncBinding >::const_iterator end = 
@@ -358,6 +360,44 @@ void Element::exec( const Qinfo* qi, const double* arg )
 		}
 	}
 }
+
+#else
+
+void Element::exec( const Qinfo* qi, const ObjFid *ofid, const double* arg ) const {
+  CkAssert( qi->isDirect() );
+  // Direct Q entry, which encapsulates ObjFid
+  const OpFunc* f = ofid->oi.element()->cinfo()->getOpFunc( ofid->fid );
+
+  if ( ofid->oi.dataId == DataId::bad() )  {
+    return;
+  }
+
+  if ( ofid->oi.dataId == DataId::any ) {
+    // Here we iterate through the DataId, using the
+    // numEntries and entrySize of the ofid to set args.
+    Element* elm = ofid->oi.element();
+    assert( ofid->numEntries > 0 );
+    const double* data = arg;
+    elm->dataHandler()->forall( f,  elm, qi, data, ofid->entrySize, ofid->numEntries );
+  } 
+  else if( ofid->oi.element()->dataHandler()->execThread(qi->threadNum(), ofid->oi.dataId ) ){
+    f->op( ofid->oi.eref(), qi, arg);
+  }
+}
+        
+void Element::exec( const Qinfo *qi, const double* arg ) const {
+  CkAssert(!qi->isDirect());
+  CkAssert( qi->bindIndex() < msgBinding_.size() );
+
+  vector< MsgFuncBinding >::const_iterator end = msgBinding_[ qi->bindIndex() ].end();
+  for ( vector< MsgFuncBinding >::const_iterator i = msgBinding_[ qi->bindIndex() ].begin(); i != end; ++i ) {
+    CkAssert( i->mid != 0 );
+    CkAssert( Msg::getMsg( i->mid ) != 0 );
+    Msg::getMsg( i->mid )->exec( qi, arg, i->fid );
+  }
+}
+
+#endif
 
 void Element::showMsg() const
 {

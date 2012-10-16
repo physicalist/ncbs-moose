@@ -160,7 +160,11 @@ void IntFire::process( const Eref &e, ProcPtr p )
 		Vm_ = 0.0;
 
 	if ( Vm_ > thresh_ ) {
+#ifndef USE_CHARMPP
 		spike()->send( e, p->threadIndexInGroup, p->currTime );
+#else
+		spike()->send( e, p->threadIndexInGroup, p->container, p->currTime );
+#endif
 		// e.sendSpike( spikeSlot, p->currTime );
 		/*
 		if ( e.index().value() % 100 == 0 ) {

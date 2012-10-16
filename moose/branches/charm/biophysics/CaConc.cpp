@@ -251,7 +251,11 @@ void CaConc::reinit( const Eref& e, ProcPtr p )
 	activation_ = 0.0;
 	c_ = 0.0;
 	Ca_ = CaBasal_;
+#ifndef USE_CHARMPP
 	concOut()->send( e, p->threadIndexInGroup, Ca_ );
+#else
+	concOut()->send( e, p->threadIndexInGroup, p->container, Ca_ );
+#endif
 }
 
 void CaConc::process( const Eref& e, ProcPtr p )
@@ -264,7 +268,11 @@ void CaConc::process( const Eref& e, ProcPtr p )
 		Ca_ = floor_;
 	}
 	c_ = Ca_ - CaBasal_;
+#ifndef USE_CHARMPP
 	concOut()->send( e, p->threadIndexInGroup, Ca_ );
+#else
+	concOut()->send( e, p->threadIndexInGroup, p->container, Ca_ );
+#endif
 	activation_ = 0;
 }
 

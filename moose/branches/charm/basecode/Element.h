@@ -7,6 +7,9 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#ifndef MOOSE_ELEMENT_H
+#define MOOSE_ELEMENT_H
+
 class SrcFinfo;
 class Qinfo;
 /**
@@ -137,6 +140,9 @@ class Element
  		 * Executes a queue entry from the buffer.
  		 */
 		void exec( const Qinfo* qi, const double* arg ) const;
+#ifdef USE_CHARMPP
+		void exec( const Qinfo* qi, const ObjFid *ofid, const double* arg ) const;
+#endif
 
 		/**
 		 * Asynchronous send command, going to specific target Element/Data.
@@ -316,3 +322,5 @@ class Element
 		 */
 		vector< vector < MsgFuncBinding > > msgBinding_;
 };
+
+#endif // MOOSE_ELEMENT_H

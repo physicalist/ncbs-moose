@@ -18,8 +18,7 @@ double lookupSizeFromMesh( const Eref& e, const SrcFinfo* sf )
 	if ( !mfb ) return 1.0;
 	if ( mfb->size() == 0 ) return 1.0;
 
-	double size = 
-		Field< double >::fastGet( e, (*mfb)[0].mid, (*mfb)[0].fid );
+	double size = Field< double >::fastGet( e, (*mfb)[0].mid, (*mfb)[0].fid );
 
 	if ( size <= 0 ) size = 1.0;
 

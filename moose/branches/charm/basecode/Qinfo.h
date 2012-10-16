@@ -15,12 +15,21 @@
 class ReduceFinfoBase;
 class ReduceBase;
 
-typedef struct {
-	ObjId oi;
-	FuncId fid;
-	unsigned int entrySize;
-	unsigned int numEntries;
-} ObjFid;
+struct ObjFid {
+  ObjId oi;
+  FuncId fid;
+  unsigned int entrySize;
+  unsigned int numEntries;
+
+  ObjFid(ObjId o, FuncId f, unsigned int size, unsigned int entries) : 
+    oi(o),
+    fid(f),
+    entrySize(size),
+    numEntries(entries)
+  {}
+
+  ObjFid() {}
+};
 
 /**
  * This class manages information going into and out of the async queue.
@@ -35,14 +44,36 @@ class Qinfo
 		 * Used in addToQ and addDirectToQ.
 		 * The size argument is in doubles, not bytes.
 		 */
+
+                 // In the charm++ version, we do not
+                 // use static, class-wide buffers with
+                 // excl. access ensured by threadNum; 
+                 // instead, we need the pointer to the
+                 // element container so that we can place
+                 // data items into its message queue.
+                 // The threadNum is here only so that we
+                 // don't have to change the data-decomp
+                 // code that needs it to divide data b/w
+                 // threads.
 		Qinfo( const ObjId& src, 
-			BindIndex bindIndex, ThreadId threadNum,
+			BindIndex bindIndex, 
+                        ThreadId threadNum,
+#ifdef USE_CHARMPP
+                        ElementContainer *container,
+#endif
 			unsigned int dataIndex, unsigned int dataSize );
 
 		Qinfo();
 
 		/// Used in readBuf to create a copy of Qinfo with specified thread.
-		Qinfo( const Qinfo* other, ThreadId threadNum );
+		Qinfo( const Qinfo* other, 
+#ifndef USE_CHARMPP
+                       ThreadId threadNum
+#else
+                       ThreadId threadNum,
+                       ElementContainer *container
+#endif
+                       );
 
 		//////////////////////////////////////////////////////////////
 		// local Qinfo field access functions.
@@ -80,6 +111,16 @@ class Qinfo
 			threadNum_ = threadNum;
 		}
 
+#ifdef USE_CHARMPP
+                ElementContainer *container() const {
+                  return container_;
+                }
+
+                void setContainer(ElementContainer *container){
+                  container_ = container;
+                }
+#endif
+
 		/**
 		 * Returns the src ObjId
 		 */
@@ -105,6 +146,7 @@ class Qinfo
 			return dataIndex_;
 		}
 
+#ifndef USE_CHARMPP
 		/**
 		 * Lock Mutex, but only if a bunch of conditions are met:
 		 * First we should be running pthreads
@@ -131,6 +173,7 @@ class Qinfo
 		static void addToQ( const ObjId& oi, 
 			BindIndex bindIndex, ThreadId threadNum,
 			const double* arg, unsigned int size );
+
 
 		static void addToQ( const ObjId& oi, 
 			BindIndex bindIndex, ThreadId threadNum,
@@ -351,6 +394,9 @@ class Qinfo
 		static void waitProcCycles( unsigned int numCyclesToWait );
 	 
 
+#endif
+// these are needed by PyMoose, so enabling them for 
+// the charm++ version as well.
 		/**
 		 * Initializes the qMutex
 		 */
@@ -372,6 +418,10 @@ class Qinfo
 		// ProcId proc_; /// Identifier for Process handled in Q.
 		ThreadId threadNum_; /// Which thread am I on?
 
+#ifdef USE_CHARMPP
+                ElementContainer *container_;
+#endif
+
 		/**
 		 * Index to look up data, counting from start of array of 
 		 * doubles in inQ.
@@ -387,6 +437,7 @@ class Qinfo
 		 */
 		unsigned int dataSize_;
 
+#ifndef USE_CHARMPP
 		///////////////////////////////////////////////////////////
 		/**
 		 * Organization of inQ_, which is used as input to each thread and
@@ -508,10 +559,19 @@ class Qinfo
 
 		/// The # of the source node being handled for MPI data transfers.
 		static unsigned int sourceNode_;
+#endif
 
+#ifdef USE_CHARMPP
+                public:
+#endif
 		/// Flag setting
 		static const BindIndex DirectAdd;
 
+#ifdef USE_CHARMPP
+                private:
+#endif
+
+#ifndef USE_CHARMPP
 		/// Extra Margin (fraction) to leave for blocksize
 		static const double blockMargin_;
 
@@ -523,6 +583,7 @@ class Qinfo
 
 		/// Size of data blocks to send to each node
 		static vector< unsigned int > blockSize_;
+#endif
 };
 
 #endif // QINFO_H

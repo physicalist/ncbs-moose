@@ -66,6 +66,7 @@ SrcFinfo0::SrcFinfo0( const string& name, const string& doc )
 	: SrcFinfo( name, doc )
 { ; }
 
+#ifndef USE_CHARMPP
 void SrcFinfo0::send( const Eref& e, ThreadId threadNum ) const {
 	Qinfo::addToQ( e.objId(), getBindIndex(), threadNum, 0, 0 );
 	/*
@@ -73,6 +74,11 @@ void SrcFinfo0::send( const Eref& e, ThreadId threadNum ) const {
 	e.element()->asend( q, getBindIndex(), p, 0 ); // last arg is data
 	*/
 }
+#else
+void SrcFinfo0::send( const Eref& e, ThreadId threadNum, ElementContainer *container ) const {
+        container->addToQ(e.objId(), getBindIndex(), threadNum, NULL, 0);
+}
+#endif
 
 /*
 void SrcFinfo0::sendTo( const Eref& e, const ProcInfo* p, 
@@ -84,8 +90,16 @@ void SrcFinfo0::sendTo( const Eref& e, const ProcInfo* p,
 }
 */
 
+#ifndef USE_CHARMPP
 void SrcFinfo0::fastSend( const Eref& e, ThreadId threadNum ) const
 {
 	Qinfo qi( e.objId(), getBindIndex(), threadNum, 0, 0 );
 	e.element()->exec( &qi, 0 );
 }
+#else
+void SrcFinfo0::fastSend( const Eref& e, ThreadId threadNum, ElementContainer *container ) const 
+{
+	Qinfo qi( e.objId(), getBindIndex(), threadNum, container, 0, 0 );
+	e.element()->exec( &qi, 0 );
+}
+#endif

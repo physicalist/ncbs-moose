@@ -13,6 +13,8 @@
 /**
  * Just a double in the Table array.
  */
+namespace moose {
+
 class TableEntry
 {
 	public: 
@@ -32,4 +34,5 @@ class TableEntry
 		double value_;
 };
 
+}
 #endif	// _TABLE_ENTRY_H

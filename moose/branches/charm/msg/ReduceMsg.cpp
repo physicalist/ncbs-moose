@@ -34,7 +34,11 @@ void ReduceMsg::exec( const Qinfo* q, const double* arg, FuncId fid ) const
 	if ( q->src().element() == e1_ ) {
 		const OpFunc* f = e2_->cinfo()->getOpFunc( fid );
 		ReduceBase* r = rfb_->makeReduce( ObjId( e1_->id(), i1_ ), f );
+#ifndef USE_CHARMPP
 		Qinfo::addToReduceQ( r, q->threadNum() );
+#else
+                q->container()->addToReduceQ(r, q->threadNum());
+#endif
 		// DataHandler* d2 = e2_->dataHandler();
 		//unsigned int count = 0;
 		vector< DataId > vec;

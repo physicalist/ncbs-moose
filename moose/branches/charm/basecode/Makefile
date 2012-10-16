@@ -17,6 +17,8 @@ TARGET = _basecode.o
 
 #  CXXFLAGS += -I.. -I../kinetics -I../biophysics
 
+INCPATH = -I../msg
+
 OBJ = \
 	consts.o	\
 	Element.o	\
@@ -51,7 +53,7 @@ OBJ = \
 	FuncBarrier.o \
 	doubleEq.o \
 	ReduceBase.o \
-	testAsync.o	\
+	TestAsync.o	\
 	main.o	\
 
 HEADERS = \
@@ -97,7 +99,7 @@ default: $(TARGET)
 
 $(OBJ)	: $(HEADERS) ../shell/Shell.h
 Element.o:	DataHandlerWrapper.h
-testAsync.o:	SparseMatrix.h SetGet.h ../scheduling/Clock.h ../scheduling/Tick.h ../scheduling/TickPtr.h ../scheduling/TickMgr.h ../biophysics/IntFire.h ../biophysics/SynBase.h
+TestAsync.o:	TestAsync.h SparseMatrix.h SetGet.h ../scheduling/Clock.h ../scheduling/Tick.h ../scheduling/TickPtr.h ../scheduling/TickMgr.h ../biophysics/IntFire.h ../biophysics/SynBase.h
 SparseMsg.o:	SparseMatrix.h
 SetGet.o:	SetGet.h ../shell/Neutral.h
 DataHandlerWrapper.o: DataHandlerWrapper.h
@@ -107,7 +109,7 @@ FuncBarrier.o:	FuncBarrier.h
 #TestBasecode.o:	Shell.h ShellWrapper.h
 
 .cpp.o:
-	$(CXX) $(CXXFLAGS) -I../msg $< -c
+	$(CXX) $(CXXFLAGS) $(INCPATH) $< -c
 
 .PHONY: pymoose
 
@@ -119,7 +121,7 @@ _basecode_pymoose.o: $(OBJ) main_pymoose.o
 	$(LD) -r -o _basecode_pymoose.o $(OBJ)
 
 main_pymoose.o: main.cpp
-	$(CXX) -c -o $@ $(CXXFLAGS) -I../msg $<
+	$(CXX) -c -o $@ $(CXXFLAGS) $(INCPATH) $<
 	@echo "Compiled version of main file for pymoose."
 
 $(TARGET):		$(OBJ) $(HEADERS) 

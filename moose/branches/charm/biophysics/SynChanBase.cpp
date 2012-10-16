@@ -213,20 +213,29 @@ void SynChanBase::handleVm( double Vm )
 
 void SynChanBase::process(  const Eref& e, const ProcPtr info )
 {
+#ifndef USE_CHARMPP
 	channelOut()->send( e, info->threadIndexInGroup, cb.getGk(), cb.getEk() );
 	// This is used if the channel connects up to a conc pool and
 	// handles influx of ions giving rise to a concentration change.
 	IkOut()->send( e, info->threadIndexInGroup, cb.getIk() );
 	// Needed by GHK-type objects
 	permeability()->send( e, info->threadIndexInGroup, cb.getGk() );
+#else
+	channelOut()->send( e, info->threadIndexInGroup, info->container, cb.getGk(), cb.getEk() );
+	// This is used if the channel connects up to a conc pool and
+	// handles influx of ions giving rise to a concentration change.
+	IkOut()->send( e, info->threadIndexInGroup, info->container, cb.getIk() );
+	// Needed by GHK-type objects
+	permeability()->send( e, info->threadIndexInGroup, info->container, cb.getGk() );
+#endif
 }
 
 
 void SynChanBase::reinit(  const Eref& e, const ProcPtr info )
 {
-	channelOut()->send( e, info->threadIndexInGroup, cb.getGk(), cb.getEk() );
+	channelOut()->send( e, info->threadIndexInGroup, info->container, cb.getGk(), cb.getEk() );
 	// Needed by GHK-type objects
-	permeability()->send( e, info->threadIndexInGroup, cb.getGk() );
+	permeability()->send( e, info->threadIndexInGroup, info->container, cb.getGk() );
 }
 
 void SynChanBase::updateIk()

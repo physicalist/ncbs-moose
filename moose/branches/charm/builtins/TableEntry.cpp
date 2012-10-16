@@ -13,13 +13,13 @@
 #include "Table.h"
 // #include "UpFunc.h"
 
-const Cinfo* TableEntry::initCinfo()
+const Cinfo* moose::TableEntry::initCinfo()
 {
-		static ValueFinfo< TableEntry, double > value(
+		static ValueFinfo< moose::TableEntry, double > value(
 			"value",
 			"Data value in this entry",
-			&TableEntry::setValue,
-			&TableEntry::getValue
+			&moose::TableEntry::setValue,
+			&moose::TableEntry::getValue
 		);
 
 	static Finfo* tableEntryFinfos[] = {
@@ -31,32 +31,32 @@ const Cinfo* TableEntry::initCinfo()
 		Neutral::initCinfo(),
 		tableEntryFinfos,
 		sizeof( tableEntryFinfos ) / sizeof ( Finfo* ),
-		new Dinfo< TableEntry >()
+		new Dinfo< moose::TableEntry >()
 	);
 
 	return &tableEntryCinfo;
 }
 
-static const Cinfo* tableEntryCinfo = TableEntry::initCinfo();
+static const Cinfo* tableEntryCinfo = moose::TableEntry::initCinfo();
 
-TableEntry::TableEntry()
+moose::TableEntry::TableEntry()
 	: value_( 1.0 )
 {
 	;
 }
 
-TableEntry::TableEntry( double v )
+moose::TableEntry::TableEntry( double v )
 	: value_( v )
 {
 	;
 }
 
-void TableEntry::setValue( const double v )
+void moose::TableEntry::setValue( const double v )
 {
 	value_ = v;
 }
 
-double TableEntry::getValue() const
+double moose::TableEntry::getValue() const
 {
 	return value_;
 }

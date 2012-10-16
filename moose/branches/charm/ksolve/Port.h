@@ -7,6 +7,8 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+namespace moose {
+
 class Port
 {
 	public:
@@ -103,3 +105,5 @@ class Port
 
 		Stoich* parent_;
 };
+
+}

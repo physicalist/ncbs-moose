@@ -44,6 +44,7 @@ void Shell::eventLoopSingleThreaded()
  */
 void* processEventLoop( void* info )
 {
+#ifndef USE_CHARMPP
 	ProcInfo *p = reinterpret_cast< ProcInfo* >( info );
 	// cout << "eventLoop on " << p->nodeIndexInGroup << ":" << p->threadIndexInGroup << endl;
 	Clock* clock = reinterpret_cast< Clock* >( Id(1).eref().data() );
@@ -78,6 +79,7 @@ void* processEventLoop( void* info )
 		p->barrier3->wait();
 	}
 	pthread_exit( NULL );
+#endif
 	return 0; //To keep compiler happy.
 }
 
@@ -90,6 +92,7 @@ void* processEventLoop( void* info )
  */
 void* mpiEventLoop( void* info )
 {
+#ifndef USE_CHARMPP
 	ProcInfo *p = reinterpret_cast< ProcInfo* >( info );
 
 	while( Shell::keepLooping() )
@@ -137,6 +140,7 @@ void* mpiEventLoop( void* info )
 		p->barrier3->wait();
 	}
 	pthread_exit( NULL );
+#endif
 	return 0; //To keep compiler happy.
 }
 
@@ -145,6 +149,7 @@ void* mpiEventLoop( void* info )
 //////////////////////////////////////////////////////////////////////////
 void Shell::launchThreads()
 {
+#ifndef USE_CHARMPP
 	attr_ = new pthread_attr_t;
 	pthread_attr_init( attr_ );
 	pthread_attr_setdetachstate( attr_, PTHREAD_CREATE_JOINABLE );
@@ -200,10 +205,12 @@ void Shell::launchThreads()
 			assert( rc == 0 );
 		}
 	}
+#endif
 }
 
 void Shell::joinThreads()
 {
+#ifndef USE_CHARMPP
 	// Add one for the MPI thread if needed.
 	int numThreads = numProcessThreads_ + ( numNodes_ > 1 ); 
 	int ret;
@@ -228,5 +235,6 @@ void Shell::joinThreads()
 	delete barrier3_;
 
 	assert( ret == 0 );
+#endif
 }
 

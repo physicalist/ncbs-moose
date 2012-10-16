@@ -20,17 +20,31 @@ OBJ = \
 	Wildcard.o	\
 	testShell.o	\
 
+ifeq ($(BUILD),charm++)
+OBJ += ShellCcsInterface.o \
+       ShellCcsInterfaceOperation.o \
+       ShellProxy.o 
+endif
+
 HEADERS = \
 	../basecode/header.h \
 	../basecode/FuncBarrier.h \
 	../basecode/ReduceBase.h \
 	../basecode/ReduceMax.h \
 
+ifeq ($(BUILD),charm++)
+HEADERS += ../charm/shell.decl.h
+endif
+
 
 default: $(TARGET)
 
 $(OBJ)	: $(HEADERS)
+ifneq ($(BUILD),charm++)
 Shell.o:	Shell.h Neutral.h ../scheduling/Clock.h ../sbml/SbmlWriter.h
+else
+Shell.o:	../charm/shell.decl.h Shell.h Neutral.h ../scheduling/Clock.h ../sbml/SbmlWriter.h
+endif
 ShellCopy.o:	Shell.h Neutral.h
 ShellSetGet.o:	Shell.h
 ShellThreads.o:	Shell.h Neutral.h ../scheduling/Clock.h
@@ -40,6 +54,12 @@ Neutral.o:	Neutral.h ../basecode/ElementValueFinfo.h
 Wildcard.o:	Wildcard.h Shell.h Neutral.h ../basecode/ElementValueFinfo.h
 testShell.o:	Wildcard.h Shell.h Neutral.h ../scheduling/Tick.h ../scheduling/testScheduling.h ../builtins/Arith.h ../basecode/SparseMatrix.h ../msg/SparseMsg.h ../msg/SingleMsg.h ../basecode/SetGet.h
 
+ifeq ($(BUILD),charm++)
+ShellCcsInterface.o : ../charm/shell.decl.h ShellCcsInterfaceOperation.h ShellCcsInterface.h 
+ShellCcsInterfaceOperation.o : ShellCcsInterfaceOperation.h 
+ShellProxy.o : ShellProxy.h ../charm/shell.decl.h
+endif
+
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I. -I../basecode -I../msg $< -c
 
@@ -47,4 +67,4 @@ $(TARGET):		$(OBJ) $(SMOLDYN_OBJ) $(HEADERS)
 	$(LD) -r -o $(TARGET) $(OBJ) $(SMOLDYN_OBJ) $(SMOLDYN_LIB_PATH) $(SMOLDYN_LIBS) 
 
 clean:
-	-rm -f *.o $(TARGET) core core.*
+	-rm -f *.o $(TARGET) core core.* *.decl.h *.def.h

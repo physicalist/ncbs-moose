@@ -22,9 +22,15 @@ void returnFromGet( const Eref& e, const Qinfo* q, const double* buf,
 	double* temp = new double[ pb.size() ];
 	pb.conv2buf( temp );
 
+#ifdef USE_CHARMPP
+         q->container()->addDirectToQ(e.objId(), q->src(), 
+                                      q->threadNum(), *convFid, 
+                                      temp, pb.size());
+#else
 	 Qinfo::addDirectToQ( e.objId(), q->src(),
 	 	q->threadNum(), *convFid,
 	 	temp, pb.size() );
+#endif
 
 	delete[] temp;
 }

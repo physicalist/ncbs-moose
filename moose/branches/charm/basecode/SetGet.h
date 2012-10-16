@@ -13,6 +13,14 @@
 // Forward declaration needed for localGet()
 template< class T, class A > class GetOpFunc;
 
+#ifdef USE_CHARMPP
+#include "ccs-client.h"
+#include "../shell/CcsPackUnpack.h"
+#include "../basecode/SetGetWrapper.h"
+#include "../shell/ShellProxy.h"
+#include "pup_stl.h"
+#endif
+
 /**
  * Similar to Field< A >::fastGet(), except that an existing Msg is not needed.
  * 
@@ -45,8 +53,26 @@ A localGet( const Eref& er, string field )
 	return gop->reduceOp( er );
 }
 
+// XXX for the following operations, we must ensure that moose-core
+// isn't in the middle of some other operation when these are issued.
+// therefore, we need some buffering mechanism similar to the Shell
+// operations
+
 class SetGet
 {
+#ifdef USE_CHARMPP
+  public:
+  static const char *strSetHandlerString(){
+    static const char *str = "Moose_SetGet_StrSet";
+    return str;
+  }
+
+  static const char *strGetHandlerString(){
+    static const char *str = "Moose_SetGet_StrGet";
+    return str;
+  }
+#endif
+
 	public:
 		SetGet( const ObjId& oid )
 			: oid_( oid )
@@ -79,19 +105,53 @@ class SetGet
 		 * There is a matching 'get<T> call, returning appropriate type.
 		 */
 		static bool strGet( const ObjId& tgt, const string& field, string& ret );
+#ifdef USE_CHARMPP
+                static void strGet_handler(char *msg);
+		static bool strGet_ccs( const ObjId& tgt, const string& field, string& ret );
+#endif
 
 		/**
 		 * Blocking 'set' call, using automatic string conversion
 		 * There is a matching blocking set call with typed arguments.
 		 */
 		static bool strSet( const ObjId& dest, const string& field, const string& val );
+#ifdef USE_CHARMPP
+                static void strSet_handler(char *msg);
+		static bool strSet_ccs( const ObjId& dest, const string& field, const string& val );
+#endif
 
 		/// Sends out request for data, and awaits its return.
+#ifndef USE_CHARMPP
 		static const vector< double* >* dispatchGet( 
 			const ObjId& tgt, FuncId tgtFid, 
 			const double* arg, unsigned int size );
+#endif
 
 		static Qinfo qi_;
+
+#ifdef USE_CHARMPP
+                // XXX must be initialized appropriately
+                // XXX ensure that these operations are only called from 
+                // head node, by a single thread.
+                static CcsServer ccsServer_;
+
+        struct Args {
+          ObjId dest_;
+          string field_;
+
+          Args(ObjId dest, string field) : 
+            dest_(dest),
+            field_(field)
+          {}
+
+          Args() {}
+
+          void pup(PUP::er &p){
+            p | dest_;
+            p | field_;
+          }
+        };
+#endif
 
 	private:
 		ObjId oid_;
@@ -99,6 +159,16 @@ class SetGet
 
 class SetGet0: public SetGet
 {
+  
+  private:
+#ifdef USE_CHARMPP
+  static const char *setHandlerString(){
+    const char *str = "SetGet0_setHandlerString";
+    return str;
+  }
+#endif
+
+
 	public:
 		SetGet0( const ObjId& dest )
 			: SetGet( dest )
@@ -107,11 +177,36 @@ class SetGet0: public SetGet
 		/**
 		 * Blocking, typed 'Set' call
 		 */
-		static bool set( const ObjId& dest, const string& field )
-		{
+#ifdef USE_CHARMPP
+		static bool set_ccs( const ObjId& dest, const string& field ){
+                        unsigned int size;
+                        SetGet::Args args(dest, field);
+                        char *msg = CcsPackUnpack<SetGet::Args>::pack(args, size);
+                        CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet0::setHandlerString(), size, msg);
+                        delete[] msg;
+
+                        bool ret;
+                        while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+                        return false;
+                        // return ret;
+                }
+
+                static void set_handler(char *msg){
+                  SetGet::Args args;
+                  CcsPackUnpack<SetGet::Args>::unpack(msg, args);
+                  CmiFree(msg);
+
+                  bool ret = set(args.dest_, args.field_);
+                  CcsSendReply(sizeof(bool), &ret);
+                }
+
+#endif
+                static bool set(const ObjId &dest, string field)
+                {
 			SetGet0 sg( dest );
 			FuncId fid;
 			ObjId tgt( dest );
+
 			if ( const OpFunc* func = sg.checkSet( field, tgt, fid ) ) {
 				func->op( tgt.eref(), &qi_, 0 );
 				/*
@@ -133,6 +228,55 @@ class SetGet0: public SetGet
 
 template< class A > class SetGet1: public SetGet
 {
+
+#ifdef USE_CHARMPP
+  private:
+  static char *setHandlerString_;
+  static char *setVecHandlerString_;
+
+  public:
+  static void setHandlerString(const char *str){
+    setHandlerString_ = str;
+  }
+
+  static const char *setHandlerString(){
+    return setHandlerString_;
+  }
+
+  static void setVecHandlerString(const char *str){
+    setVecHandlerString_ = str;
+  }
+
+  static const char *setVecHandlerString(){
+    return setVecHandlerString_;
+  }
+#endif
+
+  public:
+#ifdef USE_CHARMPP
+  struct Args : public SetGet::Args {
+    vector<A> values_;
+
+    Args(const ObjId &objId, string field, const A &value) : 
+      SetGet::Args(objId, field)
+    {
+      values_.push_back(value);
+    }
+
+    Args(const ObjId &objId, string field, const vector<A> &values) : 
+      SetGet::Args(objId, field),
+      values_(values)
+    {}
+
+    Args() {}
+
+    void pup(PUP::er &p){
+      SetGet::Args::pup(p);
+      p | values_; 
+    }
+  };
+#endif
+
 	public:
 		SetGet1( const ObjId& dest )
 			: SetGet( dest )
@@ -141,7 +285,33 @@ template< class A > class SetGet1: public SetGet
 		/**
 		 * Blocking, typed 'Set' call
 		 */
-		static bool set( const ObjId& dest, const string& field, A arg )
+
+#ifdef USE_CHARMPP
+                static bool set_ccs(const ObjId& dest, const string& field, A arg){
+                  unsigned int size;
+                  SetGet1< A >::Args wrapper(dest, field, arg);
+                  char *msg = CcsPackUnpack< SetGet1< A >::Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet1< A >::setHandlerString(), size, msg);
+                  delete[] msg;
+
+                  bool ret;
+                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+                  // original version always returned 'false'
+                  return false;
+                  // return ret;
+                }
+
+                static void set_handler(char *msg){
+                  SetGet1< A >::Args args;
+                  CcsPackUnpack< SetGet1< A >::Args >::unpack(msg, args);
+                  CmiFree(msg);
+
+                  bool ret = set(args.dest_, args.field_, args.values_[0]);
+                  CcsSendReply(sizeof(bool), &ret);
+                }
+
+#endif
+		static bool set( const ObjId& dest, const string& field, const A &arg )
 		{
 			SetGet1< A > sg( dest );
 			FuncId fid;
@@ -169,8 +339,34 @@ template< class A > class SetGet1: public SetGet
 		 * first few locations: ObjFid
 		 * Remaining locations: Args.
 		 */
-		static bool setVec( Id destId, const string& field, 
-			const vector< A >& arg )
+
+                public:
+#ifdef USE_CHARMPP
+                static bool setVec_ccs(const Id dest, const string &field, const vector<A> &arg){
+                  unsigned int size;
+                  SetGet1< A >::Args wrapper(ObjId(dest), field, arg);
+                  char *msg = CcsPackUnpack< SetGet1< A >::Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet1::setVecHandlerString(), size, msg);
+                  delete[] msg;
+
+                  bool ret;
+                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+                  // original version always returned 'false'
+                  return false;
+                  // return ret;
+                }
+
+                static void setVec_handler(char *msg){
+                  SetGet1< A >::Args args;
+                  CcsPackUnpack< SetGet1< A >::Args >::unpack(msg, args);
+                  CmiFree(msg);
+
+                  bool ret = setVec(args.dest_.id, args.field_, args.values_);
+                  CcsSendReply(sizeof(bool), &ret);
+                }
+
+#endif
+		static bool setVec( Id destId, const string& field, const vector< A >& arg )
 		{
 			if ( arg.size() == 0 ) return 0;
 
@@ -202,6 +398,7 @@ template< class A > class SetGet1: public SetGet
 			return 0;
 		}
 
+                public:
 		/**
 		 * Sets all target array values to the single value
 		 */
@@ -211,6 +408,16 @@ template< class A > class SetGet1: public SetGet
 			vector< A >temp ( 1, arg );
 			return setVec( destId, field, temp );
 		}
+
+#ifdef USE_CHARMPP
+		static bool setRepeat_ccs( Id destId, const string& field, 
+			const A& arg )
+		{
+			vector< A >temp ( 1, arg );
+			return setVec_ccs( destId, field, temp );
+		}
+
+#endif
 
 		/**
 		 * Blocking call using string conversion
@@ -226,6 +433,33 @@ template< class A > class SetGet1: public SetGet
 
 template< class A > class Field: public SetGet1< A >
 {
+
+#ifdef USE_CHARMPP
+  private: 
+
+  static char *getHandlerString_;
+  static char *getVecHandlerString_;
+
+  public:
+
+  static void getHandlerString(const char *str){
+    getHandlerString_ = str;
+  }
+
+  static const char *getHandlerString(){
+    return getHandlerString_;
+  }
+
+  static void getVecHandlerString(const char *str){
+    getVecHandlerString_ = str;
+  }
+
+  static const char *getVecHandlerString(){
+    return getVecHandlerString_;
+  }
+#endif
+
+
 	public:
 		Field( const ObjId& dest )
 			: SetGet1< A >( dest )
@@ -239,6 +473,15 @@ template< class A > class Field: public SetGet1< A >
 			string temp = "set_" + field;
 			return SetGet1< A >::set( dest, temp, arg );
 		}
+
+#ifdef USE_CHARMPP
+		static bool set_ccs( const ObjId& dest, const string& field, A arg )
+		{
+			string temp = "set_" + field;
+			return SetGet1< A >::set_ccs( dest, temp, arg );
+		}
+
+#endif
 
 		static bool setVec( Id destId, const string& field, 
 			const vector< A >& arg )
@@ -268,8 +511,52 @@ template< class A > class Field: public SetGet1< A >
 		}
 
 	//////////////////////////////////////////////////////////////////
+#ifdef USE_CHARMPP
+		static A get_ccs( const ObjId& dest, const string& field){
+                  unsigned int size;
+                  SetGet::Args wrapper(dest, field);
+                  char *msg = CcsPackUnpack< SetGet::Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, Field< A >::getHandlerString(), size, msg);
+                  delete[] msg;
 
-		static A get( const ObjId& dest, const string& field)
+                  int msgSize;
+                  // don't know how much data to receive,
+                  // so receive the whole msg first and 
+                  // unpack the data within it
+                  while(CcsRecvResponseMsg(&SetGet::ccsServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) <= 0);
+                  // type A might need to be unwrapper
+                  SetGet1Wrapper< A > ret;
+                  CcsPackUnpack< SetGet1Wrapper< A > >::unpack(msg, ret);
+                  // msg will point to a malloc()ed buffer after CcsRecvResponseMsg
+                  free(msg);
+                  CkAssert(ret.hasData_);
+                  return ret.a1_;
+                }
+
+                static void get_handler(char *msg){
+                  SetGet::Args args;
+                  CcsPackUnpack<SetGet::Args>::unpack(msg, args);
+                  CmiFree(msg);
+
+                  A ret;
+                  bool success = get(args.dest_, args.field_, ret); 
+                  // A might have members that need to be wrapper
+                  unsigned int size;
+                  SetGet1Wrapper< A > wrapper(ret, success);
+                  msg = CcsPackUnpack< SetGet1Wrapper< A > >::pack(wrapper, size);
+
+                  CcsSendReply(size, msg);
+                  delete[] msg;
+                }
+
+#endif
+                static A get( const ObjId &dest, const string &field){
+                  A ret;
+                  get(dest, field, ret);
+                  return ret;
+                }
+
+		static bool get( const ObjId& dest, const string& field, A &ret)
 		{ 
 			Field< A > sg( dest );
 			ObjId tgt( dest );
@@ -280,13 +567,16 @@ template< class A > class Field: public SetGet1< A >
 				/// Do something else if off-node.
 				const GetOpFuncBase< A >* gof = 
 					dynamic_cast< const GetOpFuncBase< A >* >( func );
-				if ( gof )
-					return gof->reduceOp( tgt.eref() );
+				if ( gof ){
+					ret = gof->reduceOp( tgt.eref() );
+                                        return true; 
+                                }
 			}
 			cout << "Warning: Field::Get conversion error for " << dest.id.path() <<
 				endl;
 
-			return A();
+			ret = A();
+                        return false;
 		}
 
 		/**
@@ -295,7 +585,42 @@ template< class A > class Field: public SetGet1< A >
 		 * the way the indexing is done. We assume
 		 * all the entries have come in, and discard the holes.
 		 */
-		static void getVec( Id dest, const string& field, vector< A >& vec)
+#ifdef USE_CHARMPP
+		static void getVec_ccs( Id dest, const string& field, vector< A >& vec){
+                  unsigned int size;
+                  SetGet::Args wrapper(ObjId(dest), field);
+                  char *msg = CcsPackUnpack< SetGet::Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, Field< A >::getVecHandlerString(), size, msg);
+                  delete[] msg;
+
+                  int replySize;
+                  while(CcsRecvResponseMsg(&SetGet::ccsServer_, &replySize, (void **) &msg, MOOSE_CCS_TIMEOUT) <= 0); 
+                  SetGet1Wrapper< vector<A> > ret;
+                  CcsPackUnpack< SetGet1Wrapper< vector< A > > >::unpack(msg, ret);
+                  free(msg);
+
+                  vec = ret.a1_;
+                }
+
+                static void getVec_handler(char *msg){
+                  SetGet::Args args; 
+                  CcsPackUnpack<SetGet::Args>::unpack(msg, args);
+                  CmiFree(msg);
+
+                  vector< A > ret;
+                  bool success = getVec(args.dest_.id, args.field_, ret);
+
+                  // A might have members that need to be wrapper
+                  unsigned int size;
+                  SetGet1Wrapper< vector< A > > wrapper(ret, success);
+                  msg = CcsPackUnpack< SetGet1Wrapper< vector< A > > >::pack(wrapper, size);
+
+                  CcsSendReply(size, msg);
+                  delete[] msg;
+                }
+
+#endif
+		static bool getVec( Id dest, const string& field, vector< A >& vec)
 		{
 			vec.resize( 0 );
 			Field< A > sg( dest );
@@ -334,11 +659,12 @@ template< class A > class Field: public SetGet1< A >
 							vec[i] = gof->reduceOp( e );
 						}
 					}
-					return;
+					return true;
 				}
 			}
 			cout << "Warning: Field::getVec conversion error for " <<
 				dest.path() << endl;
+                        return false;
 		}
 		
 
@@ -384,6 +710,60 @@ template< class A > class Field: public SetGet1< A >
  */
 template< class A1, class A2 > class SetGet2: public SetGet
 {
+
+#ifdef USE_CHARMPP
+  private:
+  static char *setHandlerString_;
+  static char *setVecHandlerString_;
+
+  public:
+
+  static void setHandlerString(const char *str){
+    setHandlerString_ = str;
+  }
+
+  static const char *setHandlerString(){
+    return setHandlerString_;
+  }
+
+  static void setVecHandlerString(const char *str){
+    setVecHandlerString_ = str;
+  }
+
+  static const char *setVecHandlerString(){
+    return setVecHandlerString_;
+  }
+#endif
+
+
+  public:
+#ifdef USE_CHARMPP
+  struct Args : public SetGet::Args {
+    vector< A1 > a1_;
+    vector< A2 > a2_;
+
+    Args(const ObjId &objId, string field, A1 a1, A2 a2) : 
+      SetGet::Args(objId, field) 
+    {
+      a1_.push_back(a1);
+      a2_.push_back(a2);
+    }
+
+    Args(const ObjId &objId, string field, const vector< A1 > &a1, const vector< A2 > &a2) : 
+      SetGet::Args(objId, field),
+      a1_(a1),
+      a2_(a2)
+    {}
+
+    Args() {}
+
+    void pup(PUP::er &p){
+      SetGet::Args::pup(p);
+      p | a1_;
+      p | a2_;
+    }
+  };
+#endif
 	public:
 		SetGet2( const ObjId& dest )
 			: SetGet( dest )
@@ -392,6 +772,29 @@ template< class A1, class A2 > class SetGet2: public SetGet
 		/**
 		 * Blocking, typed 'Set' call
 		 */
+#ifdef USE_CHARMPP
+		static bool set_ccs( const ObjId& dest, const string& field, A1 arg1, A2 arg2 ){
+                  unsigned int size;
+                  SetGet2::Args wrapper(dest, field, arg1, arg2);
+                  char *msg = CcsPackUnpack< SetGet2::Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet2::setHandlerString(), size, msg);
+                  delete[] msg;
+
+                  bool ret;
+                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+                  return ret;
+                }
+
+                static void set_handler(char *msg){
+                  SetGet2::Args args;
+                  CcsPackUnpack< SetGet2::Args >::unpack(msg, args);
+                  CmiFree(msg);
+
+                  bool ret = set(args.dest_, args.field_, args.a1_[0], args.a2_[0]);
+                  CcsSendReply(sizeof(bool), &ret);
+                }
+
+#endif
 		static bool set( const ObjId& dest, const string& field, 
 			A1 arg1, A2 arg2 )
 		{
@@ -414,9 +817,9 @@ template< class A1, class A2 > class SetGet2: public SetGet
 					conv2.ptr(), conv2.size() );
 				Qinfo::waitProcCycles( 1 );
 				*/
-				return 1;
+				return true;
 			}
-			return 0;
+			return false;
 		}
 
 		/**
@@ -430,6 +833,29 @@ template< class A1, class A2 > class SetGet2: public SetGet
 		 * we have.
 		 * Need to clean up to handle string arguments later.
 		 */
+#ifdef USE_CHARMPP
+		static bool setVec_ccs( Id destId, const string& field, const vector< A1 >& arg1, const vector< A2 >& arg2 ){
+                  unsigned int size;
+                  Args wrapper(ObjId(destId), field, arg1, arg2);
+                  char *msg = CcsPackUnpack< Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet2::setVecHandlerString(), size, msg);
+                  delete[] msg;
+
+                  bool ret;
+                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+                  return ret;
+                }
+
+                static void setVec_handler(char *msg){
+                  SetGet2::Args args;
+                  CcsPackUnpack< SetGet2::Args >::unpack(msg, args);
+                  CmiFree(msg);
+
+                  bool ret = setVec(args.dest_, args.field_, args.a1_, args.a2_);
+                  CcsSendReply(sizeof(bool), &ret);
+                }
+
+#endif
 		static bool setVec( Id destId, const string& field, 
 			const vector< A1 >& arg1, const vector< A2 >& arg2 )
 		{
@@ -483,6 +909,8 @@ template< class A1, class A2 > class SetGet2: public SetGet
 			return ret;
 		}
 
+                // XXX give corresponding _ccs functions if required
+
 		/**
 		 * Blocking call using string conversion.
 		 */
@@ -520,6 +948,21 @@ template< class A1, class A2 > class SetGet2: public SetGet
  */
 template< class L, class A > class LookupField: public SetGet2< L, A >
 {
+#ifdef USE_CHARMPP
+  private:
+  static const char *getHandlerString_;
+
+  public:
+  static void getHandlerString(const char *str){
+    getHandlerString_ = str;
+  }
+
+  static const char *getHandlerString(){
+    return getHandlerString_;
+  }
+
+#endif
+
 	public:
 		LookupField( const ObjId& dest )
 			: SetGet2< L, A >( dest )
@@ -628,7 +1071,48 @@ template< class L, class A > class LookupField: public SetGet2< L, A >
 		 * Gets a value on a specific object, looking it up using the
 		 * provided index.
 		 */
-		static A get( const ObjId& dest, const string& field, L index)
+#ifdef USE_CHARMPP
+                static A get_internal(const ObjId& dest, const string& field, L index){
+                  unsigned int size;
+                  typename SetGet1< L >::Args wrapper(dest, field, index);
+                  char *msg = CcsPackUnpack< typename SetGet1< L >::Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, LookupField< L, A >::getHandlerString(), size, msg);
+                  delete[] msg;
+
+                  int msgSize;
+                  while(CcsRecvResponseMsg(&SetGet::ccsServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) <= 0);
+                  // types L, A might need to be unwrapper
+                  SetGet1Wrapper< A > ret;
+                  CcsPackUnpack< SetGet1Wrapper< A > >::unpack(msg, ret);
+                  // msg will point to a malloc()ed buffer after CcsRecvResponseMsg
+                  free(msg);
+                  return ret.a1_;
+                }
+
+                static void get_handler(char *msg){
+                  typename SetGet1< A >::Args args;
+                  CcsPackUnpack< typename SetGet1< A >::Args >::unpack(msg, args);
+                  CmiFree(msg);
+
+                  A ret;
+                  bool success = get(args.dest_, args.field_, args.values_[0], ret); 
+                  // A might have members that need to be packed
+                  unsigned int size;
+                  SetGet1Wrapper< A > wrapper(ret, success);
+                  msg = CcsPackUnpack< SetGet1Wrapper< A > >::pack(wrapper, size);
+
+                  CcsSendReply(size, msg);
+                  delete[] msg;
+                }
+
+#endif
+		static A get( const ObjId& dest, const string& field, L index){
+                  A ret;
+                  get(dest, field, index, ret); 
+                  return ret;
+                }
+
+		static bool get( const ObjId& dest, const string& field, L index, A &ret)
 		{ 
 			LookupField< L, A > sg( dest );
 			ObjId tgt( dest );
@@ -638,12 +1122,15 @@ template< class L, class A > class LookupField: public SetGet2< L, A >
 				sg.checkSet( fullFieldName, tgt, fid ) ) {
 				const LookupGetOpFuncBase< L, A >* gof = 
 				dynamic_cast< const LookupGetOpFuncBase< L, A >* >( func );
-				if ( gof )
-					return gof->reduceOp( tgt.eref(), index );
+				if ( gof ){
+					ret = gof->reduceOp( tgt.eref(), index );
+                                        return true;
+                                }
 			}
 			cout << "Warning: LookupField::Get conversion error for " << 
 				dest.id.path() << endl;
-			return A();
+                        ret = A();
+			return false;
 		}
 
 		/**
@@ -692,6 +1179,46 @@ template< class L, class A > class LookupField: public SetGet2< L, A >
  */
 template< class A1, class A2, class A3 > class SetGet3: public SetGet
 {
+#ifdef USE_CHARMPP
+  private:
+  static char *setHandlerString_;
+
+  public:
+  static void setHandlerString(const char *str){
+    setHandlerString_ = str;
+  }
+
+  static const char *setHandlerString(){
+    return setHandlerString_;
+  }
+#endif
+
+  public:
+#ifdef USE_CHARMPP
+  struct Args : public SetGet::Args {
+    A1 a1_;
+    A2 a2_;
+    A3 a3_;
+
+    Args(ObjId dest, string field, A1 a1, A2 a2, A3 a3) :
+      SetGet::Args(dest, field),
+      a1_(a1),
+      a2_(a2),
+      a3_(a3)
+    {}
+
+    Args() {}
+
+    void pup(PUP::er &p){
+      SetGet::Args::pup(p);
+      p | a1_;
+      p | a2_;
+      p | a3_;
+    }
+  };
+#endif
+
+
 	public:
 		SetGet3( const ObjId& dest )
 			: SetGet( dest )
@@ -700,6 +1227,31 @@ template< class A1, class A2, class A3 > class SetGet3: public SetGet
 		/**
 		 * Blocking, typed 'Set' call
 		 */
+
+#ifdef USE_CHARMPP
+		static bool set_ccs( const ObjId& dest, const string& field, 
+			         A1 arg1, A2 arg2, A3 arg3 ){
+                  unsigned int size;
+                  SetGet3::Args wrapper(dest, field, arg1, arg2, arg3);
+                  char *msg = CcsPackUnpack< SetGet3::Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet3::setHandlerString(), size, msg);
+                  delete[] msg;
+
+                  bool ret;
+                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+                  return ret;
+                }
+
+                static void set_handler(char *msg){
+                  SetGet3< A1, A2, A3 >::Args args;
+                  CcsPackUnpack< SetGet3< A1, A2, A3 >::Args >::unpack(msg, args);
+                  CmiFree(msg);
+
+                  bool ret = set(args.dest_, args.field_, args.a1_, args.a2_, args.a3_);
+                  CcsSendReply(sizeof(bool), &ret);
+                }
+
+#endif
 		static bool set( const ObjId& dest, const string& field, 
 			A1 arg1, A2 arg2, A3 arg3 )
 		{
@@ -758,6 +1310,52 @@ template< class A1, class A2, class A3 > class SetGet3: public SetGet
  */
 template< class A1, class A2, class A3, class A4 > class SetGet4: public SetGet
 {
+
+#ifdef USE_CHARMPP
+  private:
+  static char *setHandlerString_;
+
+  public:
+  static void setHandlerString(const char *str){
+    setHandlerString_ = str;
+  }
+
+  static const char *setHandlerString(){
+    return setHandlerString_;
+  }
+#endif
+
+
+  public:
+#ifdef USE_CHARMPP
+  struct Args : public SetGet::Args {
+    A1 a1_;
+    A2 a2_;
+    A3 a3_;
+    A4 a4_;
+
+    Args(ObjId dest, string field, const A1 &a1, const A2 &a2, const A3 &a3, const A4 &a4) :
+      SetGet::Args(dest, field),
+      a1_(a1),
+      a2_(a2),
+      a3_(a3),
+      a4_(a4)
+    {}
+
+    Args() {}
+
+    void pup(PUP::er &p){
+      SetGet::Args::pup(p);
+      p | a1_;
+      p | a2_;
+      p | a3_;
+      p | a4_;
+    }
+  };
+#endif
+
+
+
 	public:
 		SetGet4( const ObjId& dest )
 			: SetGet( dest )
@@ -766,6 +1364,32 @@ template< class A1, class A2, class A3, class A4 > class SetGet4: public SetGet
 		/**
 		 * Blocking, typed 'Set' call
 		 */
+
+#ifdef USE_CHARMPP
+		static bool set_ccs( const ObjId& dest, const string& field, 
+			         A1 arg1, A2 arg2, A3 arg3, A4 arg4){
+                  unsigned int size;
+                  SetGet4::Args wrapper(dest, field, arg1, arg2, arg3, arg4);
+                  char *msg = CcsPackUnpack< SetGet4::Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet4::setHandlerString(), size, msg);
+                  delete[] msg;
+
+                  bool ret;
+                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+                  return ret;
+                }
+
+                static void set_handler(char *msg){
+                  SetGet4< A1, A2, A3, A4 >::Args args;
+                  CcsPackUnpack< SetGet4< A1, A2, A3, A4 >::Args >::unpack(msg, args);
+                  CmiFree(msg);
+
+                  bool ret = set(args.dest_, args.field_, args.a1_, args.a2_, args.a3_, args.a4_);
+                  CcsSendReply(sizeof(bool), &ret);
+                }
+
+
+#endif
 		static bool set( const ObjId& dest, const string& field, 
 			A1 arg1, A2 arg2, A3 arg3, A4 arg4 )
 		{
@@ -837,6 +1461,53 @@ template< class A1, class A2, class A3, class A4 > class SetGet4: public SetGet
 template< class A1, class A2, class A3, class A4, class A5 > class SetGet5:
 	public SetGet
 {
+#ifdef USE_CHARMPP
+  private:
+  static char *setHandlerString_;
+
+  public:
+  static void setHandlerString(const char *str){
+    setHandlerString_ = str;
+  }
+
+  static const char *setHandlerString(){
+    return setHandlerString_;
+  }
+#endif
+
+  public:
+#ifdef USE_CHARMPP
+  struct Args : public SetGet::Args {
+    A1 a1_;
+    A2 a2_;
+    A3 a3_;
+    A4 a4_;
+    A5 a5_;
+
+    Args(ObjId dest, string field, const A1 &a1, const A2 &a2, const A3 &a3, const A4 &a4, const A5 &a5) :
+      SetGet::Args(dest, field),
+      a1_(a1),
+      a2_(a2),
+      a3_(a3),
+      a4_(a4),
+      a5_(a5)
+    {}
+
+    Args() {}
+
+    void pup(PUP::er &p){
+      SetGet::Args::pup(p);
+      p | a1_;
+      p | a2_;
+      p | a3_;
+      p | a4_;
+      p | a5_;
+    }
+  };
+#endif
+
+
+
 	public:
 		SetGet5( const ObjId& dest )
 			: SetGet( dest )
@@ -845,8 +1516,34 @@ template< class A1, class A2, class A3, class A4, class A5 > class SetGet5:
 		/**
 		 * Blocking, typed 'Set' call
 		 */
+#ifdef USE_CHARMPP
+		static bool set_ccs( const ObjId& dest, const string& field, 
+			         A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5){
+                  unsigned int size;
+                  SetGet5::Args wrapper(dest, field, arg1, arg2, arg3, arg4, arg5);
+                  char *msg = CcsPackUnpack< SetGet5::Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet5::setHandlerString(), size, msg);
+                  delete[] msg;
+
+                  bool ret;
+                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+                  return ret;
+                }
+
+                static void set_handler(char *msg){
+                  SetGet5< A1, A2, A3, A4, A5 >::Args args;
+                  CcsPackUnpack< SetGet5< A1, A2, A3, A4, A5 >::Args >::unpack(msg, args);
+                  CmiFree(msg);
+
+                  bool ret = set(args.dest_, args.field_, args.a1_, args.a2_, args.a3_, args.a4_, args.a5_);
+                  CcsSendReply(sizeof(bool), &ret);
+                }
+
+
+#endif
+
 		static bool set( const ObjId& dest, const string& field, 
-			A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5 )
+			                  A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5 )
 		{
 			SetGet5< A1, A2, A3, A4, A5 > sg( dest );
 			FuncId fid;
@@ -922,6 +1619,57 @@ template< class A1, class A2, class A3, class A4, class A5 > class SetGet5:
 template< class A1, class A2, class A3, class A4, class A5, class A6 > class SetGet6:
 	public SetGet
 {
+#ifdef USE_CHARMPP
+  private:
+  static char *setHandlerString_;
+
+  public:
+  static void setHandlerString(const char *str){
+    setHandlerString_ = str;
+  }
+
+  static const char *setHandlerString(){
+    return setHandlerString_;
+  }
+#endif
+
+  public:
+#ifdef USE_CHARMPP
+  struct Args : public SetGet::Args {
+    A1 a1_;
+    A2 a2_;
+    A3 a3_;
+    A4 a4_;
+    A5 a5_;
+    A6 a6_;
+
+    Args(ObjId dest, string field, 
+         const A1 &a1, const A2 &a2, const A3 &a3, const A4 &a4, const A5 &a5, const A6 &a6) :
+      SetGet::Args(dest, field),
+      a1_(a1),
+      a2_(a2),
+      a3_(a3),
+      a4_(a4),
+      a5_(a5),
+      a6_(a6)
+    {}
+
+    Args() {}
+
+    void pup(PUP::er &p){
+      SetGet::Args::pup(p);
+      p | a1_;
+      p | a2_;
+      p | a3_;
+      p | a4_;
+      p | a5_;
+      p | a6_;
+    }
+  };
+#endif
+
+
+
 	public:
 		SetGet6( const ObjId& dest )
 			: SetGet( dest )
@@ -930,8 +1678,33 @@ template< class A1, class A2, class A3, class A4, class A5, class A6 > class Set
 		/**
 		 * Blocking, typed 'Set' call
 		 */
+#ifdef USE_CHARMPP
+		static bool set_ccs( const ObjId& dest, const string& field, 
+			         A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5, A6 arg6){
+                  unsigned int size;
+                  SetGet6::Args wrapper(dest, field, arg1, arg2, arg3, arg4, arg5, arg6);
+                  char *msg = CcsPackUnpack< SetGet6::Args >::pack(wrapper, size);
+                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet6::setHandlerString(), size, msg);
+                  delete[] msg;
+
+                  bool ret;
+                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+                  return ret;
+                }
+
+                static void set_handler(char *msg){
+                  SetGet6< A1, A2, A3, A4, A5, A6 >::Args args;
+                  CcsPackUnpack< SetGet6< A1, A2, A3, A4, A5, A6 >::Args >::unpack(msg, args);
+                  CmiFree(msg);
+
+                  bool ret = set(args.dest_, args.field_, args.a1_, args.a2_, args.a3_, args.a4_, args.a5_, args.a6_);
+                  CcsSendReply(sizeof(bool), &ret);
+                }
+
+#endif
+
 		static bool set( const ObjId& dest, const string& field, 
-			A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5, A6 arg6 )
+			                  A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5, A6 arg6 )
 		{
 			SetGet6< A1, A2, A3, A4, A5, A6 > sg( dest );
 			FuncId fid;

@@ -90,10 +90,17 @@ void Enz::vCplx( double n )
 
 void Enz::vProcess( const Eref& e, ProcPtr p )
 {
+#ifndef USE_CHARMPP
 	toSub->send( e, p->threadIndexInGroup, r2_, r1_ );
 	toPrd->send( e, p->threadIndexInGroup, r3_, 0 );
 	toEnz->send( e, p->threadIndexInGroup, r3_ + r2_, r1_ );
 	toCplx->send( e, p->threadIndexInGroup, r1_, r3_ + r2_ );
+#else
+	toSub->send( e, p->threadIndexInGroup, p->container, r2_, r1_ );
+	toPrd->send( e, p->threadIndexInGroup, p->container, r3_, 0 );
+	toEnz->send( e, p->threadIndexInGroup, p->container, r3_ + r2_, r1_ );
+	toCplx->send( e, p->threadIndexInGroup, p->container, r1_, r3_ + r2_ );
+#endif
 
 	// cout << "	proc: " << r1_ << ", " << r2_ << ", " << r3_ << endl;
 	

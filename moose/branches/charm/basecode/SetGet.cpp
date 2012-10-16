@@ -15,10 +15,15 @@
 // Static field defintion.
 Qinfo SetGet::qi_;
 
+#ifdef USE_CHARMPP
+CcsServer SetGet::ccsServer_;
+#endif
+
 //////////////////////////////////////////////////////////////////////
 // A group of functions to forward dispatch commands to the Shell.
 //////////////////////////////////////////////////////////////////////
 
+#ifndef USE_CHARMPP
 const vector< double* >* SetGet::dispatchGet( 
 	const ObjId& tgt, FuncId tgtFid, const double* arg, unsigned int size )
 {
@@ -29,6 +34,7 @@ const vector< double* >* SetGet::dispatchGet(
 	Qinfo::waitProcCycles( 2 );
 	return &s->getBuf();
 }
+#endif
 
 
 //////////////////////////////////////////////////////////////////////
@@ -100,6 +106,37 @@ const OpFunc* SetGet::checkSet(
 /////////////////////////////////////////////////////////////////////////
 
 // Static function
+#ifdef USE_CHARMPP
+bool SetGet::strGet_ccs( const ObjId& tgt, const string& field, string& ret ){
+  unsigned int size;
+  SetGet::Args wrapper(tgt, field);
+  char *msg = CcsPackUnpack< SetGet::Args >::pack(wrapper, size);
+  CcsSendBroadcastRequest(&SetGet::ccsServer_, strGetHandlerString(), size, msg);
+  delete[] msg;
+
+  SetGet1Wrapper< string > sg;
+  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+
+  ret = sg.a1_;
+  return sg.hasData_;
+}
+
+void SetGet::strGet_handler(char *msg){
+  SetGet::Args args;
+  CcsPackUnpack< SetGet::Args >::unpack(msg, args);
+  CmiFree(msg);
+
+  string ret;
+  bool success = strGet(args.dest_, args.field_, ret);
+  unsigned int size;
+  SetGet1Wrapper< string > wrapper(ret, success);
+  msg = CcsPackUnpack< SetGet1Wrapper< string > >::pack(wrapper, size); 
+  CcsSendReply(size, msg);
+  delete[] msg;
+}
+
+#endif
+
 bool SetGet::strGet( const ObjId& tgt, const string& field, string& ret )
 {
 	const Finfo* f = tgt.element()->cinfo()->findFinfo( field );
@@ -111,6 +148,29 @@ bool SetGet::strGet( const ObjId& tgt, const string& field, string& ret )
 	}
 	return f->strGet( tgt.eref(), field, ret );
 }
+
+#ifdef USE_CHARMPP
+bool SetGet::strSet_ccs( const ObjId& tgt, const string& field, const string& v){
+  unsigned int size;
+  SetGet1< string >::Args wrapper(tgt, field, v);
+  char *msg = CcsPackUnpack< SetGet1< string >::Args >::pack(wrapper, size);
+  CcsSendBroadcastRequest(&SetGet::ccsServer_, strSetHandlerString(), size, msg);
+  delete[] msg;
+
+  bool ret;
+  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+  return ret;
+}
+
+void SetGet::strSet_handler(char *msg){
+  SetGet1< string >::Args args;
+  CcsPackUnpack< SetGet1< string >::Args >::unpack(msg, args);
+  CmiFree(msg);
+
+  bool ret = strSet(args.dest_, args.field_, args.values_[0]); 
+  CcsSendReply(sizeof(bool), &ret);
+}
+#endif
 
 bool SetGet::strSet( const ObjId& tgt, const string& field, const string& v)
 {

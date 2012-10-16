@@ -29,6 +29,8 @@
 #include "SparseMsg.h"
 #ifdef USE_MPI
 #include <mpi.h>
+#elif USE_CHARMPP
+#include "charm++.h"
 #endif
 #include "../shell/Shell.h"
 #ifdef MACOSX
@@ -78,6 +80,9 @@ bool benchmarkTests( int argc, char** argv );
 
 unsigned int getNumCores()
 {
+#ifdef USE_CHARMPP
+        return CkNumPes();
+#endif
 	unsigned int numCPU = 0;
 #ifdef WIN_32
 	SYSTEM_INFO sysinfo;
@@ -331,11 +336,12 @@ void mpiTests()
 		cout << "." << flush;
 #endif
 }
-#ifndef PYMOOSE
+
+#if !defined PYMOOSE && !defined USE_CHARMPP
 int main( int argc, char** argv )
 {
 	bool doUnitTests = 0;
-	bool doRegressionTests = 0;
+	bool doRegressionTests = 1;
 	Id shellId = init( argc, argv, doUnitTests, doRegressionTests );
 	// Note that the main loop remains the parser loop, though it may
 	// spawn a lot of other stuff.
@@ -378,5 +384,5 @@ int main( int argc, char** argv )
 #endif
 	return 0;
 }
-#endif
 
+#endif

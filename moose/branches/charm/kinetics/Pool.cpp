@@ -101,7 +101,11 @@ void Pool::vProcess( const Eref& e, ProcPtr p )
 
 	A_ = B_ = 0.0;
 
+#ifndef USE_CHARMPP
 	nOut.send( e, p->threadIndexInGroup, n_ );
+#else
+	nOut.send( e, p->threadIndexInGroup, p->container, n_ );
+#endif
 }
 
 void Pool::vReinit( const Eref& e, ProcPtr p )
@@ -109,7 +113,11 @@ void Pool::vReinit( const Eref& e, ProcPtr p )
 	A_ = B_ = 0.0;
 	n_ = getNinit( e, 0 );
 
+#ifndef USE_CHARMPP
 	nOut.send( e, p->threadIndexInGroup, n_ );
+#else
+	nOut.send( e, p->threadIndexInGroup, p->container, n_ );
+#endif
 }
 
 void Pool::vReac( double A, double B )

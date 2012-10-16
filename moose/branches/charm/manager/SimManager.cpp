@@ -256,10 +256,14 @@ unsigned int SimManager::getVersion() const
 	return version_;
 }
 
+// XXX - requires a CCS method
+
 void SimManager::setMethod( const Eref& e, const Qinfo* q, string v )
 {
+#ifndef USE_CHARMPP
 	if ( q->addToStructuralQ() )
 		return;
+#endif
 
 	Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
 	if ( stoich_ != Id() && stoich_.element() != 0 )
@@ -424,6 +428,8 @@ void SimManager::buildEE( Shell* shell )
 	shell->doUseClock( basePath + "/kinetics/##[ISA!=Pool]", "process", 5);
 }
 
+// XXX probably need to include this in the CCS interface
+
 void SimManager::buildGssa( const Eref& e, const Qinfo* q, Shell* shell )
 {
 	vector< int > dims( 1, 1 );
@@ -448,9 +454,15 @@ void SimManager::buildGssa( const Eref& e, const Qinfo* q, Shell* shell )
 
 	numChemNodes_ = Shell::numNodes() * chemLoad / ( chemLoad + hsolveLoad);
 	
+#ifndef USE_CHARMPP
 	nodeInfo()->send( e, q->threadNum(), numChemNodes_,
 		Shell::numProcessThreads() ); 
 	Qinfo::waitProcCycles( 2 );
+#else
+	nodeInfo()->send( e, q->threadNum(), q->container(), numChemNodes_,
+		Shell::numProcessThreads() ); 
+        q->container()->hackClearQ(2);
+#endif
 
 	string path0 = basePath + "/kinetics/mesh," + 
 		basePath + "/kinetics/##[ISA=StimulusTable]";
@@ -465,6 +477,8 @@ void SimManager::buildGssa( const Eref& e, const Qinfo* q, Shell* shell )
 void SimManager::buildSmoldyn( Shell* shell )
 {
 }
+
+// XXX must add CCS function for this
 
 void SimManager::buildGsl( const Eref& e, const Qinfo* q, 
 	Shell* shell, const string& method )
@@ -490,9 +504,15 @@ void SimManager::buildGsl( const Eref& e, const Qinfo* q,
 
 	numChemNodes_ = Shell::numNodes() * chemLoad / ( chemLoad + hsolveLoad);
 	
+#ifndef USE_CHARMPP
 	nodeInfo()->send( e, q->threadNum(), numChemNodes_,
 		Shell::numProcessThreads() ); 
 	Qinfo::waitProcCycles( 2 );
+#else
+	nodeInfo()->send( e, q->threadNum(), q->container(), numChemNodes_,
+		Shell::numProcessThreads() ); 
+        q->container()->hackClearQ(2);
+#endif
 
 	Id gsl = shell->doCreate( "GslIntegrator", stoich_, "gsl", dims );
 	assert( gsl != Id() );
