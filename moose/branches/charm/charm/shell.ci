@@ -1,0 +1,28 @@
+module shell {
+  // we cannot have a Shell group, because Dinfo< Shell >
+  // requires an operator=, which is private for charm++ groups
+
+  readonly CProxy_ShellHelper readonlyShellHelperProxy;
+  readonly CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
+
+  group ShellHelper {
+    entry ShellHelper(int argc, std::string s_argv[argc], const CkCallback &cb);
+    entry void destroyShell(const CkCallback &cb);
+  };
+
+  group ShellCcsInterface {
+    entry ShellCcsInterface(const CkCallback &cb);
+  };
+
+  mainchare ShellMain {
+    entry ShellMain(CkArgMsg *m);
+    entry void shellHelpersReady();
+    entry void shellCcsInterfacesReady();
+    entry void waitUntilInitDone(){
+      when shellHelpersReady(), shellCcsInterfacesReady() atomic {
+        readonlyMainProxy.shellReady();
+      }
+    };
+
+  };
+};
