@@ -91,7 +91,11 @@ SumFunc::SumFunc()
 
 void SumFunc::process( const Eref& e, ProcPtr p )
 {
+#ifndef USE_CHARMPP
 	output.send( e, p->threadIndexInGroup, result_ );
+#else
+	output.send( e, p->threadIndexInGroup, p->container, result_ );
+#endif
 	result_ = 0.0;
 }
 

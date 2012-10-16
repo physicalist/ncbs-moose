@@ -224,8 +224,13 @@ void SymCompartment::innerProcessFunc( Element* e, ProcInfo p )
 // Alternates with the 'process' message
 void SymCompartment::innerInitProc( const Eref& e, ProcPtr p )
 {
+#ifndef USE_CHARMPP
 	raxialOut()->send( e, p->threadIndexInGroup, Ra_, Vm_ ); // to kids
 	raxial2Out()->send( e, p->threadIndexInGroup, Ra_, Vm_ ); // to parent and sibs.
+#else
+	raxialOut()->send( e, p->threadIndexInGroup, p->container, Ra_, Vm_ ); // to kids
+	raxial2Out()->send( e, p->threadIndexInGroup, p->container, Ra_, Vm_ ); // to parent and sibs.
+#endif
 }
 
 // Virtual func. Must be called after the 'init' phase.
@@ -247,18 +252,31 @@ void SymCompartment::innerInitReinit( const Eref& e, ProcPtr p )
 {
 	coeff_ = 0.0;
 	coeff2_ = 0.0;
+#ifndef USE_CHARMPP
 	requestSumAxial()->send( e, p->threadIndexInGroup );
 	requestSumAxial2()->send( e, p->threadIndexInGroup );
+#else
+	requestSumAxial()->send( e, p->threadIndexInGroup, p->container);
+	requestSumAxial2()->send( e, p->threadIndexInGroup, p->container);
+#endif
 }
 
 void SymCompartment::handleSumRaxialRequest( const Eref& e, const Qinfo* q )
 {
+#ifndef USE_CHARMPP
 	sumRaxialOut()->send( e, q->threadNum(), Ra_ );
+#else
+	sumRaxialOut()->send( e, q->threadNum(), q->container(), Ra_ );
+#endif
 }
 
 void SymCompartment::handleSumRaxial2Request( const Eref& e, const Qinfo* q)
 {
+#ifndef USE_CHARMPP
 	sumRaxial2Out()->send( e, q->threadNum(), Ra_ );
+#else
+	sumRaxial2Out()->send( e, q->threadNum(), q->container(), Ra_ );
+#endif
 }
 
 void SymCompartment::sumRaxial( double Ra )

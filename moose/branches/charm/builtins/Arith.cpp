@@ -131,7 +131,11 @@ void Arith::process( const Eref& e, ProcPtr p )
 			e.element()->getName() << ", " << e.objId() << "		" << 
 			arg3_ << "	" << &arg3_ << endl;
 	}
+#ifndef USE_CHARMPP
 	output()->send( e, p->threadIndexInGroup, output_ );
+#else
+	output()->send( e, p->threadIndexInGroup, p->container, output_ );
+#endif
 	arg3_ = 0.0;
 }
 

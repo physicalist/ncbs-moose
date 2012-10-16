@@ -22,7 +22,7 @@ static SrcFinfo0 *group() {
 	return &group;
 }
 
-const Cinfo* Group::initCinfo()
+const Cinfo* moose::Group::initCinfo()
 {
 
 	static Finfo* groupFinfos[] = {
@@ -34,15 +34,15 @@ const Cinfo* Group::initCinfo()
 		Neutral::initCinfo(),
 		groupFinfos,
 		sizeof( groupFinfos ) / sizeof ( Finfo* ),
-		new Dinfo< Group >()
+		new Dinfo< moose::Group >()
 	);
 
 	return &groupCinfo;
 }
 
-static const Cinfo* groupCinfo = Group::initCinfo();
+static const Cinfo* groupCinfo = moose::Group::initCinfo();
 
-Group::Group()
+moose::Group::Group()
 {
 	;
 }

@@ -7,6 +7,9 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#ifndef MOOSE_TICK_PTR_H
+#define MOOSE_TICK_PTR_H
+
 class TickPtr
 {
 	public:
@@ -25,3 +28,5 @@ class TickPtr
 	private:
 		TickMgr* mgr_;
 };
+
+#endif // MOOSE_TICK_PTR_H

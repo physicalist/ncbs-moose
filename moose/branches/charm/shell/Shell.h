@@ -28,6 +28,10 @@ extern DestFinfo* receiveGet();
 extern ReduceFinfoBase* reduceArraySizeFinfo();
 //extern SrcFinfo2< unsigned int, unsigned int >* ack(); // Not currently used.
 
+#ifdef USE_CHARMPP
+class ElementContainer;
+#endif
+
 class Shell
 {
 	public:
@@ -61,6 +65,11 @@ class Shell
 		 * Returns flag to indicate whether simulation is still running
 		 */
 		bool isRunning() const;
+
+#ifdef USE_CHARMPP
+                void setRunning();
+                void setNotRunning();
+#endif
 
 		///////////////////////////////////////////////////////////
 		// Parser functions
@@ -511,8 +520,24 @@ class Shell
 		 * set the gettingVector_ flag 
 		 */
 		void expectVector( bool flag );
+
+#ifdef USE_CHARMPP
+                void registerContainer(ElementContainer *container);
+                void setStop(bool stop);
+                bool getStop() const;
+#endif
 		
 	private:
+
+#ifdef USE_CHARMPP
+                // set isRunning_ to true/false as required
+                bool isRunning_;
+                bool shouldStop_;
+
+                CkVec< ElementContainer * > myElementContainers_; 
+#endif
+
+
 		Element* shelle_; // It is useful for the Shell to have this.
 
 		/**
@@ -627,6 +652,7 @@ class Shell
 		/// Keeps track of allocated reduceMsg so we can deallocate.
 		MsgId reduceMsg_;
 };
+
 
 /*
 extern bool set( Eref& dest, const string& destField, const string& val );

@@ -81,8 +81,13 @@ void MMenz::vEnz( double n )
 void MMenz::vProcess( const Eref& e, ProcPtr p )
 {
 	double rate = kcat_ * enz_ * sub_ / ( numKm_ + sub_ );
+#ifndef USE_CHARMPP
 	toSub->send( e, p->threadIndexInGroup, 0, rate );
 	toPrd->send( e, p->threadIndexInGroup, rate, 0 );
+#else
+	toSub->send( e, p->threadIndexInGroup, p->container, 0, rate );
+	toPrd->send( e, p->threadIndexInGroup, p->container, rate, 0 );
+#endif
 	
 	sub_ = 1.0;
 }

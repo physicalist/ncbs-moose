@@ -10,6 +10,10 @@
 #ifndef _ID_H
 #define _ID_H
 
+#ifdef USE_CHARMPP
+#include "pup.h"
+#endif
+
 /**
  * This class manages id lookups for elements. Ids provide a uniform
  * handle for every object, independent of which node they are located on.
@@ -162,6 +166,13 @@ class Id
 		unsigned int id_; // Unique identifier for Element*
 //		unsigned int index_; // Index of array entry within element.
 		static vector< Element* >& elements();
+
+#ifdef USE_CHARMPP
+        public:
+                void pup(PUP::er &p);
+                void reduce(const Id &other);
+#endif
+
 };
 
 #endif // _ID_H

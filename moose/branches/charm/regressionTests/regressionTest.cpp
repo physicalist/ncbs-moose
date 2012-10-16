@@ -13,13 +13,20 @@
 void rtTestChem();
 
 void rtTable();
-void rtReacDiff();
+//void rtReacDiff();
 void rtHHnetwork( unsigned int numCopies );
 
 extern void testGsolver( string modelName, string plotName,
 	double plotDt, double simtime, double volume );
 
+#include "rtReacDiff.h"
+
+#ifndef USE_CHARMPP
 void regressionTests()
+#else
+class ElementContainer *container;
+void regressionTests(ElementContainer *container)
+#endif
 {
 	//char* cwd = get_current_dir_name();
 	// get_current_dir_name is not available on all platforms
@@ -35,7 +42,12 @@ void regressionTests()
 	rtTable();
 	rtTestChem();
 
-	rtReacDiff();
+#ifndef USE_CHARMPP
+        TestReacDiff trd; 
+#else
+        TestReacDiff trd(container); 
+#endif
+	trd.rtReacDiff();
 	rtHHnetwork( 10 );
 	cout << endl;
 }

@@ -201,3 +201,13 @@ Id::Id( unsigned int id, unsigned int index )
 	;
 }
 */
+
+#ifdef USE_CHARMPP
+void Id::pup(PUP::er &p){
+  p | id_;
+}
+
+void Id::reduce(const Id &other){
+  CkAssert(*this == other);
+}
+#endif

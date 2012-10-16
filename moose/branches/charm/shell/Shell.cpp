@@ -20,6 +20,12 @@
 #include "Dinfo.h"
 #include "Wildcard.h"
 
+#include "svn_revision.h"
+
+#ifdef USE_CHARMPP
+#include "ShellCcsInterface.h"
+#endif
+
 // Want to separate out this search path into the Makefile options
 #include "../scheduling/Tick.h"
 #include "../scheduling/TickMgr.h"
@@ -470,6 +476,10 @@ static const Cinfo* shellCinfo = Shell::initCinfo();
 
 Shell::Shell()
 	: 
+#ifdef USE_CHARMPP
+                isRunning_(false),
+                shouldStop_(false),
+#endif
 		gettingVector_( 0 ),
 		numGetVecReturns_( 0 ),
 		cwe_( Id() ),
@@ -507,9 +517,13 @@ Id Shell::doCreate( string type, Id parent, string name, vector< int > dimension
 	Id ret = Id::nextId();
 	vector< int > dims( dimensions );
 	dims.push_back( isGlobal );
+#ifndef USE_CHARMPP
 	Qinfo::buildOn( qFlag );
+#endif
 		innerCreate( type, parent, ret, name, dims );
+#ifndef USE_CHARMPP
 	Qinfo::buildOff( qFlag );
+#endif
 	/*
 	initAck(); // Nasty thread stuff happens here for multithread mode.
 		requestCreate()->send( Id().eref(), ScriptThreadNum, type, parent, ret, name, dims );
@@ -521,9 +535,13 @@ Id Shell::doCreate( string type, Id parent, string name, vector< int > dimension
 bool Shell::doDelete( Id i, bool qFlag )
 {
 	Neutral n;
+#ifndef USE_CHARMPP
 	Qinfo::buildOn( qFlag );
+#endif
 		n.destroy( i.eref(), 0, 0 );
+#ifndef USE_CHARMPP
 	Qinfo::buildOff( qFlag );
+#endif
 	/*
 	initAck();
 		requestDelete()->send( Id().eref(), ScriptThreadNum, i );
@@ -560,10 +578,14 @@ MsgId Shell::doAddMsg( const string& msgType,
 		cout << myNode_ << ": Shell::doAddMsg: Error: Src/Dest Msg type mismatch: " << srcField << "/" << destField << endl;
 		return Msg::bad;
 	}
+#ifndef USE_CHARMPP
 	Qinfo::buildOn( qFlag );
+#endif
 		MsgId mid = Msg::nextMsgId();
 		innerAddMsg( msgType, mid, src, srcField, dest, destField );
+#ifndef USE_CHARMPP
 	Qinfo::buildOff( qFlag );
+#endif
 	/*
 	initAck();
 	MsgId mid = Msg::nextMsgId();
@@ -604,7 +626,11 @@ void Shell::connectMasterMsg()
 		}
 	} else {
 		cout << Shell::myNode() << ": Error: failed in Shell::connectMasterMsg()\n";
+#ifdef USE_CHARMPP
+                CkExit();
+#else
 		exit( 0 );
+#endif
 	}
 	// cout << Shell::myNode() << ": Shell::connectMasterMsg gave id: " << m->mid() << "\n";
 
@@ -613,22 +639,49 @@ void Shell::connectMasterMsg()
 	bool ret = s->innerAddMsg( "Single", Msg::nextMsgId(), 
 		ObjId( shellId, 0 ), "clockControl", 
 		ObjId( clockId, 0 ), "clockControl" );
+
+#ifdef USE_CHARMPP
+        CkAssert(ret);
+#else
 	assert( ret );
+#endif
 	// innerAddMsg( string msgType, ObjId src, string srcField, ObjId dest, string destField )
 }
 
 void Shell::doQuit( bool qFlag )
 {
+#ifndef USE_CHARMPP
 	Qinfo::buildOn( qFlag );
+#endif
 		Shell::keepLooping_ = 0;
 		// Send it off via MPI too.
+#ifndef USE_CHARMPP
 	Qinfo::buildOff( qFlag );
+#endif
 	/*
 	// No acks needed: the next call from parser should be to 
 	// exit parser itself.
 	requestQuit()->send( Id().eref(), ScriptThreadNum );
 	*/
 }
+
+#ifdef USE_CHARMPP
+
+void Shell::doStart(double runtime, bool qFlag){
+  if(isRunning_) return;
+
+  isRunning_ = true;
+#ifdef USE_CHARMPP
+  // so that all CCS requests received while Shell is
+  // running, are buffered for later processing
+  setRunning();
+#endif
+  for(unsigned int i = 0; i < myElementContainers_.size(); i++){
+    myElementContainers_[i]->start(runtime);
+  }
+}
+
+#else
 
 void Shell::doStart( double runtime, bool qFlag )
 {
@@ -676,6 +729,8 @@ void Shell::doNonBlockingStart( double runtime, bool qFlag )
 	*/
 }
 
+#endif
+
 bool isDoingReinit()
 {
 	static Id clockId( 1 );
@@ -687,6 +742,7 @@ bool isDoingReinit()
 
 void Shell::doReinit( bool qFlag )
 {
+#ifndef USE_CHARMPP
 	extern void quickNap(); // Defined in Qinfo.cpp
 	if ( !keepLooping() ) {
 		cout << "Error: Shell::doReinit: Should not be called unless ProcessLoop is running\n";
@@ -694,8 +750,15 @@ void Shell::doReinit( bool qFlag )
 	}
 	// Has to block till reinit is done.
 	Qinfo::buildOn( qFlag );
+#else
+        // we should never have come here if the Shell was busy
+        // doing something
+        CkAssert(!isDoingReinit());
+#endif
+        
 		Id clockId( 1 );
 		SetGet0::set( clockId, "reinit" );
+#ifndef USE_CHARMPP
 		while ( isDoingReinit() ) {
 			Qinfo::buildOff( qFlag );
 			// Here we let the simulation threads do stuff.
@@ -703,6 +766,7 @@ void Shell::doReinit( bool qFlag )
 			Qinfo::buildOn( qFlag );
 		}
 	Qinfo::buildOff( qFlag );
+#endif
 	/*
 	Eref sheller( shelle_, 0 );
 	initAck();
@@ -713,6 +777,7 @@ void Shell::doReinit( bool qFlag )
 
 void Shell::doStop( bool qFlag )
 {
+#ifndef USE_CHARMPP
 	if ( !keepLooping() ) {
 		cout << "Error: Shell::doStop: Should not be called unless ProcessLoop is running\n";
 		return;
@@ -721,6 +786,12 @@ void Shell::doStop( bool qFlag )
 		Id clockId( 1 );
 		SetGet0::set( clockId, "stop" );
 	Qinfo::buildOff( qFlag );
+#else
+        setNotRunning();
+        for(unsigned int i = 0; i < myElementContainers_.size(); i++){
+          myElementContainers_[i]->stop();
+        }
+#endif
 	/*
 	Eref sheller( shelle_, 0 );
 	initAck();
@@ -747,17 +818,25 @@ void Shell::doSetClock( unsigned int tickNum, double dt, bool qFlag )
 		requestSetupTick.send( sheller, ScriptThreadNum, tickNum, dt );
 	waitForAck();
 	*/
+#ifndef USE_CHARMPP
 	Qinfo::buildOn( qFlag );
+#endif
 		SetGet2< unsigned int, double >::set( ObjId( 1 ), "setupTick", tickNum, dt );
+#ifndef USE_CHARMPP
 	Qinfo::buildOff( qFlag );
+#endif
 }
 
 void Shell::doUseClock( string path, string field, unsigned int tick,
 	bool qFlag )
 {
+#ifndef USE_CHARMPP
 	Qinfo::buildOn( qFlag );
+#endif
 		innerUseClock( path, field, tick);
+#ifndef USE_CHARMPP
 	Qinfo::buildOff( qFlag );
+#endif
 	/*
 	Eref sheller( shelle_, 0 );
 	initAck();
@@ -799,9 +878,13 @@ void Shell::doMove( Id orig, Id newParent, bool qFlag )
 		return;
 		
 	}
+#ifndef USE_CHARMPP
 	Qinfo::buildOn( qFlag );
+#endif
 		innerMove( orig, newParent );
+#ifndef USE_CHARMPP
 	Qinfo::buildOff( qFlag );
+#endif
 	// Put in check here that newParent is not a child of orig.
 	/*
 	Eref sheller( shelle_, 0 );
@@ -1080,9 +1163,11 @@ void Shell::doReacDiffMesh( Id baseCompartment )
 	Id baseMesh( baseCompartment.value() + 1 );
 	doSyncDataHandler( baseMesh );
 
+#ifndef USE_CHARMPP
 	initAck();
 		requestReMesh()->send( sheller, ScriptThreadNum, baseMesh );
 	waitForAck();
+#endif
 
 	// Traverse all child compts and do their meshes.
 	vector< Id > kids;
@@ -1103,7 +1188,9 @@ void Shell::doReacDiffMesh( Id baseCompartment )
 void Shell::doSetParserIdleFlag( bool isParserIdle )
 {
 	Eref sheller( shelle_, 0 );
+#ifndef USE_CHARMPP
 	requestSetParserIdleFlag()->send( sheller, ScriptThreadNum, isParserIdle);
+#endif
 }
 
 void Shell::handleSetParserIdleFlag( bool isParserIdle )
@@ -1116,14 +1203,14 @@ void Shell::handleSetParserIdleFlag( bool isParserIdle )
 // DestFuncs
 ////////////////////////////////////////////////////////////////
 
-string Shell::doVersion()
+std::string Shell::doVersion()
 {
     return MOOSE_VERSION;
 }
 
-string Shell::doRevision()
+std::string Shell::doRevision()
 {
-    return SVN_REVISION;
+    return string(SVN_REVISION);
 }
 
 void Shell::setCwe( Id val )
@@ -1136,6 +1223,17 @@ Id Shell::getCwe() const
 	return cwe_;
 }
 
+#ifdef USE_CHARMPP
+
+// set isRunning_ to true when Shell starts to do something
+// and to false when it finishes. The ShellCcsInterface can pass
+// parser-invoked commands to the Shell only when it is not busy
+bool Shell::isRunning() const {
+  return isRunning_;
+}
+
+#else
+
 bool Shell::isRunning() const
 {
 	static Id clockId( 1 );
@@ -1143,6 +1241,8 @@ bool Shell::isRunning() const
 
 	return ( reinterpret_cast< const Clock* >( clockId.eref().data() ) )->isRunning();
 }
+
+#endif
 
 const vector< double* >& Shell::getBuf() const
 {
@@ -1164,8 +1264,10 @@ void Shell::handleCreate( const Eref& e, const Qinfo* q,
 	vector< int > dims )
 {
 	// cout << myNode_ << ": Shell::handleCreate inner Create done for element " << name << " id " << newElm << endl;
+#ifndef USE_CHARMPP
 	if ( q->addToStructuralQ() )
 		return;
+#endif
 
 	/*
 	vector< int > dims;
@@ -1175,7 +1277,9 @@ void Shell::handleCreate( const Eref& e, const Qinfo* q,
 	*/
 	innerCreate( type, parent, newElm, name, dims );
 //	if ( myNode_ != 0 )
+#ifndef USE_CHARMPP
 	ack()->send( e, q->threadNum(), Shell::myNode(), OkStatus );
+#endif
 	// cout << myNode_ << ": Shell::handleCreate ack sent" << endl;
 }
 
@@ -1269,6 +1373,7 @@ void Shell::innerCreate( string type, Id parent, Id newElm, string name,
 
 void Shell::destroy( const Eref& e, const Qinfo* q, Id eid)
 {
+#ifndef USE_CHARMPP
 	if ( q->addToStructuralQ() )
 		return;
 
@@ -1280,6 +1385,7 @@ void Shell::destroy( const Eref& e, const Qinfo* q, Id eid)
 		cwe_ = Id();
 
 	ack()->send( e, q->threadNum(), Shell::myNode(), OkStatus );
+#endif
 }
 
 
@@ -1292,12 +1398,14 @@ void Shell::handleAddMsg( const Eref& e, const Qinfo* q,
 	string msgType, MsgId mid, ObjId src, string srcField, 
 	ObjId dest, string destField )
 {
+#ifndef USE_CHARMPP
 	if ( q->addToStructuralQ() )
 		return;
 	if ( innerAddMsg( msgType, mid, src, srcField, dest, destField ) )
 		ack()->send( Eref( shelle_, 0 ), q->threadNum(), Shell::myNode(), OkStatus );
 	else
 		ack()->send( Eref( shelle_, 0), q->threadNum(), Shell::myNode(), ErrorStatus );
+#endif
 }
 
 /**
@@ -1421,6 +1529,7 @@ bool Shell::innerMove( Id orig, Id newParent )
 void Shell::handleMove( const Eref& e, const Qinfo* q,
 	Id orig, Id newParent )
 {
+#ifndef USE_CHARMPP
 	if ( q->addToStructuralQ() )
 		return;
 	
@@ -1428,6 +1537,7 @@ void Shell::handleMove( const Eref& e, const Qinfo* q,
 		ack()->send( Eref( shelle_, 0 ), q->threadNum(), Shell::myNode(), OkStatus );
 	else
 		ack()->send( Eref( shelle_, 0 ), q->threadNum(), Shell::myNode(), ErrorStatus );
+#endif
 }
 
 void Shell::addClockMsgs( 
@@ -1470,6 +1580,7 @@ bool Shell::innerUseClock( string path, string field, unsigned int tick)
 void Shell::handleUseClock( const Eref& e, const Qinfo* q,
 	string path, string field, unsigned int tick)
 {
+#ifndef USE_CHARMPP
 	if ( q->addToStructuralQ() )
 		return;
 	// cout << q->getProcInfo()->threadIndexInGroup << ": in Shell::handleUseClock with path " << path << endl << flush;
@@ -1479,6 +1590,7 @@ void Shell::handleUseClock( const Eref& e, const Qinfo* q,
 	else
 		ack()->send( Eref( shelle_, 0 ), q->threadNum(), 
 			Shell::myNode(), ErrorStatus );
+#endif
 }
 
 void Shell::handleQuit()
@@ -1523,12 +1635,15 @@ const ProcInfo* Shell::procInfo()
 	return &p_;
 }
 
+// XXX where is this used, and how should it be replaced in the charm++ version?
 void Shell::digestReduceFieldDimension( 
 	const Eref& er, const ReduceFieldDimension* arg )
 {
 	maxIndex_ = arg->maxIndex();
+#ifndef USE_CHARMPP
 	// ack()->send( Eref( shelle_, 0 ), &p_, Shell::myNode(), OkStatus );
 	ack()->send( er, ScriptThreadNum, Shell::myNode(), OkStatus );
+#endif
 }
 
 
@@ -1548,3 +1663,93 @@ void Shell::cleanSimulation()
 		}
 	}
 }
+
+#ifdef USE_CHARMPP
+#include <string>
+
+#include "../charm/moose.decl.h"
+extern CProxy_Main readonlyMainProxy;
+extern CProxy_ShellHelper readonlyShellHelperProxy;
+extern CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
+#include "../charm/shell.decl.h"
+#include "ShellHelper.h"
+
+extern Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests );
+
+ShellHelper::ShellHelper(int argc, string *s_argv, const CkCallback &cb){
+  bool doUnitTests = 0;
+  bool doRegressionTests = 1;
+  // make C strings out of C++ strings
+  char **argv = new char *[argc];
+  for(int i = 0; i < argc; i++){
+    argv[i] = new char[s_argv[i].size()+1];
+    std::copy(s_argv[i].begin(), s_argv[i].end(), argv[i]);
+    argv[i][s_argv[i].size()] = '\0';
+  }
+
+  shellId_ = init( argc, argv, doUnitTests, doRegressionTests );
+
+  for(int i = 0; i < argc; i++){
+    delete[] argv[i];
+  }
+  delete[] argv;
+
+  shell_ = reinterpret_cast< Shell* >( shellId_()->dataHandler()->data( 0 ) );
+
+  // sync to ensure that every PE has an active shell 
+  contribute(cb);
+}
+
+void ShellHelper::destroyShell(const CkCallback &cb){
+  Neutral* ns = reinterpret_cast< Neutral* >( shellId_()->dataHandler()->data( 0 ) );
+  ns->destroy( shellId_.eref(), 0, 0 );
+  contribute(cb);
+}
+
+Shell *ShellHelper::getShell(){
+  return shell_;
+}
+
+ShellMain::ShellMain(CkArgMsg *m){
+  // pack up command line arguments into vector of strings
+  __sdag_init();
+  CkPrintf("ShellMain::ShellMain\n");
+
+  CkVec<string> args;
+  for(int i = 0; i < m->argc; i++) args.push_back(m->argv[i]);
+  // create callback to be invoked once every PE has its shell running
+  CkCallback shellHelperCallback(CkIndex_ShellMain::shellHelpersReady(), thisProxy);
+  // initiate creation of shell helper group
+  readonlyShellHelperProxy = CProxy_ShellHelper::ckNew(args.size(), &args[0], shellHelperCallback);
+
+  // create callback to be invoked when every PE has its Shell-CCS interface up
+  CkCallback shellCcsInterfaceCallback(CkIndex_ShellMain::shellCcsInterfacesReady(), thisProxy);
+  // initiate creation of Shell-CCS interface group
+  readonlyShellCcsInterfaceProxy = CProxy_ShellCcsInterface::ckNew(shellCcsInterfaceCallback);
+
+  thisProxy.waitUntilInitDone();
+  delete m;
+}
+
+void Shell::setRunning(){
+  isRunning_ = true;
+}
+
+void Shell::setNotRunning(){
+  isRunning_ = false;
+}
+
+void Shell::registerContainer(ElementContainer *container){
+  myElementContainers_.push_back(container);
+}
+
+void Shell::setStop(bool stop){
+  shouldStop_ = stop;
+}
+
+bool Shell::getStop() const {
+  return shouldStop_;
+}
+
+#include "../charm/shell.def.h"
+#endif

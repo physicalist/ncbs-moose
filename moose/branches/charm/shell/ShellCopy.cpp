@@ -184,6 +184,7 @@ void Shell::handleCopy( const Eref& er, const Qinfo* q,
 	vector< Id > args, string newName,
 	unsigned int n, bool toGlobal, bool copyExtMsgs )
 {
+#ifndef USE_CHARMPP
 	static const Finfo* ackf = 
 		Shell::initCinfo()->findFinfo( "ack" );
 	static const SrcFinfo2< unsigned int, unsigned int >* 
@@ -199,4 +200,5 @@ void Shell::handleCopy( const Eref& er, const Qinfo* q,
 	else
 		ack->send( Eref( shelle_, 0 ), ScriptThreadNum, 
 			Shell::myNode(), OkStatus );
+#endif
 }

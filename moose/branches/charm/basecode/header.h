@@ -38,29 +38,16 @@ using namespace std;
 // SVN revision number should be automatically detected in top level
 // Makefile and passed to gcc. For release versions, it defaults to
 // "0".
+/*
 #ifndef SVN_REVISION
 #define SVN_REVISION "0"
 #endif
-/**
- * Looks up and uniquely identifies functions, on a per-Cinfo basis.
- * These are NOT global indices to identify the function.
- */
-typedef unsigned int FuncId;
+*/
 
-/**
- * Looks up and uniquely identifies Msgs. This is a global index
- */
-typedef unsigned int MsgId;
-
-/**
- * Index into Element::vector< vector< MsgFuncBinding > > msgBinding_;
- */
-typedef unsigned short BindIndex;
-
-/**
- * Identifier for threads.
- */
-typedef unsigned short ThreadId;
+#include "FuncId.h"
+#include "BindIndex.h"
+#include "MsgId.h"
+#include "ThreadId.h"
 
 extern const ThreadId ScriptThreadNum; // Defined in Shell.cpp
 extern const double PI;	// Defined in consts.cpp

@@ -21,6 +21,10 @@
 #include "Shell.h"
 #include "Dinfo.h"
 
+#ifdef USE_CHARMPP
+#include "charm++.h"
+#endif
+
 #define USE_NODES 1
 
 ///////////////////////////////////////////////////////////////////
@@ -33,8 +37,10 @@
  * 'send' before this call is executed.
  * This MUST be followed by a waitForAck call.
  */
+
 void Shell::initAck()
 {
+#ifndef USE_CHARMPP
 	if ( isSingleThreaded() || !keepLooping() ) {
 		numAcks_ = 0; 
 	} else {
@@ -44,6 +50,7 @@ void Shell::initAck()
 			isBlockedOnParser_ = 1;
 			acked_.assign( numNodes_, 0 );
 	}
+#endif
 }
 
 /**
@@ -52,6 +59,7 @@ void Shell::initAck()
  */
 void Shell::waitForAck()
 {
+#ifndef USE_CHARMPP
 	if ( isSingleThreaded() || !keepLooping() ) {
 		while ( isAckPending() ) {
 			Qinfo::clearQ( p_.threadIndexInGroup );
@@ -66,6 +74,7 @@ void Shell::waitForAck()
 		isBlockedOnParser_ = 0;
 		pthread_mutex_unlock( parserMutex() );
 	}
+#endif
 }
 
 /**
@@ -86,6 +95,7 @@ bool Shell::isAckPending() const
  */
 void Shell::handleAck( unsigned int ackNode, unsigned int status )
 {
+#ifndef USE_CHARMPP
 	assert( ackNode < numNodes_ );
 	acked_[ ackNode ] = status;
 		// Here we could also check which node(s) are last, in order to do
@@ -98,6 +108,7 @@ void Shell::handleAck( unsigned int ackNode, unsigned int status )
 	if ( !isAckPending() && !isSingleThreaded() ) {
 		pthread_cond_signal( parserBlockCond() );
 	}
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -128,6 +139,7 @@ void Shell::setHardware(
 	unsigned int numThreads, unsigned int numCores, unsigned int numNodes,
 	unsigned int myNode )
 {
+#ifndef USE_CHARMPP
 	numProcessThreads_ = numThreads;
 	numCores_ = numCores;
 	numNodes_ = numNodes;
@@ -137,6 +149,7 @@ void Shell::setHardware(
 	p_.nodeIndexInGroup = myNode;
 	p_.groupId = 0;
 	acked_.resize( numNodes, 0 );
+#endif
 }
 
 /**
@@ -156,24 +169,45 @@ void Shell::loadBalance()
 
 unsigned int Shell::numCores()
 {
+#ifdef USE_CHARMPP
+        return CkNumPes();
+#else
 	return numCores_;
+#endif
 }
 
 unsigned int Shell::numProcessThreads()
 {
+#ifdef USE_CHARMPP
+        return 1;
+#else
 	return numProcessThreads_;
+#endif
 }
 
 unsigned int Shell::numNodes()
 {
+#ifdef USE_CHARMPP
+        // XXX might have to change this later, when we set up
+        // SMP-node-aware sharing of data
+        return CkNumPes();
+#else
 	return numNodes_;
+#endif
 }
 
 unsigned int Shell::myNode()
 {
+#ifdef USE_CHARMPP
+        // XXX might have to change this later, when we set up
+        // SMP-node-aware sharing of data
+        return CkMyPe();
+#else
 	return myNode_;
+#endif
 }
 
+#ifndef USE_CHARMPP
 pthread_mutex_t* Shell::parserMutex()
 {
 	return parserMutex_;
@@ -187,7 +221,9 @@ bool Shell::inBlockingParserCall()
 {
 	return isBlockedOnParser_;
 }
+#endif
 
+// XXX - do we have to change this function for Charm++ version?
 bool Shell::isSingleThreaded()
 {
 	return ( numProcessThreads_ == 0 );
@@ -198,10 +234,12 @@ bool Shell::keepLooping()
 	return keepLooping_;
 }
 
+#ifndef USE_CHARMPP
 bool Shell::isParserIdle()
 {
 	return Shell::isParserIdle_;
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 // Functions for setting off clocked processes.
@@ -219,6 +257,7 @@ void Shell::start( double runtime )
 
 void Shell::handleSync( const Eref& e, const Qinfo* q, Id elm, FuncId fid )
 {
+#ifndef USE_CHARMPP
 
 	assert( elm != Id() && elm() != 0 );
 	/*
@@ -236,4 +275,5 @@ void Shell::handleSync( const Eref& e, const Qinfo* q, Id elm, FuncId fid )
 	}
 	// We don't send an ack, instead the digest function does the update.
 	// ack()->send( e, &p_, Shell::myNode(), OkStatus );
+#endif
 }

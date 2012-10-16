@@ -199,14 +199,22 @@ void Nernst::handleCin( const Eref& er, const Qinfo* q, double conc )
 {
 	Cin_ = conc;
 	updateE();
+#ifndef USE_CHARMPP
 	Eout()->send( er, q->threadNum(), E_ );
+#else
+	Eout()->send( er, q->threadNum(), q->container(), E_ );
+#endif
 }
 
 void Nernst::handleCout( const Eref& er, const Qinfo* q, double conc )
 {
 	Cout_ = conc;
 	updateE();
+#ifndef USE_CHARMPP
 	Eout()->send( er, q->threadNum(), E_ );
+#else
+	Eout()->send( er, q->threadNum(), q->container(), E_ );
+#endif
 }
 
 ///////////////////////////////////////////////////

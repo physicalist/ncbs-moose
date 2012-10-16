@@ -550,7 +550,9 @@ void Clock::processPhase2( ProcInfo* info )
 void Clock::checkProcState()
 {
 	/// Handle pending Reduce operations.
+#ifndef USE_CHARMPP
 	Qinfo::clearReduceQ( Shell::numProcessThreads() );
+#endif
 
 	if ( procState_ == NoChange ) { // Most common 
 		return;
@@ -683,9 +685,14 @@ void Clock::advancePhase2(  ProcInfo *p )
 		if ( currentTime_ > endTime_ ) {
 			Id clockId( 1 );
 			procState_ = StopOnly;
+#ifndef USE_CHARMPP
 			finished()->send( clockId.eref(), p->threadIndexInGroup );
 			ack()->send( clockId.eref(), p->threadIndexInGroup, 
 				p->nodeIndexInGroup, OkStatus );
+#else
+                        finished()->send(clockId.eref(), p->threadIndexInGroup, p->container);
+                        ack()->send(clockId.eref(), p->threadIndexInGroup, p->container, CkMyPe(), OkStatus);
+#endif
 		}
 		++countAdvance2_;
 	}
@@ -768,8 +775,14 @@ void Clock::reinitPhase2( ProcInfo* info )
 			++currTickPtr_;
 			if ( currTickPtr_ >= tickPtr_.size() ) {
 				Id clockId( 1 );
+#ifndef USE_CHARMPP
 				ack()->send( clockId.eref(), info->threadIndexInGroup,
 					info->nodeIndexInGroup, OkStatus );
+#else
+				ack()->send( clockId.eref(), info->threadIndexInGroup,
+                                        info->container, 
+					CkMyPe(), OkStatus );
+#endif
 				procState_ = TurnOffReinit;
 				++countReinit2_;
 			}

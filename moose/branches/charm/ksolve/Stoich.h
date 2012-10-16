@@ -10,6 +10,10 @@
 #ifndef _STOICH_H
 #define _STOICH_H
 
+#ifdef USE_CHARMPP
+class ElementContainer;
+#endif
+
 class Stoich
 {
 	public: 
@@ -30,7 +34,7 @@ class Stoich
 		unsigned int getNumMeshEntries() const;
 		double getEstimatedDt() const;
 
-		Port* getPort( unsigned int i );
+		moose::Port* getPort( unsigned int i );
 		unsigned int getNumPorts() const;
 		void setNumPorts( unsigned int num );
 
@@ -303,8 +307,13 @@ class Stoich
 		 * numerical integration but before any of the flux updates
 		 * (such as updateDiffusion).
 		 */
+#ifndef USE_CHARMPP
 		void clearFlux();
 		void clearFlux( unsigned int meshIndex, unsigned int threadNum );
+#else
+		void clearFlux(ElementContainer *container);
+		void clearFlux( unsigned int meshIndex, unsigned int threadNum, ElementContainer *container );
+#endif
 
 		/**
 		 * Utility func for debugging: Prints N_ matrix
@@ -530,9 +539,9 @@ class Stoich
 		 * the info about which molecules exchange, 
 		 * They are also the connection point for the messages that 
 		 * handle the port data transfer.
-		 * Each Port connects to exactly one other solver.
+		 * Each moose::Port connects to exactly one other solver.
 		 */
-		vector< Port > ports_;
+		vector< moose::Port > ports_;
 };
 
 class StoichThread

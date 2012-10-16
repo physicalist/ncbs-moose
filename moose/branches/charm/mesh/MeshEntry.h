@@ -24,6 +24,10 @@ enum MeshType {
 
 class ChemMesh;
 
+#ifdef USE_CHARMPP
+class ElementContainer;
+#endif
+
 /**
  * The MeshEntry is a single 'compartment' in the mathematical sense,
  * that is, all properties are assumed homogenous within it.
@@ -110,10 +114,17 @@ class MeshEntry
 		//////////////////////////////////////////////////////////////////
 		// Utility func
 		//////////////////////////////////////////////////////////////////
+#ifndef USE_CHARMPP
 		void triggerRemesh( const Eref& e, unsigned int threadNum,
 			unsigned int startEntry, 
 			const vector< unsigned int >& localIndices,
 			const vector< double >& vols );
+#else
+		void triggerRemesh( const Eref& e, unsigned int threadNum, ElementContainer *container, 
+			unsigned int startEntry, 
+			const vector< unsigned int >& localIndices,
+			const vector< double >& vols );
+#endif
 
 		//////////////////////////////////////////////////////////////////
 		// Lookup funcs for Boundary

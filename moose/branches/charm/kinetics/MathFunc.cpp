@@ -242,7 +242,11 @@ void MathFunc::processFunc( const Eref& e, ProcPtr info)
   }
   //cout << result_ << endl;
   // send1< double >( e, outputSlot, result_ );
+#ifndef USE_CHARMPP
   output()->send( e, info->threadIndexInGroup, result_ );
+#else
+  output()->send( e, info->threadIndexInGroup, info->container, result_ );
+#endif
   v.clear();
 }
 

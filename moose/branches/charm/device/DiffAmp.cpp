@@ -194,7 +194,11 @@ void DiffAmp::process(const Eref& e, ProcPtr p)
 	output = -saturation_;
     }    
     output_ = output;
+#ifndef USE_CHARMPP
     outputOut()->send(e, p->threadIndexInGroup, output_);
+#else
+    outputOut()->send(e, p->threadIndexInGroup, p->container, output_);
+#endif
 }
 
 void DiffAmp::reinit(const Eref& e, ProcPtr p)

@@ -10,6 +10,13 @@
 #ifndef _OBJ_ID_H
 #define _OBJ_ID_H
 
+#ifdef USE_CHARMPP
+#include "pup.h"
+#endif
+
+#include <iostream>
+using namespace std;
+
 /**
  * This class manages lookups for specific data entries in elements,
  * in a node-independent manner.
@@ -85,6 +92,12 @@ class ObjId
 
 		/// A useful test value
 		static const ObjId bad();
+#ifdef USE_CHARMPP
+        public:
+                void pup(PUP::er &p);
+                void reduce(const ObjId &other);
+#endif
+
 	private:
 };
 

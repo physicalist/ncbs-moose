@@ -207,7 +207,11 @@ void RC::process(const Eref& e, const ProcPtr proc )
             (state_ - Vin + dVin / dt_tau_) * exp_;
     sum_inject_prev = sum_inject;
     msg_inject_ = 0.0;
+#ifndef USE_CHARMPP
     outputOut()->send(e, proc->threadIndexInGroup, state_);
+#else
+    outputOut()->send(e, proc->threadIndexInGroup, proc->container, state_);
+#endif
 }
 
 void RC::reinit(const Eref& e, const ProcPtr proc)
@@ -221,7 +225,11 @@ void RC::reinit(const Eref& e, const ProcPtr proc)
         exp_ = 1 - dt_tau_;
     }
     msg_inject_ = 0.0;
+#ifndef USE_CHARMPP
     outputOut()->send(e, proc->threadIndexInGroup, state_);
+#else
+    outputOut()->send(e, proc->threadIndexInGroup, proc->container, state_);
+#endif
 }
 
 

@@ -51,9 +51,11 @@ ZeroDimHandler::ZeroDimHandler( const ZeroDimHandler* other )
 		data_ = 0;
 	}
 
+#ifndef USE_CHARMPP
 	if ( data_ && Shell::numProcessThreads() > 1 ) {
 		myThread_ = 1 + Id::numIds() % Shell::numProcessThreads();
 	}
+#endif
 }
 
 ZeroDimHandler::~ZeroDimHandler()

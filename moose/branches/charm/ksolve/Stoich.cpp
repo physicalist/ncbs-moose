@@ -143,9 +143,9 @@ const Cinfo* Stoich::initCinfo()
 		//////////////////////////////////////////////////////////////
 		// FieldElementFinfo defintion for Ports. Assume up to 16.
 		//////////////////////////////////////////////////////////////
-		static FieldElementFinfo< Stoich, Port > portFinfo( "port",
+		static FieldElementFinfo< Stoich, moose::Port > portFinfo( "port",
 			"Sets up field Elements for ports",
-			Port::initCinfo(),
+			moose::Port::initCinfo(),
 			&Stoich::getPort,
 			&Stoich::setNumPorts,
 			&Stoich::getNumPorts,
@@ -351,7 +351,7 @@ unsigned int Stoich::getNumVarPools() const
 	return numVarPools_;
 }
 
-Port* Stoich::getPort( unsigned int i )
+moose::Port* Stoich::getPort( unsigned int i )
 {
 	assert( i < ports_.size() );
 	return &ports_[i];
@@ -998,7 +998,11 @@ void Stoich::updateDiffusion(
 // Or pick the meshIndex == 0 and on that thread alone send out all the
 // stuff. At this phase it should be safe as all the calculations are done,
 // so none of the S_ vectors is changing.
+#ifndef USE_CHARMPP
 void Stoich::clearFlux( unsigned int meshIndex, unsigned int threadNum )
+#else
+void Stoich::clearFlux( unsigned int meshIndex, unsigned int threadNum, ElementContainer *container)
+#endif
 {
 	if ( meshIndex == 0 ) {
 		for( vector< unsigned int >::iterator i = diffNodes_.begin(); 
@@ -1009,8 +1013,13 @@ void Stoich::clearFlux( unsigned int meshIndex, unsigned int threadNum )
 				buf.insert( buf.end(), S_[ outgoing_[*i][j] ].begin(),
 					S_[ outgoing_[*i][j] ].end() );
 			}
+#ifndef USE_CHARMPP
 			nodeDiffBoundary()->send( stoichId_.eref(), threadNum, 
 				*i, outgoing_[*i], buf );
+#else
+			nodeDiffBoundary()->send( stoichId_.eref(), threadNum, container,  
+				*i, outgoing_[*i], buf );
+#endif
 		}
 	}
 
@@ -1037,10 +1046,19 @@ void Stoich::handleNodeDiffBoundary( unsigned int nodeNum,
 	}
 }
 
+#ifndef USE_CHARMPP
 void Stoich::clearFlux()
+#else
+void Stoich::clearFlux(ElementContainer *container)
+#endif
 {
-	for ( unsigned int i = 0; i < flux_.size(); ++i )
+	for ( unsigned int i = 0; i < flux_.size(); ++i ){
+#ifndef USE_CHARMPP
 		clearFlux( i, ScriptThreadNum );
+#else
+		clearFlux( i, ScriptThreadNum, container);
+#endif
+        }
 }
 
 // Put in a similar updateVals() function to handle Math expressions.

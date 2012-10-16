@@ -20,6 +20,10 @@
  * bitfields out of the total.
  */
 
+#ifdef USE_CHARMPP
+#include "pup.h"
+#endif
+
 class DataId
 {
 	public:
@@ -119,6 +123,11 @@ class DataId
 		static const DataId globalField;
 	private:
 		unsigned long long index_;
+
+#ifdef USE_CHARMPP
+        public:
+                void pup(PUP::er &p);
+#endif
 };
 
 

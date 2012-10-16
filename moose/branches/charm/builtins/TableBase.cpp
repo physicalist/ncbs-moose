@@ -128,7 +128,7 @@ const Cinfo* TableBase::initCinfo()
 		static FieldElementFinfo< TableBase, double > tableEntryFinfo( 
 			"table", 
 			"Field Element for TableBase entries",
-			TableEntry::initCinfo(),
+			moose::TableEntry::initCinfo(),
 			&TableBase::lookupVec,
 			&TableBase::setVecSize,
 			&TableBase::getVecSize,
