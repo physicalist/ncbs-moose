@@ -1,0 +1,42 @@
+mainmodule moose {
+
+  readonly CProxy_Main readonlyMainProxy;
+  readonly CProxy_ElementContainer readonlyElementContainerProxy;
+
+  readonly SimulationParameters readonlySimulationParameters;
+  
+  extern module shell;
+
+  message ElementDataMsg {
+    Qinfo qinfo_[];
+    double data_[];
+
+    DirectQbufEntry qinfoDirect_[];
+    double dataDirect_[];
+  };
+
+  mainchare Main {
+    entry Main(CkArgMsg *m);
+
+    entry void elementsReady();
+    entry void shellReady();
+    entry void waitUntilInitDone(){
+      when shellReady(), elementsReady() atomic {
+        thisProxy.commence();
+      }
+    };
+
+    entry [threaded] void commence();
+  };
+
+  array [1D] ElementContainer {
+    entry ElementContainer(const CkCallback &cb);
+    entry void registerWithShell(const CkCallback &cb);
+    entry void doSerialUnitTests(const CkCallback &cb);
+
+    entry void newIteration();
+    entry void iterationDone();
+    entry void exchange(ElementDataMsg *m);
+  };
+
+};
