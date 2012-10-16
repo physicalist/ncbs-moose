@@ -165,12 +165,12 @@ void ElementContainer::exchange(ElementDataMsg *m){
   delete m;
 }
 
-void ElementContainer::readBuf(const Qinfo *qinfo, unsigned int nQinfo, 
-                               const DirectQbufEntry *qinfoDirect, unsigned int nQinfoDirect,
+void ElementContainer::readBuf(Qinfo *qinfo, unsigned int nQinfo, 
+                               DirectQbufEntry *qinfoDirect, unsigned int nQinfoDirect,
                                const double *data, const double *dataDirect){
   // first look at all indirect qinfo entries
   for (unsigned int i = 0; i < nQinfo; ++i) {
-    const Qinfo &qi = qinfo[i];
+    Qinfo &qi = qinfo[i];
     qi.setContainer(this); 
     const Element* e = qi.src().element();
     if (e) e->exec(&qi, data + qi.dataIndex());
@@ -178,7 +178,7 @@ void ElementContainer::readBuf(const Qinfo *qinfo, unsigned int nQinfo,
 
   // then examine the direct qinfo entries, of type DirectQbufEntry
   for(unsigned int i = 0; i < nQinfoDirect; i++){
-    const DirectQbufEntry &qi = qinfoDirect[i];
+    DirectQbufEntry &qi = qinfoDirect[i];
     qi.qinfo_.setContainer(this); 
     const Element *e = qi.qinfo_.src().element();
     if(e) e->exec(&qi.qinfo_, &qi.ofid_, dataDirect + qi.qinfo_.dataIndex());
@@ -188,10 +188,10 @@ void ElementContainer::readBuf(const Qinfo *qinfo, unsigned int nQinfo,
 void ElementContainer::hackClearQ(int nCycles){
   for(int i = 0; i < nCycles; i++){
     // copy into temporary buffers
-    CkVec< Qinfo > qBuf(qBuf_);
-    CkVec< DirectQbufEntry > qBufDirect(qBufDirect_);
-    CkVec< double > data(dBuf_);
-    CkVec< double > dataDirect(dBufDirect_);
+    std::vector< Qinfo > qBuf(qBuf_);
+    std::vector< DirectQbufEntry > qBufDirect(qBufDirect_);
+    std::vector< double > data(dBuf_);
+    std::vector< double > dataDirect(dBufDirect_);
 
     qBuf_.resize(0);
     dBuf_.resize(0);

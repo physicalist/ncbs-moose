@@ -53,7 +53,7 @@ OBJ = \
 	FuncBarrier.o \
 	doubleEq.o \
 	ReduceBase.o \
-	TestAsync.o	\
+	testAsync.o	\
 	main.o	\
 
 HEADERS = \
@@ -99,7 +99,7 @@ default: $(TARGET)
 
 $(OBJ)	: $(HEADERS) ../shell/Shell.h
 Element.o:	DataHandlerWrapper.h
-TestAsync.o:	TestAsync.h SparseMatrix.h SetGet.h ../scheduling/Clock.h ../scheduling/Tick.h ../scheduling/TickPtr.h ../scheduling/TickMgr.h ../biophysics/IntFire.h ../biophysics/SynBase.h
+testAsync.o:	TestAsync.h SparseMatrix.h SetGet.h ../scheduling/Clock.h ../scheduling/Tick.h ../scheduling/TickPtr.h ../scheduling/TickMgr.h ../biophysics/IntFire.h ../biophysics/SynBase.h
 SparseMsg.o:	SparseMatrix.h
 SetGet.o:	SetGet.h ../shell/Neutral.h
 DataHandlerWrapper.o: DataHandlerWrapper.h
