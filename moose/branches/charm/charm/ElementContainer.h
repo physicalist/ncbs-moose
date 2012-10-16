@@ -88,7 +88,9 @@ class ElementContainer : public CBase_ElementContainer {
   private:
   void flushBufferedDataItems();
   ElementDataMsg *obtainBcastMsgFromBuffers();
-  void readBuf(ElementDataMsg *m);
+  void readBuf(Qinfo *qinfo, unsigned int nQinfo, 
+               DirectQbufEntry *qinfoDirect, unsigned int nQinfoDirect,
+               const double *data, const double *dataDirect);
 
 };
 
