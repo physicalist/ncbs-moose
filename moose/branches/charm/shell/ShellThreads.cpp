@@ -188,7 +188,7 @@ unsigned int Shell::numProcessThreads()
 unsigned int Shell::numNodes()
 {
 #ifdef USE_CHARMPP
-        // XXX might have to change this later, when we set up
+        // might have to change this later, when we set up
         // SMP-node-aware sharing of data
         return CkNumPes();
 #else
@@ -199,7 +199,7 @@ unsigned int Shell::numNodes()
 unsigned int Shell::myNode()
 {
 #ifdef USE_CHARMPP
-        // XXX might have to change this later, when we set up
+        // might have to change this later, when we set up
         // SMP-node-aware sharing of data
         return CkMyPe();
 #else
@@ -223,10 +223,14 @@ bool Shell::inBlockingParserCall()
 }
 #endif
 
-// XXX - do we have to change this function for Charm++ version?
+// do we have to change this function for Charm++ version?
 bool Shell::isSingleThreaded()
 {
+#ifndef USE_CHARMPP
 	return ( numProcessThreads_ == 0 );
+#else
+        return true;
+#endif
 }
 
 bool Shell::keepLooping()

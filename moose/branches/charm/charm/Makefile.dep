@@ -12,6 +12,7 @@ shell.decl.h \
 ../basecode/FuncId.h \
 ../basecode/ThreadId.h \
 ../basecode/Qinfo.h \
+DirectQbufEntry.h \
 SimulationParameters.h \
 ../basecode/MsgId.h \
 ../basecode/Finfo.h \
@@ -21,6 +22,9 @@ SimulationParameters.h \
 ../scheduling/TickPtr.h \
 ../scheduling/Clock.h \
 ../basecode/Element.h \
+../shell/ShellHelper.h \
+../shell/../charm/shell.decl.h \
+Messages.h \
 
 Main.o: \
 Main.cpp \
@@ -37,6 +41,7 @@ ElementContainer.h \
 ../basecode/FuncId.h \
 ../basecode/ThreadId.h \
 ../basecode/Qinfo.h \
+DirectQbufEntry.h \
 Main.h \
 Messages.h \
 

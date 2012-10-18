@@ -66,7 +66,6 @@ class ShellProxy {
       bool qFlag = 0 );
   void doSyncDataHandler( Id tgt );
   void doReacDiffMesh( Id baseCompartment );
-  void clearRestructuringQ();
   void start( double runTime );
   //void recvGet( const Eref& e, const Qinfo* q, PrepackedBuffer pb );
   void doSetClock( unsigned int tickNum, double dt, bool qFlag = 0 );

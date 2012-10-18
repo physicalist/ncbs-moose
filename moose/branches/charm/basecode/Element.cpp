@@ -392,8 +392,9 @@ void Element::exec( const Qinfo *qi, const double* arg ) const {
   vector< MsgFuncBinding >::const_iterator end = msgBinding_[ qi->bindIndex() ].end();
   for ( vector< MsgFuncBinding >::const_iterator i = msgBinding_[ qi->bindIndex() ].begin(); i != end; ++i ) {
     CkAssert( i->mid != 0 );
-    CkAssert( Msg::getMsg( i->mid ) != 0 );
-    Msg::getMsg( i->mid )->exec( qi, arg, i->fid );
+    const Msg *msg = Msg::getMsg( i->mid );
+    CkAssert( msg != NULL);
+    msg->exec( qi, arg, i->fid );
   }
 }
 
