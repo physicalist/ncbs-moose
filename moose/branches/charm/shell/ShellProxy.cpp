@@ -246,11 +246,6 @@ void ShellProxy::doReacDiffMesh(Id baseCompartment){
   while(CcsRecvResponse(&shellServer_, sizeof(bool), &b, MOOSE_CCS_TIMEOUT) < 0);
 }
 
-void ShellProxy::clearRestructuringQ(){
-  // XXX - what does this do?
-  std::cerr << "ShellProxy::clearRestructuringQ() not implemented" << std::endl;
-}
-
 void ShellProxy::doSetClock(unsigned int tickNum, double dt, bool qFlag){
   SetClockStruct setClock(tickNum, dt, qFlag);
   CcsSendBroadcastRequest(&shellServer_, ShellProxy::doSetClockHandlerString, sizeof(SetClockStruct), &setClock);

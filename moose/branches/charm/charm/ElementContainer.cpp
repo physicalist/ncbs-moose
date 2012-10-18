@@ -39,6 +39,7 @@ ElementContainer::ElementContainer(const CkCallback &cb) :
   procInfo_.nodeIndexInGroup = CkMyPe();
   procInfo_.numNodesInGroup = CkNumPes();
   procInfo_.procIndex = 0;
+  procInfo_.container = this;
 
   contribute(cb);
 }
@@ -61,29 +62,33 @@ void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, ThreadId thr
   // since data in an ElementContainer is not accessible
   // to any other ElementContainers on the same PE/SMP node
   qBuf_.push_back(Qinfo(oi, bindIndex, threadNum, this, dBuf_.size(), size));
-  if(size > 0){
-    dBuf_.insert(dBuf_.end(), arg, arg + size);
-  }
+  //if(size > 0){
+    //dBuf_.insert(dBuf_.end(), arg, arg + size);
+  //}
+  for(int i = 0; i < size; i++) dBuf_.push_back(arg[i]);
 }
 
 
-void ElementContainer::addToQ(const ObjId &oi, ThreadId threadNum, BindIndex bindIndex, const double *arg1, int size1, const double *arg2, int size2){
+void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, ThreadId threadNum, const double *arg1, int size1, const double *arg2, int size2){
   qBuf_.push_back(Qinfo(oi, bindIndex, threadNum, this, dBuf_.size(), size1 + size2));
-  if(size1 > 0) dBuf_.insert(dBuf_.end(), arg1, arg1 + size1);
-  if(size2 > 0) dBuf_.insert(dBuf_.end(), arg2, arg2 + size2);
+  //if(size1 > 0) dBuf_.insert(dBuf_.end(), arg1, arg1 + size1);
+  for(int i = 0; i < size1; i++) dBuf_.push_back(arg1[i]);
+  //if(size2 > 0) dBuf_.insert(dBuf_.end(), arg2, arg2 + size2);
+  for(int i = 0; i < size2; i++) dBuf_.push_back(arg2[i]);
 }
 
 void ElementContainer::addDirectToQ(const ObjId& src, const ObjId& dest, ThreadId threadNum, FuncId fid, const double* arg, unsigned int size){
 
   CkAssert(threadNum == 0);
-  vector< double >& vec = dBufDirect_;
+  CkVec< double >& vec = dBufDirect_;
 
   qBufDirect_.push_back(DirectQbufEntry(
                           Qinfo(src, Qinfo::DirectAdd, threadNum, this, vec.size(), size), 
                           ObjFid(dest, fid, size, 1)));
-  if ( size > 0 ) {
-    vec.insert( vec.end(), arg, arg + size );
-  }
+  //if ( size > 0 ) {
+    //vec.insert( vec.end(), arg, arg + size );
+  //}
+  for(unsigned int i = 0; i < size; i++) vec.push_back(arg[i]);
 }
 
 void ElementContainer::addDirectToQ( const ObjId& src, const ObjId& dest, 
@@ -93,13 +98,15 @@ void ElementContainer::addDirectToQ( const ObjId& src, const ObjId& dest,
         const double* arg2, unsigned int size2 ){
 
   CkAssert(threadNum == 0);
-  vector< double >& vec = dBufDirect_;
+  CkVec< double >& vec = dBufDirect_;
   qBufDirect_.push_back(DirectQbufEntry(
                           Qinfo( src, Qinfo::DirectAdd, threadNum, this, vec.size(), size1 + size2 ),
                           ObjFid(dest, fid, size1 + size2, 1)));
 
-  if ( size1 > 0 ) vec.insert( vec.end(), arg1, arg1 + size1 );
-  if ( size2 > 0 ) vec.insert( vec.end(), arg2, arg2 + size2 );
+  //if ( size1 > 0 ) vec.insert( vec.end(), arg1, arg1 + size1 );
+  for(unsigned int i = 0; i < size1; i++) vec.push_back(arg1[i]);
+  //if ( size2 > 0 ) vec.insert( vec.end(), arg2, arg2 + size2 );
+  for(unsigned int i = 0; i < size2; i++) vec.push_back(arg2[i]);
 }
 
 void ElementContainer::addVecDirectToQ( const ObjId& src, const ObjId& dest, 
@@ -112,14 +119,15 @@ void ElementContainer::addVecDirectToQ( const ObjId& src, const ObjId& dest,
   if ( entrySize == 0 || numEntries == 0 )
     return;
 
-  vector< double >& vec = dBufDirect_;
+  CkVec< double >& vec = dBufDirect_;
 
   qBufDirect_.push_back(DirectQbufEntry(
                           Qinfo(src, Qinfo::DirectAdd, threadNum, this, vec.size(), entrySize * numEntries),
                           ObjFid(dest, fid, entrySize, numEntries)
                           ));
 
-  vec.insert( vec.end(), arg, arg + entrySize * numEntries );
+  //vec.insert( vec.end(), arg, arg + entrySize * numEntries );
+  for(unsigned int i = 0; i < entrySize * numEntries; i++) vec.push_back(arg[i]);
 }
 
 void ElementContainer::flushBufferedDataItems(){
@@ -188,10 +196,10 @@ void ElementContainer::readBuf(Qinfo *qinfo, unsigned int nQinfo,
 void ElementContainer::hackClearQ(int nCycles){
   for(int i = 0; i < nCycles; i++){
     // copy into temporary buffers
-    std::vector< Qinfo > qBuf(qBuf_);
-    std::vector< DirectQbufEntry > qBufDirect(qBufDirect_);
-    std::vector< double > data(dBuf_);
-    std::vector< double > dataDirect(dBufDirect_);
+    CkVec< Qinfo > qBuf(qBuf_);
+    CkVec< DirectQbufEntry > qBufDirect(qBufDirect_);
+    CkVec< double > data(dBuf_);
+    CkVec< double > dataDirect(dBufDirect_);
 
     qBuf_.resize(0);
     dBuf_.resize(0);
@@ -200,9 +208,9 @@ void ElementContainer::hackClearQ(int nCycles){
 
     // read from temporary buffers, and write into
     // qBuf_, etc.
-    readBuf(&qBuf[0], qBuf.size(),
-            &qBufDirect[0], qBufDirect.size(), 
-            &data[0], &dataDirect[0]);
+    readBuf(qBuf.getVec(), qBuf.size(),
+            qBufDirect.getVec(), qBufDirect.size(), 
+            data.getVec(), dataDirect.getVec());
   }
 }
 
@@ -220,10 +228,12 @@ void ElementContainer::addToReduceQ(ReduceBase *r, ThreadId threadNum){
 }
 
 void ElementContainer::clearReduceQ(unsigned int numThreads){
-  // XXX fill me in
   // need to do some primary combining and then submit to 
   // charm++ reduction, which should have a customized reducer
   // mind that the MPI version uses MPI_Allgather
+
+  // This function doesn't do anything at all, since at the 
+  // moment, there is no compelling case for supporting reductions 
 }
 
 void ElementContainer::registerWithShell(const CkCallback &cb){

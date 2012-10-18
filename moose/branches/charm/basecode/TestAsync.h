@@ -1235,6 +1235,9 @@ class TestAsync {
     // ret = SetGet1< double >::set( e2, "Vm", 1.0 );
     ProcInfo p;
     p.dt = DT;
+#ifdef USE_CHARMPP
+    p.container = container_;
+#endif
     reinterpret_cast< IntFire* >(e2.data())->process( e2, &p );
     // At this stage we have sent the spike, so e2.data::Vm should be -1e-7.
     double Vm = reinterpret_cast< IntFire* >(e2.data())->getVm();
@@ -1598,6 +1601,9 @@ assert( ret );
 
 ProcInfo p;
 p.dt = timestep;
+#ifdef USE_CHARMPP
+p.container = container_;
+#endif
 /*
    IntFire* ifire100 = reinterpret_cast< IntFire* >( e2.element()->data( 100 ) );
    IntFire* ifire900 = reinterpret_cast< IntFire* >( e2.element()->data( 900 ) );

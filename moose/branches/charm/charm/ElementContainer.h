@@ -27,13 +27,13 @@ class Clock;
 class ElementContainer : public CBase_ElementContainer {
   ProcInfo procInfo_;
 
-  vector<Qinfo> qBuf_;
-  vector<double> dBuf_;
+  CkVec<Qinfo> qBuf_;
+  CkVec<double> dBuf_;
 
-  vector<DirectQbufEntry> qBufDirect_;
-  vector<double> dBufDirect_;
+  CkVec<DirectQbufEntry> qBufDirect_;
+  CkVec<double> dBufDirect_;
 
-  vector<ReduceBase *> reduceBuf_;
+  CkVec<ReduceBase *> reduceBuf_;
   
   Shell *shell_;
   Clock *clock_;

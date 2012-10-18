@@ -196,6 +196,9 @@ SimManager::~SimManager()
 // Field Definitions
 //////////////////////////////////////////////////////////////
 
+// XXX - Do the following need CCS interfaces?
+
+
 void SimManager::setAutoPlot( bool v )
 {
 	autoPlot_ = v;
@@ -255,8 +258,6 @@ unsigned int SimManager::getVersion() const
 {
 	return version_;
 }
-
-// XXX - requires a CCS method
 
 void SimManager::setMethod( const Eref& e, const Qinfo* q, string v )
 {
@@ -428,8 +429,6 @@ void SimManager::buildEE( Shell* shell )
 	shell->doUseClock( basePath + "/kinetics/##[ISA!=Pool]", "process", 5);
 }
 
-// XXX probably need to include this in the CCS interface
-
 void SimManager::buildGssa( const Eref& e, const Qinfo* q, Shell* shell )
 {
 	vector< int > dims( 1, 1 );
@@ -477,8 +476,6 @@ void SimManager::buildGssa( const Eref& e, const Qinfo* q, Shell* shell )
 void SimManager::buildSmoldyn( Shell* shell )
 {
 }
-
-// XXX must add CCS function for this
 
 void SimManager::buildGsl( const Eref& e, const Qinfo* q, 
 	Shell* shell, const string& method )
