@@ -11,6 +11,11 @@
 #include "header.h"
 #include "../shell/Shell.h"
 
+#ifdef USE_CHARMPP
+#include "../charm/LookupHelper.h"
+extern CProxy_LookupHelper readonlyLookupHelperProxy;
+#endif
+
 //////////////////////////////////////////////////////////////
 //	Id creation
 //////////////////////////////////////////////////////////////
@@ -48,8 +53,12 @@ Id Id::str2Id( const std::string& s )
 
 vector< Element* >& Id::elements()
 {
+#ifndef USE_CHARMPP
 	static vector< Element* > e;
 	return e;
+#else
+        return readonlyLookupHelperProxy.ckLocalBranch()->elements();
+#endif
 }
 
 //////////////////////////////////////////////////////////////
