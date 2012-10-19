@@ -304,7 +304,7 @@ void PIDController::process(const Eref& e,  ProcPtr proc )
 #ifndef USE_CHARMPP
     outputOut()->send(e, proc->threadIndexInGroup, output_);
 #else
-    outputOut()->send(e, proc->threadIndexInGroup, proc->container, output_);
+    outputOut()->send(e, proc->container, output_);
 #endif
 }
 
@@ -324,7 +324,7 @@ void PIDController::reinit(const Eref& e, ProcPtr proc )
     e_integral_ = 0;
     e_derivative_ = 0;
 #ifndef USE_CHARMPP
-    outputOut()->send(e, proc->threadIndexInGroup, proc->container, output_);
+    outputOut()->send(e, proc->container, output_);
 #else
 #endif
 }

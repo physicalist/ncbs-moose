@@ -210,7 +210,7 @@ void RC::process(const Eref& e, const ProcPtr proc )
 #ifndef USE_CHARMPP
     outputOut()->send(e, proc->threadIndexInGroup, state_);
 #else
-    outputOut()->send(e, proc->threadIndexInGroup, proc->container, state_);
+    outputOut()->send(e, proc->container, state_);
 #endif
 }
 
@@ -228,7 +228,7 @@ void RC::reinit(const Eref& e, const ProcPtr proc)
 #ifndef USE_CHARMPP
     outputOut()->send(e, proc->threadIndexInGroup, state_);
 #else
-    outputOut()->send(e, proc->threadIndexInGroup, proc->container, state_);
+    outputOut()->send(e, proc->container, state_);
 #endif
 }
 

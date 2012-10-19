@@ -163,7 +163,7 @@ void IntFire::process( const Eref &e, ProcPtr p )
 #ifndef USE_CHARMPP
 		spike()->send( e, p->threadIndexInGroup, p->currTime );
 #else
-		spike()->send( e, p->threadIndexInGroup, p->container, p->currTime );
+		spike()->send( e, p->container, p->currTime );
 #endif
 		// e.sendSpike( spikeSlot, p->currTime );
 		/*

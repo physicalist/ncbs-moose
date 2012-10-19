@@ -76,8 +76,8 @@ class SrcFinfo0: public SrcFinfo
 		void send( const Eref& e, ThreadId threadNum ) const;
 		void fastSend( const Eref& e, ThreadId threadNum ) const;
 #else
-		void send( const Eref& e, ThreadId threadNum, ElementContainer *container ) const;
-		void fastSend( const Eref& e, ThreadId threadNum, ElementContainer *container ) const;
+		void send( const Eref& e, ElementContainer *container ) const;
+		void fastSend( const Eref& e, ElementContainer *container ) const;
 #endif
 
 		string rttiType() const {
@@ -106,10 +106,10 @@ template < class T > class SrcFinfo1: public SrcFinfo
 			Qinfo::addToQ( e.objId(), getBindIndex(), threadNum, a.ptr(), a.size());
 		}
 #else
-		void send( const Eref& e, ThreadId threadNum, ElementContainer *container, const T& arg ) const 
+		void send( const Eref& e, ElementContainer *container, const T& arg ) const 
 		{
 			Conv< T > a( arg );
-                        container->addToQ(e.objId(), getBindIndex(), threadNum, a.ptr(), a.size());
+                        container->addToQ(e.objId(), getBindIndex(), a.ptr(), a.size());
 		}
 #endif
 
@@ -134,9 +134,9 @@ template <> class SrcFinfo1< double >: public SrcFinfo
 			Qinfo::addToQ( e.objId(), getBindIndex(), threadNum, &arg, 1 );
 		}
 #else
-		void send( const Eref& e, ThreadId threadNum, ElementContainer *container, double arg ) const
+		void send( const Eref& e, ElementContainer *container, double arg ) const
 		{
-                        container->addToQ(e.objId(), getBindIndex(), threadNum, &arg, 1);
+                        container->addToQ(e.objId(), getBindIndex(), &arg, 1);
 		}
 #endif
 
@@ -163,10 +163,10 @@ template <> class SrcFinfo1< unsigned int >: public SrcFinfo
 			Qinfo::addToQ( e.objId(), getBindIndex(), threadNum, &temp, 1 );
 		}
 #else
-		void send( const Eref& e, ThreadId threadNum, ElementContainer *container, unsigned int arg ) const
+		void send( const Eref& e, ElementContainer *container, unsigned int arg ) const
 		{
 			double temp = arg;
-                        container->addToQ(e.objId(), getBindIndex(), threadNum, &temp, 1);
+                        container->addToQ(e.objId(), getBindIndex(), &temp, 1);
 		}
 #endif
 
@@ -193,10 +193,10 @@ template <> class SrcFinfo1< int >: public SrcFinfo
 			Qinfo::addToQ( e.objId(), getBindIndex(), threadNum, &temp, 1 );
 		}
 #else
-		void send( const Eref& e, ThreadId threadNum, ElementContainer *container, int arg ) const
+		void send( const Eref& e, ElementContainer *container, int arg ) const
 		{
 			double temp = arg;
-                        container->addToQ(e.objId(), getBindIndex(), threadNum, &temp, 1);
+                        container->addToQ(e.objId(), getBindIndex(), &temp, 1);
 		}
 #endif
 
@@ -274,12 +274,12 @@ template < class T1, class T2 > class SrcFinfo2: public SrcFinfo
 		}
 
 #else
-		void send( const Eref& e, ThreadId threadNum, ElementContainer *container,
+		void send( const Eref& e, ElementContainer *container,
 			const T1& arg1, const T2& arg2 ) const
 		{
 			Conv< T1 > a1( arg1 );
 			Conv< T2 > a2( arg2 );
-                        container->addToQ(e.objId(), getBindIndex(), threadNum, 
+                        container->addToQ(e.objId(), getBindIndex(), 
                                                      a1.ptr(), a1.size(), 
                                                      a2.ptr(), a2.size());
 		}
@@ -310,10 +310,10 @@ template <> class SrcFinfo2< double, double >: public SrcFinfo
 			Qinfo::addToQ( e.objId(), getBindIndex(), threadNum, &arg1, 1, &arg2, 1 );
 		}
 #else
-		void send( const Eref& e, ThreadId threadNum, ElementContainer *container, 
+		void send( const Eref& e, ElementContainer *container, 
 			double arg1, double arg2 ) const
 		{
-                        container->addToQ(e.objId(), getBindIndex(), threadNum, &arg1, 1, &arg2, 1 );
+                        container->addToQ(e.objId(), getBindIndex(), &arg1, 1, &arg2, 1 );
 		}
 #endif
 
@@ -334,8 +334,10 @@ template < class T1, class T2, class T3 > class SrcFinfo3: public SrcFinfo
 			{ ; }
 
 		// Will need to specialize for strings etc.
-		void send( const Eref& e, ThreadId threadNum, 
-#ifdef USE_CHARMPP
+		void send( const Eref& e, 
+#ifndef USE_CHARMPP
+                        ThreadId threadNum, 
+#else
                         ElementContainer *container,
 #endif
 			const T1& arg1, const T2& arg2, const T3& arg3 ) const
@@ -352,10 +354,10 @@ template < class T1, class T2, class T3 > class SrcFinfo3: public SrcFinfo
 			ptr += a2.size();
 			memcpy( ptr, a3.ptr(), a3.size() * sizeof( double ) );
 			
-#ifdef USE_CHARMPP
-                        container->addToQ(e.objId(), getBindIndex(), threadNum, data, totSize);
-#else
+#ifndef USE_CHARMPP
 			Qinfo::addToQ( e.objId(), getBindIndex(), threadNum, data, totSize );
+#else
+                        container->addToQ(e.objId(), getBindIndex(), data, totSize);
 #endif
 			delete[] data;
 		}
@@ -379,8 +381,9 @@ template < class T1, class T2, class T3, class T4 > class SrcFinfo4: public SrcF
 
 		// Will need to specialize for strings etc.
 		void send( const Eref& e, 
+#ifndef USE_CHARMPP
                         ThreadId threadNum,
-#ifdef USE_CHARMPP
+#else
                         ElementContainer *container, 
 #endif
 			const T1& arg1, const T2& arg2, 
@@ -402,17 +405,18 @@ template < class T1, class T2, class T3, class T4 > class SrcFinfo4: public SrcF
 			ptr += a3.size();
 			memcpy( ptr, a4.ptr(), a4.size() * sizeof( double ) );
 			
-#ifdef USE_CHARMPP
-                        container->addToQ(e.objId(), getBindIndex(), threadNum, data, totSize);
-#else
+#ifndef USE_CHARMPP
 			Qinfo::addToQ( e.objId(), getBindIndex(), threadNum, data, totSize );
+#else
+                        container->addToQ(e.objId(), getBindIndex(), data, totSize);
 #endif
 			delete[] data;
 		}
 
 		void fastSend( const Eref& e, 
+#ifndef USE_CHARMPP
                         ThreadId threadNum,
-#ifdef USE_CHARMPP
+#else
                         ElementContainer *container,
 #endif
 			const T1& arg1, const T2& arg2, 
@@ -436,8 +440,9 @@ template < class T1, class T2, class T3, class T4 > class SrcFinfo4: public SrcF
 			
 			Qinfo qi( e.objId(), 
                                   getBindIndex(), 
+#ifndef USE_CHARMPP
                                   threadNum, 
-#ifdef USE_CHARMPP
+#else
                                   container,
 #endif
                                   0, 
@@ -465,8 +470,9 @@ template < class T1, class T2, class T3, class T4, class T5 > class SrcFinfo5: p
 
 		// Will need to specialize for strings etc.
 		void send( const Eref& e, 
+#ifndef USE_CHARMPP
                         ThreadId threadNum,
-#ifdef USE_CHARMPP
+#else
                         ElementContainer *container,
 #endif
 			const T1& arg1, const T2& arg2, const T3& arg3, const T4& arg4,
@@ -492,10 +498,10 @@ template < class T1, class T2, class T3, class T4, class T5 > class SrcFinfo5: p
 			ptr += a4.size();
 			memcpy( ptr, a5.ptr(), a5.size() * sizeof( double ) );
 			
-#ifdef USE_CHARMPP
-                        container->addToQ(e.objId(), getBindIndex(), threadNum, data, totSize);
-#else
+#ifndef USE_CHARMPP
 			Qinfo::addToQ( e.objId(), getBindIndex(), threadNum, data, totSize );
+#else
+                        container->addToQ(e.objId(), getBindIndex(), data, totSize);
 #endif
 			delete[] data;
 		}
@@ -521,8 +527,9 @@ template < class T1, class T2, class T3, class T4, class T5, class T6 > class Sr
 
 		// Will need to specialize for strings etc.
 		void send( const Eref& e, 
+#ifndef USE_CHARMPP
                         ThreadId threadNum,
-#ifdef USE_CHARMPP
+#else
                         ElementContainer *container,
 #endif
 			const T1& arg1, const T2& arg2, const T3& arg3, const T4& arg4,
@@ -551,10 +558,10 @@ template < class T1, class T2, class T3, class T4, class T5, class T6 > class Sr
 			ptr += a5.size();
 			memcpy( ptr, a6.ptr(), a6.size() * sizeof( double ) );
 			
-#ifdef USE_CHARMPP
-                        container->addToQ(e.objId(), getBindIndex(), threadNum, data, totSize);
-#else
+#ifndef USE_CHARMPP
 			Qinfo::addToQ( e.objId(), getBindIndex(), threadNum, data, totSize );
+#else
+                        container->addToQ(e.objId(), getBindIndex(), data, totSize);
 #endif
 			delete[] data;
 		}

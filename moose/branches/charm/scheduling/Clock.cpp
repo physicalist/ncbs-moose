@@ -690,8 +690,8 @@ void Clock::advancePhase2(  ProcInfo *p )
 			ack()->send( clockId.eref(), p->threadIndexInGroup, 
 				p->nodeIndexInGroup, OkStatus );
 #else
-                        finished()->send(clockId.eref(), p->threadIndexInGroup, p->container);
-                        ack()->send(clockId.eref(), p->threadIndexInGroup, p->container, CkMyPe(), OkStatus);
+                        finished()->send(clockId.eref(), p->container);
+                        ack()->send(clockId.eref(), p->container, CkMyPe(), OkStatus);
 #endif
 		}
 		++countAdvance2_;
@@ -779,7 +779,7 @@ void Clock::reinitPhase2( ProcInfo* info )
 				ack()->send( clockId.eref(), info->threadIndexInGroup,
 					info->nodeIndexInGroup, OkStatus );
 #else
-				ack()->send( clockId.eref(), info->threadIndexInGroup,
+				ack()->send( clockId.eref(),
                                         info->container, 
 					CkMyPe(), OkStatus );
 #endif

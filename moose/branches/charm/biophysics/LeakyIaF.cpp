@@ -344,14 +344,14 @@ void LeakyIaF::process(const Eref & eref, ProcPtr proc)
 #ifndef USE_CHARMPP
     VmOut()->send(eref, proc->threadIndexInGroup, Vm_);
 #else
-    VmOut()->send(eref, proc->threadIndexInGroup, proc->container, Vm_);
+    VmOut()->send(eref, proc->container, Vm_);
 #endif
     if ((Vm_ > Vthreshold_) && (time > tSpike_ + refractoryPeriod_)){
         tSpike_ = time;
 #ifndef USE_CHARMPP
         spike()->send(eref, proc->threadIndexInGroup, time);
 #else
-        spike()->send(eref, proc->threadIndexInGroup, proc->container, time);
+        spike()->send(eref, proc->container, time);
 #endif
         Vm_ = Vreset_;
     }
@@ -366,7 +366,7 @@ void LeakyIaF::reinit(const Eref& eref, ProcPtr proc)
 #ifndef USE_CHARMPP
     VmOut()->send(eref, proc->threadIndexInGroup, Vm_);
 #else
-    VmOut()->send(eref, proc->threadIndexInGroup, proc->container, Vm_);
+    VmOut()->send(eref, proc->container, Vm_);
 #endif
 }
 

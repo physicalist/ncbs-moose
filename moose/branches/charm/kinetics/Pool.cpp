@@ -104,7 +104,7 @@ void Pool::vProcess( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	nOut.send( e, p->threadIndexInGroup, n_ );
 #else
-	nOut.send( e, p->threadIndexInGroup, p->container, n_ );
+	nOut.send( e, p->container, n_ );
 #endif
 }
 
@@ -116,7 +116,7 @@ void Pool::vReinit( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	nOut.send( e, p->threadIndexInGroup, n_ );
 #else
-	nOut.send( e, p->threadIndexInGroup, p->container, n_ );
+	nOut.send( e, p->container, n_ );
 #endif
 }
 

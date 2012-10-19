@@ -1001,7 +1001,7 @@ void Stoich::updateDiffusion(
 #ifndef USE_CHARMPP
 void Stoich::clearFlux( unsigned int meshIndex, unsigned int threadNum )
 #else
-void Stoich::clearFlux( unsigned int meshIndex, unsigned int threadNum, ElementContainer *container)
+void Stoich::clearFlux( unsigned int meshIndex, ElementContainer *container)
 #endif
 {
 	if ( meshIndex == 0 ) {
@@ -1017,7 +1017,7 @@ void Stoich::clearFlux( unsigned int meshIndex, unsigned int threadNum, ElementC
 			nodeDiffBoundary()->send( stoichId_.eref(), threadNum, 
 				*i, outgoing_[*i], buf );
 #else
-			nodeDiffBoundary()->send( stoichId_.eref(), threadNum, container,  
+			nodeDiffBoundary()->send( stoichId_.eref(), container,  
 				*i, outgoing_[*i], buf );
 #endif
 		}
@@ -1056,7 +1056,7 @@ void Stoich::clearFlux(ElementContainer *container)
 #ifndef USE_CHARMPP
 		clearFlux( i, ScriptThreadNum );
 #else
-		clearFlux( i, ScriptThreadNum, container);
+		clearFlux( i, container);
 #endif
         }
 }

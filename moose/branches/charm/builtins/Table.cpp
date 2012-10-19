@@ -119,7 +119,7 @@ void Table::process( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	requestData()->send( e, p->threadIndexInGroup, recvDataBuf()->getFid());
 #else
-	requestData()->send( e, p->threadIndexInGroup, p->container, recvDataBuf()->getFid());
+	requestData()->send( e, p->container, recvDataBuf()->getFid());
 #endif
 }
 
@@ -132,7 +132,7 @@ void Table::reinit( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	requestData()->send( e, p->threadIndexInGroup, recvDataBuf()->getFid());
 #else
-	requestData()->send( e, p->threadIndexInGroup, p->container, recvDataBuf()->getFid());
+	requestData()->send( e, p->container, recvDataBuf()->getFid());
 #endif
 }
 

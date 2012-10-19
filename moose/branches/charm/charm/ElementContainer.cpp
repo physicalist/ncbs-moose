@@ -63,11 +63,11 @@ void ElementContainer::newIteration(){
   clock_->processPhase2(&procInfo_);
 }
 
-void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, ThreadId threadNum, const double *arg, int size){
+void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, const double *arg, int size){
   // we are passing threadId = 0, to the Qinfo ctor
   // since data in an ElementContainer is not accessible
   // to any other ElementContainers on the same PE/SMP node
-  qBuf_.push_back(Qinfo(oi, bindIndex, threadNum, this, dBuf_.size(), size));
+  qBuf_.push_back(Qinfo(oi, bindIndex, this, dBuf_.size(), size));
   //if(size > 0){
     //dBuf_.insert(dBuf_.end(), arg, arg + size);
   //}
@@ -75,21 +75,20 @@ void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, ThreadId thr
 }
 
 
-void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, ThreadId threadNum, const double *arg1, int size1, const double *arg2, int size2){
-  qBuf_.push_back(Qinfo(oi, bindIndex, threadNum, this, dBuf_.size(), size1 + size2));
+void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, const double *arg1, int size1, const double *arg2, int size2){
+  qBuf_.push_back(Qinfo(oi, bindIndex, this, dBuf_.size(), size1 + size2));
   //if(size1 > 0) dBuf_.insert(dBuf_.end(), arg1, arg1 + size1);
   for(int i = 0; i < size1; i++) dBuf_.push_back(arg1[i]);
   //if(size2 > 0) dBuf_.insert(dBuf_.end(), arg2, arg2 + size2);
   for(int i = 0; i < size2; i++) dBuf_.push_back(arg2[i]);
 }
 
-void ElementContainer::addDirectToQ(const ObjId& src, const ObjId& dest, ThreadId threadNum, FuncId fid, const double* arg, unsigned int size){
+void ElementContainer::addDirectToQ(const ObjId& src, const ObjId& dest, FuncId fid, const double* arg, unsigned int size){
 
-  CkAssert(threadNum == 0);
   CkVec< double >& vec = dBufDirect_;
 
   qBufDirect_.push_back(DirectQbufEntry(
-                          Qinfo(src, Qinfo::DirectAdd, threadNum, this, vec.size(), size), 
+                          Qinfo(src, Qinfo::DirectAdd, this, vec.size(), size), 
                           ObjFid(dest, fid, size, 1)));
   //if ( size > 0 ) {
     //vec.insert( vec.end(), arg, arg + size );
@@ -98,15 +97,13 @@ void ElementContainer::addDirectToQ(const ObjId& src, const ObjId& dest, ThreadI
 }
 
 void ElementContainer::addDirectToQ( const ObjId& src, const ObjId& dest, 
-	ThreadId threadNum,
 	FuncId fid, 
 	const double* arg1, unsigned int size1,
         const double* arg2, unsigned int size2 ){
 
-  CkAssert(threadNum == 0);
   CkVec< double >& vec = dBufDirect_;
   qBufDirect_.push_back(DirectQbufEntry(
-                          Qinfo( src, Qinfo::DirectAdd, threadNum, this, vec.size(), size1 + size2 ),
+                          Qinfo( src, Qinfo::DirectAdd, this, vec.size(), size1 + size2 ),
                           ObjFid(dest, fid, size1 + size2, 1)));
 
   //if ( size1 > 0 ) vec.insert( vec.end(), arg1, arg1 + size1 );
@@ -116,19 +113,16 @@ void ElementContainer::addDirectToQ( const ObjId& src, const ObjId& dest,
 }
 
 void ElementContainer::addVecDirectToQ( const ObjId& src, const ObjId& dest, 
-	ThreadId threadNum,
 	FuncId fid, 
 	const double* arg, unsigned int entrySize, unsigned int numEntries )
 {
-  CkAssert(threadNum == 0);
-
   if ( entrySize == 0 || numEntries == 0 )
     return;
 
   CkVec< double >& vec = dBufDirect_;
 
   qBufDirect_.push_back(DirectQbufEntry(
-                          Qinfo(src, Qinfo::DirectAdd, threadNum, this, vec.size(), entrySize * numEntries),
+                          Qinfo(src, Qinfo::DirectAdd, this, vec.size(), entrySize * numEntries),
                           ObjFid(dest, fid, entrySize, numEntries)
                           ));
 
@@ -228,8 +222,7 @@ unsigned int ElementContainer::dSize() const {
   return dBuf_.size(); 
 }
 
-void ElementContainer::addToReduceQ(ReduceBase *r, ThreadId threadNum){
-  CkAssert(threadNum == 0);
+void ElementContainer::addToReduceQ(ReduceBase *r){
   reduceBuf_.push_back(r);
 }
 
@@ -264,4 +257,8 @@ void ElementContainer::iterationDone(){
   else{
     thisProxy.newIteration();
   }
+}
+
+ThreadId ElementContainer::getRegistrationIndex(){
+  return lookupRegistrationIdx_;
 }

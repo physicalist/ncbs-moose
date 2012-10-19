@@ -245,7 +245,7 @@ void MathFunc::processFunc( const Eref& e, ProcPtr info)
 #ifndef USE_CHARMPP
   output()->send( e, info->threadIndexInGroup, result_ );
 #else
-  output()->send( e, info->threadIndexInGroup, info->container, result_ );
+  output()->send( e, info->container, result_ );
 #endif
   v.clear();
 }

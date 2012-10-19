@@ -37,7 +37,7 @@ void ReduceMsg::exec( const Qinfo* q, const double* arg, FuncId fid ) const
 #ifndef USE_CHARMPP
 		Qinfo::addToReduceQ( r, q->threadNum() );
 #else
-                q->container()->addToReduceQ(r, q->threadNum());
+                q->container()->addToReduceQ(r);
 #endif
 		// DataHandler* d2 = e2_->dataHandler();
 		//unsigned int count = 0;

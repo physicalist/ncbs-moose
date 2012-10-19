@@ -326,7 +326,7 @@ void NMDAChan::process( const Eref& e, ProcPtr info )
 #ifndef USE_CHARMPP
 	unblocked()->send( e, info->threadIndexInGroup, unblocked_ );
 #else
-	unblocked()->send( e, info->threadIndexInGroup, info->container, unblocked_ );
+	unblocked()->send( e, info->container, unblocked_ );
 #endif
     // send1< double >( e, unblockedSlot, unblocked_);
 }

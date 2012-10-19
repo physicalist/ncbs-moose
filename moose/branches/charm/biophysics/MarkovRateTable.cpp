@@ -602,7 +602,7 @@ void MarkovRateTable::process( const Eref& e, ProcPtr info )
 #ifndef USE_CHARMPP
 	instRatesOut()->send( e, info->threadIndexInGroup, Q_ );
 #else
-	instRatesOut()->send( e, info->threadIndexInGroup, info->container, Q_ );
+	instRatesOut()->send( e, info->container, Q_ );
 #endif
 }
 
@@ -617,7 +617,7 @@ void MarkovRateTable::reinit( const Eref& e, ProcPtr info )
 #ifndef USE_CHARMPP
 	instRatesOut()->send( e, info->threadIndexInGroup, Q_ );
 #else
-	instRatesOut()->send( e, info->threadIndexInGroup, info->container, Q_ );
+	instRatesOut()->send( e, info->container, Q_ );
 #endif
 }
 

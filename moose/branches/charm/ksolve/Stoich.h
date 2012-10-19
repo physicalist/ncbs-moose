@@ -312,7 +312,7 @@ class Stoich
 		void clearFlux( unsigned int meshIndex, unsigned int threadNum );
 #else
 		void clearFlux(ElementContainer *container);
-		void clearFlux( unsigned int meshIndex, unsigned int threadNum, ElementContainer *container );
+		void clearFlux( unsigned int meshIndex, ElementContainer *container );
 #endif
 
 		/**

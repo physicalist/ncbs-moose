@@ -164,7 +164,7 @@ void StimulusTable::process( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	output()->send( e, p->threadIndexInGroup, y );
 #else
-	output()->send( e, p->threadIndexInGroup, p->container, y );
+	output()->send( e, p->container, y );
 #endif
 }
 
@@ -176,7 +176,7 @@ void StimulusTable::reinit( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	output()->send( e, p->threadIndexInGroup, y );
 #else
-	output()->send( e, p->threadIndexInGroup, p->container, y );
+	output()->send( e, p->container, y );
 #endif
 }
 

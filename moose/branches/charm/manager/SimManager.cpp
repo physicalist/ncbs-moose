@@ -458,7 +458,7 @@ void SimManager::buildGssa( const Eref& e, const Qinfo* q, Shell* shell )
 		Shell::numProcessThreads() ); 
 	Qinfo::waitProcCycles( 2 );
 #else
-	nodeInfo()->send( e, q->threadNum(), q->container(), numChemNodes_,
+	nodeInfo()->send( e, q->container(), numChemNodes_,
 		Shell::numProcessThreads() ); 
         q->container()->hackClearQ(2);
 #endif
@@ -506,7 +506,7 @@ void SimManager::buildGsl( const Eref& e, const Qinfo* q,
 		Shell::numProcessThreads() ); 
 	Qinfo::waitProcCycles( 2 );
 #else
-	nodeInfo()->send( e, q->threadNum(), q->container(), numChemNodes_,
+	nodeInfo()->send( e, q->container(), numChemNodes_,
 		Shell::numProcessThreads() ); 
         q->container()->hackClearQ(2);
 #endif

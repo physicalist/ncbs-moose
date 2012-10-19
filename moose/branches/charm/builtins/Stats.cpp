@@ -139,7 +139,7 @@ void Stats::trig( const Eref& e, const Qinfo* q )
 #ifndef USE_CHARMPP
 	reduce()->send( e, q->threadNum(), 0 );
 #else
-	reduce()->send( e, q->threadNum(), q->container(), 0 );
+	reduce()->send( e, q->container(), 0 );
 #endif
 }
 ///////////////////////////////////////////////////////////////////////////

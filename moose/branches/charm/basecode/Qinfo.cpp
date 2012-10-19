@@ -67,15 +67,20 @@ Qinfo::Qinfo()
 	:	
 		src_(),
 		msgBindIndex_(0),
+#ifndef USE_CHARMPP
 		threadNum_( 0 ),
+#else
+                container_(NULL),
+#endif
 		dataIndex_( 0 ),
 		dataSize_( 0 )
 {;}
 
 Qinfo::Qinfo( const ObjId& src, 
 	BindIndex bindIndex, 
+#ifndef USE_CHARMPP
         ThreadId threadNum,
-#ifdef USE_CHARMPP
+#else
         ElementContainer *container,
 #endif
 	unsigned int dataIndex, 
@@ -83,8 +88,9 @@ Qinfo::Qinfo( const ObjId& src,
 	:	
 		src_( src ),
 		msgBindIndex_( bindIndex ),
+#ifndef USE_CHARMPP
 		threadNum_( threadNum ),
-#ifdef USE_CHARMPP
+#else
                 container_(container),
 #endif
 		dataIndex_( dataIndex ),
@@ -95,20 +101,31 @@ Qinfo::Qinfo( const Qinfo* orig,
 #ifndef USE_CHARMPP
               ThreadId threadNum
 #else
-              ThreadId threadNum,
               ElementContainer *container
 #endif
               )
 	:	
 		src_( orig->src_ ),
 		msgBindIndex_( orig->msgBindIndex_ ),
+#ifndef USE_CHARMPP
 		threadNum_( threadNum ),
-#ifdef USE_CHARMPP
+#else
                 container_(container), 
 #endif
 		dataIndex_( orig->dataIndex_ ),
 		dataSize_( orig->dataSize_ )
 {;}
+
+
+ThreadId Qinfo::threadNum() const {
+#ifndef USE_CHARMPP
+  return threadNum_;
+#else
+  return container_->getRegistrationIndex();;
+#endif
+}
+
+
 
 /*
 bool Qinfo::execThread( Id id, unsigned int dataIndex ) const

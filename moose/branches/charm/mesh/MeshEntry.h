@@ -120,7 +120,7 @@ class MeshEntry
 			const vector< unsigned int >& localIndices,
 			const vector< double >& vols );
 #else
-		void triggerRemesh( const Eref& e, unsigned int threadNum, ElementContainer *container, 
+		void triggerRemesh( const Eref& e, ElementContainer *container, 
 			unsigned int startEntry, 
 			const vector< unsigned int >& localIndices,
 			const vector< double >& vols );

@@ -594,7 +594,7 @@ void MarkovSolverBase::reinit( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	stateOut()->send( e, p->threadIndexInGroup, state_ );
 #else
-	stateOut()->send( e, p->threadIndexInGroup, p->container, state_ );
+	stateOut()->send( e, p->container, state_ );
 #endif
 }
 
@@ -605,7 +605,7 @@ void MarkovSolverBase::process( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	stateOut()->send( e, p->threadIndexInGroup, state_ );
 #else
-	stateOut()->send( e, p->threadIndexInGroup, p->container, state_ );
+	stateOut()->send( e, p->container, state_ );
 #endif
 }
 

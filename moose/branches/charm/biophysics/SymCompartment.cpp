@@ -228,8 +228,8 @@ void SymCompartment::innerInitProc( const Eref& e, ProcPtr p )
 	raxialOut()->send( e, p->threadIndexInGroup, Ra_, Vm_ ); // to kids
 	raxial2Out()->send( e, p->threadIndexInGroup, Ra_, Vm_ ); // to parent and sibs.
 #else
-	raxialOut()->send( e, p->threadIndexInGroup, p->container, Ra_, Vm_ ); // to kids
-	raxial2Out()->send( e, p->threadIndexInGroup, p->container, Ra_, Vm_ ); // to parent and sibs.
+	raxialOut()->send( e, p->container, Ra_, Vm_ ); // to kids
+	raxial2Out()->send( e, p->container, Ra_, Vm_ ); // to parent and sibs.
 #endif
 }
 
@@ -256,8 +256,8 @@ void SymCompartment::innerInitReinit( const Eref& e, ProcPtr p )
 	requestSumAxial()->send( e, p->threadIndexInGroup );
 	requestSumAxial2()->send( e, p->threadIndexInGroup );
 #else
-	requestSumAxial()->send( e, p->threadIndexInGroup, p->container);
-	requestSumAxial2()->send( e, p->threadIndexInGroup, p->container);
+	requestSumAxial()->send( e, p->container);
+	requestSumAxial2()->send( e, p->container);
 #endif
 }
 
@@ -266,7 +266,7 @@ void SymCompartment::handleSumRaxialRequest( const Eref& e, const Qinfo* q )
 #ifndef USE_CHARMPP
 	sumRaxialOut()->send( e, q->threadNum(), Ra_ );
 #else
-	sumRaxialOut()->send( e, q->threadNum(), q->container(), Ra_ );
+	sumRaxialOut()->send( e, q->container(), Ra_ );
 #endif
 }
 
@@ -275,7 +275,7 @@ void SymCompartment::handleSumRaxial2Request( const Eref& e, const Qinfo* q)
 #ifndef USE_CHARMPP
 	sumRaxial2Out()->send( e, q->threadNum(), Ra_ );
 #else
-	sumRaxial2Out()->send( e, q->threadNum(), q->container(), Ra_ );
+	sumRaxial2Out()->send( e, q->container(), Ra_ );
 #endif
 }
 

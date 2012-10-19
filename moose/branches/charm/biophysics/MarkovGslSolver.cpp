@@ -321,7 +321,7 @@ void MarkovGslSolver::process( const Eref& e, ProcPtr info )
 #ifndef USE_CHARMPP
 	stateOut()->send( e, info->threadIndexInGroup, state_ );
 #else
-	stateOut()->send( e, info->threadIndexInGroup, info->container, state_ );
+	stateOut()->send( e, info->container, state_ );
 #endif
 }
 
@@ -338,7 +338,7 @@ void MarkovGslSolver::reinit( const Eref& e, ProcPtr info )
 #ifndef USE_CHARMPP
 	stateOut()->send( e, info->threadIndexInGroup, state_ );
 #else
-	stateOut()->send( e, info->threadIndexInGroup, info->container, state_ );
+	stateOut()->send( e, info->container, state_ );
 #endif
 }
 

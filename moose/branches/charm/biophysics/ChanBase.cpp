@@ -214,12 +214,12 @@ void ChanBase::process(  const Eref& e, const ProcPtr info )
 	// Needed by GHK-type objects
 	permeability()->send( e, info->threadIndexInGroup, Gk_ );
 #else
-	channelOut()->send( e, info->threadIndexInGroup, info->container, Gk_, Ek_ );
+	channelOut()->send( e, info->container, Gk_, Ek_ );
 	// This is used if the channel connects up to a conc pool and
 	// handles influx of ions giving rise to a concentration change.
-	IkOut()->send( e, info->threadIndexInGroup, info->container, Ik_ );
+	IkOut()->send( e, info->container, Ik_ );
 	// Needed by GHK-type objects
-	permeability()->send( e, info->threadIndexInGroup, info->container, Gk_ );
+	permeability()->send( e, info->container, Gk_ );
 #endif
 }
 
@@ -231,9 +231,9 @@ void ChanBase::reinit(  const Eref& e, const ProcPtr info )
 	// Needed by GHK-type objects
 	permeability()->send( e, info->threadIndexInGroup, Gk_ );
 #else
-	channelOut()->send( e, info->threadIndexInGroup, info->container, Gk_, Ek_ );
+	channelOut()->send( e, info->container, Gk_, Ek_ );
 	// Needed by GHK-type objects
-	permeability()->send( e, info->threadIndexInGroup, info->container, Gk_ );
+	permeability()->send( e, info->container, Gk_ );
 #endif
 }
 
