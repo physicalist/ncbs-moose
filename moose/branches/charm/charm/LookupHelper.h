@@ -5,6 +5,7 @@
 class Element;
 class Id;
 class ElementContainer;
+#include "../basecode/ThreadId.h"
 
 class LookupHelper : public CBase_LookupHelper {
   vector< Element * > elements_;
@@ -20,7 +21,7 @@ class LookupHelper : public CBase_LookupHelper {
   void set(Id id, Element *e);
 
   vector< Element * > &elements();
-  int registerContainer(ElementContainer *container);
+  ThreadId registerContainer(ElementContainer *container);
 };
 
 #endif // MOOSE_LOOKUP_HELPER_H

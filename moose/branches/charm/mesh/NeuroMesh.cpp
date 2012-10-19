@@ -405,7 +405,7 @@ void NeuroMesh::innerHandleRequestMeshStats( const Eref& e, const Qinfo* q,
 #ifndef USE_CHARMPP
 	meshStatsFinfo->send( e, q->threadNum(), 1, ret );
 #else
-	meshStatsFinfo->send( e, q->threadNum(), q->container(), 1, ret );
+	meshStatsFinfo->send( e, q->container(), 1, ret );
 #endif
 }
 
@@ -430,7 +430,7 @@ void NeuroMesh::innerHandleNodeInfo(
 		vols, localEntries,
 		outgoingEntries, incomingEntries );
 #else
-	meshSplit()->send( e, q->threadNum(), q->container(),  
+	meshSplit()->send( e, q->container(),  
 		vols, localEntries,
 		outgoingEntries, incomingEntries );
 #endif
@@ -562,7 +562,7 @@ void NeuroMesh::transmitChange( const Eref& e, const Qinfo* q )
 		vols, localIndices, 
 		outgoingEntries, incomingEntries );
 #else
-	meshSplit()->fastSend( e, q->threadNum(), q->container(), 
+	meshSplit()->fastSend( e, q->container(), 
 		vols, localIndices, 
 		outgoingEntries, incomingEntries );
 #endif
@@ -573,7 +573,7 @@ void NeuroMesh::transmitChange( const Eref& e, const Qinfo* q )
 	lookupEntry( 0 )->triggerRemesh( meshEntry.eref(), q->threadNum(), 
 		startEntry, localIndices, vols );
 #else
-	lookupEntry( 0 )->triggerRemesh( meshEntry.eref(), q->threadNum(), q->container(),  
+	lookupEntry( 0 )->triggerRemesh( meshEntry.eref(), q->container(),  
 		startEntry, localIndices, vols );
 #endif
 }

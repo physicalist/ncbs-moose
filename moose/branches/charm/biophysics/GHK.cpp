@@ -301,7 +301,7 @@ void GHK::handleVm( const Eref& e, const Qinfo* q, double Vm )
 #ifndef USE_CHARMPP
 		VmOut()->send( e, q->threadNum(), Vm );
 #else
-		VmOut()->send( e, q->threadNum(), q->container(), Vm );
+		VmOut()->send( e, q->container(), Vm );
 #endif
 }
 
@@ -343,8 +343,8 @@ void GHK::process( const Eref& e, ProcPtr info )
 	channelOut()->send( e, info->threadIndexInGroup, Gk_, Ek_ );
 	IkOut()->send( e, info->threadIndexInGroup, Ik_ );
 #else
-	channelOut()->send( e, info->threadIndexInGroup, info->container, Gk_, Ek_ );
-	IkOut()->send( e, info->threadIndexInGroup, info->container, Ik_ );
+	channelOut()->send( e, info->container, Gk_, Ek_ );
+	IkOut()->send( e, info->container, Ik_ );
 #endif
 
 	// Set permeability to 0 at each timestep
@@ -379,8 +379,8 @@ void GHK::reinit( const Eref& e, ProcPtr info )
 	channelOut()->send( e, info->threadIndexInGroup, Gk_, Ek_ );
 	IkOut()->send( e, info->threadIndexInGroup, Ik_ );
 #else
-	channelOut()->send( e, info->threadIndexInGroup, info->container, Gk_, Ek_ );
-	IkOut()->send( e, info->threadIndexInGroup, info->container, Ik_ );
+	channelOut()->send( e, info->container, Gk_, Ek_ );
+	IkOut()->send( e, info->container, Ik_ );
 #endif
 }
 

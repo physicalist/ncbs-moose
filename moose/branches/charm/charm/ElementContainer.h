@@ -40,7 +40,7 @@ class ElementContainer : public CBase_ElementContainer {
   Clock *clock_;
 
   LookupHelper *lookup_;
-  int lookupRegistrationIdx_;
+  ThreadId lookupRegistrationIdx_;
 
   unsigned int nDataBcastsReceived_;
 
@@ -60,15 +60,17 @@ class ElementContainer : public CBase_ElementContainer {
   // interface for moose objects
   public:
   // called by Qinfo::addToQ
-  void addToQ(const ObjId &oi, BindIndex bindIndex, ThreadId threadNum, const double *arg, int size);
-  void addToQ(const ObjId &oi, BindIndex bindIndex, ThreadId threadNum, const double *arg1, int size1, const double *arg2, int size2);
+  void addToQ(const ObjId &oi, BindIndex bindIndex, const double *arg, int size);
+  void addToQ(const ObjId &oi, BindIndex bindIndex, const double *arg1, int size1, const double *arg2, int size2);
 
-  void addDirectToQ(const ObjId& src, const ObjId& dest, ThreadId threadNum, FuncId fid, const double* arg, unsigned int size);
-  void addDirectToQ(const ObjId& src, const ObjId& dest, ThreadId threadNum, FuncId fid, const double* arg1, unsigned int size1, const double* arg2, unsigned int size2);
-  void addVecDirectToQ(const ObjId& src, const ObjId& dest, ThreadId threadNum, FuncId fid, const double* arg, unsigned int entrySize, unsigned int numEntries);
+  void addDirectToQ(const ObjId& src, const ObjId& dest, FuncId fid, const double* arg, unsigned int size);
+  void addDirectToQ(const ObjId& src, const ObjId& dest, FuncId fid, const double* arg1, unsigned int size1, const double* arg2, unsigned int size2);
+  void addVecDirectToQ(const ObjId& src, const ObjId& dest, FuncId fid, const double* arg, unsigned int entrySize, unsigned int numEntries);
 
-  void addToReduceQ(ReduceBase *r, ThreadId tid);
+  void addToReduceQ(ReduceBase *r);
   void clearReduceQ(unsigned int numThreads);
+
+  ThreadId getRegistrationIndex();
 
   // called by Shell
   void start(double runTime);

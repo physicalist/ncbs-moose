@@ -199,7 +199,7 @@ void SpikeGen::process( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 				event()->send( e, p->threadIndexInGroup, t );
 #else
-				event()->send( e, p->threadIndexInGroup, p->container, t );
+				event()->send( e, p->container, t );
 #endif
 				lastEvent_ = t;
 				fired_ = true;                    

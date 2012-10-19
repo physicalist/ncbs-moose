@@ -24,8 +24,8 @@ vector< Element * > &LookupHelper::elements(){
   return elements_;
 }
 
-int LookupHelper::registerContainer(ElementContainer *container){
-  int index = containers_.size();
+ThreadId LookupHelper::registerContainer(ElementContainer *container){
+  ThreadId index = containers_.size();
   containers_.push_back(container);
   return index;
 }

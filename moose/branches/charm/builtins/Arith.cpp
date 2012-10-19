@@ -134,7 +134,7 @@ void Arith::process( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	output()->send( e, p->threadIndexInGroup, output_ );
 #else
-	output()->send( e, p->threadIndexInGroup, p->container, output_ );
+	output()->send( e, p->container, output_ );
 #endif
 	arg3_ = 0.0;
 }

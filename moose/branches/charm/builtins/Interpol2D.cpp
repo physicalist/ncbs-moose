@@ -479,7 +479,7 @@ void Interpol2D::lookupReturn( const Eref& e, const Qinfo*q,
 #ifndef USE_CHARMPP
 	trig()->send( e, q->threadNum(), ret );
 #else
-	trig()->send( e, q->threadNum(), q->container(), ret );
+	trig()->send( e, q->container(), ret );
 #endif
 }
 

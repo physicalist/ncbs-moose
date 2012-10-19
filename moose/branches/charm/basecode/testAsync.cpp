@@ -167,7 +167,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
       Qinfo::addDirectToQ( i1, ObjId( i2, i ), 
           ScriptThreadNum, fid, &x, 1 );
 #else
-      container_->addDirectToQ( i1, ObjId( i2, i ), ScriptThreadNum, fid, &x, 1 );
+      container_->addDirectToQ( i1, ObjId( i2, i ), fid, &x, 1 );
 #endif
 
       /*
@@ -231,8 +231,6 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     Msg* m = new OneToOneMsg( Msg::nextMsgId(), e1.element(), e2.element() );
 
 
-    ThreadId threadNum = 0;
-
     SrcFinfo1<double> s( "test", "" );
     s.setBindIndex( 0 );
     e1.element()->addMsgAndFunc( m->mid(), fid, s.getBindIndex() );
@@ -240,9 +238,10 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     for ( unsigned int i = 0; i < size; ++i ) {
       double x = i + i * i;
 #ifndef USE_CHARMPP
+      ThreadId threadNum = 0;
       s.send( Eref( e1.element(), i ), threadNum, x );
 #else
-      s.send( Eref( e1.element(), i ), threadNum, container_, x );
+      s.send( Eref( e1.element(), i ), container_, x );
 #endif
     }
 #ifndef USE_CHARMPP
@@ -279,7 +278,6 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
 
     Eref e1 = i1.eref();
     Eref e2 = i2.eref();
-    ThreadId threadNum = 0;
 
     OneToOneMsg *m = new OneToOneMsg( Msg::nextMsgId(), e1.element(), e2.element() );
     assert( m );
@@ -296,9 +294,10 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
       const SrcFinfo1< double >* sf = dynamic_cast< const SrcFinfo1< double >* >( f1 );
       assert( sf != 0 );
 #ifndef USE_CHARMPP
+      ThreadId threadNum = 0;
       sf->send( Eref( e1.element(), i ), threadNum, double( i ) );
 #else
-      sf->send( Eref( e1.element(), i ), threadNum, container_, double( i ) );
+      sf->send( Eref( e1.element(), i ), container_, double( i ) );
 #endif
     }
 #ifndef USE_CHARMPP
@@ -345,7 +344,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
         conv.ptr(), conv.size() );
     Qinfo::clearQ( 0  );
 #else
-    container_->addDirectToQ( ObjId(), ret->id(), 0, f1, conv.ptr(), conv.size() );
+    container_->addDirectToQ( ObjId(), ret->id(), f1, conv.ptr(), conv.size() );
     container_->hackClearQ();
 #endif
     // Field< string >::set( e2, "name", "NewImprovedTest" );
@@ -368,7 +367,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
 
       Qinfo::clearQ( 0 );
 #else
-      container_->addDirectToQ( ObjId(), dest.objId(), 0, f2, conv.ptr(), conv.size() );
+      container_->addDirectToQ( ObjId(), dest.objId(), f2, conv.ptr(), conv.size() );
       container_->hackClearQ();
 #endif
     }
@@ -414,7 +413,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     Qinfo::clearQ( 0 ); // The request goes to the target Element
     Qinfo::clearQ( 0 ); // The response comes back to the Shell
 #else
-    container_->addDirectToQ( ObjId(), i2, 0, f1, &temp, 1 );
+    container_->addDirectToQ( ObjId(), i2, f1, &temp, 1 );
     container_->hackClearQ(); // The request goes to the target Element
     container_->hackClearQ(); // The response comes back to the Shell
 #endif
@@ -430,7 +429,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     Qinfo::clearQ( 0 ); // The request goes to the target Element
     Qinfo::clearQ( 0 ); // The response comes back to the Shell
 #else
-    container_->addDirectToQ( ObjId(), i2, 0, f1, &temp, 1 );
+    container_->addDirectToQ( ObjId(), i2, f1, &temp, 1 );
     container_->hackClearQ(); // The request goes to the target Element
     container_->hackClearQ(); // The response comes back to the Shell
 #endif
@@ -458,7 +457,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
       Qinfo::clearQ( 0 ); // The request goes to the target Element
       Qinfo::clearQ( 0 ); // The response comes back to the Shell
 #else
-      container_->addDirectToQ( ObjId(), ObjId( i2, i ), 0, f2, &temp, 1 );
+      container_->addDirectToQ( ObjId(), ObjId( i2, i ), f2, &temp, 1 );
       container_->hackClearQ(); // The request goes to the target Element
       container_->hackClearQ(); // The response comes back to the Shell
 #endif
@@ -1619,12 +1618,12 @@ void TestAsync::testSharedMsg()
 
   // Send messages
   ProcInfo p;
-  ThreadId threadNum = 0;
 
   string arg1 = " hello ";
   string arg2 = " goodbye ";
 
 #ifndef USE_CHARMPP
+  ThreadId threadNum = 0;
   s1.send( t1.eref(), threadNum, arg1 );
   s2.send( t1.eref(), threadNum, 100, 200 );
 
@@ -1637,14 +1636,14 @@ void TestAsync::testSharedMsg()
   Qinfo::clearQ( 0 );
   Qinfo::clearQ( 0 );
 #else
-  s1.send( t1.eref(), threadNum, container_, arg1 );
-  s2.send( t1.eref(), threadNum, container_, 100, 200 );
+  s1.send( t1.eref(), container_, arg1 );
+  s2.send( t1.eref(), container_, 100, 200 );
 
   container_->hackClearQ();
   container_->hackClearQ();
 
-  s1.send( t2.eref(), threadNum, container_, arg2 );
-  s2.send( t2.eref(), threadNum, container_, 500, 600 );
+  s1.send( t2.eref(), container_, arg2 );
+  s2.send( t2.eref(), container_, 500, 600 );
 
   container_->hackClearQ();
   container_->hackClearQ();
@@ -1785,7 +1784,6 @@ void TestAsync::testMsgField()
 
   Msg* m = new SingleMsg( Msg::nextMsgId(), Eref( i1(), 5 ), Eref( i2(), 3 ) );
   ProcInfo p;
-  ThreadId threadNum = 0;
 
   Id msgElmId = m->managerId();
 
@@ -1808,9 +1806,10 @@ void TestAsync::testMsgField()
   for ( unsigned int i = 0; i < size; ++i ) {
     double x = i * 42;
 #ifndef USE_CHARMPP
+    ThreadId threadNum = 0;
     s.send( Eref( e1.element(), i ), threadNum, x );
 #else
-    s.send( Eref( e1.element(), i ), threadNum, container_, x );
+    s.send( Eref( e1.element(), i ), container_, x );
 #endif
   }
 #ifndef USE_CHARMPP
@@ -1833,9 +1832,10 @@ void TestAsync::testMsgField()
   for ( unsigned int i = 0; i < size; ++i ) {
     double x = i * 1000;
 #ifndef USE_CHARMPP
+    ThreadId threadNum = 0;
     s.send( Eref( e1.element(), i ), threadNum, x );
 #else
-    s.send( Eref( e1.element(), i ), threadNum, container_, x );
+    s.send( Eref( e1.element(), i ), container_, x );
 #endif
   }
 #ifndef USE_CHARMPP

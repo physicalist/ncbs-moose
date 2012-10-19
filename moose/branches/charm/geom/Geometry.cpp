@@ -147,7 +147,7 @@ void Geometry::handleSizeRequest( const Eref& e, const Qinfo* q )
 #ifndef USE_CHARMPP
 	returnSize()->send( e, q->threadNum(), 0.0 );
 #else
-	returnSize()->send( e, q->threadNum(), q->container(), 0.0 );
+	returnSize()->send( e, q->container(), 0.0 );
 #endif
 }
 

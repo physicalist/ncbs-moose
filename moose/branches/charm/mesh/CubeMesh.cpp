@@ -542,7 +542,7 @@ void CubeMesh::innerHandleRequestMeshStats( const Eref& e, const Qinfo* q,
 #ifndef USE_CHARMPP
 	meshStatsFinfo->send( e, q->threadNum(), nx_ * ny_ * nz_, meshSizes );
 #else
-	meshStatsFinfo->send( e, q->threadNum(), q->container(), nx_ * ny_ * nz_, meshSizes );
+	meshStatsFinfo->send( e, q->container(), nx_ * ny_ * nz_, meshSizes );
 #endif
 }
 
@@ -562,7 +562,7 @@ void CubeMesh::innerHandleNodeInfo(
 		vols, localEntries,
 		outgoingEntries, incomingEntries );
 #else
-	meshSplit()->send( e, q->threadNum(), q->container(), 
+	meshSplit()->send( e, q->container(), 
 		vols, localEntries,
 		outgoingEntries, incomingEntries );
 #endif
@@ -602,7 +602,7 @@ void CubeMesh::transmitChange( const Eref& e, const Qinfo* q )
 	meshSplit()->fastSend( e, q->threadNum(), 
 		vols, localIndices, outgoingEntries, incomingEntries );
 #else
-	meshSplit()->fastSend( e, q->threadNum(), q->container(),  
+	meshSplit()->fastSend( e, q->container(),  
 		vols, localIndices, outgoingEntries, incomingEntries );
 #endif
 
@@ -612,7 +612,7 @@ void CubeMesh::transmitChange( const Eref& e, const Qinfo* q )
 	lookupEntry( 0 )->triggerRemesh( meshEntry.eref(), q->threadNum(), 
 		startEntry, localIndices, vols );
 #else
-	lookupEntry( 0 )->triggerRemesh( meshEntry.eref(), q->threadNum(), q->container(),  
+	lookupEntry( 0 )->triggerRemesh( meshEntry.eref(), q->container(),  
 		startEntry, localIndices, vols );
 #endif
 }

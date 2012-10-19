@@ -571,7 +571,7 @@ void Compartment::process( const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	VmOut()->send( e, p->threadIndexInGroup, Vm_ );
 #else
-	VmOut()->send( e, p->threadIndexInGroup, p->container, Vm_ );
+	VmOut()->send( e, p->container, Vm_ );
 #endif
 
 	// The axial/raxial messages go out in the 'init' phase.
@@ -596,7 +596,7 @@ void Compartment::innerReinit(  const Eref& e, ProcPtr p )
 #ifndef USE_CHARMPP
 	VmOut()->send( e, p->threadIndexInGroup, Vm_ );
 #else
-	VmOut()->send( e, p->threadIndexInGroup, p->container, Vm_ );
+	VmOut()->send( e, p->container, Vm_ );
 #endif
 }
 
@@ -616,10 +616,10 @@ void Compartment::innerInitProc( const Eref& e, ProcPtr p )
 	raxialOut()->send( e, p->threadIndexInGroup, Ra_, Vm_ );
 #else
 	// Send out the axial messages
-	axialOut()->send( e, p->threadIndexInGroup, p->container, Vm_ );
+	axialOut()->send( e, p->container, Vm_ );
 
 	// Send out the raxial messages
-	raxialOut()->send( e, p->threadIndexInGroup, p->container, Ra_, Vm_ );
+	raxialOut()->send( e, p->container, Ra_, Vm_ );
 #endif
 }
 

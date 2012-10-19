@@ -57,8 +57,9 @@ class Qinfo
                  // threads.
 		Qinfo( const ObjId& src, 
 			BindIndex bindIndex, 
+#ifndef USE_CHARMPP
                         ThreadId threadNum,
-#ifdef USE_CHARMPP
+#else
                         ElementContainer *container,
 #endif
 			unsigned int dataIndex, unsigned int dataSize );
@@ -70,7 +71,6 @@ class Qinfo
 #ifndef USE_CHARMPP
                        ThreadId threadNum
 #else
-                       ThreadId threadNum,
                        ElementContainer *container
 #endif
                        );
@@ -100,15 +100,14 @@ class Qinfo
 		/**
 		 * Returns the thread index.
 		 */
-		ThreadId threadNum() const {
-			return threadNum_;
-		}
-
+		ThreadId threadNum() const;
 		/**
 		 * Assigns the thread index
 		 */
 		void setThreadNum( ThreadId threadNum ) {
+#ifndef USE_CHARMPP
 			threadNum_ = threadNum;
+#endif
 		}
 
 #ifdef USE_CHARMPP

@@ -264,7 +264,7 @@ void MeshEntry::triggerRemesh( const Eref& e, unsigned int threadNum,
 	unsigned int startEntry, const vector< unsigned int >& localIndices,
 	const vector< double >& vols )
 #else
-void MeshEntry::triggerRemesh( const Eref& e, unsigned int threadNum, ElementContainer *container, 
+void MeshEntry::triggerRemesh( const Eref& e, ElementContainer *container, 
 	unsigned int startEntry, const vector< unsigned int >& localIndices,
 	const vector< double >& vols )
 #endif
@@ -275,9 +275,9 @@ void MeshEntry::triggerRemesh( const Eref& e, unsigned int threadNum, ElementCon
 		startEntry, localIndices, vols );
 	remeshReacs()->fastSend( e, threadNum );
 #else
-	remesh()->fastSend( e, threadNum, container, parent_->getNumEntries(),
+	remesh()->fastSend( e, container, parent_->getNumEntries(),
 		startEntry, localIndices, vols );
-	remeshReacs()->fastSend( e, threadNum, container );
+	remeshReacs()->fastSend( e, container );
 #endif
 }
 
