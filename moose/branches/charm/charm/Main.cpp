@@ -3,6 +3,7 @@
 #include "moose.decl.h"
 #include "ElementContainer.h"
 #include "Main.h"
+#include "LookupHelper.h"
 
 // readonly variables
 CProxy_ElementContainer readonlyElementContainerProxy;
@@ -34,7 +35,7 @@ void Main::createMooseParallelObjects(){
 void Main::commence(){
 
   CkPrintf("[main] register containers with shells\n");
-  readonlyElementContainerProxy.registerWithShell(CkCallbackResumeThread());
+  readonlyElementContainerProxy.registerWithLookupHelper(CkCallbackResumeThread());
 
   CkPrintf("[main] starting serial unit tests\n");
   readonlyElementContainerProxy.doSerialUnitTests(CkCallbackResumeThread());
