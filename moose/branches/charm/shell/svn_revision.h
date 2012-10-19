@@ -1,4 +1,4 @@
 #ifndef MOOSE_SVN_REVISION_H
         #define MOOSE_SVN_REVISION_H
-        #define SVN_REVISION "4140:4149M"
+        #define SVN_REVISION "4140:4151M"
         #endif
