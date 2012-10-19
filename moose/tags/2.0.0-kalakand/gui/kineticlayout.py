@@ -9,6 +9,8 @@ import math
 from collections import defaultdict
 sys.path.append('../python')
 
+from kineticsgraphics import PoolItem, ReacItem,EnzItem,CplxItem,ComptItem
+
 from moose import *
 itemignoreZooming = False
 
@@ -27,10 +29,8 @@ class GraphicalView(QtGui.QGraphicsView):
         self.border = 6
         self.setRenderHints(QtGui.QPainter.Antialiasing)
         self.layoutPt = layoutPt        
-    
     def resizeEvent1(self, event):
         """ zoom when resize! """
-        #self.fitInView(self.sceneContainerPt.sceneRect(), Qt.Qt.IgnoreAspectRatio)
         self.fitInView(self.sceneContainerPt.itemsBoundingRect().x()-10,self.sceneContainerPt.itemsBoundingRect().y()-10,self.sceneContainerPt.itemsBoundingRect().width()+20,self.sceneContainerPt.itemsBoundingRect().height()+20,Qt.Qt.IgnoreAspectRatio)
         QtGui.QGraphicsView.resizeEvent(self, event)
         
@@ -50,6 +50,7 @@ class GraphicalView(QtGui.QGraphicsView):
                 #for below  Qt4.6 there is no view transform for itemAt 
                 #and if view is zoom out below 50%  and if textitem object is moved, zooming also happens.
                 sceneitems = self.sceneContainerPt.itemAt(self.startScenepos)
+
             #checking if mouse press position is on any item (in my case textitem or rectcompartment) if none, 
             if ( sceneitems == None):
                 QtGui.QGraphicsView.mousePressEvent(self, event)
@@ -103,7 +104,7 @@ class GraphicalView(QtGui.QGraphicsView):
                         if items.parentWidget().isSelected() == False:
                             items.parentWidget().setSelected(1)
                     else:
-                         if items.isSelected() == False:
+                        if items.isSelected() == False:
                             items.setSelected(1)
                         
                         
@@ -143,179 +144,35 @@ class GraphicalView(QtGui.QGraphicsView):
     def zoomItem(self):
         # First items are ignoretransformation,view is fitted and recalculated the arrow
         #global itemignoreZooming = True
-        self.layoutPt.updateItemTransformationMode(True)
+        #self.layoutPt.updateItemTransformationMode(True)
         self.fitInView(self.startScenepos.x(),self.startScenepos.y(),self.rubberbandWidth,self.rubberbandHeight,Qt.Qt.IgnoreAspectRatio)
-        global itemignoreZooming
-        itemignoreZooming = True
-        self.layoutPt.drawLine_arrow(itemignoreZooming=True)
+        #global itemignoreZooming
+        #itemignoreZooming = True
+        #self.layoutPt.drawLine_arrow(itemignoreZooming=True)
         self.rubberBandactive = False
-
-class KineticsDisplayItem(QtGui.QGraphicsWidget):
-    """Base class for display elemenets in kinetics layout"""
-    def __init__(self, mooseObject, parent=None):
-        QtGui.QGraphicsObject.__init__(self, parent)
-        self.mobj = mooseObject
-        self.gobj = None
-
-    def setDisplayProperties(self, dinfo):
-        self.setGeometry(dinfo.x, dinfo.y)        
-    def itemChange(self,change,value):
-        if change == QtGui.QGraphicsItem.ItemPositionChange:
-            self.emit(QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),element(self.mobj))
-        if change == QtGui.QGraphicsItem.ItemSelectedChange and value == True:
-            self.emit(QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),element(self.mobj))
-        return QtGui.QGraphicsItem.itemChange(self,change,value)
-
-
-class PoolItem(KineticsDisplayItem):
-    """Class for displaying pools. Uses a QGraphicsSimpleTextItem to
-    display the name."""    
-    fontMetrics = None
-    def __init__(self, *args, **kwargs):
-        
-        KineticsDisplayItem.__init__(self, *args, **kwargs)
-        self.bg = QtGui.QGraphicsRectItem(self)
-        self.gobj = QtGui.QGraphicsSimpleTextItem(self.mobj[0].name, self.bg)        
-        
-        if not PoolItem.fontMetrics:
-            PoolItem.fontMetrics = QtGui.QFontMetrics(self.gobj.font())
-        self.bg.setRect(0, 
-                        0, 
-                        self.gobj.boundingRect().width()
-                        +PoolItem.fontMetrics.width('  '), 
-                        self.gobj.boundingRect().height())
-        self.bg.setPen(Qt.QColor(0,0,0,0))
-        self.gobj.setPos(PoolItem.fontMetrics.width(' '), 0)
-
-    def setDisplayProperties(self,x,y,textcolor,bgcolor):
-        """Set the display properties of this item."""
-        self.setGeometry(x, y,self.gobj.boundingRect().width()
-                        +PoolItem.fontMetrics.width('  '), 
-                        self.gobj.boundingRect().height())
-
-        self.gobj.setPen(QtGui.QPen(QtGui.QBrush(textcolor)))
-        self.gobj.setBrush(QtGui.QBrush(textcolor))
-        self.bg.setBrush(QtGui.QBrush(bgcolor))
-        
-        self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable)
-        self.setFlag(QtGui.QGraphicsItem.ItemIsMovable,True)
-        #self.gobj.setFocus(1)
-        if QtCore.QT_VERSION >= 0x040600:
-            self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges,1)
-    def updateSlot(self):
-        self.gobj.setText(self.mobj[0].name)
-        self.bg.setRect(0, 0, self.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  '), self.gobj.boundingRect().height())
-
-class ReacItem(KineticsDisplayItem):
-    defaultWidth = 35
-    defaultHeight = 35
-    def __init__(self, *args, **kwargs):
-        KineticsDisplayItem.__init__(self, *args, **kwargs)
-        width = 30.0
-        height = 30.0
-        points = [QtCore.QPointF(width/4, 0),
-                  QtCore.QPointF(0, height/4),
-                  QtCore.QPointF(width, height/4),
-                  QtCore.QPointF(3*width/4, height/2)]
-        path = QtGui.QPainterPath()
-        path.moveTo(points[0])
-        for p in points[1:]:
-            path.lineTo(p)
-            path.moveTo(p)
-        self.gobj = QtGui.QGraphicsPathItem(path, self)
-        self.gobj.setPen(QtGui.QPen(QtCore.Qt.black, 2))
-        
-    def setDisplayProperties(self, x,y,textcolor,bgcolor):
-        """Set the display properties of this item."""
-        self.setGeometry(x,y, 
-                         self.gobj.boundingRect().width(), 
-                         self.gobj.boundingRect().height())
-        self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable
-                     +QtGui.QGraphicsItem.ItemIsMovable)
-        if QtCore.QT_VERSION >= 0x040600:
-            self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges,1)
-
-class EnzItem(KineticsDisplayItem):
-    defaultWidth = 20
-    defaultHeight = 10    
-    def __init__(self, *args, **kwargs):
-        KineticsDisplayItem.__init__(self, *args, **kwargs)
-        self.gobj = QtGui.QGraphicsEllipseItem(0, 0, 
-                                            EnzItem.defaultWidth, 
-                                            EnzItem.defaultHeight, self)
-        
-    #def setDisplayProperties(self, dinfo):
-    def setDisplayProperties(self,x,y,textcolor,bgcolor):
-        """Set the display properties of this item."""
-        self.setGeometry(x,y, 
-                         self.gobj.boundingRect().width(), 
-                         self.gobj.boundingRect().height())
-        #self.gobj.setPen(QtGui.QPen(QtGui.QBrush(textcolor)))
-        self.gobj.setBrush(QtGui.QBrush(textcolor))
-        self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable
-                     +QtGui.QGraphicsItem.ItemIsMovable)
-        if QtCore.QT_VERSION >= 0x040600:
-            self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges,1)
-
-
-class CplxItem(KineticsDisplayItem):
-    defaultWidth = 10
-    defaultHeight = 10    
-    def __init__(self, *args, **kwargs):
-        KineticsDisplayItem.__init__(self, *args, **kwargs)
-        self.gobj = QtGui.QGraphicsRectItem(0, 0, CplxItem.defaultWidth, CplxItem.defaultHeight, self)
-
-    def setDisplayProperties(self,x,y,textcolor,bgcolor):
-        """Set the display properties of this item."""
-        self.setGeometry(self.gobj.boundingRect().width()/2,self.gobj.boundingRect().height(), 
-                         self.gobj.boundingRect().width(), 
-                         self.gobj.boundingRect().height())
-
-        self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable)
-        if QtCore.QT_VERSION >= 0x040600:
-            self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges,1)
-        
-class ComptItem(QtGui.QGraphicsRectItem):
-    def __init__(self,parent,x,y,w,h,item):
-        self.cmptEmitter = QtCore.QObject()
-        self.mooseObj_ = item[0].parent
-        self.layoutWidgetPt = parent
-        QtGui.QGraphicsRectItem.__init__(self,x,y,w,h)
-
-        self.setFlag(QtGui.QGraphicsItem.ItemIsMovable, True );
-        self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable)
-        if config.QT_MINOR_VERSION >= 6:
-            self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, 1) 
-
-    def pointerLayoutpt(self):
-        return (self.layoutWidgetPt)
-
-    def itemChange(self,change,value):
-        if change == QtGui.QGraphicsItem.ItemPositionChange:
-            self.cmptEmitter.emit(QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),self.mooseObj_)
-        if change == QtGui.QGraphicsItem.ItemSelectedChange and value == True:
-            self.cmptEmitter.emit(QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),self.mooseObj_)
-        return QtGui.QGraphicsItem.itemChange(self,change,value)
 
 class Widgetvisibility(Exception):pass
 
 class  KineticsWidget(QtGui.QWidget):
     def __init__(self,size,modelPath,parent=None):
         QtGui.QWidget.__init__(self,parent)
-	
+        self.iconScale = 1
+	self.defaultComptsize = 5
+        self.border = 10
+        self.arrowsize = 2
         itemignoreZooming = False
 	# Get all the compartments and its members  
         cmptMol = {}
         self.setupComptObj(modelPath,cmptMol)
         #for k,v in test.items(): print k,v
-        #self.itemignorestransformFlag = False
         
 	#Check to see if all the cordinates are zero (which is a case for kkit8 version)
         x = []
         y = []
         allZeroCord = False
         x,y,xMin,xMax,yMin,yMax,allZeroCord = self.coordinates(x,y,cmptMol)
-        
+        self.xMin = xMin
+        self.yMin = yMin
         if( allZeroCord == True):
             msgBox = QtGui.QMessageBox()
             msgBox.setText("The Layout module works for kkit version 8 or higher.")
@@ -324,7 +181,7 @@ class  KineticsWidget(QtGui.QWidget):
             raise Widgetvisibility()
         else:
 	    #only after checking if cordiantes has values drawing starts on to qgraphicalScene
-	    self.border = 10
+	    
 	    hLayout = QtGui.QGridLayout(self)
 	    self.setLayout(hLayout)
 	    self.sceneContainer = QtGui.QGraphicsScene(self)
@@ -333,13 +190,13 @@ class  KineticsWidget(QtGui.QWidget):
             self.view = GraphicalView(self.sceneContainer,self.border,self)
 
             if xMax - xMin != 0:
-                xratio = (size.width()-10)/(xMax-xMin)
+                self.xratio = (size.width()-10)/(xMax-xMin)
             else:
-                xratio = size.width()-10
+                self.xratio = size.width()-10
             if yMax - yMin != 0:
-                yratio = (size.height()-10)/(yMax-yMin)
+                self.yratio = (size.height()-10)/(yMax-yMin)
             else:
-                yratio = size.height()-10
+                self.yratio = size.height()-10
                 
             fnt = QtGui.QFont('Helvetica',8)
 
@@ -355,7 +212,7 @@ class  KineticsWidget(QtGui.QWidget):
             self.picklecolorMap = pickle.load(pkl_file)
 
             #Create compartment and its members are created on to QGraphicsScene
-            self.mooseObjOntoscene(cmptMol,xratio,yratio,xMin,yMin)
+            self.mooseObjOntoscene(cmptMol)#,self.xratio,self.yratio,xMin,yMin)
             
             # Connecting lines to src and des is done here
             self.srcdesConnection = {}
@@ -419,7 +276,7 @@ class  KineticsWidget(QtGui.QWidget):
     def nonzero(self,seq):
       return (item for item in seq if item!=0)
 
-    def mooseObjOntoscene(self,cmptMol,xratio,yratio,xMin,yMin):
+    def mooseObjOntoscene(self,cmptMol):#,xratio,yratio,xMin,yMin):
         ''' All the moose Object are put to scene '''
         for cmpt in sorted(cmptMol.iterkeys()):
             self.createCompt(cmpt)
@@ -429,36 +286,33 @@ class  KineticsWidget(QtGui.QWidget):
                 if len(mre) == 0:
                     print cmpt, " has no members in it"
                     continue
-                xpos,ypos = self.positioninfo(mre,xratio,yratio,xMin,yMin)
+                xpos,ypos = self.positioninfo(mre)
                 textcolor,bgcolor = self.colorCheck(mre,self.picklecolorMap)
-                if mre.class_ == 'ZombieReac':
+
+                if isinstance(element(mre),ReacBase):
                     mobjItem = ReacItem(mre,comptRef)
-                    mobjItem.setDisplayProperties(xpos,ypos,textcolor,bgcolor)
-                elif mre.class_ =='ZombieEnz' or mre.class_ == 'ZombieMMenz':
+
+                elif isinstance(element(mre),EnzBase):
                     mobjItem = EnzItem(mre,comptRef)
-                    mobjItem.setDisplayProperties(xpos,ypos,textcolor,bgcolor)
-                elif mre.class_ == 'ZombiePool' or mre.class_ == 'ZombieFuncPool' or mre.class_ == 'ZombieBufPool':
+
+                elif isinstance(element(mre),PoolBase):#' or mre.class_ == 'ZombieFuncPool' or mre.class_ == 'ZombieBufPool':
                     if mre[0].parent.class_ != 'ZombieEnz':
                         mobjItem = PoolItem(mre,comptRef)
-                        mobjItem.setDisplayProperties(xpos,ypos,textcolor,bgcolor)
+
                     else:
-                        #cplx has made to sit under enz, for which xpos added with width/2
-                        #oct4 Here I am not adding enzyme as parent for cplx
-                        xpos = xpos+(self.cplx_width/2)
-                        ypos = ypos
+                        #cplx has made to sit under enz, here I am not adding enzyme as parent for cplx
                         mobjItem = CplxItem(mre,self.mooseId_GObj[element(mre[0]).parent.getId()])
-                        mobjItem.setDisplayProperties(xpos,ypos,textcolor,bgcolor)
+
+                mobjItem.setDisplayProperties(xpos,ypos,textcolor,bgcolor)
                 mobjItem.connect(mobjItem,QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),self.positionChange)
                 mobjItem.connect(mobjItem,QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),self.emitItemtoEditor)
                 self.mooseId_GObj[element(mre).getId()] = mobjItem
-        ''' compartment is rectangle is set '''
+
+        ''' compartment's rectangle is set '''
         for k, v in self.qGraCompt.items():
             rectcompt = v.childrenBoundingRect()
-            self.comptborder = 1
             v.setRect(rectcompt.x()-10,rectcompt.y()-10,(rectcompt.width()+20),(rectcompt.height()+20))
-            pen = QtGui.QPen(Qt.QColor(66,66,66,100), 10, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin)
-            pen.setCosmetic(True)
-            v.setPen(pen)
+            v.setPen(QtGui.QPen(Qt.QColor(66,66,66,100), 5, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin))
             v.cmptEmitter.connect(v.cmptEmitter,QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),self.positionChange)
             v.cmptEmitter.connect(v.cmptEmitter,QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),self.emitItemtoEditor)
     
@@ -468,7 +322,7 @@ class  KineticsWidget(QtGui.QWidget):
         self.new_Compt.setRect(10,10,10,10)
         self.sceneContainer.addItem(self.new_Compt)
 
-    def positioninfo(self,mre,xratio,yratio,xMin,yMin):
+    def positioninfo(self,mre):#,xratio,yratio,xMin,yMin):
         if ((mre[0].parent).class_ == 'ZombieEnz'):
             iteminfo = (mre[0].parent).path+'/info'
         else:
@@ -476,12 +330,12 @@ class  KineticsWidget(QtGui.QWidget):
 
         x =  float(element(iteminfo).getField('x'))
         y = float(element(iteminfo).getField('y'))
-        xpos = (x-xMin)*xratio
-        ypos = -(y-yMin)*yratio
+        xpos = (x-self.xMin)*self.xratio
+        ypos = -(y-self.yMin)*self.yratio
         return(xpos,ypos)
 
     def colorCheck(self,mre,picklecolorMap):
-        if ( (mre[0]).class_ == 'ZombieEnz' or (mre[0]).class_ == 'ZombieMMenz' ):
+        if isinstance(element(mre),EnzBase):
             iteminfo = (mre[0].parent).path+'/info'
             textcolor = Annotator(iteminfo).getField('color')
             bgcolor = Annotator(iteminfo).getField('textColor')
@@ -524,22 +378,21 @@ class  KineticsWidget(QtGui.QWidget):
     
     def positionChange(self,mooseObject):
         #If the item position changes, the corresponding arrow's are claculated
-       if ( mooseObject.class_ == 'ZombiePool' or mooseObject.class_ == 'ZombieFuncPool' or mooseObject.class_ == 'ZombieSumFunc' or mooseObject.class_ == 'ZombieBufPool'):
+       if isinstance(element(mooseObject),PoolBase):
             pool = self.mooseId_GObj[mooseObject.getId()]
             self.updatearrow(pool)
             for k, v in self.qGraCompt.items():
                 rectcompt = v.childrenBoundingRect()
                 v.setRect(rectcompt.x()-10,rectcompt.y()-10,(rectcompt.width()+20),(rectcompt.height()+20))
        else:
-            if((mooseObject.class_ == 'ZombieMMenz') or (mooseObject.class_ == 'ZombieEnz') or (mooseObject.class_ == 'ZombieReac') ):
+            if(isinstance(element(mooseObject),EnzBase) or isinstance(element(mooseObject),ReacBase) ):
                 refenz = self.mooseId_GObj[mooseObject.getId()]
                 self.updatearrow(refenz)
                 for k, v in self.qGraCompt.items():
                     rectcompt = v.childrenBoundingRect()
                     v.setRect(rectcompt.x()-10,rectcompt.y()-10,(rectcompt.width()+20),(rectcompt.height()+20))
-    
             else:
-                if mooseObject.class_ == "CubeMesh":
+                if isinstance(element(mooseObject),CubeMesh):
                     for k, v in self.qGraCompt.items():
                         mesh = mooseObject.path+'/mesh[0]'
                         if k.path == mesh:
@@ -589,7 +442,7 @@ class  KineticsWidget(QtGui.QWidget):
                             if(element(el).getId() == nfunplist[0]):
                                 cntDict[element(el)] = inputlist
                                 break
-    def drawLine_arrow(self, itemignoreZooming=False):        
+    def drawLine_arrow(self, itemignoreZooming=False):
         for inn,out in self.srcdesConnection.items():
             if isinstance(out,tuple):
                 if len(out[0])== 0:
@@ -622,11 +475,17 @@ class  KineticsWidget(QtGui.QWidget):
         if (src == "") and (des == ""):
             print "Source or destination is missing or incorrect"
             return 
-        srcdes_list = [src,des,endtype]        
+        srcdes_list = [src,des,endtype]
+        
         arrow = self.calcArrow(src,des,endtype,itemignoreZooming)
         for l,v in self.object2line[src]:
                 if v == des:
                     l.setPolygon(arrow)
+                    arrowPen = l.pen()
+                    arrowPenWidth = self.arrowsize*self.iconScale
+                    arrowPen.setColor(l.pen().color())
+                    arrowPen.setWidth(arrowPenWidth)
+                    l.setPen(arrowPen)
                     return
         '''
         if itemignoreZooming:
@@ -639,29 +498,18 @@ class  KineticsWidget(QtGui.QWidget):
                 if v == des:
                     l.setPolygon(arrow)
                     return
-        '''    
-        qgLineitem = self.sceneContainer.addPolygon(arrow)        
-        pen = QtGui.QPen(QtCore.Qt.green, 1, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin)
-        pen.setCosmetic(True)
+        '''  
+        qgLineitem = self.sceneContainer.addPolygon(arrow)
+        pen = QtGui.QPen(QtCore.Qt.green, 0, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin)
+        pen.setWidth(self.arrowsize)
+        #pen.setCosmetic(True)
         # Green is default color moose.ReacBase and derivatives - already set above
-        if  isinstance(source, moose.EnzBase):
+        if  isinstance(source, EnzBase):
             if ( (endtype == 's') or (endtype == 'p')):
                 pen.setColor(QtCore.Qt.red)
             elif(endtype != 'cplx'):
-                p = element(next((k for k,v in self.mooseId_GObj.items() if v == src), None)) 
-                parentinfo = p.path+'/info'
-                textColor = Annotator(parentinfo).getField('textColor')
-                if(isinstance(textColor,(list,tuple))):
-                    r,g,b = textColor[0],textColor[1],textColor[2]
-                    color = QtGui.QColor(r,g,b)
-                elif ((not isinstance(textColor,(list,tuple)))):
-                    if textColor.isdigit():
-                        tc = int(textColor)
-                        tc = (tc * 2 )
-                        r,g,b = self.picklecolorMap[tc]
-                        color = QtGui.QColor(r,g,b)
-                    else: 
-                        color = QtGui.QColor(200,200,200)
+                p1 = (next((k for k,v in self.mooseId_GObj.items() if v == src), None)) 
+                color,bgcolor = self.colorCheck(p1,self.picklecolorMap)
                 pen.setColor(color)
         elif isinstance(source, moose.PoolBase):
             pen.setColor(QtCore.Qt.blue)
@@ -685,7 +533,6 @@ class  KineticsWidget(QtGui.QWidget):
         else:
             srcRect = srcobj.sceneBoundingRect()
             desRect = desobj.sceneBoundingRect()
-
         arrow = QtGui.QPolygonF()
         if srcRect.intersects(desRect):                
             # This is created for getting a emptyline for reference b'cos 
@@ -776,12 +623,12 @@ class  KineticsWidget(QtGui.QWidget):
 
     def arrowHead(self,srcAngle,degree,lineSpoint):
         '''  arrow head is calculated '''
-        r = 8
+        r = 8*self.iconScale
         delta = math.radians(srcAngle) + math.radians(degree)
         width = math.sin(delta)*r
         height = math.cos(delta)*r
-        srcXArr = lineSpoint.x() + width
-        srcYArr = lineSpoint.y() + height
+        srcXArr = (lineSpoint.x() + width)
+        srcYArr = (lineSpoint.y() + height)
         return srcXArr,srcYArr
    
     def updateItemSlot(self, mooseObject):
@@ -828,34 +675,75 @@ class  KineticsWidget(QtGui.QWidget):
             arrow = self.calcArrow(srcdes[0],srcdes[1],endtype,itemignoreZooming)
             ql.setPolygon(arrow)
 
+    def updateScale( self, scale, ):
+        for item in self.sceneContainer.items():
+            if isinstance(item,ReacItem) or isinstance(item,EnzItem):
+                item.refresh(scale)
+                xpos,ypos = self.positioninfo(item.mobj)
+                item.setGeometry(xpos,ypos, 
+                         item.gobj.boundingRect().width(), 
+                         item.gobj.boundingRect().height())
+
+            elif isinstance(item,CplxItem):
+                item.refresh(scale)
+                item.setGeometry(item.gobj.boundingRect().width()/2,item.gobj.boundingRect().height(), 
+                         item.gobj.boundingRect().width(), 
+                         item.gobj.boundingRect().height())
+
+            elif isinstance(item,PoolItem):
+                item.refresh(scale)
+                xpos,ypos = self.positioninfo(item.mobj)
+                item.setGeometry(xpos, ypos,item.gobj.boundingRect().width()
+                        +PoolItem.fontMetrics.width('  '), 
+                        item.gobj.boundingRect().height())
+                item.bg.setRect(0, 0, item.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  '), item.gobj.boundingRect().height())
+
+        self.drawLine_arrow(itemignoreZooming=False)
+        for k, v in self.qGraCompt.items():
+            rectcompt = v.childrenBoundingRect()
+            comptPen = v.pen()
+            comptWidth =  self.defaultComptsize*self.iconScale
+            comptPen.setWidth(comptWidth)
+            v.setPen(comptPen)
+            v.setRect(rectcompt.x()-comptWidth,rectcompt.y()-comptWidth,(rectcompt.width()+2*comptWidth),(rectcompt.height()+2*comptWidth))
+
     def keyPressEvent(self,event):
-        key = event.key()
-        if key == QtCore.Qt.Key_A:
+        # key1 = event.key() # key event does not distinguish between capital and non-capital letters
+        key = event.text().toAscii().toHex()
+        if key ==  '41': # 'A' fits the view to iconScale factor
             itemignoreZooming = False
             self.updateItemTransformationMode(itemignoreZooming)
             self.view.fitInView(self.sceneContainer.itemsBoundingRect().x()-10,self.sceneContainer.itemsBoundingRect().y()-10,self.sceneContainer.itemsBoundingRect().width()+20,self.sceneContainer.itemsBoundingRect().height()+20,Qt.Qt.IgnoreAspectRatio)
             self.drawLine_arrow(itemignoreZooming=False)
 
-        elif (key == 46 or key == 62):
+        elif (key == '2e'): # '.' key, lower case for '>' zooms in 
             self.view.scale(1.1,1.1)
-        elif (key == 44 or key == 60):
+
+        elif (key == '2c'): # ',' key, lower case for '<' zooms in
             self.view.scale(1/1.1,1/1.1)
 
+        elif (key == '3c'): # '<' key. zooms-in to iconScale factor
+            self.iconScale *= 0.8
+            self.updateScale( self.iconScale )
+
+        elif (key == '3e'): # '>' key. zooms-out to iconScale factor
+            self.iconScale *= 1.25
+            self.updateScale( self.iconScale )
+
+        elif (key == '61'):  # 'a' fits the view to initial value where iconscale=1
+            self.iconScale = 1
+            self.updateScale( self.iconScale )
+            self.view.fitInView(self.sceneContainer.itemsBoundingRect().x()-10,self.sceneContainer.itemsBoundingRect().y()-10,self.sceneContainer.itemsBoundingRect().width()+20,self.sceneContainer.itemsBoundingRect().height()+20,Qt.Qt.IgnoreAspectRatio)
+           
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     size = QtCore.QSize(1024 ,768)
-    modelPath = '77'
-    modelPath = 'enz_classical_explicit'
-    #modelPath = 'acc61'
-    modelPath = 'reaction4'
-    #modelPath = 're'
     modelPath = 'Kholodenko'
-    #modelPath = 'EGFR_MAPK_58'
+
 
     itemignoreZooming = False
     try:
         filepath = '../Demos/Genesis_files/'+modelPath+'.g'
-        #filepath = '/home/harsha/genesis_files/'+modelPath+'.g'
         f = open(filepath, "r")
         loadModel(filepath,'/'+modelPath)
         dt = KineticsWidget(size,'/'+modelPath)
