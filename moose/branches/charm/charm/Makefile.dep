@@ -25,6 +25,7 @@ SimulationParameters.h \
 ../shell/ShellHelper.h \
 ../shell/../charm/shell.decl.h \
 Messages.h \
+../shell/Shell.h \
 
 Main.o: \
 Main.cpp \
@@ -44,4 +45,5 @@ ElementContainer.h \
 DirectQbufEntry.h \
 Main.h \
 Messages.h \
+LookupHelper.h \
 

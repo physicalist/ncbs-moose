@@ -13,8 +13,8 @@ CC = $(CXX)
 AR = ar q 
 CXX_DEPEND = $(CXX) -M -MM -MG $(CXXFLAGS)
 
-OBJECTS = ElementContainer.o Main.o
-SRCS = ElementContainer.cpp Main.cpp
+OBJECTS = ElementContainer.o Main.o LookupHelper.o
+SRCS = ElementContainer.cpp Main.cpp LookupHelper.cpp
 
 TARGET = _moose_charm.o
 all: $(TARGET) 

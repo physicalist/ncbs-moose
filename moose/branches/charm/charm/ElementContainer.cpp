@@ -25,12 +25,18 @@ class PrepackedBuffer;
 class ReduceFieldDimension;
 #include "../shell/Shell.h"
 
+#include "LookupHelper.h"
+
 // readonly
 extern SimulationParameters readonlySimulationParameters; 
 extern CProxy_ShellHelper readonlyShellHelperProxy;
+extern CProxy_LookupHelper readonlyLookupHelperProxy;
 
 ElementContainer::ElementContainer(const CkCallback &cb) : 
+  shell_(NULL),
   clock_(NULL),
+  lookup_(NULL),
+  lookupRegistrationIdx_(-1),
   nDataBcastsReceived_(0)
 {
   procInfo_.numThreadsInGroup = 1;
@@ -53,7 +59,7 @@ void ElementContainer::newIteration(){
   // copying
   flushBufferedDataItems();
 
-  // "juggle clock ticks (whatever that means)"
+  // "juggle clock ticks" (whatever that means)
   clock_->processPhase2(&procInfo_);
 }
 
@@ -236,9 +242,9 @@ void ElementContainer::clearReduceQ(unsigned int numThreads){
   // moment, there is no compelling case for supporting reductions 
 }
 
-void ElementContainer::registerWithShell(const CkCallback &cb){
-  shell_ = readonlyShellHelperProxy.ckLocalBranch()->getShell();
-  shell_->registerContainer(this);
+void ElementContainer::registerWithLookupHelper(const CkCallback &cb){
+  lookup_ = readonlyLookupHelperProxy.ckLocalBranch();
+  lookupRegistrationIdx_ = lookup_->registerContainer(this);
   contribute(cb);
 }
 

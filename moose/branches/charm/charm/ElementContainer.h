@@ -23,6 +23,7 @@ class Eref;
 
 class Shell;
 class Clock;
+class LookupHelper;
 
 class ElementContainer : public CBase_ElementContainer {
   ProcInfo procInfo_;
@@ -38,6 +39,9 @@ class ElementContainer : public CBase_ElementContainer {
   Shell *shell_;
   Clock *clock_;
 
+  LookupHelper *lookup_;
+  int lookupRegistrationIdx_;
+
   unsigned int nDataBcastsReceived_;
 
   public:
@@ -50,7 +54,7 @@ class ElementContainer : public CBase_ElementContainer {
   void iterationDone();
   void exchange(ElementDataMsg *m);
 
-  void registerWithShell(const CkCallback &cb);
+  void registerWithLookupHelper(const CkCallback &cb);
 
 
   // interface for moose objects

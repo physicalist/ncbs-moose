@@ -2,6 +2,7 @@ mainmodule moose {
 
   readonly CProxy_Main readonlyMainProxy;
   readonly CProxy_ElementContainer readonlyElementContainerProxy;
+  readonly CProxy_LookupHelper readonlyLookupHelperProxy;
 
   readonly SimulationParameters readonlySimulationParameters;
   
@@ -31,12 +32,16 @@ mainmodule moose {
 
   array [1D] ElementContainer {
     entry ElementContainer(const CkCallback &cb);
-    entry void registerWithShell(const CkCallback &cb);
+    entry void registerWithLookupHelper(const CkCallback &cb);
     entry void doSerialUnitTests(const CkCallback &cb);
 
     entry void newIteration();
     entry void iterationDone();
     entry void exchange(ElementDataMsg *m);
+  };
+
+  group LookupHelper {
+    entry LookupHelper();
   };
 
 };
