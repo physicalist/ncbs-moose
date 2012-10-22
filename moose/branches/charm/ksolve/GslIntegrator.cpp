@@ -256,11 +256,7 @@ void GslIntegrator::stoich( const Eref& e, const Qinfo* q, Id stoichId )
 	unsigned int meshIndex = e.index().value();
 	y_ = s->getY( meshIndex );
 	if ( meshIndex == 0 ){
-#ifndef USE_CHARMPP
 		s->clearFlux();
-#else
-		s->clearFlux(q->container());
-#endif
         }
 
 	isInitialized_ = 1;
@@ -338,10 +334,7 @@ void GslIntegrator::process( const Eref& e, ProcPtr info )
 	}
 #endif // USE_GSL
 	Stoich* s = reinterpret_cast< Stoich* >( stoichId_.eref().data() );
-#ifndef USE_CHARMPP
-	s->clearFlux( e.index().value(), info->threadIndexInGroup, info->container );
-#else
-#endif
+	s->clearFlux( e.index().value(), info->threadIndexInGroup );
 }
 
 void GslIntegrator::reinit( const Eref& e, ProcPtr info )
@@ -350,11 +343,7 @@ void GslIntegrator::reinit( const Eref& e, ProcPtr info )
 	unsigned int meshIndex = e.index().value();
 	stoichThread_.set( s, info, meshIndex );
 	if ( meshIndex == 0 ) {
-#ifndef USE_CHARMPP
 		s->clearFlux();
-#else
-		s->clearFlux(info->container);
-#endif
 		s->innerReinit();
 	}
 	nVarPools_ = s->getNumVarPools();

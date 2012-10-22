@@ -15,13 +15,7 @@
 #include "../kinetics/ReadCspace.h"
 #include "../manager/SimManager.h"
 
-#include "rtReacDiff.h"
-
-#ifndef USE_CHARMPP
-#include "../charm/ElementContainer.h"
-#endif
-
-    void TestReacDiff::rtReplicateModels()
+    void rtReplicateModels()
     {
       double CONCSCALE = 1e-3; // convert from uM to mM.
       // These values are obtained by running the model explicitly in a
@@ -90,11 +84,9 @@
       assert( ret );
       ret = Field< vector< double > >::set( compt, "coords", coords );
       assert( ret );
-#ifndef USE_CHARMPP
-      Qinfo::waitProcCycles( 2 );
-#else
-      container_->hackClearQ(2);
-#endif
+      Qinfo::clearQ( ScriptThreadNum );
+      Qinfo::clearQ( ScriptThreadNum );
+
       assert( mesh.element()->dataHandler()->localEntries() == 8 );
       assert( a.element()->dataHandler()->localEntries() == 8 );
 
@@ -206,7 +198,7 @@
      * The total amount is 1 uM conc in 2 compartments if input is at a corner
      * because the edge acts like a mirror.
      */
-    double TestReacDiff::checkDiff( const vector< double >& conc, 
+    double checkDiff( const vector< double >& conc, 
         double D, double t, double dx)
     {
       // static const double scaleFactor = sqrt( PI * D );
@@ -234,7 +226,7 @@
      * Very similar to the testSimManager.cpp::testRemeshing()
      * But it uses CylMesh.
      */
-    void TestReacDiff::testDiff1D()
+    void testDiff1D()
     {
       // Diffusion length in mesh entries
       const unsigned int diffLength = 20; 
@@ -273,11 +265,8 @@
 
       ret = Field< vector< double > >::set( kinetics, "coords", coords );
       assert( ret );
-#ifndef USE_CHARMPP
-      Qinfo::waitProcCycles( 2 );
-#else
-      container_->hackClearQ(2);
-#endif
+      Qinfo::clearQ( ScriptThreadNum );
+      Qinfo::clearQ( ScriptThreadNum );
 
       // This should assign the same init conc to the new pool objects.
       assert( a.element()->dataHandler()->localEntries() == diffLength );
@@ -312,7 +301,7 @@
      * Checks calculations in n-dimensions. Uses point at corner as input.
      * Assumes cube.
      */
-    double TestReacDiff::checkNdimDiff( const vector< double >& conc, double D, double t, 
+    double checkNdimDiff( const vector< double >& conc, double D, double t, 
         double dx, double n, unsigned int cubeSide )
     {
       const double scaleFactor = pow( dx, n); 
@@ -342,7 +331,7 @@
     }
 
 
-    void TestReacDiff::testDiffNd( unsigned int n )
+    void testDiffNd( unsigned int n )
     {
       // Diffusion length in mesh entries
       const unsigned int cubeSide = 15; 
@@ -394,11 +383,8 @@
 
       ret = Field< vector< double > >::set( kinetics, "coords", coords );
       assert( ret );
-#ifndef USE_CHARMPP
-      Qinfo::waitProcCycles( 2 );
-#else
-      container_->hackClearQ(2);
-#endif
+      Qinfo::clearQ( ScriptThreadNum );
+      Qinfo::clearQ( ScriptThreadNum );
 
       // This should assign the same init conc to the new pool objects.
       assert( a.element()->dataHandler()->localEntries() == vol );
@@ -431,7 +417,7 @@
     }
 
     // Still to complete. The idea is to simply test for conservation.
-    void TestReacDiff::testReacDiffNd( unsigned int n )
+    void testReacDiffNd( unsigned int n )
     {
       const bool doPrint = 0;
       // Diffusion length in mesh entries
@@ -486,11 +472,8 @@
       assert( ret );
       ret = Field< vector< double > >::set( compt, "coords", coords );
       assert( ret );
-#ifndef USE_CHARMPP
-      Qinfo::waitProcCycles( 2 );
-#else
-      container_->hackClearQ(2);
-#endif
+      Qinfo::clearQ( ScriptThreadNum );
+      Qinfo::clearQ( ScriptThreadNum );
 
       Id mesh( "/diff/kinetics/mesh" );
       assert( mesh != Id() );
@@ -539,7 +522,7 @@
       cout << "." << flush;
     }
 
-    void TestReacDiff::rtReacDiff()
+    void rtReacDiff()
     {
       rtReplicateModels();
       testDiff1D();

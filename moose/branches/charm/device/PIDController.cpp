@@ -301,11 +301,7 @@ void PIDController::process(const Eref& e,  ProcPtr proc )
         output_ = -saturation_;
         e_integral_ -= 0.5 * (error_ + e_previous_) * dt;
     }
-#ifndef USE_CHARMPP
     outputOut()->send(e, proc->threadIndexInGroup, output_);
-#else
-    outputOut()->send(e, proc->container, output_);
-#endif
 }
 
 
@@ -323,10 +319,7 @@ void PIDController::reinit(const Eref& e, ProcPtr proc )
     e_previous_ = error_;
     e_integral_ = 0;
     e_derivative_ = 0;
-#ifndef USE_CHARMPP
-    outputOut()->send(e, proc->container, output_);
-#else
-#endif
+    outputOut()->send(e, proc->threadIndexInGroup, output_);
 }
 
 

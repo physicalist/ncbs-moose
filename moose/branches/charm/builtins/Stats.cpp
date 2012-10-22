@@ -136,11 +136,7 @@ void Stats::reinit( const Eref& e, ProcPtr p )
 void Stats::trig( const Eref& e, const Qinfo* q )
 {
 	ProcInfo p;
-#ifndef USE_CHARMPP
 	reduce()->send( e, q->threadNum(), 0 );
-#else
-	reduce()->send( e, q->container(), 0 );
-#endif
 }
 ///////////////////////////////////////////////////////////////////////////
 // Reduce func

@@ -85,11 +85,7 @@ Species::Species()
 
 void Species::handleMolWtRequest( const Eref& e, const Qinfo* q )
 {
-#ifndef USE_CHARMPP
 	sendMolWt()->send( e, q->threadNum(), molWt_ );
-#else
-	sendMolWt()->send( e, q->container(), molWt_ );
-#endif
 }
 
 //////////////////////////////////////////////////////////////

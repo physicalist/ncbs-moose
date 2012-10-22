@@ -399,20 +399,11 @@ void IzhikevichNrn::process(const Eref& eref, ProcPtr proc)
         Vm_ = c_;
         u_ += d_;
         savedVm_ = Vmax_;
-#ifndef USE_CHARMPP
         VmOut()->send(eref, proc->threadIndexInGroup, Vmax_);
         spike()->send(eref, proc->threadIndexInGroup, proc->currTime);
-#else
-        VmOut()->send(eref, proc->container, Vmax_);
-        spike()->send(eref, proc->container, proc->currTime);
-#endif
     } else {
         savedVm_ = Vm_;
-#ifndef USE_CHARMPP
         VmOut()->send(eref, proc->threadIndexInGroup, Vm_);
-#else
-        VmOut()->send(eref, proc->container, Vm_);
-#endif
     } 
 }
 
@@ -422,11 +413,7 @@ void IzhikevichNrn::reinit(const Eref& eref, ProcPtr proc)
     Vm_ = initVm_;
     u_ = initU_;
     Im_ = 0.0;
-#ifndef USE_CHARMPP
     VmOut()->send(eref, proc->threadIndexInGroup, Vm_);    
-#else
-    VmOut()->send(eref, proc->container, Vm_);    
-#endif
 }
 
 // 

@@ -82,13 +82,8 @@ void Reac::vPrd( double v )
 
 void Reac::vProcess( const Eref& e, ProcPtr p )
 {
-#ifndef USE_CHARMPP
 	toPrd->send( e, p->threadIndexInGroup, sub_, prd_ );
 	toSub->send( e, p->threadIndexInGroup, prd_, sub_ );
-#else
-	toPrd->send( e, p->container, sub_, prd_ );
-	toSub->send( e, p->container, prd_, sub_ );
-#endif
 	
 	sub_ = kf_;
 	prd_ = kb_;

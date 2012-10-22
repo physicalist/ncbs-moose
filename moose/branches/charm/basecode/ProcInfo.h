@@ -9,10 +9,6 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#ifdef USE_CHARMPP
-class ElementContainer;
-#endif
-
 class ProcInfo
 {
 	public:
@@ -25,10 +21,10 @@ class ProcInfo
 				nodeIndexInGroup( 0 ),
 				numNodesInGroup( 1 ), 
 				groupId( 0 ),
-				procIndex( 0 ),
 #ifdef USE_CHARMPP
-                                container(NULL)
+				procIndex( 0 )
 #else
+				procIndex( 0 ),
 //				outQid( 0 ), 
 				isMpiThread( 0 ),
 				barrier1( 0 ),
@@ -48,9 +44,7 @@ class ProcInfo
 		unsigned int numNodesInGroup;
 		unsigned int groupId;
 		unsigned int procIndex; // Look up for this Proc on Shell::getProc
-
 #ifdef USE_CHARMPP
-                ElementContainer *container;
                 unsigned int nElementContainers;
 #else
 		bool isMpiThread;
@@ -70,8 +64,7 @@ class ProcInfo
 			return threadIndexInGroup == 
 				( ( id.value() + dataIndex ) % numThreadsInGroup );
 		}
-#endif // USE_CHARMPP
-
+#endif
 
 #if !defined NDEBUG && !defined USE_CHARMPP
     // This is for debugging. Is not thread safe.

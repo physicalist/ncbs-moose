@@ -599,11 +599,7 @@ void MarkovRateTable::process( const Eref& e, ProcPtr info )
 	if ( !areAllRatesConstant() ) 
 		updateRates();
 
-#ifndef USE_CHARMPP
 	instRatesOut()->send( e, info->threadIndexInGroup, Q_ );
-#else
-	instRatesOut()->send( e, info->container, Q_ );
-#endif
 }
 
 void MarkovRateTable::reinit( const Eref& e, ProcPtr info )
@@ -614,11 +610,7 @@ void MarkovRateTable::reinit( const Eref& e, ProcPtr info )
 		cerr << "MarkovRateTable::reinit : MarkovRateTable class has not been"
 		 		" initialized!.";
 
-#ifndef USE_CHARMPP
 	instRatesOut()->send( e, info->threadIndexInGroup, Q_ );
-#else
-	instRatesOut()->send( e, info->container, Q_ );
-#endif
 }
 
 ////////////////////////////

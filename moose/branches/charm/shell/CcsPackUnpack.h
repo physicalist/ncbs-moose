@@ -1,6 +1,10 @@
 #ifndef MOOSE_CCS_PACK_UNPACK_H
 #define MOOSE_CCS_PACK_UNPACK_H
 
+#include "charm++.h"
+#include "converse.h"
+#include "conv-ccs.h"
+
 template<typename T>
 class CcsPackUnpack {
   public:

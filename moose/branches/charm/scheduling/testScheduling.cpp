@@ -317,13 +317,8 @@ void setupTicks()
 
 	assert( doubleEq( cdata->getCurrentTime(), runtime ) );
 	// Get rid of pending events in the queues.
-#ifndef USE_CHARMPP
 	Qinfo::clearQ( p.threadIndexInGroup );
 	Qinfo::clearQ( p.threadIndexInGroup );
-#else
-        p.container->hackClearQ();
-        p.container->hackClearQ();
-#endif
 
 	tickId.destroy();
 	clock.destroy();

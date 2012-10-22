@@ -206,35 +206,20 @@ void ChanBase::handleVm( double Vm )
 
 void ChanBase::process(  const Eref& e, const ProcPtr info )
 {
-#ifndef USE_CHARMPP
 	channelOut()->send( e, info->threadIndexInGroup, Gk_, Ek_ );
 	// This is used if the channel connects up to a conc pool and
 	// handles influx of ions giving rise to a concentration change.
 	IkOut()->send( e, info->threadIndexInGroup, Ik_ );
 	// Needed by GHK-type objects
 	permeability()->send( e, info->threadIndexInGroup, Gk_ );
-#else
-	channelOut()->send( e, info->container, Gk_, Ek_ );
-	// This is used if the channel connects up to a conc pool and
-	// handles influx of ions giving rise to a concentration change.
-	IkOut()->send( e, info->container, Ik_ );
-	// Needed by GHK-type objects
-	permeability()->send( e, info->container, Gk_ );
-#endif
 }
 
 
 void ChanBase::reinit(  const Eref& e, const ProcPtr info )
 {
-#ifndef USE_CHARMPP
 	channelOut()->send( e, info->threadIndexInGroup, Gk_, Ek_ );
 	// Needed by GHK-type objects
 	permeability()->send( e, info->threadIndexInGroup, Gk_ );
-#else
-	channelOut()->send( e, info->container, Gk_, Ek_ );
-	// Needed by GHK-type objects
-	permeability()->send( e, info->container, Gk_ );
-#endif
 }
 
 void ChanBase::updateIk()

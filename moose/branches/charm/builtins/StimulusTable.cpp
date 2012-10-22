@@ -161,11 +161,7 @@ void StimulusTable::process( const Eref& e, ProcPtr p )
 	double y = interpolate( start_, stop_, lookupPosition );
 	setOutputValue( y );
 
-#ifndef USE_CHARMPP
 	output()->send( e, p->threadIndexInGroup, y );
-#else
-	output()->send( e, p->container, y );
-#endif
 }
 
 void StimulusTable::reinit( const Eref& e, ProcPtr p )
@@ -173,11 +169,7 @@ void StimulusTable::reinit( const Eref& e, ProcPtr p )
 	stepPosition_ = 0.0;
 	double y = interpolate( start_, stop_, stepPosition_ );
 	setOutputValue( y );
-#ifndef USE_CHARMPP
 	output()->send( e, p->threadIndexInGroup, y );
-#else
-	output()->send( e, p->container, y );
-#endif
 }
 
 //////////////////////////////////////////////////////////////

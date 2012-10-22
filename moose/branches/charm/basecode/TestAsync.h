@@ -84,23 +84,15 @@ class Test
 
     void handleS1( const Eref& e, const Qinfo* q, string s ) {
       s_ = s + s_;
-#ifndef USE_CHARMPP
       ThreadId threadNum = 0;
       s0.send( e, threadNum );
-#else
-      s0.send( e, q->container() );
-#endif
     }
 
     void handleS2( const Eref& e, const Qinfo* q, int i1, int i2 ) {
       i1_ += 10 * i1;
       i2_ += 10 * i2;
-#ifndef USE_CHARMPP
       ThreadId threadNum = 0;
       s0.send( e, threadNum );
-#else
-      s0.send( e, q->container() );
-#endif
     }
 
     static Finfo* sharedVec[ 6 ];
@@ -131,19 +123,7 @@ class Test
 };
 
 
-class TestAsync {
-  ElementContainer *container_;
-
-  public:
-
-  TestAsync(ElementContainer *container) : 
-    container_(container)
-  {}
-
   void testAsync( );
-
-  private:
-
   void showFields();
   void testPrepackedBuffer();
   /**
@@ -251,7 +231,6 @@ class TestAsync {
   void testCinfoFields();
   void testCinfoElements();
   void testMsgSrcDestFields();
-};
 
 
 #endif // MOOSE_TEST_ASYNC_H

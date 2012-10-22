@@ -20,6 +20,9 @@
  */
 class BlockHandler: public DataHandler
 {
+  friend void testOneDimHandler();
+  friend void testFieldDataHandler();
+
 	public:
 
 		BlockHandler( const DinfoBase* dinfo,

@@ -10,10 +10,6 @@
 #ifndef _STOICH_H
 #define _STOICH_H
 
-#ifdef USE_CHARMPP
-class ElementContainer;
-#endif
-
 class Stoich
 {
 	public: 
@@ -307,13 +303,8 @@ class Stoich
 		 * numerical integration but before any of the flux updates
 		 * (such as updateDiffusion).
 		 */
-#ifndef USE_CHARMPP
 		void clearFlux();
 		void clearFlux( unsigned int meshIndex, unsigned int threadNum );
-#else
-		void clearFlux(ElementContainer *container);
-		void clearFlux( unsigned int meshIndex, ElementContainer *container );
-#endif
 
 		/**
 		 * Utility func for debugging: Prints N_ matrix

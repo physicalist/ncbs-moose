@@ -23,7 +23,10 @@
 #include "svn_revision.h"
 
 #ifdef USE_CHARMPP
+#include <string>
 #include "ShellCcsInterface.h"
+#include "../charm/moose.decl.h"
+#include "../charm/ElementContainer.h"
 #endif
 
 // Want to separate out this search path into the Makefile options
@@ -1665,10 +1668,6 @@ void Shell::cleanSimulation()
 }
 
 #ifdef USE_CHARMPP
-#include <string>
-
-#include "../charm/moose.decl.h"
-
 /*
 void ShellHelper::destroyShell(const CkCallback &cb){
   Neutral* ns = reinterpret_cast< Neutral* >( shellId_()->dataHandler()->data( 0 ) );
@@ -1676,6 +1675,16 @@ void ShellHelper::destroyShell(const CkCallback &cb){
   contribute(cb);
 }
 */
+
+ThreadId Shell::registerContainer(ElementContainer *container){
+  ThreadId idx = myElementContainers_.size();
+  myElementContainers_.push_back(container);
+  return idx;
+}
+
+ElementContainer *Shell::getContainer(ThreadId id){
+  return myElementContainers_[id];
+}
 
 void Shell::setRunning(){
   isRunning_ = true;

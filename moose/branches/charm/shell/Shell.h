@@ -28,6 +28,9 @@ extern DestFinfo* receiveGet();
 extern ReduceFinfoBase* reduceArraySizeFinfo();
 //extern SrcFinfo2< unsigned int, unsigned int >* ack(); // Not currently used.
 
+class ReduceFieldDimension;
+class PrepackedBuffer;
+
 #ifdef USE_CHARMPP
 class ElementContainer;
 #endif
@@ -522,7 +525,8 @@ class Shell
 		void expectVector( bool flag );
 
 #ifdef USE_CHARMPP
-                void registerContainer(ElementContainer *container);
+                ThreadId registerContainer(ElementContainer *container);
+                ElementContainer *getContainer(ThreadId id);
                 void setStop(bool stop);
                 bool getStop() const;
 #endif

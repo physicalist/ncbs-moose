@@ -57,22 +57,14 @@ class Qinfo
                  // threads.
 		Qinfo( const ObjId& src, 
 			BindIndex bindIndex, 
-#ifndef USE_CHARMPP
                         ThreadId threadNum,
-#else
-                        ElementContainer *container,
-#endif
 			unsigned int dataIndex, unsigned int dataSize );
 
 		Qinfo();
 
 		/// Used in readBuf to create a copy of Qinfo with specified thread.
 		Qinfo( const Qinfo* other, 
-#ifndef USE_CHARMPP
                        ThreadId threadNum
-#else
-                       ElementContainer *container
-#endif
                        );
 
 		//////////////////////////////////////////////////////////////
@@ -105,20 +97,9 @@ class Qinfo
 		 * Assigns the thread index
 		 */
 		void setThreadNum( ThreadId threadNum ) {
-#ifndef USE_CHARMPP
 			threadNum_ = threadNum;
-#endif
 		}
 
-#ifdef USE_CHARMPP
-                ElementContainer *container() const {
-                  return container_;
-                }
-
-                void setContainer(ElementContainer *container){
-                  container_ = container;
-                }
-#endif
 
 		/**
 		 * Returns the src ObjId
@@ -169,6 +150,8 @@ class Qinfo
 		 * Add data to the queue. Fills up an entry in the qBuf as well
 		 * as putting the corresponding data.
 		 */
+#endif 
+
 		static void addToQ( const ObjId& oi, 
 			BindIndex bindIndex, ThreadId threadNum,
 			const double* arg, unsigned int size );
@@ -215,6 +198,8 @@ class Qinfo
 		 * Returns false if it was in the Qinfo::clearStructuralQ function
 		 * and wants the calling function to actually operate on the queue.
 		 */
+
+#ifndef USE_CHARMPP
 		bool addToStructuralQ() const;
 
 		/// Locks the ParserThread. Called when starting ProcessLoop.
@@ -274,6 +259,7 @@ class Qinfo
 		 * Reporting function to tell us about queue status.
 		 */
 		static void reportQ();
+#endif
 
 
 		/**
@@ -282,6 +268,7 @@ class Qinfo
 		 */
 		static void clearQ( ThreadId threadNum );
 
+#ifndef USE_CHARMPP
 		/**
 		 * Returns a pointer to the data buffer in the specified inQ.
 		 * Used for taking queue info to process.
@@ -357,6 +344,8 @@ class Qinfo
 		 */
 		static unsigned int blockSize( unsigned int node );
 
+#endif
+
 		///////////////////////////////////////////////////////////////////
 		// ReduceQ stuff.
 		///////////////////////////////////////////////////////////////////
@@ -374,6 +363,7 @@ class Qinfo
 		 */
 		static void clearReduceQ( unsigned int numThreads );
 
+#ifndef USE_CHARMPP
 		///////////////////////////////////////////////////////////////////
 		/**
 		 * Zeroes the isSafeForStructuralOps_ flag.
@@ -391,9 +381,9 @@ class Qinfo
 		 * Otherwise goes through the specified number of ClearQs.
 		 */
 		static void waitProcCycles( unsigned int numCyclesToWait );
+#endif
 	 
 
-#endif
 // these are needed by PyMoose, so enabling them for 
 // the charm++ version as well.
 		/**
@@ -406,6 +396,10 @@ class Qinfo
 		 */
 		static void freeMutex();
 
+#ifdef USE_CHARMPP
+                static unsigned int qSize(ThreadId tid);
+                static unsigned int dSize(ThreadId tid);
+#endif
 		// bool execThread( Id id, unsigned int dataIndex ) const;
 
 	private:
@@ -416,10 +410,6 @@ class Qinfo
 
 		// ProcId proc_; /// Identifier for Process handled in Q.
 		ThreadId threadNum_; /// Which thread am I on?
-
-#ifdef USE_CHARMPP
-                ElementContainer *container_;
-#endif
 
 		/**
 		 * Index to look up data, counting from start of array of 
@@ -565,10 +555,6 @@ class Qinfo
 #endif
 		/// Flag setting
 		static const BindIndex DirectAdd;
-
-#ifdef USE_CHARMPP
-                private:
-#endif
 
 #ifndef USE_CHARMPP
 		/// Extra Margin (fraction) to leave for blocksize
