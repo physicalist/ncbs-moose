@@ -35,6 +35,7 @@ class DestFinfo;
 class Eref;
 #include "../basecode/Id.h"
 #include "../basecode/DataHandler.h"
+#include "../shell/Shell.h"
 
 extern Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests );
 
@@ -81,7 +82,9 @@ vector< Element * > &LookupHelper::elements(){
 }
 
 ThreadId LookupHelper::registerContainer(ElementContainer *container){
-  ThreadId index = containers_.size();
-  containers_.push_back(container);
-  return index;
+  return shell_->registerContainer(container);
+}
+
+ElementContainer *LookupHelper::getContainer(ThreadId id){
+  return shell_->getContainer(id);
 }

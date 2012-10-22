@@ -539,11 +539,7 @@ void CubeMesh::innerHandleRequestMeshStats( const Eref& e, const Qinfo* q,
 		const SrcFinfo2< unsigned int, vector< double > >* meshStatsFinfo )
 {
 	vector< double > meshSizes( 1, dx_ * dy_ * dz_ );
-#ifndef USE_CHARMPP
 	meshStatsFinfo->send( e, q->threadNum(), nx_ * ny_ * nz_, meshSizes );
-#else
-	meshStatsFinfo->send( e, q->container(), nx_ * ny_ * nz_, meshSizes );
-#endif
 }
 
 /// Generate node decomposition of mesh, send it out along 
@@ -557,15 +553,9 @@ void CubeMesh::innerHandleNodeInfo(
 	vector< unsigned int > localEntries( numEntries );
 	vector< vector< unsigned int > > outgoingEntries;
 	vector< vector< unsigned int > > incomingEntries;
-#ifndef USE_CHARMPP
 	meshSplit()->send( e, q->threadNum(), 
 		vols, localEntries,
 		outgoingEntries, incomingEntries );
-#else
-	meshSplit()->send( e, q->container(), 
-		vols, localEntries,
-		outgoingEntries, incomingEntries );
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -598,23 +588,13 @@ void CubeMesh::transmitChange( const Eref& e, const Qinfo* q )
 
 	// This message tells the Stoich about the new mesh, and also about
 	// how it communicates with other nodes.
-#ifndef USE_CHARMPP
 	meshSplit()->fastSend( e, q->threadNum(), 
 		vols, localIndices, outgoingEntries, incomingEntries );
-#else
-	meshSplit()->fastSend( e, q->container(),  
-		vols, localIndices, outgoingEntries, incomingEntries );
-#endif
 
 	// This func goes down to the MeshEntry to tell all the pools and
 	// Reacs to deal with the new mesh. They then update the stoich.
-#ifndef USE_CHARMPP
 	lookupEntry( 0 )->triggerRemesh( meshEntry.eref(), q->threadNum(), 
 		startEntry, localIndices, vols );
-#else
-	lookupEntry( 0 )->triggerRemesh( meshEntry.eref(), q->container(),  
-		startEntry, localIndices, vols );
-#endif
 }
 
 //////////////////////////////////////////////////////////////////

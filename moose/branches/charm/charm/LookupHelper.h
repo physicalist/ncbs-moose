@@ -33,6 +33,7 @@ class LookupHelper : public CBase_LookupHelper {
 
   vector< Element * > &elements();
   ThreadId registerContainer(ElementContainer *container);
+  ElementContainer *getContainer(ThreadId id);
 };
 
 #endif // MOOSE_LOOKUP_HELPER_H

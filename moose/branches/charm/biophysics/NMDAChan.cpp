@@ -323,11 +323,7 @@ void NMDAChan::process( const Eref& e, ProcPtr info )
     // Usually needed by GHK-type objects
     send1< double >( e, gkSlot, Gk_ );
 	*/
-#ifndef USE_CHARMPP
 	unblocked()->send( e, info->threadIndexInGroup, unblocked_ );
-#else
-	unblocked()->send( e, info->container, unblocked_ );
-#endif
     // send1< double >( e, unblockedSlot, unblocked_);
 }
 

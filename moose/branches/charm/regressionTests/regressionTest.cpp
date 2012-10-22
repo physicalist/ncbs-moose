@@ -11,22 +11,23 @@
 #include <unistd.h> // need Windows-specific stuff too.
 
 void rtTestChem();
-
 void rtTable();
 //void rtReacDiff();
 void rtHHnetwork( unsigned int numCopies );
+void rtReplicateModels();
+double checkDiff( const vector< double >& conc, double D, double t, double dx);
+void testDiff1D();
+double checkNdimDiff( const vector< double >& conc, double D, double t, 
+    double dx, double n, unsigned int cubeSide );
+void testDiffNd( unsigned int n );
+void testReacDiffNd( unsigned int n );
+void rtReacDiff();
+
 
 extern void testGsolver( string modelName, string plotName,
 	double plotDt, double simtime, double volume );
 
-#include "rtReacDiff.h"
-
-#ifndef USE_CHARMPP
 void regressionTests()
-#else
-class ElementContainer *container;
-void regressionTests(ElementContainer *container)
-#endif
 {
 	//char* cwd = get_current_dir_name();
 	// get_current_dir_name is not available on all platforms
@@ -42,12 +43,7 @@ void regressionTests(ElementContainer *container)
 	rtTable();
 	rtTestChem();
 
-#ifndef USE_CHARMPP
-        TestReacDiff trd; 
-#else
-        TestReacDiff trd(container); 
-#endif
-	trd.rtReacDiff();
+	rtReacDiff();
 	rtHHnetwork( 10 );
 	cout << endl;
 }

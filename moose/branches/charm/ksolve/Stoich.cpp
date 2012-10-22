@@ -998,11 +998,7 @@ void Stoich::updateDiffusion(
 // Or pick the meshIndex == 0 and on that thread alone send out all the
 // stuff. At this phase it should be safe as all the calculations are done,
 // so none of the S_ vectors is changing.
-#ifndef USE_CHARMPP
 void Stoich::clearFlux( unsigned int meshIndex, unsigned int threadNum )
-#else
-void Stoich::clearFlux( unsigned int meshIndex, ElementContainer *container)
-#endif
 {
 	if ( meshIndex == 0 ) {
 		for( vector< unsigned int >::iterator i = diffNodes_.begin(); 
@@ -1013,13 +1009,8 @@ void Stoich::clearFlux( unsigned int meshIndex, ElementContainer *container)
 				buf.insert( buf.end(), S_[ outgoing_[*i][j] ].begin(),
 					S_[ outgoing_[*i][j] ].end() );
 			}
-#ifndef USE_CHARMPP
 			nodeDiffBoundary()->send( stoichId_.eref(), threadNum, 
 				*i, outgoing_[*i], buf );
-#else
-			nodeDiffBoundary()->send( stoichId_.eref(), container,  
-				*i, outgoing_[*i], buf );
-#endif
 		}
 	}
 
@@ -1046,18 +1037,10 @@ void Stoich::handleNodeDiffBoundary( unsigned int nodeNum,
 	}
 }
 
-#ifndef USE_CHARMPP
 void Stoich::clearFlux()
-#else
-void Stoich::clearFlux(ElementContainer *container)
-#endif
 {
 	for ( unsigned int i = 0; i < flux_.size(); ++i ){
-#ifndef USE_CHARMPP
 		clearFlux( i, ScriptThreadNum );
-#else
-		clearFlux( i, container);
-#endif
         }
 }
 

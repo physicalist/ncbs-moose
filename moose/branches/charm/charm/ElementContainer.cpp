@@ -34,6 +34,9 @@ class ReduceFieldDimension;
 extern SimulationParameters readonlySimulationParameters; 
 extern CProxy_LookupHelper readonlyLookupHelperProxy;
 
+// test function; defined in testAsync.cpp
+extern void testAsync();
+
 ElementContainer::ElementContainer(const CkCallback &cb) : 
   shell_(NULL),
   clock_(NULL),
@@ -43,11 +46,11 @@ ElementContainer::ElementContainer(const CkCallback &cb) :
 {
   procInfo_.numThreadsInGroup = 1;
   procInfo_.groupId = 1;
-  procInfo_.threadIndexInGroup = 1;
+  procInfo_.threadIndexInGroup = thisIndex;
   procInfo_.nodeIndexInGroup = CkMyPe();
   procInfo_.numNodesInGroup = CkNumPes();
   procInfo_.procIndex = 0;
-  procInfo_.container = this;
+  procInfo_.nElementContainers = CkNumPes();
 
   contribute(cb);
 }
@@ -69,7 +72,7 @@ void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, const double
   // we are passing threadId = 0, to the Qinfo ctor
   // since data in an ElementContainer is not accessible
   // to any other ElementContainers on the same PE/SMP node
-  qBuf_.push_back(Qinfo(oi, bindIndex, this, dBuf_.size(), size));
+  qBuf_.push_back(Qinfo(oi, bindIndex, lookupRegistrationIdx_, dBuf_.size(), size));
   //if(size > 0){
     //dBuf_.insert(dBuf_.end(), arg, arg + size);
   //}
@@ -78,7 +81,7 @@ void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, const double
 
 
 void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, const double *arg1, int size1, const double *arg2, int size2){
-  qBuf_.push_back(Qinfo(oi, bindIndex, this, dBuf_.size(), size1 + size2));
+  qBuf_.push_back(Qinfo(oi, bindIndex, lookupRegistrationIdx_, dBuf_.size(), size1 + size2));
   //if(size1 > 0) dBuf_.insert(dBuf_.end(), arg1, arg1 + size1);
   for(int i = 0; i < size1; i++) dBuf_.push_back(arg1[i]);
   //if(size2 > 0) dBuf_.insert(dBuf_.end(), arg2, arg2 + size2);
@@ -90,7 +93,7 @@ void ElementContainer::addDirectToQ(const ObjId& src, const ObjId& dest, FuncId 
   CkVec< double >& vec = dBufDirect_;
 
   qBufDirect_.push_back(DirectQbufEntry(
-                          Qinfo(src, Qinfo::DirectAdd, this, vec.size(), size), 
+                          Qinfo(src, Qinfo::DirectAdd, lookupRegistrationIdx_, vec.size(), size), 
                           ObjFid(dest, fid, size, 1)));
   //if ( size > 0 ) {
     //vec.insert( vec.end(), arg, arg + size );
@@ -105,7 +108,7 @@ void ElementContainer::addDirectToQ( const ObjId& src, const ObjId& dest,
 
   CkVec< double >& vec = dBufDirect_;
   qBufDirect_.push_back(DirectQbufEntry(
-                          Qinfo( src, Qinfo::DirectAdd, this, vec.size(), size1 + size2 ),
+                          Qinfo( src, Qinfo::DirectAdd, lookupRegistrationIdx_, vec.size(), size1 + size2 ),
                           ObjFid(dest, fid, size1 + size2, 1)));
 
   //if ( size1 > 0 ) vec.insert( vec.end(), arg1, arg1 + size1 );
@@ -124,7 +127,7 @@ void ElementContainer::addVecDirectToQ( const ObjId& src, const ObjId& dest,
   CkVec< double >& vec = dBufDirect_;
 
   qBufDirect_.push_back(DirectQbufEntry(
-                          Qinfo(src, Qinfo::DirectAdd, this, vec.size(), entrySize * numEntries),
+                          Qinfo(src, Qinfo::DirectAdd, lookupRegistrationIdx_, vec.size(), entrySize * numEntries),
                           ObjFid(dest, fid, entrySize, numEntries)
                           ));
 
@@ -181,7 +184,7 @@ void ElementContainer::readBuf(Qinfo *qinfo, unsigned int nQinfo,
   // first look at all indirect qinfo entries
   for (unsigned int i = 0; i < nQinfo; ++i) {
     Qinfo &qi = qinfo[i];
-    qi.setContainer(this); 
+    qi.setThreadNum(lookupRegistrationIdx_); 
     const Element* e = qi.src().element();
     if (e) e->exec(&qi, data + qi.dataIndex());
   }
@@ -189,7 +192,7 @@ void ElementContainer::readBuf(Qinfo *qinfo, unsigned int nQinfo,
   // then examine the direct qinfo entries, of type DirectQbufEntry
   for(unsigned int i = 0; i < nQinfoDirect; i++){
     DirectQbufEntry &qi = qinfoDirect[i];
-    qi.qinfo_.setContainer(this); 
+    qi.qinfo_.setThreadNum(lookupRegistrationIdx_); 
     const Element *e = qi.qinfo_.src().element();
     if(e) e->exec(&qi.qinfo_, &qi.ofid_, dataDirect + qi.qinfo_.dataIndex());
   }
@@ -263,4 +266,9 @@ void ElementContainer::iterationDone(){
 
 ThreadId ElementContainer::getRegistrationIndex(){
   return lookupRegistrationIdx_;
+}
+
+void ElementContainer::doSerialUnitTests(const CkCallback &cb){
+  testAsync();
+  contribute(cb);
 }

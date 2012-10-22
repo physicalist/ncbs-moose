@@ -476,11 +476,7 @@ void Interpol2D::lookupReturn( const Eref& e, const Qinfo*q,
 	double v1, double v2 )
 {
 	double ret = innerLookup( v1, v2 );
-#ifndef USE_CHARMPP
 	trig()->send( e, q->threadNum(), ret );
-#else
-	trig()->send( e, q->container(), ret );
-#endif
 }
 
 ////////////////////////////////////////////////////////////////////

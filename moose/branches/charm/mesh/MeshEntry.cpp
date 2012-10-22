@@ -259,25 +259,13 @@ vector< double >MeshEntry::getDiffusionScaling( const Eref& e, const Qinfo* q ) 
 //////////////////////////////////////////////////////////////
 // Utility function to pass on mesh changes
 //////////////////////////////////////////////////////////////
-#ifndef USE_CHARMPP
 void MeshEntry::triggerRemesh( const Eref& e, unsigned int threadNum,
 	unsigned int startEntry, const vector< unsigned int >& localIndices,
 	const vector< double >& vols )
-#else
-void MeshEntry::triggerRemesh( const Eref& e, ElementContainer *container, 
-	unsigned int startEntry, const vector< unsigned int >& localIndices,
-	const vector< double >& vols )
-#endif
 {
 	// cout << "MeshEntry::triggerRemesh on " << e.element()->getName() << endl;
-#ifndef USE_CHARMPP
 	remesh()->fastSend( e, threadNum, parent_->getNumEntries(), 
 		startEntry, localIndices, vols );
 	remeshReacs()->fastSend( e, threadNum );
-#else
-	remesh()->fastSend( e, container, parent_->getNumEntries(),
-		startEntry, localIndices, vols );
-	remeshReacs()->fastSend( e, container );
-#endif
 }
 

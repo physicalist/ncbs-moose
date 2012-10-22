@@ -453,15 +453,10 @@ void SimManager::buildGssa( const Eref& e, const Qinfo* q, Shell* shell )
 
 	numChemNodes_ = Shell::numNodes() * chemLoad / ( chemLoad + hsolveLoad);
 	
-#ifndef USE_CHARMPP
 	nodeInfo()->send( e, q->threadNum(), numChemNodes_,
 		Shell::numProcessThreads() ); 
-	Qinfo::waitProcCycles( 2 );
-#else
-	nodeInfo()->send( e, q->container(), numChemNodes_,
-		Shell::numProcessThreads() ); 
-        q->container()->hackClearQ(2);
-#endif
+	Qinfo::clearQ(ScriptThreadNum);
+	Qinfo::clearQ(ScriptThreadNum);
 
 	string path0 = basePath + "/kinetics/mesh," + 
 		basePath + "/kinetics/##[ISA=StimulusTable]";
@@ -501,15 +496,10 @@ void SimManager::buildGsl( const Eref& e, const Qinfo* q,
 
 	numChemNodes_ = Shell::numNodes() * chemLoad / ( chemLoad + hsolveLoad);
 	
-#ifndef USE_CHARMPP
 	nodeInfo()->send( e, q->threadNum(), numChemNodes_,
 		Shell::numProcessThreads() ); 
-	Qinfo::waitProcCycles( 2 );
-#else
-	nodeInfo()->send( e, q->container(), numChemNodes_,
-		Shell::numProcessThreads() ); 
-        q->container()->hackClearQ(2);
-#endif
+	Qinfo::clearQ(ScriptThreadNum);
+	Qinfo::clearQ(ScriptThreadNum);
 
 	Id gsl = shell->doCreate( "GslIntegrator", stoich_, "gsl", dims );
 	assert( gsl != Id() );

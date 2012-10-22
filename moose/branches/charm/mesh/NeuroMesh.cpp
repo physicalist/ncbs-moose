@@ -402,11 +402,7 @@ void NeuroMesh::innerHandleRequestMeshStats( const Eref& e, const Qinfo* q,
 	)
 {
 	vector< double > ret( size_ / nodeIndex_.size() ,1 );
-#ifndef USE_CHARMPP
 	meshStatsFinfo->send( e, q->threadNum(), 1, ret );
-#else
-	meshStatsFinfo->send( e, q->container(), 1, ret );
-#endif
 }
 
 void NeuroMesh::innerHandleNodeInfo(
@@ -425,15 +421,9 @@ void NeuroMesh::innerHandleNodeInfo(
 	vector< unsigned int > localEntries( numEntries );
 	vector< vector< unsigned int > > outgoingEntries;
 	vector< vector< unsigned int > > incomingEntries;
-#ifndef USE_CHARMPP
 	meshSplit()->send( e, q->threadNum(), 
 		vols, localEntries,
 		outgoingEntries, incomingEntries );
-#else
-	meshSplit()->send( e, q->container(),  
-		vols, localEntries,
-		outgoingEntries, incomingEntries );
-#endif
 }
 //////////////////////////////////////////////////////////////////
 
@@ -557,25 +547,14 @@ void NeuroMesh::transmitChange( const Eref& e, const Qinfo* q )
 
 	// This message tells the Stoich about the new mesh, and also about
 	// how it communicates with other nodes.
-#ifndef USE_CHARMPP
 	meshSplit()->fastSend( e, q->threadNum(), 
 		vols, localIndices, 
 		outgoingEntries, incomingEntries );
-#else
-	meshSplit()->fastSend( e, q->container(), 
-		vols, localIndices, 
-		outgoingEntries, incomingEntries );
-#endif
 
 	// This func goes down to the MeshEntry to tell all the pools and
 	// Reacs to deal with the new mesh. They then update the stoich.
-#ifndef USE_CHARMPP
 	lookupEntry( 0 )->triggerRemesh( meshEntry.eref(), q->threadNum(), 
 		startEntry, localIndices, vols );
-#else
-	lookupEntry( 0 )->triggerRemesh( meshEntry.eref(), q->container(),  
-		startEntry, localIndices, vols );
-#endif
 }
 
 //////////////////////////////////////////////////////////////////

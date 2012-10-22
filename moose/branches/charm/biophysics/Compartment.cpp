@@ -568,11 +568,7 @@ void Compartment::process( const Eref& e, ProcPtr p )
 	Im_ = 0.0;
 	sumInject_ = 0.0;
 	// Send out Vm to channels, SpikeGens, etc.
-#ifndef USE_CHARMPP
 	VmOut()->send( e, p->threadIndexInGroup, Vm_ );
-#else
-	VmOut()->send( e, p->container, Vm_ );
-#endif
 
 	// The axial/raxial messages go out in the 'init' phase.
 }
@@ -593,11 +589,7 @@ void Compartment::innerReinit(  const Eref& e, ProcPtr p )
 	dt_ = p->dt;
 	
 	// Send out the resting Vm to channels, SpikeGens, etc.
-#ifndef USE_CHARMPP
 	VmOut()->send( e, p->threadIndexInGroup, Vm_ );
-#else
-	VmOut()->send( e, p->container, Vm_ );
-#endif
 }
 
 void Compartment::initProc( const Eref& e, ProcPtr p )
@@ -608,19 +600,11 @@ void Compartment::initProc( const Eref& e, ProcPtr p )
 
 void Compartment::innerInitProc( const Eref& e, ProcPtr p )
 {
-#ifndef USE_CHARMPP
 	// Send out the axial messages
 	axialOut()->send( e, p->threadIndexInGroup, Vm_ );
 
 	// Send out the raxial messages
 	raxialOut()->send( e, p->threadIndexInGroup, Ra_, Vm_ );
-#else
-	// Send out the axial messages
-	axialOut()->send( e, p->container, Vm_ );
-
-	// Send out the raxial messages
-	raxialOut()->send( e, p->container, Ra_, Vm_ );
-#endif
 }
 
 void Compartment::initReinit( const Eref& e, ProcPtr p )

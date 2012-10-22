@@ -298,11 +298,7 @@ double GHK::getValency() const
 void GHK::handleVm( const Eref& e, const Qinfo* q, double Vm )
 {
         Vm_ = Vm;
-#ifndef USE_CHARMPP
 		VmOut()->send( e, q->threadNum(), Vm );
-#else
-		VmOut()->send( e, q->container(), Vm );
-#endif
 }
 
 void GHK::process( const Eref& e, ProcPtr info )
@@ -339,13 +335,8 @@ void GHK::process( const Eref& e, ProcPtr info )
 	} else { /* calculate in normal way */
 		Gk_ = Ik_ / exponent;
 	}
-#ifndef USE_CHARMPP
 	channelOut()->send( e, info->threadIndexInGroup, Gk_, Ek_ );
 	IkOut()->send( e, info->threadIndexInGroup, Ik_ );
-#else
-	channelOut()->send( e, info->container, Gk_, Ek_ );
-	IkOut()->send( e, info->container, Ik_ );
-#endif
 
 	// Set permeability to 0 at each timestep
 	p_ = 0;
@@ -375,13 +366,8 @@ void GHK::reinit( const Eref& e, ProcPtr info )
 		std::cerr << "GHK error, invalid permeability" << std::endl;
 	}
 
-#ifndef USE_CHARMPP
 	channelOut()->send( e, info->threadIndexInGroup, Gk_, Ek_ );
 	IkOut()->send( e, info->threadIndexInGroup, Ik_ );
-#else
-	channelOut()->send( e, info->container, Gk_, Ek_ );
-	IkOut()->send( e, info->container, Ik_ );
-#endif
 }
 
 

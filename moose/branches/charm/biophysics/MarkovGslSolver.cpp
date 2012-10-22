@@ -318,11 +318,7 @@ void MarkovGslSolver::process( const Eref& e, ProcPtr info )
 	for ( unsigned int i = 0; i < nVars_; ++i )
 		state_[i] = stateGsl_[i];
 
-#ifndef USE_CHARMPP
 	stateOut()->send( e, info->threadIndexInGroup, state_ );
-#else
-	stateOut()->send( e, info->container, state_ );
-#endif
 }
 
 void MarkovGslSolver::reinit( const Eref& e, ProcPtr info )
@@ -335,11 +331,7 @@ void MarkovGslSolver::reinit( const Eref& e, ProcPtr info )
 				 "Call init() before running.\n";
 	}
 				
-#ifndef USE_CHARMPP
 	stateOut()->send( e, info->threadIndexInGroup, state_ );
-#else
-	stateOut()->send( e, info->container, state_ );
-#endif
 }
 
 void MarkovGslSolver::handleQ( vector< vector< double > > Q )

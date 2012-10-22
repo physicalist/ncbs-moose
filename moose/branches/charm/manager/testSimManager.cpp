@@ -12,18 +12,6 @@
 #include "SimManager.h"
 #include "../kinetics/ReadCspace.h"
 
-#ifdef USE_CHARMPP
-#include "../charm/ElementContainer.h"
-#endif
-
-class TestSimManager {
-
-  private:
-
-#ifdef USE_CHARMPP
-    ElementContainer *container_;
-#endif
-
     void testBuildFromBareKineticTree()
     {
     }
@@ -119,11 +107,8 @@ class TestSimManager {
       coords[6] = 5.000000001e-7;
       numVox = coords[3] / coords[6];
       Field< vector< double > >::set( kinetics, "coords", coords );
-#ifndef USE_CHARMPP
-      Qinfo::waitProcCycles( 2 );
-#else
-      container_->hackClearQ(2);
-#endif
+      Qinfo::clearQ( ScriptThreadNum );
+
       n = Field< unsigned int >::get( kinetics, "nx" );
       assert( n == numVox );
       n = pool()->dataHandler()->localEntries();
@@ -224,12 +209,3 @@ class TestSimManager {
       testZombieTurnover(); 
     }
 
-#ifndef USE_CHARMPP
-    TestSimManager()
-    {}
-#else
-    TestSimManager(ElementContainer *container) : 
-      container_(container)
-    {}
-#endif
-};

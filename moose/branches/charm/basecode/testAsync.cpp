@@ -8,19 +8,16 @@
 **********************************************************************/
 
 #include "TestAsync.h"
+#ifdef USE_CHARMPP
 #include "../charm/ElementContainer.h"
+#endif
 
 SrcFinfo0 Test::s0( "s0", "");
 Finfo* Test::sharedVec[6];
 
-void ElementContainer::doSerialUnitTests(const CkCallback &cb){
-  TestAsync basecode(this);
-  basecode.testAsync();
 
-  contribute(cb);
-}
 
-  void TestAsync::testAsync( )
+  void testAsync( )
   {
     showFields();
     testPrepackedBuffer();
@@ -64,7 +61,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     testMsgSrcDestFields();
   }
 
-  void TestAsync::showFields()
+  void showFields()
   {
     const Cinfo* nc = Neutral::initCinfo();
     Id i1 = Id::nextId();
@@ -79,7 +76,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i1();
   }
 
-  void TestAsync::testPrepackedBuffer()
+  void testPrepackedBuffer()
   {
     string arg1 = "This is arg1";
     double arg2 = 123.4;
@@ -135,7 +132,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     cout << "." << flush;
   }
 
-  void TestAsync::insertIntoQ( )
+  void insertIntoQ( )
   {
     const Cinfo* ac = Arith::initCinfo();
     unsigned int size = 100;
@@ -163,12 +160,8 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     for ( unsigned int i = 0; i < size; ++i ) {
       double x = i * i;
       // This simulates a sendTo
-#ifndef USE_CHARMPP
       Qinfo::addDirectToQ( i1, ObjId( i2, i ), 
           ScriptThreadNum, fid, &x, 1 );
-#else
-      container_->addDirectToQ( i1, ObjId( i2, i ), fid, &x, 1 );
-#endif
 
       /*
          double buf[200];
@@ -186,11 +179,8 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
       qi.addToQforward( &p, b, buf );
        */
     }
-#ifndef USE_CHARMPP
+
     Qinfo::clearQ( 0 );
-#else
-    container_->hackClearQ();
-#endif
 
     for ( unsigned int i = 0; i < size; ++i ) {
       double val = ( reinterpret_cast< Arith* >(e2.element()->dataHandler()->data( i )) )->getOutput();
@@ -203,7 +193,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testSendMsg()
+  void testSendMsg()
   {
     const Cinfo* ac = Arith::initCinfo();
     unsigned int size = 100;
@@ -237,18 +227,10 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
 
     for ( unsigned int i = 0; i < size; ++i ) {
       double x = i + i * i;
-#ifndef USE_CHARMPP
       ThreadId threadNum = 0;
       s.send( Eref( e1.element(), i ), threadNum, x );
-#else
-      s.send( Eref( e1.element(), i ), container_, x );
-#endif
     }
-#ifndef USE_CHARMPP
     Qinfo::clearQ( 0 );
-#else
-    container_->hackClearQ();
-#endif
 
     for ( unsigned int i = 0; i < size; ++i ) {
       double temp = i + i * i;
@@ -261,7 +243,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testCreateMsg()
+  void testCreateMsg()
   {
     const Cinfo* ac = Arith::initCinfo();
     unsigned int size = 100;
@@ -293,18 +275,10 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     for ( unsigned int i = 0; i < size; ++i ) {
       const SrcFinfo1< double >* sf = dynamic_cast< const SrcFinfo1< double >* >( f1 );
       assert( sf != 0 );
-#ifndef USE_CHARMPP
       ThreadId threadNum = 0;
       sf->send( Eref( e1.element(), i ), threadNum, double( i ) );
-#else
-      sf->send( Eref( e1.element(), i ), container_, double( i ) );
-#endif
     }
-#ifndef USE_CHARMPP
     Qinfo::clearQ( 0 );
-#else
-    container_->hackClearQ();
-#endif
 
     /*
        for ( unsigned int i = 0; i < size; ++i )
@@ -316,7 +290,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testInnerSet()
+  void testInnerSet()
   {
     // Eref sheller = Id().eref();
     // Shell* shell = reinterpret_cast< Shell* >( sheller.data() );
@@ -340,13 +314,10 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     Conv< string > conv( "New Improved Test" );
 #ifndef USE_CHARMPP
     Qinfo::enableStructuralOps();
+#endif
     Qinfo::addDirectToQ( ObjId(), ret->id(), 0, f1,
         conv.ptr(), conv.size() );
     Qinfo::clearQ( 0  );
-#else
-    container_->addDirectToQ( ObjId(), ret->id(), f1, conv.ptr(), conv.size() );
-    container_->hackClearQ();
-#endif
     // Field< string >::set( e2, "name", "NewImprovedTest" );
     assert( ret->getName() == "New Improved Test" );
 
@@ -362,14 +333,11 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
       Eref dest( e2.element(), i );
 #ifndef USE_CHARMPP
       Qinfo::enableStructuralOps();
+#endif
       Qinfo::addDirectToQ( ObjId(), dest.objId(), 0, f2,
           conv.ptr(), conv.size() );
 
       Qinfo::clearQ( 0 );
-#else
-      container_->addDirectToQ( ObjId(), dest.objId(), f2, conv.ptr(), conv.size() );
-      container_->hackClearQ();
-#endif
     }
 
     for ( unsigned int i = 0; i < size; ++i ) {
@@ -383,7 +351,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testInnerGet() // Uses low-level ops to do a 'get'.
+  void testInnerGet() // Uses low-level ops to do a 'get'.
   {
     const Cinfo* ac = Arith::initCinfo();
     unsigned int size = 100;
@@ -408,15 +376,9 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     Qinfo::enableStructuralOps();
 #endif
     double temp = receiveGet()->getFid();
-#ifndef USE_CHARMPP
     Qinfo::addDirectToQ( ObjId(), i2, 0, f1, &temp, 1 );
     Qinfo::clearQ( 0 ); // The request goes to the target Element
     Qinfo::clearQ( 0 ); // The response comes back to the Shell
-#else
-    container_->addDirectToQ( ObjId(), i2, f1, &temp, 1 );
-    container_->hackClearQ(); // The request goes to the target Element
-    container_->hackClearQ(); // The response comes back to the Shell
-#endif
     Conv< string > conv( shell->getBuf()[0] );
     assert( *conv == "test2" );
     shell->clearGetBuf();
@@ -424,15 +386,11 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     ret->setName( "HupTwoThree" );
 #ifndef USE_CHARMPP
     Qinfo::enableStructuralOps();
+#endif
     Qinfo::addDirectToQ( ObjId(), i2, 0, f1, &temp, 1 );
 
     Qinfo::clearQ( 0 ); // The request goes to the target Element
     Qinfo::clearQ( 0 ); // The response comes back to the Shell
-#else
-    container_->addDirectToQ( ObjId(), i2, f1, &temp, 1 );
-    container_->hackClearQ(); // The request goes to the target Element
-    container_->hackClearQ(); // The response comes back to the Shell
-#endif
     Conv< string > conv2( shell->getBuf()[0] );
     assert( *conv2 == "HupTwoThree" );
     shell->clearGetBuf();
@@ -452,15 +410,9 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
       Qinfo::enableStructuralOps();
 #endif
       double temp = receiveGet()->getFid();
-#ifndef USE_CHARMPP
       Qinfo::addDirectToQ( ObjId(), ObjId( i2, i ), 0, f2, &temp, 1 );
       Qinfo::clearQ( 0 ); // The request goes to the target Element
       Qinfo::clearQ( 0 ); // The response comes back to the Shell
-#else
-      container_->addDirectToQ( ObjId(), ObjId( i2, i ), f2, &temp, 1 );
-      container_->hackClearQ(); // The request goes to the target Element
-      container_->hackClearQ(); // The response comes back to the Shell
-#endif
       Conv< double > conv3( shell->getBuf()[0] );
       temp = i * 3;
       assert( doubleEq( *conv3 , temp ) );
@@ -471,7 +423,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testSetGet()
+  void testSetGet()
   {
     const Cinfo* ac = Arith::initCinfo();
     unsigned int size = 100;
@@ -508,7 +460,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testStrSet()
+  void testStrSet()
   {
     const Cinfo* ac = Arith::initCinfo();
     unsigned int size = 100;
@@ -552,7 +504,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testGet()
+  void testGet()
   {
     const Cinfo* ac = Arith::initCinfo();
     unsigned int size = 100;
@@ -594,7 +546,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testStrGet()
+  void testStrGet()
   {
     const Cinfo* ac = Arith::initCinfo();
     unsigned int size = 100;
@@ -640,7 +592,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testSetGetDouble()
+  void testSetGetDouble()
   {
     const Cinfo* ic = IntFire::initCinfo();
     unsigned int size = 100;
@@ -679,7 +631,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i3();
   }
 
-  void TestAsync::testSetGetSynapse()
+  void testSetGetSynapse()
   {
     const Cinfo* ic = IntFire::initCinfo();
     // const Cinfo* sc = Synapse::initCinfo();
@@ -752,7 +704,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testSetGetVec()
+  void testSetGetVec()
   {
     const Cinfo* ic = IntFire::initCinfo();
     // const Cinfo* sc = Synapse::initCinfo();
@@ -849,7 +801,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::test2ArgSetVec()
+  void test2ArgSetVec()
   {
     const Cinfo* ac = Arith::initCinfo();
     unsigned int size = 100;
@@ -880,7 +832,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testFastGet()
+  void testFastGet()
   {
     const Cinfo* ic = IntFire::initCinfo();
     const Finfo* gf = ic->findFinfo("spike");
@@ -980,7 +932,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     cout << "." << flush;
   }
 
-  void TestAsync::testSetRepeat()
+  void testSetRepeat()
   {
     const Cinfo* ic = IntFire::initCinfo();
     // const Cinfo* sc = Synapse::initCinfo();
@@ -1046,7 +998,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::testSendSpike()
+  void testSendSpike()
   {
     static const double WEIGHT = -1.0;
     static const double TAU = 1.0;
@@ -1100,9 +1052,6 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     // ret = SetGet1< double >::set( e2, "Vm", 1.0 );
     ProcInfo p;
     p.dt = DT;
-#ifdef USE_CHARMPP
-    p.container = container_;
-#endif
     reinterpret_cast< IntFire* >(e2.data())->process( e2, &p );
     // At this stage we have sent the spike, so e2.data::Vm should be -1e-7.
     double Vm = reinterpret_cast< IntFire* >(e2.data())->getVm();
@@ -1118,14 +1067,14 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     assert( Qinfo::qBuf_[0].size() == 0 );
     assert( Qinfo::dBuf_[0].size() == 0 );
 #else
-    CkAssert(container_->qSize() > 0);
-    CkAssert(container_->dSize() > 0);
-    CkAssert(container_->qSize() == 1);
-    CkAssert(container_->dSize() == 1);
+    CkAssert(Qinfo::qSize(0) > 0);
+    CkAssert(Qinfo::dSize(0) > 0);
+    CkAssert(Qinfo::qSize(0) == 1);
+    CkAssert(Qinfo::dSize(0) == 1);
 
-    container_->hackClearQ();
-    CkAssert(container_->qSize() == 0);
-    CkAssert(container_->dSize() == 0);
+    Qinfo::clearQ(0);
+    CkAssert(Qinfo::qSize(0) == 0);
+    CkAssert(Qinfo::dSize(0) == 0);
 #endif
 
     /*
@@ -1147,7 +1096,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     delete i2();
   }
 
-  void TestAsync::printSparseMatrix( const SparseMatrix< unsigned int >& m)
+  void printSparseMatrix( const SparseMatrix< unsigned int >& m)
   {
     unsigned int nRows = m.nRows();
     unsigned int nCols = m.nColumns();
@@ -1177,7 +1126,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     cout << endl;
   }
 
-  void TestAsync::testSparseMatrix()
+  void testSparseMatrix()
   {
     static unsigned int preN[] = { 1, 2, 3, 4, 5, 6, 7 };
     static unsigned int postN[] = { 1, 3, 4, 5, 6, 2, 7 };
@@ -1227,7 +1176,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     cout << "." << flush;
   }
 
-  void TestAsync::testSparseMatrix2()
+  void testSparseMatrix2()
   {
     // Here zeroes mean no entry, not an entry of zero.
     // Rows 0 to 4 are totally empty
@@ -1276,7 +1225,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     cout << "." << flush;
   }
 
-  void TestAsync::testSparseMatrixBalance()
+  void testSparseMatrixBalance()
   {
     /*
        SparseMatrix< unsigned int > m( 3, 6 );
@@ -1307,7 +1256,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
      */
   }
 
-  void TestAsync::printGrid( Element* e, const string& field, double min, double max )
+  void printGrid( Element* e, const string& field, double min, double max )
   {
     static string icon = " .oO@";
     unsigned int yside = sqrt( double ( e->dataHandler()->totalEntries() ) );
@@ -1331,7 +1280,7 @@ void ElementContainer::doSerialUnitTests(const CkCallback &cb){
     cout << endl;
   }
 
-  void TestAsync::testSparseMsg()
+  void testSparseMsg()
   {
     static const unsigned int qSize[] =
     { 838, 10, 6, 18, 36, 84, 150, 196, 258, 302 };
@@ -1461,9 +1410,6 @@ assert( ret );
 
 ProcInfo p;
 p.dt = timestep;
-#ifdef USE_CHARMPP
-p.container = container_;
-#endif
 /*
    IntFire* ifire100 = reinterpret_cast< IntFire* >( e2.element()->data( 100 ) );
    IntFire* ifire900 = reinterpret_cast< IntFire* >( e2.element()->data( 900 ) );
@@ -1484,7 +1430,7 @@ for ( unsigned int i = 0; i < runsteps; ++i ) {
 #ifndef USE_CHARMPP
   totOutqEntries = Qinfo::qBuf_[ 0 ].size();
 #else
-  totOutqEntries = container_->qSize();
+  totOutqEntries = Qinfo::qSize(0);
 #endif
 
   // unsigned int totOutqEntries = ( *Qinfo::outQ_ )[ 0 ].totalNumEntries();
@@ -1492,11 +1438,7 @@ for ( unsigned int i = 0; i < runsteps; ++i ) {
   // cout << i << ": " << totOutqEntries / ( sizeof( Qinfo ) + sizeof( double ) ) << endl << endl ;
   // cout << p.currTime << "	" << ifire100->getVm() << "	" << ifire900->getVm() << endl;
   // cout << "T = " << p.currTime << ", Q size = " << Qinfo::q_[0].size() << endl;
-#ifndef USE_CHARMPP
   Qinfo::clearQ( 0 );
-#else
-  container_->hackClearQ();
-#endif
   //		i2()->process( &p );
   // printGrid( i2(), "Vm", 0, thresh );
   // sleep(1);
@@ -1508,7 +1450,7 @@ delete i3();
 delete i2();
 }
 
-void TestAsync::testUpValue()
+void testUpValue()
 {
   const Cinfo* cc = Clock::initCinfo();
   // const Cinfo* tc = Tick::initCinfo();
@@ -1562,7 +1504,7 @@ void TestAsync::testUpValue()
   delete clock();
 }
 
-void TestAsync::testSharedMsg()
+void testSharedMsg()
 {
   static SrcFinfo1< string > s1( "s1", "" );
   static SrcFinfo2< int, int > s2( "s2", "" );
@@ -1622,7 +1564,6 @@ void TestAsync::testSharedMsg()
   string arg1 = " hello ";
   string arg2 = " goodbye ";
 
-#ifndef USE_CHARMPP
   ThreadId threadNum = 0;
   s1.send( t1.eref(), threadNum, arg1 );
   s2.send( t1.eref(), threadNum, 100, 200 );
@@ -1635,19 +1576,6 @@ void TestAsync::testSharedMsg()
 
   Qinfo::clearQ( 0 );
   Qinfo::clearQ( 0 );
-#else
-  s1.send( t1.eref(), container_, arg1 );
-  s2.send( t1.eref(), container_, 100, 200 );
-
-  container_->hackClearQ();
-  container_->hackClearQ();
-
-  s1.send( t2.eref(), container_, arg2 );
-  s2.send( t2.eref(), container_, 500, 600 );
-
-  container_->hackClearQ();
-  container_->hackClearQ();
-#endif
 
   /*
      cout << "data1: s=" << tdata1->s_ << 
@@ -1674,7 +1602,7 @@ void TestAsync::testSharedMsg()
   cout << "." << flush;
 }
 
-void TestAsync::testConvVector()
+void testConvVector()
 {
   vector< unsigned int > intVec;
   for ( unsigned int i = 0; i < 5; ++i )
@@ -1717,7 +1645,7 @@ void TestAsync::testConvVector()
   cout << "." << flush;
 }
 
-void TestAsync::testConvVectorOfVectors()
+void testConvVectorOfVectors()
 {
   short *row0 = 0;
   short row1[] = { 1 };
@@ -1759,7 +1687,7 @@ void TestAsync::testConvVectorOfVectors()
   cout << "." << flush;
 }
 
-void TestAsync::testMsgField()
+void testMsgField()
 {
   const Cinfo* ac = Arith::initCinfo();
   unsigned int size = 10;
@@ -1805,18 +1733,10 @@ void TestAsync::testMsgField()
 
   for ( unsigned int i = 0; i < size; ++i ) {
     double x = i * 42;
-#ifndef USE_CHARMPP
     ThreadId threadNum = 0;
     s.send( Eref( e1.element(), i ), threadNum, x );
-#else
-    s.send( Eref( e1.element(), i ), container_, x );
-#endif
   }
-#ifndef USE_CHARMPP
   Qinfo::clearQ( 0 );
-#else
-  container_->hackClearQ();
-#endif
 
   // Check that regular msgs go through.
   Eref tgt3( i2(), 3 );
@@ -1831,18 +1751,10 @@ void TestAsync::testMsgField()
   sm->setI2( 8 );
   for ( unsigned int i = 0; i < size; ++i ) {
     double x = i * 1000;
-#ifndef USE_CHARMPP
     ThreadId threadNum = 0;
     s.send( Eref( e1.element(), i ), threadNum, x );
-#else
-    s.send( Eref( e1.element(), i ), container_, x );
-#endif
   }
-#ifndef USE_CHARMPP
   Qinfo::clearQ( 0 );
-#else
-  container_->hackClearQ();
-#endif
   val = reinterpret_cast< Arith* >( tgt3.data() )->getOutput();
   assert( doubleEq( val, 5 * 42 ) );
   val = reinterpret_cast< Arith* >( tgt8.data() )->getOutput();
@@ -1854,7 +1766,7 @@ void TestAsync::testMsgField()
   delete i2();
 }
 
-void TestAsync::testSetGetExtField()
+void testSetGetExtField()
 {
   const Cinfo* nc = Neutral::initCinfo();
   const Cinfo* rc = Mdouble::initCinfo();
@@ -1954,7 +1866,7 @@ void TestAsync::testSetGetExtField()
   i1.destroy();
 }
 
-void TestAsync::testLookupSetGet()
+void testLookupSetGet()
 {
   const Cinfo* ac = Arith::initCinfo();
   unsigned int size = 100;
@@ -2003,7 +1915,7 @@ void TestAsync::testLookupSetGet()
   i2.destroy();
 }
 
-void TestAsync::testIsA()
+void testIsA()
 {
   const Cinfo* n = Neutral::initCinfo();
   const Cinfo* a = Arith::initCinfo();
@@ -2016,12 +1928,12 @@ void TestAsync::testIsA()
   cout << "." << flush;
 }
 
-double* TestAsync::dptr( const DataHandler* dh, unsigned int i )
+double* dptr( const DataHandler* dh, unsigned int i )
 {
   return reinterpret_cast< double* >( dh->data( i ) );
 }
 
-void TestAsync::testDataCopyZero()
+void testDataCopyZero()
 {
   double x = 3.14;
   char* cx = reinterpret_cast< char* >( &x );
@@ -2075,7 +1987,7 @@ void TestAsync::testDataCopyZero()
   cout << "." << flush;
 }
 
-void TestAsync::testDataCopyOne()
+void testDataCopyOne()
 {
   static const unsigned int SIZE = 10;
   double x = 2.718;
@@ -2165,7 +2077,7 @@ void TestAsync::testDataCopyOne()
   cout << "." << flush;
 }
 
-void TestAsync::testDataCopyTwo()
+void testDataCopyTwo()
 {
   static const unsigned int nx = 7;
   static const unsigned int ny = 8;
@@ -2270,7 +2182,7 @@ void TestAsync::testDataCopyTwo()
   cout << "." << flush;
 }
 
-void TestAsync::testDataCopyAny()
+void testDataCopyAny()
 {
   static const unsigned int n0 = 3;
   static const unsigned int n1 = 4;
@@ -2391,7 +2303,7 @@ void TestAsync::testDataCopyAny()
   cout << "." << flush;
 }
 
-void TestAsync::testOneDimHandler()
+void testOneDimHandler()
 {
   static const unsigned int SIZE = 1000;
   Dinfo< int > dummyDinfo;
@@ -2443,7 +2355,7 @@ void TestAsync::testOneDimHandler()
   cout << "." << flush;
 }
 
-void TestAsync::testFieldDataHandler()
+void testFieldDataHandler()
 {
   static const unsigned int SIZE = 1000;
   Dinfo< IntFire > dinfo1;
@@ -2531,7 +2443,7 @@ void TestAsync::testFieldDataHandler()
   cout << "." << flush;
 }
 
-void TestAsync::testCopyFieldElementData()
+void testCopyFieldElementData()
 {
   const Cinfo* ic = IntFire::initCinfo();
   unsigned int size = 10;
@@ -2645,7 +2557,7 @@ void TestAsync::testCopyFieldElementData()
   cout << "." << flush;
 }
 
-void TestAsync::testFinfoFields()
+void testFinfoFields()
 {
   const Finfo* vmFinfo = IntFire::initCinfo()->findFinfo( "Vm" );
   const Finfo* synFinfo = IntFire::initCinfo()->findFinfo( "synapse" );
@@ -2699,7 +2611,7 @@ void TestAsync::testFinfoFields()
   cout << "." << flush;
 }
 
-void TestAsync::testCinfoFields()
+void testCinfoFields()
 {
   assert( IntFire::initCinfo()->getDocs() == "" );
   assert( IntFire::initCinfo()->getBaseClass() == "SynBase" );
@@ -2755,7 +2667,7 @@ void TestAsync::testCinfoFields()
   cout << "." << flush;
 }
 
-void TestAsync::testCinfoElements()
+void testCinfoElements()
 {
   Id intFireCinfoId( "/classes/IntFire" );
   const Cinfo *neutralCinfo = Neutral::initCinfo();
@@ -2799,7 +2711,7 @@ void TestAsync::testCinfoElements()
   cout << "." << flush;
 }
 
-void TestAsync::testMsgSrcDestFields()
+void testMsgSrcDestFields()
 {
   //////////////////////////////////////////////////////////////
   // Setup

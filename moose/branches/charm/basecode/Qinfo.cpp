@@ -22,6 +22,12 @@
 #include <mpi.h>
 #endif
 */
+#ifdef USE_CHARMPP
+#include "../charm/moose.decl.h"
+extern CProxy_LookupHelper readonlyLookupHelperProxy;
+#include "../charm/LookupHelper.h"
+#include "../charm/ElementContainer.h"
+#endif
 
 const BindIndex Qinfo::DirectAdd = -1;
 
@@ -67,62 +73,38 @@ Qinfo::Qinfo()
 	:	
 		src_(),
 		msgBindIndex_(0),
-#ifndef USE_CHARMPP
 		threadNum_( 0 ),
-#else
-                container_(NULL),
-#endif
 		dataIndex_( 0 ),
 		dataSize_( 0 )
 {;}
 
 Qinfo::Qinfo( const ObjId& src, 
 	BindIndex bindIndex, 
-#ifndef USE_CHARMPP
         ThreadId threadNum,
-#else
-        ElementContainer *container,
-#endif
 	unsigned int dataIndex, 
         unsigned int dataSize )
 	:	
 		src_( src ),
 		msgBindIndex_( bindIndex ),
-#ifndef USE_CHARMPP
 		threadNum_( threadNum ),
-#else
-                container_(container),
-#endif
 		dataIndex_( dataIndex ),
 		dataSize_( dataSize )
 {;}
 
 Qinfo::Qinfo( const Qinfo* orig, 
-#ifndef USE_CHARMPP
               ThreadId threadNum
-#else
-              ElementContainer *container
-#endif
               )
 	:	
 		src_( orig->src_ ),
 		msgBindIndex_( orig->msgBindIndex_ ),
-#ifndef USE_CHARMPP
 		threadNum_( threadNum ),
-#else
-                container_(container), 
-#endif
 		dataIndex_( orig->dataIndex_ ),
 		dataSize_( orig->dataSize_ )
 {;}
 
 
 ThreadId Qinfo::threadNum() const {
-#ifndef USE_CHARMPP
   return threadNum_;
-#else
-  return container_->getRegistrationIndex();;
-#endif
 }
 
 
@@ -598,6 +580,7 @@ void Qinfo::reportQ()
 	if ( mpiRecvQ_[1] > 0 ) innerReportQ( mpiRecvQ_, "mpiRecvQ" );
 	if ( structuralQinfo_.size() > 0 ) reportStructQ( structuralQinfo_, inQ_ );
 }
+#endif
 
 /**
  * Static function.
@@ -608,12 +591,16 @@ void Qinfo::addToQ( const ObjId& oi,
 	const double* arg, unsigned int size )
 {
 	if ( oi.element()->hasMsgs( bindIndex ) ) {
+#ifndef USE_CHARMPP
 			vector< double >& vec = dBuf_[ threadNum ];
 			qBuf_[ threadNum ].push_back( 
 				Qinfo( oi, bindIndex, threadNum, vec.size(), size ) );
 			if ( size > 0 ) {
 				vec.insert( vec.end(), arg, arg + size );
 			}
+#else
+                        readonlyLookupHelperProxy.ckLocalBranch()->getContainer(threadNum)->addToQ(oi, bindIndex, arg, size);
+#endif
 	}
 }
 
@@ -624,6 +611,7 @@ void Qinfo::addToQ( const ObjId& oi,
 	const double* arg2, unsigned int size2 )
 {
 	if ( oi.element()->hasMsgs( bindIndex ) ) {
+#ifndef USE_CHARMPP
 			vector< double >& vec = dBuf_[ threadNum ];
 			qBuf_[ threadNum ].push_back( 
 				Qinfo( oi, bindIndex, threadNum, vec.size(), size1 + size2 ) );
@@ -631,6 +619,9 @@ void Qinfo::addToQ( const ObjId& oi,
 				vec.insert( vec.end(), arg1, arg1 + size1 );
 			if ( size2 > 0 )
 				vec.insert( vec.end(), arg2, arg2 + size2 );
+#else
+          readonlyLookupHelperProxy.ckLocalBranch()->getContainer(threadNum)->addToQ(oi, bindIndex, arg1, size1, arg2, size2);
+#endif
 	}
 }
 
@@ -640,6 +631,7 @@ void Qinfo::addDirectToQ( const ObjId& src, const ObjId& dest,
 	FuncId fid, 
 	const double* arg, unsigned int size )
 {
+#ifndef USE_CHARMPP
 	static const unsigned int ObjFidSizeInDoubles = 
 		1 + ( sizeof( ObjFid ) - 1 ) / sizeof( double );
 
@@ -652,6 +644,9 @@ void Qinfo::addDirectToQ( const ObjId& src, const ObjId& dest,
 		if ( size > 0 ) {
 			vec.insert( vec.end(), arg, arg + size );
 		}
+#else   
+        readonlyLookupHelperProxy.ckLocalBranch()->getContainer(threadNum)->addDirectToQ(src, dest, fid, arg, size);
+#endif
 }
 
 // Static function
@@ -661,6 +656,7 @@ void Qinfo::addDirectToQ( const ObjId& src, const ObjId& dest,
 	const double* arg1, unsigned int size1,
 	const double* arg2, unsigned int size2 )
 {
+#ifndef USE_CHARMPP
 	static const unsigned int ObjFidSizeInDoubles = 
 		1 + ( sizeof( ObjFid ) - 1 ) / sizeof( double );
 
@@ -674,6 +670,9 @@ void Qinfo::addDirectToQ( const ObjId& src, const ObjId& dest,
 			vec.insert( vec.end(), arg1, arg1 + size1 );
 		if ( size2 > 0 )
 			vec.insert( vec.end(), arg2, arg2 + size2 );
+#else
+        readonlyLookupHelperProxy.ckLocalBranch()->getContainer(threadNum)->addDirectToQ(src, dest, fid, arg1, size1, arg2, size2);
+#endif
 }
 
 // Static function
@@ -682,6 +681,7 @@ void Qinfo::addVecDirectToQ( const ObjId& src, const ObjId& dest,
 	FuncId fid, 
 	const double* arg, unsigned int entrySize, unsigned int numEntries )
 {
+#ifndef USE_CHARMPP
 	static const unsigned int ObjFidSizeInDoubles = 
 		1 + ( sizeof( ObjFid ) - 1 ) / sizeof( double );
 
@@ -696,8 +696,12 @@ void Qinfo::addVecDirectToQ( const ObjId& src, const ObjId& dest,
 		vector< double >& vec = dBuf_[ threadNum ];
 		vec.insert( vec.end(), ptr, ptr + ObjFidSizeInDoubles );
 		vec.insert( vec.end(), arg, arg + entrySize * numEntries );
+#else
+      readonlyLookupHelperProxy.ckLocalBranch()->getContainer(threadNum)->addVecDirectToQ(src, dest, fid, arg, entrySize, numEntries);
+#endif
 }
 
+#ifndef USE_CHARMPP
 /// Static func.
 void Qinfo::disableStructuralOps()
 {
@@ -806,6 +810,7 @@ void Qinfo::emptyAllQs()
 		dBuf_[i].resize( 0 );
 	}
 }
+#endif
 
 // Static function. Used only during single-thread tests, when the
 // main thread-handling loop is inactive.
@@ -814,10 +819,15 @@ void Qinfo::emptyAllQs()
 // Static func.
 void Qinfo::clearQ( ThreadId threadNum )
 {
+#ifndef USE_CHARMPP
 	swapQ();
 	readQ( threadNum );
+#else
+        readonlyLookupHelperProxy.ckLocalBranch()->getContainer(threadNum)->hackClearQ();
+#endif
 }
 
+#ifndef USE_CHARMPP
 // static function
 double* Qinfo::sendQ()
 {
@@ -939,5 +949,21 @@ void Qinfo::clearReduceQ( unsigned int numThreads )
 		}
 		reduceQ_[j].resize( 0 );
 	}
+}
+#else
+void Qinfo::addToReduceQ(ReduceBase *r, unsigned int threadNum){
+  readonlyLookupHelperProxy.ckLocalBranch()->getContainer(threadNum)->addToReduceQ(r);
+}
+
+void Qinfo::clearReduceQ( unsigned int numThreads ){
+  CkAbort("Qinfo::clearReduceQ() not yet implemented\n");
+}
+
+unsigned int Qinfo::qSize(ThreadId tid){
+  return readonlyLookupHelperProxy.ckLocalBranch()->getContainer(tid)->qSize();
+}
+
+unsigned int Qinfo::dSize(ThreadId tid){
+  return readonlyLookupHelperProxy.ckLocalBranch()->getContainer(tid)->dSize();
 }
 #endif

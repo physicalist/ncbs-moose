@@ -196,11 +196,7 @@ void SpikeGen::process( const Eref& e, ProcPtr p )
 	if ( V_ > threshold_ ) {
 		if ((t + p->dt/2.0) >= (lastEvent_ + refractT_)) {
 			if ( !( edgeTriggered_ && fired_ ) ) {
-#ifndef USE_CHARMPP
 				event()->send( e, p->threadIndexInGroup, t );
-#else
-				event()->send( e, p->container, t );
-#endif
 				lastEvent_ = t;
 				fired_ = true;                    
 			}
