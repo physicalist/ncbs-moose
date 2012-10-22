@@ -3,10 +3,11 @@
 
 #include <string>
 #include <queue>
-#include "converse.h"
-#include "../charm/shell.decl.h"
-
 using namespace std;
+
+#include "converse.h"
+#include "../charm/moose.decl.h"
+
 
 class Shell;
 class ShellCcsInterfaceOperation;

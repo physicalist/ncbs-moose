@@ -1,5 +1,9 @@
 #include <map>
+#include <iostream>
+#include <vector>
+#include <string>
 using namespace std;
+
 
 #include "ElementContainer.h"
 #include "SimulationParameters.h"
@@ -18,7 +22,6 @@ struct DimInfo;
 class MsgFuncBinding;
 class DestFinfo;
 #include "../basecode/Element.h"
-#include "../shell/ShellHelper.h"
 
 #include "Messages.h"
 class PrepackedBuffer;
@@ -29,7 +32,6 @@ class ReduceFieldDimension;
 
 // readonly
 extern SimulationParameters readonlySimulationParameters; 
-extern CProxy_ShellHelper readonlyShellHelperProxy;
 extern CProxy_LookupHelper readonlyLookupHelperProxy;
 
 ElementContainer::ElementContainer(const CkCallback &cb) : 

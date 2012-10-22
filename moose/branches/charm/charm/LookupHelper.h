@@ -5,15 +5,26 @@
 class Element;
 class Id;
 class ElementContainer;
+class Shell;
 #include "../basecode/ThreadId.h"
+class Eref;
+#include "../basecode/Id.h"
 
 class LookupHelper : public CBase_LookupHelper {
   vector< Element * > elements_;
   CkVec< ElementContainer * > containers_;
+
+  // save id of and pointer to shell
+  Id shellId_;
+  Shell *shell_;
+
+  char **argv_;
+  unsigned int argc_;
   
   // charm++ entry methods
   public:
-  LookupHelper();
+  LookupHelper(CkVec< string > &s_argv, const CkCallback &cb);
+  void initShell(const CkCallback &cb);
 
   // normal entry methods for manipulating element table
   public:

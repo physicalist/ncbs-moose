@@ -1,12 +1,49 @@
 #include <string>
+#include <iostream>
+using namespace std;
+
+#include "pup_stl.h"
+
+#include "../basecode/ProcInfo.h"
+class Element;
+#include "../basecode/DataId.h"
+class Eref;
+#include "../basecode/Id.h"
+#include "../basecode/ObjId.h"
+#include "../basecode/Eref.h"
+#include "../basecode/BindIndex.h"
+#include "../basecode/FuncId.h"
+#include "../basecode/ThreadId.h"
+#include "../basecode/Qinfo.h"
+
+class Cinfo;
+#include "../basecode/MsgId.h"
+#include "../basecode/Finfo.h"
+class OpFunc;
+#include "../basecode/Cinfo.h"
+#include "../scheduling/Tick.h"
+#include "../scheduling/TickMgr.h"
+#include "../scheduling/TickPtr.h"
+#include "../scheduling/Clock.h"
+class DataHandler;
+struct DimInfo;
+class MsgFuncBinding;
+class DestFinfo;
+#include "../basecode/Element.h"
+#include "LookupHelper.h"
+#include "../shell/ShellCcsInterface.h" 
 #include "SimulationParameters.h"
 #include "moose.decl.h"
 #include "ElementContainer.h"
 #include "Main.h"
-#include "LookupHelper.h"
+
+
+
 
 // readonly variables
 CProxy_ElementContainer readonlyElementContainerProxy;
+CProxy_LookupHelper readonlyLookupHelperProxy;
+CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
 CProxy_Main readonlyMainProxy;
 
 SimulationParameters readonlySimulationParameters;
@@ -17,24 +54,36 @@ extern Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTest
 Main::Main(CkArgMsg *m){
   __sdag_init();
   doUnitTests_ = false;
-  createMooseParallelObjects();
+  createMooseParallelObjects(m);
   thisProxy.waitUntilInitDone();
 }
 
-void Main::createMooseParallelObjects(){
+void Main::createMooseParallelObjects(CkArgMsg *m){
   // XXX should get this from command line parameters
   nElementContainers_ = CkNumPes();
   __sdag_init();
 
-  CkCallback cb(CkIndex_Main::elementsReady(), thisProxy);
-  readonlyElementContainerProxy = CProxy_ElementContainer::ckNew(cb, nElementContainers_);
+  CkVec< string > args;
+  for(int i = 0; i < m->argc; i++) args.push_back(m->argv[i]);
+
+  // initiate creation of lookup helper group
+  readonlyLookupHelperProxy = CProxy_LookupHelper::ckNew(args, CkCallback(CkIndex_Main::lookupHelpersReady(), thisProxy));
+
+  // initiate creation of Shell-CCS interface group
+  readonlyShellCcsInterfaceProxy = CProxy_ShellCcsInterface::ckNew(CkCallback(CkIndex_Main::shellCcsInterfacesReady(), thisProxy));
+
+  // initiate creation of chare array elements
+  readonlyElementContainerProxy = CProxy_ElementContainer::ckNew(CkCallback(CkIndex_Main::elementsReady(), thisProxy), nElementContainers_);
+
   readonlyMainProxy = thisProxy;
 
 }
 
 void Main::commence(){
+  CkPrintf("[main] shell init\n");
+  readonlyLookupHelperProxy.initShell(CkCallbackResumeThread());
 
-  CkPrintf("[main] register containers with shells\n");
+  CkPrintf("[main] register containers with helpers\n");
   readonlyElementContainerProxy.registerWithLookupHelper(CkCallbackResumeThread());
 
   CkPrintf("[main] starting serial unit tests\n");

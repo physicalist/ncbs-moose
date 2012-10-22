@@ -17,11 +17,10 @@
 #include "Dinfo.h"
 #include "Wildcard.h"
 #include "Shell.h"
+#include "../charm/LookupHelper.h"
 
-CProxy_ShellHelper readonlyShellHelperProxy;
-CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
-
-#include "ShellHelper.h"
+extern CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
+extern CProxy_LookupHelper readonlyLookupHelperProxy;
 
 ShellCcsInterface::ShellCcsInterface(const CkCallback &cb){
   // register handlers
@@ -186,7 +185,7 @@ void ShellCcsInterface::doAdopt(char *msg){
 }
 
 Shell *ShellCcsInterface::getLocalShell(){
-  return readonlyShellHelperProxy.ckLocalBranch()->getShell();
+  return (Shell *) readonlyLookupHelperProxy.ckLocalBranch()->get(Id());
 }
 
 ShellCcsInterface *ShellCcsInterface::getLocalShellCcsInterface(){

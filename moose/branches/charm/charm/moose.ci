@@ -5,9 +5,9 @@ mainmodule moose {
   readonly CProxy_LookupHelper readonlyLookupHelperProxy;
 
   readonly SimulationParameters readonlySimulationParameters;
-  
-  extern module shell;
+  readonly CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
 
+  
   message ElementDataMsg {
     Qinfo qinfo_[];
     double data_[];
@@ -20,9 +20,13 @@ mainmodule moose {
     entry Main(CkArgMsg *m);
 
     entry void elementsReady();
-    entry void shellReady();
+    entry void shellCcsInterfacesReady();
+    entry void lookupHelpersReady();
+
     entry void waitUntilInitDone(){
-      when shellReady(), elementsReady() atomic {
+      when shellCcsInterfacesReady(), 
+           elementsReady(), 
+           lookupHelpersReady() atomic {
         thisProxy.commence();
       }
     };
@@ -41,7 +45,11 @@ mainmodule moose {
   };
 
   group LookupHelper {
-    entry LookupHelper();
+    entry LookupHelper(CkVec< string > &s_argv, const CkCallback &cb);
+    entry void initShell(const CkCallback &cb);
   };
 
+  group ShellCcsInterface {
+    entry ShellCcsInterface(const CkCallback &cb);
+  };
 };

@@ -5,8 +5,6 @@
 #include <string>
 using namespace std;
 
-#include "moose.decl.h"
-
 #include "../basecode/ProcInfo.h"
 class Element;
 #include "../basecode/DataId.h"
@@ -18,8 +16,10 @@ class Eref;
 #include "../basecode/FuncId.h"
 #include "../basecode/ThreadId.h"
 #include "../basecode/Qinfo.h"
-
 #include "DirectQbufEntry.h"
+
+
+#include "moose.decl.h"
 
 class Shell;
 class Clock;
