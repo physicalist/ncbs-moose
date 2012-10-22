@@ -1668,68 +1668,14 @@ void Shell::cleanSimulation()
 #include <string>
 
 #include "../charm/moose.decl.h"
-extern CProxy_Main readonlyMainProxy;
-extern CProxy_ShellHelper readonlyShellHelperProxy;
-extern CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
-#include "../charm/shell.decl.h"
-#include "ShellHelper.h"
 
-extern Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests );
-
-ShellHelper::ShellHelper(int argc, string *s_argv, const CkCallback &cb){
-  bool doUnitTests = 0;
-  bool doRegressionTests = 1;
-  // make C strings out of C++ strings
-  char **argv = new char *[argc];
-  for(int i = 0; i < argc; i++){
-    argv[i] = new char[s_argv[i].size()+1];
-    std::copy(s_argv[i].begin(), s_argv[i].end(), argv[i]);
-    argv[i][s_argv[i].size()] = '\0';
-  }
-
-  shellId_ = init( argc, argv, doUnitTests, doRegressionTests );
-
-  for(int i = 0; i < argc; i++){
-    delete[] argv[i];
-  }
-  delete[] argv;
-
-  shell_ = reinterpret_cast< Shell* >( shellId_()->dataHandler()->data( 0 ) );
-
-  // sync to ensure that every PE has an active shell 
-  contribute(cb);
-}
-
+/*
 void ShellHelper::destroyShell(const CkCallback &cb){
   Neutral* ns = reinterpret_cast< Neutral* >( shellId_()->dataHandler()->data( 0 ) );
   ns->destroy( shellId_.eref(), 0, 0 );
   contribute(cb);
 }
-
-Shell *ShellHelper::getShell(){
-  return shell_;
-}
-
-ShellMain::ShellMain(CkArgMsg *m){
-  // pack up command line arguments into vector of strings
-  __sdag_init();
-  CkPrintf("ShellMain::ShellMain\n");
-
-  CkVec<string> args;
-  for(int i = 0; i < m->argc; i++) args.push_back(m->argv[i]);
-  // create callback to be invoked once every PE has its shell running
-  CkCallback shellHelperCallback(CkIndex_ShellMain::shellHelpersReady(), thisProxy);
-  // initiate creation of shell helper group
-  readonlyShellHelperProxy = CProxy_ShellHelper::ckNew(args.size(), &args[0], shellHelperCallback);
-
-  // create callback to be invoked when every PE has its Shell-CCS interface up
-  CkCallback shellCcsInterfaceCallback(CkIndex_ShellMain::shellCcsInterfacesReady(), thisProxy);
-  // initiate creation of Shell-CCS interface group
-  readonlyShellCcsInterfaceProxy = CProxy_ShellCcsInterface::ckNew(shellCcsInterfaceCallback);
-
-  thisProxy.waitUntilInitDone();
-  delete m;
-}
+*/
 
 void Shell::setRunning(){
   isRunning_ = true;
@@ -1737,10 +1683,6 @@ void Shell::setRunning(){
 
 void Shell::setNotRunning(){
   isRunning_ = false;
-}
-
-void Shell::registerContainer(ElementContainer *container){
-  myElementContainers_.push_back(container);
 }
 
 void Shell::setStop(bool stop){
@@ -1751,5 +1693,4 @@ bool Shell::getStop() const {
   return shouldStop_;
 }
 
-#include "../charm/shell.def.h"
 #endif

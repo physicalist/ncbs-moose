@@ -23,7 +23,7 @@ class Main : public CBase_Main {
   void commence();
 
   private:
-  void createMooseParallelObjects();
+  void createMooseParallelObjects(CkArgMsg *m);
 
   private:
   int nElementContainers_;

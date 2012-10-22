@@ -33,7 +33,7 @@ HEADERS = \
 	../basecode/ReduceMax.h \
 
 ifeq ($(BUILD),charm++)
-HEADERS += ../charm/shell.decl.h
+HEADERS += ../charm/moose.decl.h
 endif
 
 
@@ -43,7 +43,7 @@ $(OBJ)	: $(HEADERS)
 ifneq ($(BUILD),charm++)
 Shell.o:	Shell.h Neutral.h ../scheduling/Clock.h ../sbml/SbmlWriter.h
 else
-Shell.o:	../charm/shell.decl.h Shell.h Neutral.h ../scheduling/Clock.h ../sbml/SbmlWriter.h
+Shell.o:	../charm/moose.decl.h Shell.h Neutral.h ../scheduling/Clock.h ../sbml/SbmlWriter.h
 endif
 ShellCopy.o:	Shell.h Neutral.h
 ShellSetGet.o:	Shell.h
@@ -55,9 +55,9 @@ Wildcard.o:	Wildcard.h Shell.h Neutral.h ../basecode/ElementValueFinfo.h
 testShell.o:	Wildcard.h Shell.h Neutral.h ../scheduling/Tick.h ../scheduling/testScheduling.h ../builtins/Arith.h ../basecode/SparseMatrix.h ../msg/SparseMsg.h ../msg/SingleMsg.h ../basecode/SetGet.h
 
 ifeq ($(BUILD),charm++)
-ShellCcsInterface.o : ../charm/shell.decl.h ShellCcsInterfaceOperation.h ShellCcsInterface.h 
+ShellCcsInterface.o : ../charm/moose.decl.h ShellCcsInterfaceOperation.h ShellCcsInterface.h 
 ShellCcsInterfaceOperation.o : ShellCcsInterfaceOperation.h 
-ShellProxy.o : ShellProxy.h ../charm/shell.decl.h
+ShellProxy.o : ShellProxy.h ../charm/moose.decl.h
 endif
 
 .cpp.o:

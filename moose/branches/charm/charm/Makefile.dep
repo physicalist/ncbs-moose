@@ -2,7 +2,6 @@ ElementContainer.o: \
 ElementContainer.cpp \
 ElementContainer.h \
 moose.decl.h \
-shell.decl.h \
 ../basecode/ProcInfo.h \
 ../basecode/DataId.h \
 ../basecode/Id.h \
@@ -22,8 +21,6 @@ SimulationParameters.h \
 ../scheduling/TickPtr.h \
 ../scheduling/Clock.h \
 ../basecode/Element.h \
-../shell/ShellHelper.h \
-../shell/../charm/shell.decl.h \
 Messages.h \
 ../shell/Shell.h \
 
@@ -31,7 +28,6 @@ Main.o: \
 Main.cpp \
 SimulationParameters.h \
 moose.decl.h \
-shell.decl.h \
 ElementContainer.h \
 ../basecode/ProcInfo.h \
 ../basecode/DataId.h \
@@ -44,6 +40,14 @@ ElementContainer.h \
 ../basecode/Qinfo.h \
 DirectQbufEntry.h \
 Main.h \
+shell.decl.h \
 Messages.h \
 LookupHelper.h \
+
+LookupHelper.o: \
+LookupHelper.cpp \
+LookupHelper.h \
+moose.decl.h \
+../basecode/ThreadId.h \
+../basecode/Id.h \
 
