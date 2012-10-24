@@ -36,6 +36,7 @@ class DestFinfo;
 #include "moose.decl.h"
 #include "ElementContainer.h"
 #include "Main.h"
+#include "ParallelTestHelper.h"
 
 
 
@@ -45,6 +46,8 @@ CProxy_ElementContainer readonlyElementContainerProxy;
 CProxy_LookupHelper readonlyLookupHelperProxy;
 CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
 CProxy_Main readonlyMainProxy;
+
+extern CProxy_ParallelTestHelper readonlyParallelTestHelperProxy;
 
 SimulationParameters readonlySimulationParameters;
 
@@ -75,6 +78,8 @@ void Main::createMooseParallelObjects(CkArgMsg *m){
   // initiate creation of chare array elements
   readonlyElementContainerProxy = CProxy_ElementContainer::ckNew(CkCallback(CkIndex_Main::elementsReady(), thisProxy), nElementContainers_);
 
+  readonlyParallelTestHelperProxy = CProxy_ParallelTestHelper::ckNew();
+
   readonlyMainProxy = thisProxy;
 
 }
@@ -84,10 +89,16 @@ void Main::commence(){
   readonlyLookupHelperProxy.initShell(CkCallbackResumeThread());
 
   CkPrintf("[main] register containers with helpers\n");
-  readonlyElementContainerProxy.registerWithLookupHelper(CkCallbackResumeThread());
+  readonlyElementContainerProxy.registerSelf(CkCallbackResumeThread());
 
   CkPrintf("[main] starting serial unit tests\n");
-  readonlyElementContainerProxy.doSerialUnitTests(CkCallbackResumeThread());
+  readonlyLookupHelperProxy.doSerialUnitTests(CkCallbackResumeThread());
+
+  CkPrintf("\n[main] starting parallel unit tests\n");
+  readonlyParallelTestHelperProxy.doMpiTests(CkCallbackResumeThread());
+
+  CkPrintf("\n[main] starting process unit tests\n");
+  readonlyParallelTestHelperProxy.doProcessTests(CkCallbackResumeThread());
 
   // XXX - only for the time being
   // once we have the unit tests running, we should 

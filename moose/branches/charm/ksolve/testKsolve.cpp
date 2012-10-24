@@ -113,7 +113,11 @@ void testKsolveZombify( string modelFile )
 	struct timeval tv1;
 	gettimeofday( &tv0, 0 );
 	s->doReinit();
+#ifndef USE_CHARMPP
 	s->doStart( simTime );
+#else
+	s->doStart( simTime, CkCallbackResumeThread() );
+#endif
 	gettimeofday( &tv1, 0 );
 
 	if ( plotName.length() > 0 ) {
@@ -157,7 +161,11 @@ void testGsolver(string modelName, string plotName, double plotDt, double simTim
 	// s->doUseClock( base.path(), "process", 0 );
 	// s->doUseClock( plotpath, "process", 2 );
 	s->doReinit();
+#ifndef USE_CHARMPP
 	s->doStart( simTime );
+#else
+	s->doStart( simTime, CkCallbackResumeThread() );
+#endif
 
 
 	string plotfile = modelName + ".out";

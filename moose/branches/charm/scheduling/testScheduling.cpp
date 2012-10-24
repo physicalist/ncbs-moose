@@ -477,7 +477,12 @@ void testQueueAndStart()
 	tsData->zeroIndex();
 
 	for ( unsigned int i = 0; i < num; ++i ) {
-		s->doStart( 2.0 );
+#ifndef USE_CHARMPP
+                s->doStart( 2.0 );
+#else
+                s->doStart( 2.0, CkCallbackResumeThread() );
+#endif
+
 		ObjId oi( pool, i );
 		// Just to stir up some stuff with the messaging.
 		ret = Field< double >::set( oi, "n", i );
@@ -627,7 +632,12 @@ void testThreadIntFireNetwork()
 	assert( doubleEq( ifire100->getVm(), initVm100 ) );
 	assert( doubleEq( ifire900->getVm(), initVm900 ) );
 
-	s->doStart( timestep * runsteps );
+#ifndef USE_CHARMPP
+        s->doStart( timestep * runsteps );
+#else
+        s->doStart( timestep * runsteps, CkCallbackResumeThread() );
+#endif
+
 
 	assert( doubleEq( ifire100->getVm(), Vm100 ) );
 	assert( doubleEq( ifire900->getVm(), Vm900 ) );
@@ -809,7 +819,12 @@ void testMultiNodeIntFireNetwork()
 	assert( fabs( retVm100 - origVm100 ) < 1e-6 );
 	assert( fabs( retVm900 - origVm900 ) < 1e-6 );
 
-	shell->doStart( static_cast< double >( timestep * runsteps) + 0.0 );
+#ifndef USE_CHARMPP
+        shell->doStart( static_cast< double >( timestep * runsteps) + 0.0 ); 
+#else
+        shell->doStart( static_cast< double >( timestep * runsteps) + 0.0, CkCallbackResumeThread() );
+#endif
+
 	retVm100 = Field< double >::get( ObjId( i2, 100 ), "Vm" );
 	retVm900 = Field< double >::get( ObjId( i2, 900 ), "Vm" );
 
@@ -948,7 +963,12 @@ void speedTestMultiNodeIntFireNetwork( unsigned int size, unsigned int runsteps 
 		e2.objId(), "process" );
 	shell->doSetClock( 0, timestep );
 
-	shell->doStart( static_cast< double >( timestep * runsteps) + 0.0 );
+#ifndef USE_CHARMPP
+        shell->doStart( static_cast< double >( timestep * runsteps) + 0.0 ); 
+#else
+        shell->doStart( static_cast< double >( timestep * runsteps) + 0.0, CkCallbackResumeThread() );
+#endif
+
 
 	/*
 	for ( unsigned int i = 0; i < size; i += 100 ) {

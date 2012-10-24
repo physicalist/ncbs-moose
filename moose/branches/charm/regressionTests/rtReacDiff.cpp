@@ -164,7 +164,12 @@
       // shell->doUseClock( "/kinetics/stoich/gsl", "process", 0 );
       shell->doUseClock( "/model/table", "process", 8 );
       shell->doReinit();
+#ifndef USE_CHARMPP
       shell->doStart( 10 );
+#else
+      shell->doStart( 10, CkCallbackResumeThread() );
+#endif
+
 
       unsigned int size = Field< unsigned int >::get( plots, "size" );
       // cout << "size = " << size << endl;
@@ -283,7 +288,12 @@
       shell->doReinit();
 
       for ( unsigned int i = 0; i < 10; ++i ) {
+#ifndef USE_CHARMPP
         shell->doStart( 1 );
+#else
+        shell->doStart( 1, CkCallbackResumeThread() );
+#endif
+
         vector< double > conc;
         Field< double >::getVec( a, "conc", conc );
         assert( conc.size() == diffLength );
@@ -402,7 +412,12 @@
       shell->doReinit();
 
       for ( unsigned int i = 0; i < 4; ++i ) {
+#ifndef USE_CHARMPP
         shell->doStart( 1 );
+#else
+        shell->doStart( 1, CkCallbackResumeThread() );
+#endif
+
         vector< double > conc;
         Field< double >::getVec( a, "conc", conc );
         assert( conc.size() == vol );
@@ -501,7 +516,12 @@
       if ( doPrint )
         cout << setprecision( 3 ) << setiosflags( ios::fixed ) << endl;
       for ( unsigned int i = 0; i < 4; ++i ) {
+#ifndef USE_CHARMPP
         shell->doStart( 1 );
+#else
+        shell->doStart( 1, CkCallbackResumeThread() );
+#endif
+
         vector< double > conc;
         Field< double >::getVec( b, "conc", conc );
         assert( conc.size() == vol );

@@ -146,6 +146,9 @@ class Clock
 		 */
 		static void reportClock();
 		void innerReportClock() const;
+
+                bool hasExpired() const;
+                void advancePhase2Body(ProcInfo *info);
 	private:
 		double runTime_;
 		double currentTime_;

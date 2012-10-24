@@ -219,7 +219,11 @@ void perfTestMarkovSolver( )
 
 	shell->doReinit();
 	shell->doReinit();
+#ifndef USE_CHARMPP
 	shell->doStart( 1.0 );
+#else
+	shell->doStart( 1.0, CkCallbackResumeThread() );
+#endif
 
 	shell->doDelete( nid );
 	cout << "." << flush;

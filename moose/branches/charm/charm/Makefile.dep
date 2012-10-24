@@ -1,7 +1,6 @@
 ElementContainer.o: \
 ElementContainer.cpp \
 ElementContainer.h \
-moose.decl.h \
 ../basecode/ProcInfo.h \
 ../basecode/DataId.h \
 ../basecode/Id.h \
@@ -12,6 +11,7 @@ moose.decl.h \
 ../basecode/ThreadId.h \
 ../basecode/Qinfo.h \
 DirectQbufEntry.h \
+moose.decl.h \
 SimulationParameters.h \
 ../basecode/MsgId.h \
 ../basecode/Finfo.h \
@@ -26,9 +26,6 @@ Messages.h \
 
 Main.o: \
 Main.cpp \
-SimulationParameters.h \
-moose.decl.h \
-ElementContainer.h \
 ../basecode/ProcInfo.h \
 ../basecode/DataId.h \
 ../basecode/Id.h \
@@ -38,16 +35,52 @@ ElementContainer.h \
 ../basecode/FuncId.h \
 ../basecode/ThreadId.h \
 ../basecode/Qinfo.h \
+../basecode/MsgId.h \
+../basecode/Finfo.h \
+../basecode/Cinfo.h \
+../scheduling/Tick.h \
+../scheduling/TickMgr.h \
+../scheduling/TickPtr.h \
+../scheduling/Clock.h \
+../basecode/Element.h \
+LookupHelper.h \
+moose.decl.h \
+../shell/ShellCcsInterface.h \
+../shell/../charm/moose.decl.h \
+SimulationParameters.h \
+ElementContainer.h \
 DirectQbufEntry.h \
 Main.h \
 shell.decl.h \
 Messages.h \
-LookupHelper.h \
+ParallelTestHelper.h \
+../charm/moose.decl.h \
 
 LookupHelper.o: \
 LookupHelper.cpp \
+../basecode/ProcInfo.h \
+../basecode/DataId.h \
+../basecode/Id.h \
+../basecode/ObjId.h \
+../basecode/Eref.h \
+../basecode/BindIndex.h \
+../basecode/FuncId.h \
+../basecode/ThreadId.h \
+../basecode/Qinfo.h \
+../basecode/MsgId.h \
+../basecode/Finfo.h \
+../basecode/Cinfo.h \
+../scheduling/Tick.h \
+../scheduling/TickMgr.h \
+../scheduling/TickPtr.h \
+../scheduling/Clock.h \
+../basecode/Element.h \
 LookupHelper.h \
 moose.decl.h \
-../basecode/ThreadId.h \
-../basecode/Id.h \
+../basecode/DataHandler.h \
+
+ParallelTestHelper.o: \
+ParallelTestHelper.cpp \
+ParallelTestHelper.h \
+../charm/moose.decl.h \
 

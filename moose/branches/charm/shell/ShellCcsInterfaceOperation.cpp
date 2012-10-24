@@ -76,8 +76,15 @@ void QuitOperation::exec(Shell *shell){
 
 void StartOperation::exec(Shell *shell){
   std::pair<double, bool> *arg = CcsPackUnpack<std::pair<double, bool> >::cast(msg_);
-  shell->doStart(arg->first, arg->second);
+  shell->doStart(arg->first, CkCallback(StartOperation::splitPhaseCallback, this), arg->second);
+}
 
+void StartOperation::splitPhaseCallback(void *param, void *msg){
+  StartOperation *sop = (StartOperation *) param;
+  sop->resume();  
+}
+
+void StartOperation::resume(){
   bool r = true;
   CcsSendDelayedReply(delayedReply_, sizeof(bool), &r);
 }

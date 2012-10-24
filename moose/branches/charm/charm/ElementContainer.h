@@ -49,12 +49,11 @@ class ElementContainer : public CBase_ElementContainer {
   ElementContainer(const CkCallback &cb);
   ElementContainer(CkMigrateMessage *) {}
 
-  void doSerialUnitTests(const CkCallback &cb);
   void newIteration();
   void iterationDone();
   void exchange(ElementDataMsg *m);
 
-  void registerWithLookupHelper(const CkCallback &cb);
+  void registerSelf(const CkCallback &cb);
 
 
   // interface for moose objects
@@ -73,7 +72,7 @@ class ElementContainer : public CBase_ElementContainer {
   ThreadId getRegistrationIndex();
 
   // called by Shell
-  void start(double runTime);
+  void start();
   void stop();
 
 

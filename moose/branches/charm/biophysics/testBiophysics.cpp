@@ -479,7 +479,11 @@ void testHHChannel()
 
 	shell->doReinit();
 	shell->doReinit();
+#ifndef USE_CHARMPP
 	shell->doStart( 0.01 );
+#else
+	shell->doStart( 0.01, CkCallbackResumeThread() );
+#endif
 
 	//////////////////////////////////////////////////////////////////////
 	// Check output
@@ -655,7 +659,11 @@ void testMarkovGslSolver()
 
 	shell->doReinit( );
 	shell->doReinit( );
+#ifndef USE_CHARMPP
 	shell->doStart( 1.0e-3 );
+#else
+	shell->doStart( 1.0e-3, CkCallbackResumeThread() );
+#endif
 
 	vector< double > vec = Field< vector< double > >::get( tabId, "vec" );
 
@@ -1014,7 +1022,11 @@ void testMarkovChannel()
 
 	shell->doReinit();
 	shell->doReinit();
+#ifndef USE_CHARMPP
 	shell->doStart( 1.0 );
+#else
+	shell->doStart( 1.0, CkCallbackResumeThread() );
+#endif
 
 	vector< double > gslVec = Field< vector< double > >::get( gslTableId, "vec" );
 	vector< double > exptlVec = Field< vector< double > >::get( exptlTableId, "vec");
@@ -1132,27 +1144,51 @@ void testSynChan()
 	shell->doReinit();
 	shell->doReinit();
 
+#ifndef USE_CHARMPP
 	shell->doStart( 0.001 );
+#else
+	shell->doStart( 0.001, CkCallbackResumeThread() );
+#endif
 	dret = Field< double >::get( synChanId, "Gk" );
 	assert( doubleApprox( dret, 0.0 ) );
 
+#ifndef USE_CHARMPP
 	shell->doStart( 0.0005 );
+#else
+	shell->doStart( 0.0005, CkCallbackResumeThread() );
+#endif
 	dret = Field< double >::get( synChanId, "Gk" );
 	assert( doubleApprox( dret, 0.825 ) );
 
+#ifndef USE_CHARMPP
 	shell->doStart( 0.0005 );
+#else
+	shell->doStart( 0.0005, CkCallbackResumeThread() );
+#endif
 	dret = Field< double >::get( synChanId, "Gk" );
 	assert( doubleApprox( dret, 1.0 ) );
 
+#ifndef USE_CHARMPP
 	shell->doStart( 0.001 );
+#else
+	shell->doStart( 0.001, CkCallbackResumeThread() );
+#endif
 	dret = Field< double >::get( synChanId, "Gk" );
 	assert( doubleApprox( dret, 0.736 ) );
 
+#ifndef USE_CHARMPP
 	shell->doStart( 0.001 );
+#else
+	shell->doStart( 0.001, CkCallbackResumeThread() );
+#endif
 	dret = Field< double >::get( synChanId, "Gk" );
 	assert( doubleApprox( dret, 0.406 ) );
 
+#ifndef USE_CHARMPP
 	shell->doStart( 0.007 );
+#else
+	shell->doStart( 0.007, CkCallbackResumeThread() );
+#endif
 	dret = Field< double >::get( synChanId, "Gk" );
 	assert( doubleApprox( dret, 0.997 ) );
 
@@ -1231,11 +1267,19 @@ void testNMDAChan()
 	shell->doReinit();
 	shell->doReinit();
 
+#ifndef USE_CHARMPP
 	shell->doStart( 0.001 );
+#else
+	shell->doStart( 0.001, CkCallbackResumeThread() );
+#endif
 	dret = Field< double >::get( synChanId, "Gk" );
 	assert( doubleApprox( dret, 0.0 ) );
 
+#ifndef USE_CHARMPP
 	shell->doStart( 0.0005 );
+#else
+	shell->doStart( 0.0005, CkCallbackResumeThread() );
+#endif
 	dret = Field< double >::get( synChanId, "Gk" );
         cout << "Gk:" << dret << endl;
 	assert( doubleApprox( dret, 1.0614275017053588e-07 ) );

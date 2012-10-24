@@ -21,6 +21,7 @@ class ShellCcsInterfaceOperation {
   virtual ~ShellCcsInterfaceOperation(){
     CmiFree(msg_);
   }
+
 };
 
 class SetCweOperation : public ShellCcsInterfaceOperation {
@@ -76,7 +77,16 @@ class StartOperation : public ShellCcsInterfaceOperation {
   StartOperation(char *msg, CcsDelayedReply delayedReply) : 
     ShellCcsInterfaceOperation(msg, delayedReply)
   {}
+
   void exec(Shell *shell);
+  void resume();
+
+  public:
+  // static method that is invoked as a callback for
+  // split-phase methods such as doStart(), i.e. those
+  // that have not yet completed upon return from call
+  static void splitPhaseCallback(void *param, void *msg);
+
 };
 
 class ReinitOperation : public ShellCcsInterfaceOperation {
