@@ -2,7 +2,7 @@ CHARM_PATH = $(HOME)/work/charm-soc/charm/net-linux
 DEFINE_FLAGS = -DUSE_CHARMPP
 
 INCPATH = -I$(CHARM_PATH)/tmp/libs/ck-libs/NDMeshStreamer -I ../shell -I../basecode -I../scheduling -I../msg 
-OPTS = -g -O3 
+OPTS = -g -O0 
 CXXFLAGS += $(OPTS) $(DEFINE_FLAGS)
 LDFLAGS += $(OPTS) -L. -L$(CHARM_PATH)/lib -language charm++ -module completion -module NDMeshStreamer #-tracemode projections 
 
@@ -13,8 +13,8 @@ CC = $(CXX)
 AR = ar q 
 CXX_DEPEND = $(CXX) -M -MM -MG $(CXXFLAGS)
 
-OBJECTS = ElementContainer.o Main.o LookupHelper.o
-SRCS = ElementContainer.cpp Main.cpp LookupHelper.cpp
+OBJECTS = ElementContainer.o Main.o LookupHelper.o ParallelTestHelper.o
+SRCS = ElementContainer.cpp Main.cpp LookupHelper.cpp ParallelTestHelper.cpp
 
 TARGET = _moose_charm.o
 all: $(TARGET) 
