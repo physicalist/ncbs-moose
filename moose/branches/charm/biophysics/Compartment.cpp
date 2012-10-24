@@ -761,7 +761,11 @@ void testCompartmentProcess()
 	shell->doUseClock( "/compt", "process", 1 );
 
 	shell->doReinit();
+#ifndef USE_CHARMPP
 	shell->doStart( runtime );
+#else
+	shell->doStart( runtime, CkCallbackResumeThread() );
+#endif
 
 	double Vmax = Field< double >::get( ObjId( cid, 0 ), "Vm" );
 

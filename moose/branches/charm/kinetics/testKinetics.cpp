@@ -192,7 +192,11 @@ void testMathFuncProcess()
 	//////////////////////////////////////////////////////////////////////
 
 	shell->doReinit();
+#ifndef USE_CHARMPP
 	shell->doStart( 10 );
+#else
+	shell->doStart( 10, CkCallbackResumeThread() );
+#endif
 
 	// SetGet2< string, string >::set( tabid, "xplot", "m.out", "mathFunc" );
 	// SetGet2< string, string >::set( tabid2, "xplot", "m.out", "mmenz" );
@@ -397,7 +401,11 @@ void testMMenzProcess()
 	//////////////////////////////////////////////////////////////////////
 
 	shell->doReinit();
+#ifndef USE_CHARMPP
 	shell->doStart( 10 );
+#else
+	shell->doStart( 10, CkCallbackResumeThread() );
+#endif
 
 	vector< double > vec = Field< vector< double > >::get( tabid2, "vec" );
 	assert( vec.size() == 1001 );

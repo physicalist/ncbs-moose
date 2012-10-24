@@ -124,7 +124,7 @@ endif
 
 ifeq ($(BUILD), charm++)
 USE_GSL = 1
-CXXFLAGS = -g -O0 -Wall -DUSE_CHARMPP -DUSE_GSL
+CXXFLAGS = -g -O0 -Wall -DDO_UNIT_TESTS -DUSE_CHARMPP -DUSE_GSL
 USE_CHARMPP = 1
 endif
 

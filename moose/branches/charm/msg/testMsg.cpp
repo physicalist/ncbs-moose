@@ -380,7 +380,11 @@ void benchmarkMsg( unsigned int n, string msgType )
 	shell->doSetClock( 0, 1, false );
 	shell->doReinit( false );
 	SetGet1< double >::setVec( a1, "arg1", init );
+#ifndef USE_CHARMPP
 	shell->doStart( 100, false );
+#else
+	shell->doStart( 100, CkCallbackResumeThread(), false );
+#endif
 	for ( unsigned int i = 0; i < n; ++i )
 		init[i] = 0; // be sure we don't retain old info.
 	init.clear();

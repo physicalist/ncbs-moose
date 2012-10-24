@@ -6,6 +6,7 @@ class Element;
 class Id;
 class ElementContainer;
 class Shell;
+class Clock;
 #include "../basecode/ThreadId.h"
 class Eref;
 #include "../basecode/Id.h"
@@ -17,6 +18,9 @@ class LookupHelper : public CBase_LookupHelper {
   // save id of and pointer to shell
   Id shellId_;
   Shell *shell_;
+  // and pointer to clock, so that it may be queried
+  // by element containers
+  Clock *clock_;
 
   char **argv_;
   unsigned int argc_;
@@ -26,10 +30,19 @@ class LookupHelper : public CBase_LookupHelper {
   LookupHelper(CkVec< string > &s_argv, const CkCallback &cb);
   void initShell(const CkCallback &cb);
 
-  // normal entry methods for manipulating element table
+  void doSerialUnitTests(const CkCallback &cb);
+  void doParallelUnitTests(const CkCallback &cb);
+
+  void iterationDone();
+  void invokeFinishCallback();
+
+  // normal methods for manipulating element table
   public:
   Element *get(Id id);
   void set(Id id, Element *e);
+
+  Shell *getShell();
+  Clock *getClock();
 
   vector< Element * > &elements();
   ThreadId registerContainer(ElementContainer *container);

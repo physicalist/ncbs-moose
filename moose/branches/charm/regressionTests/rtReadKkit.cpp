@@ -273,7 +273,12 @@ void rtRunKkitModels( const string& modelname, double dt, double runTime,
 	shell->doSetClock( 1, dt );
 	shell->doSetClock( 2, dt );
 	shell->doReinit();
-	shell->doStart( runTime );
+#ifndef USE_CHARMPP
+        shell->doStart( runTime );
+#else
+        shell->doStart( runTime, CkCallbackResumeThread() );
+#endif
+
 
 	for ( unsigned int i = 0; i < numPlots; ++i ) {
 		string plotName = string( "/kkit/graphs/" ) + string( plots[i] );
@@ -413,7 +418,12 @@ void rtRunKkit()
 	for ( unsigned int i = 0; i < 10; ++i )
 		shell->doSetClock( i, 10 );
 	shell->doReinit();
-	shell->doStart( 5000.0 );
+#ifndef USE_CHARMPP
+        shell->doStart( 5000.0 );
+#else
+        shell->doStart( 5000.0, CkCallbackResumeThread() );
+#endif
+
 
 	Id plotId( "/rkktest/graphs/conc1/MAPK_PP.Co" );
 	vector< Id > ret = LookupField< string, vector< Id > >::get( 
@@ -474,7 +484,12 @@ void rtRunKkit()
 	assert( doubleEq( actualVol, vol ) );
 
 	shell->doReinit();
-	shell->doStart( 5000.0 );
+#ifndef USE_CHARMPP
+        shell->doStart( 5000.0 );
+#else
+        shell->doStart( 5000.0, CkCallbackResumeThread() );
+#endif
+
 	size = Field< unsigned int >::get( plotId, "size" );
 	assert( size == 501 ); // Note that dt was 10.
 
@@ -620,7 +635,12 @@ void rtRunCspace()
 	checkCspaceParms();
 
 	// cout << "After Reinit\n"; Qinfo::reportQ();
-	shell->doStart( 2501.0 );
+#ifndef USE_CHARMPP
+        shell->doStart( 2501.0 );
+#else
+        shell->doStart( 2501.0, CkCallbackResumeThread() );
+#endif
+
 
 	Id plotId( "/osc/graphs/plotd" );
 	assert( plotId != Id() );
@@ -720,7 +740,12 @@ void rtRunTabSumtot()
 	shell->doSetClock( 1, 0.1 );
 	shell->doSetClock( 2, 0.1 );
 	shell->doReinit();
-	shell->doStart( 20.0 );
+#ifndef USE_CHARMPP
+        shell->doStart( 20.0 );
+#else
+        shell->doStart( 20.0, CkCallbackResumeThread() );
+#endif
+
 
 	Id tab( "/ts/kinetics/xtab" );
 	vector< double > vec = Field< vector< double > >::get( tab, "vec" );

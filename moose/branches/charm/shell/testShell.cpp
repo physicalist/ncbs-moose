@@ -25,6 +25,9 @@
 #include "OneToAllMsg.h"
 #include "Wildcard.h"
 
+#ifdef USE_CHARMPP
+#include "charm++.h"
+#endif
 
 /**
  * Tests Create and Delete calls issued through the parser interface,
@@ -713,7 +716,11 @@ void testShellParserStart()
 	if ( shell->myNode() != 0 )
 		return;
 
+#ifndef USE_CHARMPP
 	shell->doStart( 10 );
+#else
+	shell->doStart(10.0, CkCallbackResumeThread());
+#endif
 
 	tsid.destroy();
 	cout << "." << flush;
@@ -1061,7 +1068,11 @@ void testShellAddMsg()
 	// Run it
 	///////////////////////////////////////////////////////////
 
+#ifndef USE_CHARMPP
 	shell->doStart( 2 );
+#else
+        shell->doStart(2.0, CkCallbackResumeThread());
+#endif
 
 	// Clock* clock = reinterpret_cast< Clock* >( Id(1).eref().data() );
 	// clock->printCounts();
@@ -1256,7 +1267,11 @@ void testCopyMsgOps()
 	// Run it
 	///////////////////////////////////////////////////////////
 
+#ifndef USE_CHARMPP
 	shell->doStart( 2 );
+#else
+	shell->doStart(2, CkCallbackResumeThread());
+#endif
 
 	///////////////////////////////////////////////////////////
 	// Check output.
@@ -1891,3 +1906,5 @@ void testMpiShell( )
 	// Stuff for doLoadModel
 	testFindModelParent();
 }
+
+

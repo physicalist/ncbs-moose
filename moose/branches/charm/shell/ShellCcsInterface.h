@@ -22,9 +22,12 @@ class ShellCcsInterface : public CBase_ShellCcsInterface {
   // command is placed in this queue
   std::queue<ShellCcsInterfaceOperation *> opQ;
 
+  // charm++ interface
   public:
 
   ShellCcsInterface(const CkCallback &cb);
+
+  public:
   // called by (static) CCS handler functions to 
   // place operations in pending operation queue
   void addPendingOp(ShellCcsInterfaceOperation *op);

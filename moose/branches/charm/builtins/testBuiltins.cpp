@@ -110,7 +110,11 @@ void testFibonacci()
 	// ret = OneToAllMsg::add( ticker, "process0", a1, "process" );
 	assert( ret );
 
+#ifndef USE_CHARMPP
 	shell->doStart( numFib );
+#else
+	shell->doStart( numFib, CkCallbackResumeThread() );
+#endif
 	unsigned int f1 = 1;
 	unsigned int f2 = 0;
 	for ( unsigned int i = 0; i < numFib; ++i ) {
@@ -181,7 +185,12 @@ void testMpiFibonacci()
 //	assert( ret );
 	shell->doUseClock( "/a1", "process", 0 );
 
+#ifndef USE_CHARMPP
 	shell->doStart( numFib );
+#else
+	shell->doStart( numFib, CkCallbackResumeThread() );
+#endif
+
 
 	vector< double > retVec;
 	Field< double >::getVec( a1id, "outputValue", retVec );
@@ -322,7 +331,11 @@ void testGetMsg()
 	shell->doReinit();
 	SetGet1< double >::set( arithid, "arg1", 0.0 );
 	SetGet1< double >::set( arithid, "arg2", 2.0 );
+#ifndef USE_CHARMPP
 	shell->doStart( 100 );
+#else
+	shell->doStart( 100, CkCallbackResumeThread() );
+#endif
 
 	numEntries = Field< unsigned int >::get( tabid, "num_table" );
 	assert( numEntries == 101 ); // One for reinit call, 100 for process.
@@ -424,7 +437,11 @@ void testStatsReduce()
 
 	shell->doSetClock( 0, 1 );
 	shell->doReinit();
+#ifndef USE_CHARMPP
 	shell->doStart( 1 );
+#else
+	shell->doStart( 1, CkCallbackResumeThread() );
+#endif
 
 	double x = Field< double >::get( statsid, "sum" );
 	assert( doubleEq( x, sum ) );

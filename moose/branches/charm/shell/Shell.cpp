@@ -27,6 +27,9 @@
 #include "ShellCcsInterface.h"
 #include "../charm/moose.decl.h"
 #include "../charm/ElementContainer.h"
+
+extern CProxy_ElementContainer readonlyElementContainerProxy;
+extern CProxy_LookupHelper readonlyLookupHelperProxy;
 #endif
 
 // Want to separate out this search path into the Makefile options
@@ -670,17 +673,15 @@ void Shell::doQuit( bool qFlag )
 
 #ifdef USE_CHARMPP
 
-void Shell::doStart(double runtime, bool qFlag){
+void Shell::doStart(double runtime, const CkCallback &cb, bool qFlag){
   if(isRunning_) return;
 
+  finishCallback_ = cb; 
+
   isRunning_ = true;
-#ifdef USE_CHARMPP
-  // so that all CCS requests received while Shell is
-  // running, are buffered for later processing
-  setRunning();
-#endif
+  clock_->setRunTime(runtime);
   for(unsigned int i = 0; i < myElementContainers_.size(); i++){
-    myElementContainers_[i]->start(runtime);
+    myElementContainers_[i]->start();
   }
 }
 
@@ -1700,6 +1701,27 @@ void Shell::setStop(bool stop){
 
 bool Shell::getStop() const {
   return shouldStop_;
+}
+
+void Shell::setClockPointer(Clock *clock){
+  clock_ = clock;
+}
+
+void Shell::iterationDone(){
+  ProcInfo *dummy = NULL;
+  clock_->advancePhase2Body(dummy);
+
+  if(getStop() || clock_->hasExpired()){
+    readonlyLookupHelperProxy.invokeFinishCallback();
+  }
+  else{
+    readonlyElementContainerProxy.newIteration();
+  }
+}
+
+// this will be invoked via LookupHelper::invokeFinishCallback()
+void Shell::invokeFinishCallback(){
+  finishCallback_.send();
 }
 
 #endif

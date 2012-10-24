@@ -185,7 +185,7 @@ void ShellCcsInterface::doAdopt(char *msg){
 }
 
 Shell *ShellCcsInterface::getLocalShell(){
-  return (Shell *) readonlyLookupHelperProxy.ckLocalBranch()->get(Id());
+  return (Shell *) readonlyLookupHelperProxy.ckLocalBranch()->getShell();
 }
 
 ShellCcsInterface *ShellCcsInterface::getLocalShellCcsInterface(){

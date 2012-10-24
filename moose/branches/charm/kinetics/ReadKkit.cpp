@@ -164,12 +164,24 @@ void ReadKkit::run()
 	if ( useVariableDt_ ) {
 		shell_->doSetClock( 4, fastdt_ );
 		shell_->doSetClock( 5, fastdt_ );
+#ifndef USE_CHARMPP
 		shell_->doStart( transientTime_ );
+#else
+		shell_->doStart( transientTime_, CkCallbackResumeThread() );
+#endif
 		shell_->doSetClock( 4, simdt_ );
 		shell_->doSetClock( 5, simdt_ );
+#ifndef USE_CHARMPP
 		shell_->doStart( maxtime_ - transientTime_ );
+#else
+		shell_->doStart( maxtime_ - transientTime_, CkCallbackResumeThread() );
+#endif
 	} else {
+#ifndef USE_CHARMPP
 		shell_->doStart( maxtime_ );
+#else
+		shell_->doStart( maxtime_, CkCallbackResumeThread() );
+#endif
 	}
 }
 

@@ -36,17 +36,26 @@ mainmodule moose {
 
   array [1D] ElementContainer {
     entry ElementContainer(const CkCallback &cb);
-    entry void registerWithLookupHelper(const CkCallback &cb);
-    entry void doSerialUnitTests(const CkCallback &cb);
+    entry void registerSelf(const CkCallback &cb);
 
     entry void newIteration();
-    entry void iterationDone();
     entry void exchange(ElementDataMsg *m);
   };
 
   group LookupHelper {
     entry LookupHelper(CkVec< string > &s_argv, const CkCallback &cb);
     entry void initShell(const CkCallback &cb);
+
+    entry void doSerialUnitTests(const CkCallback &cb);
+  
+    entry void iterationDone();
+    entry void invokeFinishCallback();
+  };
+
+  group ParallelTestHelper {
+    entry ParallelTestHelper();
+    entry [threaded] void doMpiTests(const CkCallback &cb);
+    entry [threaded] void doProcessTests(const CkCallback &cb);
   };
 
   group ShellCcsInterface {

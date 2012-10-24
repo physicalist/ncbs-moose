@@ -302,7 +302,11 @@ void rtHHnetwork( unsigned int numCopies )
 
 	shell->doReinit();
 	shell->doReinit();
+#ifndef USE_CHARMPP
 	shell->doStart( 0.01 );
+#else
+	shell->doStart( 0.01, CkCallbackResumeThread() );
+#endif
 
 	//////////////////////////////////////////////////////////////////////
 	// Check output
@@ -364,7 +368,12 @@ void rtHHnetwork( unsigned int numCopies )
 	//////////////////////////////////////////////////////////////////////
 	shell->doReinit();
 	shell->doReinit();
+#ifndef USE_CHARMPP
 	shell->doStart( 0.1 );
+#else
+	shell->doStart( 0.1, CkCallbackResumeThread() );
+#endif
+
 	SetGet2< string, string >::set( ObjId( tabId ), 
 		"xplot", "hhnet.plot", "hhnet" );
 	

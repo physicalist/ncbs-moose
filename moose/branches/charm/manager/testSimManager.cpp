@@ -65,7 +65,11 @@
 
       shell->doReinit();
 
+#ifndef USE_CHARMPP
       shell->doStart( runtime );
+#else
+      shell->doStart( runtime, CkCallbackResumeThread() );
+#endif
 
       // Make a very long, thin, cuboid: 100um x 1um x 1um, in 1 um segments.
 
@@ -87,7 +91,11 @@
       n = gsl()->dataHandler()->localEntries();
       assert( n == numVox );
       shell->doReinit();
+#ifndef USE_CHARMPP
       shell->doStart( runtime );
+#else
+      shell->doStart( runtime, CkCallbackResumeThread() );
+#endif
       vector< double > conc;
       Field< double >::getVec( pool, "conc", conc );
       assert( conc.size() == numVox );
@@ -118,7 +126,11 @@
       n = gsl()->dataHandler()->localEntries();
       assert( n == numVox );
       shell->doReinit();
+#ifndef USE_CHARMPP
       shell->doStart( runtime );
+#else
+      shell->doStart( runtime, CkCallbackResumeThread() );
+#endif
       dx = coords[6];
       err = 0;
       Field< double >::getVec( pool, "conc", conc );

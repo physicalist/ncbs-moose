@@ -34,9 +34,6 @@ class ReduceFieldDimension;
 extern SimulationParameters readonlySimulationParameters; 
 extern CProxy_LookupHelper readonlyLookupHelperProxy;
 
-// test function; defined in testAsync.cpp
-extern void testAsync();
-
 ElementContainer::ElementContainer(const CkCallback &cb) : 
   shell_(NULL),
   clock_(NULL),
@@ -46,7 +43,7 @@ ElementContainer::ElementContainer(const CkCallback &cb) :
 {
   procInfo_.numThreadsInGroup = 1;
   procInfo_.groupId = 1;
-  procInfo_.threadIndexInGroup = thisIndex;
+  procInfo_.threadIndexInGroup = -1;
   procInfo_.nodeIndexInGroup = CkMyPe();
   procInfo_.numNodesInGroup = CkNumPes();
   procInfo_.procIndex = 0;
@@ -64,8 +61,11 @@ void ElementContainer::newIteration(){
   // copying
   flushBufferedDataItems();
 
-  // "juggle clock ticks" (whatever that means)
-  clock_->processPhase2(&procInfo_);
+  // once a container has received all the messages intended
+  // for it, it contributes to a reduction that transfers 
+  // control to Shell::iterationDone (via LookupHelper::iterationDone),
+  // where we check whether (i) we have received a stop command from
+  // the parser or (ii) the simulation clock has expired.
 }
 
 void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, const double *arg, int size){
@@ -153,10 +153,10 @@ ElementDataMsg *ElementContainer::obtainBcastMsgFromBuffers(){
 
   ElementDataMsg *msg = new (numQinfo, numData, numDirectQinfo, numDirectData) ElementDataMsg(numQinfo, numDirectQinfo);
   
-  memcpy(msg->qinfo_, &qBuf_[0], numQinfo * sizeof(Qinfo));
-  memcpy(msg->data_, &dBuf_[0], numData * sizeof(double));
-  memcpy(msg->qinfoDirect_, &qBufDirect_[0], numDirectQinfo * sizeof(DirectQbufEntry));
-  memcpy(msg->dataDirect_, &dBufDirect_[0], numDirectData * sizeof(double));
+  if(qBuf_.size() > 0) memcpy(msg->qinfo_, &qBuf_[0], numQinfo * sizeof(Qinfo));
+  if(dBuf_.size() > 0) memcpy(msg->data_, &dBuf_[0], numData * sizeof(double));
+  if(qBufDirect_.size() > 0) memcpy(msg->qinfoDirect_, &qBufDirect_[0], numDirectQinfo * sizeof(DirectQbufEntry));
+  if(dBufDirect_.size() > 0) memcpy(msg->dataDirect_, &dBufDirect_[0], numDirectData * sizeof(double));
 
   return msg;
 }
@@ -173,9 +173,8 @@ void ElementContainer::exchange(ElementDataMsg *m){
     // when all expected bcasts have been received, 
     // synchronize and (conditionally) start next 
     // iteration
-    contribute(CkCallback(CkIndex_ElementContainer::iterationDone(), CkArrayIndex1D(0), thisProxy));
+    contribute(CkCallback(CkIndex_LookupHelper::iterationDone(), 0, readonlyLookupHelperProxy));
   }
-  delete m;
 }
 
 void ElementContainer::readBuf(Qinfo *qinfo, unsigned int nQinfo, 
@@ -236,18 +235,20 @@ void ElementContainer::clearReduceQ(unsigned int numThreads){
   // charm++ reduction, which should have a customized reducer
   // mind that the MPI version uses MPI_Allgather
 
-  // This function doesn't do anything at all, since at the 
-  // moment, there is no compelling case for supporting reductions 
+  // This function doesn't do anything at all, since according to 
+  // USB, at the moment there is no compelling use-case for reductions 
 }
 
-void ElementContainer::registerWithLookupHelper(const CkCallback &cb){
+void ElementContainer::registerSelf(const CkCallback &cb){
   lookup_ = readonlyLookupHelperProxy.ckLocalBranch();
   lookupRegistrationIdx_ = lookup_->registerContainer(this);
+  shell_ = lookup_->getShell();
+  clock_ = lookup_->getClock();
+  procInfo_.threadIndexInGroup = lookupRegistrationIdx_;
   contribute(cb);
 }
 
-void ElementContainer::start(double runTime){
-  clock_->setRunTime(runTime);
+void ElementContainer::start(){
   thisProxy[thisIndex].newIteration();
 }
 
@@ -260,6 +261,8 @@ void ElementContainer::iterationDone(){
     shell_->setStop(false);
   }
   else{
+    // XXX here, we have to check for simulation completion as well
+    // that is, the clock object has to be queried somehow
     thisProxy.newIteration();
   }
 }
@@ -268,7 +271,3 @@ ThreadId ElementContainer::getRegistrationIndex(){
   return lookupRegistrationIdx_;
 }
 
-void ElementContainer::doSerialUnitTests(const CkCallback &cb){
-  testAsync();
-  contribute(cb);
-}

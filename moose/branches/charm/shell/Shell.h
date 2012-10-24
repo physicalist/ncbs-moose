@@ -33,6 +33,7 @@ class PrepackedBuffer;
 
 #ifdef USE_CHARMPP
 class ElementContainer;
+class Clock;
 #endif
 
 class Shell
@@ -72,6 +73,7 @@ class Shell
 #ifdef USE_CHARMPP
                 void setRunning();
                 void setNotRunning();
+                void iterationDone();
 #endif
 
 		///////////////////////////////////////////////////////////
@@ -117,7 +119,11 @@ class Shell
 		 * time. This version is blocking, and returns only when the 
 		 * simulation is done.
 		 */
+#ifndef USE_CHARMPP
 		void doStart( double runtime, bool qFlag = 0 );
+#else
+		void doStart( double runtime, const CkCallback &cb, bool qFlag = 0 );
+#endif
 
 		/**
 		 * Starts off simulation, to run for 'runtime' more than current
@@ -529,6 +535,9 @@ class Shell
                 ElementContainer *getContainer(ThreadId id);
                 void setStop(bool stop);
                 bool getStop() const;
+
+                void setClockPointer(Clock *clock);
+                void invokeFinishCallback();
 #endif
 		
 	private:
@@ -539,6 +548,10 @@ class Shell
                 bool shouldStop_;
 
                 CkVec< ElementContainer * > myElementContainers_; 
+                Clock *clock_;
+                // when done simulating, control is 
+                // transferred to this callback.
+                CkCallback finishCallback_;
 #endif
 
 

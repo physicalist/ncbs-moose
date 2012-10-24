@@ -674,21 +674,24 @@ void Clock::advancePhase1(  ProcInfo *p )
 // things. So it cannot touch any fields which might affect other threads.
 void Clock::advancePhase2(  ProcInfo *p )
 {
-	if ( Shell::isSingleThreaded() || p->threadIndexInGroup == 1 ) {
-		tickPtr_[0].mgr()->advancePhase2( p );
-		if ( tickPtr_.size() > 1 )
-			sort( tickPtr_.begin(), tickPtr_.end() );
-		currentTime_ = tickPtr_[0].mgr()->getNextTime() - 
-			tickPtr_[0].mgr()->getDt();
-		if ( currentTime_ > endTime_ ) {
-			Id clockId( 1 );
-			procState_ = StopOnly;
-			finished()->send( clockId.eref(), p->threadIndexInGroup );
-			ack()->send( clockId.eref(), p->threadIndexInGroup, 
-				p->nodeIndexInGroup, OkStatus );
-		}
-		++countAdvance2_;
-	}
+  if ( Shell::isSingleThreaded() || p->threadIndexInGroup == 1 ) {
+    advancePhase2Body(p);
+    if( hasExpired() ){
+      Id clockId( 1 );
+      procState_ = StopOnly;
+      finished()->send( clockId.eref(), p->threadIndexInGroup );
+      ack()->send( clockId.eref(), p->threadIndexInGroup, 
+          p->nodeIndexInGroup, OkStatus );
+
+    }
+    ++countAdvance2_;
+  }
+}
+
+void Clock::advancePhase2Body(ProcInfo *p){
+  tickPtr_[0].mgr()->advancePhase2( p );
+  if ( tickPtr_.size() > 1 ) sort( tickPtr_.begin(), tickPtr_.end() );
+  currentTime_ = tickPtr_[0].mgr()->getNextTime() - tickPtr_[0].mgr()->getDt();
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -775,5 +778,9 @@ void Clock::reinitPhase2( ProcInfo* info )
 			}
 		}
 	}
+}
+
+bool Clock::hasExpired() const {
+  return currentTime_ > endTime_;
 }
 

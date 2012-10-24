@@ -65,8 +65,15 @@ void LookupHelper::initShell(const CkCallback &cb){
   argv_ = NULL;
 
   shell_ = reinterpret_cast< Shell* >( shellId_()->dataHandler()->data( 0 ) );
+  Id clockId(1);
+  clock_ = reinterpret_cast< Clock* >( clockId()->dataHandler()->data( 0 ) );
+  shell_->setClockPointer(clock_);
 
   contribute(cb);
+}
+
+void LookupHelper::iterationDone(){
+  shell_->iterationDone();
 }
 
 Element *LookupHelper::get(Id id){
@@ -75,6 +82,14 @@ Element *LookupHelper::get(Id id){
 
 void LookupHelper::set(Id id, Element *e){
   elements_[id.value()] = e;
+}
+
+Shell *LookupHelper::getShell(){
+  return shell_;
+}
+
+Clock *LookupHelper::getClock(){
+  return clock_;
 }
 
 vector< Element * > &LookupHelper::elements(){
@@ -87,4 +102,57 @@ ThreadId LookupHelper::registerContainer(ElementContainer *container){
 
 ElementContainer *LookupHelper::getContainer(ThreadId id){
   return shell_->getContainer(id);
+}
+
+extern void testAsync();
+extern void testMsg();
+extern void testShell();
+extern void testScheduling();
+extern void testBuiltins();
+extern void testKinetics();
+extern void testBiophysics();
+extern void testHSolve();
+extern void testGeom();
+extern void testMesh();
+
+extern void testMpiMsg();
+extern void testMpiShell();
+extern void testMpiBuiltins();
+extern void testMpiScheduling();
+
+#ifdef USE_SMOLDYN
+extern void testSmoldyn();
+#endif
+
+void LookupHelper::doSerialUnitTests(const CkCallback &cb){
+  testAsync();
+  testMsg();
+  testShell();
+  testScheduling();
+  testBuiltins();
+  testKinetics();
+  testBiophysics();
+  testHSolve();
+  testGeom();
+  testMesh();
+#ifdef USE_SMOLDYN
+  testSmoldyn();
+#endif
+  contribute(cb);
+}
+
+void LookupHelper::doParallelUnitTests(const CkCallback &cb){
+  testMpiMsg();
+  cout << "." << flush;
+  testMpiShell();
+  cout << "." << flush;
+  testMpiBuiltins();
+  cout << "." << flush;
+  //testMpiScheduling();
+  //cout << "." << flush;
+  contribute(cb);
+}
+
+void LookupHelper::invokeFinishCallback(){
+  shell_->invokeFinishCallback();
 }
