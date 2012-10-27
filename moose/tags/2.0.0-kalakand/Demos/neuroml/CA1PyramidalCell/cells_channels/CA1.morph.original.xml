@@ -5,8 +5,7 @@
         <cell name="CA1">
 
             <meta:notes>Cell exported from NEURON ModelView in NeuroML Level 2 format and imported into neuroConstruct. The densities of hd, kap, kad have been replaced with variable mechanisms recreating the densities as used in the original model from ModelDB.</meta:notes>
-            <meta:notes>MOOSE NeuroML importer still does not support changing channel parameters post load and inhomogenous tags. Thus this model has been modified.
-            All inhomogeneous tags have been removed. All changed channel parameters have been hardcoded into modified channels.</meta:notes>
+
             <mml:segments>
 
                 <mml:segment id="0" name="Seg0_soma_0" cable="0">
@@ -12546,11 +12545,15 @@
                     </bio:parameter>
                 </bio:mechanism>
 
-                <!--<bio:mechanism name="hd" type="Channel Mechanism">
+                <bio:mechanism name="hd" type="Channel Mechanism">
                     <bio:parameter name="gmax" value="-1.0E8">
                         <bio:group>ModelViewParmSubset_5</bio:group>
                     </bio:parameter>
-                </bio:mechanism>-->
+                    <bio:parameter name="vhalfl" value="-81.0">    <!--Note: Units of extra parameters are not known, except if it's e!!-->
+
+                        <bio:group>ModelViewParmSubset_5</bio:group>
+                    </bio:parameter>
+                </bio:mechanism>
 
                 <bio:mechanism name="pas" type="Channel Mechanism" passive_conductance="true">
                     <bio:parameter name="e" value="-58.0">
@@ -12561,14 +12564,22 @@
                     </bio:parameter>
                 </bio:mechanism>
 
-                <!--<bio:mechanism name="hd_minus73" type="Channel Mechanism">
+                <bio:mechanism name="hd" type="Channel Mechanism">
                     <bio:parameter name="gmax" value="-1.0E8">
                         <bio:group>ModelViewParmSubset_7</bio:group>
                     </bio:parameter>
-                </bio:mechanism>-->
+                    <bio:parameter name="vhalfl" value="-73.0">    <!--Note: Units of extra parameters are not known, except if it's e!!-->
 
-                <bio:mechanism name="hd_minus73" type="Channel Mechanism">
+                        <bio:group>ModelViewParmSubset_7</bio:group>
+                    </bio:parameter>
+                </bio:mechanism>
+
+                <bio:mechanism name="hd" type="Channel Mechanism">
                     <bio:parameter name="gmax" value="0.05">
+                        <bio:group>soma_group</bio:group>
+                    </bio:parameter>
+                    <bio:parameter name="vhalfl" value="-73.0">    <!--Note: Units of extra parameters are not known, except if it's e!!-->
+
                         <bio:group>soma_group</bio:group>
                     </bio:parameter>
                 </bio:mechanism>
@@ -12583,6 +12594,37 @@
                     <bio:parameter name="gmax" value="25.0">
                         <bio:group>ModelViewParmSubset_2</bio:group>
                     </bio:parameter>
+                    <bio:parameter name="ar" value="1.0">    <!--Note: Units of extra parameters are not known, except if it's e!!-->
+
+                        <bio:group>ModelViewParmSubset_2</bio:group>
+                    </bio:parameter>
+                </bio:mechanism>    <!--kap with param: gmax = f(p) = (H(100 + ((-1) * p)) * 3.0E-7) * (1 + (p / 100)) on ParameterisedGroup: PathLengthOverDendrites on: dendrite_group with metric: Path Length from root (NO_TRANSLATION, NO_NORMALISATION), var: p-->
+
+
+                <bio:mechanism name="kap" type="Channel Mechanism">
+                    <bio:variable_parameter name="gmax">
+                        <bio:group>dendrite_group</bio:group>
+                        <bio:inhomogeneous_value param_name="PathLengthOverDendrites" value="1.0E8 * (H(100 + ((-1) * p)) * 3.0E-7) * (1 + (p / 100))"/>    <!--Note: conversion factor (1.0E8 * ) included to convert to units: GENESIS Physiological Units-->
+
+                    </bio:variable_parameter>
+                </bio:mechanism>    <!--hd with param: gmax = f(p) = 5.0E-10 * (1 + ((3 * p) / 100)) on ParameterisedGroup: PathLengthOverDendrites on: dendrite_group with metric: Path Length from root (NO_TRANSLATION, NO_NORMALISATION), var: p-->
+
+
+                <bio:mechanism name="hd" type="Channel Mechanism">
+                    <bio:variable_parameter name="gmax">
+                        <bio:group>dendrite_group</bio:group>
+                        <bio:inhomogeneous_value param_name="PathLengthOverDendrites" value="1.0E8 * 5.0E-10 * (1 + ((3 * p) / 100))"/>    <!--Note: conversion factor (1.0E8 * ) included to convert to units: GENESIS Physiological Units-->
+
+                    </bio:variable_parameter>
+                </bio:mechanism>    <!--kad with param: gmax = f(p) = (H(p - 100) * 3.0E-7) * (1 + (p / 100)) on ParameterisedGroup: PathLengthOverDendrites on: dendrite_group with metric: Path Length from root (NO_TRANSLATION, NO_NORMALISATION), var: p-->
+
+
+                <bio:mechanism name="kad" type="Channel Mechanism">
+                    <bio:variable_parameter name="gmax">
+                        <bio:group>dendrite_group</bio:group>
+                        <bio:inhomogeneous_value param_name="PathLengthOverDendrites" value="1.0E8 * (H(p - 100) * 3.0E-7) * (1 + (p / 100))"/>    <!--Note: conversion factor (1.0E8 * ) included to convert to units: GENESIS Physiological Units-->
+
+                    </bio:variable_parameter>
                 </bio:mechanism>
 
                 <bio:spec_capacitance>
