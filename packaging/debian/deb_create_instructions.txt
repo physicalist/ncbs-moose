@@ -65,7 +65,11 @@ dpkg-buildpackage -b
 -b is for only binary package.
 will create debian/moose and deeper directories and also ../*.deb files.
 
------------------------------- Packaging tips ---------------------------------------------
+Can do a sudo make install after this, as the make was done with BUILD=release.
+This will help check the gui and squid_demo from the desktop.
+Of course for the .deb install testing, you need to go to a fresh install snapshot of the virtual machine.
+
+------------------------------ Important packaging notes and tips ---------------------------------------------
 
 Note that dpkg-buildpackage calls a lot of dh_* scripts. Read their manpages to see what they do.
 You can call these individually yourself too for testing.
