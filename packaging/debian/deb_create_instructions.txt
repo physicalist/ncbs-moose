@@ -40,8 +40,8 @@ Follow sec 2.7 setting up dh_make in above file, setting DEBEMAIL and DEBFULLNAM
 install dh-make and build-essential via synaptic
 As per sec 2.9, above
 cd ~/moose_src
-dh_make --native -s -p moose_2.0 -c lgpl2
-[Set version number and licence (lgpl2) above.]
+dh_make --native -s -p moose_2.0.0 -c lgpl2
+[Sets version number (in debian/changelog) and licence (lgpl2) above.]
 This creates a ~/moose_src/debian directory.
 
 ------------------ Put in MOOSE specific information for packaging ----------------------
@@ -58,6 +58,9 @@ IMPORTANT: In ~/moose_src/debian/control,
  set architecture to 'i386' or 'amd64' for 32-bit / 64-bit systems, and
  set python2.6 / python2.7 on the 'Depends' line based on Ubuntu 10.04 / 12.04.
 
+[You cannot have a common package for python 2.6 & 2.7
+as _moose.so is linked to libpython2.6 / libpython2.7 .]
+
 ------------------- Generate /debian/moose/usr/ etc and .deb package ---------------------
 
 In ~/moose_src,
@@ -65,7 +68,7 @@ dpkg-buildpackage -b
 -b is for only binary package.
 will create debian/moose and deeper directories and also ../*.deb files.
 
-Can do a sudo make install after this, as the make was done with BUILD=release.
+Can do a 'sudo make install' after this, as the make was done with BUILD=release.
 This will help check the gui and squid_demo from the desktop.
 Of course for the .deb install testing, you need to go to a fresh install snapshot of the virtual machine.
 
@@ -96,3 +99,37 @@ dpkg-deb -c ~/moose_2.0_amd64.deb
 
 Install lintian via synaptic and use it on moose*.dsc and moose*.deb to check for certain errors.
 
+--------------------------- Setting up a Debian system ------------------------
+
+Debian 6.0.6 Squeeze
+Open root terminal from mainmenu->accesories in the LXDE desktop.
+During install, it did not ask for proxy, so it could not get latest packages.
+So, in ~/.bashrc of root and user
+export http_proxy=http://proxy.ncbs.res.in:3128
+export ftp_proxy=ftp://proxy.ncbs.res.in:3128
+In /etc/apt/sources.list, all repositories were commented out by the installer.
+The sources.list did not even have the debian main repository.
+So as per
+http://wiki.debian.org/SourcesList
+I added to /etc/apt/sources.list:
+deb http://ftp.br.debian.org/debian squeeze main
+deb-src http://ftp.br.debian.org/debian squeeze main
+
+deb http://ftp.br.debian.org/debian squeeze-updates main
+deb-src http://ftp.br.debian.org/debian squeeze-updates main
+
+deb http://security.debian.org/ squeeze/updates main
+deb-src http://security.debian.org/ squeeze/updates main
+
+apt-get update
+(update gets package lists, different from upgrade)
+apt-get install synaptic
+set proxy in synaptic preferences->network.
+
+unable to get guest additions on the virtual machine running as it did not have gcc by default!
+
+install gdebi via synaptic.
+run gdebi-gtk from a terminal and then install the .deb file using it.
+debian 6.0.6 'squeeze' still uses python2.6, so use the appropriate package.
+
+-----------------------------------------------------------------------------
