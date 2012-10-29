@@ -54,6 +54,7 @@ rsync --exclude=.svn debian-ref/* debian/
 In ~/moose_src/debian/, you can
 edit 'copyright' file to put in author names, change package copyright also to lgpl2 etc.
 edit control, postinst and prerm files.
+In changelog, enter the correct moose version.
 IMPORTANT: In ~/moose_src/debian/control,
  set architecture to 'i386' or 'amd64' for 32-bit / 64-bit systems, and
  set python2.6 / python2.7 on the 'Depends' line based on Ubuntu 10.04 / 12.04.
