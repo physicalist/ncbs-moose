@@ -16,6 +16,6 @@ Description: MOOSE is the Multiscale Object-Oriented Simulation Environment.
  MOOSE spans the range from single molecules to subcellular networks, from
  single cells to neuronal networks, and to still larger systems. It is
  backwards-compatible with GENESIS, and forward compatible with Python
- and XML-based model definition standards like SBML and MorphML. It supports
+ and XML-based model definition standards like SBML and NeuroML. It supports
  transparent parallelization, that is, it can run models on a cluster with no
  user effort required to parallelize them.
