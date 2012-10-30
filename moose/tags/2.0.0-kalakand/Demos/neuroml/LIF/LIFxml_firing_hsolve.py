@@ -37,14 +37,11 @@ def create_LIF():
 
 def run_LIF():
     cells_path = '/cells'
-    h = moose.HSolve( cells_path+'/solve' )
-    h.dt = SIMDT
-    h.target = cells_path
 
     ## reset and run the simulation
     print "Reinit MOOSE."
     ## from moose_utils.py sets clocks and resets
-    resetSim(['/cells'], SIMDT, PLOTDT,hsolve_path=cells_path+'/solve')
+    resetSim(['/cells'], SIMDT, PLOTDT, simmethod='hsolve')
     print "Running now..."
     moose.start(RUNTIME)
 

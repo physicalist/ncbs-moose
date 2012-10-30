@@ -39,7 +39,7 @@ def run_LIF():
 	## reset and run the simulation
 	print "Reinit MOOSE."
 	## from moose_utils.py sets clocks and resets
-	resetSim(['/cells'], SIMDT, PLOTDT)
+	resetSim(['/cells'], SIMDT, PLOTDT, simmethod='ee')
 	print "Running now..."
 	moose.start(RUNTIME)
 

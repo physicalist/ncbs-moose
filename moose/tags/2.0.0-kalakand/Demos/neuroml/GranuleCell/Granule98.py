@@ -32,7 +32,7 @@ def loadGran98NeuroML_L123(filename):
     #KDrX = setupTable('ChanX',moose.HHChannel(soma_path+'/Gran_KDr_98'),'X')
     soma = moose.Compartment(soma_path)
     print "Reinit MOOSE ... "
-    resetSim(['/elec','/cells'],simdt,plotdt) # from moose.utils
+    resetSim(['/elec','/cells'],simdt,plotdt,simmethod='ee') # from moose.utils
     print "Running ... "
     moose.start(runtime)
     tvec = arange(0.0,runtime,plotdt)
