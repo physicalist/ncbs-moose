@@ -49,7 +49,7 @@ moose.connect(spikeGen,'event',CA1CellSpikesTable,'input')
 cells_path = '/cells'
 
 ## from moose_utils.py sets clocks and resets/reinits
-resetSim(['/cells'],SIMDT,PLOTDT,simmethod='ee') # from moose.utils
+resetSim(['/cells'],SIMDT,PLOTDT,simmethod='hsolve') # from moose.utils
 
 ## Loop through different current injections
 freqList = []
