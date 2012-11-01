@@ -378,7 +378,11 @@ void benchmarkMsg( unsigned int n, string msgType )
 	for ( unsigned int i = 0; i < 10; ++i )
 		shell->doSetClock( i, 0, false );
 	shell->doSetClock( 0, 1, false );
+#ifndef USE_CHARMPP
 	shell->doReinit( false );
+#else
+	shell->doReinit( CkCallbackResumeThread(), false );
+#endif
 	SetGet1< double >::setVec( a1, "arg1", init );
 #ifndef USE_CHARMPP
 	shell->doStart( 100, false );

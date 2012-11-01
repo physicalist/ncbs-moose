@@ -42,6 +42,8 @@ class DestFinfo;
 
 
 // readonly variables
+unsigned int readonlyNumElementContainers;
+unsigned int readonlyNumUsefulElementContainers;
 CProxy_ElementContainer readonlyElementContainerProxy;
 CProxy_LookupHelper readonlyLookupHelperProxy;
 CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
@@ -63,7 +65,11 @@ Main::Main(CkArgMsg *m){
 
 void Main::createMooseParallelObjects(CkArgMsg *m){
   // XXX should get this from command line parameters
-  nElementContainers_ = CkNumPes();
+  // one "shell/script/test" container on each PE is required in addition to
+  // at least one compute container
+  readonlyNumElementContainers = 2 * CkNumPes();
+  readonlyNumUsefulElementContainers = CkNumPes();
+
   __sdag_init();
 
   CkVec< string > args;
@@ -76,7 +82,7 @@ void Main::createMooseParallelObjects(CkArgMsg *m){
   readonlyShellCcsInterfaceProxy = CProxy_ShellCcsInterface::ckNew(CkCallback(CkIndex_Main::shellCcsInterfacesReady(), thisProxy));
 
   // initiate creation of chare array elements
-  readonlyElementContainerProxy = CProxy_ElementContainer::ckNew(CkCallback(CkIndex_Main::elementsReady(), thisProxy), nElementContainers_);
+  readonlyElementContainerProxy = CProxy_ElementContainer::ckNew(CkCallback(CkIndex_Main::elementsReady(), thisProxy), readonlyNumElementContainers);
 
   readonlyParallelTestHelperProxy = CProxy_ParallelTestHelper::ckNew();
 
@@ -92,13 +98,13 @@ void Main::commence(){
   readonlyElementContainerProxy.registerSelf(CkCallbackResumeThread());
 
   CkPrintf("[main] starting serial unit tests\n");
-  readonlyLookupHelperProxy.doSerialUnitTests(CkCallbackResumeThread());
+  readonlyParallelTestHelperProxy[0].doSerialUnitTests(CkCallbackResumeThread());
 
   CkPrintf("\n[main] starting parallel unit tests\n");
-  readonlyParallelTestHelperProxy.doMpiTests(CkCallbackResumeThread());
+  readonlyParallelTestHelperProxy[0].doMpiTests(CkCallbackResumeThread());
 
   CkPrintf("\n[main] starting process unit tests\n");
-  readonlyParallelTestHelperProxy.doProcessTests(CkCallbackResumeThread());
+  readonlyParallelTestHelperProxy[0].doProcessTests(CkCallbackResumeThread());
 
   // XXX - only for the time being
   // once we have the unit tests running, we should 

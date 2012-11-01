@@ -120,7 +120,7 @@ Arith::Arith()
 	;
 }
 
-static bool doReport = 0;
+static bool doReport = false;
 void Arith::process( const Eref& e, ProcPtr p )
 {
 	output_ = arg1_ + arg2_ + arg3_; // Doing a hard-coded function.
@@ -131,27 +131,31 @@ void Arith::process( const Eref& e, ProcPtr p )
 			e.element()->getName() << ", " << e.objId() << "		" << 
 			arg3_ << "	" << &arg3_ << endl;
 	}
+        //cout << "Arith::process output " << output_ << endl;
 	output()->send( e, p->threadIndexInGroup, output_ );
 	arg3_ = 0.0;
 }
 
 void Arith::reinit( const Eref& e, ProcPtr p )
 {
-	// cout << "reinit: " << e.element()->getName() << ", " << e.objId() << arg3_ << endl;
+	//cout << "reinit: " << e.element()->getName() << ", " << e.objId() << arg3_ << endl;
 	arg1_ = 0.0;
 	arg2_ = 0.0;
 	arg3_ = 0.0;
 	output_ = 0.0;
+        //cout << "Arith::reinit output " << output_ << endl;
 }
 
 void Arith::arg1( const double arg )
 {
 	arg1_ = arg;
+        //cout << "Arith::arg1 arg1_ " << arg1_ << endl;
 }
 
 void Arith::arg2( const double arg )
 {
 	arg2_ = arg;
+        //cout << "Arith::arg2 arg2_ " << arg2_ << endl;
 }
 
 void Arith::arg3( const double arg )
@@ -184,6 +188,7 @@ void Arith::setOutput( double v )
 
 double Arith::getOutput() const
 {
+        //cout << "Arith::getOutput output " << output_ << endl;
 	return output_;
 }
 

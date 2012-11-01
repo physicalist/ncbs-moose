@@ -31,6 +31,8 @@ class ReduceFieldDimension;
 #include "LookupHelper.h"
 
 // readonly
+extern unsigned int readonlyNumElementContainers;
+extern unsigned int readonlyNumUsefulElementContainers;
 extern SimulationParameters readonlySimulationParameters; 
 extern CProxy_LookupHelper readonlyLookupHelperProxy;
 
@@ -47,7 +49,6 @@ ElementContainer::ElementContainer(const CkCallback &cb) :
   procInfo_.nodeIndexInGroup = CkMyPe();
   procInfo_.numNodesInGroup = CkNumPes();
   procInfo_.procIndex = 0;
-  procInfo_.nElementContainers = CkNumPes();
 
   contribute(cb);
 }
@@ -66,7 +67,23 @@ void ElementContainer::newIteration(){
   // control to Shell::iterationDone (via LookupHelper::iterationDone),
   // where we check whether (i) we have received a stop command from
   // the parser or (ii) the simulation clock has expired.
+
+  // only the container with threadNum 1 will do anything
+  // when it invokes this method
+  clock_->processPhase2(&procInfo_);
 }
+
+/*
+void ElementContainer::reinitIteration(){
+  clock_->processPhase1(&procInfo_);
+  // for now, we buffer all data items issued by
+  // elements, copy them into one bcast message and send
+  // this msg out. Extensions of this are possible; e.g. 
+  // use several, fixed size msgs or MeshStreamer to avoid
+  // copying
+  flushBufferedDataItems();
+}
+*/
 
 void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, const double *arg, int size){
   // we are passing threadId = 0, to the Qinfo ctor
@@ -168,27 +185,50 @@ void ElementContainer::exchange(ElementDataMsg *m){
           m->data_, m->dataDirect_);
   delete m;
 
-  if(nDataBcastsReceived_ == procInfo_.nElementContainers){
+  if(nDataBcastsReceived_ == readonlyNumUsefulElementContainers){
     nDataBcastsReceived_ = 0;
     // when all expected bcasts have been received, 
     // synchronize and (conditionally) start next 
     // iteration
-    contribute(CkCallback(CkIndex_LookupHelper::iterationDone(), 0, readonlyLookupHelperProxy));
+    // FIXME - contribute to local shell here, which
+    // has count of number of containers from which to
+    // expect 'checkin' 
+    shell_->containerCheckin();
   }
 }
 
 void ElementContainer::readBuf(Qinfo *qinfo, unsigned int nQinfo, 
                                DirectQbufEntry *qinfoDirect, unsigned int nQinfoDirect,
                                const double *data, const double *dataDirect){
+
+  // All containers receive each message,
+  // but only the workers should process it. Below,
+  // we enforce this constraint. If we are not 
+  // changing the DataHandler code (in particular 
+  // DataHandler::execThread()), there is no way around
+  // this hack. This is because the container assigned
+  // to the shell (i.e. the container with reg. index
+  // 0) is considered by BlockHandler's execThread method
+  // to deliver the message to all the moose objects
+  // assigned to this PE.
+  if(lookupRegistrationIdx_ == 0) return;
+
   // first look at all indirect qinfo entries
+  readIndirectBuf(qinfo, nQinfo, data);
+  // then examine the direct qinfo entries, of type DirectQbufEntry
+  readDirectBuf(qinfoDirect, nQinfoDirect, dataDirect);
+}
+
+void ElementContainer::readIndirectBuf(Qinfo *qinfo, unsigned int nQinfo, const double *data){
   for (unsigned int i = 0; i < nQinfo; ++i) {
     Qinfo &qi = qinfo[i];
     qi.setThreadNum(lookupRegistrationIdx_); 
     const Element* e = qi.src().element();
     if (e) e->exec(&qi, data + qi.dataIndex());
   }
+}
 
-  // then examine the direct qinfo entries, of type DirectQbufEntry
+void ElementContainer::readDirectBuf(DirectQbufEntry *qinfoDirect, unsigned int nQinfoDirect, const double *dataDirect){
   for(unsigned int i = 0; i < nQinfoDirect; i++){
     DirectQbufEntry &qi = qinfoDirect[i];
     qi.qinfo_.setThreadNum(lookupRegistrationIdx_); 
@@ -199,6 +239,8 @@ void ElementContainer::readBuf(Qinfo *qinfo, unsigned int nQinfo,
 
 void ElementContainer::hackClearQ(int nCycles){
   for(int i = 0; i < nCycles; i++){
+    // FIXME remove copying overhead by having a double
+    // buffer scheme with pointer swapping
     // copy into temporary buffers
     CkVec< Qinfo > qBuf(qBuf_);
     CkVec< DirectQbufEntry > qBufDirect(qBufDirect_);
@@ -210,11 +252,15 @@ void ElementContainer::hackClearQ(int nCycles){
     qBufDirect_.resize(0);
     dBufDirect_.resize(0);
 
+    // unlike in readBuf(), here we don't discriminate
+    // against the 0-th container on this PE, because
+    // hackClearQ is used only in testing, and therefore
+    // should always be done by the 0-th/test/shell container
+
     // read from temporary buffers, and write into
     // qBuf_, etc.
-    readBuf(qBuf.getVec(), qBuf.size(),
-            qBufDirect.getVec(), qBufDirect.size(), 
-            data.getVec(), dataDirect.getVec());
+    readIndirectBuf(qBuf.getVec(), qBuf.size(), data.getVec());
+    readDirectBuf(qBufDirect.getVec(), qBufDirect.size(), dataDirect.getVec());
   }
 }
 
@@ -249,22 +295,22 @@ void ElementContainer::registerSelf(const CkCallback &cb){
 }
 
 void ElementContainer::start(){
+  // if this is shell's container (allocated only 
+  // because the unit tests require it) then we shouldn't
+  // ask it to do any simulation work; instead, just have
+  // it send an empty data message, which is required for
+  // correct count of received messages
+  if(procInfo_.threadIndexInGroup == 0) flushBufferedDataItems();
+  thisProxy[thisIndex].newIteration();
+}
+
+void ElementContainer::reinit(){
+  if(procInfo_.threadIndexInGroup == 0) flushBufferedDataItems();
   thisProxy[thisIndex].newIteration();
 }
 
 void ElementContainer::stop(){
   clock_->stop();
-}
-
-void ElementContainer::iterationDone(){
-  if(shell_->getStop()){
-    shell_->setStop(false);
-  }
-  else{
-    // XXX here, we have to check for simulation completion as well
-    // that is, the clock object has to be queried somehow
-    thisProxy.newIteration();
-  }
 }
 
 ThreadId ElementContainer::getRegistrationIndex(){

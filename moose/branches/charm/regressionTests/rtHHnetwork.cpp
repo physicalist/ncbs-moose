@@ -300,11 +300,13 @@ void rtHHnetwork( unsigned int numCopies )
 	// shell->doUseClock( "/copy/compt/Na,/n/compt/K", "process", 2 );
 	shell->doUseClock( "/copy/tab", "process", 3 );
 
-	shell->doReinit();
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
+	shell->doReinit();
 	shell->doStart( 0.01 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
+	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( 0.01, CkCallbackResumeThread() );
 #endif
 
@@ -366,11 +368,13 @@ void rtHHnetwork( unsigned int numCopies )
 	// Reset, and run again. This time long enough to have lots of 
 	// synaptic activity
 	//////////////////////////////////////////////////////////////////////
-	shell->doReinit();
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
+	shell->doReinit();
 	shell->doStart( 0.1 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
+	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( 0.1, CkCallbackResumeThread() );
 #endif
 

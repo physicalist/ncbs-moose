@@ -71,9 +71,11 @@ class Shell
 		bool isRunning() const;
 
 #ifdef USE_CHARMPP
-                void setRunning();
-                void setNotRunning();
+                void containerCheckin();
                 void iterationDone();
+                void startAllContainers();
+                void reinitAllContainers();
+                bool isDoingReinit() const;
 #endif
 
 		///////////////////////////////////////////////////////////
@@ -141,7 +143,11 @@ class Shell
 		 * objects are set to initial conditions. If simulation is
 		 * already running, first stops it.
 		 */
+#ifndef USE_CHARMPP
 		void doReinit( bool qFlag = 0 );
+#else
+                void doReinit(const CkCallback &cb, bool qFlag = 0);
+#endif
 
 		/**
 		 * Cleanly stops simulation, ready to take up again from where
@@ -543,9 +549,8 @@ class Shell
 	private:
 
 #ifdef USE_CHARMPP
-                // set isRunning_ to true/false as required
-                bool isRunning_;
                 bool shouldStop_;
+                unsigned int nContainersCheckedIn_;
 
                 CkVec< ElementContainer * > myElementContainers_; 
                 Clock *clock_;

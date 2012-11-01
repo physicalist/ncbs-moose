@@ -27,6 +27,7 @@
 #include "ShellCcsInterface.h"
 #include "../charm/moose.decl.h"
 #include "../charm/ElementContainer.h"
+#include "../charm/LookupHelper.h"
 
 extern CProxy_ElementContainer readonlyElementContainerProxy;
 extern CProxy_LookupHelper readonlyLookupHelperProxy;
@@ -483,8 +484,8 @@ static const Cinfo* shellCinfo = Shell::initCinfo();
 Shell::Shell()
 	: 
 #ifdef USE_CHARMPP
-                isRunning_(false),
                 shouldStop_(false),
+                nContainersCheckedIn_(0),
 #endif
 		gettingVector_( 0 ),
 		numGetVecReturns_( 0 ),
@@ -674,13 +675,22 @@ void Shell::doQuit( bool qFlag )
 #ifdef USE_CHARMPP
 
 void Shell::doStart(double runtime, const CkCallback &cb, bool qFlag){
-  if(isRunning_) return;
+  if(isRunning()) return;
 
   finishCallback_ = cb; 
 
-  isRunning_ = true;
-  clock_->setRunTime(runtime);
-  for(unsigned int i = 0; i < myElementContainers_.size(); i++){
+  clock_->handleStart(runtime);
+  clock_->setIsRunning(true);
+  startAllContainers();
+}
+
+void Shell::startAllContainers(){
+  // Don't want the container that has been assigned
+  // to the shell to do anything, since that container's
+  // threadNum is 0 and matches the ScriptThreadNum. 
+  // This would wrongly cause DataHandler::execThread()
+  // to return true for out-of-bound DataIds
+  for(unsigned int i = 1; i < myElementContainers_.size(); i++){
     myElementContainers_[i]->start();
   }
 }
@@ -735,6 +745,8 @@ void Shell::doNonBlockingStart( double runtime, bool qFlag )
 
 #endif
 
+
+#ifndef USE_CHARMPP
 bool isDoingReinit()
 {
 	static Id clockId( 1 );
@@ -743,10 +755,15 @@ bool isDoingReinit()
 	return ( reinterpret_cast< const Clock* >( 
 		clockId.eref().data() ) )->isDoingReinit();
 }
+#else
+bool Shell::isDoingReinit() const {
+  return clock_->isDoingReinit();
+}
+#endif
 
+#ifndef USE_CHARMPP
 void Shell::doReinit( bool qFlag )
 {
-#ifndef USE_CHARMPP
 	extern void quickNap(); // Defined in Qinfo.cpp
 	if ( !keepLooping() ) {
 		cout << "Error: Shell::doReinit: Should not be called unless ProcessLoop is running\n";
@@ -754,15 +771,9 @@ void Shell::doReinit( bool qFlag )
 	}
 	// Has to block till reinit is done.
 	Qinfo::buildOn( qFlag );
-#else
-        // we should never have come here if the Shell was busy
-        // doing something
-        CkAssert(!isDoingReinit());
-#endif
         
 		Id clockId( 1 );
 		SetGet0::set( clockId, "reinit" );
-#ifndef USE_CHARMPP
 		while ( isDoingReinit() ) {
 			Qinfo::buildOff( qFlag );
 			// Here we let the simulation threads do stuff.
@@ -770,7 +781,6 @@ void Shell::doReinit( bool qFlag )
 			Qinfo::buildOn( qFlag );
 		}
 	Qinfo::buildOff( qFlag );
-#endif
 	/*
 	Eref sheller( shelle_, 0 );
 	initAck();
@@ -778,6 +788,24 @@ void Shell::doReinit( bool qFlag )
 	waitForAck();
 	*/
 }
+#else
+void Shell::doReinit(const CkCallback &cb, bool qFlag){
+  CkAssert(!isDoingReinit());
+  CkAssert(!isRunning());
+
+  clock_->setIsDoingReinit(true);
+
+  finishCallback_ = cb;
+  clock_->handleReinit();
+  reinitAllContainers();
+}
+
+void Shell::reinitAllContainers(){
+  for(unsigned int i = 1; i < myElementContainers_.size(); i++){
+    myElementContainers_[i]->reinit();
+  }
+}
+#endif
 
 void Shell::doStop( bool qFlag )
 {
@@ -791,7 +819,7 @@ void Shell::doStop( bool qFlag )
 		SetGet0::set( clockId, "stop" );
 	Qinfo::buildOff( qFlag );
 #else
-        setNotRunning();
+        clock_->setIsRunning(false);
         for(unsigned int i = 0; i < myElementContainers_.size(); i++){
           myElementContainers_[i]->stop();
         }
@@ -1233,7 +1261,7 @@ Id Shell::getCwe() const
 // and to false when it finishes. The ShellCcsInterface can pass
 // parser-invoked commands to the Shell only when it is not busy
 bool Shell::isRunning() const {
-  return isRunning_;
+  return clock_->isRunning();
 }
 
 #else
@@ -1687,14 +1715,6 @@ ElementContainer *Shell::getContainer(ThreadId id){
   return myElementContainers_[id];
 }
 
-void Shell::setRunning(){
-  isRunning_ = true;
-}
-
-void Shell::setNotRunning(){
-  isRunning_ = false;
-}
-
 void Shell::setStop(bool stop){
   shouldStop_ = stop;
 }
@@ -1707,20 +1727,31 @@ void Shell::setClockPointer(Clock *clock){
   clock_ = clock;
 }
 
-void Shell::iterationDone(){
-  ProcInfo *dummy = NULL;
-  clock_->advancePhase2Body(dummy);
-
-  if(getStop() || clock_->hasExpired()){
-    readonlyLookupHelperProxy.invokeFinishCallback();
+void Shell::containerCheckin(){
+  if(++nContainersCheckedIn_ == myElementContainers_.size()){
+    nContainersCheckedIn_ = 0;
+    readonlyLookupHelperProxy.ckLocalBranch()->sync();
   }
-  else{
-    readonlyElementContainerProxy.newIteration();
+}
+
+void Shell::iterationDone(){
+  //CkPrintf("[%d] Shell::iterationDone doingReinit %d expired %d\n", CkMyPe(), isDoingReinit(), clock_->hasExpired());
+  if(isDoingReinit() || clock_->hasExpired()){
+    invokeFinishCallback();
+  }
+  else if(isRunning()){
+    //clock_->checkProcState();
+    startAllContainers();
   }
 }
 
 // this will be invoked via LookupHelper::invokeFinishCallback()
 void Shell::invokeFinishCallback(){
+  CkAssert(isDoingReinit() || isRunning());
+  if(isDoingReinit()){
+    clock_->setIsDoingReinit(false);
+  }
+  else clock_->setIsRunning(false);
   finishCallback_.send();
 }
 

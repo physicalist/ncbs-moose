@@ -470,7 +470,11 @@ void testQueueAndStart()
 		pool, "reac", reac, "sub" );
 	assert( mid != Msg::bad );
 	s->doUseClock( "/pool,/reac", "process", 0 );
+#ifndef USE_CHARMPP
 	s->doReinit();
+#else
+        s->doReinit(CkCallbackResumeThread());
+#endif
 	x = Field< double >::get( pool, "conc" );
 	assert ( doubleEq( x, 123.0/NA ) );
 	TestSched* tsData = reinterpret_cast< TestSched* >( ts.data() );
@@ -621,7 +625,11 @@ void testThreadIntFireNetwork()
 	Element* se = Id()();
 	Shell* s = reinterpret_cast< Shell* >( se->dataHandler()->data( 0 ) );
 	s->doSetClock( 0, timestep );
+#ifndef USE_CHARMPP
 	s->doReinit();
+#else
+	s->doReinit(CkCallbackResumeThread());
+#endif
 
 	ret = Field< double >::setVec( i2, "Vm", initVm );
 	assert( ret );
@@ -812,8 +820,14 @@ void testMultiNodeIntFireNetwork()
 	shell->doAddMsg( "Single", er0.objId(), "process0",
 		e2.objId(), "process" );
 	shell->doSetClock( 0, timestep );
+#ifndef USE_CHARMPP
 	shell->doReinit();
+#else
+	shell->doReinit(CkCallbackResumeThread());
+#endif
 
+	double retVm0 = Field< double >::get( ObjId( i2, 0 ), "Vm" );
+	double retVm1 = Field< double >::get( ObjId( i2, 1 ), "Vm" );
 	double retVm100 = Field< double >::get( ObjId( i2, 100 ), "Vm" );
 	double retVm900 = Field< double >::get( ObjId( i2, 900 ), "Vm" );
 	assert( fabs( retVm100 - origVm100 ) < 1e-6 );

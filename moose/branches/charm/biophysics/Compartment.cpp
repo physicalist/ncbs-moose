@@ -760,10 +760,11 @@ void testCompartmentProcess()
 	shell->doUseClock( "/compt", "init", 0 );
 	shell->doUseClock( "/compt", "process", 1 );
 
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
 	shell->doStart( runtime );
 #else
+	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( runtime, CkCallbackResumeThread() );
 #endif
 

@@ -104,55 +104,14 @@ ElementContainer *LookupHelper::getContainer(ThreadId id){
   return shell_->getContainer(id);
 }
 
-extern void testAsync();
-extern void testMsg();
-extern void testShell();
-extern void testScheduling();
-extern void testBuiltins();
-extern void testKinetics();
-extern void testBiophysics();
-extern void testHSolve();
-extern void testGeom();
-extern void testMesh();
-
-extern void testMpiMsg();
-extern void testMpiShell();
-extern void testMpiBuiltins();
-extern void testMpiScheduling();
-
-#ifdef USE_SMOLDYN
-extern void testSmoldyn();
-#endif
-
-void LookupHelper::doSerialUnitTests(const CkCallback &cb){
-  testAsync();
-  testMsg();
-  testShell();
-  testScheduling();
-  testBuiltins();
-  testKinetics();
-  testBiophysics();
-  testHSolve();
-  testGeom();
-  testMesh();
-#ifdef USE_SMOLDYN
-  testSmoldyn();
-#endif
-  contribute(cb);
-}
-
-void LookupHelper::doParallelUnitTests(const CkCallback &cb){
-  testMpiMsg();
-  cout << "." << flush;
-  testMpiShell();
-  cout << "." << flush;
-  testMpiBuiltins();
-  cout << "." << flush;
-  //testMpiScheduling();
-  //cout << "." << flush;
-  contribute(cb);
+void LookupHelper::newIteration(){
+  shell_->startAllContainers();
 }
 
 void LookupHelper::invokeFinishCallback(){
   shell_->invokeFinishCallback();
+}
+
+void LookupHelper::sync(){
+  contribute(CkCallback(CkIndex_LookupHelper::iterationDone(), thisProxy));
 }
