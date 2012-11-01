@@ -26,7 +26,6 @@ class Main : public CBase_Main {
   void createMooseParallelObjects(CkArgMsg *m);
 
   private:
-  int nElementContainers_;
   bool doUnitTests_;
 
 };

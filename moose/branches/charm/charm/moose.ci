@@ -1,5 +1,7 @@
 mainmodule moose {
 
+  readonly unsigned int readonlyNumElementContainers;
+  readonly unsigned int readonlyNumUsefulElementContainers;
   readonly CProxy_Main readonlyMainProxy;
   readonly CProxy_ElementContainer readonlyElementContainerProxy;
   readonly CProxy_LookupHelper readonlyLookupHelperProxy;
@@ -46,14 +48,15 @@ mainmodule moose {
     entry LookupHelper(CkVec< string > &s_argv, const CkCallback &cb);
     entry void initShell(const CkCallback &cb);
 
-    entry void doSerialUnitTests(const CkCallback &cb);
-  
     entry void iterationDone();
+    entry void newIteration();
     entry void invokeFinishCallback();
   };
 
   group ParallelTestHelper {
     entry ParallelTestHelper();
+
+    entry void doSerialUnitTests(const CkCallback &cb);
     entry [threaded] void doMpiTests(const CkCallback &cb);
     entry [threaded] void doProcessTests(const CkCallback &cb);
   };

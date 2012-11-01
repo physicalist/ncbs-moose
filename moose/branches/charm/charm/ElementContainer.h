@@ -50,7 +50,6 @@ class ElementContainer : public CBase_ElementContainer {
   ElementContainer(CkMigrateMessage *) {}
 
   void newIteration();
-  void iterationDone();
   void exchange(ElementDataMsg *m);
 
   void registerSelf(const CkCallback &cb);
@@ -73,6 +72,7 @@ class ElementContainer : public CBase_ElementContainer {
 
   // called by Shell
   void start();
+  void reinit();
   void stop();
 
 
@@ -96,6 +96,9 @@ class ElementContainer : public CBase_ElementContainer {
   void readBuf(Qinfo *qinfo, unsigned int nQinfo, 
                DirectQbufEntry *qinfoDirect, unsigned int nQinfoDirect,
                const double *data, const double *dataDirect);
+
+  void readIndirectBuf(Qinfo *qinfo, unsigned int nQinfo, const double *data);
+  void readDirectBuf(DirectQbufEntry *qinfoDirect, unsigned int nQinfoDirect, const double *dataDirect);
 
 };
 

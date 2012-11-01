@@ -95,6 +95,10 @@ class ReinitOperation : public ShellCcsInterfaceOperation {
     ShellCcsInterfaceOperation(msg, delayedReply)
   {}
   void exec(Shell *shell);
+  void resume();
+
+  public:
+  static void splitPhaseCallback(void *param, void *msg);
 };
 
 class StopOperation : public ShellCcsInterfaceOperation {

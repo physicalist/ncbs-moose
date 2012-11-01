@@ -143,7 +143,11 @@ Id ReadKkit::read(
 	sm->setRunTime( maxtime_ );
 	sm->setVersion( version_ );
 	sm->build( base.eref(), &q, method );
+#ifndef USE_CHARMPP
 	s->doReinit();
+#else
+	s->doReinit(CkCallbackResumeThread());
+#endif
 	return base;
 }
 
@@ -160,7 +164,11 @@ void ReadKkit::run()
 	shell_->doUseClock( reacpath, "process", 4 );
 	shell_->doUseClock( poolpath, "process", 5 );
 	shell_->doUseClock( plotpath, "process", 8 );
+#ifndef USE_CHARMPP
 	shell_->doReinit();
+#else
+	shell_->doReinit(CkCallbackResumeThread());
+#endif
 	if ( useVariableDt_ ) {
 		shell_->doSetClock( 4, fastdt_ );
 		shell_->doSetClock( 5, fastdt_ );

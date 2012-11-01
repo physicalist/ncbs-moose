@@ -112,10 +112,11 @@ void testKsolveZombify( string modelFile )
 	struct timeval tv0;
 	struct timeval tv1;
 	gettimeofday( &tv0, 0 );
-	s->doReinit();
 #ifndef USE_CHARMPP
+	s->doReinit();
 	s->doStart( simTime );
 #else
+	s->doReinit(CkCallbackResumeThread());
 	s->doStart( simTime, CkCallbackResumeThread() );
 #endif
 	gettimeofday( &tv1, 0 );
@@ -160,10 +161,11 @@ void testGsolver(string modelName, string plotName, double plotDt, double simTim
 		// rk.getBasePath() + "/moregraphs/##[TYPE=Table]";
 	// s->doUseClock( base.path(), "process", 0 );
 	// s->doUseClock( plotpath, "process", 2 );
-	s->doReinit();
 #ifndef USE_CHARMPP
+	s->doReinit();
 	s->doStart( simTime );
 #else
+	s->doReinit(CkCallbackResumeThread());
 	s->doStart( simTime, CkCallbackResumeThread() );
 #endif
 

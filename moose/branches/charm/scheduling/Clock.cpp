@@ -309,6 +309,7 @@ void Clock::setRunTime( double v )
 {
 	runTime_ = v;
 }
+
 double Clock::getRunTime() const
 {
 	return runTime_;
@@ -369,14 +370,30 @@ vector< double > Clock::getDts() const
 
 bool Clock::isRunning() const
 {
+#ifndef USE_CHARMPP
 	return isRunning_ || ( procState_ == StartOnly );
+#else
+        return isRunning_;
+#endif
 }
 
 bool Clock::isDoingReinit() const
 {
+#ifndef USE_CHARMPP
 	return doingReinit_ || ( procState_ == TurnOnReinit ) || 
 		( procState_ == ReinitThenStart ) || 
 		( procState_ == StopThenReinit );
+#else
+        return doingReinit_;
+#endif
+}
+
+void Clock::setIsDoingReinit(bool v){
+  doingReinit_ = v;
+}
+
+void Clock::setIsRunning(bool v){
+  isRunning_ = v;
 }
 
 
@@ -514,6 +531,7 @@ void Clock::rebuild()
  */
 void Clock::processPhase1( ProcInfo* info )
 {
+        //CkPrintf("Clock::processPhase1 thread %d\n", info->threadIndexInGroup);
 	if ( isRunning_ )
 		advancePhase1( info );
 	else if ( doingReinit_ )
@@ -524,6 +542,7 @@ void Clock::processPhase1( ProcInfo* info )
 
 void Clock::processPhase2( ProcInfo* info )
 {
+        //CkPrintf("Clock::processPhase2 thread %d\n", info->threadIndexInGroup);
 	if ( isRunning_ )
 		advancePhase2( info );
 	else if ( doingReinit_ )
@@ -661,6 +680,7 @@ void Clock::handleStep( unsigned int numSteps )
 // This simply distributes the call to all scheduled objects
 void Clock::advancePhase1(  ProcInfo *p )
 {
+        CkPrintf("Clock::advancePhase1 %d time %f\n", p->threadIndexInGroup, currentTime_);
 	tickPtr_[0].mgr()->advancePhase1( p );
 	if ( Shell::isSingleThreaded() || p->threadIndexInGroup == 1 ) {
 		++countAdvance1_;
@@ -675,7 +695,9 @@ void Clock::advancePhase1(  ProcInfo *p )
 void Clock::advancePhase2(  ProcInfo *p )
 {
   if ( Shell::isSingleThreaded() || p->threadIndexInGroup == 1 ) {
+    CkPrintf("Clock::advancePhase2 %d time %f\n", p->threadIndexInGroup, currentTime_);
     advancePhase2Body(p);
+#ifndef USE_CHARMPP
     if( hasExpired() ){
       Id clockId( 1 );
       procState_ = StopOnly;
@@ -684,6 +706,7 @@ void Clock::advancePhase2(  ProcInfo *p )
           p->nodeIndexInGroup, OkStatus );
 
     }
+#endif
     ++countAdvance2_;
   }
 }
@@ -692,6 +715,7 @@ void Clock::advancePhase2Body(ProcInfo *p){
   tickPtr_[0].mgr()->advancePhase2( p );
   if ( tickPtr_.size() > 1 ) sort( tickPtr_.begin(), tickPtr_.end() );
   currentTime_ = tickPtr_[0].mgr()->getNextTime() - tickPtr_[0].mgr()->getDt();
+  //cout << "Clock::advancePhase2Body currentTime " << currentTime_ << endl;
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -741,6 +765,7 @@ void Clock::handleReinit()
  */
 void Clock::reinitPhase1( ProcInfo* info )
 {
+        CkPrintf("Clock::reinitPhase1 %d time %f\n", info->threadIndexInGroup, currentTime_);
 	if ( tickPtr_.size() == 0 )
 		return;
 	assert( currTickPtr_ < tickPtr_.size() );
@@ -766,13 +791,16 @@ void Clock::reinitPhase2( ProcInfo* info )
 {
 	info->currTime = 0.0;
 	if ( Shell::isSingleThreaded() || info->threadIndexInGroup == 1 ) {
+                CkPrintf("Clock::reinitPhase2 %d time %f\n", info->threadIndexInGroup, currentTime_);
 		assert( currTickPtr_ < tickPtr_.size() );
 		if ( tickPtr_[ currTickPtr_ ].mgr()->reinitPhase2( info ) ) {
 			++currTickPtr_;
 			if ( currTickPtr_ >= tickPtr_.size() ) {
 				Id clockId( 1 );
+#ifndef USE_CHARMPP
 				ack()->send( clockId.eref(), info->threadIndexInGroup,
 					info->nodeIndexInGroup, OkStatus );
+#endif
 				procState_ = TurnOffReinit;
 				++countReinit2_;
 			}

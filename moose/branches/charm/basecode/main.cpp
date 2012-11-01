@@ -326,14 +326,18 @@ void processTests( Shell* s )
 void mpiTests()
 {
 #ifdef DO_UNIT_TESTS
+                cout << "testMpiMsg" << endl;
 		testMpiMsg();
-		cout << "." << flush;
+		//cout << "." << flush;
+                cout << "testMpiShell" << endl;
 		testMpiShell();
-		cout << "." << flush;
+		//cout << "." << flush;
+                cout << "testMpiBuiltings" << endl;
 		testMpiBuiltins();
-		cout << "." << flush;
+		//cout << "." << flush;
+                cout << "testMpiScheduling" << endl;
 		testMpiScheduling();
-		cout << "." << flush;
+		//cout << "." << flush;
 #endif
 }
 

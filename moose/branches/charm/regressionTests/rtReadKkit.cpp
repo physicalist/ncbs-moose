@@ -272,10 +272,11 @@ void rtRunKkitModels( const string& modelname, double dt, double runTime,
 	shell->doSetClock( 0, dt );
 	shell->doSetClock( 1, dt );
 	shell->doSetClock( 2, dt );
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
         shell->doStart( runTime );
 #else
+	shell->doReinit(CkCallbackResumeThread());
         shell->doStart( runTime, CkCallbackResumeThread() );
 #endif
 
@@ -417,10 +418,11 @@ void rtRunKkit()
 	*/
 	for ( unsigned int i = 0; i < 10; ++i )
 		shell->doSetClock( i, 10 );
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
         shell->doStart( 5000.0 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
         shell->doStart( 5000.0, CkCallbackResumeThread() );
 #endif
 
@@ -483,10 +485,11 @@ void rtRunKkit()
 		Field< double >::get( Id( "/rkktest/kinetics/mesh" ), "size" );
 	assert( doubleEq( actualVol, vol ) );
 
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
         shell->doStart( 5000.0 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
         shell->doStart( 5000.0, CkCallbackResumeThread() );
 #endif
 
@@ -630,7 +633,11 @@ void rtRunCspace()
 	shell->doSetClock( 2, 10 );
 	shell->doSetClock( 3, 10 );
 	// cout << "Before Reinit\n"; Qinfo::reportQ();
+#ifndef USE_CHARMPP
 	shell->doReinit();
+#else
+	shell->doReinit(CkCallbackResumeThread());
+#endif
 
 	checkCspaceParms();
 
@@ -739,10 +746,11 @@ void rtRunTabSumtot()
 	shell->doSetClock( 0, 0.1 );
 	shell->doSetClock( 1, 0.1 );
 	shell->doSetClock( 2, 0.1 );
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
         shell->doStart( 20.0 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
         shell->doStart( 20.0, CkCallbackResumeThread() );
 #endif
 

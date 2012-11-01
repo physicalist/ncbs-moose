@@ -151,6 +151,7 @@ void IntFire::process( const Eref &e, ProcPtr p )
 		}
 	}
 	*/
+        //cout << "[" << e.id().value() << "," << e.index().value() << "] IntFire::process" << endl;
 	while ( !pendingEvents_.empty() &&
 		pendingEvents_.top().getDelay() <= p->currTime ) {
 			Vm_ += pendingEvents_.top().getWeight();

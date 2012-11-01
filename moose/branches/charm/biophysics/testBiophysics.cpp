@@ -477,11 +477,13 @@ void testHHChannel()
 	shell->doUseClock( "/n/compt/Na,/n/compt/K", "process", 2 );
 	shell->doUseClock( "/n/tab", "process", 3 );
 
-	shell->doReinit();
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
+	shell->doReinit();
 	shell->doStart( 0.01 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
+	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( 0.01, CkCallbackResumeThread() );
 #endif
 
@@ -657,11 +659,13 @@ void testMarkovGslSolver()
 	shell->doUseClock( "/n/compt/gslSolver", "process", 1 );
 	shell->doUseClock( "/n/compt/mChan,/n/tab", "process", 2 );
 
-	shell->doReinit( );
-	shell->doReinit( );
 #ifndef USE_CHARMPP
+	shell->doReinit( );
+	shell->doReinit( );
 	shell->doStart( 1.0e-3 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
+	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( 1.0e-3, CkCallbackResumeThread() );
 #endif
 
@@ -1020,11 +1024,13 @@ void testMarkovChannel()
 	shell->doUseClock( "/n/gslCompt/mChanGsl,/n/gslTable","process", 4 );
 	shell->doUseClock( "/n/exptlCompt/mChanExptl,/n/exptlTable", "process", 5 );
 
-	shell->doReinit();
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
+	shell->doReinit();
 	shell->doStart( 1.0 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
+	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( 1.0, CkCallbackResumeThread() );
 #endif
 
@@ -1141,12 +1147,14 @@ void testSynChan()
 	// shell->doUseClock( "/n/##", "process", 0 );
 	shell->doUseClock( "/n/synChan,/n/sg1,/n/sg2", "process", 0 );
 	// shell->doStart( 0.001 );
-	shell->doReinit();
-	shell->doReinit();
 
 #ifndef USE_CHARMPP
+	shell->doReinit();
+	shell->doReinit();
 	shell->doStart( 0.001 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
+	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( 0.001, CkCallbackResumeThread() );
 #endif
 	dret = Field< double >::get( synChanId, "Gk" );
@@ -1264,12 +1272,14 @@ void testNMDAChan()
 	// shell->doUseClock( "/n/##", "process", 0 );
 	shell->doUseClock( "/n/synChan,/n/sg1", "process", 0 );
 	// shell->doStart( 0.001 );
-	shell->doReinit();
-	shell->doReinit();
 
 #ifndef USE_CHARMPP
+	shell->doReinit();
+	shell->doReinit();
 	shell->doStart( 0.001 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
+	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( 0.001, CkCallbackResumeThread() );
 #endif
 	dret = Field< double >::get( synChanId, "Gk" );

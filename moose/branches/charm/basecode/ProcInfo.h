@@ -44,9 +44,7 @@ class ProcInfo
 		unsigned int numNodesInGroup;
 		unsigned int groupId;
 		unsigned int procIndex; // Look up for this Proc on Shell::getProc
-#ifdef USE_CHARMPP
-                unsigned int nElementContainers;
-#else
+#ifndef USE_CHARMPP
 		bool isMpiThread;
 		FuncBarrier* barrier1;
 		FuncBarrier* barrier2;

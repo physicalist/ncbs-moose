@@ -191,10 +191,11 @@ void testMathFuncProcess()
 	// Now run models and compare outputs
 	//////////////////////////////////////////////////////////////////////
 
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
 	shell->doStart( 10 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( 10, CkCallbackResumeThread() );
 #endif
 
@@ -391,8 +392,8 @@ void testMMenzProcess()
 	shell->doAddMsg( "Single", ObjId( mmid ), "prd", ObjId( rid ), "reac" );
 	shell->doAddMsg( "Single", ObjId( qid ), "nOut", ObjId( mmid ), "enzDest" );
 	shell->doAddMsg( "Single", ObjId( pid ), "nOut", ObjId( tabid2 ), "input" );
-	shell->doSetClock( 0, 0.01 );
-	shell->doSetClock( 1, 0.01 );
+	shell->doSetClock( 0, 0.1 );
+	shell->doSetClock( 1, 0.1 );
 	shell->doUseClock( "/n/mm,/n/tab2", "process", 0 );
 	shell->doUseClock( "/n/#[ISA=Pool]", "process", 1 );
 	
@@ -400,17 +401,18 @@ void testMMenzProcess()
 	// Now run models and compare outputs
 	//////////////////////////////////////////////////////////////////////
 
-	shell->doReinit();
 #ifndef USE_CHARMPP
-	shell->doStart( 10 );
+	shell->doReinit();
+	shell->doStart( 1 );
 #else
-	shell->doStart( 10, CkCallbackResumeThread() );
+	shell->doReinit(CkCallbackResumeThread());
+	shell->doStart( 1, CkCallbackResumeThread() );
 #endif
 
 	vector< double > vec = Field< vector< double > >::get( tabid2, "vec" );
-	assert( vec.size() == 1001 );
+	assert( vec.size() == 11 );
 	for ( unsigned int i = 0; i < vec.size(); ++i ) {
-		double t = 0.01 * i;
+		double t = 0.1 * i;
 		double et = estT( vec[i] );
 		assert( doubleApprox( t, et ) );
 	}

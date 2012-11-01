@@ -163,10 +163,11 @@
         shell->doSetClock( i, 0.1 );
       // shell->doUseClock( "/kinetics/stoich/gsl", "process", 0 );
       shell->doUseClock( "/model/table", "process", 8 );
-      shell->doReinit();
 #ifndef USE_CHARMPP
+      shell->doReinit();
       shell->doStart( 10 );
 #else
+      shell->doReinit(CkCallbackResumeThread());
       shell->doStart( 10, CkCallbackResumeThread() );
 #endif
 
@@ -285,7 +286,11 @@
       Id gsl( "/diff/stoich/gsl" );
       assert( gsl != Id() );
 
+#ifndef USE_CHARMPP
       shell->doReinit();
+#else
+      shell->doReinit(CkCallbackResumeThread());
+#endif
 
       for ( unsigned int i = 0; i < 10; ++i ) {
 #ifndef USE_CHARMPP
@@ -409,7 +414,11 @@
       shell->doSetClock( 2, dt );
       shell->doSetClock( 3, 0 ); 
 
+#ifndef USE_CHARMPP
       shell->doReinit();
+#else
+      shell->doReinit(CkCallbackResumeThread());
+#endif
 
       for ( unsigned int i = 0; i < 4; ++i ) {
 #ifndef USE_CHARMPP
@@ -511,7 +520,11 @@
       shell->doSetClock( 2, dt );
       shell->doSetClock( 3, 0 ); 
 
+#ifndef USE_CHARMPP
       shell->doReinit();
+#else
+      shell->doReinit(CkCallbackResumeThread());
+#endif
 
       if ( doPrint )
         cout << setprecision( 3 ) << setiosflags( ios::fixed ) << endl;

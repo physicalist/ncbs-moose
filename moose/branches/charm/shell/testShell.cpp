@@ -1011,7 +1011,11 @@ void testShellAddMsg()
 	// Set up initial conditions
 	///////////////////////////////////////////////////////////
 	
+#ifndef USE_CHARMPP
 	shell->doReinit();
+#else
+	shell->doReinit(CkCallbackResumeThread());
+#endif
 
 	vector< double > init; // 12345
 	for ( unsigned int i = 1; i < 6; ++i )
@@ -1160,7 +1164,11 @@ void testCopyMsgOps()
 	// Set up initial conditions and some scheduling.
 	///////////////////////////////////////////////////////////
 	shell->doSetClock( 0, 1.0 );
+#ifndef USE_CHARMPP
 	shell->doReinit();
+#else
+	shell->doReinit(CkCallbackResumeThread());
+#endif
 	bool ret = 0;
 	vector< double > init; // 12345
 	for ( unsigned int i = 1; i < 6; ++i )
@@ -1885,25 +1893,41 @@ extern void testWildcard();
 
 void testMpiShell( )
 {
+        cout << "testShellParserCreateDelete" << endl;
 	testShellParserCreateDelete();
+        cout << "testTreeTraversal" << endl;
 	testTreeTraversal();
+        cout << "testChildren" << endl;
 	testChildren();
+        cout << "testDescendant" << endl;
 	testDescendant();
+        cout << "testMove" << endl;
 	testMove();
+        cout << "testCopy" << endl;
 	testCopy();
+        cout << "testCopyFieldElement" << endl;
 	testCopyFieldElement();
 
+        cout << "testObjIdToAndFromPath" << endl;
 	testObjIdToAndFromPath();
+        cout << "testMultilevelCopyAndPath" << endl;
 	testMultiLevelCopyAndPath();
 
+        cout << "testShellSetGet" << endl;
 	testShellSetGet();
+        cout << "testInterNodeOps" << endl;
 	testInterNodeOps();
+        cout << "testShellAddMsg" << endl;
 	testShellAddMsg();
+        cout << "testCopyMsgOps" << endl;
 	testCopyMsgOps();
+        cout << "testWildcard" << endl;
 	testWildcard();
+        cout << "testSyncSynapseSize" << endl;
 	testSyncSynapseSize();
 
 	// Stuff for doLoadModel
+        cout << "testFindModelParent" << endl;
 	testFindModelParent();
 }
 

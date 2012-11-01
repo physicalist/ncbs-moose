@@ -63,11 +63,12 @@
       sm->build( mgr.eref(), &q, "gsl" );
       // SetGet1< string >::set( mgr, "build", "gsl" );
 
-      shell->doReinit();
 
 #ifndef USE_CHARMPP
+      shell->doReinit();
       shell->doStart( runtime );
 #else
+      shell->doReinit(CkCallbackResumeThread());
       shell->doStart( runtime, CkCallbackResumeThread() );
 #endif
 
@@ -90,10 +91,11 @@
       assert( gsl != Id() );
       n = gsl()->dataHandler()->localEntries();
       assert( n == numVox );
-      shell->doReinit();
 #ifndef USE_CHARMPP
+      shell->doReinit();
       shell->doStart( runtime );
 #else
+      shell->doReinit(CkCallbackResumeThread());
       shell->doStart( runtime, CkCallbackResumeThread() );
 #endif
       vector< double > conc;
@@ -125,10 +127,11 @@
       Field< double >::set( ObjId( pool, 0 ), "concInit", 2 );
       n = gsl()->dataHandler()->localEntries();
       assert( n == numVox );
-      shell->doReinit();
 #ifndef USE_CHARMPP
+      shell->doReinit();
       shell->doStart( runtime );
 #else
+      shell->doReinit(CkCallbackResumeThread());
       shell->doStart( runtime, CkCallbackResumeThread() );
 #endif
       dx = coords[6];

@@ -217,11 +217,13 @@ void perfTestMarkovSolver( )
 	shell->doUseClock( "/n/compt/rateTable", "process", 2 );
 	shell->doUseClock( "/n/compt/solver", "process", 3 );
 
-	shell->doReinit();
-	shell->doReinit();
 #ifndef USE_CHARMPP
+	shell->doReinit();
+	shell->doReinit();
 	shell->doStart( 1.0 );
 #else
+	shell->doReinit(CkCallbackResumeThread());
+	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( 1.0, CkCallbackResumeThread() );
 #endif
 

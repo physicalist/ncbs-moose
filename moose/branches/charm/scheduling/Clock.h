@@ -128,6 +128,10 @@ class Clock
 		 * Flag: True when the simulation is busy with reinit
 		 */
 		bool isDoingReinit() const;
+#ifdef USE_CHARMPP
+                void setIsDoingReinit(bool v);
+                void setIsRunning(bool v);
+#endif
 
 		/**
 		 * Static function, used to flip flags to start or end simulation. 

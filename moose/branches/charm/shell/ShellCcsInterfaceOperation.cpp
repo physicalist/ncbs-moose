@@ -91,8 +91,15 @@ void StartOperation::resume(){
 
 void ReinitOperation::exec(Shell *shell){
   bool *arg = CcsPackUnpack<bool>::cast(msg_);
-  shell->doReinit(*arg);
+  shell->doReinit(CkCallback(ReinitOperation::splitPhaseCallback, this), *arg);
+}
 
+void ReinitOperation::splitPhaseCallback(void *arg, void *msg){
+  ReinitOperation *op = (ReinitOperation *) arg;
+  op->resume();
+}
+
+void ReinitOperation::resume(){
   bool r = true;
   CcsSendDelayedReply(delayedReply_, sizeof(bool), &r);
 }
