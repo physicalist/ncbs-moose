@@ -61,6 +61,7 @@ mainmodule moose {
     entry void doSerialUnitTests(const CkCallback &cb);
     entry [threaded] void doMpiTests(const CkCallback &cb);
     entry [threaded] void doProcessTests(const CkCallback &cb);
+    entry [threaded] void doRegressionTests(const CkCallback &cb);
   };
 
   group ShellCcsInterface {

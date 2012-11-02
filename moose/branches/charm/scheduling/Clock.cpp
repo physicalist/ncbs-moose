@@ -688,7 +688,7 @@ void Clock::handleStep( unsigned int numSteps )
 // This simply distributes the call to all scheduled objects
 void Clock::advancePhase1(  ProcInfo *p )
 {
-        CkPrintf("Clock::advancePhase1 %d time %f\n", p->threadIndexInGroup, currentTime_);
+        //CkPrintf("Clock::advancePhase1 %d time %f\n", p->threadIndexInGroup, currentTime_);
 	tickPtr_[0].mgr()->advancePhase1( p );
 	if ( Shell::isSingleThreaded() || p->threadIndexInGroup == 1 ) {
 		++countAdvance1_;
@@ -703,7 +703,7 @@ void Clock::advancePhase1(  ProcInfo *p )
 void Clock::advancePhase2(  ProcInfo *p )
 {
   if ( Shell::isSingleThreaded() || p->threadIndexInGroup == 1 ) {
-    CkPrintf("Clock::advancePhase2 %d time %f\n", p->threadIndexInGroup, currentTime_);
+    //CkPrintf("Clock::advancePhase2 %d time %f\n", p->threadIndexInGroup, currentTime_);
     advancePhase2Body(p);
 #ifndef USE_CHARMPP
     if( hasExpired() ){
@@ -776,7 +776,7 @@ void Clock::handleReinit()
  */
 void Clock::reinitPhase1( ProcInfo* info )
 {
-        CkPrintf("Clock::reinitPhase1 %d time %f\n", info->threadIndexInGroup, currentTime_);
+        //CkPrintf("Clock::reinitPhase1 %d time %f\n", info->threadIndexInGroup, currentTime_);
 	if ( tickPtr_.size() == 0 )
 		return;
 	assert( currTickPtr_ < tickPtr_.size() );
@@ -802,7 +802,7 @@ void Clock::reinitPhase2( ProcInfo* info )
 {
 	info->currTime = 0.0;
 	if ( Shell::isSingleThreaded() || info->threadIndexInGroup == 1 ) {
-                CkPrintf("Clock::reinitPhase2 %d time %f currTickPtr %d nTicks %d\n", info->threadIndexInGroup, currentTime_, currTickPtr_, tickPtr_.size());
+                //CkPrintf("Clock::reinitPhase2 %d time %f currTickPtr %d nTicks %d\n", info->threadIndexInGroup, currentTime_, currTickPtr_, tickPtr_.size());
 		if ( tickPtr_.size() == 0 || 
                      tickPtr_[ currTickPtr_ ].mgr()->reinitPhase2( info ) ) {
 			++currTickPtr_;

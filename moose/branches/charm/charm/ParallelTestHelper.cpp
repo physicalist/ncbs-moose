@@ -24,6 +24,7 @@ extern void testSmoldyn();
 extern void mpiTests();
 class Shell;
 extern void processTests(Shell *shell);
+extern void regressionTests();
 
 CProxy_ParallelTestHelper readonlyParallelTestHelperProxy;
 
@@ -56,4 +57,7 @@ void ParallelTestHelper::doProcessTests(const CkCallback &cb){
   contribute(cb);
 }
 
-
+void ParallelTestHelper::doRegressionTests(const CkCallback &cb){
+  regressionTests();
+  contribute(cb);
+}

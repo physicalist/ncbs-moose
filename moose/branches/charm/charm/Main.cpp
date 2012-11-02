@@ -97,15 +97,17 @@ void Main::commence(){
   CkPrintf("[main] register containers with helpers\n");
   readonlyElementContainerProxy.registerSelf(CkCallbackResumeThread());
 
-  CkPrintf("[main] starting serial unit tests\n");
-  readonlyParallelTestHelperProxy[0].doSerialUnitTests(CkCallbackResumeThread());
+  //CkPrintf("[main] starting serial unit tests\n");
+  //readonlyParallelTestHelperProxy[0].doSerialUnitTests(CkCallbackResumeThread());
 
-  CkPrintf("\n[main] starting parallel unit tests\n");
-  readonlyParallelTestHelperProxy[0].doMpiTests(CkCallbackResumeThread());
+  //CkPrintf("\n[main] starting parallel unit tests\n");
+  //readonlyParallelTestHelperProxy[0].doMpiTests(CkCallbackResumeThread());
 
-  CkPrintf("\n[main] starting process unit tests\n");
-  readonlyParallelTestHelperProxy[0].doProcessTests(CkCallbackResumeThread());
+  //CkPrintf("\n[main] starting process unit tests\n");
+  //readonlyParallelTestHelperProxy[0].doProcessTests(CkCallbackResumeThread());
 
+  CkPrintf("\n[main] starting regression tests\n");
+  readonlyParallelTestHelperProxy[0].doRegressionTests(CkCallbackResumeThread());
   // XXX - only for the time being
   // once we have the unit tests running, we should 
   // incorporate the next steps, below

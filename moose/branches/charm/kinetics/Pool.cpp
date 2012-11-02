@@ -101,7 +101,7 @@ void Pool::vProcess( const Eref& e, ProcPtr p )
 
 	A_ = B_ = 0.0;
 
-        ckout << "Pool::vProcess objId " << e.id().value() << endl;
+        //ckout << "Pool::vProcess objId " << e.id().value() << endl;
 	nOut.send( e, p->threadIndexInGroup, n_ );
 }
 
@@ -110,7 +110,7 @@ void Pool::vReinit( const Eref& e, ProcPtr p )
 	A_ = B_ = 0.0;
 	n_ = getNinit( e, 0 );
 
-        ckout << "Pool::vReinit objId " << e.id().value() << endl;
+        //ckout << "Pool::vReinit objId " << e.id().value() << endl;
 	nOut.send( e, p->threadIndexInGroup, n_ );
 }
 
