@@ -113,7 +113,7 @@ Table::Table()
 
 void Table::process( const Eref& e, ProcPtr p )
 {
-        cout << "Table::process nEntries " << vec().size() << endl;
+        //cout << "Table::process nEntries " << vec().size() << endl;
 	lastTime_ = p->currTime;
 	// send out a request for data. This magically comes back in the
 	// RecvDataBuf and is handled.
@@ -126,7 +126,7 @@ void Table::reinit( const Eref& e, ProcPtr p )
 	vec().resize( 0 );
 	lastTime_ = 0;
 	// cout << "tabReinit on :" << p->groupId << ":" << p->threadIndexInGroup << endl << flush;
-        cout << "Table::reinit nEntries " << vec().size() << endl;
+        //cout << "Table::reinit nEntries " << vec().size() << endl;
 	requestData()->send( e, p->threadIndexInGroup, recvDataBuf()->getFid());
 }
 
@@ -169,7 +169,7 @@ void Table::recvData( PrepackedBuffer pb )
 	double ret = *reinterpret_cast< const double* >( pb.data() );
 
 	vec().push_back( ret );
-        cout << "Table::recvData val " << ret << " nEntries " << vec().size() << endl;
+        //cout << "Table::recvData val " << ret << " nEntries " << vec().size() << endl;
 }
 
 //////////////////////////////////////////////////////////////

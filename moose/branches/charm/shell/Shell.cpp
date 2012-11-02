@@ -1736,10 +1736,10 @@ void Shell::containerCheckin(){
 }
 
 void Shell::reinitIterationDone(){
-  CkPrintf("[%d] ----- Shell::reinitIterationDone -----\n", CkMyPe());
+  //CkPrintf("[%d] ----- Shell::reinitIterationDone -----\n", CkMyPe());
   CkAssert(isDoingReinit());
   if(clock_->hasFinishedTicks()){
-    CkPrintf("[%d] Shell::reinitIterationDone ticksFinished\n", CkMyPe());
+    //CkPrintf("[%d] Shell::reinitIterationDone ticksFinished\n", CkMyPe());
     invokeFinishCallback();
   }
   else{ 
@@ -1750,10 +1750,10 @@ void Shell::reinitIterationDone(){
 
 void Shell::runIterationDone(){
   //CkPrintf("[%d] Shell::iterationDone doingReinit %d expired %d\n", CkMyPe(), isDoingReinit(), clock_->hasExpired());
-  CkPrintf("[%d] ----- Shell::runIterationDone -----\n", CkMyPe());
+  //CkPrintf("[%d] ----- Shell::runIterationDone -----\n", CkMyPe());
   CkAssert(isRunning());
   if(clock_->hasExpired()){
-    CkPrintf("[%d] Shell::runIterationDone clockExpired\n", CkMyPe());
+    //CkPrintf("[%d] Shell::runIterationDone clockExpired\n", CkMyPe());
     invokeFinishCallback();
   }
   else{ 

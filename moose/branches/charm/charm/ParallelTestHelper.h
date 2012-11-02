@@ -16,5 +16,6 @@ class ParallelTestHelper : public CBase_ParallelTestHelper {
   void doSerialUnitTests(const CkCallback &cb);
   void doMpiTests(const CkCallback &cb);
   void doProcessTests(const CkCallback &cb);
+  void doRegressionTests(const CkCallback &cb);
 };
 #endif
