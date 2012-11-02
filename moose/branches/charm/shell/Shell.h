@@ -72,7 +72,8 @@ class Shell
 
 #ifdef USE_CHARMPP
                 void containerCheckin();
-                void iterationDone();
+                void reinitIterationDone();
+                void runIterationDone();
                 void startAllContainers();
                 void reinitAllContainers();
                 bool isDoingReinit() const;

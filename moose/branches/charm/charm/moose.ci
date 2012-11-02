@@ -48,7 +48,9 @@ mainmodule moose {
     entry LookupHelper(CkVec< string > &s_argv, const CkCallback &cb);
     entry void initShell(const CkCallback &cb);
 
-    entry void iterationDone();
+    entry void reinitIterationDone();
+    entry void runIterationDone();
+
     entry void newIteration();
     entry void invokeFinishCallback();
   };

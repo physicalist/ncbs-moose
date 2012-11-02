@@ -177,10 +177,15 @@ void setupTicks()
 	static const double EPSILON = 1.0e-9;
 	const double runtime = 20.0;
 	// const Cinfo* tc = Tick::initCinfo();
-	Id clock = Id::nextId();
 	vector< DimInfo > dims;
+        /*
+	Id clock = Id::nextId();
 	Element* clocke = new Element( clock, Clock::initCinfo(), "tclock",
 		dims, 1, true );
+        */
+
+        Id clock(1);
+        Element *clocke = clock.element();
 	assert( clocke );
 	// bool ret = Clock::initCinfo()->create( clock, "tclock", 1 );
 	// assert( ret );
@@ -190,15 +195,16 @@ void setupTicks()
 	Element* ticke = tickId();
 	assert( ticke->getName() == "tick" );
 
+        /*
 	unsigned int size = 10;
-
 	for ( unsigned int i = 0; i < size; ++i ) {
 		Eref er( ticke, DataId( i ) );
 		reinterpret_cast< Tick* >( er.data() )->setElement( ticke );
 	}
+        */
 
 	// cout << Shell::myNode() << ": numTicks: " << ticke->dataHandler()->totalEntries() << ", " << size << endl;
-	assert( ticke->dataHandler()->localEntries() == size );
+	assert( ticke->dataHandler()->localEntries() == Tick::maxTicks );
 
 	ObjId er0( tickId, DataId( 2 ) );
 	bool ret = Field< double >::set( er0, "dt", 5.0);
@@ -220,28 +226,6 @@ void setupTicks()
 	ObjId er5( tickId, DataId( 7 ) );
 	ret = Field< double >::set( er5, "dt", 5.0);
 	assert( ret );
-
-	Clock* cdata = reinterpret_cast< Clock* >( clocker.data() );
-	assert( cdata->tickPtr_.size() == 4 );
-	assert( fabs( cdata->tickPtr_[0].mgr()->dt_ - 1.0 ) < EPSILON );
-	assert( fabs( cdata->tickPtr_[1].mgr()->dt_ - 2.0 ) < EPSILON );
-	assert( fabs( cdata->tickPtr_[2].mgr()->dt_ - 3.0 ) < EPSILON );
-	assert( fabs( cdata->tickPtr_[3].mgr()->dt_ - 5.0 ) < EPSILON );
-	assert( fabs( cdata->tickPtr_[0].mgr()->nextTime_ - 1.0 ) < EPSILON );
-	assert( fabs( cdata->tickPtr_[1].mgr()->nextTime_ - 2.0 ) < EPSILON );
-	assert( fabs( cdata->tickPtr_[2].mgr()->nextTime_ - 3.0 ) < EPSILON );
-	assert( fabs( cdata->tickPtr_[3].mgr()->nextTime_ - 5.0 ) < EPSILON );
-	assert( cdata->tickPtr_[0].mgr()->ticks_.size() == 1 );
-	assert( cdata->tickPtr_[1].mgr()->ticks_.size() == 2 );
-	assert( cdata->tickPtr_[2].mgr()->ticks_.size() == 1 );
-	assert( cdata->tickPtr_[3].mgr()->ticks_.size() == 2 );
-
-	assert( cdata->tickPtr_[0].mgr()->ticks_[0] == reinterpret_cast< const Tick* >( er3.data() ) );
-	assert( cdata->tickPtr_[1].mgr()->ticks_[0] == reinterpret_cast< const Tick* >( er2.data() ) );
-	assert( cdata->tickPtr_[1].mgr()->ticks_[1] == reinterpret_cast< const Tick* >( er1.data() ) );
-	assert( cdata->tickPtr_[2].mgr()->ticks_[0] == reinterpret_cast< const Tick* >( er4.data() ) );
-	assert( cdata->tickPtr_[3].mgr()->ticks_[0] == reinterpret_cast< const Tick* >( er0.data() ) );
-	assert( cdata->tickPtr_[3].mgr()->ticks_[1] == reinterpret_cast< const Tick* >( er5.data() ) );
 
 	Id tsid = Id::nextId();
 	Element* tse = new Element( tsid, testSchedCinfo, "tse", dims, 1 );
@@ -267,9 +251,32 @@ void setupTicks()
 	SingleMsg *m5 = new SingleMsg( Msg::nextMsgId(), er5.eref(), ts ); 
 	er5.element()->addMsgAndFunc( m5->mid(), f, 14 + b0 );
 
-	cdata->rebuild();
+	Clock* cdata = reinterpret_cast< Clock* >( clocker.data() );
+        cdata->rebuild();
+
+	assert( cdata->tickPtr_.size() == 4 );
+	assert( fabs( cdata->tickPtr_[0].mgr()->dt_ - 1.0 ) < EPSILON );
+	assert( fabs( cdata->tickPtr_[1].mgr()->dt_ - 2.0 ) < EPSILON );
+	assert( fabs( cdata->tickPtr_[2].mgr()->dt_ - 3.0 ) < EPSILON );
+	assert( fabs( cdata->tickPtr_[3].mgr()->dt_ - 5.0 ) < EPSILON );
+	assert( fabs( cdata->tickPtr_[0].mgr()->nextTime_ - 1.0 ) < EPSILON );
+	assert( fabs( cdata->tickPtr_[1].mgr()->nextTime_ - 2.0 ) < EPSILON );
+	assert( fabs( cdata->tickPtr_[2].mgr()->nextTime_ - 3.0 ) < EPSILON );
+	assert( fabs( cdata->tickPtr_[3].mgr()->nextTime_ - 5.0 ) < EPSILON );
+	assert( cdata->tickPtr_[0].mgr()->ticks_.size() == 1 );
+	assert( cdata->tickPtr_[1].mgr()->ticks_.size() == 2 );
+	assert( cdata->tickPtr_[2].mgr()->ticks_.size() == 1 );
+	assert( cdata->tickPtr_[3].mgr()->ticks_.size() == 2 );
+
+	assert( cdata->tickPtr_[0].mgr()->ticks_[0] == reinterpret_cast< const Tick* >( er3.data() ) );
+	assert( cdata->tickPtr_[1].mgr()->ticks_[0] == reinterpret_cast< const Tick* >( er2.data() ) );
+	assert( cdata->tickPtr_[1].mgr()->ticks_[1] == reinterpret_cast< const Tick* >( er1.data() ) );
+	assert( cdata->tickPtr_[2].mgr()->ticks_[0] == reinterpret_cast< const Tick* >( er4.data() ) );
+	assert( cdata->tickPtr_[3].mgr()->ticks_[0] == reinterpret_cast< const Tick* >( er0.data() ) );
+	assert( cdata->tickPtr_[3].mgr()->ticks_[1] == reinterpret_cast< const Tick* >( er5.data() ) );
 
 	ProcInfo p;
+        p.threadIndexInGroup = 1;
 	cdata->handleReinit();
 	assert( cdata->currTickPtr_ == 0 );
 	assert( Clock::procState_ == Clock::TurnOnReinit ); 
@@ -320,9 +327,17 @@ void setupTicks()
 	Qinfo::clearQ( p.threadIndexInGroup );
 	Qinfo::clearQ( p.threadIndexInGroup );
 
+        /*
 	tickId.destroy();
 	clock.destroy();
+        */
 	tsid.destroy();
+        for(unsigned int i = 0; i < Tick::maxTicks; ++i){
+          cdata->ticks_[i].setDt(0.0);
+        }
+        cdata->rebuild();
+        assert(cdata->tickMgr_.size() == 0);
+        assert(cdata->tickPtr_.size() == 0);
 	cout << "." << flush;
 }
 

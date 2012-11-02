@@ -283,6 +283,7 @@ Clock::Clock()
 	  info_(),
 	  numPendingThreads_( 0 ),
 	  numThreads_( 0 ),
+          isDirty_(false),
 	  currTickPtr_( 0 ),
 	  ticks_( Tick::maxTicks ),
 		countNull1_( 0 ),
@@ -420,7 +421,8 @@ void Clock::setTickDt( unsigned int i, double dt )
 {
 	if ( i < ticks_.size() ) {
 		ticks_[ i ].setDt( dt ); 
-		rebuild();
+                isDirty_ = true;
+		// rebuild();
 	} else {
 		cout << "Clock::setTickDt:: Tick " << i << " not found\n";
 	}
@@ -443,9 +445,8 @@ void Clock::setupTick( unsigned int tickNum, double dt )
 {
 	assert( tickNum < Tick::maxTicks );
 	ticks_[ tickNum ].setDt( dt );
-	// ticks_[ tickNum ].setStage( stage );
-	rebuild();
-	// ack()->send( clockId.eref(), p, p->nodeIndexInGroup, OkStatus );
+        isDirty_ = true;
+	// rebuild();
 }
 
 ///////////////////////////////////////////////////
@@ -458,6 +459,8 @@ void Clock::addTick( Tick* t )
 
 	if ( t->getDt() < EPSILON )
 		return;
+        if(!t->hasTickTargets()) return;
+
 	for ( vector< TickMgr >::iterator j = tickMgr_.begin(); 
 		j != tickMgr_.end(); ++j)
 	{
@@ -487,8 +490,10 @@ void Clock::rebuild()
 	for( unsigned int i = 0; i < ticks_.size(); ++i ) {
 		addTick( &( ticks_[i] ) ); // This fills in only ticks that are used
 	}
-	if ( tickPtr_.size() == 0 ) // Nothing happening in any of the ticks.
+	if ( tickPtr_.size() == 0 ) { // Nothing happening in any of the ticks.
+                isDirty_ = false;
 		return;
+        }
 
 	// Here we put in current time so we can resume after changing a 
 	// dt. Given that we are rebuilding and cannot
@@ -501,6 +506,8 @@ void Clock::rebuild()
 
 	sort( tickPtr_.begin(), tickPtr_.end() );
 	dt_ = tickPtr_[0].mgr()->getDt();
+
+        isDirty_ = false;
 }
 
 
@@ -635,6 +642,7 @@ void Clock::handleStart( double runtime )
 		cout << "Clock::handleStart: Warning: simulation already in progress.\n Command ignored\n";
 		return;
 	}
+        if(isDirty_ || currentTime_ == 0) rebuild();
 	if ( tickPtr_.size() == 0 || tickPtr_[0].mgr() == 0 ) {
 		cout << "Clock::handleStart: Warning: simulation not yet initialized.\n Command ignored\n";
 		return;
@@ -732,6 +740,9 @@ void Clock::advancePhase2Body(ProcInfo *p){
  */
 void Clock::handleReinit()
 {
+
+        if(isDirty_) rebuild();
+
 	info_.currTime = 0.0;
 	runTime_ = 0.0;
 	currentTime_ = 0.0;
@@ -791,19 +802,19 @@ void Clock::reinitPhase2( ProcInfo* info )
 {
 	info->currTime = 0.0;
 	if ( Shell::isSingleThreaded() || info->threadIndexInGroup == 1 ) {
-                CkPrintf("Clock::reinitPhase2 %d time %f\n", info->threadIndexInGroup, currentTime_);
-		assert( currTickPtr_ < tickPtr_.size() );
-		if ( tickPtr_[ currTickPtr_ ].mgr()->reinitPhase2( info ) ) {
+                CkPrintf("Clock::reinitPhase2 %d time %f currTickPtr %d nTicks %d\n", info->threadIndexInGroup, currentTime_, currTickPtr_, tickPtr_.size());
+		if ( tickPtr_.size() == 0 || 
+                     tickPtr_[ currTickPtr_ ].mgr()->reinitPhase2( info ) ) {
 			++currTickPtr_;
-			if ( currTickPtr_ >= tickPtr_.size() ) {
-				Id clockId( 1 );
 #ifndef USE_CHARMPP
+			if ( hasFinishedTicks() ) {
+				Id clockId( 1 );
 				ack()->send( clockId.eref(), info->threadIndexInGroup,
 					info->nodeIndexInGroup, OkStatus );
-#endif
 				procState_ = TurnOffReinit;
 				++countReinit2_;
 			}
+#endif
 		}
 	}
 }
@@ -812,3 +823,6 @@ bool Clock::hasExpired() const {
   return currentTime_ > endTime_;
 }
 
+bool Clock::hasFinishedTicks() const {
+  return currTickPtr_ >= tickPtr_.size();
+}
