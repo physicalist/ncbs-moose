@@ -325,7 +325,9 @@ void testGetMsg()
 		arithid.eref().objId(), "arg1" );
 	assert( ret != Msg::bad );
 	shell->doSetClock( 0, 1 );
-	shell->doUseClock( "/tab,/arith", "process", 0 );
+	shell->doSetClock( 1, 1 );
+	shell->doUseClock( "/tab", "process", 0 );
+	shell->doUseClock( "/arith", "process", 1 );
 	unsigned int numEntries = Field< unsigned int >::get( 
 		tabid, "num_table" );
 	assert( numEntries == 0 );
@@ -334,22 +336,27 @@ void testGetMsg()
 #else
 	shell->doReinit(CkCallbackResumeThread());
 #endif
+        numEntries = Field<unsigned int>::get(tabid, "num_table");
+        assert(numEntries == 1); // One for reinit call.
+
 	SetGet1< double >::set( arithid, "arg1", 0.0 );
 	SetGet1< double >::set( arithid, "arg2", 2.0 );
+        unsigned int nIterations = 10;
 #ifndef USE_CHARMPP
-	shell->doStart( 5 );
+	shell->doStart( nIterations );
 #else
-	shell->doStart( 6, CkCallbackResumeThread() );
+	shell->doStart( nIterations, CkCallbackResumeThread() );
 #endif
 
 	numEntries = Field< unsigned int >::get( tabid, "num_table" );
-	assert( numEntries == 6 ); // One for reinit call, 100 for process.
+	assert( numEntries == nIterations + 1 ); // One for reinit call, 100 for process.
 
 	Id tabentry( tabid.value() + 1 );
-	for ( unsigned int i = 0; i < 5; ++i ) {
+	for ( unsigned int i = 0; i < numEntries; ++i ) {
 		ObjId temp( tabentry, DataId( i ) );
 		double ret = Field< double >::get( temp, "value" );
-		assert( doubleEq( ret, 2 * i ) );
+                if(i == 0) assert(doubleEq(ret, 0));
+                else assert(doubleEq(ret, 2*(i-1)));
 	}
 
 	// Perhaps I should do another test without reinit.
@@ -440,6 +447,10 @@ void testStatsReduce()
 	*/
 	SetGet0::set( statsid, "trig" );
 
+        Qinfo::clearQ(1);
+        Qinfo::clearQ(1);
+
+/*
 	shell->doSetClock( 0, 1 );
 #ifndef USE_CHARMPP
 	shell->doReinit();
@@ -448,7 +459,7 @@ void testStatsReduce()
 	shell->doReinit(CkCallbackResumeThread());
 	shell->doStart( 1, CkCallbackResumeThread() );
 #endif
-
+*/
 	double x = Field< double >::get( statsid, "sum" );
 	assert( doubleEq( x, sum ) );
 	unsigned int i = Field< unsigned int >::get( statsid, "num" );
@@ -566,10 +577,7 @@ void testBuiltinsProcess()
 {
 	testFibonacci();
 	testGetMsg();
-#ifndef USE_CHARMPP
-        // remove?
-	testStatsReduce();
-#endif
+	// testStatsReduce();
 }
 
 void testMpiBuiltins( )

@@ -30,13 +30,16 @@ class LookupHelper : public CBase_LookupHelper {
   LookupHelper(CkVec< string > &s_argv, const CkCallback &cb);
   void initShell(const CkCallback &cb);
 
-  void iterationDone();
+  void reinitIterationDone();
+  void runIterationDone();
+
   void newIteration();
   void invokeFinishCallback();
 
   // called by shell when all its useful containers
   // have checked in
-  void sync();
+  void syncReinit();
+  void syncRun();
 
   // normal methods for manipulating element table
   public:

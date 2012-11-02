@@ -1730,20 +1730,39 @@ void Shell::setClockPointer(Clock *clock){
 void Shell::containerCheckin(){
   if(++nContainersCheckedIn_ == myElementContainers_.size()){
     nContainersCheckedIn_ = 0;
-    readonlyLookupHelperProxy.ckLocalBranch()->sync();
+    if(isDoingReinit()) readonlyLookupHelperProxy.ckLocalBranch()->syncReinit();
+    else if(isRunning()) readonlyLookupHelperProxy.ckLocalBranch()->syncRun();
   }
 }
 
-void Shell::iterationDone(){
-  //CkPrintf("[%d] Shell::iterationDone doingReinit %d expired %d\n", CkMyPe(), isDoingReinit(), clock_->hasExpired());
-  if(isDoingReinit() || clock_->hasExpired()){
+void Shell::reinitIterationDone(){
+  CkPrintf("[%d] ----- Shell::reinitIterationDone -----\n", CkMyPe());
+  CkAssert(isDoingReinit());
+  if(clock_->hasFinishedTicks()){
+    CkPrintf("[%d] Shell::reinitIterationDone ticksFinished\n", CkMyPe());
     invokeFinishCallback();
   }
-  else if(isRunning()){
+  else{ 
+    //clock_->checkProcState();
+    reinitAllContainers();
+  }
+}
+
+void Shell::runIterationDone(){
+  //CkPrintf("[%d] Shell::iterationDone doingReinit %d expired %d\n", CkMyPe(), isDoingReinit(), clock_->hasExpired());
+  CkPrintf("[%d] ----- Shell::runIterationDone -----\n", CkMyPe());
+  CkAssert(isRunning());
+  if(clock_->hasExpired()){
+    CkPrintf("[%d] Shell::runIterationDone clockExpired\n", CkMyPe());
+    invokeFinishCallback();
+  }
+  else{ 
     //clock_->checkProcState();
     startAllContainers();
   }
 }
+
+
 
 // this will be invoked via LookupHelper::invokeFinishCallback()
 void Shell::invokeFinishCallback(){

@@ -33,6 +33,11 @@ class Tick
 		// Functions for handling messages
 		///////////////////////////////////////////////////////
 
+                /**
+                 * Returns true if there are outgoing tick messages
+                 */
+                bool hasTickTargets() const;
+
 		/**
 		 * New version of 'advance'
  		 * This function is called to advance this one tick through one

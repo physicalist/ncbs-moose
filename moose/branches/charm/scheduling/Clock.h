@@ -152,6 +152,7 @@ class Clock
 		void innerReportClock() const;
 
                 bool hasExpired() const;
+                bool hasFinishedTicks() const;
                 void advancePhase2Body(ProcInfo *info);
 	private:
 		double runTime_;
@@ -175,6 +176,11 @@ class Clock
 		unsigned int numPendingThreads_;
 		unsigned int numThreads_;
 		int callback_;
+
+                /**
+                 * True if the ticks have been altered.
+                 */
+                bool isDirty_;
 
 		/**
 		 * TickPtr contains pointers to tickMgr and is used to sort.

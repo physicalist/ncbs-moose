@@ -190,9 +190,6 @@ void ElementContainer::exchange(ElementDataMsg *m){
     // when all expected bcasts have been received, 
     // synchronize and (conditionally) start next 
     // iteration
-    // FIXME - contribute to local shell here, which
-    // has count of number of containers from which to
-    // expect 'checkin' 
     shell_->containerCheckin();
   }
 }
@@ -301,12 +298,12 @@ void ElementContainer::start(){
   // it send an empty data message, which is required for
   // correct count of received messages
   if(procInfo_.threadIndexInGroup == 0) flushBufferedDataItems();
-  thisProxy[thisIndex].newIteration();
+  else thisProxy[thisIndex].newIteration();
 }
 
 void ElementContainer::reinit(){
   if(procInfo_.threadIndexInGroup == 0) flushBufferedDataItems();
-  thisProxy[thisIndex].newIteration();
+  else thisProxy[thisIndex].newIteration();
 }
 
 void ElementContainer::stop(){

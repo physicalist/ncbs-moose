@@ -72,8 +72,12 @@ void LookupHelper::initShell(const CkCallback &cb){
   contribute(cb);
 }
 
-void LookupHelper::iterationDone(){
-  shell_->iterationDone();
+void LookupHelper::reinitIterationDone(){
+  shell_->reinitIterationDone();
+}
+
+void LookupHelper::runIterationDone(){
+  shell_->runIterationDone();
 }
 
 Element *LookupHelper::get(Id id){
@@ -112,6 +116,10 @@ void LookupHelper::invokeFinishCallback(){
   shell_->invokeFinishCallback();
 }
 
-void LookupHelper::sync(){
-  contribute(CkCallback(CkIndex_LookupHelper::iterationDone(), thisProxy));
+void LookupHelper::syncReinit(){
+  contribute(CkCallback(CkIndex_LookupHelper::reinitIterationDone(), thisProxy));
+}
+
+void LookupHelper::syncRun(){
+  contribute(CkCallback(CkIndex_LookupHelper::runIterationDone(), thisProxy));
 }
