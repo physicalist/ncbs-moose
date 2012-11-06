@@ -48,10 +48,14 @@ const char *ShellProxy::doAdoptHandlerString = "doAdopt";
 
 
 
-ShellProxy::ShellProxy(){
+ShellProxy::ShellProxy(){ 
 }
 
 ShellProxy::~ShellProxy(){
+}
+
+void ShellProxy::ccsInit(string serverName, int serverPort){
+  CcsConnect(&shellServer_, serverName.c_str(), serverPort, NULL);
 }
 
 std::string ShellProxy::doVersion(){
@@ -170,7 +174,7 @@ void ShellProxy::doMove(Id orig, Id newParent, bool qFlag){
   while(CcsRecvResponse(&shellServer_, sizeof(bool), &b, MOOSE_CCS_TIMEOUT) < 0);
 }
 
-void ShellProxy::doCopy(Id orig, Id newParent, string newName, unsigned int n, bool toGlobal, bool copyExtMsgs, bool qFlag){
+Id ShellProxy::doCopy(Id orig, Id newParent, string newName, unsigned int n, bool toGlobal, bool copyExtMsgs, bool qFlag){
   unsigned int size;
   CopyStruct copystruct(orig, newParent, newName, n, toGlobal, copyExtMsgs, qFlag);
   char *toSend = CcsPackUnpack< CopyStruct >::pack(copystruct, size);
@@ -178,8 +182,10 @@ void ShellProxy::doCopy(Id orig, Id newParent, string newName, unsigned int n, b
   CcsSendBroadcastRequest(&shellServer_, ShellProxy::doCopyHandlerString, size, toSend);
   delete[] toSend;
 
-  bool b;
-  while(CcsRecvResponse(&shellServer_, sizeof(bool), &b, MOOSE_CCS_TIMEOUT) < 0);
+  Id id;
+  while(CcsRecvResponse(&shellServer_, sizeof(Id), &id, MOOSE_CCS_TIMEOUT) < 0);
+
+  return id;
 }
 
 ObjId ShellProxy::doFind(string &path){

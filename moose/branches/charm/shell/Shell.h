@@ -48,27 +48,27 @@ class Shell
                 /**
                  * Returns version number of the software.
                  */
-                string doVersion();
+                virtual string doVersion();
                 /**
                  * Returns SVN revision number of the software. This
                  * information is useful for developers. In release
                  * versions it defaults to "0".
                  */
-                string doRevision();
+                virtual string doRevision();
 		/**
 		 * Assigns the current working Element of the Shell
 		 */
-		void setCwe( Id cwe );
+		virtual void setCwe( Id cwe );
 
 		/**
 		 * Returns the current working Element of the Shell
 		 */
-		Id getCwe() const;
+		virtual Id getCwe() const;
 
 		/**
 		 * Returns flag to indicate whether simulation is still running
 		 */
-		bool isRunning() const;
+		virtual bool isRunning() const;
 
 #ifdef USE_CHARMPP
                 void containerCheckin();
@@ -92,7 +92,7 @@ class Shell
 		 * Negative entries mean that that dimension is ragged. Each
 		 * array in that dimension may be a different size.
 		 */
-		Id doCreate( string type, Id parent, string name, 
+		virtual Id doCreate( string type, Id parent, string name, 
 			vector< int > dimensions = vector< int >( 1, 1 ),
 			bool isGlobal = 0, bool qFlag = 0 );
 
@@ -100,7 +100,7 @@ class Shell
 		 * Delete specified Element and all its children and all 
 		 * Msgs connected to it.
 		 */
-		bool doDelete( Id id, bool qFlag = 0 );
+		virtual bool doDelete( Id id, bool qFlag = 0 );
 
 		/**
 		 * Sets up a Message of specified type.
@@ -108,24 +108,23 @@ class Shell
 		 * Here the 'args' vector handles whatever arguments we may need
 		 * to pass to the specified msgType.
 		 */
-		MsgId doAddMsg( const string& msgType, 
+		virtual MsgId doAddMsg( const string& msgType, 
 			ObjId src, const string& srcField, 
 			ObjId dest, const string& destField, bool qFlag = 0);
 
 		/**
 		 * Cleanly quits simulation, wrapping up all nodes and threads.
 		 */
-		void doQuit( bool qFlag = 0 );
+		virtual void doQuit( bool qFlag = 0 );
 
 		/**
 		 * Starts off simulation, to run for 'runtime' more than current
 		 * time. This version is blocking, and returns only when the 
 		 * simulation is done.
 		 */
-#ifndef USE_CHARMPP
-		void doStart( double runtime, bool qFlag = 0 );
-#else
-		void doStart( double runtime, const CkCallback &cb, bool qFlag = 0 );
+		virtual void doStart( double runtime, bool qFlag = 0 );
+#ifdef USE_CHARMPP
+		virtual void doStart( double runtime, const CkCallback &cb, bool qFlag = 0 );
 #endif
 
 		/**
@@ -137,37 +136,38 @@ class Shell
 		 * or 'doReinit' at any time to stop the run with increasing
 		 * levels of prejudice.
 		 */
-		void doNonBlockingStart( double runtime, bool qFlag = 0 );
+		virtual void doNonBlockingStart( double runtime, bool qFlag = 0 );
 
 		/**
 		 * Reinitializes simulation: time goes to zero, all scheduled
 		 * objects are set to initial conditions. If simulation is
 		 * already running, first stops it.
 		 */
-#ifndef USE_CHARMPP
-		void doReinit( bool qFlag = 0 );
-#else
-                void doReinit(const CkCallback &cb, bool qFlag = 0);
+                // for the Charm++ version, this is 
+                // meant to be overridden by ShellProxy
+		virtual void doReinit( bool qFlag = 0 );
+#ifdef USE_CHARMPP
+                virtual void doReinit(const CkCallback &cb, bool qFlag = 0);
 #endif
 
 		/**
 		 * Cleanly stops simulation, ready to take up again from where
 		 * the stop occurred. Waits till current operations are done.
 		 */
-		void doStop( bool qFlag = 0 );
+		virtual void doStop( bool qFlag = 0 );
 
 		/**
 		 * Terminate ongoing simulation, with prejudice.
 		 * Uncleanly stops simulation. Things may be in a mess with
 		 * different objects at different times, but it stops at once.
 		 */
-		void doTerminate( bool qFlag = 0 );
+		virtual void doTerminate( bool qFlag = 0 );
 
 		/**
 		 * shifts orig Element (including offspring) to newParent. All old 
 		 * hierarchy, data, Msgs etc are preserved below the orig.
 		 */
-		void doMove( Id orig, Id newParent, bool qFlag = 0 );
+		virtual void doMove( Id orig, Id newParent, bool qFlag = 0 );
 
 		/**
 		 * Copies orig Element to newParent. n specifies how many copies
@@ -175,7 +175,7 @@ class Shell
 		 * copyExtMsgs specifies whether to also copy messages from orig
 		 * to objects outside the copy tree. Usually we don't do this.
 		 */
-		Id doCopy( Id orig, Id newParent, string newName,
+		virtual Id doCopy( Id orig, Id newParent, string newName,
 			unsigned int n, bool toGlobal, bool copyExtMsgs, 
 			bool qFlag = 0 );
 
@@ -184,7 +184,7 @@ class Shell
 		 * relative references and the internal cwe 
 		 * (current working Element) on the shell
 		 */
-		ObjId doFind( const string& path ) const;
+		virtual ObjId doFind( const string& path ) const;
 
 		/**
 		 * Deprecated.
@@ -200,7 +200,7 @@ class Shell
 		 * The target on the path usually has the 'process' field but
 		 * other options are allowed, like 'init'
 		 */
-		void doUseClock( string path, string field, unsigned int tick,
+		virtual void doUseClock( string path, string field, unsigned int tick,
 			bool qFlag = 0 );
 
 		/**
@@ -210,13 +210,13 @@ class Shell
 		 * Soon to learn .p, SBML, NeuroML.
 		 * Later to learn NineML
 		 */
-		 Id doLoadModel( const string& fname, const string& modelpath, 
+		 virtual Id doLoadModel( const string& fname, const string& modelpath, 
 		 	const string& solverClass = "", bool qFlag = 0 );
 		
 		/**
 		 * Write given model to SBML file. Returns success value.
 		 */
-		 int doWriteSBML( const string& fname, const string& modelpath,
+		 virtual int doWriteSBML( const string& fname, const string& modelpath,
 		 	bool qFlag = 0 );
 
 		/**
@@ -225,7 +225,7 @@ class Shell
 		 * number of Field entries in the table..
  		 * The tgt is the FieldElement whose fieldDimension needs updating.
  		 */
-		void doSyncDataHandler( Id tgt );
+		virtual void doSyncDataHandler( Id tgt );
 
 		/**
  		 * This function builds a reac-diffusion mesh starting at the
@@ -234,7 +234,7 @@ class Shell
  		 * redefined, and we now need to go through and update the child 
  		 * reaction system.
  		 */
-		void doReacDiffMesh( Id baseCompartment );
+		virtual void doReacDiffMesh( Id baseCompartment );
 
 		/**
 		 * This function is called by the parser to tell the ProcessLoop
@@ -261,7 +261,7 @@ class Shell
 		 * Sets of a simulation for duration runTime. Handles
 		 * cases including single-thread, multithread, and multinode
 		 */
-		void start( double runTime );
+		virtual void start( double runTime );
 
 		/**
  		 * Initialize acks. This call should be done before the 'send' goes 
@@ -297,7 +297,7 @@ class Shell
 		void handleCreate( const Eref& e, const Qinfo* q, 
 			string type, Id parent, Id newElm, string name,
 			vector< int > dimensions );
-		void destroy( const Eref& e, const Qinfo* q, Id eid);
+		virtual void destroy( const Eref& e, const Qinfo* q, Id eid);
 		void innerCreate( string type, Id parent, Id newElm, string name,
 			const vector< int >& dimensions );
 
@@ -464,7 +464,7 @@ class Shell
 		// Sets up clock ticks. Essentially is a call into the 
 		// Clock::setupTick function, but may be needed to be called from
 		// the parser so it is a Shell function too.
-		void doSetClock( unsigned int tickNum, double dt, bool qFlag = 0 );
+		virtual void doSetClock( unsigned int tickNum, double dt, bool qFlag = 0 );
 
 		// Should set these up as streams so that we can build error
 		// messages similar to cout.

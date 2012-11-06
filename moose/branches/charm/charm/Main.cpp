@@ -97,8 +97,8 @@ void Main::commence(){
   CkPrintf("[main] register containers with helpers\n");
   readonlyElementContainerProxy.registerSelf(CkCallbackResumeThread());
 
-  //CkPrintf("[main] starting serial unit tests\n");
-  //readonlyParallelTestHelperProxy[0].doSerialUnitTests(CkCallbackResumeThread());
+  CkPrintf("[main] starting serial unit tests\n");
+  readonlyParallelTestHelperProxy[0].doSerialUnitTests(CkCallbackResumeThread());
 
   //CkPrintf("\n[main] starting parallel unit tests\n");
   //readonlyParallelTestHelperProxy[0].doMpiTests(CkCallbackResumeThread());
@@ -106,8 +106,13 @@ void Main::commence(){
   //CkPrintf("\n[main] starting process unit tests\n");
   //readonlyParallelTestHelperProxy[0].doProcessTests(CkCallbackResumeThread());
 
-  CkPrintf("\n[main] starting regression tests\n");
-  readonlyParallelTestHelperProxy[0].doRegressionTests(CkCallbackResumeThread());
+  //CkPrintf("\n[main] starting regression tests\n");
+  //readonlyParallelTestHelperProxy[0].doRegressionTests(CkCallbackResumeThread());
+
+  // XXX disabled all parallel unit tests, since many of them make improper assumptions and assertions
+  // Moreover, shell commands must be sent to all nodes, not just node 0, and in a synchronized manner.
+  // So, we must first interface with the parser using CCS, and then do testing
+
   // XXX - only for the time being
   // once we have the unit tests running, we should 
   // incorporate the next steps, below

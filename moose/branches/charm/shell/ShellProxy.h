@@ -14,6 +14,8 @@
 #include <vector>
 using namespace std;
 
+#include "Shell.h"
+
 #include "ccs-client.h"
 
 class Eref;
@@ -23,7 +25,7 @@ class ObjId;
 
 #define MOOSE_CCS_TIMEOUT 120
 
-class ShellProxy {
+class ShellProxy : public Shell {
   private:
   CcsServer shellServer_;
 
@@ -54,7 +56,7 @@ class ShellProxy {
   void doStop( bool qFlag = 0 );
   void doTerminate( bool qFlag = 0 );
   void doMove( Id orig, Id newParent, bool qFlag = 0 );
-  void doCopy( Id orig, Id newParent, string newName,
+  Id doCopy( Id orig, Id newParent, string newName,
       unsigned int n, bool toGlobal, bool copyExtMsgs, 
       bool qFlag = 0 );
   ObjId doFind( string& path );
@@ -86,6 +88,9 @@ class ShellProxy {
   void digestReduceFieldDimension( 
       const Eref& er, const ReduceFieldDimension* arg );
   */
+
+  public:
+  void ccsInit(string serverName, int serverPort);
 
 
   // statics
