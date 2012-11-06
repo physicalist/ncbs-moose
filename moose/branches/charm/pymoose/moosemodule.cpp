@@ -99,6 +99,11 @@
 
 #include "moosemodule.h"
 
+#ifdef USE_CHARMPP
+#include "MooseParams.h"
+#include "../shell/ShellProxy.h"
+#endif
+
 using namespace std;
 
 //////////////////////// External functions /////////////////////////
@@ -278,7 +283,12 @@ static struct module_state _state;
 #define LookupField_Check(v) (Py_TYPE(v) == &LookupFieldType)
     
     // Macro to create the Shell * out of shellId
+#ifndef USE_CHARMPP
 #define SHELLPTR reinterpret_cast<Shell*>(get_shell(0, NULL).eref().data())    
+#else
+static Shell *charm_pymoose_shellPtr = NULL;
+#define SHELLPTR charm_pymoose_shellPtr
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     // Helper routines
@@ -375,6 +385,7 @@ static struct module_state _state;
         bool dounit = doUnitTests != 0;
         bool doregress = doRegressionTests != 0;
         // Utilize the main::init function which has friend access to Id
+#ifndef USE_CHARMPP
         Id shellId = init(argc, argv, dounit, doregress);
         inited = 1;
         Shell * shellPtr = reinterpret_cast<Shell*>(shellId.eref().data());
@@ -396,6 +407,22 @@ static struct module_state _state;
                 shellPtr->doQuit();
             }
         }
+
+#else
+        Id shellId;
+        string serverName;
+        int serverPort;
+
+        MooseParamCollection params;
+        params.add(string("--ccsServer"), &serverName, string("localhost"), true);
+        params.add(string("--ccsPort"), &serverPort, -1, true);
+        params.process(argc, argv);
+
+        ShellProxy *shellProxy = new ShellProxy;
+        shellProxy->ccsInit(serverName, serverPort);
+        SHELLPTR = shellProxy;
+        Shell *shellPtr = SHELLPTR;
+#endif
         return shellId;
     } //! create_shell()
 
@@ -409,7 +436,9 @@ static struct module_state _state;
         return;
       }
       finalized = true;
+#ifndef USE_CHARMPP
         Id shellId = get_shell(0, NULL);
+#endif
         for (map<string, PyObject *>::iterator it =
                      get_inited_lookupfields().begin();
              it != get_inited_lookupfields().end();
@@ -437,6 +466,7 @@ static struct module_state _state;
         }
         SHELLPTR->doQuit();
         // Cleanup threads
+#ifndef USE_CHARMPP
         if (!SHELLPTR->isSingleThreaded()){
             SHELLPTR->joinThreads();
             Qinfo::freeMutex();
@@ -444,6 +474,10 @@ static struct module_state _state;
         // Destroy the Shell object
         Neutral* ns = reinterpret_cast<Neutral*>(shellId.element()->dataHandler()->data(0));
         ns->destroy( shellId.eref(), 0, 0);
+#else
+        delete SHELLPTR;
+#endif
+
 #ifdef USE_MPI
         MPI_Finalize();
 #endif
@@ -4765,7 +4799,7 @@ static struct PyModuleDef MooseModuleDef = {
             strncpy(argv[ii], args[ii].c_str(), args[ii].length()+1);            
         }
         PyEval_InitThreads();
-        Id shellId = get_shell(argc, argv);
+        get_shell(argc, argv);
         for (int ii = 1; ii < argc; ++ii){
             free(argv[ii]);
         }

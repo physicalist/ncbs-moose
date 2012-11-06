@@ -135,16 +135,15 @@ void CopyOperation::exec(Shell *shell){
   CopyStruct copyStruct;
   CcsPackUnpack<CopyStruct>::unpack(msg_, copyStruct);
 
-  shell->doCopy(copyStruct.orig_,
-                copyStruct.newParent_,
-                copyStruct.newName_,
-                copyStruct.n_,
-                copyStruct.toGlobal_,
-                copyStruct.copyExtMsgs_,
-                copyStruct.qFlag_);
+  Id id = shell->doCopy(copyStruct.orig_,
+                        copyStruct.newParent_,
+                        copyStruct.newName_,
+                        copyStruct.n_,
+                        copyStruct.toGlobal_,
+                        copyStruct.copyExtMsgs_,
+                        copyStruct.qFlag_);
 
-  bool r = true;
-  CcsSendDelayedReply(delayedReply_, sizeof(bool), &r);
+  CcsSendDelayedReply(delayedReply_, sizeof(Id), &id);
 }
 
 void FindOperation::exec(Shell *shell){

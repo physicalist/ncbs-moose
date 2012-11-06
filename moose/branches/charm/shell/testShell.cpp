@@ -411,9 +411,15 @@ void testCopyFieldElement()
 			}
 		}
 	}
+        CkPrintf("[%d] testCopyFieldElement numHere %d\n", CkMyPe(), numHere);
 	assert( syn->dataHandler()->localEntries() == numHere );
 	syn->syncFieldDim();
 
+        // XXX This is an incorrect assertion. Since all synapses aren't necessarily
+        // going to be on this node, the largest size on this node, times the total number
+        // of arrays will not give (size-1)*size; that would require the multiplication of
+        // the largest array across all nodes and the number of arrays.
+        // XXX Disabling parallel unit tests
 	assert( syn->dataHandler()->totalEntries() == ( size - 1 ) * size );
 
 	vector< double > delay( size * ( size - 1 ), 0 );

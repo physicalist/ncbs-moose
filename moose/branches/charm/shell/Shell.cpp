@@ -684,6 +684,10 @@ void Shell::doStart(double runtime, const CkCallback &cb, bool qFlag){
   startAllContainers();
 }
 
+void Shell::doStart(double runtime, bool qFlag){
+  CkAbort("Shouldn't call Shell::doStart(); only ShellProxy::doStart()\n");
+}
+
 void Shell::startAllContainers(){
   // Don't want the container that has been assigned
   // to the shell to do anything, since that container's
@@ -798,6 +802,10 @@ void Shell::doReinit(const CkCallback &cb, bool qFlag){
   finishCallback_ = cb;
   clock_->handleReinit();
   reinitAllContainers();
+}
+
+void Shell::doReinit(bool qFlag){
+  CkAbort("Shouldn't call Shell::doReinit(), only ShellProxy::doReinit()\n");
 }
 
 void Shell::reinitAllContainers(){
