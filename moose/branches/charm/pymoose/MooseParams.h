@@ -47,7 +47,7 @@ class TypedMooseParam : public MooseParam {
     defaultValue_(defaultValue)
   {}
 
-  void extract(const char *val);
+  void extract(const char *val) {}
 
   void push(){
     if(extractedValue()) *saveTo_ = parsedValue_;

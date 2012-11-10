@@ -92,13 +92,6 @@ class ObjId
 
 		/// A useful test value
 		static const ObjId bad();
-#ifdef USE_CHARMPP
-        public:
-                void pup(PUP::er &p);
-                void reduce(const ObjId &other);
-#endif
-
-	private:
 };
 
 #endif // _OBJ_ID_H

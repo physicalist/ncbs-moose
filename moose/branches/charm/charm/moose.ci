@@ -9,6 +9,8 @@ mainmodule moose {
   readonly SimulationParameters readonlySimulationParameters;
   readonly CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
 
+  initnode void initializeSetGetCcsHandlerStrings();
+
   
   message ElementDataMsg {
     Qinfo qinfo_[];

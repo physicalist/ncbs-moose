@@ -136,7 +136,7 @@ class Shell
 		 * or 'doReinit' at any time to stop the run with increasing
 		 * levels of prejudice.
 		 */
-		virtual void doNonBlockingStart( double runtime, bool qFlag = 0 );
+		//virtual void doNonBlockingStart( double runtime, bool qFlag = 0 );
 
 		/**
 		 * Reinitializes simulation: time goes to zero, all scheduled
@@ -161,7 +161,7 @@ class Shell
 		 * Uncleanly stops simulation. Things may be in a mess with
 		 * different objects at different times, but it stops at once.
 		 */
-		virtual void doTerminate( bool qFlag = 0 );
+		//virtual void doTerminate( bool qFlag = 0 );
 
 		/**
 		 * shifts orig Element (including offspring) to newParent. All old 

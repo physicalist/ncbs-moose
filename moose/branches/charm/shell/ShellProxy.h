@@ -15,7 +15,6 @@
 using namespace std;
 
 #include "Shell.h"
-
 #include "ccs-client.h"
 
 class Eref;
@@ -34,8 +33,8 @@ class ShellProxy : public Shell {
 
   public:
 
-  ShellProxy();
-  ~ShellProxy();
+  ShellProxy() {}
+  ~ShellProxy() {}
 
   string doVersion();
   string doRevision();
@@ -76,11 +75,7 @@ class ShellProxy : public Shell {
   ////////////////////////////////////////////////////////////////
   // Utility functions
   ////////////////////////////////////////////////////////////////
-#ifndef USE_CHARMPP
-  static bool adopt( Id parent, Id child );
-#else
   bool adopt(Id parent, Id child);
-#endif
 
   /* XXX where is this used?
      XXX redefine if necessary

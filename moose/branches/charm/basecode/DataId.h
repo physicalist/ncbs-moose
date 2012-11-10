@@ -123,11 +123,6 @@ class DataId
 		static const DataId globalField;
 	private:
 		unsigned long long index_;
-
-#ifdef USE_CHARMPP
-        public:
-                void pup(PUP::er &p);
-#endif
 };
 
 
