@@ -167,12 +167,6 @@ class Id
 //		unsigned int index_; // Index of array entry within element.
 		static vector< Element* >& elements();
 
-#ifdef USE_CHARMPP
-        public:
-                void pup(PUP::er &p);
-                void reduce(const Id &other);
-#endif
-
 };
 
 #endif // _ID_H

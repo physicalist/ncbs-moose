@@ -2,7 +2,7 @@
 #include "ShellCcsInterface.h"
 #include "CcsReductionWrapper.h"
 #include "ShellCcsInterfaceOperation.h"
-#include "ShellProxy.h"
+#include "../basecode/ThreadId.h"
 // need these includes for Shell
 #include "header.h"
 #include "SingleMsg.h"
@@ -16,6 +16,8 @@
 #include "Shell.h"
 #include "Dinfo.h"
 #include "Wildcard.h"
+
+#include "ShellProxy.h"
 #include "Shell.h"
 #include "../charm/LookupHelper.h"
 

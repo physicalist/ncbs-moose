@@ -48,12 +48,6 @@ const char *ShellProxy::doAdoptHandlerString = "doAdopt";
 
 
 
-ShellProxy::ShellProxy(){ 
-}
-
-ShellProxy::~ShellProxy(){
-}
-
 void ShellProxy::ccsInit(string serverName, int serverPort){
   CcsConnect(&shellServer_, serverName.c_str(), serverPort, NULL);
 }

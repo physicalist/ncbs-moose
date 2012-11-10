@@ -56,6 +56,10 @@ OBJ = \
 	testAsync.o	\
 	main.o	\
 
+ifeq ($(BUILD),charm++)
+OBJ += SetGetStaticStrings.o
+endif
+
 HEADERS = \
 	header.h \
 	Cinfo.h \

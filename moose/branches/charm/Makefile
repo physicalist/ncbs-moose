@@ -268,10 +268,12 @@ ifdef USE_CHARMPP
 # set CHARM_PATH 
         CHARM_PATH = $(HOME)/work/charm-soc/charm/net-linux
         CXX = $(CHARM_PATH)/bin/charmc 
-        #INCPATH = -I./basecode -I./scheduling -I./msg -I./shell
-        LIBS += -lccs-client
+        LIBS += -lccs-client $(CHARM_PATH)/lib/libmemory-default.o $(CHARM_PATH)/lib/libthreads-default.o -lck -lconv-cplus-y -lconv-core -lconv-util -lckqt  
+        LINK_CXX = g++
+        LDFLAGS += -L$(CHARM_PATH)/lib_so -L$(CHARM_PATH)/lib
 else 
         CXX = g++ 
+        LINK_CXX = $(CXX)
 endif
 
 ifdef USE_HDF5
@@ -342,7 +344,7 @@ export USE_SBML
 all: moose pymoose
 
 moose: libs $(OBJLIBS) $(PARALLEL_LIB)
-	$(CXX) $(CXXFLAGS) $(OBJLIBS) $(PARALLEL_LIB) $(LIBS) -o moose
+	$(CXX) $(CXXFLAGS) $(OBJLIBS) $(PARALLEL_LIB) $(LIBS) -o moose 
 	@echo "Moose compilation finished"
 
 libmoose.so: libs
@@ -370,21 +372,40 @@ ifndef PYTHON_INCLUDES
 	PYTHON_LDFLAGS := -L/usr/lib/$(INSTALLED_PYTHON)
 endif
 # There are some unix/gcc specific paths here. Should be cleaned up in future.
+
 pymoose: python/moose/_moose.so
 pymoose: CXXFLAGS += -DPYMOOSE $(PYTHON_INCLUDES)
+pymoose: LDFLAGS += $(PYTHON_LDFLAGS)
+pymoose: SUBDIR += pymoose
+
+# In the charm++ version of PyMoose, we only require ShellProxy, Id, ObjId and DataId.
+# No other Moose objects/functions are required to create the parser module loaded
+# by python.
+
+ifneq ($(BUILD),charm++)
 pymoose: OBJLIBS += pymoose/_pymoose.o basecode/_basecode_pymoose.o
 pymoose: OBJLIBS := $(filter-out basecode/_basecode.o,$(OBJLIBS))
-pymoose: LDFLAGS += $(PYTHON_LDFLAGS)
 export CXXFLAGS
+
 python/moose/_moose.so: libs $(OBJLIBS) basecode/_basecode_pymoose.o
 	$(MAKE) -C pymoose
-	$(CXX) -shared $(LDFLAGS) $(CXXFLAGS) -o $@ $(OBJLIBS) $(LIBS)
+	$(LINK_CXX) -shared $(LDFLAGS) $(CXXFLAGS) $(OBJLIBS) $(LIBS) -o $@ 
 	@echo "pymoose module built."
 
 # This will generate an object file without main
 basecode/_basecode_pymoose.o: 	
 	$(MAKE) -C basecode pymoose 
 	@echo "_basecode_pymoose.o built"
+else
+PYMOOSE_OBJS = $(OBJLIBS)
+
+python/moose/_moose.so: $(PYMOOSE_OBJS) libs
+	$(MAKE) -C pymoose
+	$(LINK_CXX) -shared $(LDFLAGS) $(CXXFLAGS) $(PYMOOSE_OBJS) pymoose/_pymoose.o $(LIBS) -o $@ 
+	@echo "pymoose module built."
+
+endif
+
 libs:
 	@echo \
         "#ifndef MOOSE_SVN_REVISION_H\n\
