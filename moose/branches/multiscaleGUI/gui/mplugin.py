@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Oct  2 17:58:51 2012 (+0530)
+# Last-Updated: Sat Nov 10 16:12:02 2012 (+0530)
 #           By: subha
-#     Update #: 22
+#     Update #: 34
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -60,7 +60,7 @@ class MoosePlugin(object):
 	switch to when going to a larger scale."""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
-    def getAllAllowedPlugins(self):
+    def getAdjacentPlugins(self):
 	"""Return a list of plugins that are valid transitions from this plugin"""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
@@ -81,7 +81,33 @@ class MoosePlugin(object):
 	"""Return the widget with selection options that can be
 	applied on objects in current level"""
 	raise NotImplementedError('method must be reimplemented in subclass')
+
+    def getViews(self):
+	"""Return the view widgets available from this plugin."""
+	raise NotImplementedError('method must be reimplemented in subclass')
+
+    def getCurrentView(self):
+	"""Return the current view of this plugin."""
+	raise NotImplementedError('method must be reimplemented in subclass')    
 	
 
+class ViewBase(QtGui.QWidget):
+    def __init__(self, *args):
+        QtGui.QWidget.__init__(self, *args)
+
+    def getToolPanes(self):
+        """Return a list of widgets to be displayed as dock widgets"""
+	raise NotImplementedError('method must be reimplemented in subclass')
+
+    def getToolBar(self):
+        """Return the toolbar for this view"""
+	raise NotImplementedError('method must be reimplemented in subclass')
+
+    def getViewMenus(self):
+        """Return the menus for this view"""
+	raise NotImplementedError('method must be reimplemented in subclass')
+
+        
+        
 # 
 # mplugin.py ends here
