@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Nov 12 10:41:52 2012 (+0530)
+# Last-Updated: Mon Nov 12 15:46:55 2012 (+0530)
 #           By: subha
-#     Update #: 39
+#     Update #: 67
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -54,8 +54,10 @@ class MoosePlugin(object):
     implement the methods described here.
 
     """
-    def __init__(self):
-        pass
+    def __init__(self, mainwindow):
+        self._views = []
+        self._menus = []
+        self.mwindow = mainwindow
 
     def getPreviousPlugin(self):
 	"""Returns the plugin object that the gui is supposed to
@@ -71,8 +73,8 @@ class MoosePlugin(object):
 	"""Return a list of plugins that are valid transitions from this plugin"""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
-    def getEditorWidget(self):
-	"""Returns the editor object for the current level"""
+    def getCentralWidget(self):
+	"""Returns the central widget for the current level"""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
     def getLibraryWidget(self):
@@ -90,31 +92,41 @@ class MoosePlugin(object):
 	raise NotImplementedError('method must be reimplemented in subclass')
 
     def getViews(self):
-	"""Return the view widgets available from this plugin."""
+	"""Return the view widgets available from this plugin."""        
 	raise NotImplementedError('method must be reimplemented in subclass')
 
     def getCurrentView(self):
 	"""Return the current view of this plugin."""
 	raise NotImplementedError('method must be reimplemented in subclass')    
-	
+
+    def setCurrentView(self, view):
+        """Set current view (e.g., edit/plot/run)"""
+	self.currentView = view
+
+    def getMenus(self):
+        return self._menus
+
 
 class ViewBase(QtGui.QWidget):
     def __init__(self, *args):
         QtGui.QWidget.__init__(self, *args)
+        self._menus = []
 
     def getToolPanes(self):
-        """Return a list of widgets to be displayed as dock widgets"""
+        """Return a list of widgets to be displayed as dock widgets."""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
     def getToolBar(self):
-        """Return the toolbar for this view"""
+        """Return the toolbar for this view."""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
-    def getViewMenus(self):
-        """Return the menus for this view"""
-	raise NotImplementedError('method must be reimplemented in subclass')
+    def getMenus(self):
+        """Return the menus for this view."""
+        return self._menus
 
+    def getPreferences(self):
         
-        
+    
+    
 # 
 # mplugin.py ends here
