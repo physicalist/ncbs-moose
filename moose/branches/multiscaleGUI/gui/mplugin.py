@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Nov 10 16:12:02 2012 (+0530)
+# Last-Updated: Mon Nov 12 10:41:52 2012 (+0530)
 #           By: subha
-#     Update #: 34
+#     Update #: 39
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -45,10 +45,17 @@
 
 # Code:
 
+from PyQt4 import QtGui,QtCore,Qt
+
 class MoosePlugin(object):
-    """Moose GUI plugin base class"""
+    """Moose GUI plugin base class.
+
+    A GUI plugin for MOOSE should extend MoosePlugin class. It has to
+    implement the methods described here.
+
+    """
     def __init__(self):
-	pass
+        pass
 
     def getPreviousPlugin(self):
 	"""Returns the plugin object that the gui is supposed to

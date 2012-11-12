@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Feb 13 16:07:56 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Sep 27 17:52:21 2012 (+0530)
+# Last-Updated: Mon Nov 12 09:46:58 2012 (+0530)
 #           By: subha
-#     Update #: 346
+#     Update #: 347
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -71,6 +71,7 @@ KEY_LOCAL_DEMOS_DIR = 'main/localdemosdir'
 KEY_MOOSE_LOCAL_DIR = 'main/localdir'
 KEY_NUMPTHREADS = 'main/numpthreads'
 KEY_LOCAL_BUILD = 'main/localbuild'
+KEY_LAST_PLUGIN = 'main/lastplugin'
 
 QT_VERSION = str(QtCore.QT_VERSION_STR).split('.')
 QT_MAJOR_VERSION = int(QT_VERSION[0])
