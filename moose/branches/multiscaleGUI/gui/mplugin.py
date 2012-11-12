@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Nov 12 15:46:55 2012 (+0530)
+# Last-Updated: Mon Nov 12 18:21:18 2012 (+0530)
 #           By: subha
-#     Update #: 67
+#     Update #: 74
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -106,10 +106,15 @@ class MoosePlugin(object):
     def getMenus(self):
         return self._menus
 
+    def close(self):
+        for view in self._views:
+            view.close()
+
 
 class ViewBase(QtGui.QWidget):
     def __init__(self, *args):
         QtGui.QWidget.__init__(self, *args)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self._menus = []
 
     def getToolPanes(self):
@@ -125,7 +130,17 @@ class ViewBase(QtGui.QWidget):
         return self._menus
 
     def getPreferences(self):
-        
+        """Return a widget for setting preferences"""
+        raise NotImplementedError('method must be reimplemented in subclass')
+
+class EditorBase(ViewBase):
+    pass
+
+class PlotBase(ViewBase):
+    pass
+
+class RunBase(ViewBase):
+    pass
     
     
 # 

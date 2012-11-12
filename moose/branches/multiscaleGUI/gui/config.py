@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Feb 13 16:07:56 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Nov 12 09:46:58 2012 (+0530)
+# Last-Updated: Mon Nov 12 17:49:21 2012 (+0530)
 #           By: subha
-#     Update #: 347
+#     Update #: 348
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -83,6 +83,7 @@ MOOSE_REPORT_BUG_URL = 'http://sourceforge.net/tracker/?func=add&group_id=165660
 MOOSE_DEMOS_DIR = '/usr/share/moose/Demos'
 MOOSE_DOCS_DIR =  '/usr/share/doc/moose'
 MOOSE_GUI_DIR = os.path.dirname(os.path.abspath(__file__))
+MOOSE_PLUGIN_DIR = os.path.join(MOOSE_GUI_DIR, 'plugins')
 MOOSE_CFG_DIR = os.path.join(os.environ['HOME'], '.moose')
 MOOSE_LOCAL_DIR = os.path.join(os.environ['HOME'], 'moose')
 MOOSE_NUMPTHREADS = '1'
