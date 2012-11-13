@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Nov 12 18:21:18 2012 (+0530)
+# Last-Updated: Tue Nov 13 16:15:07 2012 (+0530)
 #           By: subha
-#     Update #: 74
+#     Update #: 84
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -47,7 +47,7 @@
 
 from PyQt4 import QtGui,QtCore,Qt
 
-class MoosePlugin(object):
+class MoosePluginBase(object):
     """Moose GUI plugin base class.
 
     A GUI plugin for MOOSE should extend MoosePlugin class. It has to
@@ -116,6 +116,7 @@ class ViewBase(QtGui.QWidget):
         QtGui.QWidget.__init__(self, *args)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self._menus = []
+        self._toolPanes = []
 
     def getToolPanes(self):
         """Return a list of widgets to be displayed as dock widgets."""
@@ -134,13 +135,37 @@ class ViewBase(QtGui.QWidget):
         raise NotImplementedError('method must be reimplemented in subclass')
 
 class EditorBase(ViewBase):
-    pass
+    def __init__(self, *args):
+        ViewBase.__init__(self, *args)
+
+    def getToolPanes(self):
+        if not self._toolPanes:
+            self._toolPanes = [
+                self.getLibraryPane(),
+                self.getSelectionPane(),
+                self.getOperationsPane()]
+
+    def getLibraryPane(self):
+        """TODO: display everything under library as a tree"""
+        pass
+
+    def getSelectionPane(self):
+        """TODO: provide a widget to apply selection rules"""
+        pass
+
+    def getOperationsPane(self):
+        """TODO: provide a widget to apply operations on selected
+        elements."""
+        pass
+
 
 class PlotBase(ViewBase):
-    pass
+    def __init__(self, *args):
+        ViewBase.__init__(self, *args)
 
 class RunBase(ViewBase):
-    pass
+    def __init__(self, *args):
+        ViewBase.__init__(self, *args)
     
     
 # 
