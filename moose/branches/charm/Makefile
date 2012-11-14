@@ -383,7 +383,8 @@ pymoose: SUBDIR += pymoose
 # by python.
 
 ifneq ($(BUILD),charm++)
-pymoose: OBJLIBS += pymoose/_pymoose.o basecode/_basecode_pymoose.o
+pymoose: OBJLIBS += pymoose/_pymoose.o basecode/_basecode_pymoose.o\
+                    basecode/Cinfo_parser.o basecode/Finfo_parser.o 
 pymoose: OBJLIBS := $(filter-out basecode/_basecode.o,$(OBJLIBS))
 export CXXFLAGS
 

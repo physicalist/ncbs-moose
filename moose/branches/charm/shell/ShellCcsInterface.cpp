@@ -50,20 +50,20 @@ ShellCcsInterface::ShellCcsInterface(const CkCallback &cb){
 
   // register reducer merge functions
   CcsSetMergeFn(ShellProxy::setCweHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::getCweHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<Id> >);
-  CcsSetMergeFn(ShellProxy::doCreateHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<Id> >);
+  CcsSetMergeFn(ShellProxy::getCweHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsId> >);
+  CcsSetMergeFn(ShellProxy::doCreateHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsId> >);
   CcsSetMergeFn(ShellProxy::doDeleteHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
   CcsSetMergeFn(ShellProxy::doAddMsgHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<MsgId> >);
   CcsSetMergeFn(ShellProxy::doQuitHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doStartHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<Id> >);
+  CcsSetMergeFn(ShellProxy::doStartHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsId> >);
   CcsSetMergeFn(ShellProxy::doReinitHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
   CcsSetMergeFn(ShellProxy::doStopHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
   CcsSetMergeFn(ShellProxy::doTerminateHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
   CcsSetMergeFn(ShellProxy::doMoveHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
   CcsSetMergeFn(ShellProxy::doCopyHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doFindHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<ObjId> >);
+  CcsSetMergeFn(ShellProxy::doFindHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsObjId> >);
   CcsSetMergeFn(ShellProxy::doUseClockHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doLoadModelHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<Id> >);
+  CcsSetMergeFn(ShellProxy::doLoadModelHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsId> >);
   CcsSetMergeFn(ShellProxy::doWriteSBMLHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<int> >);
   CcsSetMergeFn(ShellProxy::doSyncDataHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
   CcsSetMergeFn(ShellProxy::doReacDiffMeshHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);

@@ -12,6 +12,7 @@
 
 #ifdef USE_CHARMPP
 #include "pup.h"
+#include "CcsObjId.h"
 #endif
 
 #include <iostream>
@@ -53,6 +54,12 @@ class ObjId
 		 * Returns bad on failure.
 		 */
 		ObjId( const string& path );
+#ifdef USE_CHARMPP
+                ObjId(const CcsObjId &ccs) : 
+                  id(ccs.id),
+                  dataId(ccs.dataId)
+                {}
+#endif
 
 		/**
 		 * Returns the absolute path including all array indices.

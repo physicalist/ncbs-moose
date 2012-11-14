@@ -32,7 +32,11 @@
 #define _MOOSEMODULE_H
 
 #include <string>
+#ifndef USE_CHARMPP
 #include "../basecode/Id.h"
+#else
+#include "../basecode/CcsId.h"
+#endif
 extern "C" {
 #if PY_MAJOR_VERSION >= 3
     // int has been replaced by long
@@ -52,7 +56,7 @@ extern "C" {
     */
     typedef struct {
         PyObject_HEAD
-        Id id_;
+        CcsId id_;
     } _Id;
     /**
        _ObjId wraps the subelements of a Id - identified by
@@ -70,12 +74,12 @@ extern "C" {
     */
     typedef struct {
         PyObject_HEAD
-        ObjId oid_;
+        CcsObjId oid_;
     } _ObjId;
 
     typedef struct {
         PyObject_HEAD
-        ObjId owner;
+        CcsObjId owner;
         char * name;
     } _Field;
     //////////////////////////////////////////
@@ -145,7 +149,7 @@ extern "C" {
 
 
     // The following are global functions
-    static PyObject * oid_to_element(ObjId oid);
+    static PyObject * oid_to_element(CcsObjId oid);
     static PyObject * moose_element(PyObject * dummy, PyObject * args);
     static PyObject * moose_useClock(PyObject * dummy, PyObject * args);
     static PyObject * moose_setClock(PyObject * dummy, PyObject * args);
@@ -174,8 +178,8 @@ extern "C" {
     //////////////////////////////////////////////////////////////
     // These are internal functions and not exposed in Python
     //////////////////////////////////////////////////////////////
-    static PyObject * getLookupField(ObjId oid, char * fieldName, PyObject * key);
-    static int setLookupField(ObjId oid, char * fieldName, PyObject * key, PyObject * value);
+    static PyObject * getLookupField(CcsObjId oid, char * fieldName, PyObject * key);
+    static int setLookupField(CcsObjId oid, char * fieldName, PyObject * key, PyObject * value);
     static int define_class(PyObject * module_dict, const Cinfo * cinfo);
     static int define_destFinfos(const Cinfo * cinfo);
     static int defineAllClasses(PyObject* module_dict);
@@ -184,7 +188,7 @@ extern "C" {
     static PyObject * moose_ObjId_get_lookupField_attr(PyObject * self, void * closure);
     static PyObject * moose_ObjId_get_elementField_attr(PyObject * self, void * closure);
     static PyObject * moose_ObjId_get_destField_attr(PyObject * self, void * closure);
-    static PyObject * _setDestField(ObjId oid, PyObject * args);
+    static PyObject * _setDestField(CcsObjId oid, PyObject * args);
 #if PY_MAJOR_VERSION >= 3
     PyMODINIT_FUNC PyInit_moose();
 #else
@@ -192,7 +196,7 @@ extern "C" {
 #endif
 
 
-    int inner_getFieldDict(Id classId, string finfoType, vector<string>& fields, vector<string>& types); 
+    int inner_getFieldDict(CcsId classId, string finfoType, vector<string>& fields, vector<string>& types); 
 
 
     
@@ -310,18 +314,19 @@ template <class A> void * to_cpp(PyObject * object)
         unsigned long * ret = new unsigned long();
         *ret = v;
         return (void*)ret;
-    } else if (typeid(A) == typeid(Id))
+    } 
+    else if (typeid(A) == typeid(CcsId))
     {
         _Id * value = (_Id*)object;
         if (value != NULL){
-            Id * ret = new Id();
+            CcsId * ret = new CcsId();
             * ret = value->id_;
         return (void*)ret;
         }
-    } else if (typeid(A) == typeid(ObjId)){
+    } else if (typeid(A) == typeid(CcsObjId)){
         _ObjId * value = (_ObjId*)object;
         if (value != NULL){
-            ObjId * ret = new ObjId();
+            CcsObjId * ret = new CcsObjId();
             * ret = value->oid_;
             return (void*)ret;
         }
@@ -341,10 +346,10 @@ template <class A> void * to_cpp(PyObject * object)
         PYSEQUENCE_TO_VECTOR( double, object)
     } else if (typeid(A) == typeid(vector<string>)){
         PYSEQUENCE_TO_VECTOR( string, object)
-    } else if (typeid(A) == typeid(vector<ObjId>)){
-        PYSEQUENCE_TO_VECTOR( ObjId, object)        
-    } else if (typeid(A) == typeid(vector<Id>)){
-        PYSEQUENCE_TO_VECTOR( Id, object)
+    } else if (typeid(A) == typeid(vector<CcsObjId>)){
+        PYSEQUENCE_TO_VECTOR( CcsObjId, object)        
+    } else if (typeid(A) == typeid(vector<CcsId>)){
+        PYSEQUENCE_TO_VECTOR( CcsId, object)
     } else if (typeid(A) == typeid(vector< vector <double> >)){
         PYSEQUENCE_TO_VECVEC(double, object);
     } else if (typeid(A) == typeid(vector <vector <int > >)){
@@ -356,7 +361,7 @@ template <class A> void * to_cpp(PyObject * object)
 }
 
 /// Set a destinfo that takes a vector argument
-template <class A> inline PyObject* _set_vector_destFinfo(ObjId obj, string fieldName, int argIndex, PyObject * value)
+template <class A> inline PyObject* _set_vector_destFinfo(CcsObjId obj, string fieldName, int argIndex, PyObject * value)
 {
     ostringstream error;
     if (!PySequence_Check(value)){                                  
@@ -371,7 +376,7 @@ template <class A> inline PyObject* _set_vector_destFinfo(ObjId obj, string fiel
     if (_value == NULL){
         return NULL;
     }
-    bool ret = SetGet1< vector < A > >::set_ccs(obj, fieldName, *_value);
+    bool ret = SetGet1CcsClient< vector < A > >::set(obj, fieldName, *_value);
     delete _value;
     if (ret){
         Py_RETURN_TRUE;
@@ -381,7 +386,7 @@ template <class A> inline PyObject* _set_vector_destFinfo(ObjId obj, string fiel
 }
 
 /// The circus with value_ptr is to allow Id, ObjId to be allocated.
-template <class KeyType> inline PyObject * lookup_value(const ObjId& oid, string fname, char value_type_code, char key_type_code, PyObject * key, void * value_ptr=NULL)
+template <class KeyType> inline PyObject * lookup_value(const CcsObjId& oid, string fname, char value_type_code, char key_type_code, PyObject * key, void * value_ptr=NULL)
 {
     PyObject * ret = NULL;
     KeyType * cpp_key = (KeyType *)to_cpp<KeyType>(key);
@@ -391,7 +396,7 @@ template <class KeyType> inline PyObject * lookup_value(const ObjId& oid, string
     string value_type_str = string(1, value_type_code);
     switch (value_type_code){
         case 'b': { // boolean is a special case that PyBuildValue does not handle
-            bool value = LookupField < KeyType, bool > ::get_ccs(oid, fname, *cpp_key);
+            bool value = LookupFieldCcsClient < KeyType, bool > ::get(oid, fname, *cpp_key);
             if (value){
                 Py_RETURN_TRUE;
             } else {
@@ -399,72 +404,72 @@ template <class KeyType> inline PyObject * lookup_value(const ObjId& oid, string
             }
         }
         case 'c': {
-            char value = LookupField < KeyType, char > ::get_ccs(oid, fname, *cpp_key);
+            char value = LookupFieldCcsClient < KeyType, char > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }            
         case 'h': {
-            short value = LookupField < KeyType, short > ::get_ccs(oid, fname, *cpp_key);
+            short value = LookupFieldCcsClient < KeyType, short > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }            
         case 'H': {
-            unsigned short value = LookupField < KeyType, unsigned short > ::get_ccs(oid, fname, *cpp_key);
+            unsigned short value = LookupFieldCcsClient < KeyType, unsigned short > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }            
         case 'i': {
-            int value = LookupField < KeyType, int > ::get_ccs(oid, fname, *cpp_key);
+            int value = LookupFieldCcsClient < KeyType, int > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }            
         case 'I': {
-            unsigned int value = LookupField < KeyType, unsigned int > ::get_ccs(oid, fname, *cpp_key);
+            unsigned int value = LookupFieldCcsClient < KeyType, unsigned int > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }            
         case 'l': {
-            long value = LookupField < KeyType, long > ::get_ccs(oid, fname, *cpp_key);
+            long value = LookupFieldCcsClient < KeyType, long > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }                        
         case 'k': {
-            unsigned long value = LookupField < KeyType, unsigned long > ::get_ccs(oid, fname, *cpp_key);
+            unsigned long value = LookupFieldCcsClient < KeyType, unsigned long > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }
 #ifdef HAVE_LONG_LONG            
         case 'L': {
-            long long value = LookupField < KeyType, long long > ::get_ccs(oid, fname, *cpp_key);
+            long long value = LookupFieldCcsClient < KeyType, long long > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }                        
         case 'K': {
-            unsigned long long value = LookupField < KeyType, unsigned long long > ::get_ccs(oid, fname, *cpp_key);
+            unsigned long long value = LookupFieldCcsClient < KeyType, unsigned long long > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }
 #endif
         case 'd': {
-            double value = LookupField < KeyType, double > ::get_ccs(oid, fname, *cpp_key);
+            double value = LookupFieldCcsClient < KeyType, double > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }                        
         case 'f': {
-            float value = LookupField < KeyType, float > ::get_ccs(oid, fname, *cpp_key);
+            float value = LookupFieldCcsClient < KeyType, float > ::get(oid, fname, *cpp_key);
             ret = Py_BuildValue(value_type_str.c_str(), value);
             break;
         }
         case 'x': {
             assert(value_ptr != NULL);
-            ((_Id*)value_ptr)->id_ = LookupField < KeyType, Id > ::get_ccs(oid, fname, *cpp_key);
+            ((_Id*)value_ptr)->id_ = LookupFieldCcsClient < KeyType, CcsId > ::get(oid, fname, *cpp_key);
             ret = (PyObject*)value_ptr;
             break;
         }
         case 'y': {
             assert(value_ptr != NULL);
             // XXX Changed this to ObjId from Id
-            ((_ObjId*)value_ptr)->oid_ = LookupField < KeyType, ObjId > ::get_ccs(oid, fname, *cpp_key);
+            ((_ObjId*)value_ptr)->oid_ = LookupFieldCcsClient < KeyType, CcsObjId > ::get(oid, fname, *cpp_key);
             ret = (PyObject*)value_ptr;
             break;
         }
@@ -476,7 +481,7 @@ template <class KeyType> inline PyObject * lookup_value(const ObjId& oid, string
 }
 
 /// The circus with value_ptr is to allow Id, ObjId to be allocated.
-template <class KeyType> inline int set_lookup_value(const ObjId& oid, string fname, char value_type_code, char key_type_code, PyObject * key, PyObject * value_obj)
+template <class KeyType> inline int set_lookup_value(const CcsObjId& oid, string fname, char value_type_code, char key_type_code, PyObject * key, PyObject * value_obj)
 {
     bool success = false;
     KeyType *cpp_key = (KeyType*)to_cpp<KeyType>(key);
@@ -487,7 +492,7 @@ template <class KeyType> inline int set_lookup_value(const ObjId& oid, string fn
     {                                                                   \
         TYPE * value = (TYPE*)to_cpp<TYPE>(value_obj);                 \
             if (value){                                                 \
-                success = LookupField < KeyType, TYPE > ::set_ccs(oid, fname, *cpp_key, *value); \
+                success = LookupFieldCcsClient < KeyType, TYPE > ::set(oid, fname, *cpp_key, *value); \
                 delete value;                                           \
                 delete cpp_key;                                         \
             }                                                           \
@@ -526,9 +531,9 @@ template <class KeyType> inline int set_lookup_value(const ObjId& oid, string fn
         case 's':
             SET_LOOKUP_VALUE(string)
         case 'x':
-            SET_LOOKUP_VALUE(Id)
+            SET_LOOKUP_VALUE(CcsId)
         case 'y':
-            SET_LOOKUP_VALUE(ObjId)
+            SET_LOOKUP_VALUE(CcsObjId)
         default:
             PyErr_SetString(PyExc_TypeError, "invalid value type");
     }

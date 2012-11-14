@@ -4,6 +4,15 @@
 #include <string>
 using namespace std;
 
+#include "ccs-client.h"
+#include "SetGetWrapper.h"
+#include "CcsPackUnpack.h"
+#include "CcsId.h" 
+#include "CcsObjId.h" 
+#include "CcsDataId.h" 
+#include "../shell/ShellProxy.h"
+#include "pup_stl.h"
+
 class SetGetCcsClient {
   // to be inherited by all derived classes
   public:
@@ -45,17 +54,8 @@ class SetGetCcsClient {
   }
 
 
-  static bool strSet( const CcsObjId& dest, const string& field, const string& val ){
-    unsigned int size;
-    SetGet1CcsClient< string >::Args wrapper(tgt, field, v);
-    char *msg = CcsPackUnpack< SetGet1CcsClient< string >::Args >::pack(wrapper, size);
-    CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, strSetHandlerString().c_str(), size, msg);
-    delete[] msg;
-
-    bool ret;
-    while(CcsRecvResponse(&SetGetCcsClient::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
-    return ret;
-  }
+  // this is defined later, owing to its use of SetGet1CcsClient<A>::Args
+  static bool strSet( const CcsObjId& dest, const string& field, const string& val );
 
   struct Args {
     CcsObjId dest_;
@@ -74,6 +74,11 @@ class SetGetCcsClient {
     }
   };
 
+  public:
+  static void connect(string &name, int port){
+    CcsConnect(&ccsServer_, name.c_str(), port, NULL);
+  }
+
 };
 
 class SetGet0CcsClient : public SetGetCcsClient {
@@ -88,15 +93,15 @@ class SetGet0CcsClient : public SetGetCcsClient {
     setHandlerString_ = str;
   }
 
-  static bool set_ccs( const CcsObjId& dest, const string& field ){
+  static bool set( const CcsObjId& dest, const string& field ){
     unsigned int size;
     SetGetCcsClient::Args args(dest, field);
-    char *msg = CcsPackUnpack<CcsSetGet::Args>::pack(args, size);
+    char *msg = CcsPackUnpack<SetGetCcsClient::Args>::pack(args, size);
     CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, SetGet0CcsClient::setHandlerString().c_str(), size, msg);
     delete[] msg;
 
     bool ret;
-    while(CcsRecvResponse(&CcsSetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+    while(CcsRecvResponse(&SetGetCcsClient::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
     return false;
     // return ret;
   }
@@ -108,6 +113,7 @@ class SetGet1CcsClient : public SetGetCcsClient {
   static string setHandlerString_;
   static string setVecHandlerString_;
 
+  public:
   static void setHandlerString(const string &str){
     setHandlerString_ = str;
   }
@@ -232,7 +238,7 @@ class FieldCcsClient : public SetGet1CcsClient<A> {
   static A get( const CcsObjId& dest, const string& field, bool sendToSingleNode = false){
     unsigned int size;
     SetGetCcsClient::Args wrapper(dest, field);
-    char *msg = CcsPackUnpack< CcsSetGet::Args >::pack(wrapper, size);
+    char *msg = CcsPackUnpack< SetGetCcsClient::Args >::pack(wrapper, size);
     if(sendToSingleNode){
       CcsSendRequest(&SetGetCcsClient::ccsServer_, FieldCcsClient< A >::getHandlerString().c_str(), 0, size, msg);
     }
@@ -257,8 +263,8 @@ class FieldCcsClient : public SetGet1CcsClient<A> {
 
   static void getVec( CcsId dest, const string& field, vector< A >& vec, bool sendToSingleNode = true){
     unsigned int size;
-    CcsSetGet::Args wrapper(CcsObjId(dest), field);
-    char *msg = CcsPackUnpack< CcsSetGet::Args >::pack(wrapper, size);
+    SetGetCcsClient::Args wrapper(CcsObjId(dest), field);
+    char *msg = CcsPackUnpack< SetGetCcsClient::Args >::pack(wrapper, size);
     if(sendToSingleNode){
       CcsSendRequest(&SetGetCcsClient::ccsServer_, FieldCcsClient< A >::getVecHandlerString().c_str(), 0, size, msg);
     }
@@ -270,7 +276,7 @@ class FieldCcsClient : public SetGet1CcsClient<A> {
     int replySize;
     while(CcsRecvResponseMsg(&SetGetCcsClient::ccsServer_, &replySize, (void **) &msg, MOOSE_CCS_TIMEOUT) <= 0); 
     SetGet1CcsWrapper< vector<A> > ret;
-    CcsPackUnpack< CcsSetGet1CcsWrapper< vector< A > > >::unpack(msg, ret);
+    CcsPackUnpack< SetGet1CcsWrapper< vector< A > > >::unpack(msg, ret);
     free(msg);
 
     vec = ret.a1_;
@@ -292,6 +298,7 @@ class SetGet2CcsClient : public SetGetCcsClient {
   static string setHandlerString_;
   static string setVecHandlerString_;
 
+  public:
   static void setHandlerString(const string &str){
     setHandlerString_ = str;
   }
@@ -332,7 +339,7 @@ class SetGet2CcsClient : public SetGetCcsClient {
     return ret;
   }
 
-  struct Args : public CcsSetGet::Args {
+  struct Args : public SetGetCcsClient::Args {
     vector< A1 > a1_;
     vector< A2 > a2_;
 
@@ -369,6 +376,7 @@ class LookupFieldCcsClient : public SetGet2CcsClient<L, A> {
   static string getHandlerString_;
   static string getVecHandlerString_;
 
+  public:
   static void getHandlerString(const string &str){
     getHandlerString_ = str;
   }
@@ -419,6 +427,30 @@ class LookupFieldCcsClient : public SetGet2CcsClient<L, A> {
     vec = ret.a1_;
   }
 
+  static bool set( const CcsObjId& dest, const string& field, L index, A arg ){
+    string temp = "set_" + field;
+    return SetGet2CcsClient< L, A >::set( dest, temp, index, arg );
+  }
+
+  /** 
+   * This setVec assigns goes through each object entry in the
+   * destId, and assigns the corresponding index and argument to it.
+   */
+  static bool setVec( CcsId destId, const string& field, const vector< L >& index, const vector< A >& arg ){
+    string temp = "set_" + field;
+    return SetGet2CcsClient< L, A >::setVec( destId, temp, index, arg );
+  }
+
+  /**
+   * This setVec takes a specific object entry, presumably one with
+   * an array of values within it. The it goes through each specified
+   * index and assigns the corresponding argument.
+   * This is a brute-force assignment.
+   */
+  static bool setVec( CcsObjId dest, const string& field, const vector< L >& index, const vector< A >& arg ){
+    string temp = "set_" + field;
+    return SetGet2CcsClient< L, A >::setVec( dest, temp, index, arg );
+  }
 
 };
 
@@ -426,5 +458,234 @@ template<typename L, typename A>
 string LookupFieldCcsClient<L, A>::getHandlerString_ = string("");
 template<typename L, typename A>
 string LookupFieldCcsClient<L, A>::getVecHandlerString_ = string("");
+
+template<typename A1, typename A2, typename A3> 
+class SetGet3CcsClient : public SetGetCcsClient {
+  static string setHandlerString_;
+
+  public:
+  static void setHandlerString(const string &str){
+    setHandlerString_ = str;
+  }
+
+  static string setHandlerString(){
+    return setHandlerString_;
+  }
+
+  struct Args : public SetGetCcsClient::Args {
+    A1 a1_;
+    A2 a2_;
+    A3 a3_;
+
+    Args(CcsObjId dest, string field, A1 a1, A2 a2, A3 a3) :
+      SetGetCcsClient::Args(dest, field),
+      a1_(a1),
+      a2_(a2),
+      a3_(a3)
+    {}
+
+    Args() {}
+
+    void pup(PUP::er &p){
+      SetGetCcsClient::Args::pup(p);
+      p | a1_;
+      p | a2_;
+      p | a3_;
+    }
+  };
+
+  static bool set( const CcsObjId& dest, const string& field, 
+      A1 arg1, A2 arg2, A3 arg3 ){
+    unsigned int size;
+    SetGet3CcsClient::Args wrapper(dest, field, arg1, arg2, arg3);
+    char *msg = CcsPackUnpack< SetGet3CcsClient::Args >::pack(wrapper, size);
+    CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, SetGet3CcsClient::setHandlerString().c_str(), size, msg);
+    delete[] msg;
+
+    bool ret;
+    while(CcsRecvResponse(&SetGetCcsClient::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+    return ret;
+  }
+};
+
+template<typename A1, typename A2, typename A3>
+string SetGet3CcsClient<A1, A2, A3>::setHandlerString_ = string("");
+
+template<typename A1, typename A2, typename A3, typename A4> 
+class SetGet4CcsClient : public SetGetCcsClient {
+  static string setHandlerString_;
+
+  public:
+  static void setHandlerString(const string &str){
+    setHandlerString_ = str;
+  }
+
+  static string setHandlerString(){
+    return setHandlerString_;
+  }
+
+  struct Args : public SetGetCcsClient::Args {
+    A1 a1_;
+    A2 a2_;
+    A3 a3_;
+    A4 a4_;
+
+    Args(CcsObjId dest, string field, const A1 &a1, const A2 &a2, const A3 &a3, const A4 &a4) :
+      SetGetCcsClient::Args(dest, field),
+      a1_(a1),
+      a2_(a2),
+      a3_(a3),
+      a4_(a4)
+    {}
+
+    Args() {}
+
+    void pup(PUP::er &p){
+      SetGetCcsClient::Args::pup(p);
+      p | a1_;
+      p | a2_;
+      p | a3_;
+      p | a4_;
+    }
+  };
+
+  static bool set( const CcsObjId& dest, const string& field, A1 arg1, A2 arg2, A3 arg3, A4 arg4){
+    unsigned int size;
+    SetGet4CcsClient::Args wrapper(dest, field, arg1, arg2, arg3, arg4);
+    char *msg = CcsPackUnpack< SetGet4CcsClient::Args >::pack(wrapper, size);
+    CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, SetGet4CcsClient::setHandlerString().c_str(), size, msg);
+    delete[] msg;
+
+    bool ret;
+    while(CcsRecvResponse(&SetGetCcsClient::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+    return ret;
+  }
+};
+
+template<typename A1, typename A2, typename A3, typename A4>
+string SetGet4CcsClient<A1, A2, A3, A4>::setHandlerString_ = string("");
+
+
+template< class A1, class A2, class A3, class A4, class A5 > 
+class SetGet5CcsClient : public SetGetCcsClient {
+  static string setHandlerString_;
+
+  public:
+  static void setHandlerString(const string str){
+    setHandlerString_ = str;
+  }
+
+  static string setHandlerString(){
+    return setHandlerString_;
+  }
+
+  struct Args : public SetGetCcsClient::Args {
+    A1 a1_;
+    A2 a2_;
+    A3 a3_;
+    A4 a4_;
+    A5 a5_;
+
+    Args(CcsObjId dest, string field, const A1 &a1, const A2 &a2, const A3 &a3, const A4 &a4, const A5 &a5) :
+      SetGetCcsClient::Args(dest, field),
+      a1_(a1),
+      a2_(a2),
+      a3_(a3),
+      a4_(a4),
+      a5_(a5)
+    {}
+
+    Args() {}
+
+    void pup(PUP::er &p){
+      SetGetCcsClient::Args::pup(p);
+      p | a1_;
+      p | a2_;
+      p | a3_;
+      p | a4_;
+      p | a5_;
+    }
+  };
+
+  static bool set( const CcsObjId& dest, const string& field, A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5){
+    unsigned int size;
+    SetGet5CcsClient::Args wrapper(dest, field, arg1, arg2, arg3, arg4, arg5);
+    char *msg = CcsPackUnpack< SetGet5CcsClient::Args >::pack(wrapper, size);
+    CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, SetGet5CcsClient::setHandlerString().c_str(), size, msg);
+    delete[] msg;
+
+    bool ret;
+    while(CcsRecvResponse(&SetGetCcsClient::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+    return ret;
+  }
+
+
+
+};
+
+template<typename A1, typename A2, typename A3, typename A4, typename A5>
+string SetGet5CcsClient<A1, A2, A3, A4, A5>::setHandlerString_ = string("");
+
+template< class A1, class A2, class A3, class A4, class A5, class A6 > class SetGet6CcsClient : public SetGetCcsClient {
+  static string setHandlerString_;
+
+  public:
+  static void setHandlerString(const string &str){
+    setHandlerString_ = str;
+  }
+
+  static string setHandlerString(){
+    return setHandlerString_;
+  }
+
+  struct Args : public SetGetCcsClient::Args {
+    A1 a1_;
+    A2 a2_;
+    A3 a3_;
+    A4 a4_;
+    A5 a5_;
+    A6 a6_;
+
+    Args(CcsObjId dest, string field, 
+        const A1 &a1, const A2 &a2, const A3 &a3, const A4 &a4, const A5 &a5, const A6 &a6) :
+      SetGetCcsClient::Args(dest, field),
+      a1_(a1),
+      a2_(a2),
+      a3_(a3),
+      a4_(a4),
+      a5_(a5),
+      a6_(a6)
+    {}
+
+    Args() {}
+
+    void pup(PUP::er &p){
+      SetGetCcsClient::Args::pup(p);
+      p | a1_;
+      p | a2_;
+      p | a3_;
+      p | a4_;
+      p | a5_;
+      p | a6_;
+    }
+  };
+
+  static bool set( const CcsObjId& dest, const string& field, A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5, A6 arg6){
+    unsigned int size;
+    SetGet6CcsClient::Args wrapper(dest, field, arg1, arg2, arg3, arg4, arg5, arg6);
+    char *msg = CcsPackUnpack< SetGet6CcsClient::Args >::pack(wrapper, size);
+    CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, SetGet6CcsClient::setHandlerString().c_str(), size, msg);
+    delete[] msg;
+
+    bool ret;
+    while(CcsRecvResponse(&SetGetCcsClient::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+    return ret;
+  }
+};
+
+template<typename A1, typename A2, typename A3, typename A4, typename A5, typename A6>
+string SetGet6CcsClient<A1, A2, A3, A4, A5, A6>::setHandlerString_ = string("");
+
+
 
 #endif // SET_GET_CCS_CLIENT_H

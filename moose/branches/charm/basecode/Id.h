@@ -12,6 +12,7 @@
 
 #ifdef USE_CHARMPP
 #include "pup.h"
+#include "CcsId.h"
 #endif
 
 /**
@@ -43,6 +44,12 @@ class Id
 		 * Destroys an Id. Doesn't do anything much.
 		 */
 		~Id(){}
+
+#ifdef USE_CHARMPP
+                Id(const CcsId &ccs) : 
+                  id_(ccs.id_)
+                {}
+#endif
 
 		//////////////////////////////////////////////////////////////
 		//	Element creation and deletion.

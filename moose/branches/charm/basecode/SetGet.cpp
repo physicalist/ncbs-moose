@@ -15,18 +15,6 @@
 // Static field defintion.
 Qinfo SetGet::qi_;
 
-#ifdef USE_CHARMPP
-CcsServer SetGetCcsClient::ccsServer_;
-
-string SetGetCcsClient::strSetHandlerString_ = string("");
-string SetGetCcsClient::strGetHandlerString_ = string("");
-
-string SetGet0CcsClient::setHandlerString_ = string("");
-
-// static strings belonging to templated classes are
-// instantiated where they are used
-#endif
-
 //////////////////////////////////////////////////////////////////////
 // A group of functions to forward dispatch commands to the Shell.
 //////////////////////////////////////////////////////////////////////

@@ -20,7 +20,7 @@
 #include "Dinfo.h"
 #include "Wildcard.h"
 
-#include "svn_revision.h"
+#include "../basecode/svn_revision.h"
 
 #ifdef USE_CHARMPP
 #include <string>

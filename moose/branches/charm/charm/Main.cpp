@@ -127,5 +127,5 @@ void Main::commence(){
   // launch the parser and initiate a CCS session 
 }
 
-extern void initializeSetGetCcsHandlerStrings();
+extern void ccsRegistration();
 #include "moose.def.h"

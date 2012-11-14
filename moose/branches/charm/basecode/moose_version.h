@@ -1,0 +1,6 @@
+#ifndef MOOSE_VERSION_H
+#define MOOSE_VERSION_H
+
+#define MOOSE_VERSION "3.0"
+
+#endif // MOOSE_VERSION_H

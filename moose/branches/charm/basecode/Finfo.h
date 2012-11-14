@@ -10,6 +10,18 @@
 #define _FINFO_H
 
 // typedef unsigned int (*OpFunc )( Eref e, const void* buf );
+#include <string>
+#include <vector>
+#include <map>
+using namespace std;
+
+class Cinfo;
+class Eref;
+class Id;
+class Element;
+
+// contains only MsgId typedef
+#include "MsgId.h"
 
 class Finfo
 {
@@ -56,9 +68,7 @@ class Finfo
 		 * as soon as the parent is made.
 		 * Used in FieldElementFinfo.h
 		 */
-		virtual void postCreationFunc( Id newId, Element* newElm ) const {
-			;
-		}
+		virtual void postCreationFunc( Id newId, Element* newElm ) const;
 
 		/**
 		 * Registers the Msg slot to be used for transmitting messages.

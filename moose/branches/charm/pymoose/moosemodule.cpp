@@ -106,9 +106,10 @@ using namespace std;
 
 class Element;
 class Eref;
-#include "../basecode/Id.h"
-#include "../basecode/DataId.h"
-#include "../basecode/ObjId.h"
+#include "../basecode/CcsId.h"
+#include "../basecode/CcsDataId.h"
+#include "../basecode/CcsObjId.h"
+#if 0
 #include "../basecode/ThreadId.h"
 #include "../basecode/BindIndex.h"
 class Finfo;
@@ -133,16 +134,20 @@ class ProcInfo;
 #include "../basecode/Eref.h"
 #include "../basecode/DestFinfo.h"
 #include "../basecode/SetGet.h"
+#endif
+#include "../basecode/SetGetCcsClient.h"
 #include "moosemodule.h"
-
 #include "MooseParams.h"
 #include "../shell/ShellProxy.h"
+#include "../basecode/Cinfo.h"
+#include "../basecode/Finfo.h"
 
 #endif
 
 
 //////////////////////// External functions /////////////////////////
 
+#ifndef USE_CHARMPP
 extern void testSync();
 extern void testAsync();
 extern void testSyncArray( unsigned int size,
@@ -172,6 +177,7 @@ extern void speedTestMultiNodeIntFireNetwork(
 extern void regressionTests();
 extern bool benchmarkTests( int argc, char** argv );
 extern int getNumCores();
+#endif
 
 // C-wrapper to be used by Python
 extern "C" {
@@ -233,7 +239,7 @@ static struct module_state _state;
             // of class names.
             
             // single
-            string classname = Field<string>::get_ccs(id->id_, "class", true);
+            string classname = FieldCcsClient<string>::get(id->id_, "class", true);
             return Py_BuildValue("s", classname.c_str());
         }        
         return NULL;
@@ -412,17 +418,17 @@ static Shell *charm_pymoose_shellPtr = NULL;
 
        Return the Id of the Shell object.
     */
-    Id get_shell(int argc, char ** argv)
+    CcsId get_shell(int argc, char ** argv)
     {
         static int inited = 0;
         if (inited){
-            return Id(0);
+            return CcsId(0);
         }
         bool dounit = doUnitTests != 0;
         bool doregress = doRegressionTests != 0;
         // Utilize the main::init function which has friend access to Id
 #ifndef USE_CHARMPP
-        Id shellId = init(argc, argv, dounit, doregress);
+        CcsId shellId = init(argc, argv, dounit, doregress);
         inited = 1;
         Shell * shellPtr = reinterpret_cast<Shell*>(shellId.eref().data());
         Qinfo::initMutex(); // Mutex used to align Parser and MOOSE threads        
@@ -445,7 +451,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         }
 
 #else
-        Id shellId;
+        CcsId shellId;
         string serverName;
         int serverPort;
 
@@ -456,6 +462,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
 
         ShellProxy *shellProxy = new ShellProxy;
         shellProxy->ccsInit(serverName, serverPort);
+        SetGetCcsClient::connect(serverName, serverPort);
         SHELLPTR = shellProxy;
 #endif
         return shellId;
@@ -472,7 +479,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
       }
       finalized = true;
 #ifndef USE_CHARMPP
-        Id shellId = get_shell(0, NULL);
+        CcsId shellId = get_shell(0, NULL);
 #endif
         for (map<string, PyObject *>::iterator it =
                      get_inited_lookupfields().begin();
@@ -544,7 +551,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return NPY_CHAR;
         } else if (ctype == typeid(bool)){
             return NPY_BOOL;
-        } else if (ctype == typeid(Id) || ctype == typeid(ObjId)){
+        } else if (ctype == typeid(CcsId) || ctype == typeid(CcsObjId)){
             return NPY_OBJECT;
         } else {
             cerr << "Cannot handle type: " << ctype.name() << endl;
@@ -587,17 +594,17 @@ static Shell *charm_pymoose_shellPtr = NULL;
     {
         string fieldType = "";
         string classInfoPath("/classes/" + className);
-        Id classId(classInfoPath);
-        assert (classId != Id());
+        CcsId classId(classInfoPath);
+        assert (classId != CcsId());
         // bcast
-        unsigned int numFinfos = Field<unsigned int>::get_ccs(ObjId(classId, 0), "num_" + finfoType);
-        Id fieldId(classId.path() + "/" + finfoType);
+        unsigned int numFinfos = FieldCcsClient<unsigned int>::get(CcsObjId(classId, 0), "num_" + finfoType);
+        CcsId fieldId(classId.path() + "/" + finfoType);
         for (unsigned int ii = 0; ii < numFinfos; ++ii){
             // bcast
-            string _fieldName = Field<string>::get_ccs(ObjId(fieldId, DataId(0, ii, 0)), "name");
+            string _fieldName = FieldCcsClient<string>::get(CcsObjId(fieldId, CcsDataId(0, ii, 0)), "name");
             if (fieldName == _fieldName){                
                 // bcast
-                fieldType = Field<string>::get_ccs(ObjId(fieldId, DataId(0, ii, 0)), "type");
+                fieldType = FieldCcsClient<string>::get(CcsObjId(fieldId, CcsDataId(0, ii, 0)), "type");
                 break;
             }
         }
@@ -650,17 +657,17 @@ static Shell *charm_pymoose_shellPtr = NULL;
     vector<string> getFieldNames(string className, string finfoType)
     {
         vector <string> ret;
-        Id classId("/classes/" + className);
-        assert(classId != Id());
+        CcsId classId("/classes/" + className);
+        assert(classId != CcsId());
             // bcast
-        unsigned int numFinfos = Field<unsigned int>::get_ccs(ObjId(classId), "num_" + finfoType);
-        Id fieldId(classId.path() + "/" + finfoType);
-        if (fieldId == Id()){
+        unsigned int numFinfos = FieldCcsClient<unsigned int>::get(CcsObjId(classId), "num_" + finfoType);
+        CcsId fieldId(classId.path() + "/" + finfoType);
+        if (fieldId == CcsId()){
             return ret;
         }
         for (unsigned int ii = 0; ii < numFinfos; ++ii){
             // bcast
-            string fieldName = Field<string>::get_ccs(ObjId(fieldId, DataId(0, ii, 0)), "name");
+            string fieldName = FieldCcsClient<string>::get(CcsObjId(fieldId, CcsDataId(0, ii, 0)), "name");
             ret.push_back(fieldName);
         }
         return ret;
@@ -673,23 +680,23 @@ static Shell *charm_pymoose_shellPtr = NULL;
        Populate the `fieldTypes` vector with corresponding C++ data
        type string (Finfo.type).
      */
-    int getFieldDict(Id classId, string finfoType,
+    int getFieldDict(CcsId classId, string finfoType,
                      vector<string>& fieldNames, vector<string>&fieldTypes)
     {
             // bcast
         unsigned int numFinfos =
-                Field<unsigned int>::get_ccs(ObjId(classId),
+                FieldCcsClient<unsigned int>::get(CcsObjId(classId),
                                          "num_" + string(finfoType));
-        Id fieldId(classId.path() + "/" + string(finfoType));
-        if (fieldId == Id()){
+        CcsId fieldId(classId.path() + "/" + string(finfoType));
+        if (fieldId == CcsId()){
             return 0;
         }
         for (unsigned int ii = 0; ii < numFinfos; ++ii){
             // bcast
-            string fieldName = Field<string>::get_ccs(ObjId(fieldId, DataId(0, ii, 0)), "name");
+            string fieldName = FieldCcsClient<string>::get(CcsObjId(fieldId, CcsDataId(0, ii, 0)), "name");
             fieldNames.push_back(fieldName);
             // bcast
-            string fieldType = Field<string>::get_ccs(ObjId(fieldId, DataId(0, ii, 0)), "type");
+            string fieldType = FieldCcsClient<string>::get(CcsObjId(fieldId, CcsDataId(0, ii, 0)), "type");
             fieldTypes.push_back(fieldType);
         }
         return 1;
@@ -731,10 +738,10 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return -1;
         }
         if (!PyObject_IsInstance(owner, (PyObject*)&ObjIdType)){
-            PyErr_SetString(PyExc_TypeError, "Owner must be subtype of ObjId");
+            PyErr_SetString(PyExc_TypeError, "Owner must be subtype of CcsObjId");
             return -1;
         }
-        if (!Id::isValid(self->owner.id)){
+        if (!CcsId::isValid(self->owner.id)){
             RAISE_INVALID_ID(-1);
         }
         self->owner = ((_ObjId*)owner)->oid_;
@@ -754,7 +761,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     /// Return the hash of the string `{objectpath}.{fieldName}`
     static long moose_Field_hash(_Field * self)
     {
-        if (!Id::isValid(self->owner.id)){
+        if (!CcsId::isValid(self->owner.id)){
             RAISE_INVALID_ID(-1);
         }
         string fieldPath = self->owner.path() + "." + self->name;
@@ -767,7 +774,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     /// String representation of fields is `{objectpath}.{fieldName}`
     static PyObject * moose_Field_repr(_Field * self)
     {
-        if (!Id::isValid(self->owner.id)){
+        if (!CcsId::isValid(self->owner.id)){
             RAISE_INVALID_ID(NULL);
         }
         ostringstream fieldPath;
@@ -920,7 +927,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 return NULL;
             }
         }
-        // Call ObjId._setDestField with the new arguments
+        // Call CcsObjId._setDestField with the new arguments
         return _setDestField(((_Field*)self)->owner,
                                         newargs);
     }
@@ -1244,7 +1251,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
        Utility function to create objects from full path, dimensions
        and classname.
     */
-    static Id create_Id_from_path(string path, vector<int> dims, string type)
+    static CcsId create_Id_from_path(string path, vector<int> dims, string type)
     {
         string parent_path;
         string name;
@@ -1267,12 +1274,12 @@ static Shell *charm_pymoose_shellPtr = NULL;
         } else if (parent_path.empty()){
             parent_path = "/";
         }
-        Id parent_id(parent_path);
-        if (parent_id == Id() && parent_path != "/" && parent_path != "/root") {
+        CcsId parent_id(parent_path);
+        if (parent_id == CcsId() && parent_path != "/" && parent_path != "/root") {
             string message = "Parent element does not exist: ";
             message += parent_path;
             PyErr_SetString(PyExc_ValueError, message.c_str());
-            return Id();
+            return CcsId();
         }
         // bcast
         return SHELLPTR->doCreate(type,
@@ -1326,9 +1333,9 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 Py_XDECREF(self);
                 return -1;
             }
-            self->id_ = Id(trimmed_path);
+            self->id_ = CcsId(trimmed_path);
             // Return already existing object
-            if (self->id_ != Id() ||
+            if (self->id_ != CcsId() ||
                 trimmed_path == "/" ||
                 trimmed_path == "/root"){
                 return 0;
@@ -1339,7 +1346,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 return -1;
             }
             self->id_ = create_Id_from_path(path, vec_dims, type);
-            if (self->id_ == Id() && PyErr_Occurred()){
+            if (self->id_ == CcsId() && PyErr_Occurred()){
                 Py_XDECREF(self);
                 return -1;
             }
@@ -1355,7 +1362,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         // Next try to parse it as an integer value for an existing Id
         PyErr_Clear(); // clear the error from parsing error
         if (PyArg_ParseTuple(args, "I:moose_Id_init", &id)){
-            self->id_ = Id(id);
+            self->id_ = CcsId(id);
             return 0;
         }
         Py_XDECREF(self);
@@ -1378,28 +1385,28 @@ static Shell *charm_pymoose_shellPtr = NULL;
 
     static PyObject * moose_Id_delete(_Id * self)
     {
-        if (self->id_ == Id()){
+        if (self->id_ == CcsId()){
             PyErr_SetString(PyExc_ValueError, "Cannot delete moose shell.");
             return NULL;
         }
-        if (!Id::isValid(self->id_)){
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(NULL);
         }
         // bcast
         SHELLPTR->doDelete(self->id_);
-        self->id_ = Id();
+        self->id_ = CcsId();
         Py_CLEAR(self);
         Py_RETURN_NONE;
     }
     
     static PyObject * moose_Id_repr(_Id * self)
     {
-        if (!Id::isValid(self->id_)){
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(NULL);
         }
         ostringstream repr;
         // single
-        repr << "<moose.ematrix: class=" << Field<string>::get_ccs(self->id_, "class", true) << "): "
+        repr << "<moose.ematrix: class=" << FieldCcsClient<string>::get(self->id_, "class", true) << "): "
              << "id=" << self->id_.value() << ","
              << "path=" << self->id_.path() << ">";
         return PyString_FromString(repr.str().c_str());
@@ -1408,7 +1415,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
   // The string representation is unused. repr is used everywhere.
     static PyObject * moose_Id_str(_Id * self)
     {
-        if (!Id::isValid(self->id_)){
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(NULL);
         }        
         return PyString_FromFormat("<moose.ematrix: id=%u, path=%s>", self->id_.value(), self->id_.path().c_str());
@@ -1426,7 +1433,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     */
     static PyObject * moose_Id_getPath(_Id * self)
     {
-        if (!Id::isValid(self->id_)){
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(NULL);
         }        
         string path = self->id_.path();
@@ -1438,11 +1445,11 @@ static Shell *charm_pymoose_shellPtr = NULL;
     ////////////////////////////////////////////
     static Py_ssize_t moose_Id_getLength(_Id * self)
     {
-        if (!Id::isValid(self->id_)){
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(-1);
         }        
         // bcast
-        vector< unsigned int> dims = Field< vector <unsigned int> >::get_ccs(ObjId(self->id_), "objectDimensions");
+        vector< unsigned int> dims = FieldCcsClient< vector <unsigned int> >::get(CcsObjId(self->id_), "objectDimensions");
         if (dims.empty()){
             return (Py_ssize_t)1; // this is a bug in basecode - dimension 1 is returned as an empty vector
         } else {
@@ -1452,8 +1459,8 @@ static Shell *charm_pymoose_shellPtr = NULL;
     static PyObject * moose_Id_getShape(_Id * self)
     {
         // single
-        vector< unsigned int> dims = Field< vector <unsigned int> >::get_ccs(self->id_, "objectDimensions", true);
-        if (!Id::isValid(self->id_)){
+        vector< unsigned int> dims = FieldCcsClient< vector <unsigned int> >::get(self->id_, "objectDimensions", true);
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(NULL);
         }        
         if (dims.empty()){
@@ -1471,7 +1478,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     }
     static PyObject * moose_Id_getItem(_Id * self, Py_ssize_t index)
     {
-        if (!Id::isValid(self->id_)){
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(NULL);
         }        
         extern PyTypeObject ObjIdType;
@@ -1483,12 +1490,12 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return NULL;
         }
         _ObjId * ret = PyObject_New(_ObjId, &ObjIdType);
-        ret->oid_ = ObjId(self->id_, index);
+        ret->oid_ = CcsObjId(self->id_, index);
         return (PyObject*)ret;
     }
     static PyObject * moose_Id_getSlice(_Id * self, PyObject * args)
     {
-        if (!Id::isValid(self->id_)){
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(NULL);
         }        
         extern PyTypeObject ObjIdType;
@@ -1512,7 +1519,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         // Py_XINCREF(ret);        
         for (unsigned int ii = start; ii < end; ++ii){
             _ObjId * value = PyObject_New(_ObjId, &ObjIdType);
-            value->oid_ = ObjId(self->id_, ii);
+            value->oid_ = CcsObjId(self->id_, ii);
             if (PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)value)){
                 Py_XDECREF(ret);
                 Py_XDECREF(value);
@@ -1532,7 +1539,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return moose_Id_getItem(self, value);
         }
         // single
-        vector< unsigned int> dims = Field< vector <unsigned int> >::get_ccs(self->id_, "objectDimensions", true);
+        vector< unsigned int> dims = FieldCcsClient< vector <unsigned int> >::get(self->id_, "objectDimensions", true);
         if (dims.size() > 1 &&
             PyTuple_Check(op) && PyTuple_Size(op) == dims.size()){
             ostringstream path;
@@ -1550,13 +1557,13 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 }
                 path << "[" << ix << "]";
             }
-            ObjId oid(path.str());
-            if (oid == ObjId::bad()){
-                PyErr_SetString(PyExc_SystemError, "bad ObjId at specified index.");
+            CcsObjId oid(path.str());
+            if (oid == CcsObjId::bad()){
+                PyErr_SetString(PyExc_SystemError, "bad CcsObjId at specified index.");
                 return NULL;
             }
             // bcast
-            string class_name = Field<string>::get_ccs(oid, "class");
+            string class_name = FieldCcsClient<string>::get(oid, "class");
             map<string, PyTypeObject*>::iterator it = get_moose_classes().find(class_name);
             if (it == get_moose_classes().end()){
                 PyErr_SetString(PyExc_SystemError, "moose_Id_subscript: unknown class");
@@ -1613,7 +1620,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     static PyObject * moose_Id_getattro(_Id * self, PyObject * attr)
     {
         extern PyTypeObject ObjIdType;
-        if (!Id::isValid(self->id_)){
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(NULL);
         }        
         char * field = PyString_AsString(attr);
@@ -1622,7 +1629,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return _ret;
         }
         // single
-        string class_name = Field<string>::get_ccs(self->id_, "class", true);
+        string class_name = FieldCcsClient<string>::get(self->id_, "class", true);
         string type = getFieldType(class_name, string(field), "valueFinfo");
         if (type.empty()){
             // Check if this field name is aliased and update fieldname and type if so.
@@ -1630,7 +1637,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             if (it != get_field_alias().end()){
                 field = const_cast<char*>((it->second).c_str());
                 // single
-                type = getFieldType(Field<string>::get_ccs(self->id_, "class", true), it->second, "valueFinfo");
+                type = getFieldType(FieldCcsClient<string>::get(self->id_, "class", true), it->second, "valueFinfo");
                 // Update attr for next level (PyObject_GenericGetAttr) in case.
                 Py_XDECREF(attr);
                 attr = PyString_FromString(field);
@@ -1648,7 +1655,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         {                                                               \
             vector<TYPE> val;                                           \
             /* single */ \
-            Field< TYPE >::getVec_ccs(self->id_, string(field), val, true);       \
+            FieldCcsClient< TYPE >::getVec(self->id_, string(field), val, true);       \
             npy_intp dims = val.size();                                 \
             PyArrayObject * ret = (PyArrayObject*)PyArray_SimpleNew(1, &dims, get_npy_typenum(typeid(TYPE))); \
             char * ptr = PyArray_BYTES(ret);                            \
@@ -1660,7 +1667,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             case 'b':         {                                                               
                 vector<bool> val;                                           
                 // single
-                Field< bool >::getVec_ccs(self->id_, string(field), val, true);
+                FieldCcsClient< bool >::getVec(self->id_, string(field), val, true);
                 npy_intp dims = val.size();
                 PyArrayObject * ret = (PyArrayObject*)PyArray_SimpleNew(1, &dims, get_npy_typenum(typeid(bool))); 
                 char * ptr = PyArray_BYTES(ret);                            
@@ -1679,7 +1686,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             case 's': {
                 vector<string> val;
                 // single
-                Field<string>::getVec_ccs(self->id_, string(field), val, true);
+                FieldCcsClient<string>::getVec(self->id_, string(field), val, true);
                 PyObject * ret = PyTuple_New(val.size());
                 for (unsigned int ii = 0; ii < val.size(); ++ii){
                     PyTuple_SetItem(ret, (Py_ssize_t)ii, Py_BuildValue("s", val[ii].c_str()));
@@ -1687,9 +1694,9 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 return ret;
             }
             case 'x': {
-                vector<Id> val;
+                vector<CcsId> val;
                 // single
-                Field<Id>::getVec_ccs(self->id_, string(field), val, true);
+                FieldCcsClient<CcsId>::getVec(self->id_, string(field), val, true);
                 PyObject * ret = PyTuple_New(val.size());
                 for (unsigned int ii = 0; ii < val.size(); ++ii){
                     _Id * v = PyObject_New(_Id, &IdType);
@@ -1699,9 +1706,9 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 return ret;
             }
             case 'y': {
-                vector<ObjId> val;
+                vector<CcsObjId> val;
                 // single
-                Field<ObjId>::getVec_ccs(self->id_, string(field), val, true);
+                FieldCcsClient<CcsObjId>::getVec(self->id_, string(field), val, true);
                 PyObject * ret = PyTuple_New(val.size());
                 for (unsigned int ii = 0; ii < val.size(); ++ii){
                     _ObjId * v = PyObject_New(_ObjId, &ObjIdType);
@@ -1711,7 +1718,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 return ret;
             }
             case 'z': {
-                    PyErr_SetString(PyExc_NotImplementedError, "DataId handling not implemented yet.");
+                    PyErr_SetString(PyExc_NotImplementedError, "CcsDataId handling not implemented yet.");
                     return NULL;
             }
             default:
@@ -1722,7 +1729,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     
     static PyObject * moose_Id_setField(_Id * self, PyObject * args)
     {
-        if (!Id::isValid(self->id_)){
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(NULL);
         }        
         PyObject * field = NULL;
@@ -1738,7 +1745,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
 
     static int moose_Id_setattro(_Id * self, PyObject * attr, PyObject *value)
     {
-        if (!Id::isValid(self->id_)){
+        if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(-1);
         }
         char * fieldname = NULL;
@@ -1750,7 +1757,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return -1;
         }
         // single
-        string moose_class = Field<string>::get_ccs(self->id_, "class", true);
+        string moose_class = FieldCcsClient<string>::get(self->id_, "class", true);
         string fieldtype = getFieldType(moose_class, string(fieldname), "valueFinfo");
         if (fieldtype.length() == 0){
             // If it is instance of a MOOSE Id then throw
@@ -1793,7 +1800,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     _value.assign(length, v);
                 }
                 // bcast
-                ret = Field< bool >::setVec_ccs(self->id_, string(fieldname), _value);
+                ret = FieldCcsClient< bool >::setVec(self->id_, string(fieldname), _value);
                 break;
             }
             case 'c': {
@@ -1821,7 +1828,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                         }
                 }                    
                 // bcast
-                ret = Field< char >::setVec_ccs(self->id_, string(fieldname), _value);
+                ret = FieldCcsClient< char >::setVec(self->id_, string(fieldname), _value);
                 break;
             }
             case 'i': {
@@ -1836,7 +1843,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     _value.assign(length, v);
                 }
                 // bcast
-                ret = Field< int >::setVec_ccs(self->id_, string(fieldname), _value);
+                ret = FieldCcsClient< int >::setVec(self->id_, string(fieldname), _value);
                 break;
             }
             case 'h': {
@@ -1851,7 +1858,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     _value.assign(length, v);
                 }
                 // bcast
-                ret = Field< short >::setVec_ccs(self->id_, string(fieldname), _value);
+                ret = FieldCcsClient< short >::setVec(self->id_, string(fieldname), _value);
                 break;
             }
             case 'l': {//SET_VECFIELD(long, l)
@@ -1866,7 +1873,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     _value.assign(length, v);                    
                 }
                 // bcast
-                ret = Field<long>::setVec_ccs(self->id_, string(fieldname), _value);
+                ret = FieldCcsClient<long>::setVec(self->id_, string(fieldname), _value);
                 break;
             }
             case 'u': {//SET_VECFIELD(unsigned int, I)
@@ -1881,7 +1888,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     _value.assign(length, v);
                 }
                 // bcast
-                ret = Field< unsigned int >::setVec_ccs(self->id_, string(fieldname), _value);                
+                ret = FieldCcsClient< unsigned int >::setVec(self->id_, string(fieldname), _value);                
                 break;
             }
             case 'I': {//SET_VECFIELD(unsigned long, k)
@@ -1896,7 +1903,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     _value.assign(length, v);
                 }
                 // bcast
-                ret = Field< unsigned long >::setVec_ccs(self->id_, string(fieldname), _value);                
+                ret = FieldCcsClient< unsigned long >::setVec(self->id_, string(fieldname), _value);                
                 break;
             }
             case 'f': {//SET_VECFIELD(float, f)
@@ -1911,7 +1918,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     _value.assign(length, v);
                 }
                 // bcast
-                ret = Field<float>::setVec_ccs(self->id_, string(fieldname), _value);
+                ret = FieldCcsClient<float>::setVec(self->id_, string(fieldname), _value);
                 break;
             }
             case 'd': {//SET_VECFIELD(double, d)
@@ -1926,7 +1933,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     _value.assign(length, v);
                 }
                 // bcast
-                ret = Field<double>::setVec_ccs(self->id_, string(fieldname), _value);
+                ret = FieldCcsClient<double>::setVec(self->id_, string(fieldname), _value);
                 break;
             }                
             case 's': {
@@ -1941,7 +1948,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     _value.assign(length, string(v));
                 }                    
                 // bcast
-                ret = Field<string>::setVec_ccs(self->id_, string(fieldname), _value);
+                ret = FieldCcsClient<string>::setVec(self->id_, string(fieldname), _value);
                 break;
             }
             default:                
@@ -1959,7 +1966,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     }
     
     /////////////////////////////////////////////////////
-    // ObjId functions.
+    // CcsObjId functions.
     /////////////////////////////////////////////////////
 
 
@@ -1979,26 +1986,26 @@ static Shell *charm_pymoose_shellPtr = NULL;
                                         "I|III:moose_ObjId_init",
                                         kwlist,
                                         &id, &data, &field, &numFieldBits)){
-            if (!Id::isValid(id)){
+            if (!CcsId::isValid(id)){
                 RAISE_INVALID_ID(-1);
             }
-            instance->oid_ = ObjId(Id(id), DataId(data, field, numFieldBits));
+            instance->oid_ = CcsObjId(CcsId(id), CcsDataId(data, field, numFieldBits));
             return 0;
         }
         PyErr_Clear();
         if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|III:moose_ObjId_init",
                                         kwlist,
                                         &obj, &data, &field, &numFieldBits)){
-            // If first argument is an Id object, construct an ObjId out of it
+            // If first argument is an Id object, construct an CcsObjId out of it
             if (Id_Check(obj)){
-                if (!Id::isValid(((_Id*)obj)->id_)){
+                if (!CcsId::isValid(((_Id*)obj)->id_)){
                     RAISE_INVALID_ID(-1);
                 }                    
-                instance->oid_ = ObjId(((_Id*)obj)->id_,
-                                       DataId(data, field, numFieldBits));
+                instance->oid_ = CcsObjId(((_Id*)obj)->id_,
+                                       CcsDataId(data, field, numFieldBits));
                 return 0;
             } else if (PyObject_IsInstance(obj, (PyObject*)&ObjIdType)){
-                if (!Id::isValid(((_ObjId*)obj)->oid_.id)){
+                if (!CcsId::isValid(((_ObjId*)obj)->oid_.id)){
                     RAISE_INVALID_ID(-1);
                 }                    
                 instance->oid_ = ((_ObjId*)obj)->oid_;
@@ -2044,7 +2051,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         char _dims[] = "dims";
         static char * kwlist [] = {_path, _dims, _dtype, NULL};
         _ObjId * instance = (_ObjId*)self;
-        instance->oid_ = ObjId::bad();
+        instance->oid_ = CcsObjId::bad();
 
         // First try to parse the arguments as (path, dims, class)
         bool parse_success = false;
@@ -2069,8 +2076,8 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return -2;
         }
         // First see if there is an existing object with at path
-        instance->oid_ = ObjId(path);
-        if (!(ObjId::bad() == instance->oid_)){
+        instance->oid_ = CcsObjId(path);
+        if (!(CcsObjId::bad() == instance->oid_)){
             return 0;
         }
         string basetype_str;
@@ -2085,12 +2092,12 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return -1;
         }
         
-        Id new_id = create_Id_from_path(path, pysequence_to_dimvec(dims), basetype_str);
-        if (new_id == Id() && PyErr_Occurred()){
+        CcsId new_id = create_Id_from_path(path, pysequence_to_dimvec(dims), basetype_str);
+        if (new_id == CcsId() && PyErr_Occurred()){
             Py_XDECREF(self);
             return -1;
         }
-        instance->oid_ = ObjId(new_id);
+        instance->oid_ = CcsObjId(new_id);
         return 0;
     }
         
@@ -2126,7 +2133,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         if (ret >= -1){
             return ret;
         }
-        // parsing arguments as (path, dims, classname) failed. See if it is existing Id or ObjId.
+        // parsing arguments as (path, dims, classname) failed. See if it is existing Id or CcsObjId.
         PyErr_Clear();
         if (moose_ObjId_init_from_id(self, args, kwargs) == 0){
             return 0;
@@ -2144,7 +2151,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     */
     static long moose_ObjId_hash(_ObjId * self)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(-1);
         }
         PyObject * path = Py_BuildValue("s", self->oid_.path().c_str());        
@@ -2155,12 +2162,12 @@ static Shell *charm_pymoose_shellPtr = NULL;
     
     static PyObject * moose_ObjId_repr(_ObjId * self)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         ostringstream repr;
         // bcast
-        repr << "<moose." << Field<string>::get_ccs(self->oid_, "class") << ": "
+        repr << "<moose." << FieldCcsClient<string>::get(self->oid_, "class") << ": "
              << "id=" << self->oid_.id.value() << ", "
              << "dataId=" << self->oid_.dataId.value() << ", "
              << "path=" << self->oid_.path() << ">";
@@ -2174,7 +2181,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                  "\n");
     static PyObject* moose_ObjId_getId(_ObjId * self)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         extern PyTypeObject IdType;        
@@ -2199,7 +2206,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     
     static PyObject * moose_ObjId_getFieldType(_ObjId * self, PyObject * args)
     {
-        if (Id::isValid(self->oid_.id)){
+        if (CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         char * fieldName = NULL;
@@ -2215,7 +2222,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             finfoTypeStr = "valueFinfo";
         }
         // bcast
-        string typeStr = getFieldType(Field<string>::get_ccs(self->oid_, "class"),
+        string typeStr = getFieldType(FieldCcsClient<string>::get(self->oid_, "class"),
                                       string(fieldName), finfoTypeStr);
         if (typeStr.length() <= 0){
             PyErr_SetString(PyExc_ValueError,
@@ -2242,7 +2249,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                  "\tName of the field.");
     static PyObject * moose_ObjId_getField(_ObjId * self, PyObject * args)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         PyObject * attr;        
@@ -2257,14 +2264,14 @@ static Shell *charm_pymoose_shellPtr = NULL;
        
        Get a specified field. Re-done on: 2011-03-23 14:42:03 (+0530)
 
-       I wonder how to cleanly do this. The Id - ObjId dichotomy is
+       I wonder how to cleanly do this. The Id - CcsObjId dichotomy is
        really ugly. When you don't pass an index, it is just treated
-       as 0. Then what is the point of having Id separately? ObjId
+       as 0. Then what is the point of having Id separately? CcsObjId
        would been just fine!
     */
     static PyObject * moose_ObjId_getattro(_ObjId * self, PyObject * attr)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         extern PyTypeObject IdType;
@@ -2285,7 +2292,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
 #define GET_FIELD(TYPE, TYPEC)                                          \
         {                                                               \
             /* bcast */                                                 \
-            TYPE value = Field<TYPE>::get_ccs(self->oid_, string(field));   \
+            TYPE value = FieldCcsClient<TYPE>::get(self->oid_, string(field));   \
             PyObject * ret = Py_BuildValue(#TYPEC, value);              \
             return ret;                                                 \
         }                                                               \
@@ -2294,7 +2301,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
 #define GET_VECFIELD(TYPE)                                              \
         {                                                               \
                 /* bcast */                                              \
-                vector<TYPE> val = Field< vector<TYPE> >::get_ccs(self->oid_, string(field)); \
+                vector<TYPE> val = FieldCcsClient< vector<TYPE> >::get(self->oid_, string(field)); \
                 npy_intp dims = val.size();                             \
                 PyArrayObject * ret = (PyArrayObject*)PyArray_SimpleNew(1, &dims, get_npy_typenum(typeid(TYPE))); \
                 char * ptr = PyArray_BYTES(ret);        \
@@ -2305,7 +2312,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         
 #define GET_VECVEC(TYPE, TYPEC){                                        \
                 /* bcast */                                              \
-                vector < vector <TYPE> > val = Field< vector < vector < TYPE > > >::get_ccs(self->oid_, string(field)); \
+                vector < vector <TYPE> > val = FieldCcsClient< vector < vector < TYPE > > >::get(self->oid_, string(field)); \
                 Py_ssize_t length1 = val.size();                        \
                 PyObject * ret = PyList_New(length1);                   \
                 ostringstream error;                                    \
@@ -2338,12 +2345,12 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return ret;                                                             \
         } // GET_VECVEC
 
-	if (self->oid_ == ObjId::bad()){
-	  PyErr_SetString(PyExc_RuntimeError, "bad ObjId.");
+	if (self->oid_ == CcsObjId::bad()){
+	  PyErr_SetString(PyExc_RuntimeError, "bad CcsObjId.");
 	  return NULL;
 	}
         // bcast
-        string class_name = Field<string>::get_ccs(self->oid_, "class");
+        string class_name = FieldCcsClient<string>::get(self->oid_, "class");
         string type = getFieldType(class_name, string(field), "valueFinfo");
         if (type.empty()){
             // Check if this field name is aliased and update fieldname and type if so.
@@ -2351,7 +2358,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             if (it != get_field_alias().end()){
                 field = (it->second).c_str();
                 // bcast
-                type = getFieldType(Field<string>::get_ccs(self->oid_, "class"), it->second, "valueFinfo");
+                type = getFieldType(FieldCcsClient<string>::get(self->oid_, "class"), it->second, "valueFinfo");
                 // Update attr for next level (PyObject_GenericGetAttr) in case.
                 Py_XDECREF(attr);
                 attr = PyString_FromString(field);
@@ -2367,7 +2374,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         switch(ftype){
             case 'b': {
                 // bcast
-                bool value = Field<bool>::get_ccs(self->oid_, string(field));
+                bool value = FieldCcsClient<bool>::get(self->oid_, string(field));
                 if (value){
                     Py_RETURN_TRUE;
                 } else {
@@ -2384,13 +2391,13 @@ static Shell *charm_pymoose_shellPtr = NULL;
             case 'd': GET_FIELD(double, d)
             case 's': {
                 // bcast
-                string _s = Field<string>::get_ccs(self->oid_, string(field));
+                string _s = FieldCcsClient<string>::get(self->oid_, string(field));
                 return Py_BuildValue("s", _s.c_str());
             }
             case 'x':
                 {                    
                 // bcast
-                    Id value = Field<Id>::get_ccs(self->oid_, string(field));
+                    CcsId value = FieldCcsClient<CcsId>::get(self->oid_, string(field));
                     _Id * ret = PyObject_New(_Id, &IdType);
                     ret->id_ = value;
                     return (PyObject*)ret;
@@ -2398,14 +2405,14 @@ static Shell *charm_pymoose_shellPtr = NULL;
             case 'y':
                 {
                 // bcast
-                    ObjId value = Field<ObjId>::get_ccs(self->oid_, string(field));
+                    CcsObjId value = FieldCcsClient<CcsObjId>::get(self->oid_, string(field));
                     _ObjId * ret = PyObject_New(_ObjId, &ObjIdType);
                     ret->oid_ = value;
                     return (PyObject*)ret;
                 }
             case 'z':
                 {
-                    PyErr_SetString(PyExc_NotImplementedError, "DataId handling not implemented yet.");
+                    PyErr_SetString(PyExc_NotImplementedError, "CcsDataId handling not implemented yet.");
                     return NULL;
                 }
             case 'D': GET_VECFIELD(double)
@@ -2418,7 +2425,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             case 'C': GET_VECFIELD(char)
             case 'S': {                                                 
                 // bcast
-                vector<string> val = Field< vector<string> >::get_ccs(self->oid_, string(field)); 
+                vector<string> val = FieldCcsClient< vector<string> >::get(self->oid_, string(field)); 
                 PyObject * ret = PyTuple_New((Py_ssize_t)val.size());
                 
                 for (unsigned int ii = 0; ii < val.size(); ++ ii ){     
@@ -2434,7 +2441,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             case 'X': // vector<Id>
                 {
                     // bcast
-                    vector<Id> value = Field< vector <Id> >::get_ccs(self->oid_, string(field));
+                    vector<CcsId> value = FieldCcsClient< vector <CcsId> >::get(self->oid_, string(field));
                     PyObject * ret = PyTuple_New((Py_ssize_t)value.size());
                 
                     for (unsigned int ii = 0; ii < value.size(); ++ii){
@@ -2452,10 +2459,10 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     }
                     return ret;
                 }
-            case 'Y': // vector<ObjId>
+            case 'Y': // vector<CcsObjId>
                 {
                     // bcast
-                    vector<ObjId> value = Field< vector <ObjId> >::get_ccs(self->oid_, string(field));
+                    vector<CcsObjId> value = FieldCcsClient< vector <CcsObjId> >::get(self->oid_, string(field));
                     PyObject * ret = PyTuple_New(value.size());
                 
                     for (unsigned int ii = 0; ii < value.size(); ++ii){
@@ -2529,7 +2536,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     */
     static int  moose_ObjId_setattro(_ObjId * self, PyObject * attr, PyObject * value)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(-1);
         }
         const char * field;
@@ -2540,7 +2547,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return -1;
         }
         // bcast
-        string fieldtype = getFieldType(Field<string>::get_ccs(self->oid_, "class"), string(field), "valueFinfo");
+        string fieldtype = getFieldType(FieldCcsClient<string>::get(self->oid_, "class"), string(field), "valueFinfo");
         if (fieldtype.length() == 0){
             // If it is instance of a MOOSE built-in class then throw
             // error (to avoid silently creating new attributes due to
@@ -2562,14 +2569,14 @@ static Shell *charm_pymoose_shellPtr = NULL;
             case 'b': {
                 bool _value = (Py_True == value) || (PyInt_AsLong(value) != 0);
                 // bcast
-                ret = Field<bool>::set_ccs(self->oid_, string(field), _value);
+                ret = FieldCcsClient<bool>::set(self->oid_, string(field), _value);
                 break;
             }
             case 'c': {
                 char * _value = PyString_AsString(value);
                 if (_value && _value[0]){
                 // bcast
-                    ret = Field<char>::set_ccs(self->oid_, string(field), _value[0]);
+                    ret = FieldCcsClient<char>::set(self->oid_, string(field), _value[0]);
                 }
                 break;
             }
@@ -2577,7 +2584,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 int _value = PyInt_AsLong(value);
                 if ((_value != -1) || (!PyErr_Occurred())){
                 // bcast
-                    ret = Field<int>::set_ccs(self->oid_, string(field), _value);
+                    ret = FieldCcsClient<int>::set(self->oid_, string(field), _value);
                 }
                 break;
             }
@@ -2585,7 +2592,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 short _value = (short)PyInt_AsLong(value);
                 if ((_value != -1) || (!PyErr_Occurred())){
                 // bcast
-                    ret = Field<short>::set_ccs(self->oid_, string(field), _value);
+                    ret = FieldCcsClient<short>::set(self->oid_, string(field), _value);
                 }
                 break;
             }
@@ -2593,64 +2600,64 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 long _value = PyInt_AsLong(value);
                 if ((_value != -1) || (!PyErr_Occurred())){
                 // bcast
-                    ret = Field<long>::set_ccs(self->oid_, string(field), _value);
+                    ret = FieldCcsClient<long>::set(self->oid_, string(field), _value);
                 }
                 break;
             }
             case 'I': {
                 unsigned long _value = PyInt_AsUnsignedLongMask(value);
                 // bcast
-                ret = Field<unsigned int>::set_ccs(self->oid_, string(field), (unsigned int)_value);
+                ret = FieldCcsClient<unsigned int>::set(self->oid_, string(field), (unsigned int)_value);
                 break;
             }
             case 'k': {
                 unsigned long _value = PyInt_AsUnsignedLongMask(value);
                 // bcast
-                ret = Field<unsigned long>::set_ccs(self->oid_, string(field), _value);
+                ret = FieldCcsClient<unsigned long>::set(self->oid_, string(field), _value);
                 break;
             }                
             case 'f': {
                 float _value = PyFloat_AsDouble(value);
                 // bcast
-                ret = Field<float>::set_ccs(self->oid_, string(field), _value);
+                ret = FieldCcsClient<float>::set(self->oid_, string(field), _value);
                 break;
             }
             case 'd': {
                 double _value = PyFloat_AsDouble(value);
                 // bcast
-                ret = Field<double>::set_ccs(self->oid_, string(field), _value);
+                ret = FieldCcsClient<double>::set(self->oid_, string(field), _value);
                 break;
             }
             case 's': {
                 char * _value = PyString_AsString(value);
                 if (_value){
                 // bcast
-                    ret = Field<string>::set_ccs(self->oid_, string(field), string(_value));
+                    ret = FieldCcsClient<string>::set(self->oid_, string(field), string(_value));
                 }
                 break;
             }
             case 'x': {// Id
                 if (value){
                 // bcast
-                    ret = Field<Id>::set_ccs(self->oid_, string(field), ((_Id*)value)->id_);
+                    ret = FieldCcsClient<CcsId>::set(self->oid_, string(field), ((_Id*)value)->id_);
                 } else {
                     PyErr_SetString(PyExc_ValueError, "Null pointer passed as ematrix Id value.");
                     return -1;
                 }
                 break;
             }
-            case 'y': {// ObjId
+            case 'y': {// CcsObjId
                 if (value){
                 // bcast
-                    ret = Field<ObjId>::set_ccs(self->oid_, string(field), ((_ObjId*)value)->oid_);
+                    ret = FieldCcsClient<CcsObjId>::set(self->oid_, string(field), ((_ObjId*)value)->oid_);
                 } else {
                     PyErr_SetString(PyExc_ValueError, "Null pointer passed as ematrix Id value.");
                     return -1;
                 }
                 break;
             }
-            case 'z': {// DataId
-                PyErr_SetString(PyExc_NotImplementedError, "DataId handling not implemented yet.");
+            case 'z': {// CcsDataId
+                PyErr_SetString(PyExc_NotImplementedError, "CcsDataId handling not implemented yet.");
                 return -1;
             }
             case 'v': {
@@ -2664,7 +2671,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     _value.push_back(v);
                 }
                 // bcast
-                ret = Field< vector < int > >::set_ccs(self->oid_, string(field), _value);
+                ret = FieldCcsClient< vector < int > >::set(self->oid_, string(field), _value);
                 break;
             }
             case 'w': {
@@ -2678,7 +2685,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                         _value.push_back(v);
                     }
                 // bcast
-                    ret = Field< vector < short > >::set_ccs(self->oid_, string(field), _value);
+                    ret = FieldCcsClient< vector < short > >::set(self->oid_, string(field), _value);
                 }
                 break;
             }
@@ -2694,7 +2701,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                         _value.push_back(v);
                     }
                 // bcast
-                    ret = Field< vector < long > >::set_ccs(self->oid_, string(field), _value);
+                    ret = FieldCcsClient< vector < long > >::set(self->oid_, string(field), _value);
                 }
                 break;
             }
@@ -2709,7 +2716,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                         _value.push_back(v);
                     }
                 // bcast
-                    ret = Field< vector < unsigned int > >::set_ccs(self->oid_, string(field), _value);
+                    ret = FieldCcsClient< vector < unsigned int > >::set(self->oid_, string(field), _value);
                 }
                 break;
             }
@@ -2724,7 +2731,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                         _value.push_back(v);
                     }
                 // bcast
-                    ret = Field< vector < unsigned long > >::set_ccs(self->oid_, string(field), _value);
+                    ret = FieldCcsClient< vector < unsigned long > >::set(self->oid_, string(field), _value);
                 }
                 break;
             }
@@ -2739,7 +2746,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                         _value.push_back(v);
                     }
                 // bcast
-                    ret = Field< vector < float > >::set_ccs(self->oid_, string(field), _value);
+                    ret = FieldCcsClient< vector < float > >::set(self->oid_, string(field), _value);
                 }
                 break;
             }
@@ -2754,7 +2761,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                         _value.push_back(v);
                     }
                 // bcast
-                    ret = Field< vector < double > >::set_ccs(self->oid_, string(field), _value);
+                    ret = FieldCcsClient< vector < double > >::set(self->oid_, string(field), _value);
                 }
                 break;
             }                
@@ -2769,7 +2776,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                         _value.push_back(string(v));
                     }
                 // bcast
-                    ret = Field< vector < string > >::set_ccs(self->oid_, string(field), _value);
+                    ret = FieldCcsClient< vector < string > >::set(self->oid_, string(field), _value);
                 }
                 break;
             }
@@ -2777,7 +2784,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 vector < vector <unsigned> > * _value = (vector < vector <unsigned> > *)to_cpp< vector < vector <unsigned> > >(value);
                 if (!PyErr_Occurred()){
                 // bcast
-                    ret = Field < vector < vector <unsigned> > >::set_ccs(self->oid_, string(field), *_value);
+                    ret = Field < vector < vector <unsigned> > >::set(self->oid_, string(field), *_value);
                 }
                 delete _value;
                 break;
@@ -2786,7 +2793,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 vector < vector <int> > * _value = (vector < vector <int> > *)to_cpp< vector < vector <int> > >(value);
                 if (!PyErr_Occurred()){
                 // bcast
-                    ret = Field < vector < vector <int> > >::set_ccs(self->oid_, string(field), *_value);
+                    ret = Field < vector < vector <int> > >::set(self->oid_, string(field), *_value);
                 }
                 delete _value;
                 break;
@@ -2795,7 +2802,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 vector < vector <double> > * _value = (vector < vector <double> > *)to_cpp< vector < vector <double> > >(value);
                 if (!PyErr_Occurred()){
                 // bcast
-                    ret = Field < vector < vector <double> > >::set_ccs(self->oid_, string(field), *_value);
+                    ret = Field < vector < vector <double> > >::set(self->oid_, string(field), *_value);
                 }
                 delete _value;
                 break;
@@ -2817,17 +2824,17 @@ static Shell *charm_pymoose_shellPtr = NULL;
     } // moose_ObjId_setattro
 
     /// Inner function for looking up value from LookupField on object
-    /// with ObjId target.
+    /// with CcsObjId target.
     ///
     /// args should be a tuple (lookupFieldName, key)
-    PyObject * getLookupField(ObjId target, char * fieldName, PyObject * key)
+    PyObject * getLookupField(CcsObjId target, char * fieldName, PyObject * key)
     {
         extern PyTypeObject ObjIdType;
         vector<string> type_vec;
         // bcast
-        if (parse_Finfo_type(Field<string>::get_ccs(target, "class"), "lookupFinfo", string(fieldName), type_vec) < 0){
+        if (parse_Finfo_type(FieldCcsClient<string>::get(target, "class"), "lookupFinfo", string(fieldName), type_vec) < 0){
             ostringstream error;
-            error << "Cannot handle key type for LookupField `" << Field<string>::get_ccs(target, "class") << "." << fieldName << "`.";
+            error << "Cannot handle key type for LookupField `" << FieldCcsClient<string>::get(target, "class") << "." << fieldName << "`.";
             PyErr_SetString(PyExc_TypeError, error.str().c_str());
             return NULL;
         }
@@ -2835,7 +2842,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             ostringstream error;
             // bcast
             error << "LookupField type signature should be <keytype>, <valuetype>. But for `"
-                  << Field<string>::get_ccs(target, "class") << "." << fieldName << "` got " << type_vec.size() << " components." ;
+                  << FieldCcsClient<string>::get(target, "class") << "." << fieldName << "` got " << type_vec.size() << " components." ;
             PyErr_SetString(PyExc_AssertionError, error.str().c_str());
             return NULL;
         }
@@ -2902,11 +2909,11 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 break;
             }
             case 'x': {
-                ret = lookup_value <Id> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <CcsId> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }
             case 'y': {
-                ret = lookup_value <ObjId> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
+                ret = lookup_value <CcsObjId> (target, string(fieldName), value_type_code, key_type_code, key, value_ptr);
                 break;
             }
             case 'v': {
@@ -2936,7 +2943,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             default:
                 ostringstream error;
                 // bcast
-                error << "Unhandled key type `" << type_vec[0] << "` for " << Field<string>::get_ccs(target, "class") << "." << fieldName;
+                error << "Unhandled key type `" << type_vec[0] << "` for " << FieldCcsClient<string>::get(target, "class") << "." << fieldName;
                 PyErr_SetString(PyExc_TypeError, error.str().c_str());
         }                
         return ret;
@@ -2957,7 +2964,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
 
     static PyObject * moose_ObjId_getLookupField(_ObjId * self, PyObject * args)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         char * fieldName = NULL;
@@ -2968,14 +2975,14 @@ static Shell *charm_pymoose_shellPtr = NULL;
         return getLookupField(self->oid_, fieldName, key);
     } // moose_ObjId_getLookupField
 
-    int setLookupField(ObjId target, char * fieldName, PyObject * key, PyObject * value)
+    int setLookupField(CcsObjId target, char * fieldName, PyObject * key, PyObject * value)
     {
         vector<string> type_vec;
                 // bcast
-        if (parse_Finfo_type(Field<string>::get_ccs(target, "class"), "lookupFinfo", string(fieldName), type_vec) < 0){
+        if (parse_Finfo_type(FieldCcsClient<string>::get(target, "class"), "lookupFinfo", string(fieldName), type_vec) < 0){
             ostringstream error;
                 // bcast
-            error << "Cannot handle key type for LookupField `" << Field<string>::get_ccs(target, "class") << "." << fieldName << "`.";
+            error << "Cannot handle key type for LookupField `" << FieldCcsClient<string>::get(target, "class") << "." << fieldName << "`.";
             PyErr_SetString(PyExc_TypeError, error.str().c_str());
             return -1;
         }
@@ -2983,7 +2990,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             ostringstream error;
                 // bcast
             error << "LookupField type signature should be <keytype>, <valuetype>. But for `"
-                  << Field<string>::get_ccs(target, "class") << "." << fieldName << "` got " << type_vec.size() << " components." ;
+                  << FieldCcsClient<string>::get(target, "class") << "." << fieldName << "` got " << type_vec.size() << " components." ;
             PyErr_SetString(PyExc_AssertionError, error.str().c_str());
             return -1;
         }
@@ -3040,11 +3047,11 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 break;
             }
             case 'x': {
-                ret = set_lookup_value <Id> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                ret = set_lookup_value <CcsId> (target, string(fieldName), value_type_code, key_type_code, key, value);
                 break;
             }
             case 'y': {
-                ret = set_lookup_value <ObjId> (target, string(fieldName), value_type_code, key_type_code, key, value);
+                ret = set_lookup_value <CcsObjId> (target, string(fieldName), value_type_code, key_type_code, key, value);
                 break;
             }
             default:
@@ -3069,7 +3076,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     
     static PyObject * moose_ObjId_setLookupField(_ObjId * self, PyObject * args)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             return NULL;
         }
         PyObject * key;
@@ -3099,14 +3106,14 @@ static Shell *charm_pymoose_shellPtr = NULL;
     
     static PyObject * moose_ObjId_setDestField(_ObjId * self, PyObject * args)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         return _setDestField(((_ObjId*)self)->oid_, args);        
     }
 
     
-    static PyObject * _setDestField(ObjId oid, PyObject *args)
+    static PyObject * _setDestField(CcsObjId oid, PyObject *args)
     {
         PyObject * arglist[10] = {NULL, NULL, NULL, NULL, NULL,
                                   NULL, NULL, NULL, NULL, NULL};
@@ -3134,7 +3141,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         // Try to parse the arguments.
         vector< string > argType;
                 // bcast
-        if (parse_Finfo_type(Field<string>::get_ccs(oid, "class"),
+        if (parse_Finfo_type(FieldCcsClient<string>::get(oid, "class"),
                              "destFinfo", string(fieldName), argType) < 0){
             error << "Arguments not handled: " << fieldName << "(";
             for (unsigned int ii = 0; ii < argType.size(); ++ii){
@@ -3150,7 +3157,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             PyObject * arg = arglist[ii+1];
             if ( arg == NULL && argType[ii] == "void"){
                 // bcast
-                bool ret = SetGet0::set_ccs(oid, string(fieldName));
+                bool ret = SetGet0CcsClient::set(oid, string(fieldName));
                 if (ret){
                     Py_RETURN_TRUE;
                 } else {
@@ -3249,12 +3256,12 @@ static Shell *charm_pymoose_shellPtr = NULL;
                     }
                 case 'X':
                     {
-                        return _set_vector_destFinfo<Id>(oid, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<CcsId>(oid, string(fieldName), ii, arg);
                         break;
                     }
                 case 'Y':
                     {
-                        return _set_vector_destFinfo<ObjId>(oid, string(fieldName), ii, arg);
+                        return _set_vector_destFinfo<CcsObjId>(oid, string(fieldName), ii, arg);
                     }
                 default:
                     {
@@ -3273,7 +3280,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         }
         
         argstring = argstring.substr(0, argstring.length() - 1);        
-        bool ret = SetGet::strSet(oid, string(fieldName), argstring);
+        bool ret = SetGetCcsClient::strSet(oid, string(fieldName), argstring);
         if (ret){
             Py_RETURN_TRUE;
         } else {
@@ -3306,7 +3313,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     // 2011-03-23 15:28:26 (+0530)
     static PyObject * moose_ObjId_getFieldNames(_ObjId * self, PyObject *args)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         char * ftype = NULL;
@@ -3316,7 +3323,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         string ftype_str = (ftype != NULL)? string(ftype): "";
         vector<string> ret;
         // bcast
-        string className = Field<string>::get_ccs(self->oid_, "class");
+        string className = FieldCcsClient<string>::get(self->oid_, "class");
         if (ftype_str == ""){
             for (const char **a = getFinfoTypes(); *a; ++a){
                 vector<string> fields = getFieldNames(className, string(*a));
@@ -3363,7 +3370,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                  
     static PyObject * moose_ObjId_getNeighbors(_ObjId * self, PyObject * args)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         char * field = NULL;
@@ -3371,7 +3378,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return NULL;
         }
         // bcast
-        vector< Id > val = LookupField< string, vector< Id > >::get_ccs(self->oid_, "neighbours", string(field));
+        vector< CcsId > val = LookupFieldCcsClient< string, vector< CcsId > >::get(self->oid_, "neighbours", string(field));
     
         PyObject * ret = PyTuple_New((Py_ssize_t)val.size());
                 
@@ -3419,7 +3426,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                  );
     static PyObject * moose_ObjId_connect(_ObjId * self, PyObject * args)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         extern PyTypeObject ObjIdType;        
@@ -3463,7 +3470,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                  "meaningful for elements.\n"); 
   static PyObject* moose_ObjId_richcompare(_ObjId * self, PyObject * other, int op)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         extern PyTypeObject ObjIdType;
@@ -3479,12 +3486,12 @@ static Shell *charm_pymoose_shellPtr = NULL;
         }
         if (!PyObject_IsInstance(other, (PyObject*)&ObjIdType)){
           ostringstream error;
-          error << "Cannot compare ObjId with "
+          error << "Cannot compare CcsObjId with "
                 << Py_TYPE(other)->tp_name;
           PyErr_SetString(PyExc_TypeError, error.str().c_str());
           return NULL;
         }
-        if (!Id::isValid(((_ObjId*)other)->oid_.id)){
+        if (!CcsId::isValid(((_ObjId*)other)->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
 
@@ -3515,7 +3522,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                  "Return the dataIndex of this object.\n");
     static PyObject * moose_ObjId_getDataIndex(_ObjId * self)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }        
         PyObject * ret = Py_BuildValue("I", self->oid_.dataId.value());
@@ -3527,7 +3534,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     // place-holer to avoid compilation errors.
     static PyObject * moose_ObjId_getFieldIndex(_ObjId * self)
     {
-        if (!Id::isValid(self->oid_.id)){
+        if (!CcsId::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         PyObject * ret = Py_BuildValue("I", self->oid_.dataId.value());
@@ -3535,7 +3542,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     }
     
     ///////////////////////////////////////////////
-    // Python method lists for PyObject of ObjId
+    // Python method lists for PyObject of CcsObjId
     ///////////////////////////////////////////////
 
     static PyMethodDef ObjIdMethods[] = {
@@ -3569,7 +3576,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     };
 
     ///////////////////////////////////////////////
-    // Type defs for PyObject of ObjId
+    // Type defs for PyObject of CcsObjId
     ///////////////////////////////////////////////
     PyTypeObject ObjIdType = { 
       PyVarObject_HEAD_INIT(NULL, 0)            /* tp_head */
@@ -3682,18 +3689,18 @@ static Shell *charm_pymoose_shellPtr = NULL;
         if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|sIII", const_cast<char**>(kwlist), &src, &dest, &newName, &num, &toGlobal, &copyExtMsgs)){
             return NULL;
         }
-        Id _src, _dest;
+        CcsId _src, _dest;
         if (PyObject_IsInstance(src, (PyObject*)&IdType)){
             _src = ((_Id*)src)->id_;
         } else if (PyObject_IsInstance(src, (PyObject*)&ObjIdType)){
             _src = ((_ObjId*)src)->oid_.id;
         } else if (PyString_Check(src)){
-            _src = Id(PyString_AsString(src));
+            _src = CcsId(PyString_AsString(src));
         } else {
             PyErr_SetString(PyExc_TypeError, "Source must be instance of ematrix, element or string.");
             return NULL;
         }
-        if (_src == Id()){
+        if (_src == CcsId()){
             PyErr_SetString(PyExc_ValueError, "Cannot make copy of moose shell.");
             return NULL;
         } 
@@ -3702,19 +3709,19 @@ static Shell *charm_pymoose_shellPtr = NULL;
         } else if (PyObject_IsInstance(dest, (PyObject*)&ObjIdType)){
             _dest = ((_ObjId*)dest)->oid_.id;
         } else if (PyString_Check(dest)){
-            _dest = Id(PyString_AsString(dest));
+            _dest = CcsId(PyString_AsString(dest));
         } else {
             PyErr_SetString(PyExc_TypeError, "destination must be instance of ematrix, element or string.");
             return NULL;
         }
-        if (!Id::isValid(_src) || !Id::isValid(_dest)){
+        if (!CcsId::isValid(_src) || !CcsId::isValid(_dest)){
             RAISE_INVALID_ID(NULL);
         }
         string name;
         if (newName == NULL){
             // Use the original name if name is not specified.
             // bcast
-            name = Field<string>::get_ccs(ObjId(_src, 0), "name");
+            name = FieldCcsClient<string>::get(CcsObjId(_src, 0), "name");
         } else {
             name = string(newName);
         }
@@ -3732,7 +3739,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         if (!PyArg_ParseTuple(args, "OO:moose_move", &src, &dest)){
             return NULL;
         }
-        if (((_Id*)src)->id_ == Id()){
+        if (((_Id*)src)->id_ == CcsId()){
             PyErr_SetString(PyExc_ValueError, "cannot move moose shell");
             return NULL;
         }
@@ -3762,11 +3769,11 @@ static Shell *charm_pymoose_shellPtr = NULL;
             PyErr_SetString(PyExc_TypeError, "ematrix instance expected");
             return NULL;
         }
-        if (((_Id*)obj)->id_ == Id()){
+        if (((_Id*)obj)->id_ == CcsId()){
             PyErr_SetString(PyExc_ValueError, "cannot delete moose shell.");
             return NULL;
         }
-        if (!Id::isValid(((_Id*)obj)->id_)){
+        if (!CcsId::isValid(((_Id*)obj)->id_)){
             RAISE_INVALID_ID(NULL);
         }
         SHELLPTR->doDelete(((_Id*)obj)->id_);
@@ -3874,7 +3881,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         if (!PyArg_ParseTuple(args, "s", &path)){
             return NULL;
         }
-        return Py_BuildValue("i", Id(path) != Id() || string(path) == "/" || string(path) == "/root");
+        return Py_BuildValue("i", CcsId(path) != CcsId() || string(path) == "/" || string(path) == "/root");
     }
 
     //Harsha : For writing genesis file to sbml
@@ -3919,7 +3926,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         } else {
             model->id_ = SHELLPTR->doLoadModel(string(fname), string(modelpath), string(solverclass));
         }
-        if (model->id_ == Id()){
+        if (model->id_ == CcsId()){
           Py_XDECREF(model);
           PyErr_SetString(PyExc_IOError, "could not load model");
           return NULL;
@@ -3932,9 +3939,9 @@ static Shell *charm_pymoose_shellPtr = NULL;
     {
         PyObject * element = NULL;
         const char * path = "/";
-        Id id;
+        CcsId id;
         if(PyArg_ParseTuple(args, "s:moose_setCwe", const_cast<char**>(&path))){
-            id = Id(string(path));
+            id = CcsId(string(path));
         } else if (PyArg_ParseTuple(args, "O:moose_setCwe", &element)){
             PyErr_Clear();
             if (PyObject_IsInstance(element, (PyObject*)&IdType)){
@@ -3948,7 +3955,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         } else {
             return NULL;
         }
-        if (!Id::isValid(id)){
+        if (!CcsId::isValid(id)){
             RAISE_INVALID_ID(NULL);
         }
         SHELLPTR->setCwe(id);
@@ -4018,7 +4025,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         }
         _ObjId * dest = reinterpret_cast<_ObjId*>(destPtr);
         _ObjId * src = reinterpret_cast<_ObjId*>(srcPtr);
-        if (!Id::isValid(dest->oid_.id) || !Id::isValid(src->oid_.id)){
+        if (!CcsId::isValid(dest->oid_.id) || !CcsId::isValid(src->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         MsgId mid = SHELLPTR->doAddMsg(msgType, src->oid_, string(srcField), dest->oid_, string(destField));
@@ -4066,8 +4073,8 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return NULL;
         }
         
-        Id classId = Id("/classes/" + string(className));
-        if (classId == Id()){
+        CcsId classId = CcsId("/classes/" + string(className));
+        if (classId == CcsId()){
             string msg = string(className);
             msg += " not a valid MOOSE class.";
             PyErr_SetString(PyExc_NameError, msg.c_str());
@@ -4119,48 +4126,48 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return NULL;
         }
         string fname(field), ftype(type);
-        ObjId oid = ((_ObjId*)pyobj)->oid_;
-        if (!Id::isValid(oid.id)){
+        CcsObjId oid = ((_ObjId*)pyobj)->oid_;
+        if (!CcsId::isValid(oid.id)){
             RAISE_INVALID_ID(NULL);
         }
         // Let us do this version using brute force. Might be simpler than getattro.
         if (ftype == "char"){
           // bcast
-            char value =Field<char>::get_ccs(oid, fname);
+            char value =FieldCcsClient<char>::get(oid, fname);
             return PyInt_FromLong(value);            
         } else if (ftype == "double"){
           // bcast
-            double value = Field<double>::get_ccs(oid, fname);
+            double value = FieldCcsClient<double>::get(oid, fname);
             return PyFloat_FromDouble(value);
         } else if (ftype == "float"){
           // bcast
-            float value = Field<float>::get_ccs(oid, fname);
+            float value = FieldCcsClient<float>::get(oid, fname);
             return PyFloat_FromDouble(value);
         } else if (ftype == "int"){
           // bcast
-            int value = Field<int>::get_ccs(oid, fname);
+            int value = FieldCcsClient<int>::get(oid, fname);
             return PyInt_FromLong(value);
         } else if (ftype == "string"){
           // bcast
-            string value = Field<string>::get_ccs(oid, fname);
+            string value = FieldCcsClient<string>::get(oid, fname);
             return PyString_FromString(value.c_str());
         } else if (ftype == "unsigned int" || ftype == "unsigned" || ftype == "uint"){
           // bcast
-            unsigned int value = Field<unsigned int>::get_ccs(oid, fname);
+            unsigned int value = FieldCcsClient<unsigned int>::get(oid, fname);
             return PyInt_FromLong(value);
-        } else if (ftype == "Id"){
+        } else if (ftype == "CcsId"){
             _Id * value = (_Id*)PyObject_New(_Id, &IdType);
           // bcast
-            value->id_ = Field<Id>::get_ccs(oid, fname);
+            value->id_ = FieldCcsClient<CcsId>::get(oid, fname);
             return (PyObject*) value;
-        } else if (ftype == "ObjId"){
+        } else if (ftype == "CcsObjId"){
             _ObjId * value = (_ObjId*)PyObject_New(_ObjId, &ObjIdType);
           // bcast
-            value->oid_ = Field<ObjId>::get_ccs(oid, fname);
+            value->oid_ = FieldCcsClient<CcsObjId>::get(oid, fname);
             return (PyObject*)value;
         } else if (ftype == "vector<int>"){
           // bcast
-            vector<int> value = Field< vector < int > >::get_ccs(oid, fname);
+            vector<int> value = FieldCcsClient< vector < int > >::get(oid, fname);
             PyObject * ret = PyTuple_New((Py_ssize_t)value.size());
                 
             for (unsigned int ii = 0; ii < value.size(); ++ ii ){     
@@ -4175,7 +4182,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return ret;
         } else if (ftype == "vector<double>"){
           // bcast
-            vector<double> value = Field< vector < double > >::get_ccs(oid, fname);
+            vector<double> value = FieldCcsClient< vector < double > >::get(oid, fname);
             PyObject * ret = PyTuple_New((Py_ssize_t)value.size());
                 
             for (unsigned int ii = 0; ii < value.size(); ++ ii ){     
@@ -4190,7 +4197,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return ret;
         } else if (ftype == "vector<float>"){
           // bcast
-            vector<float> value = Field< vector < float > >::get_ccs(oid, fname);
+            vector<float> value = FieldCcsClient< vector < float > >::get(oid, fname);
             PyObject * ret = PyTuple_New((Py_ssize_t)value.size());
                 
             for (unsigned int ii = 0; ii < value.size(); ++ ii ){     
@@ -4205,7 +4212,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return ret;
         } else if (ftype == "vector<string>"){
           // bcast
-            vector<string> value = Field< vector < string > >::get_ccs(oid, fname);
+            vector<string> value = FieldCcsClient< vector < string > >::get(oid, fname);
             PyObject * ret = PyTuple_New((Py_ssize_t)value.size());
                 
             for (unsigned int ii = 0; ii < value.size(); ++ ii ){     
@@ -4217,9 +4224,9 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 }                                            
             }
             return ret;
-        } else if (ftype == "vector<Id>"){
+        } else if (ftype == "vector<CcsId>"){
           // bcast
-            vector<Id> value = Field< vector < Id > >::get_ccs(oid, fname);
+            vector<CcsId> value = FieldCcsClient< vector < CcsId > >::get(oid, fname);
             PyObject * ret = PyTuple_New((Py_ssize_t)value.size());
                 
             for (unsigned int ii = 0; ii < value.size(); ++ ii ){
@@ -4232,9 +4239,9 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 }                                            
             }
             return ret;
-        } else if (ftype == "vector<ObjId>"){
+        } else if (ftype == "vector<CcsObjId>"){
           // bcast
-            vector<ObjId> value = Field< vector < ObjId > >::get_ccs(oid, fname);
+            vector<CcsObjId> value = FieldCcsClient< vector < CcsObjId > >::get(oid, fname);
             PyObject * ret = PyTuple_New((Py_ssize_t)value.size());
                 
             for (unsigned int ii = 0; ii < value.size(); ++ ii ){
@@ -4258,8 +4265,8 @@ static Shell *charm_pymoose_shellPtr = NULL;
         if (!PyArg_ParseTuple(args, "O:moose.syncDataHandler", &obj)){
             return NULL;
         }
-        Id id = ((_Id*)obj)->id_;
-        if (!Id::isValid(id)){
+        CcsId id = ((_Id*)obj)->id_;
+        if (!CcsId::isValid(id)){
                 RAISE_INVALID_ID(NULL);
         }
         SHELLPTR->doSyncDataHandler(id);
@@ -4313,7 +4320,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                  "\n");
     static PyObject * moose_wildcardFind(PyObject * dummy, PyObject * args)
     {
-        vector <Id> objects;
+        vector <CcsId> objects;
         char * wildcard_path = NULL;
         if (!PyArg_ParseTuple(args, "s:moose.wildcardFind", &wildcard_path)){
             return NULL;
@@ -4355,7 +4362,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
     static int defineAllClasses(PyObject * module_dict)
     {
         // bcast
-        static vector <Id> classes(Field< vector<Id> >::get_ccs(ObjId("/classes"),
+        static vector <CcsId> classes(FieldCcsClient< vector<CcsId> >::get(CcsObjId("/classes"),
                                                             "children"));
         for (unsigned ii = 0; ii < classes.size(); ++ii){
             const string& class_name = classes[ii].element()->getName();
@@ -4488,7 +4495,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return NULL;
         }
         _ObjId * obj = (_ObjId*)self;
-        if (!Id::isValid(obj->oid_.id)){
+        if (!CcsId::isValid(obj->oid_.id)){
                 RAISE_INVALID_ID(NULL);
         }
         char * name = NULL;
@@ -4577,7 +4584,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return NULL;
         }
         _ObjId * obj = (_ObjId*)self;
-        if (!Id::isValid(obj->oid_.id)){
+        if (!CcsId::isValid(obj->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         char * name = NULL;
@@ -4619,10 +4626,10 @@ static Shell *charm_pymoose_shellPtr = NULL;
         return NULL;
     }
 
-    static PyObject * oid_to_element(ObjId oid)
+    static PyObject * oid_to_element(CcsObjId oid)
     {
         // bcast
-        string classname = Field<string>::get_ccs(oid, "class");
+        string classname = FieldCcsClient<string>::get(oid, "class");
         map<string, PyTypeObject *>::iterator it = get_moose_classes().find(classname);
         if (it == get_moose_classes().end()){
             return NULL;
@@ -4653,10 +4660,10 @@ static Shell *charm_pymoose_shellPtr = NULL;
     {
         char * path = NULL;
         PyObject * obj = NULL;
-        ObjId oid;
+        CcsObjId oid;
         if (PyArg_ParseTuple(args, "s", &path)){
-            oid = ObjId(path);
-            if (ObjId::bad() == oid){
+            oid = CcsObjId(path);
+            if (CcsObjId::bad() == oid){
                 PyErr_SetString(PyExc_ValueError, "moose_element: path does not exist");
                 return NULL;
             }
@@ -4675,9 +4682,9 @@ static Shell *charm_pymoose_shellPtr = NULL;
         if (PyObject_IsInstance(obj, (PyObject*)&ObjIdType)){
             oid = ((_ObjId*)obj)->oid_;
         } else if (PyObject_IsInstance(obj, (PyObject*)&IdType)){
-            oid = ObjId(((_Id*)obj)->id_);
+            oid = CcsObjId(((_Id*)obj)->id_);
         }
-        if (oid == ObjId::bad()){
+        if (oid == CcsObjId::bad()){
             PyErr_SetString(PyExc_TypeError, "moose_element: cannot convert to moose element.");
             return NULL;
         }
@@ -4718,7 +4725,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return NULL;
         }
         _ObjId * obj = (_ObjId*)self;
-        if (!Id::isValid(obj->oid_.id)){
+        if (!CcsId::isValid(obj->oid_.id)){
             RAISE_INVALID_ID(NULL);
         }
         char * name = NULL;
@@ -4781,17 +4788,17 @@ static Shell *charm_pymoose_shellPtr = NULL;
 
     PyObject * moose_ElementField_getNum(_Field * self, void * closure)
     {
-        if (!Id::isValid(self->owner.id)){
+        if (!CcsId::isValid(self->owner.id)){
             RAISE_INVALID_ID(NULL);
         }
         // bcast
-        unsigned int num = Field<unsigned int>::get_ccs(self->owner, "num_" + string(self->name));
+        unsigned int num = FieldCcsClient<unsigned int>::get(self->owner, "num_" + string(self->name));
         return Py_BuildValue("I", num);
     }
 
     int moose_ElementField_setNum(_Field * self, PyObject * args, void * closure)
     {
-        if (!Id::isValid(self->owner.id)){
+        if (!CcsId::isValid(self->owner.id)){
             RAISE_INVALID_ID(-1);
         }
         unsigned int num;
@@ -4801,7 +4808,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         }
         num = PyInt_AsUnsignedLongMask(args);
         // bcast
-        if (!Field<unsigned int>::set_ccs(self->owner, "num_" + string(self->name), num)){
+        if (!FieldCcsClient<unsigned int>::set(self->owner, "num_" + string(self->name), num)){
             PyErr_SetString(PyExc_RuntimeError, "moose.ElementField.setNum : Field::set returned False.");
             return -1;
         }
@@ -4810,11 +4817,11 @@ static Shell *charm_pymoose_shellPtr = NULL;
 
     PyObject * moose_ElementField_getItem(_Field * self, Py_ssize_t index)
     {
-        if (!Id::isValid(self->owner.id)){
+        if (!CcsId::isValid(self->owner.id)){
             RAISE_INVALID_ID(NULL);
         }
         // bcast
-        unsigned int len = Field<unsigned int>::get_ccs(self->owner, "num_" + string(self->name));
+        unsigned int len = FieldCcsClient<unsigned int>::get(self->owner, "num_" + string(self->name));
         if (index >= len){
             PyErr_SetString(PyExc_IndexError, "moose.ElementField.getItem: index out of bounds.");
             return NULL;
@@ -4827,7 +4834,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return NULL;
         }
         _ObjId * oid = PyObject_New(_ObjId, &ObjIdType);
-        oid->oid_ = ObjId(Id(self->owner.path() + "/" + self->name), DataId(index));
+        oid->oid_ = CcsObjId(CcsId(self->owner.path() + "/" + self->name), CcsDataId(index));
         return (PyObject*)oid;
     }
 
@@ -4973,7 +4980,7 @@ static struct PyModuleDef MooseModuleDef = {
         Py_INCREF(&IdType);
         PyModule_AddObject(moose_module, "ematrix", (PyObject*)&IdType);
 
-        // Add ObjId type
+        // Add CcsObjId type
         // Py_TYPE(&ObjIdType) = &PyType_Type; // unnecessary - filled in by PyType_Ready
         ObjIdType.tp_new = PyType_GenericNew;
         if (PyType_Ready(&ObjIdType) < 0){

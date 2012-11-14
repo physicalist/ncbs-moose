@@ -9,7 +9,7 @@ mainmodule moose {
   readonly SimulationParameters readonlySimulationParameters;
   readonly CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
 
-  initnode void initializeSetGetCcsHandlerStrings();
+  initnode void ccsRegistration();
 
   
   message ElementDataMsg {

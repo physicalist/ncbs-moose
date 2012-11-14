@@ -1,4 +1,5 @@
 // need these includes for Shell
+#if 0
 #include "header.h"
 #include "SingleMsg.h"
 #include "DiagonalMsg.h"
@@ -12,15 +13,20 @@
 #include "Dinfo.h"
 #include "Wildcard.h"
 #include "Shell.h"
+#endif
 
+#include "CcsId.h"
+#include "CcsObjId.h"
+#include "CcsDataId.h"
 
+#include "../basecode/CcsPackUnpack.h"
 #include "ShellProxy.h"
 #include "ShellProxyHelpers.h"
 #include "charm++.h"
 #include "pup.h"
 #include "pup_stl.h"
 
-#include "svn_revision.h"
+#include "../basecode/svn_revision.h"
 
 #include <utility>
 
@@ -60,20 +66,20 @@ std::string ShellProxy::doRevision(){
   return SVN_REVISION;
 }
 
-void ShellProxy::setCwe(Id cwe){
+void ShellProxy::setCwe(CcsId cwe){
   // Id's do not have to be packd; can be treated as an already contiguous run of bytes
-  CcsSendBroadcastRequest(&shellServer_, ShellProxy::setCweHandlerString, sizeof(Id), &cwe);
+  CcsSendBroadcastRequest(&shellServer_, ShellProxy::setCweHandlerString, sizeof(CcsId), &cwe);
 
   bool r;
   while(CcsRecvResponse(&shellServer_, sizeof(bool), &r, MOOSE_CCS_TIMEOUT) < 0);
 }
 
-Id ShellProxy::getCwe(){
+CcsId ShellProxy::getCwe(){
   const char *dummy = "dummy";
   CcsSendRequest(&shellServer_, ShellProxy::getCweHandlerString, 0, strlen(dummy)+1, dummy);
 
-  Id ret;
-  while(CcsRecvResponse(&shellServer_, sizeof(Id), &ret, MOOSE_CCS_TIMEOUT) < 0);
+  CcsId ret;
+  while(CcsRecvResponse(&shellServer_, sizeof(CcsId), &ret, MOOSE_CCS_TIMEOUT) < 0);
   return ret;
 }
 
@@ -81,7 +87,7 @@ bool ShellProxy::isRunning() const {
   return isRunning_;
 }
 
-Id ShellProxy::doCreate(string type, Id parent, string name, vector<int> dimensions, bool isGlobal, bool qFlag){
+CcsId ShellProxy::doCreate(string type, CcsId parent, string name, vector<int> dimensions, bool isGlobal, bool qFlag){
   unsigned int size;
   CreateStruct create(type, parent, name, dimensions, isGlobal, qFlag);
   char *toSend = CcsPackUnpack< CreateStruct >::pack(create, size);
@@ -89,14 +95,14 @@ Id ShellProxy::doCreate(string type, Id parent, string name, vector<int> dimensi
   CcsSendBroadcastRequest(&shellServer_, ShellProxy::doCreateHandlerString, size, toSend);
   delete[] toSend;
 
-  Id createdId;
-  while(CcsRecvResponse(&shellServer_, sizeof(Id), &createdId, MOOSE_CCS_TIMEOUT) < 0);
+  CcsId createdId;
+  while(CcsRecvResponse(&shellServer_, sizeof(CcsId), &createdId, MOOSE_CCS_TIMEOUT) < 0);
 
   return createdId;
 }
 
-bool ShellProxy::doDelete(Id id, bool qFlag){
-  std::pair<Id, bool> toSend = make_pair(id, qFlag);
+bool ShellProxy::doDelete(CcsId id, bool qFlag){
+  std::pair<CcsId, bool> toSend = make_pair(id, qFlag);
   CcsSendBroadcastRequest(&shellServer_, ShellProxy::doDeleteHandlerString, sizeof(toSend), &toSend);
 
   bool ret;
@@ -105,7 +111,7 @@ bool ShellProxy::doDelete(Id id, bool qFlag){
   return ret;
 }
 
-MsgId ShellProxy::doAddMsg(const string &msgType, ObjId src, const string &srcField, ObjId dest, const string &destField, bool qFlag){
+MsgId ShellProxy::doAddMsg(const string &msgType, CcsObjId src, const string &srcField, CcsObjId dest, const string &destField, bool qFlag){
   unsigned int size;
   AddMsgStruct addmsg(msgType, src, srcField, dest, destField, qFlag);
   char *toSend = CcsPackUnpack< AddMsgStruct >::pack(addmsg, size);
@@ -160,7 +166,7 @@ void ShellProxy::doTerminate(bool qFlag){
   while(CcsRecvResponse(&shellServer_, sizeof(bool), &b, MOOSE_CCS_TIMEOUT) < 0);
 }
 
-void ShellProxy::doMove(Id orig, Id newParent, bool qFlag){
+void ShellProxy::doMove(CcsId orig, CcsId newParent, bool qFlag){
   MoveStruct ms(orig, newParent, qFlag);
   CcsSendBroadcastRequest(&shellServer_, ShellProxy::doMoveHandlerString, sizeof(MoveStruct), &ms);
 
@@ -168,7 +174,7 @@ void ShellProxy::doMove(Id orig, Id newParent, bool qFlag){
   while(CcsRecvResponse(&shellServer_, sizeof(bool), &b, MOOSE_CCS_TIMEOUT) < 0);
 }
 
-Id ShellProxy::doCopy(Id orig, Id newParent, string newName, unsigned int n, bool toGlobal, bool copyExtMsgs, bool qFlag){
+CcsId ShellProxy::doCopy(CcsId orig, CcsId newParent, string newName, unsigned int n, bool toGlobal, bool copyExtMsgs, bool qFlag){
   unsigned int size;
   CopyStruct copystruct(orig, newParent, newName, n, toGlobal, copyExtMsgs, qFlag);
   char *toSend = CcsPackUnpack< CopyStruct >::pack(copystruct, size);
@@ -176,21 +182,21 @@ Id ShellProxy::doCopy(Id orig, Id newParent, string newName, unsigned int n, boo
   CcsSendBroadcastRequest(&shellServer_, ShellProxy::doCopyHandlerString, size, toSend);
   delete[] toSend;
 
-  Id id;
-  while(CcsRecvResponse(&shellServer_, sizeof(Id), &id, MOOSE_CCS_TIMEOUT) < 0);
+  CcsId id;
+  while(CcsRecvResponse(&shellServer_, sizeof(CcsId), &id, MOOSE_CCS_TIMEOUT) < 0);
 
   return id;
 }
 
-ObjId ShellProxy::doFind(string &path){
+CcsObjId ShellProxy::doFind(string &path){
   unsigned int size;
   char *toSend = CcsPackUnpack< string >::pack(path, size);
 
   CcsSendBroadcastRequest(&shellServer_, ShellProxy::doFindHandlerString, size, toSend);
   delete[] toSend;
 
-  ObjId ret;
-  while(CcsRecvResponse(&shellServer_, sizeof(ObjId), &ret, MOOSE_CCS_TIMEOUT) < 0);
+  CcsObjId ret;
+  while(CcsRecvResponse(&shellServer_, sizeof(CcsObjId), &ret, MOOSE_CCS_TIMEOUT) < 0);
   return ret;
 }
 
@@ -206,7 +212,7 @@ void ShellProxy::doUseClock(string path, string field, unsigned int tick, bool q
   while(CcsRecvResponse(&shellServer_, sizeof(bool), &b, MOOSE_CCS_TIMEOUT) < 0);
 }
 
-Id ShellProxy::doLoadModel(const string& fname, const string& modelpath, const string& solverClass, bool qFlag){
+CcsId ShellProxy::doLoadModel(const string& fname, const string& modelpath, const string& solverClass, bool qFlag){
   unsigned int size;
   LoadModelStruct load(fname, modelpath, solverClass, qFlag);
   char *toSend = CcsPackUnpack< LoadModelStruct >::pack(load, size);
@@ -214,8 +220,8 @@ Id ShellProxy::doLoadModel(const string& fname, const string& modelpath, const s
   CcsSendBroadcastRequest(&shellServer_, ShellProxy::doLoadModelHandlerString, size, toSend);
   delete[] toSend;
 
-  Id id;
-  while(CcsRecvResponse(&shellServer_, sizeof(Id), &id, MOOSE_CCS_TIMEOUT) < 0);
+  CcsId id;
+  while(CcsRecvResponse(&shellServer_, sizeof(CcsId), &id, MOOSE_CCS_TIMEOUT) < 0);
   return id;
 }
 
@@ -232,15 +238,15 @@ int ShellProxy::doWriteSBML(const string &fname, const string &modelpath, bool q
   return ret;
 }
 
-void ShellProxy::doSyncDataHandler(Id tgt){
-  CcsSendBroadcastRequest(&shellServer_, ShellProxy::doSyncDataHandlerString, sizeof(Id), &tgt);
+void ShellProxy::doSyncDataHandler(CcsId tgt){
+  CcsSendBroadcastRequest(&shellServer_, ShellProxy::doSyncDataHandlerString, sizeof(CcsId), &tgt);
 
   bool b;
   while(CcsRecvResponse(&shellServer_, sizeof(bool), &b, MOOSE_CCS_TIMEOUT) < 0);
 }
 
-void ShellProxy::doReacDiffMesh(Id baseCompartment){
-  CcsSendBroadcastRequest(&shellServer_, ShellProxy::doReacDiffMeshHandlerString, sizeof(Id), &baseCompartment);
+void ShellProxy::doReacDiffMesh(CcsId baseCompartment){
+  CcsSendBroadcastRequest(&shellServer_, ShellProxy::doReacDiffMeshHandlerString, sizeof(CcsId), &baseCompartment);
 
   bool b;
   while(CcsRecvResponse(&shellServer_, sizeof(bool), &b, MOOSE_CCS_TIMEOUT) < 0);
@@ -262,7 +268,7 @@ void ShellProxy::cleanSimulation(){
   while(CcsRecvResponse(&shellServer_, sizeof(bool), &b, MOOSE_CCS_TIMEOUT) < 0);
 }
 
-bool ShellProxy::adopt(Id parent, Id child){
+bool ShellProxy::adopt(CcsId parent, CcsId child){
   AdoptStruct adoptStruct(parent, child);
   CcsSendBroadcastRequest(&shellServer_, ShellProxy::doAdoptHandlerString, sizeof(AdoptStruct), &adoptStruct);
 

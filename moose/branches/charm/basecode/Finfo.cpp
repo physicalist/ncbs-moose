@@ -75,16 +75,15 @@ static const Cinfo* finfoCinfo = Finfo::initCinfo();
 
 ////////////////////////////////////////////////////////////////
 
-const string& Finfo::name( ) const
-{
-	return name_;
-}
-
 // Silly variation needed to handle template expectations for
 // name field.
 string Finfo::getName( ) const
 {
 	return name_;
+}
+
+void Finfo::postCreationFunc( Id newId, Element* newElm ) const {
+  ;
 }
 
 string Finfo::docs( ) const

@@ -34,8 +34,3 @@ istream& operator >>( istream& s, DataId& d )
 	return s;
 }
 
-#ifdef USE_CHARMPP
-void DataId::pup(PUP::er &p){
-  p | index_;
-}
-#endif
