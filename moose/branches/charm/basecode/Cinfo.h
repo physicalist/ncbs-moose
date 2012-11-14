@@ -10,7 +10,24 @@
 #ifndef _CINFO_H
 #define _CINFO_H
 
+
 class DinfoBase;
+// Since we are separating the parts of Cinfo that are
+// required by the parser, and those that aren't, we
+// must forward-declare typenames
+class Finfo;
+class OpFunc;
+class Id;
+class Element;
+class DataId;
+
+// contains only BindIndex typedef
+#include "BindIndex.h"
+// contains only FuncId typedef
+#include "FuncId.h"
+// contains only ThreadId typedef
+#include "ThreadId.h"
+
 
 typedef bool ( *ThreadExecBalancer )( const char* data, ThreadId t, DataId di );
 

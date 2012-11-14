@@ -36,12 +36,15 @@ OBJ = \
 	ZombieHandler.o \
 	Eref.o	\
 	Finfo.o	\
+	Finfo_parser.o	\
 	DestFinfo.o	\
 	Cinfo.o	\
+        Cinfo_parser.o \
 	SrcFinfo.o \
 	ValueFinfo.o \
 	SharedFinfo.o \
 	FieldElementFinfo.o \
+        DummyFinfo.o \
 	Id.o \
 	ObjId.o \
 	DataId.o \
@@ -57,7 +60,9 @@ OBJ = \
 	main.o	\
 
 ifeq ($(BUILD),charm++)
-OBJ += SetGetStaticStrings.o
+OBJ += SetGetRegistration.o \
+       SetGetCcsClient.o \
+       CcsPackUnpack.o
 endif
 
 HEADERS = \

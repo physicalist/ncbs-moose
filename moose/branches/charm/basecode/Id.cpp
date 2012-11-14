@@ -21,7 +21,6 @@ extern CProxy_LookupHelper readonlyLookupHelperProxy;
 //////////////////////////////////////////////////////////////
 
 Id::Id()
-	// : id_( 0 ), index_( 0 )
 	: id_( 0 )
 {;}
 
@@ -210,13 +209,3 @@ Id::Id( unsigned int id, unsigned int index )
 	;
 }
 */
-
-#ifdef USE_CHARMPP
-void Id::pup(PUP::er &p){
-  p | id_;
-}
-
-void Id::reduce(const Id &other){
-  CkAssert(*this == other);
-}
-#endif

@@ -76,13 +76,3 @@ Element* ObjId::element() const
 	return id();
 }
 
-#ifdef USE_CHARMPP
-void ObjId::pup(PUP::er &p){
-  p | id;
-  p | dataId;
-}
-
-void ObjId::reduce(const ObjId &other){
-  CkAssert(*this == other);
-}
-#endif

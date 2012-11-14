@@ -14,22 +14,16 @@
 #include <vector>
 using namespace std;
 
-#include "Shell.h"
 #include "ccs-client.h"
-
-class Eref;
-class Qinfo;
-class Id;
-class ObjId;
+#include "../basecode/MsgId.h"
+#include "../basecode/moose_version.h"
 
 #define MOOSE_CCS_TIMEOUT 120
 
-class ShellProxy : public Shell {
+class ShellProxy {
   private:
   CcsServer shellServer_;
-
   bool isRunning_;
-  void destroy( const Eref& e, const Qinfo* q, Id eid);
 
   public:
 
@@ -38,35 +32,35 @@ class ShellProxy : public Shell {
 
   string doVersion();
   string doRevision();
-  void setCwe( Id cwe );
-  Id getCwe();
+  void setCwe( CcsId cwe );
+  CcsId getCwe();
   bool isRunning() const;
-  Id doCreate( string type, Id parent, string name, 
+  CcsId doCreate( string type, CcsId parent, string name, 
       vector< int > dimensions = vector< int >( 1, 1 ),
       bool isGlobal = 0, bool qFlag = 0 );
-  bool doDelete( Id id, bool qFlag = 0 );
+  bool doDelete( CcsId id, bool qFlag = 0 );
   MsgId doAddMsg( const string& msgType, 
-      ObjId src, const string& srcField, 
-      ObjId dest, const string& destField, bool qFlag = 0);
+      CcsObjId src, const string& srcField, 
+      CcsObjId dest, const string& destField, bool qFlag = 0);
   void doQuit( bool qFlag = 0 );
   void doStart( double runtime, bool qFlag = 0 );
   void doNonBlockingStart( double runtime, bool qFlag = 0 );
   void doReinit( bool qFlag = 0 );
   void doStop( bool qFlag = 0 );
   void doTerminate( bool qFlag = 0 );
-  void doMove( Id orig, Id newParent, bool qFlag = 0 );
-  Id doCopy( Id orig, Id newParent, string newName,
+  void doMove( CcsId orig, CcsId newParent, bool qFlag = 0 );
+  CcsId doCopy( CcsId orig, CcsId newParent, string newName,
       unsigned int n, bool toGlobal, bool copyExtMsgs, 
       bool qFlag = 0 );
-  ObjId doFind( string& path );
+  CcsObjId doFind( string& path );
   void doUseClock( string path, string field, unsigned int tick,
       bool qFlag = 0 );
-  Id doLoadModel( const string& fname, const string& modelpath, 
+  CcsId doLoadModel( const string& fname, const string& modelpath, 
       const string& solverClass = "", bool qFlag = 0 );
   int doWriteSBML( const string& fname, const string& modelpath,
       bool qFlag = 0 );
-  void doSyncDataHandler( Id tgt );
-  void doReacDiffMesh( Id baseCompartment );
+  void doSyncDataHandler( CcsId tgt );
+  void doReacDiffMesh( CcsId baseCompartment );
   void start( double runTime );
   //void recvGet( const Eref& e, const Qinfo* q, PrepackedBuffer pb );
   void doSetClock( unsigned int tickNum, double dt, bool qFlag = 0 );
@@ -75,7 +69,7 @@ class ShellProxy : public Shell {
   ////////////////////////////////////////////////////////////////
   // Utility functions
   ////////////////////////////////////////////////////////////////
-  bool adopt(Id parent, Id child);
+  bool adopt(CcsId parent, CcsId child);
 
   /* XXX where is this used?
      XXX redefine if necessary

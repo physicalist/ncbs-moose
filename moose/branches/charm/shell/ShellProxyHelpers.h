@@ -6,9 +6,15 @@
 
 using namespace std;
 
+#include "CcsId.h"
+#include "CcsObjId.h"
+#include "CcsDataId.h"
+
+#include "pup_stl.h"
+
 struct CreateStruct {
   string type_;
-  Id parent_;
+  CcsId parent_;
   string name_;
   vector<int> dimensions_;
   bool isGlobal_;
@@ -16,7 +22,7 @@ struct CreateStruct {
 
   CreateStruct() {}
 
-  CreateStruct(string type, Id parent, string name, vector<int> dimensions, bool isGlobal, bool qFlag) : 
+  CreateStruct(string type, CcsId parent, string name, vector<int> dimensions, bool isGlobal, bool qFlag) : 
     type_(type),
     name_(name),
     dimensions_(dimensions),
@@ -36,15 +42,15 @@ struct CreateStruct {
 
 struct AddMsgStruct {
   string msgType_;
-  ObjId src_;
+  CcsObjId src_;
   string srcField_;
-  ObjId dest_;
+  CcsObjId dest_;
   string destField_;
   bool qFlag_;
 
   AddMsgStruct() {}
 
-  AddMsgStruct(string msgType, ObjId &src, string srcField, ObjId dest, string destField, bool qFlag) : 
+  AddMsgStruct(string msgType, CcsObjId &src, string srcField, CcsObjId dest, string destField, bool qFlag) : 
     msgType_(msgType),
     src_(src),
     srcField_(srcField),
@@ -64,13 +70,13 @@ struct AddMsgStruct {
 };
 
 struct MoveStruct {
-  Id orig_;
-  Id newParent_;
+  CcsId orig_;
+  CcsId newParent_;
   bool qFlag_;
 
   MoveStruct() {}
 
-  MoveStruct(Id orig, Id newParent, bool qFlag) : 
+  MoveStruct(CcsId orig, CcsId newParent, bool qFlag) : 
     orig_(orig),
     newParent_(newParent),
     qFlag_(qFlag)
@@ -78,8 +84,8 @@ struct MoveStruct {
 };
 
 struct CopyStruct {
-  Id orig_;
-  Id newParent_;
+  CcsId orig_;
+  CcsId newParent_;
   string newName_;
   unsigned int n_;
   bool toGlobal_;
@@ -88,7 +94,7 @@ struct CopyStruct {
 
   CopyStruct() {}
 
-  CopyStruct(Id orig, Id newParent, string newName, unsigned int n, bool toGlobal, bool copyExtMsgs, bool qFlag) : 
+  CopyStruct(CcsId orig, CcsId newParent, string newName, unsigned int n, bool toGlobal, bool copyExtMsgs, bool qFlag) : 
     orig_(orig),
     newParent_(newParent),
     newName_(newName),
@@ -197,12 +203,12 @@ struct SetClockStruct {
 };
 
 struct AdoptStruct {
-  Id parent_;
-  Id child_;
+  CcsId parent_;
+  CcsId child_;
 
   AdoptStruct() {}
 
-  AdoptStruct(Id parent, Id child) : 
+  AdoptStruct(CcsId parent, CcsId child) : 
     parent_(parent),
     child_(child)
   {}

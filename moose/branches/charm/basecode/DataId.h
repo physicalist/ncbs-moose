@@ -22,6 +22,7 @@
 
 #ifdef USE_CHARMPP
 #include "pup.h"
+#include "CcsDataId.h"
 #endif
 
 class DataId
@@ -47,6 +48,12 @@ class DataId
 		DataId( unsigned long long data, unsigned int field, unsigned int numFieldBits )
 			: index_( ( data << numFieldBits ) + field )
 		{;}
+
+#ifdef USE_CHARMPP
+                DataId(const CcsDataId &id) : 
+                  index_(id.index_)
+                {}
+#endif
 
 		/**
 		 * Destructor. Nothing much to do here, move along.

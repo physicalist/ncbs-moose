@@ -13,14 +13,6 @@
 // Forward declaration needed for localGet()
 template< class T, class A > class GetOpFunc;
 
-#ifdef USE_CHARMPP
-#include "ccs-client.h"
-#include "../shell/CcsPackUnpack.h"
-#include "../basecode/SetGetWrapper.h"
-#include "../shell/ShellProxy.h"
-#include "pup_stl.h"
-#endif
-
 // XXX for the following operations, we must ensure that moose-core
 // isn't in the middle of some other operation when these are issued.
 // therefore, we need some buffering mechanism similar to the Shell
@@ -705,45 +697,6 @@ template< class L, class A > class LookupField: public SetGet2< L, A >
  */
 template< class A1, class A2, class A3 > class SetGet3: public SetGet
 {
-#ifdef USE_CHARMPP
-  private:
-  static string setHandlerString_;
-
-  public:
-  static void setHandlerString(const string &str){
-    setHandlerString_ = str;
-  }
-
-  static string setHandlerString(){
-    return setHandlerString_;
-  }
-#endif
-
-  public:
-#ifdef USE_CHARMPP
-  struct Args : public SetGet::Args {
-    A1 a1_;
-    A2 a2_;
-    A3 a3_;
-
-    Args(ObjId dest, string field, A1 a1, A2 a2, A3 a3) :
-      SetGet::Args(dest, field),
-      a1_(a1),
-      a2_(a2),
-      a3_(a3)
-    {}
-
-    Args() {}
-
-    void pup(PUP::er &p){
-      SetGet::Args::pup(p);
-      p | a1_;
-      p | a2_;
-      p | a3_;
-    }
-  };
-#endif
-
 
 	public:
 		SetGet3( const ObjId& dest )
@@ -754,34 +707,6 @@ template< class A1, class A2, class A3 > class SetGet3: public SetGet
 		 * Blocking, typed 'Set' call
 		 */
 
-		static bool set_ccs( const ObjId& dest, const string& field, 
-			         A1 arg1, A2 arg2, A3 arg3 ){
-#ifndef USE_CHARMPP
-                  return set(dest, field, arg1, arg2, arg3);
-#else
-                  unsigned int size;
-                  SetGet3::Args wrapper(dest, field, arg1, arg2, arg3);
-                  char *msg = CcsPackUnpack< SetGet3::Args >::pack(wrapper, size);
-                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet3::setHandlerString().c_str(), size, msg);
-                  delete[] msg;
-
-                  bool ret;
-                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
-                  return ret;
-#endif
-                }
-
-#ifdef USE_CHARMPP
-                static void set_handler(char *msg){
-                  SetGet3< A1, A2, A3 >::Args args;
-                  CcsPackUnpack< SetGet3< A1, A2, A3 >::Args >::unpack(msg, args);
-                  CmiFree(msg);
-
-                  bool ret = set(args.dest_, args.field_, args.a1_, args.a2_, args.a3_);
-                  CcsSendReply(sizeof(bool), &ret);
-                }
-
-#endif
 		static bool set( const ObjId& dest, const string& field, 
 			A1 arg1, A2 arg2, A3 arg3 )
 		{
@@ -835,59 +760,11 @@ template< class A1, class A2, class A3 > class SetGet3: public SetGet
 		}
 };
 
-template<typename A1, typename A2, typename A3>
-string SetGet3<A1, A2, A3>::setHandlerString_ = string("");
-
 /**
  * SetGet4 handles 4-argument Sets. It does not deal with Gets.
  */
 template< class A1, class A2, class A3, class A4 > class SetGet4: public SetGet
 {
-
-#ifdef USE_CHARMPP
-  private:
-  static string setHandlerString_;
-
-  public:
-  static void setHandlerString(const string &str){
-    setHandlerString_ = str;
-  }
-
-  static string setHandlerString(){
-    return setHandlerString_;
-  }
-#endif
-
-
-  public:
-#ifdef USE_CHARMPP
-  struct Args : public SetGet::Args {
-    A1 a1_;
-    A2 a2_;
-    A3 a3_;
-    A4 a4_;
-
-    Args(ObjId dest, string field, const A1 &a1, const A2 &a2, const A3 &a3, const A4 &a4) :
-      SetGet::Args(dest, field),
-      a1_(a1),
-      a2_(a2),
-      a3_(a3),
-      a4_(a4)
-    {}
-
-    Args() {}
-
-    void pup(PUP::er &p){
-      SetGet::Args::pup(p);
-      p | a1_;
-      p | a2_;
-      p | a3_;
-      p | a4_;
-    }
-  };
-#endif
-
-
 
 	public:
 		SetGet4( const ObjId& dest )
@@ -898,33 +775,6 @@ template< class A1, class A2, class A3, class A4 > class SetGet4: public SetGet
 		 * Blocking, typed 'Set' call
 		 */
 
-		static bool set_ccs( const ObjId& dest, const string& field, 
-			         A1 arg1, A2 arg2, A3 arg3, A4 arg4){
-#ifndef USE_CHARMPP
-                  return set(dest, field, arg1, arg2, arg3, arg4);
-#else
-                  unsigned int size;
-                  SetGet4::Args wrapper(dest, field, arg1, arg2, arg3, arg4);
-                  char *msg = CcsPackUnpack< SetGet4::Args >::pack(wrapper, size);
-                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet4::setHandlerString().c_str(), size, msg);
-                  delete[] msg;
-
-                  bool ret;
-                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
-                  return ret;
-#endif
-                }
-
-#ifdef USE_CHARMPP
-                static void set_handler(char *msg){
-                  SetGet4< A1, A2, A3, A4 >::Args args;
-                  CcsPackUnpack< SetGet4< A1, A2, A3, A4 >::Args >::unpack(msg, args);
-                  CmiFree(msg);
-
-                  bool ret = set(args.dest_, args.field_, args.a1_, args.a2_, args.a3_, args.a4_);
-                  CcsSendReply(sizeof(bool), &ret);
-                }
-#endif
 		static bool set( const ObjId& dest, const string& field, 
 			A1 arg1, A2 arg2, A3 arg3, A4 arg4 )
 		{
@@ -990,61 +840,12 @@ template< class A1, class A2, class A3, class A4 > class SetGet4: public SetGet
 		}
 };
 
-template<typename A1, typename A2, typename A3, typename A4>
-string SetGet4<A1, A2, A3, A4>::setHandlerString_ = string("");
-
 /**
  * SetGet5 handles 5-argument Sets. It does not deal with Gets.
  */
 template< class A1, class A2, class A3, class A4, class A5 > class SetGet5:
 	public SetGet
 {
-#ifdef USE_CHARMPP
-  private:
-  static string setHandlerString_;
-
-  public:
-  static void setHandlerString(const string str){
-    setHandlerString_ = str;
-  }
-
-  static string setHandlerString(){
-    return setHandlerString_;
-  }
-#endif
-
-  public:
-#ifdef USE_CHARMPP
-  struct Args : public SetGet::Args {
-    A1 a1_;
-    A2 a2_;
-    A3 a3_;
-    A4 a4_;
-    A5 a5_;
-
-    Args(ObjId dest, string field, const A1 &a1, const A2 &a2, const A3 &a3, const A4 &a4, const A5 &a5) :
-      SetGet::Args(dest, field),
-      a1_(a1),
-      a2_(a2),
-      a3_(a3),
-      a4_(a4),
-      a5_(a5)
-    {}
-
-    Args() {}
-
-    void pup(PUP::er &p){
-      SetGet::Args::pup(p);
-      p | a1_;
-      p | a2_;
-      p | a3_;
-      p | a4_;
-      p | a5_;
-    }
-  };
-#endif
-
-
 
 	public:
 		SetGet5( const ObjId& dest )
@@ -1054,33 +855,6 @@ template< class A1, class A2, class A3, class A4, class A5 > class SetGet5:
 		/**
 		 * Blocking, typed 'Set' call
 		 */
-		static bool set_ccs( const ObjId& dest, const string& field, 
-			         A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5){
-#ifndef USE_CHARMPP
-                  return set(dest, field, arg1, arg2, arg3, arg4, arg5);
-#else
-                  unsigned int size;
-                  SetGet5::Args wrapper(dest, field, arg1, arg2, arg3, arg4, arg5);
-                  char *msg = CcsPackUnpack< SetGet5::Args >::pack(wrapper, size);
-                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet5::setHandlerString().c_str(), size, msg);
-                  delete[] msg;
-
-                  bool ret;
-                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
-                  return ret;
-#endif
-                }
-
-#ifdef USE_CHARMPP
-                static void set_handler(char *msg){
-                  SetGet5< A1, A2, A3, A4, A5 >::Args args;
-                  CcsPackUnpack< SetGet5< A1, A2, A3, A4, A5 >::Args >::unpack(msg, args);
-                  CmiFree(msg);
-
-                  bool ret = set(args.dest_, args.field_, args.a1_, args.a2_, args.a3_, args.a4_, args.a5_);
-                  CcsSendReply(sizeof(bool), &ret);
-                }
-#endif
 
 		static bool set( const ObjId& dest, const string& field, 
 			                  A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5 )
@@ -1153,65 +927,12 @@ template< class A1, class A2, class A3, class A4, class A5 > class SetGet5:
 		}
 };
 
-template<typename A1, typename A2, typename A3, typename A4, typename A5>
-string SetGet5<A1, A2, A3, A4, A5>::setHandlerString_ = string("");
-
 /**
  * SetGet6 handles 6-argument Sets. It does not deal with Gets.
  */
 template< class A1, class A2, class A3, class A4, class A5, class A6 > class SetGet6:
 	public SetGet
 {
-#ifdef USE_CHARMPP
-  private:
-  static string setHandlerString_;
-
-  public:
-  static void setHandlerString(const string &str){
-    setHandlerString_ = str;
-  }
-
-  static string setHandlerString(){
-    return setHandlerString_;
-  }
-#endif
-
-  public:
-#ifdef USE_CHARMPP
-  struct Args : public SetGet::Args {
-    A1 a1_;
-    A2 a2_;
-    A3 a3_;
-    A4 a4_;
-    A5 a5_;
-    A6 a6_;
-
-    Args(ObjId dest, string field, 
-         const A1 &a1, const A2 &a2, const A3 &a3, const A4 &a4, const A5 &a5, const A6 &a6) :
-      SetGet::Args(dest, field),
-      a1_(a1),
-      a2_(a2),
-      a3_(a3),
-      a4_(a4),
-      a5_(a5),
-      a6_(a6)
-    {}
-
-    Args() {}
-
-    void pup(PUP::er &p){
-      SetGet::Args::pup(p);
-      p | a1_;
-      p | a2_;
-      p | a3_;
-      p | a4_;
-      p | a5_;
-      p | a6_;
-    }
-  };
-#endif
-
-
 
 	public:
 		SetGet6( const ObjId& dest )
@@ -1221,33 +942,6 @@ template< class A1, class A2, class A3, class A4, class A5, class A6 > class Set
 		/**
 		 * Blocking, typed 'Set' call
 		 */
-		static bool set_ccs( const ObjId& dest, const string& field, 
-			         A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5, A6 arg6){
-#ifndef USE_CHARMPP
-                  return set(dest, field, arg1, arg2, arg3, arg4, arg5, arg6);
-#else
-                  unsigned int size;
-                  SetGet6::Args wrapper(dest, field, arg1, arg2, arg3, arg4, arg5, arg6);
-                  char *msg = CcsPackUnpack< SetGet6::Args >::pack(wrapper, size);
-                  CcsSendBroadcastRequest(&SetGet::ccsServer_, SetGet6::setHandlerString().c_str(), size, msg);
-                  delete[] msg;
-
-                  bool ret;
-                  while(CcsRecvResponse(&SetGet::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
-                  return ret;
-                }
-#endif
-
-#ifdef USE_CHARMPP
-                static void set_handler(char *msg){
-                  SetGet6< A1, A2, A3, A4, A5, A6 >::Args args;
-                  CcsPackUnpack< SetGet6< A1, A2, A3, A4, A5, A6 >::Args >::unpack(msg, args);
-                  CmiFree(msg);
-
-                  bool ret = set(args.dest_, args.field_, args.a1_, args.a2_, args.a3_, args.a4_, args.a5_, args.a6_);
-                  CcsSendReply(sizeof(bool), &ret);
-                }
-#endif
 
 		static bool set( const ObjId& dest, const string& field, 
 			                  A1 arg1, A2 arg2, A3 arg3, A4 arg4, A5 arg5, A6 arg6 )
@@ -1326,9 +1020,6 @@ template< class A1, class A2, class A3, class A4, class A5, class A6 > class Set
 			return "";
 		}
 };
-
-template<typename A1, typename A2, typename A3, typename A4, typename A5, typename A6>
-string SetGet6<A1, A2, A3, A4, A5, A6>::setHandlerString_ = string("");
 
 
 
