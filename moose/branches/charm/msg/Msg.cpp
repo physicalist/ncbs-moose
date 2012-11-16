@@ -24,7 +24,6 @@
 // Static field declaration.
 vector< Msg* > Msg::msg_;
 vector< MsgId > Msg::garbageMsg_;
-const MsgId Msg::bad = 0;
 const MsgId Msg::setMsg = 1;
 Id Msg::msgManagerId_;
 vector< Id > msgMgrs;

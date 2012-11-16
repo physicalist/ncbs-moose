@@ -12,6 +12,31 @@
 
 class Neutral
 {
+
+  // saves only the Id's of the children visited
+  class IdChildVisitor {
+    vector<Id> *toPopulate_;
+
+    public:
+    IdChildVisitor(vector<Id> *toPopulate) : 
+      toPopulate_(toPopulate)
+    {}
+
+    void child(Element *e);
+  };
+
+  // saves both the Id and name of each child 
+  class NameChildVisitor {
+    vector< string > *toPopulate_;
+
+    public:
+    NameChildVisitor(vector< string > *toPopulate) : 
+      toPopulate_(toPopulate)
+    {}
+
+    void child(Element *e);
+  };
+
 	public:
 		friend istream& operator >>( istream& s, Neutral& d );
 		friend ostream& operator <<( ostream& s, const Neutral& d );
@@ -89,6 +114,11 @@ class Neutral
 		 * Looks up all the Element children of the current Element
 		 */
 		vector< Id > getChildren( const Eref& e, const Qinfo* q ) const;
+
+		/**
+		 * Same as above, but returns names
+		 */
+		vector< string > getChildrenNames( const Eref& e, const Qinfo* q ) const;
 
 		/**
 		 * Builds a vector of all descendants of e
@@ -210,9 +240,17 @@ class Neutral
 		static const Cinfo* initCinfo();
 
 		/**
+		 * return ids of all children of e
+                 * uses templated version (below) internally
+                 */
+		static void children( const Eref& e, vector< Id >& ret);
+
+		/**
 		 * return ids of all the children in ret.
+                 * visitor processes the visited children
 		 */
-		static void children( const Eref& e, vector< Id >& ret );
+                template<typename ChildVisitorClass>
+		static void children( const Eref& e, ChildVisitorClass &visitor);
 
 		/**
 		 * Finds the path of element e

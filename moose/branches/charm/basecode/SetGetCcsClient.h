@@ -257,7 +257,7 @@ class FieldCcsClient : public SetGet1CcsClient<A> {
     CcsPackUnpack< SetGet1CcsWrapper< A > >::unpack(msg, ret);
     // msg will point to a malloc()ed buffer after CcsRecvResponseMsg
     free(msg);
-    CkAssert(ret.hasData_);
+    assert(ret.hasData_);
     return ret.a1_;
   }
 

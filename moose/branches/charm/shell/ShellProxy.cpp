@@ -22,13 +22,14 @@
 #include "../basecode/CcsPackUnpack.h"
 #include "ShellProxy.h"
 #include "ShellProxyHelpers.h"
-#include "charm++.h"
+#include "converse.h"
 #include "pup.h"
 #include "pup_stl.h"
 
 #include "../basecode/svn_revision.h"
 
 #include <utility>
+#include <iostream>
 
 const char *ShellProxy::setCweHandlerString = "setCwe"; 
 const char *ShellProxy::getCweHandlerString = "getCwe"; 
@@ -51,6 +52,12 @@ const char *ShellProxy::doReacDiffMeshHandlerString = "doReacDiffMesh";
 const char *ShellProxy::doSetClockHandlerString = "doSetClock"; 
 const char *ShellProxy::doCleanSimulationHandlerString = "doCleanSimulation"; 
 const char *ShellProxy::doAdoptHandlerString = "doAdopt"; 
+
+const char *ShellProxy::doGetPathHandlerString = "doGetPath"; 
+const char *ShellProxy::doGetObjIdPathHandlerString = "doGetObjIdPath"; 
+const char *ShellProxy::doGetIsValidHandlerString = "doGetIsValid"; 
+const char *ShellProxy::doWildcardHandlerString = "doWildcard"; 
+const char *ShellProxy::doGetMsgMgrHandlerString = "doGetMsgMgr"; 
 
 
 
@@ -142,7 +149,7 @@ void ShellProxy::doStart(double runtime, bool qFlag){
 
 void ShellProxy::doNonBlockingStart(double runtime, bool qFlag){
   // not supported for the time being
-  CkPrintf("ShellProxy::doNonBlockingStart() not supported\n");
+  std::cout << "ShellProxy::doNonBlockingStart() not supported" << endl;
 }
 
 void ShellProxy::doReinit(bool qFlag){
@@ -278,4 +285,62 @@ bool ShellProxy::adopt(CcsId parent, CcsId child){
   return b;
 }
 
+string ShellProxy::doGetObjIdPath(const CcsObjId &id){
+  CcsSendRequest(&shellServer_, ShellProxy::doGetObjIdPathHandlerString, 0, sizeof(CcsObjId), &id);
+
+  string ret;
+  int msgSize;
+  char *msg;
+  while(CcsRecvResponseMsg(&shellServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) < 0);
+
+  CcsPackUnpack<string>::unpack(msg, ret);
+
+  free(msg);
+
+  return ret;
+}
+
+string ShellProxy::doGetPath(const CcsId &id){
+  CcsSendRequest(&shellServer_, ShellProxy::doGetPathHandlerString, 0, sizeof(CcsId), &id);
+
+  string ret;
+  int msgSize;
+  char *msg;
+  while(CcsRecvResponseMsg(&shellServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) < 0);
+
+  CcsPackUnpack<string>::unpack(msg, ret);
+
+  free(msg);
+
+  return ret;
+}
+
+bool ShellProxy::doGetIsValid(const CcsId &id){
+  CcsSendRequest(&shellServer_, ShellProxy::doGetIsValidHandlerString, 0, sizeof(CcsId), &id);
+
+  bool ret;
+  while(CcsRecvResponse(&shellServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) < 0);
+
+  return ret;
+}
+
+void ShellProxy::wildcard(string path, vector<CcsId> &list){
+  unsigned int size;
+  char *msg = CcsPackUnpack<string>::pack(path, size);
+  CcsSendRequest(&shellServer_, ShellProxy::doWildcardHandlerString, 0, size, msg);
+
+  int msgSize;
+  while(CcsRecvResponseMsg(&shellServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) < 0);
+
+  CcsPackUnpack<vector<CcsId> >::unpack(msg, list);
+  free(msg);
+}
+
+CcsObjId ShellProxy::doGetMsgMgr(MsgId mid){
+  CcsSendRequest(&shellServer_, ShellProxy::doGetMsgMgrHandlerString, 0, sizeof(MsgId), &mid);
+
+  CcsObjId oid;
+  while(CcsRecvResponse(&shellServer_, sizeof(CcsObjId), &oid, MOOSE_CCS_TIMEOUT) < 0);
+  return oid;
+}
 

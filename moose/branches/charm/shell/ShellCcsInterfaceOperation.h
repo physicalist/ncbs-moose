@@ -205,5 +205,46 @@ class AdoptOperation : public ShellCcsInterfaceOperation {
   void exec(Shell *shell);
 };
 
+class GetPathOperation : public ShellCcsInterfaceOperation {
+  public:
+  GetPathOperation(char *msg, CcsDelayedReply delayedReply) : 
+    ShellCcsInterfaceOperation(msg, delayedReply)
+  {}
+  void exec(Shell *shell);
+};
+
+
+class GetObjIdPathOperation : public ShellCcsInterfaceOperation {
+  public:
+  GetObjIdPathOperation(char *msg, CcsDelayedReply delayedReply) : 
+    ShellCcsInterfaceOperation(msg, delayedReply)
+  {}
+  void exec(Shell *shell);
+};
+
+class GetIsValidOperation : public ShellCcsInterfaceOperation {
+  public:
+  GetIsValidOperation(char *msg, CcsDelayedReply delayedReply) : 
+    ShellCcsInterfaceOperation(msg, delayedReply)
+  {}
+  void exec(Shell *shell);
+};
+
+class WildcardOperation : public ShellCcsInterfaceOperation {
+  public:
+  WildcardOperation(char *msg, CcsDelayedReply delayedReply) : 
+    ShellCcsInterfaceOperation(msg, delayedReply)
+  {}
+  void exec(Shell *shell);
+};
+
+class MsgMgrOperation : public ShellCcsInterfaceOperation {
+  public:
+  MsgMgrOperation(char *msg, CcsDelayedReply delayedReply) : 
+    ShellCcsInterfaceOperation(msg, delayedReply)
+  {}
+  void exec(Shell *shell);
+};
+
 
 #endif // MOOSE_SHELL_CCS_INTERFACE_OPERATION_H

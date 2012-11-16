@@ -63,6 +63,12 @@ class ShellCcsInterface : public CBase_ShellCcsInterface {
   static void doCleanSimulation(char *msg);
   static void doAdopt(char *msg);
 
+  static void doGetPath(char *msg);
+  static void doGetObjIdPath(char *msg);
+  static void doGetIsValid(char *msg);
+  static void doWildcard(char *msg);
+  static void doGetMsgMgr(char *msg);
+
   private:
   // for the benefit of the CCS interface functions
   static Shell *getLocalShell();

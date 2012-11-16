@@ -12,8 +12,7 @@
 
 /*
 */
-class DummyFinfo : public Finfo
-{
+class DummyFinfo : public Finfo {
 	public:
 		~DummyFinfo();
 		DummyFinfo( const string& name, const string& doc);

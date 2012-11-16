@@ -109,6 +109,15 @@ class Eref;
 #include "../basecode/CcsId.h"
 #include "../basecode/CcsDataId.h"
 #include "../basecode/CcsObjId.h"
+#include "../basecode/Cinfo.h"
+#include "../basecode/Finfo.h"
+#include "../utility/utility.h"
+#include "../basecode/MsgId.h"
+class ProcInfo;
+class Qinfo;
+class ObjId;
+#include "../msg/Msg.h"
+#include "../randnum/randnum.h"
 #if 0
 #include "../basecode/ThreadId.h"
 #include "../basecode/BindIndex.h"
@@ -326,10 +335,18 @@ static struct module_state _state;
     
     // Macro to create the Shell * out of shellId
 #ifndef USE_CHARMPP
+
 #define SHELLPTR reinterpret_cast<Shell*>(get_shell(0, NULL).eref().data())    
+
 #else
-static Shell *charm_pymoose_shellPtr = NULL;
+
+static ShellProxy *charm_pymoose_shellPtr = NULL;
 #define SHELLPTR charm_pymoose_shellPtr
+
+ShellProxy *getParserShellProxy(){
+  return SHELLPTR;
+}
+
 #endif
 
     ///////////////////////////////////////////////////////////////////////////
@@ -2076,7 +2093,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
             return -2;
         }
         // First see if there is an existing object with at path
-        instance->oid_ = CcsObjId(path);
+        instance->oid_ = CcsObjId(string(path));
         if (!(CcsObjId::bad() == instance->oid_)){
             return 0;
         }
@@ -2784,7 +2801,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 vector < vector <unsigned> > * _value = (vector < vector <unsigned> > *)to_cpp< vector < vector <unsigned> > >(value);
                 if (!PyErr_Occurred()){
                 // bcast
-                    ret = Field < vector < vector <unsigned> > >::set(self->oid_, string(field), *_value);
+                    ret = FieldCcsClient < vector < vector <unsigned> > >::set(self->oid_, string(field), *_value);
                 }
                 delete _value;
                 break;
@@ -2793,7 +2810,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 vector < vector <int> > * _value = (vector < vector <int> > *)to_cpp< vector < vector <int> > >(value);
                 if (!PyErr_Occurred()){
                 // bcast
-                    ret = Field < vector < vector <int> > >::set(self->oid_, string(field), *_value);
+                    ret = FieldCcsClient < vector < vector <int> > >::set(self->oid_, string(field), *_value);
                 }
                 delete _value;
                 break;
@@ -2802,7 +2819,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
                 vector < vector <double> > * _value = (vector < vector <double> > *)to_cpp< vector < vector <double> > >(value);
                 if (!PyErr_Occurred()){
                 // bcast
-                    ret = Field < vector < vector <double> > >::set(self->oid_, string(field), *_value);
+                    ret = FieldCcsClient < vector < vector <double> > >::set(self->oid_, string(field), *_value);
                 }
                 delete _value;
                 break;
@@ -3455,10 +3472,13 @@ static Shell *charm_pymoose_shellPtr = NULL;
                             "connect failed: check field names and type compatibility.");
             return NULL;
         }
+#if 0
         const Msg* msg = Msg::getMsg(mid);
         Eref mer = msg->manager();
-        _ObjId* msgMgrId = (_ObjId*)PyObject_New(_ObjId, &ObjIdType);        
         msgMgrId->oid_ = mer.objId();
+#endif
+        _ObjId* msgMgrId = (_ObjId*)PyObject_New(_ObjId, &ObjIdType);        
+        msgMgrId->oid_ = SHELLPTR->doGetMsgMgr(mid);
         return (PyObject*)msgMgrId;
     }
 
@@ -4033,10 +4053,13 @@ static Shell *charm_pymoose_shellPtr = NULL;
             PyErr_SetString(PyExc_NameError, "connect failed: check field names and type compatibility.");
             return NULL;
         }
+#if 0
         const Msg* msg = Msg::getMsg(mid);
         Eref mer = msg->manager();
-        _ObjId * msgMgrId = (_ObjId*)PyObject_New(_ObjId, &ObjIdType);
         msgMgrId->oid_ = mer.objId();
+#endif
+        _ObjId * msgMgrId = (_ObjId*)PyObject_New(_ObjId, &ObjIdType);
+        msgMgrId->oid_ = SHELLPTR->doGetMsgMgr(mid);
         return (PyObject*) msgMgrId;
     }
 
@@ -4362,10 +4385,13 @@ static Shell *charm_pymoose_shellPtr = NULL;
     static int defineAllClasses(PyObject * module_dict)
     {
         // bcast
-        static vector <CcsId> classes(FieldCcsClient< vector<CcsId> >::get(CcsObjId("/classes"),
-                                                            "children"));
+        static vector <CcsId> classes(FieldCcsClient< vector<CcsId> >::get(CcsObjId(string("/classes")), "children"));
+        static vector <string> classNames(FieldCcsClient< vector<string> >::get(CcsObjId(string("/classes")), "childrenNames"));
+
+        assert(classes.size() == classNames.size());
+
         for (unsigned ii = 0; ii < classes.size(); ++ii){
-            const string& class_name = classes[ii].element()->getName();
+            const string& class_name = classNames[ii];
             const Cinfo * cinfo = Cinfo::find(class_name);
             if (!cinfo){
                 cerr << "Error: no cinfo found with name " << class_name << endl;
@@ -4662,7 +4688,7 @@ static Shell *charm_pymoose_shellPtr = NULL;
         PyObject * obj = NULL;
         CcsObjId oid;
         if (PyArg_ParseTuple(args, "s", &path)){
-            oid = CcsObjId(path);
+            oid = CcsObjId(string(path));
             if (CcsObjId::bad() == oid){
                 PyErr_SetString(PyExc_ValueError, "moose_element: path does not exist");
                 return NULL;

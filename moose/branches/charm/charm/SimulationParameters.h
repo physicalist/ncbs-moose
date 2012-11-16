@@ -1,7 +1,8 @@
 #ifndef MOOSE_SIMULATION_PARAMETERS
 #define MOOSE_SIMULATION_PARAMETERS
 
-#include "charm++.h"
+#include "converse.h"
+#include "pup.h"
 
 struct SimulationParameters {
   double dt;

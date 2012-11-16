@@ -1,7 +1,7 @@
 #ifndef MOOSE_SET_GET_WRAPPER_H
 #define MOOSE_SET_GET_WRAPPER_H
 
-#include "charm++.h"
+#include "converse.h"
 #include "pup.h"
 
 template<typename A1>

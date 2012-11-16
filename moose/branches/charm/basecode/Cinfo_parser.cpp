@@ -16,7 +16,11 @@ static DummyFinfo dummy(
 		"dummy", 
 		"This Finfo is a dummy. If you are reading this you have used an invalid index");
 
-
+map<string, Cinfo*>& Cinfo::cinfoMap()
+{
+	static map<std::string, Cinfo*> lookup_;
+	return lookup_;
+}
 
 const Cinfo* Cinfo::find( const string& name )
 {
@@ -29,6 +33,14 @@ const Cinfo* Cinfo::find( const string& name )
 const Cinfo* Cinfo::baseCinfo() const
 {
 	return baseCinfo_;
+}
+
+string Cinfo::getBaseClass() const 
+{
+	if ( baseCinfo_ )
+		return baseCinfo_->name();
+	else
+		return "none";
 }
 
 const std::string& Cinfo::name() const
@@ -160,6 +172,32 @@ unsigned int Cinfo::getNumFieldElementFinfo() const
 	else 
 		return fieldElementFinfos_.size();
 }
+
+unsigned int Cinfo::getNumSrcFinfo() const
+{
+	if ( baseCinfo_ )
+		return srcFinfos_.size() + baseCinfo_->getNumSrcFinfo();
+	else 
+		return srcFinfos_.size();
+}
+
+unsigned int Cinfo::getNumValueFinfo() const
+{
+	if ( baseCinfo_ )
+		return valueFinfos_.size() + baseCinfo_->getNumValueFinfo();
+	else 
+		return valueFinfos_.size();
+}
+
+unsigned int Cinfo::getNumSharedFinfo() const
+{
+	if ( baseCinfo_ )
+		return sharedFinfos_.size() + baseCinfo_->getNumSharedFinfo();
+	else 
+		return sharedFinfos_.size();
+}
+
+
 
 // finfo::name
 

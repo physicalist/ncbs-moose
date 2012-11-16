@@ -50,6 +50,11 @@ const Cinfo* Neutral::initCinfo()
 		"vector of ObjIds listing all children of current object", 
 			&Neutral::getChildren );
 
+	static ReadOnlyElementValueFinfo< Neutral, vector< string > > childrenNames( 
+		"childrenNames",
+		"vector of ObjIds and names of all children of current object", 
+			&Neutral::getChildrenNames );
+
 	static ReadOnlyElementValueFinfo< Neutral, string > path( 
 		"path",
 		"text path for object", 
@@ -171,6 +176,7 @@ const Cinfo* Neutral::initCinfo()
 		&me,					// ReadOnlyValue
 		&parent,				// ReadOnlyValue
 		&children,				// ReadOnlyValue
+		&childrenNames, 			// ReadOnlyValue
 		&path,					// ReadOnlyValue
 		&className,				// ReadOnlyValue
 		&linearSize,			// ReadOnlyValue
@@ -282,9 +288,23 @@ vector< Id > Neutral::getChildren( const Eref& e, const Qinfo* q ) const
 	return ret;
 }
 
-// Static function
-void Neutral::children( const Eref& e, vector< Id >& ret )
+void Neutral::children( const Eref& e, vector< Id >& ret){
+  IdChildVisitor visitor(&ret);
+  children( e, visitor ); 
+}
+
+vector< string > Neutral::getChildrenNames( const Eref& e, const Qinfo* q ) const
 {
+  vector< string > ret;
+  NameChildVisitor visitor(&ret);
+
+  children( e, visitor);
+  return ret;
+}
+
+// Static function
+template<typename ChildVisitorClass>
+void Neutral::children( const Eref& e, ChildVisitorClass &visitor){
 	static const Finfo* pf = neutralCinfo->findFinfo( "parentMsg" );
 	static const DestFinfo* pf2 = dynamic_cast< const DestFinfo* >( pf );
 	static const FuncId pafid = pf2->getFid();
@@ -299,9 +319,17 @@ void Neutral::children( const Eref& e, vector< Id >& ret )
 		if ( i->fid == pafid ) {
 			const Msg* m = Msg::getMsg( i->mid );
 			assert( m );
-			ret.push_back( m->e2()->id() );
+                        visitor.child(m->e2());
 		}
 	}
+}
+
+void Neutral::IdChildVisitor::child(Element *e){
+  toPopulate_->push_back(e->id());
+}
+
+void Neutral::NameChildVisitor::child(Element *e){
+  toPopulate_->push_back(e->getName());
 }
 
 /*

@@ -10,13 +10,15 @@ HEADERS = moosemodule.h
 
 OBJ = moosemodule.o
 
-PYMOOSE_DEPS = moosemodule.cpp $(OBJ) $(HEADERS) ../basecode/main.cpp ../utility/_utility.o ../basecode/_basecode_pymoose.o
+PYMOOSE_DEPS = moosemodule.cpp $(OBJ) $(HEADERS) ../basecode/main.cpp ../utility/_utility.o 
 
-ifeq ($(BUILD), charm++)
+ifneq ($(BUILD), charm++)
+PYMOOSE_DEPS += ../basecode/_basecode_pymoose.o
+else
 PYMOOSE_DEPS += MooseParams.h ../shell/ShellProxy.h
 endif
 
-$(TARGET): $(PYMOOSE_DEPS) 
+$(TARGET): $(PYMOOSE_DEPS) ../basecode/CcsPackUnpack.h 
 	$(LD) -r -o $(TARGET) $(OBJ) $(LDFLAGS)
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $< -c
