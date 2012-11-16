@@ -10,12 +10,6 @@
 #include <typeinfo>
 #include "header.h"
 
-Finfo::Finfo( const string& name, const string& doc )
-	: name_( name ), doc_( doc )
-{
-	;
-}
-
 ////////////////////////////////////////////////////////////////
 // MOOSE class functions
 ////////////////////////////////////////////////////////////////
@@ -108,20 +102,4 @@ vector< string > Finfo::dest( ) const
 }
 
 
-// Default virtual functions.
-string Finfo::rttiType() const
-{
-	return typeid( *this ).name();
-}
 
-vector< string > Finfo::innerSrc() const
-{
-	static vector< string > ret;
-	return ret;
-}
-
-vector< string > Finfo::innerDest() const
-{
-	static vector< string > ret;
-	return ret;
-}

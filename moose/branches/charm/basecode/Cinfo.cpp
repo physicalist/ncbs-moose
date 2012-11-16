@@ -236,12 +236,6 @@ ThreadExecBalancer Cinfo::internalThreadBalancer() const
 ////////////////////////////////////////////////////////////////////////
 // Private functions.
 ////////////////////////////////////////////////////////////////////////
-map<string, Cinfo*>& Cinfo::cinfoMap()
-{
-	static map<std::string, Cinfo*> lookup_;
-	return lookup_;
-}
-
 
 
 /*
@@ -365,14 +359,6 @@ static const Cinfo* cinfoCinfo = Cinfo::initCinfo();
 // Field functions
 ///////////////////////////////////////////////////////////////////
 
-string Cinfo::getBaseClass() const 
-{
-	if ( baseCinfo_ )
-		return baseCinfo_->name();
-	else
-		return "none";
-}
-
 ////////////////////////////////////////////////////////////////////
 // Below we have a set of functions for getting various categories of
 // Finfos. These also return the base class finfos. The baseclass finfos 
@@ -380,30 +366,6 @@ string Cinfo::getBaseClass() const
 // the indices of the new finfos, but I shouldn't be looking them up 
 // by index anyway.
 ////////////////////////////////////////////////////////////////////
-unsigned int Cinfo::getNumSrcFinfo() const
-{
-	if ( baseCinfo_ )
-		return srcFinfos_.size() + baseCinfo_->getNumSrcFinfo();
-	else 
-		return srcFinfos_.size();
-}
-
-unsigned int Cinfo::getNumValueFinfo() const
-{
-	if ( baseCinfo_ )
-		return valueFinfos_.size() + baseCinfo_->getNumValueFinfo();
-	else 
-		return valueFinfos_.size();
-}
-
-unsigned int Cinfo::getNumSharedFinfo() const
-{
-	if ( baseCinfo_ )
-		return sharedFinfos_.size() + baseCinfo_->getNumSharedFinfo();
-	else 
-		return sharedFinfos_.size();
-}
-
 ////////////////////////////////////////////////////////////////////
 void Cinfo::setNumFinfo( unsigned int val ) // Dummy function
 {

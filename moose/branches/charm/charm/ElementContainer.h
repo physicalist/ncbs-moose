@@ -5,6 +5,8 @@
 #include <string>
 using namespace std;
 
+#include "charm++.h"
+
 #include "../basecode/ProcInfo.h"
 class Element;
 #include "../basecode/DataId.h"

@@ -48,6 +48,13 @@ ShellCcsInterface::ShellCcsInterface(const CkCallback &cb){
   CcsRegisterHandler(ShellProxy::doCleanSimulationHandlerString, (CmiHandler) ShellCcsInterface::doCleanSimulation);
   CcsRegisterHandler(ShellProxy::doAdoptHandlerString, (CmiHandler) ShellCcsInterface::doAdopt);
 
+
+  CcsRegisterHandler(ShellProxy::doGetPathHandlerString, (CmiHandler) ShellCcsInterface::doGetPath);
+  CcsRegisterHandler(ShellProxy::doGetObjIdPathHandlerString, (CmiHandler) ShellCcsInterface::doGetObjIdPath);
+  CcsRegisterHandler(ShellProxy::doGetIsValidHandlerString, (CmiHandler) ShellCcsInterface::doGetIsValid);
+  CcsRegisterHandler(ShellProxy::doWildcardHandlerString, (CmiHandler) ShellCcsInterface::doWildcard);
+  CcsRegisterHandler(ShellProxy::doGetMsgMgrHandlerString, (CmiHandler) ShellCcsInterface::doGetMsgMgr);
+
   // register reducer merge functions
   CcsSetMergeFn(ShellProxy::setCweHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
   CcsSetMergeFn(ShellProxy::getCweHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsId> >);
@@ -184,6 +191,26 @@ void ShellCcsInterface::doCleanSimulation(char *msg){
 
 void ShellCcsInterface::doAdopt(char *msg){
   process<AdoptOperation>(msg);
+}
+
+void ShellCcsInterface::doGetPath(char *msg){
+  process<GetPathOperation>(msg);
+}
+
+void ShellCcsInterface::doGetObjIdPath(char *msg){
+  process<GetObjIdPathOperation>(msg);
+}
+
+void ShellCcsInterface::doGetIsValid(char *msg){
+  process<GetIsValidOperation>(msg);
+}
+
+void ShellCcsInterface::doWildcard(char *msg){
+  process<WildcardOperation>(msg);
+}
+
+void ShellCcsInterface::doGetMsgMgr(char *msg){
+  process<MsgMgrOperation>(msg);
 }
 
 Shell *ShellCcsInterface::getLocalShell(){

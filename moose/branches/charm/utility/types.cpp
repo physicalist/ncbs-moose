@@ -52,9 +52,9 @@ char shortType(string name)
         typemap.insert(pair<string, char>("float", 'f'));
         typemap.insert(pair<string, char>("double", 'd'));
         typemap.insert(pair<string, char>("string", 's'));
-        typemap.insert(pair<string, char>("Id", 'x'));
-        typemap.insert(pair<string, char>("ObjId", 'y'));
-        typemap.insert(pair<string, char>("DataId", 'z'));
+        typemap.insert(pair<string, char>("CcsId", 'x'));
+        typemap.insert(pair<string, char>("CcsObjId", 'y'));
+        typemap.insert(pair<string, char>("CcsDataId", 'z'));
         typemap.insert(pair<string, char>("vector<char>", 'C'));
         typemap.insert(pair<string, char>("vector<int>", 'v'));
         typemap.insert(pair<string, char>("vector<short>", 'w'));
@@ -64,9 +64,9 @@ char shortType(string name)
         typemap.insert(pair<string, char>("vector<float>", 'F'));
         typemap.insert(pair<string, char>("vector<double>", 'D'));
         typemap.insert(pair<string, char>("vector<string>", 'S'));
-        typemap.insert(pair<string, char>("vector<Id>", 'X'));
-        typemap.insert(pair<string, char>("vector<ObjId>", 'Y'));
-        typemap.insert(pair<string, char>("vector<DataId", 'Z'));
+        typemap.insert(pair<string, char>("vector<CcsId>", 'X'));
+        typemap.insert(pair<string, char>("vector<CcsObjId>", 'Y'));
+        typemap.insert(pair<string, char>("vector<CcsDataId", 'Z'));
         typemap.insert(pair<string, char>("void", '_'));
         typemap.insert(pair<string, char>("vector< vector<unsigned int> >", 'P'));
         typemap.insert(pair<string, char>("vector< vector<int> >", 'Q'));

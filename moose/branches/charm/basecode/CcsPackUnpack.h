@@ -1,9 +1,12 @@
 #ifndef MOOSE_CCS_PACK_UNPACK_H
 #define MOOSE_CCS_PACK_UNPACK_H
 
-#include "charm++.h"
 #include "converse.h"
 #include "conv-ccs.h"
+#include "pup.h"
+#include "pup_stl.h"
+
+#include <assert.h>
 
 template<typename T>
 class CcsPackUnpack {
@@ -33,7 +36,7 @@ class CcsPackUnpack {
     // message the data embedded within it. 
     static T *cast(const char *msg){
       CcsImplHeader *header = (CcsImplHeader *)(msg + CmiReservedHeaderSize);
-      CkAssert(ChMessageInt(header->len) == sizeof(T));
+      assert(ChMessageInt(header->len) == sizeof(T));
       return (T *)(header + 1);
     }
 

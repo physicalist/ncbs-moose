@@ -71,6 +71,22 @@ class ShellProxy {
   ////////////////////////////////////////////////////////////////
   bool adopt(CcsId parent, CcsId child);
 
+  // replacement for Id::path(); sends
+  // a CCS request, which calls Neutral::path(), so that
+  // we don't need to include any of that functionality
+  // in the parser.
+  string doGetPath(const CcsId &id);
+  string doGetObjIdPath(const CcsObjId &id);
+
+  // replacement for Id::isValid
+  bool doGetIsValid(const CcsId &id);
+
+  // invokes Shell::wildcard
+  void wildcard(string path, vector<CcsId> &list);
+
+  // invokes Msg::getMsg(mid)->manager().objId();
+  CcsObjId doGetMsgMgr(MsgId mid);
+
   /* XXX where is this used?
      XXX redefine if necessary
   /// Digests outcome of calculation for max index of ragged array
@@ -105,6 +121,14 @@ class ShellProxy {
   static const char *doSetClockHandlerString; 
   static const char *doCleanSimulationHandlerString; 
   static const char *doAdoptHandlerString; 
+
+  // these are additions to keep parser separate
+  // from moose core
+  static const char *doGetPathHandlerString; 
+  static const char *doGetObjIdPathHandlerString; 
+  static const char *doGetIsValidHandlerString; 
+  static const char *doWildcardHandlerString; 
+  static const char *doGetMsgMgrHandlerString; 
 };
 
 

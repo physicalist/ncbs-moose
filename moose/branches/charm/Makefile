@@ -124,7 +124,7 @@ endif
 
 ifeq ($(BUILD), charm++)
 USE_GSL = 1
-CXXFLAGS = -g -O0 -DDO_UNIT_TESTS -DUSE_CHARMPP -DUSE_GSL
+CXXFLAGS = -g -O0 -DDO_UNIT_TESTS -DUSE_CHARMPP -DUSE_GSL #-DSTANDALONE_PUP
 USE_CHARMPP = 1
 endif
 
@@ -268,9 +268,9 @@ ifdef USE_CHARMPP
 # set CHARM_PATH 
         CHARM_PATH = $(HOME)/work/charm-soc/charm/net-linux
         CXX = $(CHARM_PATH)/bin/charmc 
-        LIBS += -lccs-client $(CHARM_PATH)/lib/libmemory-default.o $(CHARM_PATH)/lib/libthreads-default.o -lck -lconv-cplus-y -lconv-core -lconv-util -lckqt  
+        LIBS += -lccs-client 
         LINK_CXX = g++
-        LDFLAGS += -L$(CHARM_PATH)/lib_so -L$(CHARM_PATH)/lib
+        LDFLAGS += -L$(CHARM_PATH)/lib
 else 
         CXX = g++ 
         LINK_CXX = $(CXX)
@@ -384,7 +384,8 @@ pymoose: SUBDIR += pymoose
 
 ifneq ($(BUILD),charm++)
 pymoose: OBJLIBS += pymoose/_pymoose.o basecode/_basecode_pymoose.o\
-                    basecode/Cinfo_parser.o basecode/Finfo_parser.o 
+                    basecode/Cinfo_parser.o basecode/Finfo_parser.o\
+                    basecode/CcsId.o
 pymoose: OBJLIBS := $(filter-out basecode/_basecode.o,$(OBJLIBS))
 export CXXFLAGS
 
@@ -398,11 +399,25 @@ basecode/_basecode_pymoose.o:
 	$(MAKE) -C basecode pymoose 
 	@echo "_basecode_pymoose.o built"
 else
-PYMOOSE_OBJS = $(OBJLIBS)
+PYMOOSE_OBJS = basecode/CcsId.o \
+               basecode/CcsObjId.o \
+               basecode/SetGetCcsClient.o \
+               basecode/Cinfo_parser.o \
+               basecode/Finfo_parser.o \
+               basecode/DummyFinfo.o \
+               msg/Msg_parser.o \
+               randnum/_randnum.o \
+               utility/strutil.o \
+               utility/types.o \
+               utility/setupenv.o \
+               utility/numutil.o \
+               shell/ShellProxy.o
+
+PYMOOSE_LIBS = -lccs-client -lconv-util -lconv-core
 
 python/moose/_moose.so: $(PYMOOSE_OBJS) libs
 	$(MAKE) -C pymoose
-	$(LINK_CXX) -shared $(LDFLAGS) $(CXXFLAGS) $(PYMOOSE_OBJS) pymoose/_pymoose.o $(LIBS) -o $@ 
+	$(LINK_CXX) $(LDFLAGS) $(CXXFLAGS) pymoose/_pymoose.o $(PYMOOSE_OBJS) $(PYMOOSE_LIBS) -o $@  
 	@echo "pymoose module built."
 
 endif

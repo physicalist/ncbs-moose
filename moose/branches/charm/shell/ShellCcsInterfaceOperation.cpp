@@ -231,4 +231,62 @@ void AdoptOperation::exec(Shell *shell){
   CcsSendDelayedReply(delayedReply_, sizeof(bool), &r);
 }
 
+// can't do this in parser, since we want to keep 
+// it separate from moose core
+void GetPathOperation::exec(Shell *shell){
+  CcsId *ccsId = CcsPackUnpack<CcsId>::cast(msg_);
+  string ret = Id(*ccsId).path();
+
+  unsigned int size;
+  char *msg = CcsPackUnpack<string>::pack(ret, size);
+  CcsSendDelayedReply(delayedReply_, size, msg);
+
+  delete[] msg;
+}
+
+void GetObjIdPathOperation::exec(Shell *shell){
+  CcsObjId *ccsObjId = CcsPackUnpack<CcsObjId>::cast(msg_);
+  string ret = ObjId(*ccsObjId).path();
+
+  unsigned int size;
+  char *msg = CcsPackUnpack<string>::pack(ret, size);
+  CcsSendDelayedReply(delayedReply_, size, msg);
+
+  delete[] msg;
+}
+
+void GetIsValidOperation::exec(Shell *shell){
+  CcsId *ccsId = CcsPackUnpack<CcsId>::cast(msg_);
+  bool ret = Id::isValid(Id(*ccsId));
+
+  CcsSendDelayedReply(delayedReply_, sizeof(bool), &ret);
+}
+
+void WildcardOperation::exec(Shell *shell){
+  string path;
+  CcsPackUnpack<string>::unpack(msg_, path);
+  
+  vector<Id> list;
+  shell->wildcard(path, list);
+
+  vector<CcsId> toSend;
+  for(int i = 0; i < list.size(); i++){
+    toSend.push_back(CcsId(list[i].value()));
+  }
+
+  unsigned int size;
+  char *msg = CcsPackUnpack<vector<CcsId> >::pack(toSend, size);
+  CcsSendDelayedReply(delayedReply_, size, msg);
+
+  delete[] msg;
+}
+
+void MsgMgrOperation::exec(Shell *shell){
+  MsgId *mid = CcsPackUnpack<MsgId>::cast(msg_);
+
+  ObjId oid = Msg::getMsg(*mid)->manager().objId();
+  CcsObjId ccsOid(oid.id.value(), oid.dataId.value());
+  
+  CcsSendDelayedReply(delayedReply_, sizeof(CcsObjId), &ccsOid);
+}
 

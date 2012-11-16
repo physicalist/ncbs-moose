@@ -1,4 +1,4 @@
-#include "charm++.h"
+#include "converse.h"
 #include "pup_stl.h"
 #include "header.h"
 #include "../shell/ShellProxy.h"
@@ -124,6 +124,10 @@ void initializeSetGetCcsHandlerStrings(){
   MOOSE_SETGET_CCS_HANDLER_STRING_DEF1(Field, vector<unsigned long>, set)
   MOOSE_SETGET_CCS_HANDLER_STRING_DEF1(Field, vector<float>, set)
   MOOSE_SETGET_CCS_HANDLER_STRING_DEF1(Field, vector<double>, set)
+
+  MOOSE_SETGET_CCS_HANDLER_STRING_DEF1(Field, vector<vector<unsigned> >, set)
+  MOOSE_SETGET_CCS_HANDLER_STRING_DEF1(Field, vector<vector<int> >, set)
+  MOOSE_SETGET_CCS_HANDLER_STRING_DEF1(Field, vector<vector<double> >, set)
 
   MOOSE_SETGET_CCS_HANDLER_STRING_DEF2(LookupField, string, vector<CcsId>, get)
 

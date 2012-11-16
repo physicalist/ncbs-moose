@@ -11,6 +11,7 @@ TARGET = _msg.o
 
 OBJ = \
 	Msg.o	\
+	Msg_parser.o	\
 	DiagonalMsg.o	\
 	OneToAllMsg.o	\
 	OneToOneMsg.o	\

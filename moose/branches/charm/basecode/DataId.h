@@ -21,6 +21,7 @@
  */
 
 #ifdef USE_CHARMPP
+#include "converse.h"
 #include "pup.h"
 #include "CcsDataId.h"
 #endif
