@@ -116,6 +116,11 @@ DataHandlerWrapper.o: DataHandlerWrapper.h
 FieldDataHandlerBase.o: FieldOpFunc.h
 FieldOpFunc.o: FieldOpFunc.h FieldDataHandlerBase.h
 FuncBarrier.o:	FuncBarrier.h
+
+ifeq ($(BUILD), charm++)
+SetGetRegistration.o: SetGetRegistration.h SetGetCcsServer.h SetGetCcsClient.h
+endif
+
 #TestBasecode.o:	Shell.h ShellWrapper.h
 
 .cpp.o:

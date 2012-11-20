@@ -106,8 +106,7 @@ class SetGet0CcsClient : public SetGetCcsClient {
 
     bool ret;
     while(CcsRecvResponse(&SetGetCcsClient::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
-    return false;
-    // return ret;
+    return ret;
   }
 
 };
@@ -145,8 +144,7 @@ class SetGet1CcsClient : public SetGetCcsClient {
     bool ret;
     while(CcsRecvResponse(&SetGetCcsClient::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
     // original version always returned 'false'
-    return false;
-    // return ret;
+    return ret;
   }
 
   static bool setVec(const CcsId dest, const string &field, const vector<A> &arg){
@@ -159,8 +157,7 @@ class SetGet1CcsClient : public SetGetCcsClient {
     bool ret;
     while(CcsRecvResponse(&SetGetCcsClient::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
     // original version always returned 'false'
-    return false;
-    // return ret;
+    return ret;
   }
 
   static bool setRepeat( CcsId destId, const string& field, 
@@ -236,6 +233,12 @@ class FieldCcsClient : public SetGet1CcsClient<A> {
   {
     string temp = "set_" + field;
     return SetGet1CcsClient< A >::set( dest, temp, arg );
+  }
+
+  static bool setVec( CcsId destId, const string& field, const vector< A > &arg )
+  {
+    string temp = "set_" + field;
+    return SetGet1CcsClient< A >::setVec( destId, temp, arg );
   }
 
 

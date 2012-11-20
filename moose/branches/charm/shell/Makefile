@@ -56,8 +56,8 @@ testShell.o:	Wildcard.h Shell.h Neutral.h ../scheduling/Tick.h ../scheduling/tes
 
 ifeq ($(BUILD),charm++)
 ShellCcsInterface.o : ../charm/moose.decl.h ShellCcsInterfaceOperation.h ShellCcsInterface.h 
-ShellCcsInterfaceOperation.o : ShellCcsInterfaceOperation.h 
-ShellProxy.o : ShellProxy.h ../charm/moose.decl.h ../basecode/CcsPackUnpack.h
+ShellCcsInterfaceOperation.o : ShellCcsInterfaceOperation.h ShellProxyHelpers.h 
+ShellProxy.o : ShellProxy.h ../charm/moose.decl.h ../basecode/CcsPackUnpack.h ShellProxyHelpers.h
 endif
 
 .cpp.o:
