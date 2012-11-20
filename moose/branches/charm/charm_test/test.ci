@@ -1,0 +1,8 @@
+mainmodule test {
+  initnode defineHandlerStrings();
+
+  mainchare Main {
+    entry Main(CkArgMsg *m);
+    entry void commence();
+  };
+};
