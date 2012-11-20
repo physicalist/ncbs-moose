@@ -106,14 +106,13 @@ struct CopyStruct {
   {}
 
   void pup(PUP::er &p){
-    PUP::sizer psz;
-    psz | orig_;
-    psz | newParent_;
-    psz | newName_;
-    psz | n_;
-    psz | toGlobal_;
-    psz | copyExtMsgs_;
-    psz | qFlag_;
+    p | orig_;
+    p | newParent_;
+    p | newName_;
+    p | n_;
+    p | toGlobal_;
+    p | copyExtMsgs_;
+    p | qFlag_;
   }
 };
 

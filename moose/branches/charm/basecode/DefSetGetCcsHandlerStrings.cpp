@@ -51,6 +51,8 @@ void MooseSetTypeCodes(map<string, string> &table){
 void MooseSetClassCodes(map<string, string> &table){
   table["Field"      ] = string("F"); 
   table["LookupField"] = string("LF"); 
+  table["SetGet1"] = string("SG1"); 
+  table["SetGet2"] = string("SG2"); 
 }
 
 string MooseGetTypeCode(map<string, string> &table, string in){
@@ -166,6 +168,12 @@ void initializeSetGetCcsHandlerStrings(map<string, string> &typeCodeTable, map<s
   MOOSE_SETGET_CCS_HANDLER_STRING_DEF3_OUTER(LookupField, CcsId, get)
   MOOSE_SETGET_CCS_HANDLER_STRING_DEF3_OUTER(LookupField, CcsObjId, get)
 
+  // needed by SetGet2 in rtHHNetwork
+  MOOSE_SETGET_CCS_HANDLER_STRING_DEF2(SetGet2, double, long, set)
+  MOOSE_SETGET_CCS_HANDLER_STRING_DEF2(SetGet2, string, string, set)
+
+  MOOSE_SETGET_CCS_HANDLER_STRING_DEF1(SetGet1, double, set)
+  MOOSE_SETGET_CCS_HANDLER_STRING_DEF1(SetGet1, double, setVec)
 }
 
 

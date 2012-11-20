@@ -18,6 +18,37 @@
 #include "ShellProxyHelpers.h"
 #include "CcsPackUnpack.h"
 
+#define DEF_DESCR_STRING(Class) \
+const string Class ## Operation::name_ = #Class;
+
+DEF_DESCR_STRING(SetCwe)
+DEF_DESCR_STRING(GetCwe)
+DEF_DESCR_STRING(Create)
+DEF_DESCR_STRING(Delete)
+DEF_DESCR_STRING(AddMsg)
+DEF_DESCR_STRING(Quit)
+DEF_DESCR_STRING(Start)
+DEF_DESCR_STRING(Reinit)
+DEF_DESCR_STRING(Stop)
+DEF_DESCR_STRING(Terminate)
+DEF_DESCR_STRING(Move)
+DEF_DESCR_STRING(Copy)
+DEF_DESCR_STRING(Find)
+DEF_DESCR_STRING(LoadModel)
+DEF_DESCR_STRING(UseClock)
+DEF_DESCR_STRING(WriteSbml)
+DEF_DESCR_STRING(SyncDataHandler)
+DEF_DESCR_STRING(ReacDiffMesh)
+DEF_DESCR_STRING(SetClock)
+DEF_DESCR_STRING(CleanSimulation)
+DEF_DESCR_STRING(Adopt)
+DEF_DESCR_STRING(GetPath)
+DEF_DESCR_STRING(GetObjIdPath)
+DEF_DESCR_STRING(GetIsValid)
+DEF_DESCR_STRING(Wildcard)
+DEF_DESCR_STRING(MsgMgr)
+
+
 void SetCweOperation::exec(Shell *shell){
   Id *id = CcsPackUnpack<Id>::extractHandler(msg_); 
   shell->setCwe(*id);
@@ -79,9 +110,14 @@ void StartOperation::exec(Shell *shell){
   shell->doStart(arg->first, CkCallback(StartOperation::splitPhaseCallback, this), arg->second);
 }
 
+bool StartOperation::done(){
+  return false;
+}
+
 void StartOperation::splitPhaseCallback(void *param, void *msg){
   StartOperation *sop = (StartOperation *) param;
   sop->resume();  
+  delete sop;
 }
 
 void StartOperation::resume(){
@@ -94,9 +130,14 @@ void ReinitOperation::exec(Shell *shell){
   shell->doReinit(CkCallback(ReinitOperation::splitPhaseCallback, this), *arg);
 }
 
+bool ReinitOperation::done(){
+  return false;
+}
+
 void ReinitOperation::splitPhaseCallback(void *arg, void *msg){
   ReinitOperation *op = (ReinitOperation *) arg;
   op->resume();
+  delete op;
 }
 
 void ReinitOperation::resume(){

@@ -100,6 +100,12 @@ void registerSetGetCcsHandlers(map<string, string> &typeCodeTable, map<string, s
   MOOSE_SETGET_CCS_HANDLER_REG3_OUTER(LookupField, CcsId, get)
   MOOSE_SETGET_CCS_HANDLER_REG3_OUTER(LookupField, CcsObjId, get)
 
+  // Needed in rtHHNetwork.cpp
+  MOOSE_SETGET_CCS_HANDLER_REG1(SetGet1, double, set)
+  MOOSE_SETGET_CCS_HANDLER_REG1(SetGet1, double, setVec)
+  MOOSE_SETGET_CCS_HANDLER_REG2(SetGet2, double, long, set)
+  MOOSE_SETGET_CCS_HANDLER_REG2(SetGet2, string, string, set)
+
 
   CcsRegisterHandler(SetGetCcsClient::strSetHandlerString().c_str(), (CmiHandler) SetGetCcsServer::strSet_handler);
   CcsRegisterHandler(SetGetCcsClient::strGetHandlerString().c_str(), (CmiHandler) SetGetCcsServer::strGet_handler);
@@ -109,6 +115,9 @@ void registerSetGetCcsHandlers(map<string, string> &typeCodeTable, map<string, s
 
 #define MOOSE_SETGET_MERGE_1(T1, Method) \
 CcsSetMergeFn(SetGet1CcsClient< T1 >::Method ## HandlerString().c_str(), CcsMerge_logical_and);
+
+#define MOOSE_SETGET_MERGE_2(T1, T2, Method) \
+CcsSetMergeFn(SetGet2CcsClient< T1, T2 >::Method ## HandlerString().c_str(), CcsMerge_logical_and);
 
 #define MOOSE_SETGET_MERGE_1_OUTER(Method) \
 MOOSE_SETGET_MERGE_1(bool, Method) \
@@ -188,6 +197,10 @@ void registerSetGetMergeFns(map<string, string> &typeCodeTable, map<string, stri
   MOOSE_SETGET_MERGE_1_VECTOR_OUTER(setVec)
   // put SetGet2, etc. merge functions below this line, as needed
   // For set/setVec, these should all be CcsMerge_logical_and
+  // needed in rtHHNetwork
+  MOOSE_SETGET_MERGE_1(double, setVec)
+  MOOSE_SETGET_MERGE_2(double, long, set)
+  MOOSE_SETGET_MERGE_2(string, string, set)
 
   // SetGet::strGet
   CcsSetMergeFn(SetGetCcsClient::strGetHandlerString().c_str(), (CmiReduceMergeFn) SetGetCcsServer::merge< SetGet1CcsWrapper< string > >);

@@ -21,6 +21,8 @@
 #include "Shell.h"
 #include "../charm/LookupHelper.h"
 
+#define SHELL_CCS_INTERFACE_VERBOSE CkPrintf
+
 extern CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
 extern CProxy_LookupHelper readonlyLookupHelperProxy;
 
@@ -98,10 +100,12 @@ void ShellCcsInterface::poll(Shell *shell){
   if(opQ.empty()) return;
 
   ShellCcsInterfaceOperation *op = opQ.front();
-  op->exec(shell);
-
   opQ.pop();
-  delete op;
+
+  SHELL_CCS_INTERFACE_VERBOSE("[%d] %s::exec\n", CkMyPe(), op->getName().c_str());
+  op->exec(shell);
+  
+  if(op->done()) delete op;
 }
 
 void ShellCcsInterface::addPendingOp(ShellCcsInterfaceOperation *op){

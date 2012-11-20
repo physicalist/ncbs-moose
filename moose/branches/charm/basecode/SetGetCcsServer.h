@@ -10,6 +10,8 @@ using namespace std;
 #include "SetGetCcsClient.h"
 #include "pup_stl.h"
 
+#define SETGET_CCS_VERBOSE CkPrintf
+
 class SetGetCcsServer {
   public:
     static void strGet_handler(char *msg){
@@ -19,6 +21,7 @@ class SetGetCcsServer {
 
       string ret;
       bool success = SetGet::strGet(ObjId(args.dest_), args.field_, ret);
+      SETGET_CCS_VERBOSE("[%d] SetGetCcsServer::strGet success:%d\n", CkMyPe(), success);
       unsigned int size;
       SetGet1CcsWrapper< string > wrapper(ret, success);
       msg = CcsPackUnpack< SetGet1CcsWrapper< string > >::pack(wrapper, size); 
@@ -33,6 +36,7 @@ class SetGetCcsServer {
       CmiFree(msg);
 
       bool ret = SetGet::strSet(ObjId(args.dest_), args.field_, args.values_[0]); 
+      SETGET_CCS_VERBOSE("[%d] SetGetCcsServer::strSet success: %d\n", CkMyPe(), ret);
       CcsSendReply(sizeof(bool), &ret);
     }
 
@@ -116,6 +120,7 @@ class SetGet0CcsServer {
     CmiFree(msg);
 
     bool ret = SetGet0::set(ObjId(args.dest_), args.field_);
+    SETGET_CCS_VERBOSE("[%d] SetGet0CcsServer::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
 };
@@ -129,6 +134,7 @@ class SetGet1CcsServer : public SetGetCcsServer {
     CmiFree(msg);
 
     bool ret = SetGet1<A>::set(ObjId(args.dest_), args.field_, args.values_[0]);
+    SETGET_CCS_VERBOSE("[%d] SetGet1CcsServer<A>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
 
@@ -138,6 +144,7 @@ class SetGet1CcsServer : public SetGetCcsServer {
     CmiFree(msg);
 
     bool ret = SetGet1<A>::setVec(Id(args.dest_.id), args.field_, args.values_);
+    SETGET_CCS_VERBOSE("[%d] SetGet1CcsServer<A>::setVec success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
 
@@ -151,6 +158,7 @@ void SetGet1CcsServer<CcsId>::set_handler(char *msg){
   CmiFree(msg);
 
   bool ret = SetGet1<Id>::set(ObjId(args.dest_), args.field_, Id(args.values_[0]));
+  SETGET_CCS_VERBOSE("[%d] SetGet1CcsServer<CcsId>::setVec success: %d\n", CkMyPe(), ret);
   CcsSendReply(sizeof(bool), &ret);
 }
 
@@ -161,6 +169,7 @@ void SetGet1CcsServer<CcsObjId>::set_handler(char *msg){
   CmiFree(msg);
 
   bool ret = SetGet1<ObjId>::set(ObjId(args.dest_), args.field_, ObjId(args.values_[0]));
+  SETGET_CCS_VERBOSE("[%d] SetGet1CcsServer<CcsObjId>::set success: %d\n", CkMyPe(), ret);
   CcsSendReply(sizeof(bool), &ret);
 }
 
@@ -176,6 +185,7 @@ class FieldCcsServer : public SetGet1CcsServer<A> {
 
     A ret;
     bool success = Field<A>::get(ObjId(args.dest_), args.field_, ret); 
+    SETGET_CCS_VERBOSE("[%d] FieldCcsServer<A>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be wrapper
     unsigned int size;
     SetGet1CcsWrapper< A > wrapper(ret, success);
@@ -192,6 +202,7 @@ class FieldCcsServer : public SetGet1CcsServer<A> {
 
     vector< A > ret;
     bool success = Field<A>::getVec(Id(args.dest_.id), args.field_, ret);
+    SETGET_CCS_VERBOSE("[%d] FieldCcsServer<A>::getVec success: %d\n", CkMyPe(), success);
 
     // A might have members that need to be wrapper
     unsigned int size;
@@ -213,6 +224,7 @@ void FieldCcsServer<CcsId>::get_handler(char *msg){
 
   Id ret;
   bool success = Field<Id>::get(ObjId(args.dest_), args.field_, ret);
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsId>::get success: %d\n", CkMyPe(), success);
 
   CcsId reply;
   reply.id_ = ret.value();
@@ -233,6 +245,7 @@ void FieldCcsServer<vector<CcsId> >::get_handler(char *msg){
 
   vector<Id> ret;
   bool success = Field<vector<Id> >::get(ObjId(args.dest_), args.field_, ret);
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<vector<CcsId>>::get success: %d\n", CkMyPe(), success);
 
   vector<CcsId> reply;
   for(int i = 0; i < ret.size(); i++){
@@ -255,6 +268,7 @@ void FieldCcsServer<CcsId>::getVec_handler(char *msg){
 
   vector< Id > ret;
   bool success = Field<Id>::getVec(Id(args.dest_.id), args.field_, ret);
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsId>::getVec success: %d\n", CkMyPe(), success);
 
   vector< CcsId > reply;
   for(int i = 0; i < ret.size(); i++){
@@ -279,6 +293,7 @@ void FieldCcsServer<CcsObjId>::get_handler(char *msg){
 
   ObjId ret;
   bool success = Field<ObjId>::get(ObjId(args.dest_), args.field_, ret);
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsObjId>::getVec success: %d\n", CkMyPe(), success);
 
   CcsObjId reply;
   reply.id = CcsId(ret.id.value());
@@ -300,6 +315,7 @@ void FieldCcsServer<vector<CcsObjId> >::get_handler(char *msg){
 
   vector<ObjId> ret;
   bool success = Field<vector<ObjId> >::get(ObjId(args.dest_), args.field_, ret);
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<vector<CcsObjId>>::get success: %d\n", CkMyPe(), success);
 
   vector<CcsObjId> reply;
   for(int i = 0; i < ret.size(); i++){
@@ -322,6 +338,7 @@ void FieldCcsServer<CcsObjId>::getVec_handler(char *msg){
 
   vector< ObjId > ret;
   bool success = Field<ObjId>::getVec(Id(args.dest_.id), args.field_, ret);
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsObjId>::getVec success: %d\n", CkMyPe(), success);
 
   vector< CcsObjId > reply;
   for(int i = 0; i < ret.size(); i++){
@@ -346,6 +363,7 @@ class SetGet2CcsServer : public SetGetCcsServer {
     CmiFree(msg);
 
     bool ret = SetGet2<A1, A2>::set(ObjId(args.dest_), args.field_, args.a1_[0], args.a2_[0]);
+    SETGET_CCS_VERBOSE("[%d] SetGet2CcsServer<A1,A2>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
 
@@ -355,6 +373,7 @@ class SetGet2CcsServer : public SetGetCcsServer {
     CmiFree(msg);
 
     bool ret = SetGet2<A1, A2>::setVec(ObjId(args.dest_), args.field_, args.a1_, args.a2_);
+    SETGET_CCS_VERBOSE("[%d] SetGet2CcsServer<A1,A2>::setVec success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
 
@@ -371,6 +390,7 @@ class LookupFieldCcsServer : public SetGet2CcsServer<L, A> {
 
     A ret;
     bool success = LookupField<L, A>::get(ObjId(args.dest_), args.field_, args.values_[0], ret); 
+    SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<L,A>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be packed
     unsigned int size;
     SetGet1CcsWrapper< A > wrapper(ret, success);
@@ -381,6 +401,7 @@ class LookupFieldCcsServer : public SetGet2CcsServer<L, A> {
   }
 
   static void getVec_handler(char *msg){
+    SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<L,A>::getVec\n", CkMyPe());
     typename SetGet1CcsClient< L >::Args args;
     CcsPackUnpack< typename SetGet1CcsClient< L >::Args >::unpackHandler(msg, args);
     CmiFree(msg);
@@ -407,6 +428,7 @@ class LookupFieldCcsServer<L, CcsId> : public SetGet2CcsServer<L, CcsId> {
 
     Id ret;
     bool success = LookupField<L, Id>::get(ObjId(args.dest_), args.field_, args.values_[0], ret); 
+    SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<L,CcsId>::get success: %d\n", CkMyPe(), success);
 
     CcsId reply(ret.value());
     unsigned int size;
@@ -428,6 +450,7 @@ class LookupFieldCcsServer<CcsId, A> : public SetGet2CcsServer<CcsId, A> {
 
     A ret;
     bool success = LookupField<Id, A>::get(ObjId(args.dest_), args.field_, Id(args.values_[0]), ret); 
+    SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<CcsId,A>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be packed
 
     unsigned int size;
@@ -449,6 +472,7 @@ class LookupFieldCcsServer<CcsId, CcsId> : public SetGet2CcsServer<CcsId, CcsId>
 
     Id ret;
     bool success = LookupField<Id, Id>::get(ObjId(args.dest_), args.field_, Id(args.values_[0]), ret); 
+    SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<CcsId,CcsId>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be packed
 
     CcsId reply(ret.value());
@@ -471,6 +495,7 @@ class LookupFieldCcsServer<CcsId, CcsObjId> : public SetGet2CcsServer<CcsId, Ccs
 
     ObjId ret;
     bool success = LookupField<Id, ObjId>::get(ObjId(args.dest_), args.field_, Id(args.values_[0]), ret); 
+    SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<CcsId,CcsObjId>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be packed
 
     CcsObjId reply(ret.id.value(), ret.dataId.value());
@@ -493,6 +518,7 @@ class LookupFieldCcsServer<CcsObjId, CcsId> : public SetGet2CcsServer<CcsObjId, 
 
     Id ret;
     bool success = LookupField<ObjId, Id>::get(ObjId(args.dest_), args.field_, ObjId(args.values_[0]), ret); 
+    SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<CcsObjId,CcsId>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be packed
 
     CcsId reply(ret.value());
@@ -515,6 +541,7 @@ class LookupFieldCcsServer<L, CcsObjId> : public SetGet2CcsServer<L, CcsObjId> {
 
     ObjId ret;
     bool success = LookupField<L, ObjId>::get(ObjId(args.dest_), args.field_, args.values_[0], ret); 
+    SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<L,CcsObjId>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be packed
 
     CcsObjId reply(ret.id.value(), ret.dataId.value());
@@ -537,6 +564,7 @@ class LookupFieldCcsServer<CcsObjId, A> : public SetGet2CcsServer<CcsObjId, A> {
 
     A ret;
     bool success = LookupField<ObjId, A>::get(ObjId(args.dest_), args.field_, ObjId(args.values_[0]), ret); 
+    SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<CcsObjId,A>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be packed
 
     unsigned int size;
@@ -558,6 +586,7 @@ class LookupFieldCcsServer<CcsObjId, CcsObjId> : public SetGet2CcsServer<CcsObjI
 
     ObjId ret;
     bool success = LookupField<ObjId, ObjId>::get(ObjId(args.dest_), args.field_, ObjId(args.values_[0]), ret); 
+    SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<CcsObjId,CcsObjId>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be packed
 
     CcsObjId reply(ret.id.value(), ret.dataId.value());
@@ -579,6 +608,7 @@ class SetGet3CcsServer : public SetGetCcsServer {
     CmiFree(msg);
 
     bool ret = SetGet3<A1, A2, A3>::set(ObjId(args.dest_), args.field_, args.a1_, args.a2_, args.a3_);
+    SETGET_CCS_VERBOSE("[%d] SetGet3CcsServer<A1,A2,A3>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
 };
@@ -592,6 +622,7 @@ class SetGet4CcsServer : public SetGetCcsServer {
     CmiFree(msg);
 
     bool ret = SetGet4<A1, A2, A3, A4>::set(ObjId(args.dest_), args.field_, args.a1_, args.a2_, args.a3_, args.a4_);
+    SETGET_CCS_VERBOSE("[%d] SetGet4CcsServer<A1,A2,A3,A4>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
 };
@@ -604,6 +635,7 @@ template< class A1, class A2, class A3, class A4, class A5 > class SetGet5CcsSer
     CmiFree(msg);
 
     bool ret = SetGet5<A1, A2, A3, A4, A5>::set(ObjId(args.dest_), args.field_, args.a1_, args.a2_, args.a3_, args.a4_, args.a5_);
+    SETGET_CCS_VERBOSE("[%d] SetGet5CcsServer<A1,A2,A3,A4,A5>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
 };
@@ -616,6 +648,7 @@ template< class A1, class A2, class A3, class A4, class A5, class A6 > class Set
     CmiFree(msg);
 
     bool ret = SetGet6<A1, A2, A3, A4, A5, A6>::set(ObjId(args.dest_), args.field_, args.a1_, args.a2_, args.a3_, args.a4_, args.a5_, args.a6_);
+    SETGET_CCS_VERBOSE("[%d] SetGet6CcsServer<A1,A2,A3,A4,A5,A6>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
 };
