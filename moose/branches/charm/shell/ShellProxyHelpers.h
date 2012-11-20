@@ -24,6 +24,7 @@ struct CreateStruct {
 
   CreateStruct(string type, CcsId parent, string name, vector<int> dimensions, bool isGlobal, bool qFlag) : 
     type_(type),
+    parent_(parent),
     name_(name),
     dimensions_(dimensions),
     isGlobal_(isGlobal),

@@ -32,6 +32,7 @@ class ReduceFieldDimension;
 class PrepackedBuffer;
 
 #ifdef USE_CHARMPP
+#include "charm++.h"
 class ElementContainer;
 class Clock;
 #endif

@@ -91,14 +91,17 @@ void Main::createMooseParallelObjects(CkArgMsg *m){
 }
 
 void Main::commence(){
-  CkPrintf("[main] shell init\n");
+  CkPrintf("[main] shell init...");
   readonlyLookupHelperProxy.initShell(CkCallbackResumeThread());
+  CkPrintf("done\n");
 
-  CkPrintf("[main] register containers with helpers\n");
+  CkPrintf("[main] register containers with helpers...");
   readonlyElementContainerProxy.registerSelf(CkCallbackResumeThread());
+  CkPrintf("done\n");
 
-  CkPrintf("[main] starting serial unit tests\n");
+  CkPrintf("[main] serial unit tests...");
   readonlyParallelTestHelperProxy[0].doSerialUnitTests(CkCallbackResumeThread());
+  CkPrintf("done\n");
 
   //CkPrintf("\n[main] starting parallel unit tests\n");
   //readonlyParallelTestHelperProxy[0].doMpiTests(CkCallbackResumeThread());
@@ -116,7 +119,7 @@ void Main::commence(){
   // XXX - only for the time being
   // once we have the unit tests running, we should 
   // incorporate the next steps, below
-  CkExit();
+  //CkExit();
 
   // at this point, we have initialized the shells and
   // the shell ccs interfaces, and have created the 

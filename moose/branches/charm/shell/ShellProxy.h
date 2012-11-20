@@ -27,7 +27,10 @@ class ShellProxy {
 
   public:
 
-  ShellProxy() {}
+  ShellProxy() :
+    isRunning_(false)
+  {}
+
   ~ShellProxy() {}
 
   string doVersion();

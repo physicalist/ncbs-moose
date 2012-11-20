@@ -17,20 +17,6 @@ struct CcsReductionWrapper {
   {}
 
   CcsReductionWrapper<T> &operator+=(const CcsReductionWrapper<T> &other){
-    data_.reduce(other.data_);
-    return *this;
-  }
-};
-
-template<>
-struct CcsReductionWrapper<int> {
-  int data_;
-
-  CcsReductionWrapper(int data) : 
-    data_(data)
-  {}
-
-  CcsReductionWrapper<int> &operator+=(const CcsReductionWrapper<int> &other){
     data_ += other.data_;
     return *this;
   }
@@ -42,16 +28,6 @@ struct CcsReductionWrapper<bool> {
 
   CcsReductionWrapper<bool> &operator+=(const CcsReductionWrapper<bool> &other){
     data_ &= other.data_;
-    return *this;
-  }
-};
-
-template<>
-struct CcsReductionWrapper<MsgId> {
-  MsgId data_;
-
-  CcsReductionWrapper<MsgId> &operator+=(const CcsReductionWrapper<MsgId> &other){
-    CkAssert(data_ == other.data_);
     return *this;
   }
 };
