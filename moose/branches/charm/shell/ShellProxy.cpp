@@ -293,7 +293,7 @@ string ShellProxy::doGetObjIdPath(const CcsObjId &id){
   char *msg;
   while(CcsRecvResponseMsg(&shellServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) < 0);
 
-  CcsPackUnpack<string>::unpack(msg, ret);
+  CcsPackUnpack<string>::unpackReply(msg, ret);
 
   free(msg);
 
@@ -308,7 +308,7 @@ string ShellProxy::doGetPath(const CcsId &id){
   char *msg;
   while(CcsRecvResponseMsg(&shellServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) < 0);
 
-  CcsPackUnpack<string>::unpack(msg, ret);
+  CcsPackUnpack<string>::unpackReply(msg, ret);
 
   free(msg);
 
@@ -332,7 +332,7 @@ void ShellProxy::wildcard(string path, vector<CcsId> &list){
   int msgSize;
   while(CcsRecvResponseMsg(&shellServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) < 0);
 
-  CcsPackUnpack<vector<CcsId> >::unpack(msg, list);
+  CcsPackUnpack<vector<CcsId> >::unpackReply(msg, list);
   free(msg);
 }
 

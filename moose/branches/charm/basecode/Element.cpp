@@ -8,7 +8,10 @@
 **********************************************************************/
 
 #include "header.h"
+#ifdef USE_CHARMPP
 #include "../charm/DirectQbufEntry.h"
+#include "charm++.h"
+#endif
 
 /**
  * This version is used when making zombies. We want to have a

@@ -56,27 +56,26 @@ ShellCcsInterface::ShellCcsInterface(const CkCallback &cb){
   CcsRegisterHandler(ShellProxy::doGetMsgMgrHandlerString, (CmiHandler) ShellCcsInterface::doGetMsgMgr);
 
   // register reducer merge functions
-  CcsSetMergeFn(ShellProxy::setCweHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::getCweHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsId> >);
-  CcsSetMergeFn(ShellProxy::doCreateHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsId> >);
-  CcsSetMergeFn(ShellProxy::doDeleteHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doAddMsgHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<MsgId> >);
-  CcsSetMergeFn(ShellProxy::doQuitHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doStartHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsId> >);
-  CcsSetMergeFn(ShellProxy::doReinitHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doStopHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doTerminateHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doMoveHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doCopyHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doFindHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsObjId> >);
-  CcsSetMergeFn(ShellProxy::doUseClockHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doLoadModelHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<CcsId> >);
-  CcsSetMergeFn(ShellProxy::doWriteSBMLHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<int> >);
-  CcsSetMergeFn(ShellProxy::doSyncDataHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doReacDiffMeshHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doSetClockHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doCleanSimulationHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
-  CcsSetMergeFn(ShellProxy::doAdoptHandlerString, ShellCcsInterface::reductionMerger<CcsReductionWrapper<bool> >);
+  CcsSetMergeFn(ShellProxy::setCweHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doCreateHandlerString, CmiReduceMergeFn_random);
+  CcsSetMergeFn(ShellProxy::doDeleteHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doAddMsgHandlerString, CmiReduceMergeFn_random);
+  CcsSetMergeFn(ShellProxy::doQuitHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doStartHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doReinitHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doStopHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doTerminateHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doMoveHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doCopyHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doFindHandlerString, CmiReduceMergeFn_random);
+  CcsSetMergeFn(ShellProxy::doUseClockHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doLoadModelHandlerString, CmiReduceMergeFn_random);
+  CcsSetMergeFn(ShellProxy::doWriteSBMLHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doSyncDataHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doReacDiffMeshHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doSetClockHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doCleanSimulationHandlerString, CcsMerge_logical_and);
+  CcsSetMergeFn(ShellProxy::doAdoptHandlerString, CcsMerge_logical_and);
 
 
   contribute(cb);
@@ -222,39 +221,5 @@ ShellCcsInterface *ShellCcsInterface::getLocalShellCcsInterface(){
 }
 
 
-
-// CCS REDUCTION MERGER FUNCTION
-
-template<typename WRAPPER_TYPE>
-void *ShellCcsInterface::reductionMerger(int *localSize, void *localContribution, void **remoteContributions, int nRemoteContributions){
-  CcsImplHeader *header = (CcsImplHeader *) (((char *) localContribution) + CmiReservedHeaderSize);
-
-  // check whether local contribution is sane          
-  CmiAssert(ChMessageInt(header->len) == sizeof(WRAPPER_TYPE));  
-
-  int msgSize = CmiReservedHeaderSize + sizeof(CcsImplHeader) + ChMessageInt(header->len);
-  CmiAssert(*localSize == msgSize);
-
-  // this is the locally contributed data
-  WRAPPER_TYPE *localData = (WRAPPER_TYPE *)(header + 1);
-
-  // go through recvd remote contributions and accumulate
-  for(int i = 0; i < nRemoteContributions; i++){       
-    // check whether remote contributions are sane     
-    header = (CcsImplHeader *)(((char *) remoteContributions[i]) + CmiReservedHeaderSize);
-    CmiAssert(ChMessageInt(header->len) == sizeof(WRAPPER_TYPE));
-
-    // accumulate remote contribution 
-    WRAPPER_TYPE *remoteData = (WRAPPER_TYPE *)(header + 1);     
-    *localData += *remoteData;
-  }
-
-  // reuse the local message
-  void *replyMsg = localContribution;
-  header = (CcsImplHeader *)(((char *)replyMsg) + CmiReservedHeaderSize);
-  header->len = ChMessageInt_new(sizeof(WRAPPER_TYPE));
-
-  return replyMsg;
-}
 
 

@@ -86,6 +86,11 @@ void TypedMooseParam<double>::extract(const char *val){
   parsedValue_ = strtod(val, NULL);
 }
 
+template<>
+void TypedMooseParam<string>::extract(const char *val){
+  parsedValue_ = string(val);
+}
+
 class MooseParamCollection {
   map<string, MooseParam *> params_;
 

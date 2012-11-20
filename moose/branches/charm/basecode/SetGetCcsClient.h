@@ -46,8 +46,12 @@ class SetGetCcsClient {
     CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, strGetHandlerString().c_str(), size, msg);
     delete[] msg;
 
+    int msgSize;
+    while(CcsRecvResponseMsg(&SetGetCcsClient::ccsServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) <= 0);
+
     SetGet1CcsWrapper< string > sg;
-    while(CcsRecvResponse(&SetGetCcsClient::ccsServer_, sizeof(bool), &ret, MOOSE_CCS_TIMEOUT) <= 0);
+    CcsPackUnpack< SetGet1CcsWrapper< string > >::unpackReply(msg, sg);
+    free(msg);
 
     ret = sg.a1_;
     return sg.hasData_;
@@ -254,14 +258,15 @@ class FieldCcsClient : public SetGet1CcsClient<A> {
     while(CcsRecvResponseMsg(&SetGetCcsClient::ccsServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) <= 0);
     // type A might need to be unwrapper
     SetGet1CcsWrapper< A > ret;
-    CcsPackUnpack< SetGet1CcsWrapper< A > >::unpack(msg, ret);
+    CcsPackUnpack< SetGet1CcsWrapper< A > >::unpackReply(msg, ret);
     // msg will point to a malloc()ed buffer after CcsRecvResponseMsg
     free(msg);
+
     assert(ret.hasData_);
     return ret.a1_;
   }
 
-  static void getVec( CcsId dest, const string& field, vector< A >& vec, bool sendToSingleNode = true){
+  static void getVec( CcsId dest, const string& field, vector< A >& vec, bool sendToSingleNode = false){
     unsigned int size;
     SetGetCcsClient::Args wrapper(CcsObjId(dest), field);
     char *msg = CcsPackUnpack< SetGetCcsClient::Args >::pack(wrapper, size);
@@ -276,7 +281,7 @@ class FieldCcsClient : public SetGet1CcsClient<A> {
     int replySize;
     while(CcsRecvResponseMsg(&SetGetCcsClient::ccsServer_, &replySize, (void **) &msg, MOOSE_CCS_TIMEOUT) <= 0); 
     SetGet1CcsWrapper< vector<A> > ret;
-    CcsPackUnpack< SetGet1CcsWrapper< vector< A > > >::unpack(msg, ret);
+    CcsPackUnpack< SetGet1CcsWrapper< vector< A > > >::unpackReply(msg, ret);
     free(msg);
 
     vec = ret.a1_;
@@ -404,9 +409,10 @@ class LookupFieldCcsClient : public SetGet2CcsClient<L, A> {
     while(CcsRecvResponseMsg(&SetGetCcsClient::ccsServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) <= 0);
     // types L, A might need to be unwrapper
     SetGet1CcsWrapper< A > ret;
-    CcsPackUnpack< SetGet1CcsWrapper< A > >::unpack(msg, ret);
+    CcsPackUnpack< SetGet1CcsWrapper< A > >::unpackReply(msg, ret);
     // msg will point to a malloc()ed buffer after CcsRecvResponseMsg
     free(msg);
+
     return ret.a1_;
   }
 
@@ -420,10 +426,11 @@ class LookupFieldCcsClient : public SetGet2CcsClient<L, A> {
     int msgSize;
     while(CcsRecvResponseMsg(&SetGetCcsClient::ccsServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) <= 0);
     // types L, A might need to be unwrapper
-    SetGet1CcsWrapper< A > ret;
-    CcsPackUnpack< SetGet1CcsWrapper< A > >::unpack(msg, ret);
+    SetGet1CcsWrapper< vector< A > > ret;
+    CcsPackUnpack< SetGet1CcsWrapper< vector< A > > >::unpackReply(msg, ret);
     // msg will point to a malloc()ed buffer after CcsRecvResponseMsg
     free(msg);
+
     vec = ret.a1_;
   }
 

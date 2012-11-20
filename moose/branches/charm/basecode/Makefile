@@ -61,6 +61,7 @@ OBJ = \
 
 ifeq ($(BUILD),charm++)
 OBJ += SetGetRegistration.o \
+       DefSetGetCcsHandlerStrings.o \
        SetGetCcsClient.o \
        CcsPackUnpack.o
 endif

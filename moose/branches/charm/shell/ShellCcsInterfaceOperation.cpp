@@ -19,7 +19,7 @@
 #include "CcsPackUnpack.h"
 
 void SetCweOperation::exec(Shell *shell){
-  Id *id = CcsPackUnpack<Id>::cast(msg_); 
+  Id *id = CcsPackUnpack<Id>::extractHandler(msg_); 
   shell->setCwe(*id);
 
   bool r = true;
@@ -33,7 +33,7 @@ void GetCweOperation::exec(Shell *shell){
 
 void CreateOperation::exec(Shell *shell){
   CreateStruct createStruct;
-  CcsPackUnpack<CreateStruct>::unpack(msg_, createStruct);
+  CcsPackUnpack<CreateStruct>::unpackHandler(msg_, createStruct);
   Id id = shell->doCreate(createStruct.type_,
                           createStruct.parent_,
                           createStruct.name_,
@@ -45,7 +45,7 @@ void CreateOperation::exec(Shell *shell){
 }
 
 void DeleteOperation::exec(Shell *shell){
-  std::pair<Id, bool> *pr = CcsPackUnpack<std::pair<Id, bool> >::cast(msg_);
+  std::pair<Id, bool> *pr = CcsPackUnpack<std::pair<Id, bool> >::extractHandler(msg_);
   shell->doDelete(pr->first, pr->second);
 
   bool r = true;
@@ -54,7 +54,7 @@ void DeleteOperation::exec(Shell *shell){
 
 void AddMsgOperation::exec(Shell *shell){
   AddMsgStruct addMsgStruct;
-  CcsPackUnpack<AddMsgStruct>::unpack(msg_, addMsgStruct);
+  CcsPackUnpack<AddMsgStruct>::unpackHandler(msg_, addMsgStruct);
 
   MsgId mid = shell->doAddMsg(addMsgStruct.msgType_,
                               addMsgStruct.src_,
@@ -67,7 +67,7 @@ void AddMsgOperation::exec(Shell *shell){
 }
 
 void QuitOperation::exec(Shell *shell){
-  bool *arg = CcsPackUnpack<bool>::cast(msg_);
+  bool *arg = CcsPackUnpack<bool>::extractHandler(msg_);
   shell->doQuit(*arg);
 
   bool r = true;
@@ -75,7 +75,7 @@ void QuitOperation::exec(Shell *shell){
 }
 
 void StartOperation::exec(Shell *shell){
-  std::pair<double, bool> *arg = CcsPackUnpack<std::pair<double, bool> >::cast(msg_);
+  std::pair<double, bool> *arg = CcsPackUnpack<std::pair<double, bool> >::extractHandler(msg_);
   shell->doStart(arg->first, CkCallback(StartOperation::splitPhaseCallback, this), arg->second);
 }
 
@@ -90,7 +90,7 @@ void StartOperation::resume(){
 }
 
 void ReinitOperation::exec(Shell *shell){
-  bool *arg = CcsPackUnpack<bool>::cast(msg_);
+  bool *arg = CcsPackUnpack<bool>::extractHandler(msg_);
   shell->doReinit(CkCallback(ReinitOperation::splitPhaseCallback, this), *arg);
 }
 
@@ -105,7 +105,7 @@ void ReinitOperation::resume(){
 }
 
 void StopOperation::exec(Shell *shell){
-  bool *arg = CcsPackUnpack<bool>::cast(msg_);
+  bool *arg = CcsPackUnpack<bool>::extractHandler(msg_);
   shell->doStop(*arg);
 
   bool r = true;
@@ -113,7 +113,7 @@ void StopOperation::exec(Shell *shell){
 }
 
 void TerminateOperation::exec(Shell *shell){
-  bool *arg = CcsPackUnpack<bool>::cast(msg_);
+  bool *arg = CcsPackUnpack<bool>::extractHandler(msg_);
   shell->doQuit(*arg);
 #if 0
   shell->doTerminate(*arg);
@@ -124,7 +124,7 @@ void TerminateOperation::exec(Shell *shell){
 }
 
 void MoveOperation::exec(Shell *shell){
-  MoveStruct *arg = CcsPackUnpack<MoveStruct>::cast(msg_);
+  MoveStruct *arg = CcsPackUnpack<MoveStruct>::extractHandler(msg_);
   shell->doMove(arg->orig_, arg->newParent_, arg->qFlag_);
 
   bool r = true;
@@ -133,7 +133,7 @@ void MoveOperation::exec(Shell *shell){
 
 void CopyOperation::exec(Shell *shell){
   CopyStruct copyStruct;
-  CcsPackUnpack<CopyStruct>::unpack(msg_, copyStruct);
+  CcsPackUnpack<CopyStruct>::unpackHandler(msg_, copyStruct);
 
   Id id = shell->doCopy(copyStruct.orig_,
                         copyStruct.newParent_,
@@ -148,7 +148,7 @@ void CopyOperation::exec(Shell *shell){
 
 void FindOperation::exec(Shell *shell){
   std::string path;
-  CcsPackUnpack<std::string>::unpack(msg_, path);
+  CcsPackUnpack<std::string>::unpackHandler(msg_, path);
 
   ObjId id = shell->doFind(path);
   CcsSendDelayedReply(delayedReply_, sizeof(ObjId), &id);
@@ -156,7 +156,7 @@ void FindOperation::exec(Shell *shell){
 
 void UseClockOperation::exec(Shell *shell){
   UseClockStruct use;
-  CcsPackUnpack<UseClockStruct>::unpack(msg_, use);
+  CcsPackUnpack<UseClockStruct>::unpackHandler(msg_, use);
 
   shell->doUseClock(use.path_,
                     use.field_,
@@ -169,7 +169,7 @@ void UseClockOperation::exec(Shell *shell){
 
 void LoadModelOperation::exec(Shell *shell){
   LoadModelStruct load;
-  CcsPackUnpack<LoadModelStruct>::unpack(msg_, load);
+  CcsPackUnpack<LoadModelStruct>::unpackHandler(msg_, load);
 
   Id id = shell->doLoadModel(load.fname_, 
                              load.modelpath_,
@@ -181,7 +181,7 @@ void LoadModelOperation::exec(Shell *shell){
 
 void WriteSbmlOperation::exec(Shell *shell){
   WriteSbmlStruct write;
-  CcsPackUnpack<WriteSbmlStruct>::unpack(msg_, write);
+  CcsPackUnpack<WriteSbmlStruct>::unpackHandler(msg_, write);
 
   int ret = shell->doWriteSBML(write.fname_, write.modelpath_, write.qFlag_);
 
@@ -189,7 +189,7 @@ void WriteSbmlOperation::exec(Shell *shell){
 }
 
 void SyncDataHandlerOperation::exec(Shell *shell){
-  Id *id = CcsPackUnpack<Id>::cast(msg_);
+  Id *id = CcsPackUnpack<Id>::extractHandler(msg_);
   shell->doSyncDataHandler(*id);
 
   bool r = true;
@@ -198,7 +198,7 @@ void SyncDataHandlerOperation::exec(Shell *shell){
 
 void ReacDiffMeshOperation::exec(Shell *shell){
   CkAbort("ReacDiffMeshOperation not correctly implemented yet\n");
-  Id *id = CcsPackUnpack<Id>::cast(msg_);
+  Id *id = CcsPackUnpack<Id>::extractHandler(msg_);
   shell->doReacDiffMesh(*id);
 
   bool r = true;
@@ -206,7 +206,7 @@ void ReacDiffMeshOperation::exec(Shell *shell){
 }
 
 void SetClockOperation::exec(Shell *shell){
-  SetClockStruct *setClock = CcsPackUnpack<SetClockStruct>::cast(msg_);
+  SetClockStruct *setClock = CcsPackUnpack<SetClockStruct>::extractHandler(msg_);
   shell->doSetClock(setClock->tickNum_,
                     setClock->dt_,
                     setClock->qFlag_);
@@ -223,7 +223,7 @@ void CleanSimulationOperation::exec(Shell *shell){
 }
 
 void AdoptOperation::exec(Shell *shell){
-  AdoptStruct *adopt = CcsPackUnpack<AdoptStruct>::cast(msg_);
+  AdoptStruct *adopt = CcsPackUnpack<AdoptStruct>::extractHandler(msg_);
   shell->adopt(adopt->parent_,
                adopt->child_);
 
@@ -234,7 +234,7 @@ void AdoptOperation::exec(Shell *shell){
 // can't do this in parser, since we want to keep 
 // it separate from moose core
 void GetPathOperation::exec(Shell *shell){
-  CcsId *ccsId = CcsPackUnpack<CcsId>::cast(msg_);
+  CcsId *ccsId = CcsPackUnpack<CcsId>::extractHandler(msg_);
   string ret = Id(*ccsId).path();
 
   unsigned int size;
@@ -245,7 +245,7 @@ void GetPathOperation::exec(Shell *shell){
 }
 
 void GetObjIdPathOperation::exec(Shell *shell){
-  CcsObjId *ccsObjId = CcsPackUnpack<CcsObjId>::cast(msg_);
+  CcsObjId *ccsObjId = CcsPackUnpack<CcsObjId>::extractHandler(msg_);
   string ret = ObjId(*ccsObjId).path();
 
   unsigned int size;
@@ -256,7 +256,7 @@ void GetObjIdPathOperation::exec(Shell *shell){
 }
 
 void GetIsValidOperation::exec(Shell *shell){
-  CcsId *ccsId = CcsPackUnpack<CcsId>::cast(msg_);
+  CcsId *ccsId = CcsPackUnpack<CcsId>::extractHandler(msg_);
   bool ret = Id::isValid(Id(*ccsId));
 
   CcsSendDelayedReply(delayedReply_, sizeof(bool), &ret);
@@ -264,7 +264,7 @@ void GetIsValidOperation::exec(Shell *shell){
 
 void WildcardOperation::exec(Shell *shell){
   string path;
-  CcsPackUnpack<string>::unpack(msg_, path);
+  CcsPackUnpack<string>::unpackHandler(msg_, path);
   
   vector<Id> list;
   shell->wildcard(path, list);
@@ -282,7 +282,7 @@ void WildcardOperation::exec(Shell *shell){
 }
 
 void MsgMgrOperation::exec(Shell *shell){
-  MsgId *mid = CcsPackUnpack<MsgId>::cast(msg_);
+  MsgId *mid = CcsPackUnpack<MsgId>::extractHandler(msg_);
 
   ObjId oid = Msg::getMsg(*mid)->manager().objId();
   CcsObjId ccsOid(oid.id.value(), oid.dataId.value());

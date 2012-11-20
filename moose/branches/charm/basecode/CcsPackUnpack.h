@@ -16,8 +16,9 @@ class CcsPackUnpack {
       PUP::sizer psz;
       psz | t;
 
+      size = psz.size();
       // allocate enough memory for serialized arguments
-      char *serialized = new char[psz.size()];
+      char *serialized = new char[size];
 
       // serialize arguments into allocated buffer
       PUP::toMem pmem(serialized);
@@ -26,18 +27,37 @@ class CcsPackUnpack {
       return serialized;
     }
 
-    static void unpack(char *msg, T &out){
-      T *t = CcsPackUnpack<T>::cast(msg);
-      PUP::fromMem pmem(t);
-      pmem | out;
+    // to unpack data embedded within messages 
+    // received in ccs handlers
+    static void unpackHandler(char *msg, T &out){
+      char *data = (char *) extractHandler(msg);
+      unpack(data, out);
     }
 
-    // utility function that extracts from a raw Converse 
-    // message the data embedded within it. 
-    static T *cast(const char *msg){
-      CcsImplHeader *header = (CcsImplHeader *)(msg + CmiReservedHeaderSize);
-      assert(ChMessageInt(header->len) == sizeof(T));
-      return (T *)(header + 1);
+    // utility function that extracts from a ccs 
+    // message the data embedded within it.
+    // meant for use in handlers.
+    static T *extractHandler(char *msg){
+      //CcsImplHeader *header = (CcsImplHeader *)(msg + CmiReservedHeaderSize);
+      //assert(ChMessageInt(header->len) == sizeof(T));
+      return (T *) (msg + CmiReservedHeaderSize);
+      //return (T *)(header + 1);
+    }
+
+    static void unpackReply(char *msg, T &out){
+      char *data = (char *) extractReply(msg);
+      unpack(data, out);
+    } 
+
+    // get data from ccs message
+    static T *extractReply(char *msg){
+      return (T *) msg;
+    }
+
+  private:
+    static void unpack(char *data, T &out){
+      PUP::fromMem pmem(data);
+      pmem | out;
     }
 
 };
