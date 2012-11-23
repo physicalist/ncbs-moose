@@ -18,6 +18,7 @@ BlockHandler::BlockHandler( const DinfoBase* dinfo,
 {
 	assert( totalEntries_ > 0 );
 	innerNodeBalance( totalEntries_, Shell::myNode(), Shell::numNodes() );
+        CkPrintf("[%d] BlockHandler::BlockHandler start %d end %d\n", CkMyPe(), start_, end_);
 	data_ = dinfo->allocData( end_ - start_ );
 }
 

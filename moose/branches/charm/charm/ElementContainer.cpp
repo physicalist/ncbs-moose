@@ -54,6 +54,7 @@ ElementContainer::ElementContainer(const CkCallback &cb) :
 }
 
 void ElementContainer::newIteration(){
+  //CkPrintf("[%d] ElementContainer::newIteration\n", thisIndex);
   clock_->processPhase1(&procInfo_);
   // for now, we buffer all data items issued by
   // elements, copy them into one bcast message and send

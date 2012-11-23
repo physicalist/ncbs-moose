@@ -16,7 +16,9 @@ AR = ar q
 CXX_DEPEND = $(CXX) -M -MM -MG -Wall $(CXXFLAGS) 
 CFLAGS = $(OPTS) $(DEFINE_FLAGS) -g 
 
-OBJECTS = Main.o rtHHNetwork.o
+OBJECTS = Main.o \
+          rtHHNetwork.o \
+          speedTestMultiNodeIntFireNetwork.o
 
 LINK_OBJECTS = ../shell/ShellProxy.o \
                ../basecode/SetGetCcsClient.o \
@@ -25,7 +27,9 @@ LINK_OBJECTS = ../shell/ShellProxy.o \
                ../msg/Msg_parser.o \
                ../randnum/_randnum.o
 
-SRC = Main.cpp rtHHNetwork.cpp 
+SRC = Main.cpp \
+      rtHHNetwork.cpp \
+      speedTestMultiNodeIntFireNetwork.cpp 
 
 TARGET = test
 all: $(TARGET) 
