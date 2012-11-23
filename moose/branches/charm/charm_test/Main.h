@@ -36,6 +36,7 @@ class Main : public CBase_Main {
   private:
   void test();
   void rtHHNetwork(ShellProxy *shell);
+  void speedTestMultiNodeIntFireNetwork( unsigned int size, unsigned int runsteps, ShellProxy *shell );
 };
 
 

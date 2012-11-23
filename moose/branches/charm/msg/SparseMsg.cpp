@@ -329,7 +329,6 @@ unsigned int SparseMsg::randomConnect( double probability )
 	matrix_.clear();
 	unsigned int totalSynapses = 0;
 	vector< unsigned int > sizes( nCols, 0 );
-	bool isFirstRound = 1;
 	unsigned int totSynNum = 0;
 	unsigned int maxSynPerRow = 0;
 
@@ -341,19 +340,15 @@ unsigned int SparseMsg::randomConnect( double probability )
 		dynamic_cast< FieldDataHandlerBase* >( syn->dataHandler() );
 
 	for ( unsigned int i = 0; i < nCols; ++i ) {
-		// Check if synapse is on local node
-		bool isSynOnMyNode = syn->dataHandler()->isDataHere( i );
+		// Check if target neuron is on local node: we record the synapses of only
+                // those recipients that are on the current node: don't need the rest
+		bool isSynOnMyNode = syn->dataHandler()->parentDataHandler()->isDataHere( i );
 		vector< unsigned int > synIndex;
 		// This needs to be obtained from current size of syn array.
 		// unsigned int synNum = sizes[ i ];
 		unsigned int synNum = 0;
 		for ( unsigned int j = 0; j < nRows; ++j ) {
 			double r = mtrand(); // Want to ensure it is called each time round the loop.
-			if ( isSynOnMyNode ) {
-				if ( isFirstRound ) {
-					isFirstRound = 0;
-				}
-			}
 			if ( r < probability && isSynOnMyNode ) {
 				synIndex.push_back( synNum );
 				++synNum;
@@ -372,6 +367,10 @@ unsigned int SparseMsg::randomConnect( double probability )
 		}
 		matrix_.addRow( i, synIndex );
 	}
+
+        CkPrintf("[%d] SparseMsg::randomConnect nRows %d nCols %d totSynNum %d totalSynapses %d maxSynPerRow %d\n", 
+                  CkMyPe(), nRows, nCols, totSynNum, totalSynapses, maxSynPerRow);
+
 	/*
 	// Here we figure out the largest # of syns and use it.
 	unsigned int biggest = *max_element( sizes.begin(), sizes.end() );

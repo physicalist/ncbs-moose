@@ -33,6 +33,7 @@ void Main::commence(){
 
 void Main::test(){
   rtHHNetwork(&shell_);
+  speedTestMultiNodeIntFireNetwork(2048, 20, &shell_);
 }
 
 extern void MooseSetTypeCodes(map<string, string> &table);

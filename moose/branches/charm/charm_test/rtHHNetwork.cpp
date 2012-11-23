@@ -72,7 +72,10 @@ void Main::rtHHNetwork(ShellProxy *shell){
   //////////////////////////////////////////////////////////////////////
   vector< CcsId > kids; // These are the HHGates.
   kids = FieldCcsClient< vector< CcsId > >::get( naId, "children" );
-  assert( kids.size() == 3 );
+  if( kids.size() != 3 ){
+    cout << "Na nKids: " << kids.size() << endl;
+    assert(false);
+  }
   vector< double > parms;
   // For the alpha:
   // A = 0.1e6*(EREST*0.025), B = -0.1e6, C= -1, D= -(EREST+0.025), F = -0.01
@@ -149,8 +152,8 @@ void Main::rtHHNetwork(ShellProxy *shell){
   parms.push_back( xmin );
   parms.push_back( xmax );
 
-  SetGet1CcsClient< vector< double > >::set( kids[0], "setupAlpha", parms );
-  FieldCcsClient< bool >::set( kids[0], "useInterpolation", 1 );
+  SetGet1CcsClient< vector< double > >::set( kids[2], "setupAlpha", parms );
+  FieldCcsClient< bool >::set( kids[2], "useInterpolation", 1 );
 
   //////////////////////////////////////////////////////////////////////
   // Set up SpikeGen and SynChan
