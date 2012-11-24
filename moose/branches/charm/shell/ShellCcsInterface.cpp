@@ -21,6 +21,9 @@
 #include "Shell.h"
 #include "../charm/LookupHelper.h"
 
+#include "../basecode/SetGetCcsServer.h"
+#include "../basecode/CcsPackUnpack.h"
+
 #define SHELL_CCS_INTERFACE_VERBOSE CkPrintf
 
 extern CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
@@ -68,10 +71,11 @@ ShellCcsInterface::ShellCcsInterface(const CkCallback &cb){
   CcsSetMergeFn(ShellProxy::doStopHandlerString, CcsMerge_logical_and);
   CcsSetMergeFn(ShellProxy::doTerminateHandlerString, CcsMerge_logical_and);
   CcsSetMergeFn(ShellProxy::doMoveHandlerString, CcsMerge_logical_and);
-  CcsSetMergeFn(ShellProxy::doCopyHandlerString, CcsMerge_logical_and);
-  CcsSetMergeFn(ShellProxy::doFindHandlerString, CmiReduceMergeFn_random);
+  CcsSetMergeFn(ShellProxy::doCopyHandlerString, CmiReduceMergeFn_random);
+  CcsSetMergeFn(ShellProxy::doFindHandlerString, SetGetCcsServer::merge< SetGet1CcsWrapper< CcsObjId > >);
   CcsSetMergeFn(ShellProxy::doUseClockHandlerString, CcsMerge_logical_and);
   CcsSetMergeFn(ShellProxy::doLoadModelHandlerString, CmiReduceMergeFn_random);
+  // FIXME - different merge function required ? 
   CcsSetMergeFn(ShellProxy::doWriteSBMLHandlerString, CcsMerge_logical_and);
   CcsSetMergeFn(ShellProxy::doSyncDataHandlerString, CcsMerge_logical_and);
   CcsSetMergeFn(ShellProxy::doReacDiffMeshHandlerString, CcsMerge_logical_and);

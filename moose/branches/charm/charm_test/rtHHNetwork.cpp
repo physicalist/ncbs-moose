@@ -29,6 +29,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   ////////////////////////////////////////////////////////////////
   // Check construction and result of HH squid simulation
   ////////////////////////////////////////////////////////////////
+  cout << "HHnet: creating objects" << endl;
   vector< int > dims( 1, 1 );
   CcsId nid = shell->doCreate( "Neutral", CcsId(), "n", dims, 1 );
   CcsId comptId = shell->doCreate( "Compartment", nid, "compt", dims, 1 );
@@ -45,6 +46,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   // set up compartment properties
   //////////////////////////////////////////////////////////////////////
 
+  cout << "HHnet: setting compartment props" << endl;
   FieldCcsClient< double >::set( comptId, "Cm", 0.007854e-6 );
   FieldCcsClient< double >::set( comptId, "Ra", 7639.44e3 ); // does it matter?
   FieldCcsClient< double >::set( comptId, "Rm", 424.4e3 );
@@ -55,6 +57,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   //////////////////////////////////////////////////////////////////////
   // set up Na channel properties
   //////////////////////////////////////////////////////////////////////
+  cout << "HHnet: set up Na channel" << endl;
   FieldCcsClient< double >::set( naId, "Gbar", 0.94248e-3 );
   FieldCcsClient< double >::set( naId, "Ek", EREST + 0.115 );
   FieldCcsClient< double >::set( naId, "Xpower", 3.0 );
@@ -63,6 +66,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   //////////////////////////////////////////////////////////////////////
   // set up K channel properties
   //////////////////////////////////////////////////////////////////////
+  cout << "HHnet: set up K channel" << endl;
   FieldCcsClient< double >::set( kId, "Gbar", 0.282743e-3 );
   FieldCcsClient< double >::set( kId, "Ek", EREST - 0.012 );
   FieldCcsClient< double >::set( kId, "Xpower", 4.0 );
@@ -70,6 +74,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   //////////////////////////////////////////////////////////////////////
   // set up m-gate of Na.
   //////////////////////////////////////////////////////////////////////
+  cout << "HHnet: get Na channel children" << endl;
   vector< CcsId > kids; // These are the HHGates.
   kids = FieldCcsClient< vector< CcsId > >::get( naId, "children" );
   if( kids.size() != 3 ){
@@ -100,7 +105,9 @@ void Main::rtHHNetwork(ShellProxy *shell){
   parms.push_back( xmin );
   parms.push_back( xmax );
 
+  cout << "HHnet: set Na-m gate alpha" << endl;
   SetGet1CcsClient< vector< double > >::set( kids[0], "setupAlpha", parms );
+  cout << "HHnet: set Na-m gate interpolation" << endl;
   FieldCcsClient< bool >::set( kids[0], "useInterpolation", 1 );
 
   //////////////////////////////////////////////////////////////////////
@@ -125,7 +132,9 @@ void Main::rtHHNetwork(ShellProxy *shell){
   parms.push_back( xmin );
   parms.push_back( xmax );
 
+  cout << "HHnet: set Na-h gate alpha" << endl;
   SetGet1CcsClient< vector< double > >::set( kids[1], "setupAlpha", parms );
+  cout << "HHnet: set Na-h gate interpolation" << endl;
   FieldCcsClient< bool >::set( kids[1], "useInterpolation", 1 );
 
   //////////////////////////////////////////////////////////////////////
@@ -134,6 +143,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   // Alpha rates: A = 1e4 * (0.01 + EREST), B = -1e4, C = -1.0, 
   //	D = -(EREST + 0.01 ), F = -0.01
   // Beta rates: 	A = 0.125e3, B = 0, C = 0, D = -EREST ), F = 0.08
+  cout << "HHnet: get K channel children" << endl;
   kids = FieldCcsClient< vector< CcsId > >::get( kId, "children" );
   parms.resize( 0 );
   parms.push_back(  1e4 * (0.01 + EREST) );
@@ -152,12 +162,15 @@ void Main::rtHHNetwork(ShellProxy *shell){
   parms.push_back( xmin );
   parms.push_back( xmax );
 
-  SetGet1CcsClient< vector< double > >::set( kids[2], "setupAlpha", parms );
-  FieldCcsClient< bool >::set( kids[2], "useInterpolation", 1 );
+  cout << "HHnet: set K-n gate alpha" << endl;
+  SetGet1CcsClient< vector< double > >::set( kids[0], "setupAlpha", parms );
+  cout << "HHnet: set K-n gate interpolation" << endl;
+  FieldCcsClient< bool >::set( kids[0], "useInterpolation", 1 );
 
   //////////////////////////////////////////////////////////////////////
   // Set up SpikeGen and SynChan
   //////////////////////////////////////////////////////////////////////
+  cout << "HHnet: create SynChan, SpikeGen" << endl;
   CcsId synChanId = shell->doCreate( "SynChan", comptId, "synChan", dims, 1);
   CcsId synId( synChanId.value() + 1 );
   CcsId axonId = shell->doCreate( "SpikeGen", comptId, "axon", dims, 1 );
@@ -168,6 +181,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   // Not valid anymore: cannot access Element from Id/ObjId in parser 
   //assert( synId()->getName() == "synapse" );
 
+  cout << "HHnet: configure SynChan" << endl;
   ret = FieldCcsClient< double >::set( synChanId, "tau1", 1.0e-3 );
   assert( ret );
   ret = FieldCcsClient< double >::set( synChanId, "tau2", 1.0e-3 );
@@ -229,7 +243,10 @@ void Main::rtHHNetwork(ShellProxy *shell){
   */
 
   kids = FieldCcsClient< vector< CcsId > >::get( copyId, "children" );
-  assert( kids.size() == 4 );
+  if( kids.size() != 4 ){
+    cout << "Copy nKids: " << kids.size() << endl;
+    assert(false);
+  }
   
   for(int i = 0; i < kids.size(); i++){
     cout << "kids[" << i << "] path: " << shell->doGetPath(kids[i]) << endl;

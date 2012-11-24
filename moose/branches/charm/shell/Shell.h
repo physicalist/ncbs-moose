@@ -550,6 +550,8 @@ class Shell
 		
 	private:
 
+          void printElementTree( Id id, int tabs, ostringstream &oss );
+
 #ifdef USE_CHARMPP
                 bool shouldStop_;
                 unsigned int nContainersCheckedIn_;

@@ -20,6 +20,7 @@
 #include "CcsDataId.h"
 
 #include "../basecode/CcsPackUnpack.h"
+#include "../basecode/SetGetWrapper.h"
 #include "ShellProxy.h"
 #include "ShellProxyHelpers.h"
 #include "converse.h"
@@ -202,9 +203,17 @@ CcsObjId ShellProxy::doFind(string &path){
   CcsSendBroadcastRequest(&shellServer_, ShellProxy::doFindHandlerString, size, toSend);
   delete[] toSend;
 
-  CcsObjId ret;
-  while(CcsRecvResponse(&shellServer_, sizeof(CcsObjId), &ret, MOOSE_CCS_TIMEOUT) < 0);
-  return ret;
+
+  int replySize;
+  char *reply;
+  while(CcsRecvResponseMsg(&shellServer_, &replySize, (void **) &reply, MOOSE_CCS_TIMEOUT) < 0);
+
+  SetGet1CcsWrapper< CcsObjId > wrapper;
+  CcsPackUnpack< SetGet1CcsWrapper< CcsObjId > >::unpackReply(reply, wrapper);
+  free(reply);
+
+  if(wrapper.hasData_) return wrapper.a1_;
+  else return CcsObjId();
 }
 
 void ShellProxy::doUseClock(string path, string field, unsigned int tick, bool qFlag){
