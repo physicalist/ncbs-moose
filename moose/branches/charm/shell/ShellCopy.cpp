@@ -175,9 +175,41 @@ bool Shell::innerCopy( const vector< Id >& args, const string& newName,
 	}
 	if ( newName != "" )
 		e->setName( newName );
+
+        ostringstream oss;
+        printElementTree(args[0], 0, oss);
+        CkPrintf("[0] orig tree:\n%s\n", oss.str().c_str());
+
+        oss.str("");
+        printElementTree(args[2], 0, oss);
+        CkPrintf("[1] copied tree:\n%s\n", oss.str().c_str());
+
 	//innerCopyData( orig, newParent );
 	innerCopyMsgs( tree, n, copyExtMsgs );
 	return 1;
+}
+
+string tabSpace(int units);
+
+void Shell::printElementTree(Id id, int tab, ostringstream &oss){
+  oss << tabSpace(tab) << id()->getName() << "(" << id.value() << ")" << endl;
+  vector< Id > kids;
+  Neutral::children(id.eref(), kids);
+  for(int i = 0; i < kids.size(); i++){
+    printElementTree(kids[i], tab + 2, oss);
+  }
+}
+
+string tabSpace(int units){
+  char *str = new char[units + 1];
+  for(int i = 0; i < units; i++){
+    str[i] = ' ';
+  }
+  str[units] = '\0';
+  string ret = string(str);
+  delete[] str;
+
+  return ret;
 }
 
 void Shell::handleCopy( const Eref& er, const Qinfo* q,

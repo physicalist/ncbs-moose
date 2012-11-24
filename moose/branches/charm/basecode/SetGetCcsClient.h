@@ -241,17 +241,11 @@ class FieldCcsClient : public SetGet1CcsClient<A> {
     return SetGet1CcsClient< A >::setVec( destId, temp, arg );
   }
 
-
-  static A get( const CcsObjId& dest, const string& field, bool sendToSingleNode = false){
+  static A get( const CcsId& dest, const string& field){
     unsigned int size;
     SetGetCcsClient::Args wrapper(dest, field);
     char *msg = CcsPackUnpack< SetGetCcsClient::Args >::pack(wrapper, size);
-    if(sendToSingleNode){
-      CcsSendRequest(&SetGetCcsClient::ccsServer_, FieldCcsClient< A >::getHandlerString().c_str(), 0, size, msg);
-    }
-    else{
-      CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, FieldCcsClient< A >::getHandlerString().c_str(), size, msg);
-    }
+    CcsSendRequest(&SetGetCcsClient::ccsServer_, FieldCcsClient< A >::getHandlerString().c_str(), 0, size, msg);
     delete[] msg;
 
     int msgSize;
@@ -269,16 +263,33 @@ class FieldCcsClient : public SetGet1CcsClient<A> {
     return ret.a1_;
   }
 
-  static void getVec( CcsId dest, const string& field, vector< A >& vec, bool sendToSingleNode = false){
+  static A get( const CcsObjId& dest, const string& field){
+    unsigned int size;
+    SetGetCcsClient::Args wrapper(dest, field);
+    char *msg = CcsPackUnpack< SetGetCcsClient::Args >::pack(wrapper, size);
+    CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, FieldCcsClient< A >::getHandlerString().c_str(), size, msg);
+    delete[] msg;
+
+    int msgSize;
+    // don't know how much data to receive,
+    // so receive the whole msg first and 
+    // unpack the data within it
+    while(CcsRecvResponseMsg(&SetGetCcsClient::ccsServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) <= 0);
+    // type A might need to be unwrapper
+    SetGet1CcsWrapper< A > ret;
+    CcsPackUnpack< SetGet1CcsWrapper< A > >::unpackReply(msg, ret);
+    // msg will point to a malloc()ed buffer after CcsRecvResponseMsg
+    free(msg);
+
+    assert(ret.hasData_);
+    return ret.a1_;
+  }
+
+  static void getVec( CcsId dest, const string& field, vector< A >& vec){
     unsigned int size;
     SetGetCcsClient::Args wrapper(CcsObjId(dest), field);
     char *msg = CcsPackUnpack< SetGetCcsClient::Args >::pack(wrapper, size);
-    if(sendToSingleNode){
-      CcsSendRequest(&SetGetCcsClient::ccsServer_, FieldCcsClient< A >::getVecHandlerString().c_str(), 0, size, msg);
-    }
-    else{
-      CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, FieldCcsClient< A >::getVecHandlerString().c_str(), size, msg);
-    }
+    CcsSendBroadcastRequest(&SetGetCcsClient::ccsServer_, FieldCcsClient< A >::getVecHandlerString().c_str(), size, msg);
     delete[] msg;
 
     int replySize;

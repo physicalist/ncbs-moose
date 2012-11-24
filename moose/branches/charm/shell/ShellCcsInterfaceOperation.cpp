@@ -15,8 +15,9 @@
 #include "Shell.h"
 #include "converse.h"
 
+#include "../basecode/SetGetWrapper.h"
 #include "ShellProxyHelpers.h"
-#include "CcsPackUnpack.h"
+#include "../basecode/CcsPackUnpack.h"
 
 #define DEF_DESCR_STRING(Class) \
 const string Class ## Operation::name_ = #Class;
@@ -59,7 +60,9 @@ void SetCweOperation::exec(Shell *shell){
 
 void GetCweOperation::exec(Shell *shell){
   Id id = shell->getCwe(); 
-  CcsSendDelayedReply(delayedReply_, sizeof(Id), &id);
+
+  CcsId ccsId(id.value());
+  CcsSendDelayedReply(delayedReply_, sizeof(CcsId), &ccsId);
 }
 
 void CreateOperation::exec(Shell *shell){
@@ -72,7 +75,9 @@ void CreateOperation::exec(Shell *shell){
                           createStruct.isGlobal_,
                           createStruct.qFlag_);
 
-  CcsSendDelayedReply(delayedReply_, sizeof(Id), &id);
+  CcsId ccsId(id.value());
+
+  CcsSendDelayedReply(delayedReply_, sizeof(CcsId), &ccsId);
 }
 
 void DeleteOperation::exec(Shell *shell){
@@ -184,7 +189,9 @@ void CopyOperation::exec(Shell *shell){
                         copyStruct.copyExtMsgs_,
                         copyStruct.qFlag_);
 
-  CcsSendDelayedReply(delayedReply_, sizeof(Id), &id);
+  CcsId ccsId(id.value());
+  CkPrintf("CopyOperation::exec doCopy ret %u\n", ccsId.value());
+  CcsSendDelayedReply(delayedReply_, sizeof(CcsId), &ccsId);
 }
 
 void FindOperation::exec(Shell *shell){
@@ -192,7 +199,15 @@ void FindOperation::exec(Shell *shell){
   CcsPackUnpack<std::string>::unpackHandler(msg_, path);
 
   ObjId id = shell->doFind(path);
-  CcsSendDelayedReply(delayedReply_, sizeof(ObjId), &id);
+  CcsObjId ccsId(id.id.value(), id.dataId.value());
+  SetGet1CcsWrapper< CcsObjId > wrapper(ccsId, !(id == ObjId()));
+
+  // since reduction requires a special (SetGetCcsServer) merge function, pack
+  unsigned int size;
+  char *toSend = CcsPackUnpack< SetGet1CcsWrapper< CcsObjId > >::pack(wrapper, size);
+  CcsSendDelayedReply(delayedReply_, size, toSend);
+
+  delete[] toSend;
 }
 
 void UseClockOperation::exec(Shell *shell){
@@ -217,7 +232,8 @@ void LoadModelOperation::exec(Shell *shell){
                              load.solverClass_,
                              load.qFlag_);
 
-  CcsSendDelayedReply(delayedReply_, sizeof(Id), &id);
+  CcsId ccsId(id.value());
+  CcsSendDelayedReply(delayedReply_, sizeof(CcsId), &ccsId);
 }
 
 void WriteSbmlOperation::exec(Shell *shell){
