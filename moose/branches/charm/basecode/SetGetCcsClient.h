@@ -263,6 +263,9 @@ class FieldCcsClient : public SetGet1CcsClient<A> {
     return ret.a1_;
   }
 
+  // FIXME - need a boolean flag to differentiate b/w
+  // this call (ccsobjid) and previous one (ccsid)
+  // FIXME how is get(ccsid) handled?
   static A get( const CcsObjId& dest, const string& field){
     unsigned int size;
     SetGetCcsClient::Args wrapper(dest, field);

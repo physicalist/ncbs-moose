@@ -178,11 +178,11 @@ bool Shell::innerCopy( const vector< Id >& args, const string& newName,
 
         ostringstream oss;
         printElementTree(args[0], 0, oss);
-        CkPrintf("[0] orig tree:\n%s\n", oss.str().c_str());
+        CkPrintf("[%d] orig tree:\n%s\n", CkMyPe(), oss.str().c_str());
 
         oss.str("");
         printElementTree(args[2], 0, oss);
-        CkPrintf("[1] copied tree:\n%s\n", oss.str().c_str());
+        CkPrintf("[%d] copied tree:\n%s\n", CkMyPe(), oss.str().c_str());
 
 	//innerCopyData( orig, newParent );
 	innerCopyMsgs( tree, n, copyExtMsgs );
