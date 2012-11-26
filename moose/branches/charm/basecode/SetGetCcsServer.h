@@ -77,7 +77,6 @@ class SetGetCcsServer {
 
     msgSize = psz.size() + sizeof(CcsImplHeader) + CmiReservedHeaderSize;
     char *replyMsg = (char *) CmiAlloc(msgSize);
-    header->len = ChMessageInt_new(psz.size());
 
     // copy converse header from local contribution
     //memcpy(replyMsg, localContribution, CmiReservedHeaderSize);
@@ -88,6 +87,7 @@ class SetGetCcsServer {
         sizeof(CcsImplHeader));
     header = (CcsImplHeader *) (replyMsg + CmiReservedHeaderSize);
     // set len field of CCS header
+    header->len = ChMessageInt_new(psz.size());
 
     // copy accumulated data into allocated message
     PUP::toMem pmem(header + 1);
@@ -184,7 +184,19 @@ class FieldCcsServer : public SetGet1CcsServer<A> {
     CmiFree(msg);
 
     A ret;
-    bool success = Field<A>::get(ObjId(args.dest_), args.field_, ret); 
+    bool success = false;
+
+    ObjId oid(args.dest_);
+    // FIXME - must differentiate between get(ccsid)
+    // and get(ccsobjid): test should only be performed for ccsobjid
+    // FIXME - for which other set/get calls must we perform this check?
+    // since this ccs call is going to be broadcast, the appropriate
+    // node on which the object is present should be the only one
+    // trying to invoke get() on it. 
+    if(oid.isDataHere()){
+      success = Field<A>::get(ObjId(args.dest_), args.field_, ret); 
+    }
+    
     SETGET_CCS_VERBOSE("[%d] FieldCcsServer<A>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be wrapper
     unsigned int size;

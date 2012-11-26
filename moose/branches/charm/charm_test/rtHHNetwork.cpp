@@ -244,12 +244,12 @@ void Main::rtHHNetwork(ShellProxy *shell){
 
   kids = FieldCcsClient< vector< CcsId > >::get( copyId, "children" );
   if( kids.size() != 4 ){
-    cout << "Copy nKids: " << kids.size() << endl;
+    cout << "HHnet: Copy nKids: " << kids.size() << endl;
     assert(false);
   }
   
   for(int i = 0; i < kids.size(); i++){
-    cout << "kids[" << i << "] path: " << shell->doGetPath(kids[i]) << endl;
+    cout << "HHnet: kids[" << i << "] path: " << shell->doGetPath(kids[i]) << endl;
   }
   // Cannot use operator() on Id to get Element
   /*
@@ -269,10 +269,12 @@ void Main::rtHHNetwork(ShellProxy *shell){
   ////////////////////////////////////////////////////////
   // Check that the HHGate data is accessible in copies.
   ////////////////////////////////////////////////////////
+  cout << "HHnet: get kids of kids[1]" << endl;
   vector< CcsId > gateKids = FieldCcsClient< vector< CcsId > >::get( kids[1], "children" );
   assert ( gateKids.size() == 3 );
   // Cannot use operator() on Id to get Element
   // assert ( gateKids[0]()->dataHandler() != 0 );
+  cout << "HHnet: get kparms" << endl;
   vector< double > kparms = FieldCcsClient< vector< double > >::get( 
       gateKids[0], "alpha" );
   assert( kparms.size() == 5 );
@@ -283,14 +285,17 @@ void Main::rtHHNetwork(ShellProxy *shell){
   // Check that regular fields are the same in copies.
   ////////////////////////////////////////////////////////
 
+  cout << "HHnet: get kids[0].Ek" << endl;
   double chanEk = FieldCcsClient< double >::get( 
       CcsObjId( kids[0], (numCopies * 234)/1000  ), 
       "Ek" ); 
   assert( doubleEq( chanEk, EREST + 0.115 ) );
+  cout << "HHnet: get kids[1].Ek" << endl;
   chanEk = FieldCcsClient< double >::get( 
       CcsObjId( kids[1], (numCopies * 567)/1000 ), 
       "Ek" ); 
   assert( doubleEq( chanEk, EREST - 0.012 ) );
+  cout << "HHnet: get kids[2].tau1" << endl;
   double tau1 = FieldCcsClient< double >::get( 
       CcsObjId( kids[2], (numCopies * 890)/1000 ), 
       "tau1" ); 
@@ -300,7 +305,9 @@ void Main::rtHHNetwork(ShellProxy *shell){
   // Make table to monitor one of the compartments.
   //////////////////////////////////////////////////////////////////////
 
+  cout << "HHnet: create table" << endl;
   CcsId tabId = shell->doCreate( "Table", copyParentId, "tab", dims );
+  cout << "HHnet: connect table to copy" << endl;
   mid = shell->doAddMsg( "single", CcsObjId( tabId, 0 ), "requestData",
       CcsObjId( copyId, numCopies/2 ), "get_Vm" );
   assert( mid != Msg::bad );
