@@ -35,7 +35,11 @@ class SetGetCcsServer {
       CcsPackUnpack< SetGet1CcsClient< string >::Args >::unpackHandler(msg, args);
       CmiFree(msg);
 
-      bool ret = SetGet::strSet(ObjId(args.dest_), args.field_, args.values_[0]); 
+      ObjId oid(args.dest_);
+      bool ret = true;
+      if(oid.isDataHere()){
+        ret = SetGet::strSet(oid, args.field_, args.values_[0]); 
+      }
       SETGET_CCS_VERBOSE("[%d] SetGetCcsServer::strSet success: %d\n", CkMyPe(), ret);
       CcsSendReply(sizeof(bool), &ret);
     }
@@ -107,6 +111,7 @@ class SetGetCcsServer {
     }
      */
 
+    // FIXME - do we have to free localContribution?
     //CmiFree(localContribution);
     return replyMsg;
   }
@@ -119,7 +124,11 @@ class SetGet0CcsServer {
     CcsPackUnpack<SetGetCcsClient::Args>::unpackHandler(msg, args);
     CmiFree(msg);
 
-    bool ret = SetGet0::set(ObjId(args.dest_), args.field_);
+    ObjId oid(args.dest_);
+    bool ret = true;
+    if(oid.isDataHere()){
+      ret = SetGet0::set(oid, args.field_);
+    }
     SETGET_CCS_VERBOSE("[%d] SetGet0CcsServer::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
@@ -133,7 +142,11 @@ class SetGet1CcsServer : public SetGetCcsServer {
     CcsPackUnpack< typename SetGet1CcsClient< A >::Args >::unpackHandler(msg, args);
     CmiFree(msg);
 
-    bool ret = SetGet1<A>::set(ObjId(args.dest_), args.field_, args.values_[0]);
+    ObjId oid(args.dest_);
+    bool ret = true;
+    if(oid.isDataHere()){
+      ret = SetGet1<A>::set(oid, args.field_, args.values_[0]);
+    }
     SETGET_CCS_VERBOSE("[%d] SetGet1CcsServer<A>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
@@ -157,7 +170,11 @@ void SetGet1CcsServer<CcsId>::set_handler(char *msg){
   CcsPackUnpack< SetGet1CcsClient< CcsId >::Args >::unpackHandler(msg, args);
   CmiFree(msg);
 
-  bool ret = SetGet1<Id>::set(ObjId(args.dest_), args.field_, Id(args.values_[0]));
+  ObjId oid(args.dest_);
+  bool ret = true;
+  if(oid.isDataHere()){
+    ret = SetGet1<Id>::set(oid, args.field_, Id(args.values_[0]));
+  }
   SETGET_CCS_VERBOSE("[%d] SetGet1CcsServer<CcsId>::setVec success: %d\n", CkMyPe(), ret);
   CcsSendReply(sizeof(bool), &ret);
 }
@@ -168,7 +185,11 @@ void SetGet1CcsServer<CcsObjId>::set_handler(char *msg){
   CcsPackUnpack< SetGet1CcsClient< CcsObjId >::Args >::unpackHandler(msg, args);
   CmiFree(msg);
 
-  bool ret = SetGet1<ObjId>::set(ObjId(args.dest_), args.field_, ObjId(args.values_[0]));
+  ObjId oid(args.dest_);
+  bool ret = true;
+  if(oid.isDataHere()){
+    ret = SetGet1<ObjId>::set(oid, args.field_, ObjId(args.values_[0]));
+  }
   SETGET_CCS_VERBOSE("[%d] SetGet1CcsServer<CcsObjId>::set success: %d\n", CkMyPe(), ret);
   CcsSendReply(sizeof(bool), &ret);
 }
@@ -194,7 +215,7 @@ class FieldCcsServer : public SetGet1CcsServer<A> {
     // node on which the object is present should be the only one
     // trying to invoke get() on it. 
     if(oid.isDataHere()){
-      success = Field<A>::get(ObjId(args.dest_), args.field_, ret); 
+      success = Field<A>::get(oid, args.field_, ret); 
     }
     
     SETGET_CCS_VERBOSE("[%d] FieldCcsServer<A>::get success: %d\n", CkMyPe(), success);
@@ -374,7 +395,11 @@ class SetGet2CcsServer : public SetGetCcsServer {
     CcsPackUnpack< typename SetGet2CcsClient<A1, A2>::Args >::unpackHandler(msg, args);
     CmiFree(msg);
 
-    bool ret = SetGet2<A1, A2>::set(ObjId(args.dest_), args.field_, args.a1_[0], args.a2_[0]);
+    ObjId oid(args.dest_);
+    bool ret = true;
+    if(oid.isDataHere()){
+      ret = SetGet2<A1, A2>::set(oid, args.field_, args.a1_[0], args.a2_[0]);
+    }
     SETGET_CCS_VERBOSE("[%d] SetGet2CcsServer<A1,A2>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
@@ -619,7 +644,11 @@ class SetGet3CcsServer : public SetGetCcsServer {
     CcsPackUnpack< typename SetGet3CcsClient< A1, A2, A3 >::Args >::unpackHandler(msg, args);
     CmiFree(msg);
 
-    bool ret = SetGet3<A1, A2, A3>::set(ObjId(args.dest_), args.field_, args.a1_, args.a2_, args.a3_);
+    ObjId oid(args.dest_);
+    bool ret = true;
+    if(oid.isDataHere()){
+      ret = SetGet3<A1, A2, A3>::set(oid, args.field_, args.a1_, args.a2_, args.a3_);
+    }
     SETGET_CCS_VERBOSE("[%d] SetGet3CcsServer<A1,A2,A3>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
@@ -633,7 +662,11 @@ class SetGet4CcsServer : public SetGetCcsServer {
     CcsPackUnpack< typename SetGet4CcsClient< A1, A2, A3, A4 >::Args >::unpackHandler(msg, args);
     CmiFree(msg);
 
-    bool ret = SetGet4<A1, A2, A3, A4>::set(ObjId(args.dest_), args.field_, args.a1_, args.a2_, args.a3_, args.a4_);
+    ObjId oid(args.dest_);
+    bool ret = true;
+    if(oid.isDataHere()){
+      ret = SetGet4<A1, A2, A3, A4>::set(oid, args.field_, args.a1_, args.a2_, args.a3_, args.a4_);
+    }
     SETGET_CCS_VERBOSE("[%d] SetGet4CcsServer<A1,A2,A3,A4>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
@@ -646,7 +679,11 @@ template< class A1, class A2, class A3, class A4, class A5 > class SetGet5CcsSer
     CcsPackUnpack< typename SetGet5CcsClient< A1, A2, A3, A4, A5 >::Args >::unpackHandler(msg, args);
     CmiFree(msg);
 
-    bool ret = SetGet5<A1, A2, A3, A4, A5>::set(ObjId(args.dest_), args.field_, args.a1_, args.a2_, args.a3_, args.a4_, args.a5_);
+    ObjId oid(args.dest_);
+    bool ret = true;
+    if(oid.isDataHere()){
+      ret = SetGet5<A1, A2, A3, A4, A5>::set(oid, args.field_, args.a1_, args.a2_, args.a3_, args.a4_, args.a5_);
+    }
     SETGET_CCS_VERBOSE("[%d] SetGet5CcsServer<A1,A2,A3,A4,A5>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }
@@ -659,7 +696,11 @@ template< class A1, class A2, class A3, class A4, class A5, class A6 > class Set
     CcsPackUnpack< typename::SetGet6CcsClient< A1, A2, A3, A4, A5, A6 >::Args >::unpackHandler(msg, args);
     CmiFree(msg);
 
-    bool ret = SetGet6<A1, A2, A3, A4, A5, A6>::set(ObjId(args.dest_), args.field_, args.a1_, args.a2_, args.a3_, args.a4_, args.a5_, args.a6_);
+    ObjId oid(args.dest_);
+    bool ret = true;
+    if(oid.isDataHere()){
+      ret = SetGet6<A1, A2, A3, A4, A5, A6>::set(oid, args.field_, args.a1_, args.a2_, args.a3_, args.a4_, args.a5_, args.a6_);
+    }
     SETGET_CCS_VERBOSE("[%d] SetGet6CcsServer<A1,A2,A3,A4,A5,A6>::set success: %d\n", CkMyPe(), ret);
     CcsSendReply(sizeof(bool), &ret);
   }

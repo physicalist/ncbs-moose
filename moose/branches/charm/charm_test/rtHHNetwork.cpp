@@ -315,17 +315,20 @@ void Main::rtHHNetwork(ShellProxy *shell){
   //////////////////////////////////////////////////////////////////////
   // Schedule, Reset, and run.
   //////////////////////////////////////////////////////////////////////
+  cout << "HHnet: set clock" << endl;
   shell->doSetClock( 0, 1.0e-5 );
   shell->doSetClock( 1, 1.0e-5 );
   shell->doSetClock( 2, 1.0e-5 );
   shell->doSetClock( 3, 1.0e-4 );
 
+  cout << "HHnet: use clock" << endl;
   shell->doUseClock( "/copy/comptCopies", "init", 0 );
   shell->doUseClock( "/copy/comptCopies", "process", 1 );
   shell->doUseClock( "/copy/comptCopies/##", "process", 2 );
   // shell->doUseClock( "/copy/compt/Na,/n/compt/K", "process", 2 );
   shell->doUseClock( "/copy/tab", "process", 3 );
 
+  cout << "HHnet: reinit and start" << endl;
   shell->doReinit();
   shell->doReinit();
   shell->doStart( 0.01 );
@@ -333,6 +336,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   //////////////////////////////////////////////////////////////////////
   // Check output
   //////////////////////////////////////////////////////////////////////
+  cout << "HHnet: check output" << endl;
   vector< double > vec = FieldCcsClient< vector< double > >::get( tabId, "vec" );
   // assert( vec.size() == 101 );
   double delta = 0;
@@ -348,6 +352,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   double connectionProbability = 1.5 / sqrt( numCopies );
   CcsId synCopyId( kids[2].value() + 1 );
 
+  cout << "HHnet: add msg" << endl;
   mid = shell->doAddMsg( "Sparse", kids[3], "event", 
       synCopyId, "addSpike" );
   assert( mid != Msg::bad );
@@ -356,6 +361,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   // Use following shell proxy function instead
   CcsObjId msgMgrObjId = shell->doGetMsgMgr(mid);
 
+  cout << "HHnet: set msg random connectivity" << endl;
   SetGet2CcsClient< double, long >::set( msgMgrObjId, "setRandomConnectivity",
       connectionProbability, 1234UL );
 
@@ -376,8 +382,10 @@ void Main::rtHHNetwork(ShellProxy *shell){
     weight[i] = mtrand() * weightMax;
     delay[i] = mtrand() * delayRange + delayMin;
   }
+  cout << "HHnet: set synapse weights" << endl;
   ret = FieldCcsClient< double >::setVec( synCopyId, "weight", weight );
   assert( ret );
+  cout << "HHnet: set synapse delays" << endl;
   ret = FieldCcsClient< double >::setVec( synCopyId, "delay", delay );
   assert( ret );
 
@@ -385,6 +393,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   vector< double > inject( numCopies, 0 );
   for ( unsigned int i = 0; i < numCopies; ++i )
     inject[i] = mtrand() * injectRange;
+  cout << "HHnet: set injection current" << endl;
   ret = FieldCcsClient< double >::setVec( copyId, "inject", inject );
   assert( ret );
 
@@ -392,10 +401,12 @@ void Main::rtHHNetwork(ShellProxy *shell){
   // Reset, and run again. This time long enough to have lots of 
   // synaptic activity
   //////////////////////////////////////////////////////////////////////
+  cout << "HHnet: reinit and run again" << endl;
   shell->doReinit();
   shell->doReinit();
   shell->doStart( 0.1 );
 
+  cout << "HHnet: set plot" << endl;
   SetGet2CcsClient< string, string >::set( CcsObjId( tabId ), 
       "xplot", "hhnet.plot", "hhnet" );
 
@@ -405,6 +416,7 @@ void Main::rtHHNetwork(ShellProxy *shell){
   ////////////////////////////////////////////////////////////////
   // Clear it all up
   ////////////////////////////////////////////////////////////////
+  cout << "HHnet: clean up" << endl;
   shell->doDelete( copyParentId );
   shell->doDelete( nid );
   cout << "." << flush;
