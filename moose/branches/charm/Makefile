@@ -266,7 +266,7 @@ endif
 
 ifdef USE_CHARMPP
 # set CHARM_PATH 
-        CHARM_PATH = $(HOME)/work/charm-soc/charm/net-linux
+        CHARM_PATH = #
         CXX = $(CHARM_PATH)/bin/charmc 
         LIBS += -lccs-client 
         LINK_CXX = g++
