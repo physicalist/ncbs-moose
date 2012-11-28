@@ -1,4 +1,4 @@
-CHARM_PATH = $(HOME)/work/charm-soc/charm/net-linux
+CHARM_PATH = #
 DEFINE_FLAGS = -DUSE_CHARMPP
 
 INCPATH = -I$(CHARM_PATH)/tmp/libs/ck-libs/NDMeshStreamer -I ../shell -I../basecode -I../scheduling -I../msg 
