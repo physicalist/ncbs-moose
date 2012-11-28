@@ -18,7 +18,9 @@ CFLAGS = $(OPTS) $(DEFINE_FLAGS) -g
 
 OBJECTS = Main.o \
           rtHHNetwork.o \
-          speedTestMultiNodeIntFireNetwork.o
+          speedTestMultiNodeIntFireNetwork.o \
+          LaunchJob.o \
+          ParamStorage.o
 
 LINK_OBJECTS = ../shell/ShellProxy.o \
                ../basecode/SetGetCcsClient.o \
@@ -29,7 +31,9 @@ LINK_OBJECTS = ../shell/ShellProxy.o \
 
 SRC = Main.cpp \
       rtHHNetwork.cpp \
-      speedTestMultiNodeIntFireNetwork.cpp 
+      speedTestMultiNodeIntFireNetwork.cpp \
+      LaunchJob.cpp \
+      ParamStorage.cpp
 
 TARGET = test
 all: $(TARGET) 

@@ -24,6 +24,8 @@ class Cinfo;
 #include <iostream>
 using namespace std;
 
+class ParamStorage;
+
 
 class Main : public CBase_Main {
   ShellProxy shell_;
@@ -35,6 +37,7 @@ class Main : public CBase_Main {
 
   private:
   void test();
+  string launchJob(ParamStorage &p);
   void rtHHNetwork(ShellProxy *shell);
   void speedTestMultiNodeIntFireNetwork( unsigned int size, unsigned int runsteps, ShellProxy *shell );
 };
