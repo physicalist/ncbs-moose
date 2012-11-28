@@ -1,28 +1,42 @@
 #include "Main.h"
+#include "ParamStorage.h"
 
 Main::Main(CkArgMsg *m){
   argMsg_ = m;
   thisProxy.commence();
 }
 
+
+
 void Main::commence(){
   CkPrintf("Test::commence\n");
-  MooseParamCollection params;
-  string serverName;
-  int serverPort;
 
-  params.add(string("--ccsServer"), &serverName, string("localhost"), true);
-  params.add(string("--ccsPort"), &serverPort, -1, true);
+  MooseParamCollection params;
+  ParamStorage p;
+
+  //params.add(string("--ccsServer"), &serverName, string("localhost"), true);
+  params.add(string("--exe"), &p.exe, ParamStorage::defaultExe, true);
+  params.add(string("--pwd"), &p.pwd, ParamStorage::defaultPwd, true);
+  params.add(string("--launcher"), &p.launcher, ParamStorage::defaultLauncher, true);
+  params.add(string("--npes"), &p.nPes, ParamStorage::defaultNPes, true);
+  params.add(string("--ccsPort"), &p.ccsPort, ParamStorage::defaultCcsPort, true);
+  params.add(string("--listenPort"), &p.listenPort, ParamStorage::defaultListenPort, true);
+
   params.process(argMsg_->argc, argMsg_->argv);                      
 
-  CkPrintf("server: %s\nport: %d\n", serverName.c_str(), serverPort);
+  string serverName = launchJob(p);
+  // when we return from launchJob, the job will have started up
+  // and will be ready for CCS commands
+
+  // we can then connect to the job's CCS server
+  CkPrintf("server: %s\nport: %d\n", serverName.c_str(), p.ccsPort);
 
   CkPrintf("ShellProxy connection...");
-  shell_.ccsInit(serverName, serverPort);
+  shell_.ccsInit(serverName, p.ccsPort);
   CkPrintf("done\n");
 
   CkPrintf("SetGetCcsClient connection...");
-  SetGetCcsClient::connect(serverName, serverPort);
+  SetGetCcsClient::connect(serverName, p.ccsPort);
   CkPrintf("done\n");
 
   test();
