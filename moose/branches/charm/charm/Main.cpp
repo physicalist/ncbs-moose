@@ -103,6 +103,8 @@ void Main::commence(){
   readonlyParallelTestHelperProxy[0].doSerialUnitTests(CkCallbackResumeThread());
   CkPrintf("done\n");
 
+  CkPrintf("[main] ready for CCS commands\n");
+
   //CkPrintf("\n[main] starting parallel unit tests\n");
   //readonlyParallelTestHelperProxy[0].doMpiTests(CkCallbackResumeThread());
 

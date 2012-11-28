@@ -199,8 +199,10 @@ Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests )
 	}
 	if ( isSingleThreaded )
 		numThreads = 0;
+#ifndef USE_CHARMPP
 	if ( myNode == 0 ) 
 		cout << "on node " << myNode << ", numNodes = " << numNodes << ", numCores = " << numCores << ", numComputeThreads = " << numThreads << endl;
+#endif
 
 	Msg::initNull();
 	Id shellId;
