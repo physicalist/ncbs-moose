@@ -164,8 +164,11 @@ class SetGet1CcsServer : public SetGetCcsServer {
 
 };
 
+// in the specializations below, the inlines help us to avoid 
+// compiler complaints of violation of the one definition rule
+
 template<>
-void SetGet1CcsServer<CcsId>::set_handler(char *msg){
+inline void SetGet1CcsServer<CcsId>::set_handler(char *msg){
   SetGet1CcsClient< CcsId >::Args args;
   CcsPackUnpack< SetGet1CcsClient< CcsId >::Args >::unpackHandler(msg, args);
   CmiFree(msg);
@@ -180,7 +183,7 @@ void SetGet1CcsServer<CcsId>::set_handler(char *msg){
 }
 
 template<>
-void SetGet1CcsServer<CcsObjId>::set_handler(char *msg){
+inline void SetGet1CcsServer<CcsObjId>::set_handler(char *msg){
   SetGet1CcsClient< CcsObjId >::Args args;
   CcsPackUnpack< SetGet1CcsClient< CcsObjId >::Args >::unpackHandler(msg, args);
   CmiFree(msg);
@@ -250,7 +253,7 @@ class FieldCcsServer : public SetGet1CcsServer<A> {
 // specializations for returning CcsId/CcsObjId. These are needed because
 // we must convert from Id/ObjId to CcsId/CcsObjId before replying
 template<>
-void FieldCcsServer<CcsId>::get_handler(char *msg){
+inline void FieldCcsServer<CcsId>::get_handler(char *msg){
   SetGetCcsClient::Args args;
   CcsPackUnpack<SetGetCcsClient::Args>::unpackHandler(msg, args);
   CmiFree(msg);
@@ -271,7 +274,7 @@ void FieldCcsServer<CcsId>::get_handler(char *msg){
 }
 
 template<>
-void FieldCcsServer<vector<CcsId> >::get_handler(char *msg){
+inline void FieldCcsServer<vector<CcsId> >::get_handler(char *msg){
   SetGetCcsClient::Args args;
   CcsPackUnpack<SetGetCcsClient::Args>::unpackHandler(msg, args);
   CmiFree(msg);
@@ -294,7 +297,7 @@ void FieldCcsServer<vector<CcsId> >::get_handler(char *msg){
 }
 
 template<>
-void FieldCcsServer<CcsId>::getVec_handler(char *msg){
+inline void FieldCcsServer<CcsId>::getVec_handler(char *msg){
   SetGetCcsClient::Args args; 
   CcsPackUnpack<SetGetCcsClient::Args>::unpackHandler(msg, args);
   CmiFree(msg);
@@ -319,7 +322,7 @@ void FieldCcsServer<CcsId>::getVec_handler(char *msg){
 
 
 template<>
-void FieldCcsServer<CcsObjId>::get_handler(char *msg){
+inline void FieldCcsServer<CcsObjId>::get_handler(char *msg){
   SetGetCcsClient::Args args;
   CcsPackUnpack<SetGetCcsClient::Args>::unpackHandler(msg, args);
   CmiFree(msg);
@@ -341,7 +344,7 @@ void FieldCcsServer<CcsObjId>::get_handler(char *msg){
 }
 
 template<>
-void FieldCcsServer<vector<CcsObjId> >::get_handler(char *msg){
+inline void FieldCcsServer<vector<CcsObjId> >::get_handler(char *msg){
   SetGetCcsClient::Args args;
   CcsPackUnpack<SetGetCcsClient::Args>::unpackHandler(msg, args);
   CmiFree(msg);
@@ -364,7 +367,7 @@ void FieldCcsServer<vector<CcsObjId> >::get_handler(char *msg){
 }
 
 template<>
-void FieldCcsServer<CcsObjId>::getVec_handler(char *msg){
+inline void FieldCcsServer<CcsObjId>::getVec_handler(char *msg){
   SetGetCcsClient::Args args; 
   CcsPackUnpack<SetGetCcsClient::Args>::unpackHandler(msg, args);
   CmiFree(msg);

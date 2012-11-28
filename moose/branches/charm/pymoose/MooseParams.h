@@ -56,7 +56,7 @@ class TypedMooseParam : public MooseParam {
 };
 
 template<>
-void TypedMooseParam<bool>::extract(const char *val){
+inline void TypedMooseParam<bool>::extract(const char *val){
   string valString(val);
   if(valString == "true"){
     parsedValue_ = true;  
@@ -67,27 +67,27 @@ void TypedMooseParam<bool>::extract(const char *val){
 }
 
 template<>
-void TypedMooseParam<int>::extract(const char *val){
+inline void TypedMooseParam<int>::extract(const char *val){
   parsedValue_ = atoi(val);
 }
 
 template<>
-void TypedMooseParam<unsigned int>::extract(const char *val){
+inline void TypedMooseParam<unsigned int>::extract(const char *val){
   parsedValue_ = strtoul(val, NULL, 0);
 }
 
 template<>
-void TypedMooseParam<float>::extract(const char *val){
+inline void TypedMooseParam<float>::extract(const char *val){
   parsedValue_ = atof(val);
 }
 
 template<>
-void TypedMooseParam<double>::extract(const char *val){
+inline void TypedMooseParam<double>::extract(const char *val){
   parsedValue_ = strtod(val, NULL);
 }
 
 template<>
-void TypedMooseParam<string>::extract(const char *val){
+inline void TypedMooseParam<string>::extract(const char *val){
   parsedValue_ = string(val);
 }
 
