@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 12 09:38:09 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 16:07:05 2012 (+0530)
+# Last-Updated: Thu Nov 29 16:39:07 2012 (+0530)
 #           By: subha
-#     Update #: 306
+#     Update #: 334
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -69,7 +69,7 @@ class MWindow(QtGui.QMainWindow):
     the plugin can provide its own list of menus by implementing the
     function getMenus().
 
-    the view widget of the plugin can also provide its own list of
+    the view of the plugin can also provide its own list of
     menus by implementing the function getMenus().
 
     the currentView provides a set of toolbars that are added to the
@@ -95,22 +95,24 @@ class MWindow(QtGui.QMainWindow):
         self.viewActions = None
         self.editActions = None                
         self._loadedPlugins = {}
-        print 'Loading plugins'
         self.quitAction = QtGui.QAction('Quit', self)
         self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), self.quit)
-        print 'Created quit action'
         self.setPlugin('default')        
-        print 'Initialized'
 
     def quit(self):
         QtGui.qApp.closeAllWindows()        
     
     def getPluginNames(self):
+        """Return pluginNames attribute or create it by retrieving
+        available plugin names from plugin/list.txt file.
+
+        """
         if self.pluginNames is None:
             with open(os.path.join(config.MOOSE_GUI_DIR,
                                    'plugins', 
                                    'list.txt')) as lfile:
                 self.pluginNames = [line.strip() for line in lfile]
+                self.pluginNames = [name for name in self.pluginNames if name]
         return self.pluginNames
 
     def loadPluginModule(self, name, re=False):
@@ -150,8 +152,15 @@ class MWindow(QtGui.QMainWindow):
         raise Exception('No plugin with name: %s' % (name))
 
     def setPlugin(self, name):
+        """Set the current plugin to use.
+
+        This 
+
+        2. sets the `plugin` attribute.
+        3. updates menus by clearing and reinstating menus including anything provided by the plugin.
+        4. sets the current view  to the plugins editor view.
+        """
         plugin = self.loadPluginClass(name)
-        self.menuBar().clear()
         self.plugin = plugin
         self.updateMenus()
         self.setCurrentView(plugin.getEditorView())
@@ -170,10 +179,20 @@ class MWindow(QtGui.QMainWindow):
         return False
         
     def updateMenus(self):
+        """Clear the menubar and reinstate the basic menus.  Go
+        through the menus provided by current plugin and add those to
+        menubar.
+
+        If a menu provided by a plugin has same name as one of the
+        core menus, the menu items provided by the plugin are appended
+        to the existing menu after a separator.
+
+        """
         self.menuBar().clear()
         self.menuBar().addMenu(self.getFileMenu())
         self.menuBar().addMenu(self.getEditMenu())
         self.menuBar().addMenu(self.getViewMenu())
+        self.menuBar().addMenu(self.getPluginsMenu())
         self.menuBar().addMenu(self.getHelpMenu())
         for menu in self.plugin.getMenus():
             if not self.updateExistingMenu(menu):
@@ -203,7 +222,19 @@ class MWindow(QtGui.QMainWindow):
             self.editMenu.clear()
         self.editMenu.addActions(self.getEditActions())
         return self.editMenu
-    
+
+    def getPluginsMenu(self):
+        if (not hasattr(self, 'pluginsMenu')) or (self.pluginsMenu is None):
+            self.pluginsMenu = QtGui.QMenu('Plugins')
+            mapper = QtCore.QSignalMapper(self)
+            for pluginName in self.getPluginNames():
+                action = QtGui.QAction(pluginName, self)
+                self.connect(action, QtCore.SIGNAL('triggered()'), mapper.map)
+                self.pluginsMenu.addAction(action)
+                mapper.setMapping(action, pluginName)
+            self.connect(mapper, QtCore.SIGNAL('mapped(const QString &)'), self.setPlugin)
+        return self.pluginsMenu
+
     def getHelpMenu(self):
         if self.helpMenu is None:
             self.helpMenu = QtGui.QMenu('Help')
