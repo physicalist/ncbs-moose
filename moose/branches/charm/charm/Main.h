@@ -1,19 +1,10 @@
 #ifndef MOOSE_MAIN_H
 #define MOOSE_MAIN_H
 
-template <typename POINTER_TYPE>
-struct PointerContainer {
-  POINTER_TYPE *ptr;
-  void pup(PUP::er &p){
-    pup(p, (char **)&ptr, sizeof(char *));
-  }
-};
-
 #include <string>
 using namespace std;
 #include "moose.decl.h"
 #include "shell.decl.h"
-#include "Messages.h"
 
 class Main : public CBase_Main {
   public:
@@ -21,12 +12,19 @@ class Main : public CBase_Main {
 
   Main(CkArgMsg *m);
   void commence();
+  static void RetryHeadNodeConnect(void *arg, double);
+  void trySendReply();
 
   private:
   void createMooseParallelObjects(CkArgMsg *m);
+  void sendSocketReply();
 
   private:
   bool doUnitTests_;
+  int replyPort_;
+  string replyAddress_;
+  int retryPeriod_;
+  int retryAttempts_;
 
 };
 

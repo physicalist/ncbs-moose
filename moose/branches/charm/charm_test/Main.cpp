@@ -15,28 +15,42 @@ void Main::commence(){
   ParamStorage p;
 
   //params.add(string("--ccsServer"), &serverName, string("localhost"), true);
-  params.add(string("--exe"), &p.exe, ParamStorage::defaultExe, true);
-  params.add(string("--pwd"), &p.pwd, ParamStorage::defaultPwd, true);
-  params.add(string("--launcher"), &p.launcher, ParamStorage::defaultLauncher, true);
-  params.add(string("--npes"), &p.nPes, ParamStorage::defaultNPes, true);
-  params.add(string("--ccsPort"), &p.ccsPort, ParamStorage::defaultCcsPort, true);
-  params.add(string("--listenPort"), &p.listenPort, ParamStorage::defaultListenPort, true);
+  //params.add(string("exe"), &p.exe, ParamStorage::defaultExe, true);
+  //params.add(string("dir"), &p.dir, ParamStorage::defaultDir, true);
+  //params.add(string("launcher"), &p.launcher, ParamStorage::defaultLauncher, true);
+  //// no default for nodelist; must be specified explicitly
+  //params.add(string("nodelist"), &p.nodelist, true);
+  //params.add(string("npes"), &p.nPes, ParamStorage::defaultNPes, true);
+  params.add(string("ccsHost"), &p.ccsHost, ParamStorage::defaultCcsHost, true);
+  params.add(string("ccsPort"), &p.ccsPort, ParamStorage::defaultCcsPort, true);
+  params.add(string("listenPort"), &p.listenPort, ParamStorage::defaultListenPort, true);
 
-  params.process(argMsg_->argc, argMsg_->argv);                      
+  if(!params.process(argMsg_->argc, argMsg_->argv)){
+    CkPrintf("[main] test not started; missing parameters\n");
+    CkExit();
+  }
 
-  string serverName = launchJob(p);
-  // when we return from launchJob, the job will have started up
+  // fix directory from relative to absolute,
+  // if needed
+  /*
+  if(!MooseEnv::isAbsolutePath(p.dir)){
+    p.dir = MooseEnv::CurrentWorkingDirectory_ + MooseEnv::DirectorySeparator_ + p.dir;
+  }
+  */
+
+  acceptJobReply(p);
+  // when we return from accepJobReply, the job will have started up
   // and will be ready for CCS commands
 
   // we can then connect to the job's CCS server
-  CkPrintf("server: %s\nport: %d\n", serverName.c_str(), p.ccsPort);
+  CkPrintf("server: %s\nport: %d\n", p.ccsHost.c_str(), p.ccsPort);
 
   CkPrintf("ShellProxy connection...");
-  shell_.ccsInit(serverName, p.ccsPort);
+  shell_.ccsInit(p.ccsHost, p.ccsPort);
   CkPrintf("done\n");
 
   CkPrintf("SetGetCcsClient connection...");
-  SetGetCcsClient::connect(serverName, p.ccsPort);
+  SetGetCcsClient::connect(p.ccsHost, p.ccsPort);
   CkPrintf("done\n");
 
   test();

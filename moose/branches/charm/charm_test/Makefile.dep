@@ -16,6 +16,7 @@ test.decl.h \
 ../basecode/CcsObjId.h \
 ../basecode/../shell/ShellProxy.h \
 ../pymoose/MooseParams.h \
+../pymoose/../charm/MooseEnv.h \
 ../msg/Msg.h \
 ParamStorage.h \
 
@@ -37,6 +38,7 @@ test.decl.h \
 ../basecode/CcsObjId.h \
 ../basecode/../shell/ShellProxy.h \
 ../pymoose/MooseParams.h \
+../pymoose/../charm/MooseEnv.h \
 ../msg/Msg.h \
 ../basecode/doubleEq.h \
 
@@ -58,6 +60,7 @@ test.decl.h \
 ../basecode/CcsObjId.h \
 ../basecode/../shell/ShellProxy.h \
 ../pymoose/MooseParams.h \
+../pymoose/../charm/MooseEnv.h \
 ../msg/Msg.h \
 ../basecode/doubleEq.h \
 
@@ -79,8 +82,12 @@ test.decl.h \
 ../basecode/CcsObjId.h \
 ../basecode/../shell/ShellProxy.h \
 ../pymoose/MooseParams.h \
+../pymoose/../charm/MooseEnv.h \
 ../msg/Msg.h \
 
 ParamStorage.o: \
 ParamStorage.cpp \
+ParamStorage.h \
+../pymoose/MooseParams.h \
+../pymoose/../charm/MooseEnv.h \
 

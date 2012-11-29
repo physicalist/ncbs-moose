@@ -4,10 +4,18 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
 
-string Main::launchJob(ParamStorage &p){
+template<typename T>
+string Main::toString(const T &t){
+  ostringstream oss;
+  oss << t;
+  return oss.str();
+}
+
+void Main::acceptJobReply(ParamStorage &p){
   // set up a socket 
   int listenFd;
   int connFd;
@@ -21,23 +29,30 @@ string Main::launchJob(ParamStorage &p){
 
   servAddr.sin_family = AF_INET;
   servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  servAddr.sin_port = htons(p.defaultListenPort);
+  servAddr.sin_port = htons(p.listenPort);
 
   bind(listenFd, (sockaddr *)&servAddr, sizeof(servAddr));
 
-  // XXX launch job
-
   // listen on socket
   listen(listenFd, 1);
+  CkPrintf("[test] Listening for connection\n");
 
   // accept connection
   connFd = accept(listenFd, (sockaddr *) NULL, NULL); 
 
-  // XXX read CCS serverName from socket
-  string serverName;
+  CkPrintf("[test] Accepted connection from compute nodes!\n");
 
   close(connFd);
+  close(listenFd);
+}
 
-  // return serverName 
-  return serverName;
+string Main::findHostAddr(){
+  struct addrinfo hints, *info, *p;
+  int gai_result;
+
+  char hostname[1024];
+  hostname[1023] = '\0';
+  gethostname(hostname, 1023);
+
+  return string(hostname);
 }

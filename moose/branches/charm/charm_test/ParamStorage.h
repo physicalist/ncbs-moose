@@ -5,22 +5,28 @@
 using namespace std;
 
 struct ParamStorage {
-  string exe;
-  string pwd;
-  string launcher;
-  int nPes;
+  //string exe;
+  //string dir;
+  //string launcher;
+  //string nodelist;
+  //string replyAddress;
+  string ccsHost; 
+
+  //int nPes;
   int ccsPort;
   int listenPort;
 
-
-
   // constants
-  static string defaultExe;
-  static string defaultPwd;
-  static string defaultLauncher;
-  static int    defaultNPes;
+  //static string defaultExe;
+  //static string defaultDir;
+  //static string defaultLauncher;
+  static string defaultCcsHost; 
+  //static int    defaultNPes;
   static int    defaultCcsPort;
   static int    defaultListenPort;
+
+  static string getDefaultDir();
+  static string getcwd();
 };
 
 #endif // PARAM_STORAGE_H

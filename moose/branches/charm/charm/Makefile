@@ -4,7 +4,7 @@ DEFINE_FLAGS = -DUSE_CHARMPP
 INCPATH = -I$(CHARM_PATH)/tmp/libs/ck-libs/NDMeshStreamer -I ../shell -I../basecode -I../scheduling -I../msg 
 OPTS = -g -O0 
 CXXFLAGS += $(OPTS) $(DEFINE_FLAGS)
-LDFLAGS += $(OPTS) -L. -L$(CHARM_PATH)/lib -language charm++ -module completion -module NDMeshStreamer #-tracemode projections 
+LDFLAGS += $(OPTS) -L. -L$(CHARM_PATH)/lib -language charm++ #-tracemode projections 
 
 CHARMC = $(CHARM_PATH)/bin/charmc $(INCPATH)
 
@@ -13,8 +13,8 @@ CC = $(CXX)
 AR = ar q 
 CXX_DEPEND = $(CXX) -M -MM -MG $(CXXFLAGS)
 
-OBJECTS = ElementContainer.o Main.o LookupHelper.o ParallelTestHelper.o
-SRCS = ElementContainer.cpp Main.cpp LookupHelper.cpp ParallelTestHelper.cpp
+OBJECTS = ElementContainer.o Main.o LookupHelper.o ParallelTestHelper.o SocketReply.o MooseEnv.o 
+SRCS = ElementContainer.cpp Main.cpp LookupHelper.cpp ParallelTestHelper.cpp SocketReply.cpp MooseEnv.cpp
 
 TARGET = _moose_charm.o
 all: $(TARGET) 
