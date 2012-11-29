@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Nov 13 15:58:31 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Nov 13 16:18:13 2012 (+0530)
+# Last-Updated: Thu Nov 29 12:15:33 2012 (+0530)
 #           By: subha
-#     Update #: 26
+#     Update #: 28
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -67,6 +67,10 @@ class MoosePlugin(MoosePluginBase):
 
     def getCurrentView(self):
         return self.currentView
+
+    def switchView(self, view):
+        self.currentView = view
+
 
 class MooseEditorView(EditorBase):
     """Default editor.

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Nov 13 16:15:07 2012 (+0530)
+# Last-Updated: Thu Nov 29 12:11:32 2012 (+0530)
 #           By: subha
-#     Update #: 84
+#     Update #: 89
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -111,12 +111,11 @@ class MoosePluginBase(object):
             view.close()
 
 
-class ViewBase(QtGui.QWidget):
+class ViewBase(object):
     def __init__(self, *args):
-        QtGui.QWidget.__init__(self, *args)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self._menus = []
         self._toolPanes = []
+        self._centralWidgets = []
 
     def getToolPanes(self):
         """Return a list of widgets to be displayed as dock widgets."""
@@ -133,6 +132,9 @@ class ViewBase(QtGui.QWidget):
     def getPreferences(self):
         """Return a widget for setting preferences"""
         raise NotImplementedError('method must be reimplemented in subclass')
+
+    def getCentralWidgets(self):
+        return self._centralWidgets
 
 class EditorBase(ViewBase):
     def __init__(self, *args):

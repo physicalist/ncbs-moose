@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 12 09:38:09 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Nov 12 18:14:57 2012 (+0530)
+# Last-Updated: Thu Nov 29 12:26:09 2012 (+0530)
 #           By: subha
-#     Update #: 240
+#     Update #: 241
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -93,7 +93,7 @@ class MWindow(QtGui.QMainWindow):
         self.helpActions = None
         self.viewActions = None
         self.editActions = None                
-        self.setPlugin(None)        
+        self.setPlugin('default')        
     
     def getPluginNames(self):
         if self.pluginNames is None:
