@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 12:11:32 2012 (+0530)
+# Last-Updated: Thu Nov 29 16:09:51 2012 (+0530)
 #           By: subha
-#     Update #: 89
+#     Update #: 106
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -106,9 +106,18 @@ class MoosePluginBase(object):
     def getMenus(self):
         return self._menus
 
-    def close(self):
-        for view in self._views:
-            view.close()
+    # def close(self):
+    #     for view in self._views:
+    #         view.close()
+
+    def getEditorView(self):
+        raise NotImplementedError('method must be implemented in derived class')
+
+    def getPlotView(self):
+        raise NotImplementedError('method must be implemented in derived class')
+
+    def getRunView(self):
+        raise NotImplementedError('method must be implemented in derived class')
 
 
 class ViewBase(object):
@@ -133,12 +142,12 @@ class ViewBase(object):
         """Return a widget for setting preferences"""
         raise NotImplementedError('method must be reimplemented in subclass')
 
-    def getCentralWidgets(self):
+    def getCentralWidgets(self):        
         return self._centralWidgets
 
 class EditorBase(ViewBase):
     def __init__(self, *args):
-        ViewBase.__init__(self, *args)
+        ViewBase.__init__(self, *args)        
 
     def getToolPanes(self):
         if not self._toolPanes:
@@ -160,14 +169,35 @@ class EditorBase(ViewBase):
         elements."""
         pass
 
+    def createCentralWidget(self, path):
+        """Create a central widget with model rooted at path"""
+	raise NotImplementedError('method must be reimplemented in subclass')
+
 
 class PlotBase(ViewBase):
     def __init__(self, *args):
         ViewBase.__init__(self, *args)
 
+
 class RunBase(ViewBase):
     def __init__(self, *args):
         ViewBase.__init__(self, *args)
+
+
+class EditorWidgetBase(QtGui.QWidget):
+    """This is the base class for central widget displayed in
+    editorviews."""
+    def __init__(self, *args):
+        QtGui.QWidget.__init__(self, *args)
+        self.modelRoot = '/'
+
+    def setModelRoot(self, path):
+        self.modelRoot = path
+        self.update()
+
+    def update(self):
+        """Update view."""
+        raise NotImplementedError('must be implemented in derived class.')
     
     
 # 
