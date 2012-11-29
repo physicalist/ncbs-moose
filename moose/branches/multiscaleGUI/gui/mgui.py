@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 12 09:38:09 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 12:26:09 2012 (+0530)
+# Last-Updated: Thu Nov 29 16:07:05 2012 (+0530)
 #           By: subha
-#     Update #: 241
+#     Update #: 306
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -45,6 +45,7 @@
 
 # Code:
 import imp
+import inspect
 import sys
 import os
 from PyQt4 import QtGui,QtCore,Qt
@@ -93,7 +94,16 @@ class MWindow(QtGui.QMainWindow):
         self.helpActions = None
         self.viewActions = None
         self.editActions = None                
+        self._loadedPlugins = {}
+        print 'Loading plugins'
+        self.quitAction = QtGui.QAction('Quit', self)
+        self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), self.quit)
+        print 'Created quit action'
         self.setPlugin('default')        
+        print 'Initialized'
+
+    def quit(self):
+        QtGui.qApp.closeAllWindows()        
     
     def getPluginNames(self):
         if self.pluginNames is None:
@@ -103,8 +113,8 @@ class MWindow(QtGui.QMainWindow):
                 self.pluginNames = [line.strip() for line in lfile]
         return self.pluginNames
 
-    def loadPlugin(self, name, re=False):
-        """Load a plugin by name.
+    def loadPluginModule(self, name, re=False):
+        """Load a plugin module by name.
 
         First check if the plugin is already loaded. If so return the
         existing one. Otherwise, search load the plugin as a python
@@ -112,32 +122,39 @@ class MWindow(QtGui.QMainWindow):
 
         If re is True, the plugin is reloaded.
         """
-        if not re:
-            try:
-                return sys.modules[name]
-            except KeyError:
-                pass
-        fp, pathname, description = imp.find_module(name, config.MOOSE_PLUGIN_DIR)
+        if (not re) and name in sys.modules:
+            return sys.modules[name]
+        fp, pathname, description = imp.find_module(name, [config.MOOSE_PLUGIN_DIR])
         try:
-            return imp.load_module(name, fp, pathname, description)
+            module = imp.load_module(name, fp, pathname, description)
         finally:
             if fp:
                 fp.close()
+        return module
+
+    def loadPluginClass(self, name, re=False):        
+        """Load the plugin class from a plugin module.
+        
+        A plugin module should have only one subclass of
+        MoosePluginBase. Otherwise the first such class found will be
+        loaded.
+        """
+        try:
+            return self._loadedPlugins[name]
+        except KeyError:
+            pluginModule = self.loadPluginModule(name, re=re)
+            for classname, classobj in inspect.getmembers(pluginModule, inspect.isclass):
+                if issubclass(classobj, mplugin.MoosePluginBase):
+                    self._loadedPlugins[name] = classobj(self)
+                    return self._loadedPlugins[name]
+        raise Exception('No plugin with name: %s' % (name))
 
     def setPlugin(self, name):
-        pluginModule = self.loadPlugin(name)
-        plugin = None
-        for obj in dir(pluginModule):
-            if issubclass(obj, mplugin.MoosePlugin):
-                plugin = obj(self)
-                break
-        if plugin is None:
-            raise Exception('No plugin with name: %s' % (name))
-        self.plugin.close()
+        plugin = self.loadPluginClass(name)
         self.menuBar().clear()
         self.plugin = plugin
         self.updateMenus()
-        self.setCurrentView(plugin.getDefaultView())
+        self.setCurrentView(plugin.getEditorView())
 
     def updateExistingMenu(self, menu):
         """Check if a menu with same title
@@ -164,7 +181,7 @@ class MWindow(QtGui.QMainWindow):
 
     def setCurrentView(self, view):
         self.plugin.setCurrentView(view)
-        self.setCentralWidget(self.plugin.getCurrentView())
+        self.setCentralWidget(self.plugin.getCurrentView().getCentralWidgets()[0])
         for menu in self.plugin.getCurrentView().getMenus():
             if not self.updateExistingMenu(menu):
                 self.menuBar().addMenu(menu)
@@ -174,9 +191,10 @@ class MWindow(QtGui.QMainWindow):
             self.fileMenu = QtGui.QMenu('File')
         else:
             self.fileMenu.clear()
-        self.fileMenu.addAction(self.plugin.getLoadAction())
-        self.fileMenu.addAction(self.plugin.getSaveAction())
+        # self.fileMenu.addAction(self.plugin.getLoadAction())
+        # self.fileMenu.addAction(self.plugin.getSaveAction())
         self.fileMenu.addAction(self.quitAction)
+        return self.fileMenu
 
     def getEditMenu(self):
         if self.editMenu is None:
@@ -184,6 +202,7 @@ class MWindow(QtGui.QMainWindow):
         else:
             self.editMenu.clear()
         self.editMenu.addActions(self.getEditActions())
+        return self.editMenu
     
     def getHelpMenu(self):
         if self.helpMenu is None:
@@ -191,31 +210,33 @@ class MWindow(QtGui.QMainWindow):
         else:
             self.helpMenu.clear()
         self.helpMenu.addActions(self.getHelpActions())        
+        return self.helpMenu
 
     def getViewMenu(self):
-        if self.viewMenu is None:
+        if (not hasattr(self, 'viewMenu')) or (self.viewMenu is None):
             self.viewMenu = QtGui.QMenu('View')
         else:
             self.viewMenu.clear()
         self.viewMenu.addActions(self.getViewActions())
+        return self.viewMenu
 
     def getEditActions(self):
-        if self.editActions is None:
+        if (not hasattr(self, 'editActions')) or (self.editActions is None):
             self.editActions = [] # TODO placeholder
         return self.editActions
 
     def getViewActions(self):
-        if self.viewActions is None:
+        if (not hasattr(self, 'viewActions')) or (self.viewActions is None):
             self.viewActions = [] # TODO placeholder
         return self.viewActions
 
     def getHelpActions(self):
-        if self.helpActions is None:
-            self.actionAbout = QtGui.QAction('About MOOSE')
+        if (not hasattr(self, 'helpActions')) or (self.helpActions is None):
+            self.actionAbout = QtGui.QAction('About MOOSE', self)
             self.connect(self.actionAbout, QtCore.SIGNAL('triggered()'), self.showAboutMoose)
-            self.actionBuiltInDocumentation = QtGui.QAction('Built-in documentation')
+            self.actionBuiltInDocumentation = QtGui.QAction('Built-in documentation', self)
             self.connect(self.actionBuiltInDocumentation, QtCore.SIGNAL('triggered()'), self.showBuiltInDocumentation)
-            self.actionBug = QtGui.QAction('Report a bug')
+            self.actionBug = QtGui.QAction('Report a bug', self)
             self.connect(self.actionBug, QtCore.SIGNAL('triggered()'), self.reportBug)
             self.helpActions = [self.actionAbout, self.actionBuiltInDocumentation, self.actionBug]
         return self.helpActions
@@ -250,6 +271,7 @@ class MWindow(QtGui.QMainWindow):
 if __name__ == '__main__':
     # create the GUI application
     app = QtGui.QApplication(sys.argv)
+    QtGui.qApp = app
     icon = QtGui.QIcon(os.path.join(config.KEY_ICON_DIR,'moose_icon.png'))
     app.setWindowIcon(icon)
     # instantiate the main window

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Nov 13 15:58:31 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 15:02:38 2012 (+0530)
+# Last-Updated: Thu Nov 29 16:10:07 2012 (+0530)
 #           By: subha
-#     Update #: 30
+#     Update #: 46
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -51,7 +51,6 @@ class MoosePlugin(MoosePluginBase):
     """Default plugin for MOOSE GUI"""
     def __init__(self, mainwindow):
         MoosePluginBase.__init__(self, mainwindow)
-        self._views = [MooseEditorView(), MoosePlotView(), MooseRunView()]
 
     def getPreviousPlugin(self):
         return None
@@ -70,6 +69,12 @@ class MoosePlugin(MoosePluginBase):
 
     def switchView(self, view):
         self.currentView = view
+
+    def getEditorView(self):
+        if not hasattr(self, 'editorView'):
+            self.editorView = MooseEditorView()
+            self.currentView = self.editorView
+        return self.editorView
 
 
 class MooseEditorView(EditorBase):
@@ -91,9 +96,10 @@ class MooseEditorView(EditorBase):
     def getOperationsWidget(self):
         return super(MooseEditorView, self).getOperationsPane()
 
-    def setModelRoot(self, path):
-        raise NotImplementedError('method must be reimplemented in subclass')
-
+    def getCentralWidgets(self):
+        if len(self._centralWidgets) == 0:
+            self._centralWidgets.append(EditorWidgetBase())
+        return self._centralWidgets
 
 # 
 # default.py ends here
