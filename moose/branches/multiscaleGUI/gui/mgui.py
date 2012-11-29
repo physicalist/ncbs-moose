@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 12 09:38:09 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 16:39:07 2012 (+0530)
+# Last-Updated: Thu Nov 29 16:47:59 2012 (+0530)
 #           By: subha
-#     Update #: 334
+#     Update #: 340
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -81,7 +81,7 @@ class MWindow(QtGui.QMainWindow):
     the plugin.
 
     the currentView provides a set of panes that are inserted in the
-    right dock area one by one.
+    right dock area one by one.    
 
     """
     def __init__(self, *args):
@@ -154,11 +154,14 @@ class MWindow(QtGui.QMainWindow):
     def setPlugin(self, name):
         """Set the current plugin to use.
 
-        This 
+        This -
 
-        2. sets the `plugin` attribute.
-        3. updates menus by clearing and reinstating menus including anything provided by the plugin.
-        4. sets the current view  to the plugins editor view.
+        1. sets the `plugin` attribute.
+
+        2. updates menus by clearing and reinstating menus including
+        anything provided by the plugin.
+
+        3. sets the current view  to the plugins editor view.
         """
         plugin = self.loadPluginClass(name)
         self.plugin = plugin
@@ -224,6 +227,7 @@ class MWindow(QtGui.QMainWindow):
         return self.editMenu
 
     def getPluginsMenu(self):
+        """Populate plugins menu if it does not exist already."""
         if (not hasattr(self, 'pluginsMenu')) or (self.pluginsMenu is None):
             self.pluginsMenu = QtGui.QMenu('Plugins')
             mapper = QtCore.QSignalMapper(self)

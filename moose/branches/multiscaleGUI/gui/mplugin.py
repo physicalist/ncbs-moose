@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 16:09:51 2012 (+0530)
+# Last-Updated: Thu Nov 29 17:11:24 2012 (+0530)
 #           By: subha
-#     Update #: 106
+#     Update #: 107
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -130,8 +130,8 @@ class ViewBase(object):
         """Return a list of widgets to be displayed as dock widgets."""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
-    def getToolBar(self):
-        """Return the toolbar for this view."""
+    def getToolBars(self):
+        """Return list of toolbars for this view."""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
     def getMenus(self):
