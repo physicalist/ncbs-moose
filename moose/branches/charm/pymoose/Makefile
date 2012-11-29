@@ -6,16 +6,16 @@ TARGET = _pymoose.o
 # CXXFLAGS += -I../basecode -I../msg -I../shell
 .PHONY: clean
 
-HEADERS = moosemodule.h
+HEADERS = moosemodule.h 
 
-OBJ = moosemodule.o
+OBJ = moosemodule.o 
 
 PYMOOSE_DEPS = moosemodule.cpp $(OBJ) $(HEADERS) ../basecode/main.cpp ../utility/_utility.o 
 
 ifneq ($(BUILD), charm++)
-PYMOOSE_DEPS += ../basecode/_basecode_pymoose.o
+PYMOOSE_DEPS += ../basecode/_basecode_pymoose.o ../charm/MooseEnv.o
 else
-PYMOOSE_DEPS += MooseParams.h ../shell/ShellProxy.h
+PYMOOSE_DEPS += MooseParams.h ../shell/ShellProxy.h ../charm/MooseEnv.h
 endif
 
 $(TARGET): $(PYMOOSE_DEPS) ../basecode/CcsPackUnpack.h 

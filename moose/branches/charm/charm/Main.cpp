@@ -36,7 +36,10 @@ class DestFinfo;
 #include "moose.decl.h"
 #include "ElementContainer.h"
 #include "Main.h"
+#include "Messages.h"
+#include "PointerContainer.h"
 #include "ParallelTestHelper.h"
+#include "../pymoose/MooseParams.h"
 
 
 
@@ -69,6 +72,15 @@ void Main::createMooseParallelObjects(CkArgMsg *m){
   // at least one compute container
   readonlyNumElementContainers = 2 * CkNumPes();
   readonlyNumUsefulElementContainers = CkNumPes();
+
+  MooseParamCollection params;
+
+  params.add("replyPort", &replyPort_, 9999, true);
+  params.add("replyAddress", &replyAddress_, string("localhost"), true);
+  params.add("retryPeriod", &retryPeriod_, 5, true);
+  params.add("retryAttempts", &retryAttempts_, 3, true);
+
+  CkAssert(params.process(m->argc, m->argv));
 
   __sdag_init();
 
@@ -104,6 +116,8 @@ void Main::commence(){
   CkPrintf("done\n");
 
   CkPrintf("[main] ready for CCS commands\n");
+
+  sendSocketReply();
 
   //CkPrintf("\n[main] starting parallel unit tests\n");
   //readonlyParallelTestHelperProxy[0].doMpiTests(CkCallbackResumeThread());

@@ -1,6 +1,6 @@
 CHARM_PATH = #
 CHARM_LIBS = $(CHARM_PATH)/lib
-INCFLAGS = -I$(CHARM_PATH)/include -I../basecode -I../shell -I../randnum -I../pymoose 
+INCFLAGS = -I$(CHARM_PATH)/include -I../basecode -I../shell -I../randnum -I../pymoose -I../charm 
 
 APP_FLAGS = # 
 OPTS = -O0 -g $(APP_FLAGS)
@@ -20,12 +20,13 @@ OBJECTS = Main.o \
           rtHHNetwork.o \
           speedTestMultiNodeIntFireNetwork.o \
           LaunchJob.o \
-          ParamStorage.o
+          ParamStorage.o 
 
 LINK_OBJECTS = ../shell/ShellProxy.o \
                ../basecode/SetGetCcsClient.o \
                ../basecode/DefSetGetCcsHandlerStrings.o \
                ../basecode/doubleEq.o \
+               ../charm/MooseEnv.o \
                ../msg/Msg_parser.o \
                ../randnum/_randnum.o
 
@@ -33,7 +34,7 @@ SRC = Main.cpp \
       rtHHNetwork.cpp \
       speedTestMultiNodeIntFireNetwork.cpp \
       LaunchJob.cpp \
-      ParamStorage.cpp
+      ParamStorage.cpp 
 
 TARGET = test
 all: $(TARGET) 

@@ -36,8 +36,12 @@ class Main : public CBase_Main {
   void commence();
 
   private:
+  void acceptJobReply(ParamStorage &p);
+  string findHostAddr();
+  template<typename T>
+  string toString(const T &t);
+
   void test();
-  string launchJob(ParamStorage &p);
   void rtHHNetwork(ShellProxy *shell);
   void speedTestMultiNodeIntFireNetwork( unsigned int size, unsigned int runsteps, ShellProxy *shell );
 };

@@ -4,17 +4,22 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <iostream>
+
+#include "../charm/MooseEnv.h"
 
 using namespace std;
 
 class MooseParam {
   bool hasValue_;
   bool extractedValue_;
+  bool compulsory_;
 
   public:
-  MooseParam(bool hasValue) : 
+  MooseParam(bool hasValue, bool compulsory) : 
     hasValue_(hasValue),
-    extractedValue_(false)
+    extractedValue_(false),
+    compulsory_(compulsory)
   {}
 
 
@@ -32,6 +37,10 @@ class MooseParam {
   bool extractedValue() const {
     return extractedValue_;
   }
+
+  bool isCompulsory() const {
+    return compulsory_;
+  }
 };
 
 template<typename ParamType>
@@ -41,10 +50,15 @@ class TypedMooseParam : public MooseParam {
   ParamType defaultValue_;
 
   public:
-  TypedMooseParam(ParamType *saveTo, ParamType defaultValue, bool hasValue) : 
-    MooseParam(hasValue), 
+  TypedMooseParam(ParamType *saveTo, ParamType defaultValue, bool hasValue, bool compulsory) : 
+    MooseParam(hasValue, compulsory), 
     saveTo_(saveTo),
     defaultValue_(defaultValue)
+  {}
+
+  TypedMooseParam(ParamType *saveTo, bool hasValue, bool compulsory) : 
+    MooseParam(hasValue, compulsory), 
+    saveTo_(saveTo)
   {}
 
   void extract(const char *val) {}
@@ -54,6 +68,9 @@ class TypedMooseParam : public MooseParam {
     else *saveTo_ = defaultValue_;
   }
 };
+
+#include <stdlib.h>
+#include <assert.h>
 
 template<>
 inline void TypedMooseParam<bool>::extract(const char *val){
@@ -97,12 +114,23 @@ class MooseParamCollection {
   public:
   template<typename ParamType>
   void add(const string &description, ParamType *saveTo, ParamType defaultValue, bool hasValue){
-    params_[description] = new TypedMooseParam<ParamType>(saveTo, defaultValue, hasValue);
+    // since this parameter has a default value, it is
+    // not compulsory
+    params_[MooseEnv::FlagPrefix_ + description] = new TypedMooseParam<ParamType>(saveTo, defaultValue, hasValue, false);
   }
 
-  void process(int argc, char **argv){
+  template<typename ParamType>
+  void add(const string &description, ParamType *saveTo, bool hasValue){
+    // since this parameter doesn't have a default 
+    // value, it is compulsory
+    params_[MooseEnv::FlagPrefix_ + description] = new TypedMooseParam<ParamType>(saveTo, hasValue, true);
+  }
+
+  bool process(int argc, char **argv){
     map<string, MooseParam *>::iterator it;
 
+    // check the parameters for which the user has
+    // supplied values
     for(int i = 0; i < argc; ++i){
       string searchString(argv[i]);
       it = params_.find(searchString);
@@ -112,19 +140,36 @@ class MooseParamCollection {
         if(param->hasValue()){
           assert(i+1 < argc);
           param->extract(argv[i+1]);
-          param->hasExtractedValue();
           ++i;
         }
         else{
           param->extract("true");
-          param->hasExtractedValue();
         }
+        param->hasExtractedValue();
+      }
+      else{
+        cerr << "unrecognized parameter `" << searchString << "'; skipping" << endl;
       }
     }
 
+    // set the value of the parameter, either to a
+    // user-supplied value, or to the default;
+    // complain if user has not supplied values for
+    // compulsory parameters
+    int nMissing = 0;
     for(it = params_.begin(); it != params_.end(); ++it){
-      it->second->push();
+      MooseParam *param = it->second;
+      if(param->isCompulsory() && !param->extractedValue()){
+        cerr << "parameter `" << it->first << "' is compulsory" << endl;
+        nMissing++;
+      }
+      else {
+        it->second->push();
+      }
     }
+
+    if(nMissing > 0) return false;
+    else return true;
   }
 };
 
