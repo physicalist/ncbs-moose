@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Nov 13 15:58:31 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 12:15:33 2012 (+0530)
+# Last-Updated: Thu Nov 29 15:02:38 2012 (+0530)
 #           By: subha
-#     Update #: 28
+#     Update #: 30
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -90,6 +90,9 @@ class MooseEditorView(EditorBase):
 
     def getOperationsWidget(self):
         return super(MooseEditorView, self).getOperationsPane()
+
+    def setModelRoot(self, path):
+        raise NotImplementedError('method must be reimplemented in subclass')
 
 
 # 
