@@ -85,7 +85,10 @@ void Main::createMooseParallelObjects(CkArgMsg *m){
   __sdag_init();
 
   CkVec< string > args;
-  for(int i = 0; i < m->argc; i++) args.push_back(m->argv[i]);
+  // remove all flags not meant for moose core
+  for(int i = 0; i < m->argc; i++){
+    if(!params.contains(m->argv[i])) args.push_back(m->argv[i]);
+  }
 
   // initiate creation of lookup helper group
   readonlyLookupHelperProxy = CProxy_LookupHelper::ckNew(args, CkCallback(CkIndex_Main::lookupHelpersReady(), thisProxy));
