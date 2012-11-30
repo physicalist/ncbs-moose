@@ -36,6 +36,8 @@ void Main::trySendReply(){
   ostringstream oss;
   oss << replyPort_; 
 
+  CkPrintf("Main::trySendReply %s:%d\n", replyAddress_.c_str(), replyPort_);
+
   if ((rv = getaddrinfo(replyAddress_.c_str(), oss.str().c_str(), &hints, &servinfo)) != 0) {
     CkPrintf("getaddrinfo: %s\n", gai_strerror(rv));
     CkExit();

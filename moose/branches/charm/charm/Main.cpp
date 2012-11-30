@@ -78,7 +78,7 @@ void Main::createMooseParallelObjects(CkArgMsg *m){
   params.add("replyPort", &replyPort_, 9999, true);
   params.add("replyAddress", &replyAddress_, string("localhost"), true);
   params.add("retryPeriod", &retryPeriod_, 5, true);
-  params.add("retryAttempts", &retryAttempts_, 3, true);
+  params.add("retryAttempts", &retryAttempts_, 10, true);
 
   CkAssert(params.process(m->argc, m->argv));
 
