@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Nov 13 15:58:31 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 16:10:07 2012 (+0530)
+# Last-Updated: Fri Nov 30 11:36:30 2012 (+0530)
 #           By: subha
-#     Update #: 46
+#     Update #: 54
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -49,8 +49,8 @@ from mplugin import *
 
 class MoosePlugin(MoosePluginBase):
     """Default plugin for MOOSE GUI"""
-    def __init__(self, mainwindow):
-        MoosePluginBase.__init__(self, mainwindow)
+    def __init__(self, root, mainwindow):
+        MoosePluginBase.__init__(self, root, mainwindow)
 
     def getPreviousPlugin(self):
         return None
@@ -67,12 +67,9 @@ class MoosePlugin(MoosePluginBase):
     def getCurrentView(self):
         return self.currentView
 
-    def switchView(self, view):
-        self.currentView = view
-
     def getEditorView(self):
         if not hasattr(self, 'editorView'):
-            self.editorView = MooseEditorView()
+            self.editorView = MooseEditorView(self)
             self.currentView = self.editorView
         return self.editorView
 
@@ -96,10 +93,10 @@ class MooseEditorView(EditorBase):
     def getOperationsWidget(self):
         return super(MooseEditorView, self).getOperationsPane()
 
-    def getCentralWidgets(self):
-        if len(self._centralWidgets) == 0:
-            self._centralWidgets.append(EditorWidgetBase())
-        return self._centralWidgets
+    def getCentralWidget(self):
+        if self._centralWidget is None:
+            self._centralWidget = EditorWidgetBase()
+        return self._centralWidget
 
 # 
 # default.py ends here
