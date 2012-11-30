@@ -39,7 +39,7 @@ class Eref;
 
 extern Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests );
 
-LookupHelper::LookupHelper(CkVec< string > &s_argv, const CkCallback &cb){
+LookupHelper::LookupHelper(vector< string > &s_argv, const CkCallback &cb){
   // make C strings out of C++ strings
   argv_ = new char *[s_argv.size()];
   argc_ = s_argv.size();

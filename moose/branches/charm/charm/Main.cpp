@@ -69,7 +69,8 @@ Main::Main(CkArgMsg *m){
 void Main::createMooseParallelObjects(CkArgMsg *m){
   // XXX should get this from command line parameters
   // one "shell/script/test" container on each PE is required in addition to
-  // at least one compute container
+  // at least one compute container, since scriptThread is always given 
+  // index 0
   readonlyNumElementContainers = 2 * CkNumPes();
   readonlyNumUsefulElementContainers = CkNumPes();
 
@@ -82,12 +83,18 @@ void Main::createMooseParallelObjects(CkArgMsg *m){
 
   CkAssert(params.process(m->argc, m->argv));
 
+  int purgedArgc;
+  char **purgedArgv;
+
+  // remove all flags not meant for moose core
+  vector< string > args;
+  params.purge(m->argc, m->argv, args);
+
   __sdag_init();
 
-  CkVec< string > args;
-  // remove all flags not meant for moose core
-  for(int i = 0; i < m->argc; i++){
-    if(!params.contains(m->argv[i])) args.push_back(m->argv[i]);
+  CkPrintf("[main] sending following startup args to moose core:\n");
+  for(int i = 0; i < args.size(); i++){
+    CkPrintf("%s\n", args[i].c_str());
   }
 
   // initiate creation of lookup helper group

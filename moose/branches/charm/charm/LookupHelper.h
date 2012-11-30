@@ -27,7 +27,7 @@ class LookupHelper : public CBase_LookupHelper {
   
   // charm++ entry methods
   public:
-  LookupHelper(CkVec< string > &s_argv, const CkCallback &cb);
+  LookupHelper(vector< string > &s_argv, const CkCallback &cb);
   void initShell(const CkCallback &cb);
 
   void reinitIterationDone();
