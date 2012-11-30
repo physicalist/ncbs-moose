@@ -126,6 +126,10 @@ class MooseParamCollection {
     params_[MooseEnv::FlagPrefix_ + description] = new TypedMooseParam<ParamType>(saveTo, hasValue, true);
   }
 
+  bool contains(const char *description){
+    return params_.find(MooseEnv::FlagPrefix_ + string(description)) != params_.end();
+  }
+
   bool process(int argc, char **argv){
     map<string, MooseParam *>::iterator it;
 
