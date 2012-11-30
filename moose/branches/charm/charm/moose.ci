@@ -47,7 +47,7 @@ mainmodule moose {
   };
 
   group LookupHelper {
-    entry LookupHelper(CkVec< string > &s_argv, const CkCallback &cb);
+    entry LookupHelper(vector< string > &s_argv, const CkCallback &cb);
     entry void initShell(const CkCallback &cb);
 
     entry void reinitIterationDone();

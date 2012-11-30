@@ -111,6 +111,52 @@ inline void TypedMooseParam<string>::extract(const char *val){
 class MooseParamCollection {
   map<string, MooseParam *> params_;
 
+  private:
+  // these are 'visitor' classes for param list
+  // this one extracts all values required by the
+  // parallel driver of moose
+  class MooseParamExtractionWorker {
+    public:
+    void matchValue(int argi, int argc, char **argv, MooseParam *param){
+      assert(argi + 1 < argc);
+      param->extract(argv[argi + 1]);
+    }
+
+    void matchNoValue(int argi, int argc, char **argv, MooseParam *param){
+      param->extract("true");
+    }
+
+    void noMatch(int argi, int argc, char **argv){
+      cerr << "unrecognized parameter `" << argv[argi] << "'; skipping" << endl;
+    }
+  };
+  
+  // this one "purges" the arg list for moose-core,
+  // i.e. it removes all args required only by the 
+  // parallel driver, since those are not understood
+  // by the core
+  class MooseParamPurgeWorker {
+    vector< string > *purged_;
+
+    public:
+    MooseParamPurgeWorker(vector< string > *purged) : 
+      purged_(purged)
+    {
+    }
+
+    void matchValue(int argi, int argc, char **argv, MooseParam *param){
+    }
+
+    void matchNoValue(int argi, int argc, char **argv, MooseParam *param){
+    }
+
+    void noMatch(int argi, int argc, char **argv){
+      (*purged_).push_back(argv[argi]);
+    }
+  };
+ 
+
+
   public:
   template<typename ParamType>
   void add(const string &description, ParamType *saveTo, ParamType defaultValue, bool hasValue){
@@ -130,7 +176,8 @@ class MooseParamCollection {
     return params_.find(MooseEnv::FlagPrefix_ + string(description)) != params_.end();
   }
 
-  bool process(int argc, char **argv){
+  template<typename WorkerClass>
+  bool traverse(int argc, char **argv, WorkerClass &worker){
     map<string, MooseParam *>::iterator it;
 
     // check the parameters for which the user has
@@ -142,17 +189,16 @@ class MooseParamCollection {
       if(it != params_.end()){
         MooseParam *param = it->second;
         if(param->hasValue()){
-          assert(i+1 < argc);
-          param->extract(argv[i+1]);
+          worker.matchValue(i, argc, argv, param);
           ++i;
         }
         else{
-          param->extract("true");
+          worker.matchNoValue(i, argc, argv, param);
         }
         param->hasExtractedValue();
       }
       else{
-        cerr << "unrecognized parameter `" << searchString << "'; skipping" << endl;
+        worker.noMatch(i, argc, argv);
       }
     }
 
@@ -174,6 +220,16 @@ class MooseParamCollection {
 
     if(nMissing > 0) return false;
     else return true;
+  }
+
+  bool process(int argc, char **argv){
+    MooseParamExtractionWorker worker;
+    traverse(argc, argv, worker);
+  }
+
+  bool purge(int argc, char **argv, vector< string > &purgedArgs){
+    MooseParamPurgeWorker worker(&purgedArgs);
+    traverse(argc, argv, worker);
   }
 };
 
