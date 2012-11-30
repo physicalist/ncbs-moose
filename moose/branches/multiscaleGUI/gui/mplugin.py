@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 17:11:24 2012 (+0530)
+# Last-Updated: Fri Nov 30 11:43:13 2012 (+0530)
 #           By: subha
-#     Update #: 107
+#     Update #: 159
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -54,10 +54,15 @@ class MoosePluginBase(object):
     implement the methods described here.
 
     """
-    def __init__(self, mainwindow):
+    def __init__(self, root='/', mainwindow=None):
+        """Create a plugin object whose model is the tree rooted at
+        `root` and whose widgets will be displayed in `mainwindow`.
+        
+        """
         self._views = []
         self._menus = []
-        self.mwindow = mainwindow
+        self.mWindow = mainwindow
+        self.modelRoot = root
 
     def getPreviousPlugin(self):
 	"""Returns the plugin object that the gui is supposed to
@@ -100,8 +105,19 @@ class MoosePluginBase(object):
 	raise NotImplementedError('method must be reimplemented in subclass')    
 
     def setCurrentView(self, view):
-        """Set current view (e.g., edit/plot/run)"""
-	self.currentView = view
+        """Set current view (e.g., editor/plot/run).
+
+        Return true if successful, otherwise return False.
+        """
+        if view == 'editor':
+            self.currentView = self.getEditorView()
+        elif view == 'plot':
+            self.currentView = self.getPlotView()
+        elif view == 'run':
+            self.currentView = self.getRunView()
+        else:
+            return False
+        return True
 
     def getMenus(self):
         return self._menus
@@ -121,10 +137,24 @@ class MoosePluginBase(object):
 
 
 class ViewBase(object):
-    def __init__(self, *args):
+    """Base class for each view: Editor, Plot, Run.
+
+    A view is a mode in a of a plugin. Each view provides 
+
+    a list of toolbars to be displayed on top.
+
+    a list of widgets to be docked on the sides.
+
+    a list of menus to be added to the menubar.
+
+    a central widget to be displayed at the centre of the main window.
+
+    """
+    def __init__(self, plugin):
         self._menus = []
         self._toolPanes = []
-        self._centralWidgets = []
+        self._centralWidget = None
+        self.plugin = plugin
 
     def getToolPanes(self):
         """Return a list of widgets to be displayed as dock widgets."""
@@ -142,10 +172,20 @@ class ViewBase(object):
         """Return a widget for setting preferences"""
         raise NotImplementedError('method must be reimplemented in subclass')
 
-    def getCentralWidgets(self):        
-        return self._centralWidgets
+    def getCentralWidget(self):
+        """Return a widget for central widget of mainwindow."""
+        raise NotImplementedError('method must be reimplemented in subclass')
 
 class EditorBase(ViewBase):
+    """Base class for editor view.
+
+    This is the default view of a plugin. It should essentially
+    display a loaded model in an appropriate visual form.
+
+    It is ultimately intended to allow editing of the model, but that
+    is not a strict requirement.
+
+    """
     def __init__(self, *args):
         ViewBase.__init__(self, *args)        
 
@@ -169,34 +209,59 @@ class EditorBase(ViewBase):
         elements."""
         pass
 
-    def createCentralWidget(self, path):
-        """Create a central widget with model rooted at path"""
-	raise NotImplementedError('method must be reimplemented in subclass')
-
-
 class PlotBase(ViewBase):
+    """Base class for plot configuration view.
+    
+    In each plugin, this should provide utility to setup the plotting
+    of object fields. This is supposed to be used by intermediate
+    users.
+    """
     def __init__(self, *args):
         ViewBase.__init__(self, *args)
 
 
 class RunBase(ViewBase):
+    """Base class for runtime view.
+
+    When the simulation runs, this view displays the runtime
+    visualization and controls for the simulation.
+    """
     def __init__(self, *args):
         ViewBase.__init__(self, *args)
 
 
 class EditorWidgetBase(QtGui.QWidget):
-    """This is the base class for central widget displayed in
-    editorviews."""
+    """Base class for central widget displayed in editor view.
+
+    The widget should display the model components in the tree rooted
+    at `modelRoot` in appropriate visual representation.
+
+    `updateModelView` function should do the actual creation and laying
+    out of the visual objects.
+
+    """
     def __init__(self, *args):
         QtGui.QWidget.__init__(self, *args)
         self.modelRoot = '/'
 
     def setModelRoot(self, path):
-        self.modelRoot = path
-        self.update()
+        """Set the root of the model tree to be displayed.
 
-    def update(self):
-        """Update view."""
+        This calls `updateModelView` which should update the scene to
+        represent current model tree.
+
+        """
+        self.modelRoot = path
+        self.updateModelView()
+
+    def updateModelView(self):
+        """Update view by going through the model.
+
+        When model root is changed, this function is called. It should
+        update the scene to represent the current model tree rooted at
+        modelRoot.
+
+        """
         raise NotImplementedError('must be implemented in derived class.')
     
     

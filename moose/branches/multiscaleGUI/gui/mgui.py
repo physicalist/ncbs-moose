@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 12 09:38:09 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 16:47:59 2012 (+0530)
+# Last-Updated: Fri Nov 30 11:32:34 2012 (+0530)
 #           By: subha
-#     Update #: 340
+#     Update #: 356
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -97,7 +97,7 @@ class MWindow(QtGui.QMainWindow):
         self._loadedPlugins = {}
         self.quitAction = QtGui.QAction('Quit', self)
         self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), self.quit)
-        self.setPlugin('default')        
+        self.setPlugin('default', '/')        
 
     def quit(self):
         QtGui.qApp.closeAllWindows()        
@@ -147,11 +147,11 @@ class MWindow(QtGui.QMainWindow):
             pluginModule = self.loadPluginModule(name, re=re)
             for classname, classobj in inspect.getmembers(pluginModule, inspect.isclass):
                 if issubclass(classobj, mplugin.MoosePluginBase):
-                    self._loadedPlugins[name] = classobj(self)
+                    self._loadedPlugins[name] = classobj
                     return self._loadedPlugins[name]
         raise Exception('No plugin with name: %s' % (name))
 
-    def setPlugin(self, name):
+    def setPlugin(self, name, root):
         """Set the current plugin to use.
 
         This -
@@ -163,10 +163,9 @@ class MWindow(QtGui.QMainWindow):
 
         3. sets the current view  to the plugins editor view.
         """
-        plugin = self.loadPluginClass(name)
-        self.plugin = plugin
+        self.plugin = self.loadPluginClass(name)(root, self)
         self.updateMenus()
-        self.setCurrentView(plugin.getEditorView())
+        self.setCurrentView(self.plugin.getEditorView())
 
     def updateExistingMenu(self, menu):
         """Check if a menu with same title
@@ -202,8 +201,11 @@ class MWindow(QtGui.QMainWindow):
                 self.menuBar().addMenu(menu)
 
     def setCurrentView(self, view):
+        """Set current view to a particular one: options are 'editor',
+        'plot', 'run'. A plugin can provide more views if necessary.
+        """
         self.plugin.setCurrentView(view)
-        self.setCentralWidget(self.plugin.getCurrentView().getCentralWidgets()[0])
+        self.setCentralWidget(self.plugin.getCurrentView().getCentralWidget())
         for menu in self.plugin.getCurrentView().getMenus():
             if not self.updateExistingMenu(menu):
                 self.menuBar().addMenu(menu)
