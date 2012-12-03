@@ -2,6 +2,8 @@ mainmodule moose {
 
   readonly unsigned int readonlyNumElementContainers;
   readonly unsigned int readonlyNumUsefulElementContainers;
+  readonly unsigned int readonlyVirtualizationRatio;
+
   readonly CProxy_Main readonlyMainProxy;
   readonly CProxy_ElementContainer readonlyElementContainerProxy;
   readonly CProxy_LookupHelper readonlyLookupHelperProxy;

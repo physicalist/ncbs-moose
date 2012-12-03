@@ -76,6 +76,7 @@ class ElementContainer : public CBase_ElementContainer {
   void start();
   void reinit();
   void stop();
+  void processPhase2();
 
 
   // HACK! this is to enable unit testing when messages

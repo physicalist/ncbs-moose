@@ -177,17 +177,13 @@ bool BlockHandler::innerNodeBalance( unsigned int numData,
 		ret = ( numData != oldNumData || oldstart != start_ || 
 			oldend != end_ );
 	}
-        // in Charm++ version, there is only one thread per PE
-#ifndef USE_CHARMPP
 	if ( Shell::numProcessThreads() == 0 ) { // Single thread mode.
-#endif
 		threadStart_.resize( 2 );
 		threadEnd_.resize( 2 );
 		threadStart_[0] = start_;
 		threadEnd_[0] = end_;
 		threadStart_[1] = start_;
 		threadEnd_[1] = end_;
-#ifndef USE_CHARMPP
 	} else {
 		threadStart_.resize( Shell::numProcessThreads() + 1 );
 		threadEnd_.resize( Shell::numProcessThreads() + 1 );
@@ -204,7 +200,6 @@ bool BlockHandler::innerNodeBalance( unsigned int numData,
 				Shell::numProcessThreads();
 		}
 	}
-#endif
 	return ret;
 	// cout << "BlockHandler::innerNodeBalance( " << numData_ << ", " << start_ << ", " << end_ << "), fieldDimension = " << getFieldDimension() << "\n";
 

@@ -345,7 +345,6 @@ template < class T > class SparseMatrix
 			stable_sort( t.begin(), t.end() );
 			// cout << "after sort\n"; printTriplet( t );
 
-			unsigned int j = ~0;
 			rowStart_.resize( 0 );
 			rowStart_.push_back( 0 );
 			unsigned int ci = 0;
@@ -358,15 +357,15 @@ template < class T > class SparseMatrix
 					ci++;
 				}
 
-				/*
-				if ( t[i].c_ != j ) {
-					j = t[i].c_;
-					rowStart_.push_back( i );
-				}
-				*/
 			}
-			rowStart_.push_back( N_.size() );
-			j = nrows_;
+
+                        do {
+                          rowStart_.push_back( N_.size() );
+                          ci++;
+                        }
+                        while(ci < ncolumns_);
+
+			unsigned int j = nrows_;
 			nrows_ = ncolumns_;
 			ncolumns_ = j;
 			assert( rowStart_.size() == nrows_ + 1 );
@@ -375,44 +374,44 @@ template < class T > class SparseMatrix
 		/**
 		 * Prints out the contents in matrix form
 		 */
-		void print() const {
+		void print(ostream &out = std::cout) const {
 			for ( unsigned int i = 0; i < nrows_; ++i ) {
 				unsigned int k = rowStart_[i];
 				unsigned int end = rowStart_[i + 1];
 				unsigned int nextColIndex = colIndex_[k];
 				for ( unsigned int j = 0; j < ncolumns_; ++j ) {
 					if ( j < nextColIndex ) {
-						cout << "0	";
+						out << ".  ";
 					} else if ( k < end ) {
-						cout << N_[k] << "	";
+						out << N_[k] << "  ";
 						++k;
 						nextColIndex = colIndex_[k];
 					} else {
-						cout << "0	";
+						out << ".  ";
 					}
 				}
-				cout << endl;
+				out << endl;
 			}
 		}
 
 		/**
 		 * Prints out the contents in internal form
 		 */
-		void printInternal() const {
+		void printInternal(ostream &out) const {
 			unsigned int max = (nrows_ < N_.size() ) ? N_.size() : nrows_+1;
-			cout << "#	";
+			out << "#	";
 			for ( unsigned int i = 0; i < max; ++i )
-				cout << i << "	";
-			cout << "\nrs	";
+				out << i << "	";
+			out << "\nrs	";
 			for ( unsigned int i = 0; i < rowStart_.size(); ++i )
-				cout << rowStart_[i] << "	";
-			cout << "\ncol	";
+				out << rowStart_[i] << "	";
+			out << "\ncol	";
 			for ( unsigned int i = 0; i < N_.size(); ++i )
-				cout << colIndex_[i] << "	";
-			cout << "\nN	";
+				out << colIndex_[i] << "	";
+			out << "\nN	";
 			for ( unsigned int i = 0; i < N_.size(); ++i )
-				cout << N_[i] << "	";
-			cout << endl;
+				out << N_[i] << "	";
+			out << endl;
 		}
 
 	protected:

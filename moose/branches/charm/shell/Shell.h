@@ -39,6 +39,29 @@ class Clock;
 
 class Shell
 {
+
+#ifdef USE_CHARMPP
+  class StartAll {
+    public:
+    void work(ElementContainer *container) const;
+  };
+
+  class ReinitAll {
+    public:
+    void work(ElementContainer *container) const;
+  };
+
+  class StopAll {
+    public:
+    void work(ElementContainer *container) const;
+  };
+
+  class ProcessPhase2All {
+    public:
+    void work(ElementContainer *container) const;
+  };
+#endif
+
 	public:
 		Shell();
 		~Shell();
@@ -77,6 +100,7 @@ class Shell
                 void runIterationDone();
                 void startAllContainers();
                 void reinitAllContainers();
+                void processPhase2AllContainers();
                 bool isDoingReinit() const;
 #endif
 
@@ -546,6 +570,12 @@ class Shell
 
                 void setClockPointer(Clock *clock);
                 void invokeFinishCallback();
+
+                template <typename WorkerType> 
+                void forall(const WorkerType &worker);
+
+                template <typename WorkerType> 
+                void forall(int istart, int iend, const WorkerType &worker);
 #endif
 		
 	private:
