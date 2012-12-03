@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Nov 13 15:58:31 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Nov 30 11:36:30 2012 (+0530)
+# Last-Updated: Mon Dec  3 14:43:19 2012 (+0530)
 #           By: subha
-#     Update #: 54
+#     Update #: 62
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -95,8 +95,17 @@ class MooseEditorView(EditorBase):
 
     def getCentralWidget(self):
         if self._centralWidget is None:
-            self._centralWidget = EditorWidgetBase()
+            self._centralWidget = MooseEditorWidget()
+            self._centralWidget.setModelRoot(self.plugin.modelRoot)
         return self._centralWidget
+
+class MooseEditorWidget(EditorWidgetBase):
+    def __init__(self, *args):
+        EditorWidgetBase.__init__(self, *args)
+    
+    def updateModelView(self):
+        # TODO: implement a tree / box widget
+        pass
 
 # 
 # default.py ends here
