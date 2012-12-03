@@ -231,7 +231,18 @@ void SparseMsg::exec( const Qinfo* q, const double* arg, FuncId fid ) const
 		const unsigned int* fieldIndex = 0;
 		const unsigned int* colIndex = 0;
 		unsigned int n = matrix_.getRow( row, &fieldIndex, &colIndex );
-		assert( fieldIndex != 0 && colIndex != 0 );
+                // it is not correct to assert the following
+		//assert( fieldIndex != 0 && colIndex != 0 );
+                // this is because there might be a source neuron with no 
+                // target synapses on this PE
+                // note that getRow() only returns NULL values for fieldIndex and colIndex
+                // under two scenarios:
+                // (1) the requested row is out of range
+                // (2) the start of a requested row is >= the number of elements in the sparse matrix 
+                // the above assertion doesn't fail when the number of elements in a row is 0, and the
+                // start of the empty row is within the size of matrix_.N_
+                // however, it does fail (incorrectly) when an empty row is requested, with the start
+                // of the row occurring at or beyond the size boundary of matrix_.N_
 
 		FieldDataHandlerBase* fdh = 
 			dynamic_cast< FieldDataHandlerBase* >( e2_->dataHandler() );
@@ -384,6 +395,10 @@ unsigned int SparseMsg::randomConnect( double probability )
 		fdh->setMaxFieldEntries( maxSynPerRow );
 
 	// cout << Shell::myNode() << ": sizes.size() = " << sizes.size() << ", ncols = " << nCols << ", startSynapse = " << startSynapse << endl;
+        //ostringstream oss;
+        //matrix_.print(oss);
+        //cout << CkMyPe() << " SparseMsg matrix before transpose: \n" << oss.str() << endl;
+
 	matrix_.transpose();
 	return totalSynapses;
 }

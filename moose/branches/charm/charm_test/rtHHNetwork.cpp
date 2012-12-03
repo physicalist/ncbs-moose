@@ -1,6 +1,7 @@
 #include "Main.h"
 #include "doubleEq.h"
 #include "randnum.h"
+#include <fstream>
 
 void Main::rtHHNetwork(ShellProxy *shell){
   const double EREST = -0.07;
@@ -340,10 +341,26 @@ void Main::rtHHNetwork(ShellProxy *shell){
   vector< double > vec = FieldCcsClient< vector< double > >::get( tabId, "vec" );
   // assert( vec.size() == 101 );
   double delta = 0;
+  double maxError = 0.0;
+  ofstream reference("hhnet.ref.out");
+  ofstream sim("hhnet.sim.out");
+
   for ( unsigned int i = 0; i < 100; ++i ) {
     double ref = EREST + actionPotl[i] * 0.001;
-    delta += (vec[i] - ref) * (vec[i] - ref);
+    double error = vec[i] - ref;
+    double relError = fabs(error)/ref;
+    if(relError > maxError) maxError = relError;
+    delta += error * error;
+
+    reference << i << " " << ref << endl;
+    sim << i << " " << vec[i] << endl;
   }
+
+  reference.close();
+  sim.close();
+
+  double rmsError = sqrt( delta/100 );
+  cout << "HHnet: RMS error: " << rmsError << "; maxRelError: " << maxError << endl;
   assert( sqrt( delta/100 ) < 0.001 );
 
   ////////////////////////////////////////////////////////////////

@@ -54,7 +54,7 @@ ElementContainer::ElementContainer(const CkCallback &cb) :
 }
 
 void ElementContainer::newIteration(){
-  //CkPrintf("[%d] ElementContainer::newIteration\n", thisIndex);
+  //CkPrintf("[%d] ElementContainer::newIteration threadId %d\n", thisIndex, procInfo_.threadIndexInGroup);
   clock_->processPhase1(&procInfo_);
   // for now, we buffer all data items issued by
   // elements, copy them into one bcast message and send
@@ -68,23 +68,8 @@ void ElementContainer::newIteration(){
   // control to Shell::iterationDone (via LookupHelper::iterationDone),
   // where we check whether (i) we have received a stop command from
   // the parser or (ii) the simulation clock has expired.
-
-  // only the container with threadNum 1 will do anything
-  // when it invokes this method
-  clock_->processPhase2(&procInfo_);
+  // this is done by Shell (see reinitIterationDone, runIterationDone)
 }
-
-/*
-void ElementContainer::reinitIteration(){
-  clock_->processPhase1(&procInfo_);
-  // for now, we buffer all data items issued by
-  // elements, copy them into one bcast message and send
-  // this msg out. Extensions of this are possible; e.g. 
-  // use several, fixed size msgs or MeshStreamer to avoid
-  // copying
-  flushBufferedDataItems();
-}
-*/
 
 void ElementContainer::addToQ(const ObjId &oi, BindIndex bindIndex, const double *arg, int size){
   // we are passing threadId = 0, to the Qinfo ctor
@@ -309,6 +294,10 @@ void ElementContainer::reinit(){
 
 void ElementContainer::stop(){
   clock_->stop();
+}
+
+void ElementContainer::processPhase2(){
+  clock_->processPhase2(&procInfo_);
 }
 
 ThreadId ElementContainer::getRegistrationIndex(){

@@ -47,10 +47,13 @@ class DestFinfo;
 // readonly variables
 unsigned int readonlyNumElementContainers;
 unsigned int readonlyNumUsefulElementContainers;
+unsigned int readonlyVirtualizationRatio;
+
 CProxy_ElementContainer readonlyElementContainerProxy;
 CProxy_LookupHelper readonlyLookupHelperProxy;
 CProxy_ShellCcsInterface readonlyShellCcsInterfaceProxy;
 CProxy_Main readonlyMainProxy;
+
 
 extern CProxy_ParallelTestHelper readonlyParallelTestHelperProxy;
 
@@ -71,17 +74,19 @@ void Main::createMooseParallelObjects(CkArgMsg *m){
   // one "shell/script/test" container on each PE is required in addition to
   // at least one compute container, since scriptThread is always given 
   // index 0
-  readonlyNumElementContainers = 2 * CkNumPes();
-  readonlyNumUsefulElementContainers = CkNumPes();
-
   MooseParamCollection params;
 
+  params.add("virtRatio", &readonlyVirtualizationRatio, (unsigned int) 1, true);
   params.add("replyPort", &replyPort_, 9999, true);
   params.add("replyAddress", &replyAddress_, string("localhost"), true);
   params.add("retryPeriod", &retryPeriod_, 5, true);
   params.add("retryAttempts", &retryAttempts_, 10, true);
 
   CkAssert(params.process(m->argc, m->argv));
+
+  readonlyNumElementContainers = (readonlyVirtualizationRatio + 1) * CkNumPes();
+  readonlyNumUsefulElementContainers = readonlyNumElementContainers - CkNumPes();
+
 
   int purgedArgc;
   char **purgedArgv;

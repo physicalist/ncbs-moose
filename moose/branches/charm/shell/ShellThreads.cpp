@@ -139,8 +139,8 @@ void Shell::setHardware(
 	unsigned int numThreads, unsigned int numCores, unsigned int numNodes,
 	unsigned int myNode )
 {
-#ifndef USE_CHARMPP
 	numProcessThreads_ = numThreads;
+#ifndef USE_CHARMPP
 	numCores_ = numCores;
 	numNodes_ = numNodes;
 	Qinfo::initQs( numThreads + 1, 1024 );
@@ -178,11 +178,7 @@ unsigned int Shell::numCores()
 
 unsigned int Shell::numProcessThreads()
 {
-#ifdef USE_CHARMPP
-        return 1;
-#else
 	return numProcessThreads_;
-#endif
 }
 
 unsigned int Shell::numNodes()
@@ -226,11 +222,7 @@ bool Shell::inBlockingParserCall()
 // do we have to change this function for Charm++ version?
 bool Shell::isSingleThreaded()
 {
-#ifndef USE_CHARMPP
 	return ( numProcessThreads_ == 0 );
-#else
-        return true;
-#endif
 }
 
 bool Shell::keepLooping()

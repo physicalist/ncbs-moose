@@ -135,10 +135,16 @@ void checkChildren( Id parent, const string& info )
 	}
 }
 
+extern unsigned int readonlyVirtualizationRatio;
+
 Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests )
 {
 	unsigned int numCores = getNumCores();
+#ifndef USE_CHARMPP
 	unsigned int numThreads = numCores;
+#else
+	unsigned int numThreads = readonlyVirtualizationRatio;
+#endif
 	unsigned int numNodes = 1;
 	unsigned int myNode = 0;
 	bool isSingleThreaded = 0;

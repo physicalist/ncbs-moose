@@ -694,9 +694,7 @@ void Shell::startAllContainers(){
   // threadNum is 0 and matches the ScriptThreadNum. 
   // This would wrongly cause DataHandler::execThread()
   // to return true for out-of-bound DataIds
-  for(unsigned int i = 1; i < myElementContainers_.size(); i++){
-    myElementContainers_[i]->start();
-  }
+  forall(Shell::StartAll());
 }
 
 #else
@@ -809,9 +807,7 @@ void Shell::doReinit(bool qFlag){
 }
 
 void Shell::reinitAllContainers(){
-  for(unsigned int i = 1; i < myElementContainers_.size(); i++){
-    myElementContainers_[i]->reinit();
-  }
+  forall(Shell::ReinitAll());
 }
 #endif
 
@@ -828,9 +824,8 @@ void Shell::doStop( bool qFlag )
 	Qinfo::buildOff( qFlag );
 #else
         clock_->setIsRunning(false);
-        for(unsigned int i = 0; i < myElementContainers_.size(); i++){
-          myElementContainers_[i]->stop();
-        }
+
+        forall(0, myElementContainers_.size(), Shell::StopAll());
 #endif
 	/*
 	Eref sheller( shelle_, 0 );
@@ -1746,6 +1741,11 @@ void Shell::containerCheckin(){
 void Shell::reinitIterationDone(){
   //CkPrintf("[%d] ----- Shell::reinitIterationDone -----\n", CkMyPe());
   CkAssert(isDoingReinit());
+
+  // call process phase 2 on all containers
+  processPhase2AllContainers();
+
+  // and then check whether done
   if(clock_->hasFinishedTicks()){
     //CkPrintf("[%d] Shell::reinitIterationDone ticksFinished\n", CkMyPe());
     invokeFinishCallback();
@@ -1756,10 +1756,18 @@ void Shell::reinitIterationDone(){
   }
 }
 
+void Shell::processPhase2AllContainers(){
+  forall(Shell::ProcessPhase2All());
+}
+
 void Shell::runIterationDone(){
   //CkPrintf("[%d] Shell::iterationDone doingReinit %d expired %d\n", CkMyPe(), isDoingReinit(), clock_->hasExpired());
   //CkPrintf("[%d] ----- Shell::runIterationDone -----\n", CkMyPe());
   CkAssert(isRunning());
+
+  // call process phase 2 on all containers
+  processPhase2AllContainers();
+
   if(clock_->hasExpired()){
     //CkPrintf("[%d] Shell::runIterationDone clockExpired\n", CkMyPe());
     invokeFinishCallback();
@@ -1781,5 +1789,37 @@ void Shell::invokeFinishCallback(){
   else clock_->setIsRunning(false);
   finishCallback_.send();
 }
+
+void Shell::StartAll::work(ElementContainer *container) const {
+  container->start();
+}
+
+void Shell::ReinitAll::work(ElementContainer *container) const {
+  container->reinit();
+}
+
+void Shell::StopAll::work(ElementContainer *container) const {
+  container->stop();
+}
+
+void Shell::ProcessPhase2All::work(ElementContainer *container) const {
+  container->processPhase2();
+}
+
+template <typename WorkerType> 
+void Shell::forall(const WorkerType &worker){
+  for(unsigned int i = 1; i < myElementContainers_.size(); i++){
+    worker.work(myElementContainers_[i]);
+  }
+}
+
+template <typename WorkerType> 
+void Shell::forall(int istart, int iend, const WorkerType &worker){
+  for(unsigned int i = istart; i < iend; i++){
+    worker.work(myElementContainers_[i]);
+  }
+}
+
+
 
 #endif
