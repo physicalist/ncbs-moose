@@ -186,8 +186,8 @@ class EditorBase(ViewBase):
     is not a strict requirement.
 
     """
-    def __init__(self, *args):
-        ViewBase.__init__(self, *args)        
+    def __init__(self, plugin):
+        ViewBase.__init__(self, plugin)        
 
     def getToolPanes(self):
         if not self._toolPanes:
@@ -243,7 +243,7 @@ class EditorWidgetBase(QtGui.QWidget):
     def __init__(self, *args):
         QtGui.QWidget.__init__(self, *args)
         self.modelRoot = '/'
-
+	
     def setModelRoot(self, path):
         """Set the root of the model tree to be displayed.
 

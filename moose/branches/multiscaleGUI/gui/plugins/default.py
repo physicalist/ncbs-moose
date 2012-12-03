@@ -81,8 +81,8 @@ class MooseEditorView(EditorBase):
     boxes inside boxes
 
     """
-    def __init__(self, *args):
-        EditorBase.__init__(self, *args)
+    def __init__(self, plugin):
+        EditorBase.__init__(self, plugin)
 
     def getToolPanes(self):
         return super(MooseEditorView, self).getToolPanes()
@@ -97,6 +97,7 @@ class MooseEditorView(EditorBase):
         if self._centralWidget is None:
             self._centralWidget = MooseEditorWidget()
             self._centralWidget.setModelRoot(self.plugin.modelRoot)
+            print 'Model root', self.modelRoot
         return self._centralWidget
 
 class MooseEditorWidget(EditorWidgetBase):
@@ -105,6 +106,7 @@ class MooseEditorWidget(EditorWidgetBase):
     
     def updateModelView(self):
         # TODO: implement a tree / box widget
+        #print 'updateModelView', self.modelRoot
         pass
 
 # 
