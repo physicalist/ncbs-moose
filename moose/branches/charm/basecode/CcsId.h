@@ -51,4 +51,7 @@ struct CcsId {
   }
 };
 
+#include <iostream>
+std::ostream &operator<<(std::ostream &out, CcsId &id);
+
 #endif // CCS_ID_H

@@ -4,6 +4,7 @@
 
 using namespace std;
 
+#ifdef PYMOOSE
 extern ShellProxy *getParserShellProxy();
 
 CcsId::CcsId( std::string path, std::string separator){
@@ -16,4 +17,10 @@ string CcsId::path(string separator) const {
 
 bool CcsId::isValid(CcsId id){
   return getParserShellProxy()->doGetIsValid(id);
+}
+#endif
+
+std::ostream &operator<<(std::ostream &out, CcsId &id){
+  out << id.value();
+  return out;
 }

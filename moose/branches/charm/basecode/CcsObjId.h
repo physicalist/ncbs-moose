@@ -46,4 +46,7 @@ struct CcsObjId {
   static const CcsObjId bad();
 };
 
+#include <iostream>
+std::ostream &operator<<(std::ostream &, CcsObjId &);
+
 #endif // CCS_OBJID_H

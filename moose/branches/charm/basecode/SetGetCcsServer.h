@@ -12,6 +12,11 @@ using namespace std;
 
 #define SETGET_CCS_VERBOSE CkPrintf
 
+#include <iostream>
+// defined at end of file
+template<typename T>
+ostream &operator<<(ostream &out, vector<T> &v);
+
 class SetGetCcsServer {
   public:
     static void strGet_handler(char *msg){
@@ -23,7 +28,7 @@ class SetGetCcsServer {
       bool success = SetGet::strGet(ObjId(args.dest_), args.field_, ret);
       SETGET_CCS_VERBOSE("[%d] SetGetCcsServer::strGet success:%d\n", CkMyPe(), success);
       unsigned int size;
-      SetGet1CcsWrapper< string > wrapper(ret, success);
+      SetGet1CcsWrapper< string > wrapper(ret, success, CkMyPe());
       msg = CcsPackUnpack< SetGet1CcsWrapper< string > >::pack(wrapper, size); 
       CcsSendReply(size, msg);
       delete[] msg;
@@ -59,7 +64,8 @@ class SetGetCcsServer {
     WRAPPER_TYPE localData;
     pmeml | localData;
 
-    //cout << "reducer localData: " << localData << endl;
+    ostringstream oss;
+    oss << "[" << CkMyPe() << "] REDUCER localData: " << localData << endl;
 
     // go through recvd remote contributions and accumulate
     for(int i = 0; i < nRemoteContributions; i++){
@@ -69,7 +75,7 @@ class SetGetCcsServer {
       WRAPPER_TYPE remoteData;
       pmemr | remoteData;
 
-      //cout << "reducer remoteData: " << remoteData << endl;
+      oss << "[" << CkMyPe() << "] REDUCER remoteData: " << remoteData << endl;
 
       // accumulate remote contribution 
       localData += remoteData;
@@ -97,7 +103,8 @@ class SetGetCcsServer {
     PUP::toMem pmem(header + 1);
     pmem | localData;
 
-    //cout << "reducer size: " << psz.size() <<  " result: " << localData << endl;
+    oss << "[" << CkMyPe() << "] REDUCER size: " << psz.size() <<  " result: " << localData << endl;
+    CkPrintf("%s", oss.str().c_str());
 
 
     /*
@@ -111,8 +118,9 @@ class SetGetCcsServer {
     }
      */
 
-    // FIXME - do we have to free localContribution?
-    //CmiFree(localContribution);
+    CmiFree(localContribution);
+
+    *localSize = msgSize;
     return replyMsg;
   }
 };
@@ -221,10 +229,13 @@ class FieldCcsServer : public SetGet1CcsServer<A> {
       success = Field<A>::get(oid, args.field_, ret); 
     }
     
-    SETGET_CCS_VERBOSE("[%d] FieldCcsServer<A>::get success: %d\n", CkMyPe(), success);
+    ostringstream oss;
+    oss << ret;
+
+    SETGET_CCS_VERBOSE("[%d] FieldCcsServer<A>::get success: %d (%s)\n", CkMyPe(), success, oss.str().c_str());
     // A might have members that need to be wrapper
     unsigned int size;
-    SetGet1CcsWrapper< A > wrapper(ret, success);
+    SetGet1CcsWrapper< A > wrapper(ret, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< A > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -242,7 +253,7 @@ class FieldCcsServer : public SetGet1CcsServer<A> {
 
     // A might have members that need to be wrapper
     unsigned int size;
-    SetGet1CcsWrapper< vector< A > > wrapper(ret, success);
+    SetGet1CcsWrapper< vector< A > > wrapper(ret, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< vector< A > > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -260,13 +271,16 @@ inline void FieldCcsServer<CcsId>::get_handler(char *msg){
 
   Id ret;
   bool success = Field<Id>::get(ObjId(args.dest_), args.field_, ret);
-  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsId>::get success: %d\n", CkMyPe(), success);
+  ostringstream oss;
+  oss << ret;
+
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsId>::get success: %d (%s)\n", CkMyPe(), success, oss.str().c_str());
 
   CcsId reply;
   reply.id_ = ret.value();
 
   unsigned int size;
-  SetGet1CcsWrapper<CcsId> wrapper(reply, success);
+  SetGet1CcsWrapper<CcsId> wrapper(reply, success, CkMyPe());
   msg = CcsPackUnpack< SetGet1CcsWrapper< CcsId > >::pack(wrapper, size);
 
   CcsSendReply(size, msg);
@@ -281,15 +295,21 @@ inline void FieldCcsServer<vector<CcsId> >::get_handler(char *msg){
 
   vector<Id> ret;
   bool success = Field<vector<Id> >::get(ObjId(args.dest_), args.field_, ret);
-  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<vector<CcsId>>::get success: %d\n", CkMyPe(), success);
 
   vector<CcsId> reply;
   for(int i = 0; i < ret.size(); i++){
     reply.push_back(CcsId(ret[i].value()));
   }
 
+  ostringstream oss;
+  oss << reply;
+
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<vector<CcsId>>::get success: %d (%s)\n", CkMyPe(), success, oss.str().c_str());
+
+
+
   unsigned int size;
-  SetGet1CcsWrapper<vector<CcsId> > wrapper(reply, success);
+  SetGet1CcsWrapper<vector<CcsId> > wrapper(reply, success, CkMyPe());
   msg = CcsPackUnpack< SetGet1CcsWrapper< vector<CcsId> > >::pack(wrapper, size);
 
   CcsSendReply(size, msg);
@@ -304,16 +324,18 @@ inline void FieldCcsServer<CcsId>::getVec_handler(char *msg){
 
   vector< Id > ret;
   bool success = Field<Id>::getVec(Id(args.dest_.id), args.field_, ret);
-  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsId>::getVec success: %d\n", CkMyPe(), success);
 
   vector< CcsId > reply;
   for(int i = 0; i < ret.size(); i++){
     reply.push_back(CcsId(ret[i].value()));
   }
 
+  ostringstream oss;
+  oss << reply;
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsId>::getVec success: %d (%s)\n", CkMyPe(), success, oss.str().c_str());
   // A might have members that need to be wrapper
   unsigned int size;
-  SetGet1CcsWrapper< vector< CcsId > > wrapper(reply, success);
+  SetGet1CcsWrapper< vector< CcsId > > wrapper(reply, success, CkMyPe());
   msg = CcsPackUnpack< SetGet1CcsWrapper< vector< CcsId > > >::pack(wrapper, size);
 
   CcsSendReply(size, msg);
@@ -329,14 +351,17 @@ inline void FieldCcsServer<CcsObjId>::get_handler(char *msg){
 
   ObjId ret;
   bool success = Field<ObjId>::get(ObjId(args.dest_), args.field_, ret);
-  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsObjId>::getVec success: %d\n", CkMyPe(), success);
 
   CcsObjId reply;
   reply.id = CcsId(ret.id.value());
   reply.dataId = CcsDataId(ret.dataId.value());
 
+  ostringstream oss;
+  oss << reply;
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsObjId>::getVec success: %d (%s)\n", CkMyPe(), success, oss.str().c_str());
+
   unsigned int size;
-  SetGet1CcsWrapper<CcsObjId> wrapper(reply, success);
+  SetGet1CcsWrapper<CcsObjId> wrapper(reply, success, CkMyPe());
   msg = CcsPackUnpack< SetGet1CcsWrapper< CcsObjId > >::pack(wrapper, size);
 
   CcsSendReply(size, msg);
@@ -351,15 +376,18 @@ inline void FieldCcsServer<vector<CcsObjId> >::get_handler(char *msg){
 
   vector<ObjId> ret;
   bool success = Field<vector<ObjId> >::get(ObjId(args.dest_), args.field_, ret);
-  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<vector<CcsObjId>>::get success: %d\n", CkMyPe(), success);
 
   vector<CcsObjId> reply;
   for(int i = 0; i < ret.size(); i++){
     reply.push_back(CcsObjId(ret[i].id.value(), ret[i].dataId.value()));
   }
 
+  ostringstream oss;
+  oss << reply;
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<vector<CcsObjId>>::get success: %d (%s)\n", CkMyPe(), success, oss.str().c_str());
+
   unsigned int size;
-  SetGet1CcsWrapper<vector<CcsObjId> > wrapper(reply, success);
+  SetGet1CcsWrapper<vector<CcsObjId> > wrapper(reply, success, CkMyPe());
   msg = CcsPackUnpack< SetGet1CcsWrapper< vector<CcsObjId> > >::pack(wrapper, size);
 
   CcsSendReply(size, msg);
@@ -374,16 +402,19 @@ inline void FieldCcsServer<CcsObjId>::getVec_handler(char *msg){
 
   vector< ObjId > ret;
   bool success = Field<ObjId>::getVec(Id(args.dest_.id), args.field_, ret);
-  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsObjId>::getVec success: %d\n", CkMyPe(), success);
 
   vector< CcsObjId > reply;
   for(int i = 0; i < ret.size(); i++){
     reply.push_back(CcsObjId(ret[i].id.value(), ret[i].dataId.value()));
   }
 
+  ostringstream oss;
+  oss << reply;
+  SETGET_CCS_VERBOSE("[%d] FieldCcsServer<CcsObjId>::getVec success: %d (%s)\n", CkMyPe(), success, oss.str().c_str());
+
   // A might have members that need to be wrapper
   unsigned int size;
-  SetGet1CcsWrapper< vector< CcsObjId > > wrapper(reply, success);
+  SetGet1CcsWrapper< vector< CcsObjId > > wrapper(reply, success, CkMyPe());
   msg = CcsPackUnpack< SetGet1CcsWrapper< vector< CcsObjId > > >::pack(wrapper, size);
 
   CcsSendReply(size, msg);
@@ -433,7 +464,7 @@ class LookupFieldCcsServer : public SetGet2CcsServer<L, A> {
     SETGET_CCS_VERBOSE("[%d] LookupFieldCcsServer<L,A>::get success: %d\n", CkMyPe(), success);
     // A might have members that need to be packed
     unsigned int size;
-    SetGet1CcsWrapper< A > wrapper(ret, success);
+    SetGet1CcsWrapper< A > wrapper(ret, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< A > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -450,7 +481,7 @@ class LookupFieldCcsServer : public SetGet2CcsServer<L, A> {
     LookupField<L, A>::getVec(Id(args.dest_.id), args.field_, args.values_, ret); 
     // A might have members that need to be packed
     unsigned int size;
-    SetGet1CcsWrapper< vector< A > > wrapper(ret, true);
+    SetGet1CcsWrapper< vector< A > > wrapper(ret, true, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< vector< A > > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -472,7 +503,7 @@ class LookupFieldCcsServer<L, CcsId> : public SetGet2CcsServer<L, CcsId> {
 
     CcsId reply(ret.value());
     unsigned int size;
-    SetGet1CcsWrapper< CcsId > wrapper(reply, success);
+    SetGet1CcsWrapper< CcsId > wrapper(reply, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< CcsId > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -494,7 +525,7 @@ class LookupFieldCcsServer<CcsId, A> : public SetGet2CcsServer<CcsId, A> {
     // A might have members that need to be packed
 
     unsigned int size;
-    SetGet1CcsWrapper< A > wrapper(ret, success);
+    SetGet1CcsWrapper< A > wrapper(ret, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< A > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -517,7 +548,7 @@ class LookupFieldCcsServer<CcsId, CcsId> : public SetGet2CcsServer<CcsId, CcsId>
 
     CcsId reply(ret.value());
     unsigned int size;
-    SetGet1CcsWrapper< CcsId > wrapper(reply, success);
+    SetGet1CcsWrapper< CcsId > wrapper(reply, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< CcsId > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -540,7 +571,7 @@ class LookupFieldCcsServer<CcsId, CcsObjId> : public SetGet2CcsServer<CcsId, Ccs
 
     CcsObjId reply(ret.id.value(), ret.dataId.value());
     unsigned int size;
-    SetGet1CcsWrapper< CcsObjId > wrapper(reply, success);
+    SetGet1CcsWrapper< CcsObjId > wrapper(reply, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< CcsObjId > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -563,7 +594,7 @@ class LookupFieldCcsServer<CcsObjId, CcsId> : public SetGet2CcsServer<CcsObjId, 
 
     CcsId reply(ret.value());
     unsigned int size;
-    SetGet1CcsWrapper< CcsId > wrapper(reply, success);
+    SetGet1CcsWrapper< CcsId > wrapper(reply, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< CcsId > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -586,7 +617,7 @@ class LookupFieldCcsServer<L, CcsObjId> : public SetGet2CcsServer<L, CcsObjId> {
 
     CcsObjId reply(ret.id.value(), ret.dataId.value());
     unsigned int size;
-    SetGet1CcsWrapper< CcsObjId > wrapper(reply, success);
+    SetGet1CcsWrapper< CcsObjId > wrapper(reply, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< CcsObjId > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -608,7 +639,7 @@ class LookupFieldCcsServer<CcsObjId, A> : public SetGet2CcsServer<CcsObjId, A> {
     // A might have members that need to be packed
 
     unsigned int size;
-    SetGet1CcsWrapper< A > wrapper(ret, success);
+    SetGet1CcsWrapper< A > wrapper(ret, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< A > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -631,7 +662,7 @@ class LookupFieldCcsServer<CcsObjId, CcsObjId> : public SetGet2CcsServer<CcsObjI
 
     CcsObjId reply(ret.id.value(), ret.dataId.value());
     unsigned int size;
-    SetGet1CcsWrapper< CcsObjId > wrapper(reply, success);
+    SetGet1CcsWrapper< CcsObjId > wrapper(reply, success, CkMyPe());
     msg = CcsPackUnpack< SetGet1CcsWrapper< CcsObjId > >::pack(wrapper, size);
 
     CcsSendReply(size, msg);
@@ -708,5 +739,18 @@ template< class A1, class A2, class A3, class A4, class A5, class A6 > class Set
     CcsSendReply(sizeof(bool), &ret);
   }
 };
+
+template<typename T>
+ostream &operator<<(ostream &out, vector<T> &v){
+  out << "[";
+  if(v.size() > 0){
+    for(int i = 0; i < v.size() - 1; i++){
+      out << v[i] << ", ";
+    }
+    out << v[v.size()-1];
+  }
+  out << "]";
+  return out;
+}
 
 #endif // SET_GET_CCS_SERVER_H
