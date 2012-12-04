@@ -63,7 +63,9 @@ ifeq ($(BUILD),charm++)
 OBJ += SetGetRegistration.o \
        DefSetGetCcsHandlerStrings.o \
        SetGetCcsClient.o \
-       CcsPackUnpack.o
+       CcsPackUnpack.o \
+       CcsId.o \
+       CcsObjId.o
 endif
 
 HEADERS = \
@@ -118,7 +120,8 @@ FieldOpFunc.o: FieldOpFunc.h FieldDataHandlerBase.h
 FuncBarrier.o:	FuncBarrier.h
 
 ifeq ($(BUILD), charm++)
-SetGetRegistration.o: SetGetRegistration.h SetGetCcsServer.h SetGetCcsClient.h
+SetGetRegistration.o: SetGetRegistration.h SetGetCcsServer.h SetGetCcsClient.h SetGetWrapper.h
+SetGetCcsClient.o: SetGetWrapper.h
 endif
 
 #TestBasecode.o:	Shell.h ShellWrapper.h
