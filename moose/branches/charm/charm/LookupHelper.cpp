@@ -123,3 +123,7 @@ void LookupHelper::syncReinit(){
 void LookupHelper::syncRun(){
   contribute(CkCallback(CkIndex_LookupHelper::runIterationDone(), thisProxy));
 }
+
+void LookupHelper::doQuit(){
+  contribute(CkCallback(CkCallback::ckExit));
+}

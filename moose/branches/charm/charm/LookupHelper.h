@@ -41,6 +41,9 @@ class LookupHelper : public CBase_LookupHelper {
   void syncReinit();
   void syncRun();
 
+  // called by shell when quitting
+  void doQuit();
+
   // normal methods for manipulating element table
   public:
   Element *get(Id id);
