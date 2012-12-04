@@ -662,6 +662,10 @@ void Shell::doQuit( bool qFlag )
 #endif
 		Shell::keepLooping_ = 0;
 		// Send it off via MPI too.
+#ifdef USE_CHARMPP
+        readonlyLookupHelperProxy.ckLocalBranch()->doQuit();
+#endif
+
 #ifndef USE_CHARMPP
 	Qinfo::buildOff( qFlag );
 #endif

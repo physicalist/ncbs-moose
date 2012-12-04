@@ -200,7 +200,7 @@ void FindOperation::exec(Shell *shell){
 
   ObjId id = shell->doFind(path);
   CcsObjId ccsId(id.id.value(), id.dataId.value());
-  SetGet1CcsWrapper< CcsObjId > wrapper(ccsId, !(id == ObjId()));
+  SetGet1CcsWrapper< CcsObjId > wrapper(ccsId, !(id == ObjId()), CkMyPe());
 
   // since reduction requires a special (SetGetCcsServer) merge function, pack
   unsigned int size;
