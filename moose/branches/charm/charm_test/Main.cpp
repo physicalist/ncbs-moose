@@ -62,7 +62,7 @@ void Main::commence(){
 }
 
 void Main::test(){
-  rtHHNetwork(&shell_);
+  rtHHNetwork(100, &shell_);
   speedTestMultiNodeIntFireNetwork(2048, 20, &shell_);
 }
 

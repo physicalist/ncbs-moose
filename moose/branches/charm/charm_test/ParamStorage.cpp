@@ -1,3 +1,5 @@
+#include "charm++.h"
+
 #include "ParamStorage.h"
 #include "MooseParams.h"
 #include "MooseEnv.h"

@@ -87,12 +87,9 @@ void Main::createMooseParallelObjects(CkArgMsg *m){
   readonlyNumElementContainers = (readonlyVirtualizationRatio + 1) * CkNumPes();
   readonlyNumUsefulElementContainers = readonlyNumElementContainers - CkNumPes();
 
-
-  int purgedArgc;
-  char **purgedArgv;
-
   // remove all flags not meant for moose core
   vector< string > args;
+  args.push_back("moose");
   params.purge(m->argc, m->argv, args);
 
   __sdag_init();
