@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Nov 30 11:43:13 2012 (+0530)
+# Last-Updated: Wed Dec  5 16:39:02 2012 (+0530)
 #           By: subha
-#     Update #: 159
+#     Update #: 162
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -249,6 +249,9 @@ class EditorWidgetBase(QtGui.QWidget):
 
         This calls `updateModelView` which should update the scene to
         represent current model tree.
+
+        This function can be a slot for connecting actions that should
+        cause a change in modelRoot.
 
         """
         self.modelRoot = path
