@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Oct  2 17:25:41 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Dec  5 16:39:02 2012 (+0530)
+# Last-Updated: Wed Dec  5 16:56:53 2012 (+0530)
 #           By: subha
-#     Update #: 162
+#     Update #: 168
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -76,24 +76,6 @@ class MoosePluginBase(object):
 
     def getAdjacentPlugins(self):
 	"""Return a list of plugins that are valid transitions from this plugin"""
-	raise NotImplementedError('method must be reimplemented in subclass')
-
-    def getCentralWidget(self):
-	"""Returns the central widget for the current level"""
-	raise NotImplementedError('method must be reimplemented in subclass')
-
-    def getLibraryWidget(self):
-	"""Returns the library widget for current level of detail"""
-	raise NotImplementedError('method must be reimplemented in subclass')
-
-    def getOperationsWidget(self):
-	"""Return the widget with operations that can be applied on
-	objects in current level"""
-	raise NotImplementedError('method must be reimplemented in subclass')
-
-    def getSelectionWidget(self):
-	"""Return the widget with selection options that can be
-	applied on objects in current level"""
 	raise NotImplementedError('method must be reimplemented in subclass')
 
     def getViews(self):
@@ -198,16 +180,16 @@ class EditorBase(ViewBase):
 
     def getLibraryPane(self):
         """TODO: display everything under library as a tree"""
-        pass
+        raise NotImplementedError('method must be reimplemented in subclass')
 
     def getSelectionPane(self):
         """TODO: provide a widget to apply selection rules"""
-        pass
+        raise NotImplementedError('method must be reimplemented in subclass')
 
     def getOperationsPane(self):
         """TODO: provide a widget to apply operations on selected
         elements."""
-        pass
+        raise NotImplementedError('method must be reimplemented in subclass')
 
 class PlotBase(ViewBase):
     """Base class for plot configuration view.
@@ -218,6 +200,15 @@ class PlotBase(ViewBase):
     """
     def __init__(self, *args):
         ViewBase.__init__(self, *args)
+
+    def getSelectionPane(self):
+        """TODO: provide a widget to apply selection rules"""
+        raise NotImplementedError('method must be reimplemented in subclass')
+
+    def getOperationsPane(self):
+        """TODO: provide a widget to apply operations on selected
+        elements."""
+        raise NotImplementedError('method must be reimplemented in subclass')
 
 
 class RunBase(ViewBase):
