@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Nov 13 15:58:31 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Dec  3 14:43:19 2012 (+0530)
+# Last-Updated: Wed Dec  5 16:37:15 2012 (+0530)
 #           By: subha
-#     Update #: 62
+#     Update #: 66
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -94,13 +94,25 @@ class MooseEditorView(EditorBase):
         return super(MooseEditorView, self).getOperationsPane()
 
     def getCentralWidget(self):
+        """Retrieve or initialize the central widget.
+
+        Note that we call the widget's setModelRoot() function
+        explicitly with the plugin's modelRoot as the argument. This
+        enforces an update of the widget display with the current
+        modelRoot.
+
+        """
         if self._centralWidget is None:
             self._centralWidget = MooseEditorWidget()
             self._centralWidget.setModelRoot(self.plugin.modelRoot)
-            print 'Model root', self.modelRoot
         return self._centralWidget
 
 class MooseEditorWidget(EditorWidgetBase):
+    """Editor widget for default plugin. 
+    
+    Currently does nothing. Plugin-writers should code there own
+    editor widgets derived from EditorWidgetBase.
+    """
     def __init__(self, *args):
         EditorWidgetBase.__init__(self, *args)
     
