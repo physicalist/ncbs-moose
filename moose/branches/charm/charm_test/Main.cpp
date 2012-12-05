@@ -55,6 +55,8 @@ void Main::commence(){
 
   test();
 
+  shell_.doQuit();
+
   delete argMsg_;
   CkExit();
 }
