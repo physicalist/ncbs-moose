@@ -42,7 +42,7 @@ class Main : public CBase_Main {
   string toString(const T &t);
 
   void test();
-  void rtHHNetwork(ShellProxy *shell);
+  void rtHHNetwork(int numCopies, ShellProxy *shell);
   void speedTestMultiNodeIntFireNetwork( unsigned int size, unsigned int runsteps, ShellProxy *shell );
 };
 

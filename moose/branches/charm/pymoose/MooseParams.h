@@ -182,22 +182,27 @@ class MooseParamCollection {
 
     // check the parameters for which the user has
     // supplied values
-    for(int i = 0; i < argc; ++i){
+    for(int i = 1; i < argc; ++i){
       string searchString(argv[i]);
       it = params_.find(searchString);
+
+      //CkPrintf("MooseParams: search %s found %d\n", searchString.c_str(), it != params_.end());
 
       if(it != params_.end()){
         MooseParam *param = it->second;
         if(param->hasValue()){
+          //CkPrintf("MooseParams: matchValue %s\n", searchString.c_str());
           worker.matchValue(i, argc, argv, param);
           ++i;
         }
         else{
+          //CkPrintf("MooseParams: matchNoValue %s\n", searchString.c_str());
           worker.matchNoValue(i, argc, argv, param);
         }
         param->hasExtractedValue();
       }
       else{
+        //CkPrintf("MooseParams: noMatch %s\n", searchString.c_str());
         worker.noMatch(i, argc, argv);
       }
     }
@@ -209,27 +214,28 @@ class MooseParamCollection {
     int nMissing = 0;
     for(it = params_.begin(); it != params_.end(); ++it){
       MooseParam *param = it->second;
+      //CkPrintf("MooseParams: check param %s\n", it->first.c_str());
       if(param->isCompulsory() && !param->extractedValue()){
-        cerr << "parameter `" << it->first << "' is compulsory" << endl;
+        //CkPrintf("MooseParams: parameter `%s' is compulsory and unspecified: fail\n", it->first.c_str());
         nMissing++;
       }
       else {
+        //CkPrintf("MooseParams: parameter `%s' good\n", it->first.c_str());
         it->second->push();
       }
     }
 
-    if(nMissing > 0) return false;
-    else return true;
+    return (nMissing == 0);
   }
 
   bool process(int argc, char **argv){
     MooseParamExtractionWorker worker;
-    traverse(argc, argv, worker);
+    return traverse(argc, argv, worker);
   }
 
   bool purge(int argc, char **argv, vector< string > &purgedArgs){
     MooseParamPurgeWorker worker(&purgedArgs);
-    traverse(argc, argv, worker);
+    return traverse(argc, argv, worker);
   }
 };
 

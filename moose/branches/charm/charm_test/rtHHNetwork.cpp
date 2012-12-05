@@ -3,7 +3,7 @@
 #include "randnum.h"
 #include <fstream>
 
-void Main::rtHHNetwork(ShellProxy *shell){
+void Main::rtHHNetwork(int numCopies, ShellProxy *shell){
   const double EREST = -0.07;
 
   // AP measured in millivolts wrt EREST, at a sample interval of 
@@ -229,7 +229,6 @@ void Main::rtHHNetwork(ShellProxy *shell){
   //////////////////////////////////////////////////////////////////////
   // Make a copy with lots of duplicates
   //////////////////////////////////////////////////////////////////////
-  int numCopies = 10;
   CcsId copyParentId = shell->doCreate( "Neutral", CcsId(), "copy", dims );
   CcsId copyId = shell->doCopy( comptId, copyParentId, 
       "comptCopies", numCopies, false, false );
