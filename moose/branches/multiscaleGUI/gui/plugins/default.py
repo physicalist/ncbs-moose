@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Nov 13 15:58:31 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Dec  6 08:45:52 2012 (+0530)
+# Last-Updated: Thu Dec  6 17:43:05 2012 (+0530)
 #           By: subha
-#     Update #: 69
+#     Update #: 239
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -45,7 +45,10 @@
 
 # Code:
 
-from mplugin import *
+from PyQt4 import QtGui, QtCore
+from PyQt4.Qt import Qt
+import moose
+from mplugin import MoosePluginBase, EditorBase, EditorWidgetBase
 
 class MoosePlugin(MoosePluginBase):
     """Default plugin for MOOSE GUI"""
@@ -118,11 +121,203 @@ class DefaultEditorWidget(EditorWidgetBase):
     """
     def __init__(self, *args):
         EditorWidgetBase.__init__(self, *args)
+        # self.qmodel = MooseTreeModel(self)
+        # self.qview = QtGui.QTreeView(self)
+        # self.qview.setModel(self.qmodel)
     
     def updateModelView(self):
         # TODO: implement a tree / box widget
         #print 'updateModelView', self.modelRoot
+        # self.qmodel.setupModelData(moose.ematrix(self.modelRoot))
         pass
+
+
+class MooseTreeModel(QtCore.QAbstractItemModel):
+    """Tree model for the MOOSE element tree.
+    
+    This is not going to work as the MOOSE tree nodes are
+    inhomogeneous. The parent of a node is an melement, but the
+    children of an melement are ematrix objects.
+
+    Qt can handle only homogeneous tere nodes.
+    """
+    def __init__(self, *args):
+        super(MooseTreeModel, self).__init__(*args)
+        self.rootItem = moose.element('/')
+
+    def setupModelData(self, root):
+        self.rootItem = root        
+        print 'setupModelData', self.rootItem
+    
+    def index(self, row, column, parent):
+        print 'index', row, column, parent.internalPointer().path
+        if not self.hasIndex(row, column, parent):
+            return QtCore.QModelIndex()
+        if not parent.isValid():
+            parentItem = self.rootItem
+        else:
+            parentItem = parent.internalPointer()
+        childItem = parentItem.children[row]
+        if childItem.path == '/':
+            return QtCore.QModelIndex()
+        return self.createIndex(row, column, childItem)
+
+    def parent(self, index):
+        if not index.isValid():
+            return QtCore.QModelIndex()
+        childItem = index.internalPointer()
+        print 'parent():', childItem.path
+        parentItem = childItem.parent()
+        if parentItem == self.rootItem:
+            return QtCore.QModelIndex()
+        return self.createIndex(parentItem.parent.children.index(parentItem), parentItem.getDataIndex(), parentItem)
+
+    def rowCount(self, parent):
+        print 'Row count', parent
+        if not parent.isValid():
+            parentItem = self.rootItem
+        else:
+            parentItem = parent.internalPointer()
+        ret = len(parentItem.children)
+        print 'rowCount()', ret
+        return ret
+
+    def columnCount(self, parent):
+        print 'Column count', parent,
+        if parent.isValid():
+            print '\t',parent.internalPointer().path
+            return len(parent.internalPointer())
+        else:
+            print '\tInvalid parent',
+        ret = len(self.rootItem)
+        print '\t', ret
+        return ret
+
+    def data(self, index, role):
+        print 'data', index
+        if not index.isValid():
+            return None
+        item = index.internalPointer()
+        print '\t', item.name, role
+        return QtCore.QVariant(item[index.column()].name)
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:  
+            return QtCore.QVariant('Model Tree')
+        return None
+
+    def flags(self, index):
+         if not index.isValid():
+             return QtCore.Qt.NoItemFlags
+         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        
+    
+class MooseTreeItem(QtGui.QTreeWidgetItem):
+    def __init__(self, *args):
+	QtGui.QTreeWidgetItem.__init__(self, *args)
+	self.mobj = None
+
+    def setObject(self, element):
+        if isinstance(element, moose.marray):
+            self.mobj = marray[0]
+        elif isinstance(element, moose.melement):
+	    self.mobj = element
+	elif isinstance(element, str):
+	    self.mobj = moose.element(element)
+	else:
+            raise TypeError('Takes a path or an element or an array')
+	self.setText(0, QtCore.QString(self.mobj.name))
+	self.setText(1, QtCore.QString(self.mobj.class_))
+	#self.setToolTip(0, QtCore.QString('class:' + self.mooseObj_.className))
+
+    def updateSlot(self):
+	self.setText(0, QtCore.QString(self.mobj.name))
+
+
+class MooseTreeWidget(QtGui.QTreeWidget):
+    """Widget for displaying MOOSE model tree.
+
+    """
+    # Author: subhasis ray
+    #
+    # Created: Tue Jun 23 18:54:14 2009 (+0530)
+    #
+    # Updated for moose 2 and multiscale GUI: 2012-12-06
+
+
+    def __init__(self, *args):
+	QtGui.QTreeWidget.__init__(self, *args)
+        self.header().hide()
+	self.rootObject = '/'
+	self.itemList = []
+	# self.setupTree(self.rootObject, self, self.itemList)
+        # self.setCurrentItem(self.itemList[0]) # Make root the default item
+        # self.setColumnCount(2)	
+	# self.setHeaderLabels(['Moose Object                    ','Class']) 	#space as a hack to set a minimum 1st column width
+	# self.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
+	# self.expandToDepth(0)
+        # self.mooseHandler = None
+
+    def setupTree(self, obj, parent, itemlist):
+	item = MooseTreeItem(parent)
+	item.setObject(obj)
+	itemlist.append(item)
+	for childarray in obj.children:
+            for child in childarray:
+                self.setupTree(child, item, itemlist)
+        
+	return item
+
+    def recreateTree(self):
+        self.clear()
+        self.itemList = []
+        self.setupTree(moose.Neutral('/'), self, self.itemList)
+        if self.mooseHandler:
+            self.setCurrentItem(self.mooseHandler.getCurrentElement())
+        self.expandToDepth(0)
+
+    def insertMooseObjectSlot(self, class_name):
+        """Creates an instance of the class class_name and inserts it
+        under currently selected element in the model tree."""
+        try:
+            class_name = str(class_name)
+            class_obj = eval('moose.' + class_name)
+            current = self.currentItem()
+            new_item = MooseTreeItem(current)
+            parent = current.getMooseObject()
+            new_obj = class_obj(class_name, parent)
+            new_item.setMooseObject(new_obj)
+            current.addChild(new_item)
+            self.itemList.append(new_item)
+            self.emit(QtCore.SIGNAL('mooseObjectInserted(PyQt_PyObject)'), new_obj)
+        except AttributeError:
+            config.LOGGER.error('%s: no such class in module moose' % (class_name))
+
+    def setCurrentItem(self, item):
+        if isinstance(item, QtGui.QTreeWidgetItem):
+            QtGui.QTreeWidget.setCurrentItem(self, item)
+        elif isinstance(item, moose.PyMooseBase):
+            for entry in self.itemList:
+                if entry.getMooseObject().path == item.path:
+                    QtGui.QTreeWidget.setCurrentItem(self, entry)
+        elif isinstance(item, str):
+            for entry in self.itemList:
+                if entry.getMooseObject().path == item:
+                    QtGui.QTreeWidget.setCurrentItem(self, entry)
+        else:
+            raise Exception('Expected QTreeWidgetItem/moose object/string. Got: %s' % (type(item)))
+
+
+    def updateItemSlot(self, mooseObject):
+        for changedItem in (item for item in self.itemList if mooseObject.id == item.mooseObj_.id):
+            break
+        changedItem.updateSlot()
+        
+    def pathToTreeChild(self,moosePath):	#traverses the tree, itemlist already in a sorted way 
+    	path = str(moosePath)
+    	for item in self.itemList:
+    		if path==item.mooseObj_.path:
+    			return item
 
 # 
 # default.py ends here
