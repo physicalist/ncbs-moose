@@ -52,16 +52,14 @@ class KkitEditorView(MooseEditorView):
 
     def getCentralWidget(self):
         if self._centralWidget is None:
-            #self._centralWidget = EditorWidgetBase()
             self._centralWidget = KineticsWidget()
-            #print "getCentrelWidget",self.plugin.modelRoot
             self._centralWidget.setModelRoot(self.plugin.modelRoot)
         return self._centralWidget
 
-class  KineticsWidget(MooseEditorWidget):
+class  KineticsWidget(EditorWidgetBase):
     def __init__(self, *args):
         #QtGui.QWidget.__init__(self,parent)
-	MooseEditorWidget.__init__(self, *args)
+	EditorWidgetBase.__init__(self, *args)
 
         #print "KKIT plugin",self.modelRoot
         
