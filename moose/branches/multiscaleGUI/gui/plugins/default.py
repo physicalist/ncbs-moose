@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Nov 13 15:58:31 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Dec  5 16:37:15 2012 (+0530)
+# Last-Updated: Thu Dec  6 08:45:52 2012 (+0530)
 #           By: subha
-#     Update #: 66
+#     Update #: 69
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -101,13 +101,16 @@ class MooseEditorView(EditorBase):
         enforces an update of the widget display with the current
         modelRoot.
 
+        This function should be overridden by any derived class as it
+        has the editor widget class hard coded into it.
+
         """
         if self._centralWidget is None:
-            self._centralWidget = MooseEditorWidget()
+            self._centralWidget = DefaultEditorWidget()
             self._centralWidget.setModelRoot(self.plugin.modelRoot)
         return self._centralWidget
 
-class MooseEditorWidget(EditorWidgetBase):
+class DefaultEditorWidget(EditorWidgetBase):
     """Editor widget for default plugin. 
     
     Currently does nothing. Plugin-writers should code there own
