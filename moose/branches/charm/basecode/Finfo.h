@@ -22,23 +22,13 @@ class Element;
 
 // contains only MsgId typedef
 #include "MsgId.h"
+#include "CcsFinfo.h"
 
-class Finfo
+class Finfo : public CcsFinfo
 {
 	public:
 		Finfo( const string& name, const string& doc );
 		virtual ~Finfo() {;}
-
-		/**
-		 * Returns the Finfo name
-		 */
-		const string& name() const;
-
-		/**
-		 * Returns string-ified form to handle template expectations
-		 * for name field
-		 */
-		string getName() const;
 
 		/**
 		 * Assign function Ids, bindIndex and so on.
@@ -101,10 +91,6 @@ class Finfo
 		////////////////////////////////////////////////////////////////
 		// Functions for handling MOOSE Element inspection
 		////////////////////////////////////////////////////////////////
-		/**
-		 * Returns the documentation string for the Finfo
-		 */
-		string docs() const;
 
 		/**
 		 * Returns the RTTI type string for the finfo by referring

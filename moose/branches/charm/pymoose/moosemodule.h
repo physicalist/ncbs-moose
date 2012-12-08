@@ -180,11 +180,11 @@ extern "C" {
     //////////////////////////////////////////////////////////////
     static PyObject * getLookupField(CcsObjId oid, char * fieldName, PyObject * key);
     static int setLookupField(CcsObjId oid, char * fieldName, PyObject * key, PyObject * value);
-    static int define_class(PyObject * module_dict, const Cinfo * cinfo);
-    static int define_destFinfos(const Cinfo * cinfo);
+    static int define_class(PyObject * module_dict, const CcsCinfo * cinfo);
+    static int define_destFinfos(const CcsCinfo * cinfo);
     static int defineAllClasses(PyObject* module_dict);
-    static int define_lookupFinfos(const Cinfo * cinfo);
-    static int define_elementFinfos(const Cinfo * cinfo);
+    static int define_lookupFinfos(const CcsCinfo * cinfo);
+    static int define_elementFinfos(const CcsCinfo * cinfo);
     static PyObject * moose_ObjId_get_lookupField_attr(PyObject * self, void * closure);
     static PyObject * moose_ObjId_get_elementField_attr(PyObject * self, void * closure);
     static PyObject * moose_ObjId_get_destField_attr(PyObject * self, void * closure);

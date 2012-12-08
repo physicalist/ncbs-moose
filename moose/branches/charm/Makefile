@@ -384,7 +384,6 @@ pymoose: SUBDIR += pymoose
 
 ifneq ($(BUILD),charm++)
 pymoose: OBJLIBS += pymoose/_pymoose.o basecode/_basecode_pymoose.o\
-                    basecode/Cinfo_parser.o basecode/Finfo_parser.o\
                     basecode/CcsId.o
 pymoose: OBJLIBS := $(filter-out basecode/_basecode.o,$(OBJLIBS))
 export CXXFLAGS
@@ -399,25 +398,33 @@ basecode/_basecode_pymoose.o:
 	$(MAKE) -C basecode pymoose 
 	@echo "_basecode_pymoose.o built"
 else
+# below, we have CcsObjId_parser separate from CcsObjId because
+# the former contains methods that should be invoked only by the
+# parser (via ShellProxy), triggering the sending of CCS messages
 PYMOOSE_OBJS = basecode/CcsId.o \
                basecode/CcsObjId.o \
+               basecode/CcsId_parser.o \
+               basecode/CcsObjId_parser.o \
                basecode/SetGetCcsClient.o \
-               basecode/Cinfo_parser.o \
-               basecode/Finfo_parser.o \
-               basecode/DummyFinfo.o \
+               basecode/CcsCinfo.o \
+               basecode/CcsFinfo.o \
+               basecode/sundry.o \
+               $(CHARM_PATH)/tmp/ckhashtable.o \
+               charm/pup_util.o \
                msg/Msg_parser.o \
                randnum/_randnum.o \
                utility/strutil.o \
                utility/types.o \
                utility/setupenv.o \
                utility/numutil.o \
-               shell/ShellProxy.o
+               shell/ShellProxy.o \
+               charm/MooseEnv.o
 
-PYMOOSE_LIBS = -lccs-client -lconv-util -lconv-core
+PYMOOSE_LIBS = -lccs-client 
 
 python/moose/_moose.so: $(PYMOOSE_OBJS) libs
 	$(MAKE) -C pymoose
-	$(LINK_CXX) $(LDFLAGS) $(CXXFLAGS) pymoose/_pymoose.o $(PYMOOSE_OBJS) $(PYMOOSE_LIBS) -o $@  
+	$(LINK_CXX) -shared $(LDFLAGS) $(CXXFLAGS) $(PYMOOSE_OBJS) pymoose/_pymoose.o $(PYMOOSE_LIBS) -o $@  
 	@echo "pymoose module built."
 
 endif

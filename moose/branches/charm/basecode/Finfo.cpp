@@ -69,22 +69,9 @@ static const Cinfo* finfoCinfo = Finfo::initCinfo();
 
 ////////////////////////////////////////////////////////////////
 
-// Silly variation needed to handle template expectations for
-// name field.
-string Finfo::getName( ) const
-{
-	return name_;
-}
-
 void Finfo::postCreationFunc( Id newId, Element* newElm ) const {
   ;
 }
-
-string Finfo::docs( ) const
-{
-	return doc_;
-}
-
 
 string Finfo::type( ) const
 {
@@ -101,5 +88,27 @@ vector< string > Finfo::dest( ) const
 	return this->innerDest();
 }
 
+// Default virtual functions.
+string Finfo::rttiType() const
+{
+	return typeid( *this ).name();
+}
 
+Finfo::Finfo( const string& name, const string& doc )
+	: CcsFinfo(name, doc)
+{
+	;
+}
+
+vector< string > Finfo::innerSrc() const
+{
+	static vector< string > ret;
+	return ret;
+}
+
+vector< string > Finfo::innerDest() const
+{
+	static vector< string > ret;
+	return ret;
+}
 

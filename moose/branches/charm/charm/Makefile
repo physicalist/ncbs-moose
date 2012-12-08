@@ -13,8 +13,8 @@ CC = $(CXX)
 AR = ar q 
 CXX_DEPEND = $(CXX) -M -MM -MG $(CXXFLAGS)
 
-OBJECTS = ElementContainer.o Main.o LookupHelper.o ParallelTestHelper.o SocketReply.o MooseEnv.o 
-SRCS = ElementContainer.cpp Main.cpp LookupHelper.cpp ParallelTestHelper.cpp SocketReply.cpp MooseEnv.cpp
+OBJECTS = ElementContainer.o Main.o LookupHelper.o ParallelTestHelper.o SocketReply.o MooseEnv.o pup_util.o 
+SRCS = ElementContainer.cpp Main.cpp LookupHelper.cpp ParallelTestHelper.cpp SocketReply.cpp MooseEnv.cpp $(CHARM_PATH)/tmp/pup_util.C
 
 TARGET = _moose_charm.o
 all: $(TARGET) 
@@ -24,6 +24,9 @@ $(TARGET): $(OBJECTS)
 
 %.decl.h %.def.h : %.ci
 	$(CHARMC) -E $(OPTS) $(DEFINE_FLAGS) $<
+
+pup_util.o: $(CHARM_PATH)/tmp/pup_util.C
+	$(CHARMC) -c -o $@ $(CXXFLAGS) -DSTANDALONE_PUP $(INCPATH) $(CHARM_PATH)/tmp/pup_util.C
 
 %.o: Makefile
 

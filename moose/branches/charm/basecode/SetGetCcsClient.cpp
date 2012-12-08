@@ -1,4 +1,11 @@
+// STANDALONE causes CmiAbort, etc. to be defined.
+// this is required since we will be linking with g++,
+// not charmc
+#define STANDALONE_PUP
+#include "sundry.h"
+#include "converse.h"
 #include "SetGetCcsClient.h"
+#undef STANDALONE_PUP
 
 CcsServer SetGetCcsClient::ccsServer_;
 

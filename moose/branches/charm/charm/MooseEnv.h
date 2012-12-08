@@ -12,6 +12,7 @@ struct MooseEnv {
 
   static string getcwd_();
   static bool isAbsolutePath(const string &path);
+  static unsigned int getNumCores();
 };
 
 #endif // MOOSE_ENV_H

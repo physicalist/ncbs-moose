@@ -353,3 +353,7 @@ CcsObjId ShellProxy::doGetMsgMgr(MsgId mid){
   return oid;
 }
 
+unsigned int ShellProxy::getNumPes(){
+  return CcsNumPes(&shellServer_);
+}
+

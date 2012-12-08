@@ -90,6 +90,8 @@ class ShellProxy {
   // invokes Msg::getMsg(mid)->manager().objId();
   CcsObjId doGetMsgMgr(MsgId mid);
 
+  unsigned int getNumPes();
+
   /* XXX where is this used?
      XXX redefine if necessary
   /// Digests outcome of calculation for max index of ragged array
