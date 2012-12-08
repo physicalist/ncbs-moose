@@ -82,4 +82,9 @@ void defineHandlerStrings(){
   initializeSetGetCcsHandlerStrings(typeCodeTable, classCodeTable);
 }
 
+// this function is a dummy, never actually called by the charm_test code, but
+// expected as extern by CcsId/CcsObjId. so, we include it for successful compilation
+
+ShellProxy *getParserShellProxy() { return NULL; }
+
 #include "test.def.h"

@@ -33,9 +33,9 @@
 #include <string>
 #include <sstream>
 #include <cstdlib>
-using namespace std;
 
-extern unsigned getNumCores();
+#include "../charm/MooseEnv.h"
+using namespace std;
 
 const map<string, string>& getArgMap()
 {
@@ -65,7 +65,7 @@ const map<string, string>& getArgMap()
         if (numCores != NULL){
             argmap.insert(pair<string, string>("NUMCORES", string(numCores)));
         } else {
-            unsigned int cores = getNumCores();
+            unsigned int cores = MooseEnv::getNumCores();
             stringstream s;
             s << cores;
             argmap.insert(pair<string, string>("NUMCORES", s.str()));        

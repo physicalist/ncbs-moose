@@ -109,13 +109,17 @@ class Eref;
 #include "../basecode/CcsId.h"
 #include "../basecode/CcsDataId.h"
 #include "../basecode/CcsObjId.h"
-#include "../basecode/Cinfo.h"
-#include "../basecode/Finfo.h"
+#include "../basecode/CcsCinfo.h"
+#include "../basecode/CcsFinfo.h"
 #include "../utility/utility.h"
 #include "../basecode/MsgId.h"
 class ProcInfo;
 class Qinfo;
 class ObjId;
+class Id;
+class FuncId;
+class DataId;
+class Cinfo;
 #include "../msg/Msg.h"
 #include "../randnum/randnum.h"
 #if 0
@@ -148,8 +152,6 @@ class ProcInfo;
 #include "moosemodule.h"
 #include "MooseParams.h"
 #include "../shell/ShellProxy.h"
-#include "../basecode/Cinfo.h"
-#include "../basecode/Finfo.h"
 
 #endif
 
@@ -185,7 +187,6 @@ extern void speedTestMultiNodeIntFireNetwork(
 	unsigned int size, unsigned int runsteps );
 extern void regressionTests();
 extern bool benchmarkTests( int argc, char** argv );
-extern int getNumCores();
 #endif
 
 // C-wrapper to be used by Python
@@ -248,7 +249,7 @@ static struct module_state _state;
             // of class names.
             
             // single
-            string classname = FieldCcsClient<string>::get(id->id_, "class", true);
+            string classname = FieldCcsClient<string>::get(id->id_, "class");
             return Py_BuildValue("s", classname.c_str());
         }        
         return NULL;
@@ -1423,7 +1424,7 @@ ShellProxy *getParserShellProxy(){
         }
         ostringstream repr;
         // single
-        repr << "<moose.ematrix: class=" << FieldCcsClient<string>::get(self->id_, "class", true) << "): "
+        repr << "<moose.ematrix: class=" << FieldCcsClient<string>::get(self->id_, "class") << "): "
              << "id=" << self->id_.value() << ","
              << "path=" << self->id_.path() << ">";
         return PyString_FromString(repr.str().c_str());
@@ -1476,7 +1477,7 @@ ShellProxy *getParserShellProxy(){
     static PyObject * moose_Id_getShape(_Id * self)
     {
         // single
-        vector< unsigned int> dims = FieldCcsClient< vector <unsigned int> >::get(self->id_, "objectDimensions", true);
+        vector< unsigned int> dims = FieldCcsClient< vector <unsigned int> >::get(self->id_, "objectDimensions");
         if (!CcsId::isValid(self->id_)){
             RAISE_INVALID_ID(NULL);
         }        
@@ -1556,7 +1557,7 @@ ShellProxy *getParserShellProxy(){
             return moose_Id_getItem(self, value);
         }
         // single
-        vector< unsigned int> dims = FieldCcsClient< vector <unsigned int> >::get(self->id_, "objectDimensions", true);
+        vector< unsigned int> dims = FieldCcsClient< vector <unsigned int> >::get(self->id_, "objectDimensions");
         if (dims.size() > 1 &&
             PyTuple_Check(op) && PyTuple_Size(op) == dims.size()){
             ostringstream path;
@@ -1646,7 +1647,7 @@ ShellProxy *getParserShellProxy(){
             return _ret;
         }
         // single
-        string class_name = FieldCcsClient<string>::get(self->id_, "class", true);
+        string class_name = FieldCcsClient<string>::get(self->id_, "class");
         string type = getFieldType(class_name, string(field), "valueFinfo");
         if (type.empty()){
             // Check if this field name is aliased and update fieldname and type if so.
@@ -1654,7 +1655,7 @@ ShellProxy *getParserShellProxy(){
             if (it != get_field_alias().end()){
                 field = const_cast<char*>((it->second).c_str());
                 // single
-                type = getFieldType(FieldCcsClient<string>::get(self->id_, "class", true), it->second, "valueFinfo");
+                type = getFieldType(FieldCcsClient<string>::get(self->id_, "class"), it->second, "valueFinfo");
                 // Update attr for next level (PyObject_GenericGetAttr) in case.
                 Py_XDECREF(attr);
                 attr = PyString_FromString(field);
@@ -1672,7 +1673,7 @@ ShellProxy *getParserShellProxy(){
         {                                                               \
             vector<TYPE> val;                                           \
             /* single */ \
-            FieldCcsClient< TYPE >::getVec(self->id_, string(field), val, true);       \
+            FieldCcsClient< TYPE >::getVec(self->id_, string(field), val);       \
             npy_intp dims = val.size();                                 \
             PyArrayObject * ret = (PyArrayObject*)PyArray_SimpleNew(1, &dims, get_npy_typenum(typeid(TYPE))); \
             char * ptr = PyArray_BYTES(ret);                            \
@@ -1684,7 +1685,7 @@ ShellProxy *getParserShellProxy(){
             case 'b':         {                                                               
                 vector<bool> val;                                           
                 // single
-                FieldCcsClient< bool >::getVec(self->id_, string(field), val, true);
+                FieldCcsClient< bool >::getVec(self->id_, string(field), val);
                 npy_intp dims = val.size();
                 PyArrayObject * ret = (PyArrayObject*)PyArray_SimpleNew(1, &dims, get_npy_typenum(typeid(bool))); 
                 char * ptr = PyArray_BYTES(ret);                            
@@ -1703,7 +1704,7 @@ ShellProxy *getParserShellProxy(){
             case 's': {
                 vector<string> val;
                 // single
-                FieldCcsClient<string>::getVec(self->id_, string(field), val, true);
+                FieldCcsClient<string>::getVec(self->id_, string(field), val);
                 PyObject * ret = PyTuple_New(val.size());
                 for (unsigned int ii = 0; ii < val.size(); ++ii){
                     PyTuple_SetItem(ret, (Py_ssize_t)ii, Py_BuildValue("s", val[ii].c_str()));
@@ -1713,7 +1714,7 @@ ShellProxy *getParserShellProxy(){
             case 'x': {
                 vector<CcsId> val;
                 // single
-                FieldCcsClient<CcsId>::getVec(self->id_, string(field), val, true);
+                FieldCcsClient<CcsId>::getVec(self->id_, string(field), val);
                 PyObject * ret = PyTuple_New(val.size());
                 for (unsigned int ii = 0; ii < val.size(); ++ii){
                     _Id * v = PyObject_New(_Id, &IdType);
@@ -1725,7 +1726,7 @@ ShellProxy *getParserShellProxy(){
             case 'y': {
                 vector<CcsObjId> val;
                 // single
-                FieldCcsClient<CcsObjId>::getVec(self->id_, string(field), val, true);
+                FieldCcsClient<CcsObjId>::getVec(self->id_, string(field), val);
                 PyObject * ret = PyTuple_New(val.size());
                 for (unsigned int ii = 0; ii < val.size(); ++ii){
                     _ObjId * v = PyObject_New(_ObjId, &ObjIdType);
@@ -1774,7 +1775,7 @@ ShellProxy *getParserShellProxy(){
             return -1;
         }
         // single
-        string moose_class = FieldCcsClient<string>::get(self->id_, "class", true);
+        string moose_class = FieldCcsClient<string>::get(self->id_, "class");
         string fieldtype = getFieldType(moose_class, string(fieldname), "valueFinfo");
         if (fieldtype.length() == 0){
             // If it is instance of a MOOSE Id then throw
@@ -4392,7 +4393,7 @@ ShellProxy *getParserShellProxy(){
 
         for (unsigned ii = 0; ii < classes.size(); ++ii){
             const string& class_name = classNames[ii];
-            const Cinfo * cinfo = Cinfo::find(class_name);
+            const CcsCinfo * cinfo = CcsCinfo::find(class_name);
             if (!cinfo){
                 cerr << "Error: no cinfo found with name " << class_name << endl;
                 return 0;
@@ -4419,7 +4420,7 @@ ShellProxy *getParserShellProxy(){
                  "*-----------------------------------------------------------------*\n"
                  );
 
-    static int define_class(PyObject * module_dict, const Cinfo * cinfo)
+    static int define_class(PyObject * module_dict, const CcsCinfo * cinfo)
     {
         const string& class_name = cinfo->name();
         map <string, PyTypeObject * >::iterator existing =
@@ -4427,7 +4428,7 @@ ShellProxy *getParserShellProxy(){
         if (existing != get_moose_classes().end()){
             return 1;
         }
-        const Cinfo* base = cinfo->baseCinfo();
+        const CcsCinfo* base = cinfo->baseCinfo();
         if (base && !define_class(module_dict, base)){
             return 0;
         }
@@ -4508,7 +4509,7 @@ ShellProxy *getParserShellProxy(){
         get_moose_classes().insert(pair<string, PyTypeObject*> (class_name, new_class));
         Py_INCREF(new_class);
         PyDict_SetItemString(new_class->tp_dict, "__module__", PyString_FromString("moose"));
-        string doc = const_cast<Cinfo*>(cinfo)->getDocs();
+        string doc = const_cast<CcsCinfo*>(cinfo)->getDocs();
         PyDict_SetItemString(new_class->tp_dict, "__doc__", PyString_FromString(doc.c_str()));
         PyDict_SetItemString(module_dict, class_name.c_str(), (PyObject *)new_class);
         return 1;                
@@ -4559,7 +4560,7 @@ ShellProxy *getParserShellProxy(){
     }
     
     
-    static int define_destFinfos(const Cinfo * cinfo)
+    static int define_destFinfos(const CcsCinfo * cinfo)
     {
         const string& class_name = cinfo->name();
         // Create methods for destFinfos. The tp_dict is initialized by
@@ -4572,7 +4573,7 @@ ShellProxy *getParserShellProxy(){
         // with get/set. So use a vector instead of C array.
         size_t curr_index = vec.size();
         for (unsigned int ii = 0; ii < cinfo->getNumDestFinfo(); ++ii){
-            Finfo * destFinfo = const_cast<Cinfo*>(cinfo)->getDestFinfo(ii);
+            CcsFinfo * destFinfo = const_cast<CcsCinfo*>(cinfo)->getDestFinfo(ii);
             const string& destFinfo_name = destFinfo->name();
             // get_{xyz} and set_{xyz} are internal destFinfos for
             // accessing valueFinfos. Ignore them.
@@ -4721,13 +4722,13 @@ ShellProxy *getParserShellProxy(){
         return new_obj;
     }
     
-    static int define_lookupFinfos(const Cinfo * cinfo)
+    static int define_lookupFinfos(const CcsCinfo * cinfo)
     {
         const string & class_name = cinfo->name();
         unsigned int num_lookupFinfos = cinfo->getNumLookupFinfo();
         unsigned int curr_index = get_getsetdefs()[class_name].size();
         for (unsigned int ii = 0; ii < num_lookupFinfos; ++ii){
-            const string& lookupFinfo_name = const_cast<Cinfo*>(cinfo)->getLookupFinfo(ii)->name();
+            const string& lookupFinfo_name = const_cast<CcsCinfo*>(cinfo)->getLookupFinfo(ii)->name();
             PyGetSetDef getset;
             get_getsetdefs()[class_name].push_back(getset);
             get_getsetdefs()[class_name][curr_index].name = (char*)calloc(lookupFinfo_name.size() + 1, sizeof(char));
@@ -4791,13 +4792,13 @@ ShellProxy *getParserShellProxy(){
         return NULL;
     }
 
-    static int define_elementFinfos(const Cinfo * cinfo)
+    static int define_elementFinfos(const CcsCinfo * cinfo)
     {
         const string & class_name = cinfo->name();
         unsigned int num_fieldElementFinfo = cinfo->getNumFieldElementFinfo();
         unsigned int curr_index = get_getsetdefs()[class_name].size();
         for (unsigned int ii = 0; ii < num_fieldElementFinfo; ++ii){
-            const string& finfo_name = const_cast<Cinfo*>(cinfo)->getFieldElementFinfo(ii)->name();
+            const string& finfo_name = const_cast<CcsCinfo*>(cinfo)->getFieldElementFinfo(ii)->name();
             PyGetSetDef getset;
             get_getsetdefs()[class_name].push_back(getset);
             get_getsetdefs()[class_name][curr_index].name = (char*)calloc(finfo_name.size() + 1, sizeof(char));

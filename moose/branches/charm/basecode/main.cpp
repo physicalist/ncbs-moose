@@ -37,6 +37,8 @@
 #include <sys/sysctl.h>
 #endif // MACOSX
 
+#include "../charm/MooseEnv.h"
+
 #ifdef DO_UNIT_TESTS
 extern void testSync();
 extern void testAsync();
@@ -78,48 +80,6 @@ bool benchmarkTests( int argc, char** argv );
 // System-dependent function here
 //////////////////////////////////////////////////////////////////
 
-unsigned int getNumCores()
-{
-#ifdef USE_CHARMPP
-        return CkNumPes();
-#endif
-	unsigned int numCPU = 0;
-#ifdef WIN_32
-	SYSTEM_INFO sysinfo;
-	GetSystemInfo( &sysinfo );
-
-	numCPU = sysinfo.dwNumberOfProcessors;
-#endif
-
-#ifdef LINUX
-	numCPU = sysconf( _SC_NPROCESSORS_ONLN );
-#endif
-
-#ifdef MACOSX
-	int mib[4];
-	size_t len = sizeof(numCPU); 
-
-	/* set the mib for hw.ncpu */
-	mib[0] = CTL_HW;
-	mib[1] = HW_AVAILCPU;  // alternatively, try HW_NCPU;
-
-	/* get the number of CPUs from the system */
-	sysctl(mib, 2, &numCPU, &len, NULL, 0);
-
-	if( numCPU < 1 ) 
-	{
-		mib[1] = HW_NCPU;
-		sysctl( mib, 2, &numCPU, &len, NULL, 0 );
-	}
-#endif
-	if ( numCPU < 1 )
-	{
-		cout << "No CPU information available. Assuming single core." << endl;
-		numCPU = 1;
-	}
-	return numCPU;
-}
-
 bool quitFlag = 0;
 //////////////////////////////////////////////////////////////////
 
@@ -139,7 +99,7 @@ extern unsigned int readonlyVirtualizationRatio;
 
 Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests )
 {
-	unsigned int numCores = getNumCores();
+	unsigned int numCores = MooseEnv::getNumCores();
 #ifndef USE_CHARMPP
 	unsigned int numThreads = numCores;
 #else

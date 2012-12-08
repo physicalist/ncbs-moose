@@ -15,7 +15,7 @@ PYMOOSE_DEPS = moosemodule.cpp $(OBJ) $(HEADERS) ../basecode/main.cpp ../utility
 ifneq ($(BUILD), charm++)
 PYMOOSE_DEPS += ../basecode/_basecode_pymoose.o ../charm/MooseEnv.o
 else
-PYMOOSE_DEPS += MooseParams.h ../shell/ShellProxy.h ../charm/MooseEnv.h
+PYMOOSE_DEPS += MooseParams.h ../shell/ShellProxy.h ../charm/MooseEnv.h 
 endif
 
 $(TARGET): $(PYMOOSE_DEPS) ../basecode/CcsPackUnpack.h 

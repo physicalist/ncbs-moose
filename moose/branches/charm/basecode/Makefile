@@ -36,15 +36,13 @@ OBJ = \
 	ZombieHandler.o \
 	Eref.o	\
 	Finfo.o	\
-	Finfo_parser.o	\
+	CcsFinfo.o	\
 	DestFinfo.o	\
 	Cinfo.o	\
-        Cinfo_parser.o \
 	SrcFinfo.o \
 	ValueFinfo.o \
 	SharedFinfo.o \
 	FieldElementFinfo.o \
-        DummyFinfo.o \
 	Id.o \
 	ObjId.o \
 	DataId.o \
@@ -67,6 +65,14 @@ OBJ += SetGetRegistration.o \
        CcsId.o \
        CcsObjId.o
 endif
+
+PARSER_OBJS = CcsId_parser.o \
+              CcsObjId_parser.o \
+              sundry.o
+# sundry.o is required for pymoose: defines some basic functions 
+# that are referenced in pup framework. since we link pymoose
+# with g++ instead of charm++, we have to provide our own 
+# definitions for these functions. 
 
 HEADERS = \
 	header.h \
@@ -107,7 +113,7 @@ HEADERS = \
 	ReduceBase.h \
 	ReduceFinfo.h \
 
-default: $(TARGET)
+default: $(TARGET) $(PARSER_OBJS)
 
 $(OBJ)	: $(HEADERS) ../shell/Shell.h
 Element.o:	DataHandlerWrapper.h
@@ -118,6 +124,9 @@ DataHandlerWrapper.o: DataHandlerWrapper.h
 FieldDataHandlerBase.o: FieldOpFunc.h
 FieldOpFunc.o: FieldOpFunc.h FieldDataHandlerBase.h
 FuncBarrier.o:	FuncBarrier.h
+
+CcsId_parser.o: CcsId.h
+CcsObjId_parser.o: CcsObjId.h
 
 ifeq ($(BUILD), charm++)
 SetGetRegistration.o: SetGetRegistration.h SetGetCcsServer.h SetGetCcsClient.h SetGetWrapper.h
