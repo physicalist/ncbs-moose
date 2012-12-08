@@ -8,3 +8,5 @@ std::ostream &operator<<(std::ostream &out, CcsObjId &oid){
   out << "[" << oid.id.value() << "," << oid.dataId.value() << "]";
   return out;
 }
+
+
