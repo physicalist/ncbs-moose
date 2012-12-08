@@ -128,6 +128,7 @@ FuncBarrier.o:	FuncBarrier.h
 CcsId_parser.o: CcsId.h
 CcsObjId_parser.o: CcsObjId.h
 
+
 ifeq ($(BUILD), charm++)
 SetGetRegistration.o: SetGetRegistration.h SetGetCcsServer.h SetGetCcsClient.h SetGetWrapper.h
 SetGetCcsClient.o: SetGetWrapper.h
