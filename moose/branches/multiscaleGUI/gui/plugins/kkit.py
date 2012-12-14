@@ -10,6 +10,7 @@ from mplugin import *
 from kkitUtil import *
 from kkitQGraphics import PoolItem, ReacItem,EnzItem,CplxItem,ComptItem
 from kkitViewcontrol import *
+
 class KkitPlugin(MoosePlugin):
     """Default plugin for MOOSE GUI"""
     def __init__(self, *args):
@@ -59,14 +60,16 @@ class KkitEditorView(MooseEditorView):
 
     def getCentralWidget(self):
         if self._centralWidget is None:
+            #self._centralWidget = EditorWidgetBase()
             self._centralWidget = KineticsWidget()
+            #print "getCentrelWidget",self.plugin.modelRoot
             self._centralWidget.setModelRoot(self.plugin.modelRoot)
         return self._centralWidget
 
-class  KineticsWidget(EditorWidgetBase):
+class  KineticsWidget(DefaultEditorWidget):
     def __init__(self, *args):
         #QtGui.QWidget.__init__(self,parent)
-	EditorWidgetBase.__init__(self, *args)
+	DefaultEditorWidget.__init__(self, *args)
 
         #print "KKIT plugin",self.modelRoot
         
@@ -148,20 +151,21 @@ for models using kkit8 or later')
                 poolinfo = poolObj.path+'/info'
                 poolItem = PoolItem(poolObj,self.qGraCompt[cmpt])
                 self.setupDisplay(poolinfo,poolItem,"pool")
-                self.mooseId_GObj[element(poolObj).getId()] = poolItem
+                #self.mooseId_GObj[element(poolObj).getId()] = poolItem
+                self.setupSlot(poolObj,poolItem)
 
             for cplxObj in self.find_index(memb,'cplx'):
                 cplxinfo = (cplxObj[0].parent).path+'/info'
                 cplxItem = CplxItem(cplxObj,self.mooseId_GObj[element(cplxObj[0]).parent.getId()])
                 self.setupDisplay(cplxinfo,cplxItem,"cplx")
-                self.mooseId_GObj[element(cplxObj).getId()] = cplxItem
-                
+                #self.mooseId_GObj[element(cplxObj).getId()] = cplxItem
+                self.setupSlot(cplxObj,cplxItem)
+
             for reaObj in self.find_index(memb,'reaction'):
                 reainfo = reaObj.path+'/info'
                 reaItem = ReacItem(reaObj,self.qGraCompt[cmpt])
                 self.setupDisplay(reainfo,reaItem,"reaction")
-                self.mooseId_GObj[element(reaObj).getId()] = reaItem
-
+                self.setupSlot(reaObj,reaItem)
 
 
         ''' compartment's rectangle size is calculated depending on children '''
@@ -169,6 +173,12 @@ for models using kkit8 or later')
             rectcompt = v.childrenBoundingRect()
             v.setRect(rectcompt.x()-10,rectcompt.y()-10,(rectcompt.width()+20),(rectcompt.height()+20))
             v.setPen(QtGui.QPen(Qt.QColor(66,66,66,100), 5, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin))
+    
+    def setupSlot(self,mooseObj,qgraphicItem):
+        self.mooseId_GObj[element(mooseObj).getId()] = qgraphicItem
+        #qgraphicItem.connect(qgraphicItem,QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),self.positionChange)
+        #qgraphicItem.connect(qgraphicItem,QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),self.emitItemtoEditor)
+        
 
     def setupDisplay(self,info,graphicalObj,objClass):
         x = float(element(info).getField('x'))
@@ -178,7 +188,7 @@ for models using kkit8 or later')
         """ For Reaction and Complex object I have skiped the process to get the facecolor and background color as \
             we are not using these colors for displaying the object so just passing dummy color white """
         if( (objClass == "reaction" ) or (objClass == "cplx")):
-            textcolor,bgcolor = "",""
+            textcolor,bgcolor = "white","white"
         else:
             textcolor,bgcolor = getColor(info,self.colorMap)
 
