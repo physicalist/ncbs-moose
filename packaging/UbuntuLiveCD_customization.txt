@@ -3,7 +3,7 @@ Dt: 2012 Jul 09
 
 Customization of Ubuntu liveCD (liveDVD also) / liveUSB:
 Not sure if you need to be running the same version of Ubuntu as the liveCD you're customizing?
-But 32-bit can be customized on 64-bit linux, not vice-versa.
+But 32-bit can be customized on 64-bit linux, not vice-versa. Better customize a 32-bit Ubuntu as it'll run on all machines.
 
 Install Ubuntu Customization Kit 2.4.5 via synaptic. 5GB free space needed to customize a live CD.
 
@@ -30,12 +30,30 @@ deb http://archive.ubuntu.com/ubuntu/ precise universe
 deb http://archive.ubuntu.com/ubuntu/ precise multiverse
 Run "gnome-control-center network" to set system proxy (sets env variable http_proxy). Set it at the end to what it'll be where the live USB/DVD is finally used.
 Reload/update package list! apt-get update (different from apt-get upgrade.)
-Now run 'software-center'. Install synaptic from software-center; OR 'apt-get install synaptic'.
+Now run 'software-center'. Install synaptic from software-center [Update Dec'12: proxy error on Ubuntu12.04 for me];
+Do 'apt-get install synaptic'.
 Below packages can also be installed via synaptic / software-center.
 You can even exit from the console and double-click package manager -- will work now that synaptic is installed.
-(You may also need to set synaptic proxy, but don't forget to set them before exiting to what they'll be where the liveUSB/DVD is used.)
+(You must also set synaptic proxy, but don't forget to set them before exiting to what they'll be where the liveUSB/DVD is used.)
 
 Dependencies for moose:
+[
+UPDATE Dec'12: Use moose .deb file instead of svn :
+Always first 'apt-get update' (to get latest list of packages), then install/upgrade.
+First install gdebi using 'apt-get install gdebi' or synaptic.
+Download moose deb file from sourceforge using firefox.
+Then 'gdebi <moose deb filename>' Installs all dependencies too.
+Add user moose as below. Then 'su moose' and 'moosegui' to create Demos in /home/moose/.
+Run 'nautilus' to create a 'Desktop' folder in /home/moose/.
+Since deb doesn't copy shortcuts to desktop, do as below:
+cp /usr/share/moose/gui/MooseGUI.desktop /home/moose/Desktop/
+cp /usr/share/moose/gui/MooseSquidAxon.desktop /home/moose/Desktop/
+If copied as moose user, they'll belong to moose, else chown and chgrp.
+also chmod a+x /home/moose/Desktop/*.desktop
+You won't be able to run it via nautilus, as new terminal perhaps cannot be opened in customization mode.
+Be sure to remove proxies set in synaptic, firefox and 'gnome-control-center network'.
+'exit' and double-click 'continue building'. (WARNING: Do not click 'continue building' and 'ok'. UCK will close, above will be deleted.)
+]
 Always first apt-get update (to get latest list of packages), then install/upgrade.
 apt-get install subversion
 svn help (this creates ~/.subversion/servers)
@@ -81,7 +99,8 @@ For further customization of background etc, see here:
 (but see only the customization part, the manual mounting etc does not use UCK):
 https://help.ubuntu.com/community/LiveCDCustomization
 
-ATTENTION: After customization, double-click 'build' on the GUI (WARNING: do not select 'build' and click ok, as that exits!!)
+ATTENTION: After customization, double-click 'continue building' on the GUI.
+(WARNING: do not select 'continue building' and click ok, as that exits!! UCK will close, above efforts will be deleted.)
 It'll create the iso, but it will delete the file structure and your customizations at the end.
 
 I tried to be smart and Ctrl-C -ed it in the terminal after customization (note that the script unmounts the filesystems, so no problem with Ctrl-C).
@@ -114,3 +133,7 @@ To reuse just the settings (WARNING: deletes previous liveCD filestructure witho
 in ~/tmp (default location), run:
 sudo uck-remaster /media/data/FILAB/software/linux/ubuntu-12.04-desktop-i386.iso customization-scripts
 WARNING: The liveCD file structure gets deleted (without asking) and made again, so be careful :( !!!
+
+Use starup disk creator to write to CD or USB. Do not use persistent storage. Takes a long time to make a persistence file.
+If 'qemu' is installed, can test using:
+qemu -cdrom /home/aditya/tmp/remaster-new-files/livecd.iso -boot d -m 256

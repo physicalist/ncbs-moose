@@ -1,0 +1,56 @@
+Instructions to boot into the MOOSE 2.0.0 - Ubuntu 12.04 32-bit live USB:
+
+0) Power down laptop/computer.
+
+1) Insert USB into usb 2.0 port on laptop/computer.
+Avoid usb 3.0 ports as loading becomes very slow possibly due to incompatibility with these usb 2.0 pen drives.
+(USB 3.0 ports have blue innards - blue connector inside the laptop port).
+
+2) Power-up computer and ...
+A) Most new laptops and computers have a key to be pressed just after powerup to select boot device.
+***********
+PC: Usually the key is F9 on HP, F10 on Sony, F12 on Lenovo, Dell and Acer, and ESC on ASUS. Sometimes F8 also works.
+MAC: Press C on intel-based macs on startup for booting from USB/CD.
+***********
+Press requisite key and select USB Transcend as the boot device.
+The requisite key is written as last line on display on starting laptop - press within 1-2 seconds of it being displayed,
+else it'll go ahead with normal boot and you need to reboot and start again.
+
+OR
+
+B) You need to go into BIOS setup, usually pressing 'del' or 'F2' key, and set boot order to usb first.
+
+3) After a while, it'll ask to 'Try Ubuntu' or 'Install Ubuntu'. Choose 'Try Ubuntu' to run it as a live USB.
+
+4) When it asks for password, type 'moose'.
+username: moose
+password: moose
+
+5) On logging in, MOOSE GUI and MOOSE Squid Axon demo are available on the Desktop as icons and on the sidebar.
+Double-click Desktop icon or single-click sidebar icon to run any of them.
+
+6) About 10-15 seconds after logging in, a crash report window will open:
+'the app Ubuntu Software Center has closed unexpectedly.'
+Click on 'Leave Closed'. Click 'cancel' when apport tries to collect and send info about the problem.
+[This is not due to MOOSE, somehow the Ubuntu Software Center is starting up on its own.
+Maybe it's just on my laptop or could be generic. But no time to probe why this is happening.]
+
+*******************************************************
+
+For Ubuntu 10.04 onwards (and perhaps earlier too), you can use the deb packages provided at:
+http://moose.sourceforge.net/
+or on a separate USB.
+
+Debian Package: 64-bit, Python 2.7 (e.g.: Ubuntu 11.04 or newer)	moose_2.0.0_amd64_python2.7.deb	4.6 MB	0196732bcf4d820a63f6ed801cd71cda8f6483ee
+Debian Package: 64-bit, Python 2.6 (e.g.: Ubuntu 10.04 or 10.10)	moose_2.0.0_amd64_python2.6.deb	4.5 MB	8b37d36c2ee9c97f807872db5206cd128b872efe
+Debian Package: 32-bit, Python 2.7 (e.g.: Ubuntu 11.04 or newer)	moose_2.0.0_i386_python2.7.deb	4.5 MB	97e63db7c3d63598e4cdbf3c836b2d17ec81c869
+Debian Package: 32-bit, Python 2.6 (e.g.: Ubuntu 10.04 or 10.10)	moose_2.0.0_i386_python2.6.deb	4.5 MB	1b84cbea02182ec311bb7c28b01598af00c7da56
+Source Tarball	moose_2.0.0_kalakand.src.tar.gz	3.2 MB	d3f42a20d2b212d663e2e03bfbacf168bac07c8d
+
+*******************************************************
+
+If all else fails, use virtualbox from http://www.virtualbox.org/
+to boot using the moose2.0.0-ubuntulive.iso file provided on a separate USB.
+Can also use commercial s/w: 'parallels' for Mac, or vmware for PC.
+
+*******************************************************
