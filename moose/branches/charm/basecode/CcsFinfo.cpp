@@ -1,5 +1,7 @@
 #include "CcsFinfo.h"
 
+CcsFinfo::CcsFinfo() {}
+
 CcsFinfo::CcsFinfo(const string &name, const string &doc) : 
   name_(name),
   doc_(doc)
@@ -20,6 +22,11 @@ const string &CcsFinfo::name( ) const
 string CcsFinfo::getName( ) const
 {
 	return name_;
+}
+
+void CcsFinfo::pup(PUP::er &p){
+  p | name_;
+  p | doc_;
 }
 
 DummyCcsFinfo::DummyCcsFinfo() : 

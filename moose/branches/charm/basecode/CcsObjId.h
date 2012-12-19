@@ -28,6 +28,8 @@ struct CcsObjId {
     dataId(0)
   {}
 
+  CcsObjId(const std::string &path);
+
   void pup(PUP::er &p){
     p|id;
     p|dataId;

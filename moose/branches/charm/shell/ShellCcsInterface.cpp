@@ -59,6 +59,7 @@ ShellCcsInterface::ShellCcsInterface(const CkCallback &cb){
   CcsRegisterHandler(ShellProxy::doGetIsValidHandlerString, (CmiHandler) ShellCcsInterface::doGetIsValid);
   CcsRegisterHandler(ShellProxy::doWildcardHandlerString, (CmiHandler) ShellCcsInterface::doWildcard);
   CcsRegisterHandler(ShellProxy::doGetMsgMgrHandlerString, (CmiHandler) ShellCcsInterface::doGetMsgMgr);
+  CcsRegisterHandler(ShellProxy::doGetCinfosHandlerString, (CmiHandler) ShellCcsInterface::doGetCinfos);
 
   // register reducer merge functions
   CcsSetMergeFn(ShellProxy::setCweHandlerString, CcsMerge_logical_and);
@@ -218,6 +219,10 @@ void ShellCcsInterface::doWildcard(char *msg){
 
 void ShellCcsInterface::doGetMsgMgr(char *msg){
   process<MsgMgrOperation>(msg);
+}
+
+void ShellCcsInterface::doGetCinfos(char *msg){
+  process<CinfosOperation>(msg);
 }
 
 Shell *ShellCcsInterface::getLocalShell(){

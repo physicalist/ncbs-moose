@@ -12,7 +12,13 @@
 // charm++ test driver, charm_test
 extern "C" ShellProxy *getParserShellProxy();
 
+CcsObjId::CcsObjId(const string &path){
+  string nonConstString(path);
+  *this = getParserShellProxy()->doFind(nonConstString);
+}
+
 string CcsObjId::path(string separator) const {
+  // XXX shouldn't we send the separator along?
   return getParserShellProxy()->doGetObjIdPath(*this); 
 }
 
@@ -21,5 +27,4 @@ const CcsObjId CcsObjId::bad()
   static CcsObjId bad_( CcsId(), CcsDataId::bad() );
   return bad_;
 }
-
 

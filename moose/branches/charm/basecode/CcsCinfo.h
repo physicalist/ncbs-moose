@@ -24,6 +24,10 @@ class CcsCinfo {
   vector< CcsFinfo * > fieldElementFinfos_;
 
   public:
+  CcsCinfo();
+  CcsCinfo(const CcsCinfo &other);
+  CcsCinfo &operator=(const CcsCinfo &other);
+
   const CcsCinfo *baseCinfo() const;
   string getBaseClass() const;
   const string &name() const;
@@ -35,6 +39,14 @@ class CcsCinfo {
   CcsFinfo* getFieldElementFinfo( unsigned int i );
   unsigned int getNumFieldElementFinfo() const;
 
+  vector< CcsFinfo * > &getDestFinfos();
+  vector< CcsFinfo * > &getLookupFinfos();
+  vector< CcsFinfo * > &getFieldElementFinfos();
+
+  void setName(const string &name);
+  void setDoc(const map< string, string > &doc);
+
+
   public:
   static const CcsCinfo *find(const string &name);
   static map< string, CcsCinfo * > &cinfoMap();  
@@ -42,6 +54,15 @@ class CcsCinfo {
   private:
   static DummyCcsFinfo dummy_;
 
+  // these are for serialization
+  public:
+  void setBaseCinfo(CcsCinfo *base);
+  void setBaseCinfoIndex(int i);
+  void setBaseCinfoFromIndex(CcsCinfo *arrayBasePtr);
+  void pup(PUP::er &p);
+
+  private:
+  void copy(const CcsCinfo &other);
 };
 
 #endif // CCS_CINFO_H

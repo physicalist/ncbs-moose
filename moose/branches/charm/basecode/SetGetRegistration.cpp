@@ -183,6 +183,7 @@ MOOSE_SETGET_FIELD_MERGE(vector< long long >, Method) \
 MOOSE_SETGET_FIELD_MERGE(vector< unsigned long long >, Method) \
 MOOSE_SETGET_FIELD_MERGE(vector< float >, Method) \
 MOOSE_SETGET_FIELD_MERGE(vector< double >, Method) \
+MOOSE_SETGET_FIELD_MERGE(vector< string >, Method) \
 MOOSE_SETGET_FIELD_MERGE(vector< CcsId >, Method) \
 MOOSE_SETGET_FIELD_MERGE(vector< CcsObjId >, Method) 
 

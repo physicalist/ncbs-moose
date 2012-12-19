@@ -4385,22 +4385,44 @@ ShellProxy *getParserShellProxy(){
     /// Python class for it.
     static int defineAllClasses(PyObject * module_dict)
     {
-        // bcast
         static vector <CcsId> classes(FieldCcsClient< vector<CcsId> >::get(CcsObjId(string("/classes")), "children"));
         static vector <string> classNames(FieldCcsClient< vector<string> >::get(CcsObjId(string("/classes")), "childrenNames"));
 
         assert(classes.size() == classNames.size());
 
+        vector< CcsCinfo > cinfos;
+        SHELLPTR->doGetCinfos(cinfos);
+
+        // first put all the cinfos into CcsCinfo::cinfoMap
+        // worry about setting parent cinfo pointers later
+        map< string, CcsCinfo * > &cinfoMap = CcsCinfo::cinfoMap();
         for (unsigned ii = 0; ii < classes.size(); ++ii){
-            const string& class_name = classNames[ii];
-            const CcsCinfo * cinfo = CcsCinfo::find(class_name);
-            if (!cinfo){
-                cerr << "Error: no cinfo found with name " << class_name << endl;
-                return 0;
-            }
-            if (!define_class(module_dict, cinfo)){
-                return 0;
-            }
+          cinfoMap[cinfos[ii].name()] = new CcsCinfo(cinfos[ii]);
+        }
+
+        // set parent cinfo pointers
+        for (unsigned ii = 0; ii < classes.size(); ++ii){
+          CcsCinfo &oldCinfo = cinfos[ii];
+          CcsCinfo *newCinfo = cinfoMap[oldCinfo.name()];
+          if(oldCinfo.baseCinfo() == NULL){
+            newCinfo->setBaseCinfo(NULL);
+          }
+          else{
+            string parentName = oldCinfo.baseCinfo()->name();
+            CcsCinfo *newParentCinfo = cinfoMap[parentName];
+            newCinfo->setBaseCinfo(newParentCinfo);
+          }
+        }
+
+        // at this point, all cinfos' parent pointers will
+        // have been set; now we can define_classes
+
+        map< string, CcsCinfo * >::iterator it;
+        for(it = cinfoMap.begin(); it != cinfoMap.end(); ++it){
+          CcsCinfo *cinfo = it->second;
+          if (!define_class(module_dict, cinfo)){
+            return 0;
+          }
         }
         return 1;
     }

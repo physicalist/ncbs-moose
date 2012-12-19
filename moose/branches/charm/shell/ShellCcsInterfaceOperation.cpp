@@ -48,6 +48,7 @@ DEF_DESCR_STRING(GetObjIdPath)
 DEF_DESCR_STRING(GetIsValid)
 DEF_DESCR_STRING(Wildcard)
 DEF_DESCR_STRING(MsgMgr)
+DEF_DESCR_STRING(Cinfos)
 
 
 void SetCweOperation::exec(Shell *shell){
@@ -102,6 +103,11 @@ void AddMsgOperation::exec(Shell *shell){
   CcsSendDelayedReply(delayedReply_, sizeof(MsgId), &mid);
 }
 
+// this will cause an 'unclean' shutdown: the ccs server
+// might terminate before the client, leading to a socket
+// error at the client end. however, since this is the
+// last thing that happens in the simulation, perhaps
+// it is tolerable, but certainly not elegant. 
 void QuitOperation::exec(Shell *shell){
   bool *arg = CcsPackUnpack<bool>::extractHandler(msg_);
   shell->doQuit(*arg);
@@ -202,7 +208,7 @@ void FindOperation::exec(Shell *shell){
   CcsObjId ccsId(id.id.value(), id.dataId.value());
   SetGet1CcsWrapper< CcsObjId > wrapper(ccsId, !(id == ObjId()), CkMyPe());
 
-  // since reduction requires a special (SetGetCcsServer) merge function, pack
+  // since reduction requires a special (see SetGetCcsServer) merge function, pack
   unsigned int size;
   char *toSend = CcsPackUnpack< SetGet1CcsWrapper< CcsObjId > >::pack(wrapper, size);
   CcsSendDelayedReply(delayedReply_, size, toSend);
@@ -345,5 +351,66 @@ void MsgMgrOperation::exec(Shell *shell){
   CcsObjId ccsOid(oid.id.value(), oid.dataId.value());
   
   CcsSendDelayedReply(delayedReply_, sizeof(CcsObjId), &ccsOid);
+}
+
+void CinfosOperation::exec(Shell *shell){
+  map< string, Cinfo * > &tab = Cinfo::cinfoMap();
+  map< string, Cinfo * >::iterator cit;
+
+  // we create an array of ccscinfos instead of a table, so that
+  // we can store indices from the base pointer of the array to
+  // identify parent ccscinfos.
+  vector< CcsCinfo > toPack;
+  toPack.resize(tab.size());
+  int sindex = 0;
+
+  // stores indices of Cinfos corresponding to 
+  // descriptive names
+  map< string, int > tmp;
+
+  // populate tmp table
+  for(cit = tab.begin(); cit != tab.end(); ++cit){
+    // get a cinfo from the table
+    Cinfo *cinfo = cit->second;
+    // pick a corresponding target ccscinfo in the array
+    CcsCinfo *ccsCinfo = &toPack[sindex];
+    // fill in the target's fields
+    cinfo->fillCcsCinfo(ccsCinfo);
+    // record the filled-in ccscinfo in a table for 
+    // quick recall when setting parent pointers (indices)
+    tmp[cit->first] = sindex++;
+  }
+
+  // now set parent ccscinfos
+  for(cit = tab.begin(); cit != tab.end(); ++cit){
+    // get a cinfo
+    Cinfo *cinfo = cit->second;
+    // get the corresponding ccscinfo; here, we could have
+    // directly indexed into the toPack array as well
+    CcsCinfo *ccsCinfo = &toPack[tmp[cit->first]];
+    // get the parent ccscinfo based on the name of the parent 
+    // of the corresponding cinfo. this is why the tmp table
+    // is needed in the first place
+    int parentIndex = -1;
+    const Cinfo *parentCinfo = cinfo->baseCinfo();
+    if(parentCinfo != NULL){
+      parentIndex = tmp[parentCinfo->name()];
+    }
+    // set index of parent ccscinfo relative to base ptr of toPack array
+    ccsCinfo->setBaseCinfoIndex(parentIndex);
+  }
+
+  // now do the actual serialization
+  PUP::sizer psz;
+  psz | toPack;
+
+  char *packed = new char[psz.size()];
+  PUP::toMem pmem(packed);
+  pmem | toPack;
+
+
+  CcsSendDelayedReply(delayedReply_, psz.size(), packed);
+
+  delete[] packed;
 }
 

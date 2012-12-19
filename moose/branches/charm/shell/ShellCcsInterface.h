@@ -68,6 +68,7 @@ class ShellCcsInterface : public CBase_ShellCcsInterface {
   static void doGetIsValid(char *msg);
   static void doWildcard(char *msg);
   static void doGetMsgMgr(char *msg);
+  static void doGetCinfos(char *msg);
 
   private:
   // for the benefit of the CCS interface functions
