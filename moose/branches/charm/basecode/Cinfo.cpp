@@ -591,4 +591,24 @@ unsigned int Cinfo::getNumSharedFinfo() const
 		return sharedFinfos_.size();
 }
 
+void Cinfo::fillCcsCinfo(CcsCinfo *to) const {
+  to->setName(name_);
+  to->setDoc(doc_);
 
+  vector< CcsFinfo * > &dests = to->getDestFinfos();
+  vector< CcsFinfo * > &lookups = to->getLookupFinfos();
+  vector< CcsFinfo * > &fieldElements = to->getFieldElementFinfos();
+
+  for(int i = 0; i < destFinfos_.size(); i++){
+    dests.push_back(destFinfos_[i]);
+  }
+
+  for(int i = 0; i < lookupFinfos_.size(); i++){
+    lookups.push_back(lookupFinfos_[i]);
+  }
+
+  for(int i = 0; i < fieldElementFinfos_.size(); i++){
+    fieldElements.push_back(fieldElementFinfos_[i]);
+  }
+
+}

@@ -36,9 +36,10 @@ OBJ = \
 	ZombieHandler.o \
 	Eref.o	\
 	Finfo.o	\
-	CcsFinfo.o	\
-	DestFinfo.o	\
+	CcsFinfo.o \
+	DestFinfo.o \
 	Cinfo.o	\
+	CcsCinfo.o \
 	SrcFinfo.o \
 	ValueFinfo.o \
 	SharedFinfo.o \

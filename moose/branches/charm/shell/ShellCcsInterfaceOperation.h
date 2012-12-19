@@ -347,5 +347,18 @@ class MsgMgrOperation : public ShellCcsInterfaceOperation {
   static const string name_;
 };
 
+class CinfosOperation : public ShellCcsInterfaceOperation {
+  public:
+  CinfosOperation(char *msg, CcsDelayedReply delayedReply) : 
+    ShellCcsInterfaceOperation(msg, delayedReply, name_)
+  {}
+  void exec(Shell *shell);
+
+  public:
+  static const string name_;
+};
+
+
+
 
 #endif // MOOSE_SHELL_CCS_INTERFACE_OPERATION_H

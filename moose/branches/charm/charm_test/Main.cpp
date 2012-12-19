@@ -6,13 +6,20 @@ Main::Main(CkArgMsg *m){
   thisProxy.commence();
 }
 
-
+ShellProxy *globalShellProxy = NULL;
 
 void Main::commence(){
   CkPrintf("Test::commence\n");
 
+  globalShellProxy = &shell_;
+
   MooseParamCollection params;
   ParamStorage p;
+  // whether to listen for incoming connection from moose-core; true by default.
+  // when specified as false, charm_test skips the acceptJobReply. this is done
+  // when it is known that moose-core has already started up previously, and hence 
+  // will not be initiating a connection to charm_test
+  int listen;
 
   //params.add(string("--ccsServer"), &serverName, string("localhost"), true);
   //params.add(string("exe"), &p.exe, ParamStorage::defaultExe, true);
@@ -24,6 +31,7 @@ void Main::commence(){
   params.add(string("ccsHost"), &p.ccsHost, ParamStorage::defaultCcsHost, true);
   params.add(string("ccsPort"), &p.ccsPort, ParamStorage::defaultCcsPort, true);
   params.add(string("listenPort"), &p.listenPort, ParamStorage::defaultListenPort, true);
+  params.add(string("listen"), &listen, 1, true);
 
   if(!params.process(argMsg_->argc, argMsg_->argv)){
     CkPrintf("[main] test not started; missing parameters\n");
@@ -38,7 +46,7 @@ void Main::commence(){
   }
   */
 
-  acceptJobReply(p);
+  if(listen) acceptJobReply(p);
   // when we return from accepJobReply, the job will have started up
   // and will be ready for CCS commands
 
@@ -62,8 +70,22 @@ void Main::commence(){
 }
 
 void Main::test(){
-  rtHHNetwork(100, &shell_);
-  speedTestMultiNodeIntFireNetwork(2048, 20, &shell_);
+  //rtHHNetwork(100, &shell_);
+  //speedTestMultiNodeIntFireNetwork(2048, 20, &shell_);
+  vector <CcsId> ids(FieldCcsClient< vector<CcsId> >::get(CcsObjId(string("/classes")), "children")); 
+  vector <string> names(FieldCcsClient< vector<string> >::get(CcsObjId(string("/classes")), "childrenNames")); 
+  assert(ids.size() == names.size());
+
+  for(int i = 0; i < ids.size(); i++){
+    cout << "class " << i << " id: " << ids[i] << " name: " << names[i] << endl; 
+  }
+
+  vector< CcsCinfo > cinfos;
+  shell_.doGetCinfos(cinfos);
+
+  for(int i = 0; i < cinfos.size(); i++){
+    cout << "cinfo " << i << " name: " << cinfos[i].name() << endl; 
+  }
 }
 
 extern void MooseSetTypeCodes(map<string, string> &table);
@@ -85,6 +107,6 @@ void defineHandlerStrings(){
 // this function is a dummy, never actually called by the charm_test code, but
 // expected as extern by CcsId/CcsObjId. so, we include it for successful compilation
 
-ShellProxy *getParserShellProxy() { return NULL; }
+extern "C" ShellProxy *getParserShellProxy() { return globalShellProxy; }
 
 #include "test.def.h"

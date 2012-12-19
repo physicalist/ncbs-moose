@@ -26,6 +26,12 @@ LINK_OBJECTS = ../shell/ShellProxy.o \
                ../basecode/SetGetCcsClient.o \
                ../basecode/DefSetGetCcsHandlerStrings.o \
                ../basecode/doubleEq.o \
+               ../basecode/CcsId.o \
+               ../basecode/CcsObjId.o \
+               ../basecode/CcsId_parser.o \
+               ../basecode/CcsObjId_parser.o \
+               ../basecode/CcsCinfo.o \
+               ../basecode/CcsFinfo.o \
                ../charm/MooseEnv.o \
                ../msg/Msg_parser.o \
                ../randnum/_randnum.o

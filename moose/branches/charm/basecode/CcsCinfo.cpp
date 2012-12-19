@@ -2,6 +2,38 @@
 #include <iostream>
 #include <sstream>
 
+// define a deep-copy constructor: doesn't copy 
+// baseCinfo_, since that cannot be set independently
+// of other cinfos. see pymoose/moosemodule.cpp:defineAllClasses
+void CcsCinfo::copy(const CcsCinfo &other){
+  name_ = other.name_;
+  doc_ = other.doc_;
+
+  for(unsigned int i = 0; i < other.destFinfos_.size(); ++i){
+    destFinfos_.push_back(new CcsFinfo(*other.destFinfos_[i]));
+  }
+
+  for(unsigned int i = 0; i < other.lookupFinfos_.size(); ++i){
+    lookupFinfos_.push_back(new CcsFinfo(*other.lookupFinfos_[i]));
+  }
+
+  for(unsigned int i = 0; i < other.fieldElementFinfos_.size(); ++i){
+    fieldElementFinfos_.push_back(new CcsFinfo(*other.fieldElementFinfos_[i]));
+  }
+}
+
+CcsCinfo::CcsCinfo(){
+}
+
+CcsCinfo::CcsCinfo(const CcsCinfo &other){
+  copy(other);
+}
+
+CcsCinfo &CcsCinfo::operator=(const CcsCinfo &other){
+  copy(other);
+  return *this;
+}
+
 map<string, CcsCinfo*>& CcsCinfo::cinfoMap()
 {
 	static map<std::string, CcsCinfo*> lookup_;
@@ -108,6 +140,87 @@ unsigned int CcsCinfo::getNumFieldElementFinfo() const
 		return fieldElementFinfos_.size() + baseCinfo_->getNumFieldElementFinfo();
 	else 
 		return fieldElementFinfos_.size();
+}
+
+#define PUP_VEC_CCSFINFO_PTRS(Name)\
+{\
+  int nFinfos;\
+  if(!p.isUnpacking()){\
+    nFinfos = Name##Finfos_.size();\
+  }\
+  p | nFinfos;\
+  if(p.isUnpacking()){\
+    Name##Finfos_.resize(nFinfos);\
+    for(int i = 0; i < nFinfos; i++){\
+      Name##Finfos_[i] = new CcsFinfo;\
+    }\
+  }\
+  for(int i = 0; i < nFinfos; i++){\
+    p | *Name##Finfos_[i];\
+  }\
+}
+
+// before packing up the cinfos, we must change from pointer-based 
+// addressing to an offset-based scheme for baseCinfo_. Similarly,
+// after unpacking, we will use the local offset to get a pointer to
+// the base cinfo.
+void CcsCinfo::pup(PUP::er &p){
+  int baseIndex;
+  if(!p.isUnpacking()){
+    baseIndex = (int)(baseCinfo_);
+  }
+  p | baseIndex;
+  if(p.isUnpacking()){
+    baseCinfo_ = (CcsCinfo *)(baseIndex);
+  }
+
+  p | name_;
+  p | doc_;
+
+  PUP_VEC_CCSFINFO_PTRS(dest)
+  PUP_VEC_CCSFINFO_PTRS(lookup)
+  PUP_VEC_CCSFINFO_PTRS(fieldElement)
+}
+
+void CcsCinfo::setBaseCinfoIndex(int i){
+  baseCinfo_ = (CcsCinfo *)i;
+}
+
+void CcsCinfo::setBaseCinfoFromIndex(CcsCinfo *base){
+  // interpret baseCinfo_ pointer as an integer offset
+  // into an array (whose base addr is 'base') and get
+  // proper c++ pointer to base cinfo
+  int index = (int) baseCinfo_;
+  if(index < 0){
+    baseCinfo_ = NULL;
+  }
+  else{
+    baseCinfo_ = base + ((int) baseCinfo_);
+  }
+}
+
+void CcsCinfo::setBaseCinfo(CcsCinfo *base){
+  baseCinfo_ = base;
+}
+
+vector< CcsFinfo * > &CcsCinfo::getDestFinfos(){
+  return destFinfos_;
+}
+
+vector< CcsFinfo * > &CcsCinfo::getLookupFinfos(){
+  return lookupFinfos_;
+}
+
+vector< CcsFinfo * > &CcsCinfo::getFieldElementFinfos(){
+  return fieldElementFinfos_;
+}
+
+void CcsCinfo::setName(const string &name){
+  name_ = name;
+}
+
+void CcsCinfo::setDoc(const map< string, string > &doc){
+  doc_ = doc;
 }
 
 DummyCcsFinfo CcsCinfo::dummy_;

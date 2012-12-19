@@ -27,6 +27,7 @@ class DataId;
 #include "FuncId.h"
 // contains only ThreadId typedef
 #include "ThreadId.h"
+#include "CcsCinfo.h"
 
 
 typedef bool ( *ThreadExecBalancer )( const char* data, ThreadId t, DataId di );
@@ -335,10 +336,14 @@ class Cinfo
 			vector< const OpFunc* > funcs_;
 //			map< string, FuncId > opFuncNames_;
 
-			static map< string, Cinfo* >& cinfoMap();
 
 			// Many opfuncs share same FuncId
 			// static map< OpFunc*, FuncId >& funcMap();
+
+                        // for serialization
+                        public:
+			static map< string, Cinfo* >& cinfoMap();
+                        void fillCcsCinfo(CcsCinfo *cinfo) const;
 };
 
 #endif // _CINFO_H

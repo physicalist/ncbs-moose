@@ -4,6 +4,8 @@
 #include <string>
 using namespace std;
 
+#include "pup_stl.h"
+
 // Class that encapsulates all the components of Finfo
 // that are required by the parser
 
@@ -13,6 +15,7 @@ class CcsFinfo {
   string doc_;
 
   public:
+  CcsFinfo();
   CcsFinfo(const string &name, const string &doc);
   virtual ~CcsFinfo() {}
 
@@ -29,6 +32,8 @@ class CcsFinfo {
    * Returns the documentation string for the Finfo
    */
   string docs() const;
+
+  void pup(PUP::er &p);
 };
 
 class DummyCcsFinfo : public CcsFinfo {

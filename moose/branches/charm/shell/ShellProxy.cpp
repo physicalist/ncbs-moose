@@ -59,6 +59,7 @@ const char *ShellProxy::doGetObjIdPathHandlerString = "doGetObjIdPath";
 const char *ShellProxy::doGetIsValidHandlerString = "doGetIsValid"; 
 const char *ShellProxy::doWildcardHandlerString = "doWildcard"; 
 const char *ShellProxy::doGetMsgMgrHandlerString = "doGetMsgMgr"; 
+const char *ShellProxy::doGetCinfosHandlerString = "doGetCinfos"; 
 
 
 
@@ -351,6 +352,20 @@ CcsObjId ShellProxy::doGetMsgMgr(MsgId mid){
   CcsObjId oid;
   while(CcsRecvResponse(&shellServer_, sizeof(CcsObjId), &oid, MOOSE_CCS_TIMEOUT) < 0);
   return oid;
+}
+
+void ShellProxy::doGetCinfos(vector< CcsCinfo > &ret){
+  CcsSendRequest(&shellServer_, ShellProxy::doGetCinfosHandlerString, 0, 0, NULL);
+
+  int msgSize;
+  char *msg;
+  while(CcsRecvResponseMsg(&shellServer_, &msgSize, (void **) &msg, MOOSE_CCS_TIMEOUT) < 0);
+  CcsPackUnpack< vector< CcsCinfo > >::unpackReply(msg, ret);
+  // fix the pointers to parents
+  for(int i = 0; i < ret.size(); i++){
+    ret[i].setBaseCinfoFromIndex(&ret[0]);
+  }
+  free(msg);
 }
 
 unsigned int ShellProxy::getNumPes(){

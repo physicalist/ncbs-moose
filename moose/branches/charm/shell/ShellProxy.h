@@ -17,6 +17,7 @@ using namespace std;
 #include "ccs-client.h"
 #include "../basecode/MsgId.h"
 #include "../basecode/moose_version.h"
+#include "../basecode/CcsCinfo.h"
 
 #define MOOSE_CCS_TIMEOUT 120
 
@@ -91,6 +92,7 @@ class ShellProxy {
   CcsObjId doGetMsgMgr(MsgId mid);
 
   unsigned int getNumPes();
+  void doGetCinfos(vector< CcsCinfo > &ret);
 
   /* XXX where is this used?
      XXX redefine if necessary
@@ -134,6 +136,7 @@ class ShellProxy {
   static const char *doGetIsValidHandlerString; 
   static const char *doWildcardHandlerString; 
   static const char *doGetMsgMgrHandlerString; 
+  static const char *doGetCinfosHandlerString; 
 };
 
 
