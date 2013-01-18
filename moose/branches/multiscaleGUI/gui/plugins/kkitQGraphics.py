@@ -20,7 +20,7 @@ class KineticsDisplayItem(QtGui.QGraphicsWidget):
       
     def paint(self, painter=None, option=None, widget = None):
         #If item is selected
-        if self.hasFocus():
+        if self.hasFocus() or self.isSelected():
             painter.setPen(QtGui.QPen(QtGui.QPen(QtCore.Qt.black, 1.8,Qt.Qt.DashLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin)))
             painter.drawRect(self.boundingRect())
       
@@ -142,6 +142,10 @@ class EnzItem(KineticsDisplayItem):
         defaultWidth = EnzItem.defaultWidth*scale
         defaultHeight = EnzItem.defaultHeight*scale
         self.gobj.setRect(0,0,defaultWidth,defaultHeight)
+
+class MMEnzItem(EnzItem):
+    def __init__(self,*args, **kwargs):
+        EnzItem.__init__(self,*args, **kwargs)
 
 class CplxItem(KineticsDisplayItem):
     defaultWidth = 10
