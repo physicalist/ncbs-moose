@@ -10,6 +10,7 @@ from mplugin import *
 from kkitUtil import *
 from kkitQGraphics import PoolItem, ReacItem,EnzItem,CplxItem,ComptItem
 from kkitViewcontrol import *
+from PyQt4 import QtGui, QtCore, Qt
 
 class KkitPlugin(MoosePlugin):
     """Default plugin for MOOSE GUI"""
@@ -72,7 +73,8 @@ class  KineticsWidget(DefaultEditorWidget):
 	DefaultEditorWidget.__init__(self, *args)
 
         #print "KKIT plugin",self.modelRoot
-        
+    def Checkthisfun(self):
+        print "Check if I can call this function"
     def updateModelView(self):
         """ maxmium and minimum coordinates of the objects specified in kkit file. """
         self.xmin = 0.0
@@ -93,7 +95,7 @@ class  KineticsWidget(DefaultEditorWidget):
             QtGui.QMessageBox.warning(self, 
                                       'No coordinates found', 
                                       'Kinetic layout works only \
-for models using kkit8 or later')
+                                       for models using kkit8 or later')
             raise Exception('Unsupported kkit version')
         
         """Scale factor to translate the x -y position from kkit to Qt coordinates. \
@@ -122,43 +124,44 @@ for models using kkit8 or later')
         self.sceneContainer = QtGui.QGraphicsScene(self)
         self.sceneContainer.setSceneRect(self.sceneContainer.itemsBoundingRect())
         self.sceneContainer.setBackgroundBrush(QtGui.QColor(230,220,219,120))
-        self.view = GraphicalView(self.sceneContainer,self.border,self)
+
         
         """ Compartment and its members are put on the qgraphicsscene """
         self.mooseObjOntoscene()
+        self.view = GraphicalView(self.sceneContainer,self.border,self)
         hLayout.addWidget(self.view)
         #self.view.fitInView(self.sceneContainer.itemsBoundingRect().x()-10,self.sceneContainer.itemsBoundingRect().y()-10,self.sceneContainer.itemsBoundingRect().width()+20,self.sceneContainer.itemsBoundingRect().height()+20,Qt.Qt.IgnoreAspectRatio)
 
     def mooseObjOntoscene(self):
         """  All the compartments are put first on to the scene \
              Need to do: Check With upi if empty compartments exist """
-        for cmpt in self.meshEntry.keys():
+        for cmpt in sorted(self.meshEntry.iterkeys()):
+            print "cmpt",cmpt
             self.createCompt(cmpt)
             comptRef = self.qGraCompt[cmpt]
         
-        """ Enzymes of all the compartment are placed after compartment, \
-             so that when cplx queries for parent it gets it parent enz co-ordinates with respect to QGraphicsscene """
+        """ Enzymes of all the compartments are placed first, \
+             so that when cplx (which is pool object) queries for its parent, it gets its \
+             parent enz co-ordinates with respect to QGraphicsscene """
         
         for cmpt,memb in self.meshEntry.items():
             for enzObj in self.find_index(memb,'enzyme'):
                 enzinfo = enzObj.path+'/info'
                 enzItem = EnzItem(enzObj,self.qGraCompt[cmpt])
                 self.setupDisplay(enzinfo,enzItem,"enzyme")
-                self.mooseId_GObj[element(enzObj).getId()] = enzItem
+                self.setupSlot(enzObj,enzItem)
 
         for cmpt,memb in self.meshEntry.items():
             for poolObj in self.find_index(memb,'pool'):
                 poolinfo = poolObj.path+'/info'
                 poolItem = PoolItem(poolObj,self.qGraCompt[cmpt])
                 self.setupDisplay(poolinfo,poolItem,"pool")
-                #self.mooseId_GObj[element(poolObj).getId()] = poolItem
                 self.setupSlot(poolObj,poolItem)
 
             for cplxObj in self.find_index(memb,'cplx'):
                 cplxinfo = (cplxObj[0].parent).path+'/info'
                 cplxItem = CplxItem(cplxObj,self.mooseId_GObj[element(cplxObj[0]).parent.getId()])
                 self.setupDisplay(cplxinfo,cplxItem,"cplx")
-                #self.mooseId_GObj[element(cplxObj).getId()] = cplxItem
                 self.setupSlot(cplxObj,cplxItem)
 
             for reaObj in self.find_index(memb,'reaction'):
@@ -173,19 +176,43 @@ for models using kkit8 or later')
             rectcompt = v.childrenBoundingRect()
             v.setRect(rectcompt.x()-10,rectcompt.y()-10,(rectcompt.width()+20),(rectcompt.height()+20))
             v.setPen(QtGui.QPen(Qt.QColor(66,66,66,100), 5, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin))
-    
+
     def setupSlot(self,mooseObj,qgraphicItem):
         self.mooseId_GObj[element(mooseObj).getId()] = qgraphicItem
-        #qgraphicItem.connect(qgraphicItem,QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),self.positionChange)
-        #qgraphicItem.connect(qgraphicItem,QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),self.emitItemtoEditor)
-        
+        qgraphicItem.connect(qgraphicItem,QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),self.positionChange)
+        qgraphicItem.connect(qgraphicItem,QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),self.emitItemtoEditor)
+
+    def find_key(self, dic, val):
+        """return the key of dictionary dic given the value"""
+        return [k for k, v in dic.iteritems() if v == val]
+
+    def positionChange(self,mooseObject):
+        #If the item position changes, the corresponding arrow's are calculated
+        print "position Changed"
+        if isinstance(element(mooseObject),CubeMesh):
+            for k, v in self.qGraCompt.items():
+                mesh = mooseObject.path+'/mesh[0]'
+                if k.path == mesh:
+                    for rectChilditem in v.childItems():
+                        #self.updateArrow(rectChilditem)
+                        pass
+        else:
+            mobj = self.mooseId_GObj[mooseObject.getId()]
+            #self.updateArrow(pool)
+            for k, v in self.qGraCompt.items():
+                rectcompt = v.childrenBoundingRect()
+                v.setRect(rectcompt.x()-10,rectcompt.y()-10,(rectcompt.width()+20),(rectcompt.height()+20))
+
+    def emitItemtoEditor(self,mooseObject):
+        print "selected"
+        self.emit(QtCore.SIGNAL("itemDoubleClicked(PyQt_PyObject)"),mooseObject)
 
     def setupDisplay(self,info,graphicalObj,objClass):
         x = float(element(info).getField('x'))
         y = float(element(info).getField('y'))
         xpos = x*self.xratio
         ypos = y*self.yratio
-        """ For Reaction and Complex object I have skiped the process to get the facecolor and background color as \
+        """ For Reaction and Complex object I have skipped the process to get the facecolor and background color as \
             we are not using these colors for displaying the object so just passing dummy color white """
         if( (objClass == "reaction" ) or (objClass == "cplx")):
             textcolor,bgcolor = "white","white"
