@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Sat Feb 25 14:42:03 2012 (+0530)
 // Version: 
-// Last-Updated: Wed Feb 29 01:01:24 2012 (+0530)
-//           By: Subhasis Ray
-//     Update #: 264
+// Last-Updated: Wed Nov 14 18:39:19 2012 (+0530)
+//           By: subha
+//     Update #: 282
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -40,39 +40,55 @@
 const Cinfo* HDF5WriterBase::initCinfo()
 {
 
-    static Finfo * finfos[] = {
-    //////////////////////////////////////////////////////////////
-    // Field Definitions
-    //////////////////////////////////////////////////////////////
-        new ValueFinfo< HDF5WriterBase, string > (
-                "filename",
-                "Name of the file associated with this HDF5 writer object.",
-                &HDF5WriterBase::setFilename,
-                &HDF5WriterBase::getFilename),
-        new ReadOnlyValueFinfo < HDF5WriterBase, bool > (
-                "isOpen",
-                "True if this object has an open file handle.",
-                &HDF5WriterBase::isOpen),
-        new ValueFinfo <HDF5WriterBase, unsigned int > (
-                "mode",
-                "Depending on mode, if file already exists, if mode=1, data will be"
-                " appended to existing file, if mode=2, file will be truncated, if "
-                " mode=4, no writing will happen.",
-                &HDF5WriterBase::setMode,
-                &HDF5WriterBase::getMode),
-        new DestFinfo(
-                "flush",
-                "Write all buffer contents to file and clear the buffers.",
-                new OpFunc0 < HDF5WriterBase > ( &HDF5WriterBase::flush )),        
-    };
-    
-    static Cinfo hdf5Cinfo(
-            "HDF5WriterBase",
-            Neutral::initCinfo(),
-            finfos,
-            sizeof(finfos)/sizeof(Finfo*),
-            new Dinfo<HDF5WriterBase>());
-    return &hdf5Cinfo;                
+  //////////////////////////////////////////////////////////////
+  // Field Definitions
+  //////////////////////////////////////////////////////////////
+  static ValueFinfo< HDF5WriterBase, string > fileName(
+      "filename",
+      "Name of the file associated with this HDF5 writer object.",
+      &HDF5WriterBase::setFilename,
+      &HDF5WriterBase::getFilename);
+  static ReadOnlyValueFinfo < HDF5WriterBase, bool > isOpen(
+      "isOpen",
+      "True if this object has an open file handle.",
+      &HDF5WriterBase::isOpen);
+  static ValueFinfo <HDF5WriterBase, unsigned int > mode(
+      "mode",
+      "Depending on mode, if file already exists, if mode=1, data will be"
+      " appended to existing file, if mode=2, file will be truncated, if "
+      " mode=4, no writing will happen.",
+      &HDF5WriterBase::setMode,
+      &HDF5WriterBase::getMode);
+  static DestFinfo flush(
+      "flush",
+      "Write all buffer contents to file and clear the buffers.",
+      new OpFunc0 < HDF5WriterBase > ( &HDF5WriterBase::flush ));
+      
+
+  static Finfo * finfos[] = {
+    &fileName,
+    &isOpen,
+    &mode,
+    &flush
+  };
+  static string doc[] = {
+    "Name", "HDF5WriterBase",
+    "Author", "Subhasis Ray",
+    "Description", "HDF5 file writer base class. This is not to be used directly. Instead,"
+    " it should be subclassed to provide specific data writing functions."
+    " This class provides most basic properties like filename, file opening"
+    " mode, file open status."
+  };
+
+
+  static Cinfo hdf5Cinfo(
+      "HDF5WriterBase",
+      Neutral::initCinfo(),
+      finfos,
+      sizeof(finfos)/sizeof(Finfo*),
+      new Dinfo<HDF5WriterBase>(),
+      doc, sizeof(doc)/sizeof(string));
+  return &hdf5Cinfo;                
 }
 
 HDF5WriterBase::HDF5WriterBase():
@@ -89,6 +105,7 @@ HDF5WriterBase::~HDF5WriterBase()
         return;
     }
     herr_t err = H5Fclose(filehandle_);
+    filehandle_ = -1;
     if (err < 0){
         cerr << "Error: Error occurred when closing file. Error code: " << err << endl;
     }

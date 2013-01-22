@@ -1,14 +1,14 @@
-# trbcell.py --- 
+# cell.py --- 
 # 
-# Filename: trbcell.py
+# Filename: cell.py
 # Description: 
 # Author: Subhasis Ray
 # Maintainer: 
 # Created: Fri Mar  9 23:17:17 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Aug 27 18:52:54 2012 (+0530)
+# Last-Updated: Sat Dec  8 15:08:16 2012 (+0530)
 #           By: subha
-#     Update #: 674
+#     Update #: 688
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -102,7 +102,7 @@ def adjust_chanlib(cdict):
     value for AR channel. Set the tau for Ca pool."""
     channel_dict = init_chanlib()
     for ch in channel_dict.values():
-        print 'adjust_chanlib:', ch.path
+        config.logger.info('adjusting properties of %s' % (ch.path))
         if isinstance(ch, kchans.KChannel):
             ch.Ek = cdict['EK']
         elif isinstance(ch, nachans.NaChannel):
@@ -115,6 +115,8 @@ def adjust_chanlib(cdict):
                 ch.X = cdict['X_AR']        
         elif isinstance(ch, moose.CaConc):
             ch.tau = cdict['TauCa']            
+        if isinstance(ch, moose.HHChannel):
+            config.logger.debug('%s.Ek = %g' % (ch.path, ch.Ek))
 
 def read_prototype(celltype, cdict):
     """Read the cell prototype file for the specified class. The
@@ -191,7 +193,7 @@ class CellMeta(type):
         return type.__new__(cls, name, bases, cdict)
 
     
-class CellBase(moose.Neutral):
+class CellBase(moose.Neuron):
     __metaclass__ = CellMeta
     annotation = {'cno': 'cno_0000020'}
     def __init__(self, path):
@@ -224,7 +226,7 @@ class CellBase(moose.Neutral):
                     fieldnames += ['e_' + chtype, 'gbar_' + chtype]
                 else:
                     fieldnames += ['tau_' + chtype, 'beta_' + chtype]
-            print fieldnames
+            # print fieldnames
             writer = csv.DictWriter(dump_file, fieldnames=fieldnames, delimiter=',')
             writer.writeheader()
             comps = moose.wildcardFind('%s/##[TYPE=Compartment]' % (self.path))
@@ -520,4 +522,4 @@ def init_prototypes():
 
 
 # 
-# trbcell.py ends here
+# cells.py ends here

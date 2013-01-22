@@ -19,7 +19,7 @@ from moose.neuroml.NeuroML import NeuroML
 from pylab import *
 
 simdt = 10e-6 # s
-plotdt = 100e-6 # s
+plotdt = 10e-6 # s
 runtime = 0.7 # s
 cells_path = '/cells' # neuromlR.readNeuroMLFromFile creates cells in '/cells'
 
@@ -34,12 +34,8 @@ def loadGran98NeuroML_L123(filename):
     ## Am not able to plot KDr gating variable X when running under hsolve
     #KDrX = setupTable('ChanX',moose.HHChannel(soma_path+'/Gran_KDr_98'),'X')
 
-    h = moose.HSolve( cells_path+'/solve' )
-    h.dt = simdt
-    h.target = cells_path
-
     print "Reinit MOOSE ... "
-    resetSim(['/elec',cells_path], simdt, plotdt, hsolve_path=cells_path+'/solve')
+    resetSim(['/elec',cells_path], simdt, plotdt, simmethod='hsolve')
 
     print "Running ... "
     moose.start(runtime)

@@ -54,10 +54,17 @@ import tempfile
 import logging
 from PyQt4.Qt import Qt
 from PyQt4 import QtGui, QtCore
+## import moose just for version number
+import moose
+MOOSE_VERSION = moose.VERSION
 
 TEMPDIR = tempfile.gettempdir()
 KEY_FIRSTTIME = 'firsttime'
+KEY_FIRSTTIME_THISVERSION = 'firsttime_'+MOOSE_VERSION
+KEY_DEMOS_COPIED_THISVERSION = 'demoscopied_'+MOOSE_VERSION
 # KEY_STATE_FILE = 'statefile'
+
+TRUE_STRS = ['True', 'true', '1', 'Yes', 'yes', 'Y']
 
 KEY_WINDOW_GEOMETRY = 'main/geometry'
 KEY_WINDOW_LAYOUT = 'main/layout'
@@ -88,7 +95,10 @@ MOOSE_CFG_DIR = os.path.join(os.environ['HOME'], '.moose')
 MOOSE_LOCAL_DIR = os.path.join(os.environ['HOME'], 'moose')
 MOOSE_NUMPTHREADS = '1'
 MOOSE_ABOUT_FILE = os.path.join(MOOSE_GUI_DIR, 'about.html')
-LOCAL_BUILD = False
+
+# If we have a Makefile above GUI directory, then this must be a
+# locally built version
+LOCAL_BUILD = os.access(os.path.join(MOOSE_GUI_DIR, '../Makefile'), os.R_OK)
 
 class MooseSetting(dict):
     """
@@ -106,21 +116,29 @@ class MooseSetting(dict):
         # creates it.
         if cls._instance is None:           
             cls._instance = super(MooseSetting, cls).__new__(cls, *args, **kwargs)
-            firsttime, errs = init_dirs()
-            for e in errs:
-                print e
             QtCore.QCoreApplication.setOrganizationName('NCBS')
             QtCore.QCoreApplication.setOrganizationDomain('ncbs.res.in')
             QtCore.QCoreApplication.setApplicationName('MOOSE')
             cls._instance.qsettings = QtCore.QSettings()
+            ## if this version's firstime key is not present '' or is True,
+            ## then set firsttime=True and do what needs to be done first time.
+            if cls._instance[KEY_FIRSTTIME_THISVERSION] in ['']+TRUE_STRS:
+                firsttime = True
+            else:
+                firsttime = False
+            ## intialize directories based on local build or otherwise
+            errs = init_dirs()
+            for e in errs:
+                print e
             # If this is the first time, then set some defaults
             if firsttime:
-                cls._instance.qsettings.setValue(KEY_FIRSTTIME, True)
+                cls._instance.qsettings.setValue(KEY_FIRSTTIME_THISVERSION, 'True') # string not boolean
+                cls._instance.qsettings.setValue(KEY_DEMOS_COPIED_THISVERSION, 'False') # string not boolean
                 cls._instance.qsettings.setValue(KEY_COLORMAP_DIR, os.path.join(MOOSE_GUI_DIR, 'colormaps'))
                 cls._instance.qsettings.setValue(KEY_ICON_DIR, os.path.join(MOOSE_GUI_DIR, 'icons'))
                 cls._instance.qsettings.setValue(KEY_NUMPTHREADS, '1')
             else:
-                cls._instance.qsettings.setValue(KEY_FIRSTTIME, False)
+                cls._instance.qsettings.setValue(KEY_FIRSTTIME_THISVERSION, 'False') # string not boolean
             # These are to be checked at every run
             cls._instance.qsettings.setValue(KEY_HOME_DIR, os.environ['HOME'])
             cls._instance.qsettings.setValue(KEY_DEMOS_DIR, MOOSE_DEMOS_DIR)
@@ -156,48 +174,33 @@ class MooseSetting(dict):
         return (str(self.qsettings.value(key).toString()) for key in self.qsettings.allKeys())
 
 def init_dirs():
-    """Check if there is a `.moose` directory in user's home
-    directory. If not, we assume this to be the first run of MOOSE.
-    Then we try to create the `~/.moose` directory and `~/moose`
-    directory.
+    """ Set directories based on local build or global moosegui.
     """  
-    firsttime = False
     global MOOSE_DEMOS_DIR
     global MOOSE_LOCAL_DIR
     global MOOSE_CFG_DIR
     global MOOSE_DOCS_DIR
     global LOCAL_BUILD
-    # If we have a Makefile above GUI directory, then this must be a
-    # locally built version
-    LOCAL_BUILD = os.access(os.path.join(MOOSE_GUI_DIR, '../Makefile'), os.R_OK)
     errors = []
-    moose_cfg_dir = os.path.join(os.environ['HOME'], '.moose')
-    if not os.path.exists(moose_cfg_dir):
-        firsttime = True
-        try:
-            os.mkdir(moose_cfg_dir)
-            MOOSE_CFG_DIR = moose_cfg_dir
-            print 'Created moose configuration directory:', moose_cfg_dir
-        except OSError, e:
-            errors.append(e)
-            print e
     if LOCAL_BUILD:
         MOOSE_LOCAL_DIR = os.path.normpath(os.path.join(MOOSE_GUI_DIR, '..'))
         MOOSE_DEMOS_DIR = os.path.join(MOOSE_LOCAL_DIR, 'Demos')
         MOOSE_DOCS_DIR = os.path.join(MOOSE_LOCAL_DIR, 'Docs')
     else:
-        MOOSE_LOCAL_DIR = os.path.join(os.environ['HOME'], 'moose')
-        if not os.path.exists(MOOSE_LOCAL_DIR):
-            try:
-                os.mkdir(MOOSE_LOCAL_DIR)
-                print 'Created local moose directory:', MOOSE_LOCAL_DIR    
-            except OSError, e:
-                errors.append(e)
-                print e
+        MOOSE_LOCAL_DIR = os.path.join(os.environ['HOME'], 'moose_'+MOOSE_VERSION)
+        ## Create this directory only when Demos are copied there.
+        ## IMPORTANT: FOR NEXT version we need to prompt the user for this directory.
+        #if not os.path.exists(MOOSE_LOCAL_DIR):
+        #    try:
+        #        os.mkdir(MOOSE_LOCAL_DIR)
+        #        print 'Created local moose directory:', MOOSE_LOCAL_DIR
+        #    except OSError, e:
+        #        errors.append(e)
+        #        print e
     if not os.access(MOOSE_DOCS_DIR, os.R_OK + os.X_OK):
-        print "Could not access Demos directory: %s" % (MOOSE_DOCS_DIR)
+        print "Could not access documentation directory: %s" % (MOOSE_DOCS_DIR)
         errors.append(OSError(errno.EACCES, 'Cannot access %s' % (MOOSE_DOCS_DIR)))
-    return firsttime, errors
+    return errors
 
 settings = MooseSetting()
 

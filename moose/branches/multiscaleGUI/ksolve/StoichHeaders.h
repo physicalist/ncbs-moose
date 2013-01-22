@@ -13,7 +13,7 @@
 #include "header.h"
 #include "RateTerm.h"
 class MathFunc;
-#include "FuncTerm.h"
+#include "../kinetics/FuncTerm.h"
 #include "SparseMatrix.h"
 #include "KinSparseMatrix.h"
 
@@ -22,4 +22,7 @@ class Stoich;
 #include "../kinetics/lookupSizeFromMesh.h"
 #include "../mesh/Stencil.h"
 #include "Port.h"
+#include "../mesh/VoxelJunction.h"
+#include "SolverJunction.h"
 #include "Stoich.h"
+#include "StoichCore.h"

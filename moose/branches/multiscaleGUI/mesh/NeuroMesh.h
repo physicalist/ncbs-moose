@@ -49,8 +49,17 @@ class NeuroMesh: public ChemMesh
 		// Field assignment stuff
 		//////////////////////////////////////////////////////////////////
 
+		/**
+		 * Assigns the parent of all the cell compartments.
+		 */
 		void setCell( Id cellmodel );
 		Id getCell() const;
+
+		/**
+		 * Assigns a group of compartments to be used for the mesh.
+		 */
+		void setCellPortion( Id cell, vector< Id > portion );
+
 		/**
 		 * The SubTree is a contiguous set of compartments to model.
 		 * The first entry is the root of the tree, closest to the soma.
@@ -98,6 +107,8 @@ class NeuroMesh: public ChemMesh
 		vector< double > getDiffusionArea( unsigned int fid ) const;
 		/// Virtual function to return scale factor for diffusion. 1 here.
 		vector< double > getDiffusionScaling( unsigned int fid ) const;
+		/// Vol of all mesh Entries including abutting diff-coupled voxels
+		double extendedMeshEntrySize( unsigned int fid ) const;
 
 		//////////////////////////////////////////////////////////////////
 
@@ -129,6 +140,26 @@ class NeuroMesh: public ChemMesh
 		void transmitChange( const Eref& e, const Qinfo* q );
 
 		void buildStencil();
+
+		unsigned int getStencil( unsigned int meshIndex,
+			const double** entry, const unsigned int** colIndex ) const;
+
+		void extendStencil( 
+			const ChemMesh* other, const vector< VoxelJunction >& vj );
+
+		//////////////////////////////////////////////////////////////////
+		// inherited virtual funcs for Boundary
+		//////////////////////////////////////////////////////////////////
+		
+		void matchMeshEntries( const ChemMesh* other, 
+			vector< VoxelJunction > & ret ) const;
+
+		double nearest( double x, double y, double z, 
+						unsigned int& index ) const;
+	
+		void indexToSpace( unsigned int index, 
+						double& x, double& y, double& z ) const;
+		
 
 		//////////////////////////////////////////////////////////////////
 		// Utility functions for building tree.

@@ -8,6 +8,8 @@
 **********************************************************************/
 
 #include "StoichHeaders.h"
+#include "FuncBase.h"
+#include "../kinetics/SumTotalTerm.h"
 #include "SumFunc.h"
 #include "ZombieSumFunc.h"
 #include "ZombieSumFunc.h"
@@ -131,7 +133,9 @@ void ZombieSumFunc::zombify( Element* solver, Element* orig, Id molId )
 	vector< unsigned int > poolIndex( numSrc );
 	for ( unsigned int i = 0; i < numSrc; ++i )
 		poolIndex[i] = z->convertIdToPoolIndex( srcPools[i] );
-	z->funcs_[ funcIndex ] = new SumTotal( poolIndex );
+	SumTotalTerm * stt = new SumTotalTerm();
+	stt->setReactants( poolIndex );
+	z->funcs_[ funcIndex ] = stt;
 
 	DataHandler* dh = new ZombieHandler( solver->dataHandler(),
 		orig->dataHandler() );
@@ -141,18 +145,20 @@ void ZombieSumFunc::zombify( Element* solver, Element* orig, Id molId )
 // Static func
 void ZombieSumFunc::unzombify( Element* zombie )
 {
+	DataHandler* oldHandler = zombie->dataHandler();
 	Element temp( zombie->id(), zombie->cinfo(), zombie->dataHandler() );
 	Eref zer( &temp, 0 );
 	Eref oer( zombie, 0 );
 
-	// ZombieSumFunc* z = reinterpret_cast< ZombieSumFunc* >( zer.data() );
+	ZombieHandler* zh = dynamic_cast< ZombieHandler* >( oldHandler );
+	assert( zh );
 
-	// Here I am unsure how to recreate the correct kind of data handler
-	// for the original. Do later.
-	DataHandler* dh = 0;
+	DataHandler* sumFuncHandler = zh->origHandler();
 
-	zombie->zombieSwap( SumFunc::initCinfo(), dh );
+	zombie->zombieSwap( SumFunc::initCinfo(), sumFuncHandler );
 
-	// SumFunc* m = reinterpret_cast< SumFunc* >( oer.data() );
+	// Delete the old handler, which is a ZombieHandler and thus
+	// leaves its contents intact.
+	delete zh;
 }
 

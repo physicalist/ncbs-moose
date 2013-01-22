@@ -51,7 +51,7 @@ import os
 from PyQt4 import QtGui,QtCore,Qt
 import config
 import mplugin
-
+import moose
 class MWindow(QtGui.QMainWindow):
     """The main window for MOOSE GUI.
 
@@ -97,8 +97,8 @@ class MWindow(QtGui.QMainWindow):
         self._loadedPlugins = {}
         self.quitAction = QtGui.QAction('Quit', self)
         self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), self.quit)
-        self.setPlugin('default', '/')        
-
+        #self.setPlugin('default', '/')        
+	self.setPlugin('kkit','/kho')
     def quit(self):
         QtGui.qApp.closeAllWindows()        
     
@@ -312,6 +312,11 @@ if __name__ == '__main__':
     icon = QtGui.QIcon(os.path.join(config.KEY_ICON_DIR,'moose_icon.png'))
     app.setWindowIcon(icon)
     # instantiate the main window
+    #moose.loadModel('../Demos/Genesis_files/Kholodenko.g','/kho')
+    #moose.loadModel('../Demos/Genesis_files/enz_classical_explicit.g','/kho')	
+    moose.loadModel('../Demos/Genesis_files/traff_nn_diff_BIS.g','/kho')
+    #moose.loadModel('/home/harsha/genesis_files/gfile/acc64.g','/kho')
+    #moose.loadModel('/home/harsha/BuildQ/gui/dummycmpt.g','/kho')
     mWindow =  MWindow()
     mWindow.setWindowState(QtCore.Qt.WindowMaximized)
     # show it

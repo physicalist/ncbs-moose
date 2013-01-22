@@ -28,7 +28,7 @@ IF1spikesTable = moose.Table(table_path+'/spikesTable')
 moose.connect(spikeGen,'event',IF1spikesTable,'input')
 
 ## from moose_utils.py sets clocks and resets/reinits
-resetSim(['/cells'], SIMDT, PLOTDT)
+resetSim(['/cells'], SIMDT, PLOTDT, simmethod='hsolve')
 
 ## Loop through different current injections
 freqList = []

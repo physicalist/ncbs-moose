@@ -64,6 +64,9 @@ class CubeMesh: public ChemMesh
 		void setSpaceToMesh( vector< unsigned int > v );
 		vector< unsigned int > getSpaceToMesh() const;
 
+		void setSurface( vector< unsigned int > v );
+		vector< unsigned int > getSurface() const;
+
 		unsigned int innerGetDimensions() const;
 
 		void setIsToroid( bool v );
@@ -92,6 +95,11 @@ class CubeMesh: public ChemMesh
 		vector< double > getDiffusionScaling( unsigned int fid ) const;
 
 		//////////////////////////////////////////////////////////////////
+		/**
+		 * Utility function to return volume of any voxel including those
+		 * diffusively coupled and aubtting the present volume.
+		 */
+		double extendedMeshEntrySize( unsigned int fid ) const;
 
 		/**
 		 * Inherited virtual func. Returns number of MeshEntry in array
@@ -135,6 +143,66 @@ class CubeMesh: public ChemMesh
 			int dx, int dy, int dz ) const;
 
 		void transmitChange( const Eref& e, const Qinfo* q, double oldvol );
+
+		bool isInsideCuboid( double x, double y, double z ) const;
+		bool isInsideSpheroid( double x, double y, double z ) const;
+
+		//////////////////////////////////////////////////////////////////
+		//  Stuff for junctions
+		//////////////////////////////////////////////////////////////////
+
+		/**
+		 * Key virtual function for generating a map between facing
+		 * surfaces on a CubeMesh and another ChemMesh
+		 */
+		void matchMeshEntries( const ChemMesh* other,
+			vector< VoxelJunction >& ret ) const;
+
+		/**
+		 * Specialization for cube-to-cube mesh matching. Return vector is
+		 * of pairs of meshIndices (not spatialIndices).
+		 */
+		void matchCubeMeshEntries( const CubeMesh* other,
+			vector< VoxelJunction >& ret ) const;
+
+		/*
+		/// Utility function for special case in matchMeshEntries.
+		void matchSameSpacing( const CubeMesh* other,
+			vector< pair< unsigned int, unsigned int > >& ret ) const;
+			*/
+
+		/// Utility function for returning # of dimensions in mesh
+		unsigned int numDims() const;
+		
+		/// Converts the integer meshIndex to spatial coords.
+		void indexToSpace( unsigned int index, 
+						double& x, double& y, double& z ) const;
+
+		/**
+		 * Virtual function to return the distance and index of nearest
+		 * meshEntry. Places entry at centre of voxel.
+		 */
+		double nearest( double x, double y, double z, unsigned int& index )
+			   	const;
+		
+		/// Return 0 if spacing same, -1 if self smaller, +1 if self bigger
+		int compareMeshSpacing( const CubeMesh* other ) const;
+
+		/// Defines a cuboid volume of intersection between self and other.
+		void defineIntersection( const CubeMesh* other,
+			double& xmin, double &xmax,
+			double& ymin, double &ymax,
+			double& zmin, double &zmax ) const;
+		
+		/// Fills surface_ vector with spatial meshIndices for a rectangle
+		void fillTwoDimSurface();
+
+		/// Fills surface_ vector with spatial meshIndices for a cuboid,
+		/// that is, puts the surfaces of the cuboid in the vector.
+		void fillThreeDimSurface();
+
+		/// Utility and test function to read surface.
+		const vector< unsigned int >& surface() const;
 		//////////////////////////////////////////////////////////////////
 		//  Stuff for diffusion
 		//////////////////////////////////////////////////////////////////
@@ -143,10 +211,41 @@ class CubeMesh: public ChemMesh
 		 * Sets up the stencil that defines how to combine neighbouring
 		 * mesh elements to set up the diffusion du/dt term, using the
 		 * method of lines.
+		 * This is a very general function. It uses the information in the
+		 * m2s_ and s2m_ vectors to work out the adjacency matrix. So
+		 * we could use an arbitrary 3-D image to define the diffusive
+		 * volume and boundaries using m2s_ and s2m_. We could also use
+		 * geometric shapes through the fillSpaceToMeshLookup() function,
+		 * which is currently a dummy and just does a cuboid.
 		 */
 		void buildStencil();
+		void fillSpaceToMeshLookup();
 
+		/// Derived function to return SparseMatrix-style row info for
+		/// specified mesh entry. 
+		unsigned int getStencil( unsigned int meshIndex,
+				const double** entry, const unsigned int** colIndex ) const;
+
+		/// Add boundary voxels to stencil for cross-solver junctions
+		void extendStencil(
+				const ChemMesh* other, const vector< VoxelJunction >& vj );
+
+		void assignVoxels( 
+				vector< pair< unsigned int, unsigned int > >& intersect,
+				double xmin, double xmax, 
+				double ymin, double ymax, 
+				double zmin, double zmax
+		   	   ) const;
+		
+		void setDiffScale( const CubeMesh* other,
+			vector< VoxelJunction >& ret ) const;
 		//////////////////////////////////////////////////////////////////
+		static const unsigned int EMPTY;
+		static const unsigned int SURFACE;
+		static const unsigned int ABUTX;
+		static const unsigned int ABUTY;
+		static const unsigned int ABUTZ;
+		static const unsigned int MULTI;
 
 		static const Cinfo* initCinfo();
 
@@ -169,6 +268,8 @@ class CubeMesh: public ChemMesh
 		unsigned int nx_; /// # of entries in x in surround volume
 		unsigned int ny_; /// # of entries in y in surround volume
 		unsigned int nz_; /// # of entries in z in surround volume
+
+		SparseMatrix< double > m_; /// Handles the stencil
 
 		/**
 		 * For spherical mesh, coords are xyz r0 r1 theta0 theta1 phi0 phi1
@@ -195,6 +296,19 @@ class CubeMesh: public ChemMesh
 		 * outside the included volume of the mesh, returns ~0.
 		 */
 		vector< unsigned int > s2m_;
+
+		/**
+		 * Vector of spatial meshIndices comprising surface of volume in 
+		 * CubeMesh.
+		 */
+		vector< unsigned int > surface_;
+
+		/**
+		 * vector of meshEntrySizes for abutting surfaces, needed to compute
+		 * diffusion rates across junctions.
+		 * Indexed from zero.
+		 */
+		vector< double > extendedMeshEntrySize_;
 };
 
 #endif	// _CUBE_MESH_H

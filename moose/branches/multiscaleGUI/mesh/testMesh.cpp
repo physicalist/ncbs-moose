@@ -8,6 +8,7 @@
 **********************************************************************/
 
 #include "header.h"
+#include "SparseMatrix.h"
 #include "../shell/Shell.h"
 #include "Boundary.h"
 #include "MeshEntry.h"
@@ -17,6 +18,7 @@
 #include "CubeMesh.h"
 #include "CylBase.h"
 #include "NeuroNode.h"
+#include "SparseMatrix.h"
 #include "NeuroStencil.h"
 #include "NeuroMesh.h"
 
@@ -571,6 +573,13 @@ void testCubeMesh()
 
 	cm.innerSetCoords( coords );
 
+	vector< unsigned int > neighbors = cm.getNeighbors( 0 );
+	assert( neighbors.size() == 3 );
+	assert( neighbors[0] = 1 );
+	assert( neighbors[0] = 2 );
+	assert( neighbors[0] = 8 );
+
+	assert( cm.innerGetNumEntries() == 64 );
 	assert( doubleEq( cm.getX0(), 0 ) );
 	assert( doubleEq( cm.getY0(), 0 ) );
 	assert( doubleEq( cm.getZ0(), 0 ) );
@@ -582,6 +591,10 @@ void testCubeMesh()
 	assert( doubleEq( cm.getDx(), 1 ) );
 	assert( doubleEq( cm.getDy(), 1 ) );
 	assert( doubleEq( cm.getDz(), 1 ) );
+
+	assert( cm.getNx() == 2 );
+	assert( cm.getNy() == 4 );
+	assert( cm.getNz() == 8 );
 
 	cm.setX0( 1 );
 	cm.setY0( 2 );
@@ -602,45 +615,46 @@ void testCubeMesh()
 	assert( doubleEq( temp[6], 1 ) );
 	assert( doubleEq( temp[7], 1 ) );
 	assert( doubleEq( temp[8], 1 ) );
+	assert( cm.innerGetNumEntries() == 64 );
+	assert( cm.getNx() == 4 );
+	assert( cm.getNy() == 4 );
+	assert( cm.getNz() == 4 );
 
-	vector< unsigned int > m2s;
-	vector< unsigned int > s2m( 64, ~0);
-	for ( unsigned int i = 0; i < 4; ++i ) {
-		for ( unsigned int j = 0; j < 4; ++j ) {
-			for ( unsigned int k = 0; k < 4; ++k ) {
-				unsigned int index = ( i * 4 + j ) * 4 + k;
-				if ( i*i + j * j + k * k < 15 ) { 
-					// include shell around 1 octant of sphere
-					s2m[index] = m2s.size();
-					m2s.push_back( index );
-				} else {
-					s2m[index] = ~0;
-				}
-			}
-		}
-	}
-	unsigned int numEntries = m2s.size();
-	cm.setMeshToSpace( m2s );
-	cm.setSpaceToMesh( s2m );
-
-	assert( cm.getNumEntries() == numEntries );
-	assert( cm.getMeshEntrySize( 0 ) == 1 );
-
-	coords = cm.getCoordinates( 0 );
-	assert( doubleEq( coords[0], 1 ) );
-	assert( doubleEq( coords[1], 2 ) );
-	assert( doubleEq( coords[2], 4 ) );
-	assert( doubleEq( coords[3], 2 ) );
-	assert( doubleEq( coords[4], 3 ) );
-	assert( doubleEq( coords[5], 5 ) );
-
-	vector< unsigned int > neighbors = cm.getNeighbors( 0 );
+	neighbors = cm.getNeighbors( 0 );
 	assert( neighbors.size() == 3 );
-	assert( neighbors[0] = 1 );
-	assert( neighbors[1] = s2m[ 4 ] );
-	assert( neighbors[2] = s2m[ 16 ] );
+	assert( neighbors[0] == 1 );
+	assert( neighbors[1] == 4 );
+	assert( neighbors[2] = 16 );
 
+	neighbors = cm.getNeighbors( 63 );
+	assert( neighbors.size() == 3 );
+	assert( neighbors[0] == 47 );
+	assert( neighbors[1] == 59 );
+	assert( neighbors[2] == 62 );
 
+	neighbors = cm.getNeighbors( 2 );
+	assert( neighbors.size() == 4 );
+	assert( neighbors[0] == 1 );
+	assert( neighbors[1] == 3 );
+	assert( neighbors[2] == 6 );
+	assert( neighbors[3] == 18 );
+
+	neighbors = cm.getNeighbors( 6 );
+	assert( neighbors.size() == 5 );
+	assert( neighbors[0] == 2 );
+	assert( neighbors[1] == 5 );
+	assert( neighbors[2] == 7 );
+	assert( neighbors[3] == 10 );
+	assert( neighbors[4] == 22 );
+
+	neighbors = cm.getNeighbors( 22 );
+	assert( neighbors.size() == 6 );
+	assert( neighbors[0] == 6 );
+	assert( neighbors[1] == 18 );
+	assert( neighbors[2] == 21 );
+	assert( neighbors[3] == 23 );
+	assert( neighbors[4] == 26 );
+	assert( neighbors[5] == 38 );
 
 	cm.setPreserveNumEntries( 1 );
 	assert( cm.getNx() == 4 );
@@ -658,6 +672,69 @@ void testCubeMesh()
 	assert( doubleEq( cm.getDx(), 1.25 ) );
 	assert( doubleEq( cm.getDy(), 1.5 ) );
 	assert( doubleEq( cm.getDz(), 2.0 ) );
+
+	cout << "." << flush;
+}
+
+void testCubeMeshExtendStencil()
+{
+	CubeMesh cm0;
+	cm0.setPreserveNumEntries( 0 );
+	assert( cm0.getMeshType( 0 ) == CUBOID );
+	assert( cm0.getMeshDimensions( 0 ) == 3 );
+	assert( cm0.getDimensions() == 3 );
+	CubeMesh cm1 = cm0;
+
+	vector< double > coords( 9 );
+	coords[0] = 0; // X0
+	coords[1] = 0; // Y0
+	coords[2] = 0; // Z0
+
+	coords[3] = 2; // X1
+	coords[4] = 4; // Y1
+	coords[5] = 8; // Z1
+
+	coords[6] = 1; // DX
+	coords[7] = 1; // DY
+	coords[8] = 1; // DZ
+
+	cm0.innerSetCoords( coords );
+	coords[2] = 8; // 2x4 face abuts.
+	coords[5] = 16;
+	cm1.innerSetCoords( coords );
+
+	const double* entry;
+	const unsigned int* colIndex;
+	unsigned int num = cm0.getStencil( 0, &entry, &colIndex );
+	assert( num == 3 );
+	assert( colIndex[0] == 1 );
+	assert( colIndex[1] == 2 );
+	assert( colIndex[2] == 8 );
+
+	num = cm0.getStencil( 56, &entry, &colIndex );
+	assert( num == 3 );
+	assert( colIndex[0] == 48 );
+	assert( colIndex[1] == 57 );
+	assert( colIndex[2] == 58 );
+
+	vector< VoxelJunction > vj;
+	for ( unsigned int i = 0; i < 8; ++i ) {
+		vj.push_back( VoxelJunction( 56 + i, i ) );
+	}
+	cm0.extendStencil( &cm1, vj );
+
+	num = cm0.getStencil( 56, &entry, &colIndex );
+	assert( num == 4 );
+	assert( colIndex[0] == 48 );
+	assert( colIndex[1] == 57 );
+	assert( colIndex[2] == 58 );
+	assert( colIndex[3] == 64 );
+
+	for ( unsigned int i = 0; i < 8; ++i ) {
+		num = cm0.getStencil( 64 + i, &entry, &colIndex );
+		assert( num == 1 );
+		assert( colIndex[0] == 56 + i );
+	}
 
 	cout << "." << flush;
 }
@@ -785,7 +862,102 @@ pair< unsigned int, unsigned int > buildBranchingCell(
 	return pair< unsigned int, unsigned int >( 17, 161 );
 }
 
-void testNeuroMesh()
+	// y = initConc * dx * (0.5 / sqrt( PI * DiffConst * runtime ) ) * 
+	//        exp( -x * x / ( 4 * DiffConst * runtime ) )
+double diffusionFunction( double D, double dx, double x, double t )
+{
+	return
+		dx * (0.5 / sqrt( PI * D * t ) ) * exp( -x * x / ( 4 * D * t ) );
+}
+
+void testNeuroMeshLinear()
+{
+	Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
+	vector< int > dims( 1, 1 );
+	// Build a linear cylindrical cell, no tapering.
+	Id cell = shell->doCreate( "Neutral", Id(), "cell", dims );
+	unsigned int numCompts = 500;
+	double dia = 1e-6; // metres
+	double diffLength = 0.2e-6; // metres
+	double len = diffLength * numCompts;
+	double maxt = 100.0;
+	double dt = 0.01;
+	double D = 1e-12;
+	double totNum = 1e6;
+
+	Id soma = makeCompt( Id(), cell, "soma", len, dia, 0 );
+
+	// Scan it with neuroMesh and check outcome.
+	Id nm = shell->doCreate( "NeuroMesh", Id(), "neuromesh", dims );
+	Field< double >::set( nm, "diffLength", diffLength );
+	Field< string >::set( nm, "geometryPolicy", "cylinder" );
+	Field< Id >::set( nm, "cell", cell );
+	unsigned int ns = Field< unsigned int >::get( nm, "numSegments" );
+	assert( ns == 1 );
+	unsigned int ndc = Field< unsigned int >::get( nm, "numDiffCompts" );
+	assert( ndc == numCompts );
+	const vector< NeuroNode >& nodes = 
+			reinterpret_cast< NeuroMesh* >( nm.eref().data() )->
+			getNodes();
+	assert( nodes.size() == 1 );
+	assert( nodes[0].children().size() == 0 );
+
+	// Insert a molecule at first subdivision of soma. I use a dummy 
+	// matrix S rather than the one in the system.
+	// Field< double >::set( ObjId( soma, 0 ), "nInit", 1.0e6 );
+	vector< double > molNum( 1, 0 ); // We only have one pool
+	// S[meshIndex][poolIndex]
+	vector< vector< double > > S( ndc, molNum ); 
+	S[0][0] = totNum;
+	vector< double > diffConst( 1, D );
+	vector< double > temp( 1, 0.0 );
+	vector< vector< double > > flux( ndc, temp );
+	
+	// Watch diffusion using stencil and direct calls to the flux 
+	// calculations rather than going through the ksolve.
+	const Stencil* stencil = 
+			reinterpret_cast< NeuroMesh* >( nm.eref().data() )->
+			getStencil();
+	assert( stencil != 0 );	
+	for ( double t = 0; t < maxt; t += dt ) {
+		for ( unsigned int i = 0; i < ndc; ++i )
+			flux[i][0] = 0.0;
+		
+		for ( unsigned int i = 0; i < ndc; ++i ) {
+			stencil->addFlux( i, flux[i], S, diffConst );
+		}
+		for ( unsigned int i = 0; i < ndc; ++i )
+			S[i][0] += flux[i][0] * dt;
+	}
+
+	// Compare with analytic calculation
+	double tot1 = 0.0;
+	double tot2 = 0.0;
+	double dlBy2 = diffLength/2.0;
+	double x = dlBy2;
+	for ( unsigned int j = 0; j < numCompts; ++j ) {
+			// Factor of two because we compute a half-infinite cylinder.
+		double y = 2 * totNum * 
+			diffusionFunction( diffConst[0], diffLength, x, maxt );
+		unsigned int k = j + nodes[0].startFid();
+		//cout << "S[" << k << "][0] = " << S[k][0] << "	" << y << endl;
+		tot1 += S[k][0];
+		tot2 += y;
+		x += diffLength;
+		// Here we compare only half of the length because edge effects 
+		// mess up the flux calculation.
+		if ( j < numCompts/2 )
+			assert ( doubleApprox( y, S[k][0] ) ); 
+	}
+	assert( doubleEq( tot1, totNum ) );
+	assert( doubleEq( tot2, totNum ) );
+	
+	shell->doDelete( cell );
+	shell->doDelete( nm );
+	cout << "." << flush;
+}
+
+void testNeuroMeshBranching()
 {
 	Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
 	vector< int > dims( 1, 1 );
@@ -794,6 +966,10 @@ void testNeuroMesh()
 	double len = 10e-6; // metres
 	double dia = 1e-6; // metres
 	double diffLength = 1e-6; // metres
+	double D = 4e-12; // Diff const, m^2/s
+	double totNum = 1e6; // Molecules
+	double maxt = 10.0;
+	double dt = 0.001;
 
 	pair< unsigned int, unsigned int > ret = 
 			buildBranchingCell( cell, len, dia );
@@ -824,8 +1000,8 @@ void testNeuroMesh()
 	vector< double > molNum( 1, 0 ); // We only have one pool
 	// S[meshIndex][poolIndex]
 	vector< vector< double > > S( ndc, molNum ); 
-	S[0][0] = 1.0e6;
-	vector< double > diffConst( 1, 1e-12 );
+	S[0][0] = totNum;
+	vector< double > diffConst( 1, D );
 	vector< double > temp( 1, 0.0 );
 	vector< vector< double > > flux( ndc, temp );
 	
@@ -835,8 +1011,6 @@ void testNeuroMesh()
 			reinterpret_cast< NeuroMesh* >( nm.eref().data() )->
 			getStencil();
 	assert( stencil != 0 );	
-	double maxt = 10.0;
-	double dt = 0.001;
 	for ( double t = 0; t < maxt; t += dt ) {
 		for ( unsigned int i = 0; i < ndc; ++i )
 			flux[i][0] = 0.0;
@@ -847,38 +1021,367 @@ void testNeuroMesh()
 		for ( unsigned int i = 0; i < ndc; ++i )
 			S[i][0] += flux[i][0] * dt;
 	}
-	// Here we need to figure out how to compare with the analytic solution
-	// y = initConc * dx * (0.5 / sqrt( PI * DiffConst * runtime ) ) * 
-	//        exp( -x * x / ( 4 * DiffConst * runtime ) )
-	//  Turns out that the ordering is sequential for 30 compts, but
-	//  I have used conical segment calculations which will give different
-	//  results from simple diffusion in a cylinder.
-	//  For now, comment out. I need to move on to other things for now.
-	/*
 	double tot = 0.0;
 	for ( unsigned int i = 0; i < nodes.size(); ++i ) {
-		cout << "node[" << i << "], dia = " << nodes[i].getDia() << 
-				", parent = " << nodes[i].parent() << endl;
 		for ( unsigned int j = 0; j < nodes[i].getNumDivs(); ++j ) {
 			unsigned int k = j + nodes[i].startFid();
-			cout << "S[" << k << "][0] = " << S[k][0] << endl;
+			//cout << "S[" << k << "][0] = " << S[k][0] << endl;
 			tot += S[k][0];
 		}
 	}
-	assert( doubleEq( tot, 1.0e6 ) );
+
+	// Compare with analytic solution.
+	assert( doubleEq( tot, totNum ) );
+	double x = 1.5 * diffLength;
+	for ( unsigned int i = 1; i < 11; ++i ) { // First segment of tree.
+		double y = totNum * diffusionFunction(
+				diffConst[0], diffLength, x, maxt );
+		assert( doubleApprox( y, S[i][0] ) );
+		// cout << "S[" << i << "][0] = " << S[i][0] << "	" << y << endl;
+		x += diffLength;
+	}
 	tot = 0;
-	for ( double x = 0; x < len * 4; x += diffLength ) {
-		double y = 1.0e6 * diffLength * 
-			(0.5 / sqrt( PI * diffConst[0] * maxt ) ) * 
-			exp( -x * x / ( 4 * diffConst[0] * maxt ) );
-		cout << rint( x / diffLength ) << ": " << y << endl;
+	for ( double x = diffLength / 2.0 ; x < 10 * len; x += diffLength ) {
+			// the 2x is needed because we add up only half of the 2-sided
+			// diffusion distribution.
+		double y = 2 * totNum * diffusionFunction( 
+				diffConst[0], diffLength, x, maxt );
+		// cout << floor( x / diffLength ) << ": " << y << endl;
 		tot += y;
 	}
-	assert( doubleEq( tot, 1.0e6 ) );
-	*/
+	assert( doubleEq( tot, totNum ) );
 	
 	shell->doDelete( cell );
 	shell->doDelete( nm );
+	cout << "." << flush;
+}
+
+// Assorted definitions from CubeMesh.cpp
+static const unsigned int EMPTY = ~0;
+static const unsigned int SURFACE = ~1;
+static const unsigned int ABUT = ~2;
+static const unsigned int MULTI = ~3;
+typedef pair< unsigned int, unsigned int > PII;
+extern void setIntersectVoxel( 
+		vector< PII >& intersect, 
+		unsigned int ix, unsigned int iy, unsigned int iz,
+		unsigned int nx, unsigned int ny, unsigned int nz,
+		unsigned int meshIndex );
+
+extern void checkAbut( 
+		const vector< PII >& intersect, 
+		unsigned int ix, unsigned int iy, unsigned int iz,
+		unsigned int nx, unsigned int ny, unsigned int nz,
+		unsigned int meshIndex,
+		vector< VoxelJunction >& ret );
+
+void testIntersectVoxel()
+{
+		/**
+		 * Here is the geometry of the surface. * is surface, - is empty.
+		 *
+		 *			-***-
+		 *			-*---
+		 *			-***-
+		 *
+		 *
+		 *			x***x
+		 *			x*32-
+		 *			x***x
+		 *
+		 * 	x is ABUTX
+		 * 	y is ABUTY
+		 * 	z is ABUTZ
+		 * 	2 is 2 points
+		 * 	3 is MULTI
+		 *
+		 */
+
+
+	unsigned int nx = 5;
+	unsigned int ny = 3;
+	unsigned int nz = 1;
+	vector< PII > intersect( nx * ny * nz, PII( 
+							CubeMesh::EMPTY, CubeMesh::EMPTY ) );
+	unsigned int meshIndex = 0;
+	setIntersectVoxel( intersect, 1, 0, 0, nx, ny, nz, meshIndex++ );
+	setIntersectVoxel( intersect, 2, 0, 0, nx, ny, nz, meshIndex++ );
+	setIntersectVoxel( intersect, 3, 0, 0, nx, ny, nz, meshIndex++ );
+	setIntersectVoxel( intersect, 1, 1, 0, nx, ny, nz, meshIndex++ );
+	setIntersectVoxel( intersect, 1, 2, 0, nx, ny, nz, meshIndex++ );
+	setIntersectVoxel( intersect, 2, 2, 0, nx, ny, nz, meshIndex++ );
+	setIntersectVoxel( intersect, 3, 2, 0, nx, ny, nz, meshIndex++ );
+
+	assert( intersect[0].first == 0 && 
+					intersect[0].second == CubeMesh::ABUTX );
+	assert( intersect[1].first == 0 && 
+					intersect[1].second == CubeMesh::SURFACE );
+	assert( intersect[2].first == 1 && 
+					intersect[2].second == CubeMesh::SURFACE );
+	assert( intersect[3].first == 2 && 
+					intersect[3].second == CubeMesh::SURFACE );
+	assert( intersect[4].first == 2 && 
+					intersect[4].second == CubeMesh::ABUTX );
+
+	assert( intersect[5].first == 3 && 
+					intersect[5].second == CubeMesh::ABUTX );
+	assert( intersect[6].first == 3 && 
+					intersect[6].second == CubeMesh::SURFACE );
+	assert( intersect[7].first == 1 && 
+					intersect[7].second == CubeMesh::MULTI );
+	assert( intersect[8].first == 2 && 
+					intersect[8].second == CubeMesh::MULTI );
+	assert( intersect[9].first == EMPTY && 
+					intersect[9].second == CubeMesh::EMPTY );
+
+	assert( intersect[10].first == 4 && 
+					intersect[10].second == CubeMesh::ABUTX );
+	assert( intersect[11].first == 4 && 
+					intersect[11].second == CubeMesh::SURFACE );
+	assert( intersect[12].first == 5 && 
+					intersect[12].second == CubeMesh::SURFACE );
+	assert( intersect[13].first == 6 && 
+					intersect[13].second == CubeMesh::SURFACE );
+	assert( intersect[14].first == 6 && 
+					intersect[14].second == CubeMesh::ABUTX );
+
+	// Next: test out checkAbut.
+	vector< VoxelJunction > ret;
+	checkAbut( intersect, 0, 0, 0, nx, ny, nz, 1234, ret );
+	assert( ret.size() == 1 );
+	assert( ret[0].first == 0 && ret[0].second == 1234 );
+	ret.clear();
+	// The ones below are either SURFACE or EMPTY and should not add points
+	checkAbut( intersect, 1, 0, 0, nx, ny, nz, 1234, ret );
+	checkAbut( intersect, 2, 0, 0, nx, ny, nz, 1234, ret );
+	checkAbut( intersect, 3, 0, 0, nx, ny, nz, 1234, ret );
+	checkAbut( intersect, 1, 1, 0, nx, ny, nz, 1234, ret );
+	checkAbut( intersect, 4, 1, 0, nx, ny, nz, 1234, ret );
+	checkAbut( intersect, 1, 2, 0, nx, ny, nz, 1234, ret );
+	checkAbut( intersect, 2, 2, 0, nx, ny, nz, 1234, ret );
+	checkAbut( intersect, 3, 2, 0, nx, ny, nz, 1234, ret );
+	assert( ret.size() == 0 );
+	checkAbut( intersect, 2, 1, 0, nx, ny, nz, 9999, ret );
+	assert( ret.size() == 3 );
+	assert( ret[0].first == 3 && ret[0].second == 9999 );
+	assert( ret[1].first == 1 && ret[1].second == 9999 );
+	assert( ret[2].first == 5 && ret[1].second == 9999 );
+	ret.clear();
+	checkAbut( intersect, 3, 1, 0, nx, ny, nz, 8888, ret );
+	assert( ret.size() == 2 );
+	assert( ret[0].first == 2 && ret[0].second == 8888 );
+	assert( ret[1].first == 6 && ret[1].second == 8888 );
+	ret.clear();
+	checkAbut( intersect, 4, 0, 0, nx, ny, nz, 7777, ret );
+	checkAbut( intersect, 0, 1, 0, nx, ny, nz, 6666, ret );
+	checkAbut( intersect, 0, 2, 0, nx, ny, nz, 5555, ret );
+	checkAbut( intersect, 4, 2, 0, nx, ny, nz, 4444, ret );
+	assert( ret.size() == 4 );
+	assert( ret[0].first == 2 && ret[0].second == 7777 );
+	assert( ret[1].first == 3 && ret[1].second == 6666 );
+	assert( ret[2].first == 4 && ret[2].second == 5555 );
+	assert( ret[3].first == 6 && ret[3].second == 4444 );
+	
+	cout << "." << flush;
+}
+
+void testCubeMeshFillTwoDimSurface()
+{
+	CubeMesh cm;
+	vector< double > coords( 9, 0.0 );
+	coords[3] = 5.0;
+	coords[4] = 3.0;
+	coords[5] = 1.0;
+	coords[6] = coords[7] = coords[8] = 1.0;
+	cm.setPreserveNumEntries( false );
+	cm.innerSetCoords( coords );
+	assert( cm.numDims() == 2 );
+	const vector< unsigned int >& surface = cm.surface();
+	assert( surface.size() == 12 );
+	for ( unsigned int i = 0; i < 5; ++i ) {
+		assert( surface[i] == i );
+		assert( surface[i + 5] == i + 10 );
+	}
+	assert( surface[10] == 5 );
+	assert( surface[11] == 9 );
+	cout << "." << flush;
+}
+
+void testCubeMeshFillThreeDimSurface()
+{
+	cout << "." << flush;
+}
+
+void testCubeMeshJunctionTwoDimSurface()
+{
+		/**					
+		 * 						8	9
+		 * 10	11	12	13	14	6	7
+		 * 5	6	7	8	9	4	5
+		 * 0	1	2	3	4	2	3
+		 * 						0	1
+		 *
+		 * So, junction should be (4,2),(9,4),(14,6)
+		 */
+	CubeMesh cm1;
+	vector< double > coords( 9, 0.0 );
+	coords[3] = 5.0;
+	coords[4] = 3.0;
+	coords[5] = 1.0;
+	coords[6] = coords[7] = coords[8] = 1.0;
+	cm1.setPreserveNumEntries( false );
+	cm1.innerSetCoords( coords );
+	vector< unsigned int > surface = cm1.surface();
+	assert( surface.size() == 12 );
+
+	CubeMesh cm2;
+	coords[0] = 5.0;
+	coords[1] = -1.0;
+	coords[2] = 0.0;
+	coords[3] = 7.0;
+	coords[4] = 4.0;
+	coords[5] = 1.0;
+	coords[6] = coords[7] = coords[8] = 1.0;
+	cm2.setPreserveNumEntries( false );
+	cm2.innerSetCoords( coords );
+	const vector< unsigned int >& surface2 = cm2.surface();
+	assert( surface2.size() == 10 );
+
+	vector< VoxelJunction > ret;
+	cm1.matchCubeMeshEntries( &cm2, ret );
+	assert( ret.size() == 3 ); 
+
+	assert( ret[0].first == 4 );
+	assert( ret[0].second == 2 );
+	assert( ret[1].first == 9 );
+	assert( ret[1].second == 4 );
+	assert( ret[2].first == 14 );
+	assert( ret[2].second == 6 );
+
+	/**
+	 * That was too easy, since the spatial and meshIndices were
+	 * identical. Now trim the geometries a bit to look like:
+		 * 						6	7
+		 * 10	11	12	13	-	4	5
+		 * 5	6	7	8	9	2	3
+		 * 0	1	2	3	4	-	1
+		 * 						-	0
+		 *
+		 * So, junction should be (9,2) only.
+		 */
+	
+	// Trimming cm1. At this point we don't assume automatic updates of
+	// the m2s, s2m and surface vectors when any of them is changed.
+	vector< unsigned int > m2s = cm1.getMeshToSpace();
+	assert( m2s.size() == 15 );
+	m2s.resize( 14 );
+	cm1.setMeshToSpace( m2s );
+	vector< unsigned int > s2m = cm1.getSpaceToMesh();
+	assert( s2m.size() == 15 );
+	s2m[14] = ~0;
+	cm1.setSpaceToMesh( s2m );
+	surface.resize( 4 ); 
+	// As a shortcut, just assign the places near the junction
+	// Note that the indices are spaceIndices.
+	surface[0] = 3;
+	surface[1] = 4;
+	surface[2] = 9;
+	surface[3] = 13;
+	cm1.setSurface( surface );
+	
+	// Trimming cm2.
+	m2s = cm2.getMeshToSpace();
+	assert( m2s.size() == 10 );
+	m2s.resize( 8 );
+	m2s[0] = 1;
+	for ( unsigned int i = 1; i < 8; ++i )
+		m2s[i] = i + 2;
+	cm2.setMeshToSpace( m2s );
+	s2m.clear();
+	s2m.resize( 10, ~0 );
+	for ( unsigned int i = 0; i < 8; ++i )
+		s2m[ m2s[i] ] = i;
+	cm2.setSpaceToMesh( s2m );
+	// As a shortcut, just assign the places near the junction
+	// Note that the indices are spaceIndices.
+	surface[0] = 3;
+	surface[1] = 4;
+	surface[2] = 6;
+	surface[3] = 8;
+	cm2.setSurface( surface );
+
+	// Now test it out.
+	ret.resize( 0 );
+	cm1.matchCubeMeshEntries( &cm2, ret );
+	assert( ret.size() == 1 ); 
+	assert( ret[0].first == 9 );
+	assert( ret[0].second == 2 );
+
+	cout << "." << flush;
+}
+
+void testCubeMeshJunctionDiffSizeMesh()
+{
+		/**					
+		 * 						14	15
+		 * 						12	13
+		 * 10	11	12	13	14	10	11
+		 *						8	9
+		 * 5	6	7	8	9	6	7
+		 *						4	5
+		 * 0	1	2	3	4	2	3
+		 * 						0	1
+		 *
+		 * So, junction should be (4,2)(4,4),(9,6),(9,8),(14,10),(14,12)
+		 */
+	CubeMesh cm1;
+	vector< double > coords( 9, 0.0 );
+	coords[3] = 5.0;
+	coords[4] = 3.0;
+	coords[5] = 1.0;
+	coords[6] = coords[7] = coords[8] = 1.0;
+	cm1.setPreserveNumEntries( false );
+	cm1.innerSetCoords( coords );
+	vector< unsigned int > surface = cm1.surface();
+	assert( surface.size() == 12 );
+
+	CubeMesh cm2;
+	coords[0] = 5.0;
+	coords[1] = -0.5;
+	coords[2] = 0.0;
+	coords[3] = 7.0;
+	coords[4] = 3.5;
+	coords[5] = 0.5;
+	coords[6] = 1.0;
+	coords[7] = 0.5;
+   	coords[8] = 0.5;
+	cm2.setPreserveNumEntries( false );
+	cm2.innerSetCoords( coords );
+	const vector< unsigned int >& surface2 = cm2.surface();
+	assert( surface2.size() == 16 );
+
+	vector< VoxelJunction > ret;
+	cm1.matchCubeMeshEntries( &cm2, ret );
+	assert( ret.size() == 6 ); 
+
+	assert( ret[0].first == 4 );
+	assert( ret[0].second == 2 );
+	assert( ret[1].first == 4 );
+	assert( ret[1].second == 4 );
+	assert( ret[2].first == 9 );
+	assert( ret[2].second == 6 );
+	assert( ret[3].first == 9 );
+	assert( ret[3].second == 8 );
+	assert( ret[4].first == 14 );
+	assert( ret[4].second == 10 );
+	assert( ret[5].first == 14 );
+	assert( ret[5].second == 12 );
+
+	cout << "." << flush;
+}
+
+void testCubeMeshJunctionThreeDimSurface()
+{
 	cout << "." << flush;
 }
 
@@ -891,6 +1394,14 @@ void testMesh()
 	testCylMesh();
 	testMidLevelCylMesh();
 	testCubeMesh();
+	testCubeMeshExtendStencil();
 	testReMesh();
-	testNeuroMesh();
+	testNeuroMeshLinear();
+	testNeuroMeshBranching();
+	testIntersectVoxel();
+	testCubeMeshFillTwoDimSurface();
+	testCubeMeshFillThreeDimSurface();
+	testCubeMeshJunctionTwoDimSurface();
+	testCubeMeshJunctionThreeDimSurface();
+	testCubeMeshJunctionDiffSizeMesh();
 }

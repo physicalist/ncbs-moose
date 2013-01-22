@@ -33,14 +33,17 @@ HSolveActive::HSolveActive()
 	caAdvance_ = 1;
 	
 	// Default lookup table size
-	vDiv_ = 3000;    // for voltage
-	caDiv_ = 3000;   // for calcium
+	//~ vDiv_ = 3000;    // for voltage
+	//~ caDiv_ = 3000;   // for calcium
 }
 
 //////////////////////////////////////////////////////////////////////
 // Solving differential equations
 //////////////////////////////////////////////////////////////////////
 void HSolveActive::step( ProcPtr info ) {
+	if ( nCompt_ <= 0 )
+		return;
+	
 	if ( !current_.size() ) {
 		current_.resize( channel_.size() );
 	}
@@ -112,18 +115,17 @@ void HSolveActive::updateMatrix() {
 		value.injectVarying = 0.0;
 	}
 	
-	double Gk, Ek;
-	vector< SynChanStruct >::iterator isyn;
-	for ( isyn = synchan_.begin(); isyn != synchan_.end(); ++isyn ) {
+	// Synapses are being handled as external channels.
+	//~ double Gk, Ek;
+	//~ vector< SynChanStruct >::iterator isyn;
+	//~ for ( isyn = synchan_.begin(); isyn != synchan_.end(); ++isyn ) {
 		//~ get< double >( isyn->elm_, synGkFinfo, Gk );
 		//~ get< double >( isyn->elm_, synEkFinfo, Ek );
-		Gk = 0.0;
-		Ek = 0.0;
-		
-		unsigned int ic = isyn->compt_;
-		HS_[ 4 * ic ] += Gk;
-		HS_[ 4 * ic + 3 ] += Gk * Ek;
-	}
+		//~ 
+		//~ unsigned int ic = isyn->compt_;
+		//~ HS_[ 4 * ic ] += Gk;
+		//~ HS_[ 4 * ic + 3 ] += Gk * Ek;
+	//~ }
 	
 	ihs = HS_.begin();
 	vector< double >::iterator iec;
@@ -287,15 +289,9 @@ void HSolveActive::advanceSynChans( ProcPtr info ) {
 }
 
 void HSolveActive::sendSpikes( ProcPtr info ) {
-	//~ vector< SpikeGenStruct >::iterator ispike;
-	//~ for ( ispike = spikegen_.begin(); ispike != spikegen_.end(); ++ispike ) {
-		//~ /* Scope resolution used here to resolve ambiguity between the "set"
-		 //~ * function (used here for setting element field values) which belongs
-		 //~ * in the global namespace, and the STL "set" container, which is in the
-		 //~ * std namespace.
-		 //~ */
-		//~ ::set< double >( ispike->elm_, spikeVmFinfo, V_[ ispike->compt_ ] );
-	//~ }
+	vector< SpikeGenStruct >::iterator ispike;
+	for ( ispike = spikegen_.begin(); ispike != spikegen_.end(); ++ispike )
+		ispike->send( info );
 }
 
 /**
@@ -303,24 +299,21 @@ void HSolveActive::sendSpikes( ProcPtr info ) {
  * objects which have been taken over.
  */
 void HSolveActive::sendValues( ProcPtr info ) {
-	/*
-	 * Can speed up this function by sending only from objects
-	 * which have targets.
-	 */
-	 
-	// for ( unsigned int i = 0; i < compartmentId_.size(); ++i )
-	// 	moose::Compartment::VmOut()->send(
-	// 	//~ ZombieCompartment::VmOut()->send(
-	// 		compartmentId_[ i ].eref(),
-	// 		info->threadIndexInGroup,
-	// 		V_[ i ]
-	// 	);
+	vector< unsigned int >::iterator i;
 	
-	for ( unsigned int i = 0; i < caConcId_.size(); ++i )
-        //		CaConc::concOut()->send(
-        ZombieCaConc::concOut()->send(
-			caConcId_[ i ].eref(),
+	for ( i = outVm_.begin(); i != outVm_.end(); ++i )
+		moose::Compartment::VmOut()->send(
+		//~ ZombieCompartment::VmOut()->send(
+			compartmentId_[ *i ].eref(),
 			info->threadIndexInGroup,
-			ca_[ i ]
+			V_[ *i ]
+		);
+	
+	for ( i = outCa_.begin(); i != outCa_.end(); ++i )
+		//~ CaConc::concOut()->send(
+		ZombieCaConc::concOut()->send(
+			caConcId_[ *i ].eref(),
+			info->threadIndexInGroup,
+			ca_[ *i ]
 		);
 }
