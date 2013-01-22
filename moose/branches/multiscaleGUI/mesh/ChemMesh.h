@@ -10,6 +10,8 @@
 #ifndef _CHEM_MESH_H
 #define _CHEM_MESH_H
 
+#include "VoxelJunction.h"
+
 /**
  * The ChemMesh represents a chemically identified compartment.
  * This may be spatially extended, and may even be discontinuous.
@@ -118,6 +120,40 @@ class ChemMesh
 		void setNumBoundary( unsigned int num );
 		unsigned int getNumBoundary( ) const;
 
+		/**
+		 * Wrapper function to buld junction between two meshes, and to
+		 * extend the meshes so that their stencils also handle update to
+		 * the voxels abutting the boundary on the neighbour mesh.
+		 */
+		void buildJunction( ChemMesh* other, vector< VoxelJunction >& ret );
+
+		/**
+		 * Returns the meshIndices (NOT spatial indices) of all adjacent
+		 * mesh entry pairs on ether side of the (self, other) junction.
+		 * meshIndices are the indices that look up entries in the vector
+		 * of pools.
+		 * spatialIndices are (iz * ny + iy) * nx + ix, that is, a linear
+		 * conversion of cartesian spatial indices.
+		 * So, for two touching cubes, the return vector is the paired 
+		 * meshIndices on either side of the plane of contact. If one mesh
+		 * has a finer mesh than the other, or if there are more than one
+		 * contact points from self to other (for example, at a corner),
+		 * then we just have multiple pairs using the same meshIndex of
+		 * the repeated voxel.
+		 */
+		virtual void matchMeshEntries( const ChemMesh* other, 
+			vector< VoxelJunction > & ret ) const = 0;
+
+
+		virtual double nearest( double x, double y, double z, 
+						unsigned int& index ) const = 0;
+	
+		virtual void indexToSpace( unsigned int index, 
+						double& x, double& y, double& z ) const = 0;
+
+		/// Utility function for swapping first and second in VoxelJunctions
+		void flipRet( vector< VoxelJunction >& ret ) const;
+
 		//////////////////////////////////////////////////////////////////
 		// FieldElement assignment stuff for MeshEntries
 		//////////////////////////////////////////////////////////////////
@@ -143,6 +179,41 @@ class ChemMesh
 		virtual vector< double > getDiffusionScaling( unsigned int fid ) 
 			const = 0;
 
+		/// Volume of mesh Entry including abutting diff-coupled voxels
+		virtual double extendedMeshEntrySize( unsigned int fid ) 
+			const = 0;
+
+		/**
+		 * Function to look up scale factor derived from area and length
+		 * of compartment junction, for all the mesh entries connected to
+		 * the specified one. 
+		 * Modeled on equivalent function in SparseMatrix.
+		 * meshIndex: index of reference mesh entry
+		 * entry: array of values of scale factor
+		 * colIndex: array of relative indices for each entry. The values
+		 * 	returned here are the offset from the meshIndex.
+		 * Returns number of entries and colIndexes.
+		 * For a 1-D mesh, there will be 2 except at boundaries
+		 * For a 2-D mesh, there will be 4 except at boundaries
+		 * For a 3-D mesh, there will be 6 except at boundaries
+		 * For a neuromesh, there will be a variable number depending on
+		 * branching.
+		 * For a CylMesh there are 2 except at boundaries.
+		 */
+		virtual unsigned int getStencil( unsigned int meshIndex,
+				const double** entry, const unsigned int** colIndex )
+			   	const = 0;
+
+
+		/**
+		 * Function to add voxels for boundaries. This is done so that the
+		 * solver can do reaction-diffusion computations on the entire mesh
+		 * including voxels of neighbouring solvers abutting the boundary.
+		 * It uses these to stitch together the computations that span
+		 * multiple solvers and compartments.
+		 */
+		virtual void extendStencil( 
+			const ChemMesh* other, const vector< VoxelJunction >& vj ) = 0;
 		//////////////////////////////////////////////////////////////////
 
 		static const Cinfo* initCinfo();

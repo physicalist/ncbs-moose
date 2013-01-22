@@ -52,6 +52,8 @@ extern void testMpiShell();
 extern void testMsg();
 extern void testMpiMsg();
 extern void testKinetics();
+extern void testKineticSolvers();
+extern void	testKineticSolversProcess();
 extern void testBiophysics();
 extern void testBiophysicsProcess();
 extern void testHSolve();
@@ -59,6 +61,8 @@ extern void testKineticsProcess();
 extern void testGeom();
 extern void testMesh();
 extern void testSimManager();
+extern void testSigNeur();
+extern void testSigNeurProcess();
 
 extern void initMsgManagers();
 extern void destroyMsgManagers();
@@ -279,18 +283,20 @@ void nonMpiTests( Shell* s )
 		unsigned int numCores = s->numCores();
 		unsigned int numThreads = s->numProcessThreads();
 		if ( numCores > 0 )
-		// s->setHardware( isSingleThreaded, numCores, numNodes, myNode );
-		s->setHardware( 0, 1, 1, 0 );
+		// s->setHardware( numthreads, numCores, numNodes, myNode );
+		s->setHardware( 1, 1, 1, 0 );
 		testAsync();
 		testMsg();
 		testShell();
 		testScheduling();
 		testBuiltins();
 		testKinetics();
+		testKineticSolvers();
 		testBiophysics();
 		testHSolve();
 		testGeom();
 		testMesh();
+		testSigNeur();
 #ifdef USE_SMOLDYN
 		testSmoldyn();
 #endif
@@ -310,7 +316,9 @@ void processTests( Shell* s )
 	testBuiltinsProcess();
 	testKineticsProcess();
 	testBiophysicsProcess();
+	testKineticSolversProcess();
 	testSimManager();
+	testSigNeurProcess();
 #endif
 }
 

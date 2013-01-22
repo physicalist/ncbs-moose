@@ -17,6 +17,7 @@
 #include "ChemMesh.h"
 #include "CylBase.h"
 #include "NeuroNode.h"
+#include "SparseMatrix.h"
 #include "NeuroStencil.h"
 #include "NeuroMesh.h"
 #include "../utility/numutil.h"
@@ -139,6 +140,15 @@ const Cinfo* NeuroMesh::initCinfo()
 		// MsgDest Definitions
 		//////////////////////////////////////////////////////////////
 
+		static DestFinfo setCellPortion( "setCellPortion",
+			"Tells NeuroMesh to mesh up a subpart of a cell. For now"
+			"assumed contiguous."
+			"The first argument is the cell Id. The second is the vector"
+			"of Ids to consider in meshing up the subpart.",
+			new OpFunc2< NeuroMesh, Id, vector< Id > >(
+				&NeuroMesh::setCellPortion )
+		);
+
 		//////////////////////////////////////////////////////////////
 		// Field Elements
 		//////////////////////////////////////////////////////////////
@@ -151,6 +161,7 @@ const Cinfo* NeuroMesh::initCinfo()
 		&numDiffCompts,		// ReadOnlyValue
 		&diffLength,			// Value
 		&geometryPolicy,		// Value
+		&setCellPortion,			// DestFinfo
 	};
 
 	static Cinfo neuroMeshCinfo (
@@ -398,8 +409,16 @@ void NeuroMesh::buildNodeTree( const map< Id, unsigned int >& comptMap )
 // I assume 'cell' is the parent of the compartment tree.
 void NeuroMesh::setCell( Id cell )
 {
-		cell_ = cell;
 		vector< Id > compts = Field< vector< Id > >::get( cell, "children");
+		setCellPortion( cell, compts );
+}
+
+// Here we set a portion of a cell, specified by a vector of Ids. We
+// also need to define the cell parent.
+void NeuroMesh::setCellPortion( Id cell, vector< Id > portion )
+{
+		cell_ = cell;
+		vector< Id >& compts = portion;
 		map< Id, unsigned int > comptMap;
 
 		Id soma;
@@ -586,6 +605,18 @@ vector< double > NeuroMesh::getDiffusionScaling( unsigned int fid ) const
 		*/
 
 	return vector< double >( 2, 1.0 );
+}
+
+/// Virtual function to return volume of mesh Entry, including
+/// for diffusively coupled voxels from other solvers.
+double NeuroMesh::extendedMeshEntrySize( unsigned int fid ) const
+{
+	if ( fid < nodeIndex_.size() ) {
+		return getMeshEntrySize( fid );
+	} else {
+		assert( 0 ); // Doesn't work yet.
+		return 0;
+	}
 }
 
 //////////////////////////////////////////////////////////////////
@@ -776,8 +807,39 @@ const Stencil* NeuroMesh::getStencil() const
 			return stencil_[0];
 	return 0;
 }
+unsigned int NeuroMesh::getStencil( unsigned int meshIndex,
+		const double** entry, const unsigned int** colIndex ) const
+{
+		return 0;
+}
+
+void NeuroMesh::extendStencil(
+	   	const ChemMesh* other, const vector< VoxelJunction >& vj )
+{
+	assert( 0 ); // doesn't work yet.
+}
 
 const vector< NeuroNode >& NeuroMesh::getNodes() const
 {
 	return nodes_;
+}
+
+//////////////////////////////////////////////////////////////////
+// Utility function for junctions
+//////////////////////////////////////////////////////////////////
+
+void NeuroMesh::matchMeshEntries( const ChemMesh* other,
+	   vector< VoxelJunction >& ret ) const
+{
+}
+
+void NeuroMesh::indexToSpace( unsigned int index,
+			double& x, double& y, double& z ) const 
+{
+}
+
+double NeuroMesh::nearest( double x, double y, double z, 
+				unsigned int& index ) const
+{
+	return 0;
 }

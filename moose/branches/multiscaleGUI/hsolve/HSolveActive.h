@@ -19,7 +19,7 @@ public:
 	
 	void setup( Id seed, double dt );
 	void step( ProcPtr info );
-	void reinit();
+	void reinit( ProcPtr info );
 	
 protected:
 	/**
@@ -81,6 +81,8 @@ protected:
 	vector< Id >              channelId_;
 	vector< Id >              gateId_;
 	//~ vector< vector< Id > >    externalChannelId_;
+	vector< unsigned int >    outVm_;
+	vector< unsigned int >    outCa_;
 	
 private:
 	/**
@@ -91,13 +93,15 @@ private:
 	void readCalcium();
 	void readSynapses();
 	void readExternalChannels();
-	
 	void createLookupTables();
+	void manageOutgoingMessages();
+	
 	void cleanup();
 	
 	/**
 	 * Reinit code: Defined in HSolveActiveSetup.cpp
 	 */
+	void reinitSpikeGens( ProcPtr info );
 	void reinitCompartments();
 	void reinitCalcium();
 	void reinitChannels();

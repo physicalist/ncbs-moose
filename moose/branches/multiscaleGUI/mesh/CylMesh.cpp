@@ -198,6 +198,8 @@ void CylMesh::updateCoords()
 	rSlope_ = ( r1_ - r0_ ) / numEntries_;
 	lenSlope_ = lambda_ * rSlope_ * 2 / ( r0_ + r1_ );
 
+	dx2_[0] = lambda_;
+	dx2_[1] = lambda_;
 	buildStencil();
 }
 
@@ -533,6 +535,18 @@ vector< double > CylMesh::getDiffusionScaling( unsigned int fid ) const
 	return vector< double >( 2, 1.0 );
 }
 
+/// Virtual function to return volume of mesh Entry, including
+/// for diffusively coupled voxels from other solvers.
+double CylMesh::extendedMeshEntrySize( unsigned int fid ) const
+{
+	if ( fid < numEntries_ ) {
+		return getMeshEntrySize( fid );
+	} else {
+		assert( 0 ); // Doesn't work yet.
+		return 0;
+	}
+}
+
 //////////////////////////////////////////////////////////////////
 // Dest funcsl
 //////////////////////////////////////////////////////////////////
@@ -666,4 +680,57 @@ void CylMesh::buildStencil()
 		delete stencil_[i];
 	stencil_.resize( 1 );
 	stencil_[0] = new LineStencil( lambda_ );
+}	
+
+unsigned int CylMesh::getStencil( unsigned int meshIndex,
+			const double** entry, const unsigned int** colIndex ) const
+{
+	static unsigned int leftIndex;
+	static const unsigned int rightIndex = 1;
+	static unsigned int middleIndex[2];
+	assert ( numEntries_ > 1 );
+	// Should use try-catch?
+	if ( meshIndex == 0 ) {
+			*entry = &lambda_;
+			*colIndex = &rightIndex;
+			return 1;
+	} else if ( meshIndex == numEntries_ - 1 ) {
+			assert( meshIndex > 0 );
+			*entry = &lambda_;
+			leftIndex = meshIndex - 1;
+			*colIndex = &leftIndex;
+			return 1;
+	}
+	assert ( numEntries_ > 2 );
+	*entry = dx2_;
+	middleIndex[0] = meshIndex - 1;
+	middleIndex[1] = meshIndex + 1;
+	*colIndex = middleIndex;
+	return 2;
+}
+
+void CylMesh::extendStencil( 
+	   	const ChemMesh* other, const vector< VoxelJunction >& vj )
+{
+	assert( 0 ); // doesn't work yet.
+}
+
+//////////////////////////////////////////////////////////////////
+// Utility function for junctions
+//////////////////////////////////////////////////////////////////
+
+void CylMesh::matchMeshEntries( const ChemMesh* other,
+	   vector< VoxelJunction >& ret ) const
+{
+}
+
+void CylMesh::indexToSpace( unsigned int index,
+			double& x, double& y, double& z ) const 
+{
+}
+
+double CylMesh::nearest( double x, double y, double z, 
+				unsigned int& index ) const
+{
+	return 0;
 }

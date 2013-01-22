@@ -30,12 +30,8 @@ def loadGran98NeuroML_L123(filename):
     #KDrX = setupTable('ChanX',moose.HHChannel(soma_path+'/Gran_KDr_98'),'X')
     soma = moose.Compartment(soma_path)
     
-    h = moose.HSolve( cells_path+'/solve' )
-    h.dt = simdt
-    h.path = cells_path
-
     print "Reinit MOOSE ... "
-    resetSim(['/elec','/cells'],simdt,plotdt,hsolve_path=cells_path+'/solve') # from moose.utils
+    resetSim(['/elec','/cells'],simdt,plotdt,simmethod='hsolve') # from moose.utils
     print "Running ... "
     moose.start(runtime)
     tvec = arange(0.0,runtime,simdt)
@@ -48,7 +44,7 @@ def loadGran98NeuroML_L123(filename):
 
 if __name__ == "__main__":
     if len(sys.argv)<2:
-        filename = "CA1.net.xml"
+        filename = "CA1soma.net.xml"
     else:
         filename = sys.argv[1]
 loadGran98NeuroML_L123(filename)

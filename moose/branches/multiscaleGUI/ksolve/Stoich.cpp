@@ -19,6 +19,9 @@
 #include "CplxEnzBase.h"
 #include "Enz.h"
 #include "MMenz.h"
+#include "FuncTerm.h"
+#include "SumTotalTerm.h"
+#include "FuncBase.h"
 #include "SumFunc.h"
 #include "MathFunc.h"
 #include "Boundary.h"
@@ -63,6 +66,53 @@ static SrcFinfo3< unsigned int, vector< unsigned int >, vector< double > >* node
 	return &nodeDiffBoundary;
 }
 
+static SrcFinfo2< unsigned int, vector< double > >* 
+	poolsReactingAcrossBoundary()
+{
+	static SrcFinfo2< unsigned int, vector< double > > 
+		poolsReactingAcrossBoundary(
+		"poolsReactingAcrossBoundary",
+		"A vector of mol counts (n) of those pools that react across a "
+		"boundary. Sent over to another Stoich every sync timestep so "
+		"that the target Stoich has both sides of the boundary reaction. "
+		"Assumes that the mesh encolosing the target Stoich also encloses "
+		"the reaction object. "
+	);
+	return &poolsReactingAcrossBoundary;
+}
+
+static SrcFinfo2< unsigned int, vector< double > >* 
+	reacRatesAcrossBoundary()
+{
+	static SrcFinfo2< unsigned int, vector< double > > 
+			reacRatesAcrossBoundary(
+		"reacRatesAcrossBoundary",
+		"A vector of reac rates (V) of each reaction crossing the "
+		"boundary between compartments. Sent over to another Stoich every "
+	    "sync timestep so "
+		"that the target Stoich has both sides of the boundary reaction. "
+		"In the case of Gillespie calculations *V* is the integer # of "
+		"transitions (firings) of each reaction. "
+		"Assumes that the mesh encolosing the target Stoich also encloses "
+		"the reaction object. "
+	);
+	return &reacRatesAcrossBoundary;
+}
+
+static SrcFinfo2< unsigned int, vector< double > >* reacRollbacksAcrossBoundary()
+{
+	static SrcFinfo2< unsigned int, vector< double > > 
+			reacRollbacksAcrossBoundary(
+		"reacRollbacksAcrossBoundary",
+		"Occasionally, a Gillespie advance will cause the mol conc on "
+		"the target stoich side to become negative. If so, this message "
+		"does a patch up job by telling the originating Stoich to roll "
+		"back to the specified number of reac firings, which is the max "
+		"that the target was able to handle. This is probably numerically "
+		"naughty, but it is better than negative concentrations "
+	);
+	return &reacRollbacksAcrossBoundary;
+}
 
 const Cinfo* Stoich::initCinfo()
 {
@@ -141,6 +191,57 @@ const Cinfo* Stoich::initCinfo()
 			>( &Stoich::meshSplit )
 		);
 
+		// This one is part of a Shared msg: boundaryReacIn
+		static DestFinfo handlePoolsReactingAcrossBoundary(
+				"handlePoolsReactingAcrossBoundary",
+				"When we have reactions that cross compartment boundaries,"
+				" we may have different solvers and meshes on either side."
+				" This message handle info for two things: "
+				" Arg 1: An identifier for the boundary. "
+				" Arg 2: A vector of pool #s for every pool that reacts "
+				" across the boundary, in every mesh entry. "
+				" that reacts across a boundary, in every mesh entry ",
+				new OpFunc2< Stoich, unsigned int, vector< double > >( 
+					&Stoich::handlePoolsReactingAcrossBoundary )
+		);
+
+		// This one is part of a Shared msg: boundaryReacOut
+		static DestFinfo handleReacRatesAcrossBoundary(
+				"handleReacRatesAcrossBoundary",
+				"When we have reactions that cross compartment boundaries,"
+				" we may have different solvers and meshes on either side."
+				" This message handle info for two things: "
+				" Arg 1: An identifier for the boundary. "
+				" Arg 2: A vector of reaction rates for every reaction "
+				" across the boundary, in every mesh entry. ",
+				new OpFunc2< Stoich, unsigned int, vector< double > >( 
+					&Stoich::handleReacRatesAcrossBoundary )
+		);
+
+		// This one is part of a Shared msg: boundaryReacIn
+		static DestFinfo handleReacRollbacksAcrossBoundary(
+				"handleReacRollbacksAcrossBoundary",
+				"When we have reactions that cross compartment boundaries,"
+				" we may have different solvers and meshes on either side."
+				" Only one side does the calculations to assure mass "
+				" conservation. "
+				" There are rare cases when the calculations of one "
+				" solver, typically a Gillespie one, gives such a large "
+				" change that the concentrations on the other side would "
+				" become negative in one or more molecules "
+				" This message handles such cases on the Gillespie side, "
+				" by telling the solver to roll back its recent "
+				" calculation and instead use the specified vector for "
+				" the rates, that is the # of mols changed in the latest "
+				" timestep. "
+				" This message handle info for two things: "
+				" Arg 1: An identifier for the boundary. "
+				" Arg 2: A vector of reaction rates for every reaction "
+				" across the boundary, in every mesh entry. ",
+				new OpFunc2< Stoich, unsigned int, vector< double > >(
+					&Stoich::handleReacRollbacksAcrossBoundary )
+		);
+
 		//////////////////////////////////////////////////////////////
 		// FieldElementFinfo defintion for Ports. Assume up to 16.
 		//////////////////////////////////////////////////////////////
@@ -165,6 +266,30 @@ const Cinfo* Stoich::initCinfo()
 			procShared, sizeof( procShared ) / sizeof( const Finfo* )
 		);
 		*/
+		static Finfo* boundaryReacOutShared[] = {
+			poolsReactingAcrossBoundary(), 
+			&handleReacRatesAcrossBoundary,
+			reacRollbacksAcrossBoundary()
+		};
+		static SharedFinfo boundaryReacOut( "boundaryReacOut",
+			"Shared message between Stoichs to handle reactions taking "
+		   " molecules between the pools handled by the two Stoichs. ",
+			boundaryReacOutShared, 
+			sizeof( boundaryReacOutShared ) / sizeof( const Finfo* )
+		);
+
+
+		static Finfo* boundaryReacInShared[] = {
+			&handlePoolsReactingAcrossBoundary, 
+			reacRatesAcrossBoundary(),
+			&handleReacRollbacksAcrossBoundary
+		};
+		static SharedFinfo boundaryReacIn( "boundaryReacIn",
+			"Shared message between Stoichs to handle reactions taking "
+		   " molecules between the pools handled by the two Stoichs. ",
+			boundaryReacInShared, 
+			sizeof( boundaryReacInShared ) / sizeof( const Finfo* )
+		);
 
 	static Finfo* stoichFinfos[] = {
 		&useOneWay,		// Value
@@ -177,6 +302,8 @@ const Cinfo* Stoich::initCinfo()
 		nodeDiffBoundary(),		// SrcFinfo
 		&meshSplit,		// DestFinfo
 		&portFinfo,		// FieldElementFinfo
+		&boundaryReacOut,
+		&boundaryReacIn,
 	};
 
 	static Cinfo stoichCinfo (
@@ -207,6 +334,8 @@ Stoich::Stoich()
 		objMapStart_( 0 ),
 		numVarPools_( 0 ),
 		numVarPoolsBytes_( 0 ),
+		numBufPools_( 0 ),
+		numFuncPools_( 0 ),
 		numReac_( 0 )
 {;}
 
@@ -292,6 +421,54 @@ void Stoich::handleMatchedMolsAtPort( unsigned int port, vector< SpeciesId > mol
 {
 	;
 }
+
+// Just dump the pool #s into S_. The vector n is a linearized version of
+// a 2-D matrix[meshIndex][poolIndex]
+void Stoich::handlePoolsReactingAcrossBoundary( 
+		unsigned int boundary, vector< double > n )
+{
+	// Would like to check this during setup.
+	// boundaryPools[boundary][poolIndex] is a 2-D vector which
+	// contains the vector of all pools that are brought across for each
+	// boundary.
+	assert( boundaryPools_.size() > boundary );
+	const vector< unsigned int >& bp = boundaryPools_[boundary];
+	assert( bp.size() * S_.size() == n.size() );
+	// Deal with all mesh entries.
+	unsigned int k = 0;
+	for ( unsigned int i = 0; i < S_.size(); ++i ) {
+		for ( unsigned int j = 0; j < bp.size(); ++j ) {
+			S_[i][ bp[j] ] = n[k++];
+		}
+	}
+}
+
+void Stoich::handleReacRatesAcrossBoundary( 
+			unsigned int boundary, vector< double > v )
+{
+	// boundaryReacs[boundary] is a 1-D vector indicating the start
+	// ReacIndex of the vector of reac rates occuring over the 
+	// specified boundary. This ReacIndex refers to the extRates vector
+	// that the Stoich::updateV will use.
+	assert( boundaryReacs_.size() > boundary );
+
+	unsigned int boundaryReacIndex = boundaryReacs_[boundary];
+	unsigned int k = 0;
+	unsigned int numRates = v.size() / extRates_.size();
+	for ( unsigned int i = 0; i < extRates_.size(); ++i ) { // # mesh
+		for ( unsigned int j = 0; j < numRates; ++j ) { // # rates
+			extRates_[i][ boundaryReacIndex + j ] = v[k++];
+		}
+	}
+}
+
+
+void Stoich::handleReacRollbacksAcrossBoundary( 
+			unsigned int boundary, vector< double > )
+{
+	// Doesn't do anything for Stoich. Used in Gssa.
+}
+
 
 //////////////////////////////////////////////////////////////
 // Field Definitions
@@ -387,7 +564,9 @@ void Stoich::allocateObjMap( const vector< Id >& elist )
 	assert( objMap_.size() >= elist.size() );
 }
 
-void Stoich::allocateModel( const vector< Id >& elist )
+/// Identifies and allocates objects in the Stoich.
+void Stoich::allocateModelObject( Id id, 
+				vector< Id >& bufPools, vector< Id >& funcPools )
 {
 	static const Cinfo* poolCinfo = Pool::initCinfo();
 	static const Cinfo* bufPoolCinfo = BufPool::initCinfo();
@@ -396,53 +575,81 @@ void Stoich::allocateModel( const vector< Id >& elist )
 	static const Cinfo* enzCinfo = Enz::initCinfo();
 	static const Cinfo* mmEnzCinfo = MMenz::initCinfo();
 	static const Cinfo* sumFuncCinfo = SumFunc::initCinfo();
-	// static const Cinfo* meshEntryCinfo = MeshEntry::initCinfo();
+
+	Element* ei = id.element();
+	if ( ei->cinfo() == poolCinfo ) {
+		objMap_[ id.value() - objMapStart_ ] = numVarPools_;
+		idMap_.push_back( id );
+		++numVarPools_;
+	} else if ( ei->cinfo() == bufPoolCinfo ) {
+			bufPools.push_back( id );
+	} else if ( ei->cinfo() == funcPoolCinfo ) {
+			funcPools.push_back( id );
+	} else if ( ei->cinfo() == mmEnzCinfo ){
+			mmEnzMap_.push_back( ei->id() );
+			objMap_[ id.value() - objMapStart_ ] = numReac_;
+			++numReac_;
+	} else if ( ei->cinfo() == reacCinfo ) {
+			reacMap_.push_back( ei->id() );
+			if ( useOneWay_ ) {
+				objMap_[ id.value() - objMapStart_ ] = numReac_;
+				numReac_ += 2;
+			} else {
+				objMap_[ id.value() - objMapStart_ ] = numReac_;
+				++numReac_;
+			}
+	} else if ( ei->cinfo() == enzCinfo ) {
+			enzMap_.push_back( ei->id() );
+			if ( useOneWay_ ) {
+				objMap_[ id.value() - objMapStart_ ] = numReac_;
+				numReac_ += 3;
+			} else {
+				objMap_[ id.value() - objMapStart_ ] = numReac_;
+				numReac_ += 2;
+			}
+	} else if ( ei->cinfo() == sumFuncCinfo ){
+			objMap_[ id.value() - objMapStart_ ] = numFuncPools_;
+			++numFuncPools_;
+	} 
+}
+
+/// Using the computed array sizes, now allocate space for them.
+void Stoich::resizeArrays()
+{
+	concInit_.resize( numVarPools_ + numBufPools_ + numFuncPools_, 0.0 );
+	S_.resize( 1 );
+	Sinit_.resize( 1 );
+	y_.resize( 1 );
+	flux_.resize( 1 );
+	S_[0].resize( numVarPools_ + numBufPools_ + numFuncPools_, 0.0 );
+	Sinit_[0].resize( numVarPools_ + numBufPools_ + numFuncPools_, 0.0);
+	y_[0].resize( numVarPools_, 0.0 );
+	flux_[0].resize( numVarPools_, 0.0 );
+
+	diffConst_.resize( numVarPools_ + numBufPools_ + numFuncPools_, 0.0 );
+	species_.resize( numVarPools_ + numBufPools_ + numFuncPools_, 0 );
+	rates_.resize( numReac_ );
+	// v_.resize( numReac_, 0.0 ); // v is now allocated dynamically
+	funcs_.resize( numFuncPools_ );
+	N_.setSize( numVarPools_ + numBufPools_ + numFuncPools_, numReac_ );
+}
+
+/// Calculate sizes of all arrays, and allocate them.
+void Stoich::allocateModel( const vector< Id >& elist )
+{
 	numVarPools_ = 0;
 	numReac_ = 0;
+	numFuncPools_ = 0;
 	vector< Id > bufPools;
 	vector< Id > funcPools;
-	unsigned int numFunc = 0;
 	idMap_.clear();
 	reacMap_.clear();
 	enzMap_.clear();
 	mmEnzMap_.clear();
-	for ( vector< Id >::const_iterator i = elist.begin(); i != elist.end(); ++i ){
-		Element* ei = (*i)();
-		if ( ei->cinfo() == poolCinfo ) {
-			objMap_[ i->value() - objMapStart_ ] = numVarPools_;
-			idMap_.push_back( *i );
-			++numVarPools_;
-		} else if ( ei->cinfo() == bufPoolCinfo ) {
-			bufPools.push_back( *i );
-		} else if ( ei->cinfo() == funcPoolCinfo ) {
-			funcPools.push_back( *i );
-		} else if ( ei->cinfo() == mmEnzCinfo ){
-			mmEnzMap_.push_back( ei->id() );
-			objMap_[ i->value() - objMapStart_ ] = numReac_;
-			++numReac_;
-		} else if ( ei->cinfo() == reacCinfo ) {
-			reacMap_.push_back( ei->id() );
-			if ( useOneWay_ ) {
-				objMap_[ i->value() - objMapStart_ ] = numReac_;
-				numReac_ += 2;
-			} else {
-				objMap_[ i->value() - objMapStart_ ] = numReac_;
-				++numReac_;
-			}
-		} else if ( ei->cinfo() == enzCinfo ) {
-			enzMap_.push_back( ei->id() );
-			if ( useOneWay_ ) {
-				objMap_[ i->value() - objMapStart_ ] = numReac_;
-				numReac_ += 3;
-			} else {
-				objMap_[ i->value() - objMapStart_ ] = numReac_;
-				numReac_ += 2;
-			}
-		} else if ( ei->cinfo() == sumFuncCinfo ){
-			objMap_[ i->value() - objMapStart_ ] = numFunc;
-			++numFunc;
-		} 
-	}
+
+	for ( vector< Id >::const_iterator i = elist.begin(); 
+					i != elist.end(); ++i )
+			allocateModelObject( *i, bufPools, funcPools );
 
 	numBufPools_ = 0;
 	for ( vector< Id >::const_iterator i = bufPools.begin(); i != bufPools.end(); ++i ){
@@ -459,26 +666,9 @@ void Stoich::allocateModel( const vector< Id >& elist )
 	}
 	assert( idMap_.size() == numFuncPools_ );
 	numFuncPools_ -= numVarPools_ + numBufPools_;
-	assert( numFunc == numFuncPools_ );
-
 	numVarPoolsBytes_ = numVarPools_ * sizeof( double );
-	concInit_.resize( numVarPools_ + numBufPools_ + numFuncPools_, 0.0 );
-	S_.resize( 1 );
-	Sinit_.resize( 1 );
-	y_.resize( 1 );
-	flux_.resize( 1 );
-	S_[0].resize( numVarPools_ + numBufPools_ + numFuncPools_, 0.0 );
-	Sinit_[0].resize( numVarPools_ + numBufPools_ + numFuncPools_, 0.0);
-	y_[0].resize( numVarPools_, 0.0 );
-	flux_[0].resize( numVarPools_, 0.0 );
 
-	diffConst_.resize( numVarPools_ + numBufPools_ + numFuncPools_, 0.0 );
-	// compartment_.resize( numVarPools_ + numBufPools_ + numFuncPools_, 0 );
-	species_.resize( numVarPools_ + numBufPools_ + numFuncPools_, 0 );
-	rates_.resize( numReac_ );
-	// v_.resize( numReac_, 0.0 ); // v is now allocated dynamically
-	funcs_.resize( numFuncPools_ );
-	N_.setSize( numVarPools_ + numBufPools_ + numFuncPools_, numReac_ );
+	resizeArrays();
 }
 
 void zombifyAndUnschedPool( 
@@ -496,12 +686,7 @@ void zombifyAndUnschedPool(
 	if ( mid != Msg::bad )
 		Msg::deleteMsg( mid );
 
-	////////////////////////////////////////////////////////
-	/*
-	PoolBase* pb = reinterpret_cast< PoolBase* >( orig->dataHandler()->data( 0 ) );
-	pb->zombify( orig, zClass );
-	*/
-	
+	// Complete the unzombification.
 	PoolBase::zombify( orig, zClass, s.id() );
 }
 
@@ -514,9 +699,6 @@ void Stoich::zombifyModel( const Eref& e, const vector< Id >& elist )
 	static const Cinfo* reacCinfo = Reac::initCinfo();
 	static const Cinfo* enzCinfo = Enz::initCinfo();
 	static const Cinfo* mmEnzCinfo = MMenz::initCinfo();
-	// static const Cinfo* chemComptCinfo = ChemMesh::initCinfo();
-	// static const Cinfo* sumFuncCinfo = SumFunc::initCinfo();
-	// The FuncPool handles zombification of stuff coming in to it.
 	vector< Id > meshEntries;
 
 	for ( vector< Id >::const_iterator i = elist.begin(); i != elist.end(); ++i ){
@@ -530,7 +712,7 @@ void Stoich::zombifyModel( const Eref& e, const vector< Id >& elist )
 		else if ( ei->cinfo() == funcPoolCinfo ) {
 			zombifyAndUnschedPool( e, (*i)(), ZombieFuncPool::initCinfo());
 			// Has also got to zombify the Func.
-			Id funcId = Neutral::child( i->eref(), "sumFunc" );
+			Id funcId = Neutral::child( i->eref(), "func" );
 			if ( funcId != Id() ) {
 				if ( funcId()->cinfo()->isA( "SumFunc" ) )
 					ZombieSumFunc::zombify( e.element(), funcId(), (*i) );
@@ -541,19 +723,15 @@ void Stoich::zombifyModel( const Eref& e, const vector< Id >& elist )
 		}
 		else if ( ei->cinfo() == mmEnzCinfo ) {
 			EnzBase::zombify( ei, ZombieMMenz::initCinfo(), e.id() );
-			// ZombieMMenz::zombify( e.element(), (*i)() );
 		}
 		else if ( ei->cinfo() == enzCinfo ) {
 			CplxEnzBase::zombify( ei, ZombieEnz::initCinfo(), e.id() );
-		//	ZombieEnz::zombify( e.element(), (*i)() );
 		}
 	}
 }
 
-void Stoich::unZombifyModel()
+void Stoich::unZombifyPools()
 {
-	// Need to check for existence of molecule and whether it is still
-	// a zombie.
 	unsigned int i = 0;
 	for ( ; i < numVarPools_; ++i ) {
 		Element* e = idMap_[i].element();
@@ -566,12 +744,33 @@ void Stoich::unZombifyModel()
 		if ( e != 0 &&  e->cinfo() == ZombieBufPool::initCinfo() )
 			PoolBase::zombify( e, BufPool::initCinfo(), Id() );
 	}
-	
-	for ( ; i < numVarPools_ + numBufPools_ + numFuncPools_; ++i ) {
+}
+
+void Stoich::unZombifyFuncs()
+{
+	unsigned int start = numVarPools_ + numBufPools_;
+	for ( unsigned int k = 0; k < numFuncPools_; ++k ) {
+		unsigned int i = k + start;
 		Element* e = idMap_[i].element();
-		if ( e != 0 &&  e->cinfo() == ZombieFuncPool::initCinfo() )
+		if ( e != 0 &&  e->cinfo() == ZombieFuncPool::initCinfo() ) {
 			PoolBase::zombify( e, FuncPool::initCinfo(), Id() );
+			// Has also got to unzombify the Func.
+			Id funcId = Neutral::child( idMap_[i].eref(), "sumFunc" );
+			if ( funcId != Id() ) {
+				assert ( funcId()->cinfo()->isA( "ZombieSumFunc" ) );
+				ZombieSumFunc::unzombify( funcId.element() );
+			}
+		}
 	}
+}
+
+void Stoich::unZombifyModel()
+{
+	assert (idMap_.size() == numVarPools_ + numBufPools_ + numFuncPools_);
+
+	unZombifyPools();
+	unZombifyFuncs();
+
 	Shell* s = reinterpret_cast< Shell* >( Id().eref().data() );
 
 	for ( vector< Id >::iterator i = reacMap_.begin(); 
@@ -942,6 +1141,7 @@ void Stoich::updateV( unsigned int meshIndex, vector< double >& v )
 	// to the corresponding v_ vector entry
 	// for_each( rates_.begin(), rates_.end(), assign);
 
+	// v.resize( rates_.size() );
 	vector< RateTerm* >::const_iterator i;
 	vector< double >::iterator j = v.begin();
 	const double* S = &S_[meshIndex][0];
@@ -952,7 +1152,11 @@ void Stoich::updateV( unsigned int meshIndex, vector< double >& v )
 		assert( !isnan( *( j-1 ) ) );
 	}
 
-	// I should use forall here.
+	// Here we handle external rates due to inter-compartment traffic.
+	// The external rates are computed by Stoichs handling other 
+	// compartments. This requires that v be only the size of rates_.
+	// v.insert( j, extRates_[meshIndex].begin(), extRates_[meshIndex].end());
+
 	/*
 	vector< SumTotal >::const_iterator k;
 	for ( k = sumTotals_.begin(); k != sumTotals_.end(); k++ )
@@ -988,6 +1192,42 @@ void Stoich::updateFuncs( double t, unsigned int meshIndex )
 		assert( !isnan( *( j-1 ) ) );
 	}
 }
+
+/**
+ * This updates V for all reactions that cross a specific compartmental/
+ * solver border. 
+ * We could either put the foreign molecules into S, and use standard
+ * RateTerms to compute the border reaction V, 
+ * Or
+ * we could have a special vector of foreign molecules, and use
+ * a different set of RateTerms that take the foreign vector as a 
+ * second argument in addition to S.
+ *
+ * This set of Vs have to be suitably digested to handle compartmental
+ * alignment issues, and sent back to the neighbour mesh solver.
+ *
+ * Data transfer: 
+ * 	- The border concs from the coarser mesh in
+ * 	- The matching Vs out. Same size vector?, no smaller. Only as many as
+ * 		reac terms.
+void Stoich::updateBorderV( unsigned int meshIndex, vector< double >& v, 
+					const vector< double >& otherN )
+{
+	vector< RateTerm* >::const_iterator i;
+	vector< double >::iterator j = v.begin();
+	const double* S = &S_[meshIndex][0];
+	for ( unsigned int k = 0; k < meshAlign.size(); ++k )
+
+
+	for ( i = borderRates_.begin(); i != borderRates_.end(); i++)
+	{
+		*j++ = (**i)( S );
+		assert( !isnan( *( j-1 ) ) );
+	}
+	
+
+}
+ */
 
 /////////////////////////////////////////////////////////////////
 // 

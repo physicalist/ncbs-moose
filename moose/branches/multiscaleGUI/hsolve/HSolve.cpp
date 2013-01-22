@@ -197,14 +197,7 @@ void HSolve::process( const Eref& hsolve, ProcPtr p )
 
 void HSolve::reinit( const Eref& hsolve, ProcPtr p )
 {
-	//~ if ( seed_ == Id() )
-		//~ return;
-	//~ 
-	//~ // Setup solver.
-	//~ this->HSolveActive::setup( seed_, p->dt );
-	//~ 
-	//~ zombify( hsolve );
-	//~ mapIds();
+	this->HSolveActive::reinit( p );
 }
 
 void HSolve::zombify( Eref hsolve ) const
@@ -253,14 +246,14 @@ Id HSolve::getSeed() const
 void HSolve::setPath( const Eref& hsolve, const Qinfo* q, string path )
 {
 	if ( dt_ == 0.0 ) {
-		cerr << "Error: HSolve::setPath: Must set 'dt' first.\n";
+		cerr << "Error: HSolve::setPath(): Must set 'dt' first.\n";
 		return;
 	}
 	
 	seed_ = deepSearchForCompartment( Id( path ) );
 	
 	if ( seed_ == Id() )
-		cerr << "Error: HSolve::setPath: No compartments found at or below '"
+		cerr << "Warning: HSolve::setPath(): No compartments found at or below '"
 		     << path << "'.\n";
 	else {
 		cout << "HSolve: Seed compartment found at '" << seed_.path() << "'.\n";

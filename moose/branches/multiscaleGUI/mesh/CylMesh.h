@@ -82,6 +82,8 @@ class CylMesh: public ChemMesh
 		vector< double > getDiffusionArea( unsigned int fid ) const;
 		/// Virtual function to return scale factor for diffusion. 1 here.
 		vector< double > getDiffusionScaling( unsigned int fid ) const;
+		/// Volume of mesh Entry including abutting diff-coupled voxels
+		double extendedMeshEntrySize( unsigned int fid ) const;
 
 		//////////////////////////////////////////////////////////////////
 
@@ -114,6 +116,28 @@ class CylMesh: public ChemMesh
 
 		void buildStencil();
 
+		unsigned int getStencil( unsigned int meshIndex,
+			const double** entry, const unsigned int** colIndex ) const;
+
+		void extendStencil( 
+		   	const ChemMesh* other, const vector< VoxelJunction >& vj );
+		
+		//////////////////////////////////////////////////////////////////
+		// inherited virtual funcs for Boundary
+		//////////////////////////////////////////////////////////////////
+		
+		void matchMeshEntries( const ChemMesh* other, 
+			vector< VoxelJunction > & ret ) const;
+
+		double nearest( double x, double y, double z, 
+						unsigned int& index ) const;
+	
+		void indexToSpace( unsigned int index, 
+						double& x, double& y, double& z ) const;
+		
+
+		//////////////////////////////////////////////////////////////////
+
 		static const Cinfo* initCinfo();
 
 	private:
@@ -133,12 +157,13 @@ class CylMesh: public ChemMesh
 		double r0_;	/// Radius at one end
 		double r1_; /// Radius at other end
 
-		double lambda_;	/// Length constant for diffusion
+		double lambda_;	/// Length constant for diffusion. Equal to dx.
 
 		double totLen_;	/// Utility value: Total length of cylinder
 		double rSlope_;	/// Utility value: dr/dx
 		double lenSlope_; /// Utility value: dlen/dx
 
+		double dx2_[2]; /// Used as stencil for 2 entries, each = lambda_.
 
 		/**
 		 * For spherical mesh, coords are xyz r0 r1 theta0 theta1 phi0 phi1

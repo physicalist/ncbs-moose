@@ -12,18 +12,27 @@ TARGET = _ksolve.o
 OBJ = \
 	Port.o	\
 	Stoich.o	\
+	StoichCore.o	\
+	StoichPools.o	\
 	KinSparseMatrix.o	\
 	ZombiePool.o \
+	ZPool.o \
 	ZombieBufPool.o \
+	ZBufPool.o \
 	ZombieFuncPool.o \
+	ZFuncPool.o \
 	ZombieReac.o \
+	ZReac.o \
 	ZombieEnz.o \
+	ZEnz.o \
 	ZombieMMenz.o \
+	ZMMenz.o \
 	ZombieSumFunc.o \
 	RateTerm.o \
-	FuncTerm.o \
 	GssaStoich.o	\
+	GslStoich.o	\
 	EstimateDt.o	\
+	SolverJunction.o	\
 	testKsolve.o	\
 
 	
@@ -34,10 +43,12 @@ HEADERS = \
 	../basecode/header.h \
 	../basecode/SparseMatrix.h \
 	../basecode/ElementValueFinfo.h \
+	../mesh/VoxelJunction.h \
 	Port.h \
 	Stoich.h \
+	StoichCore.h \
+	StoichPools.h \
 	RateTerm.h \
-	FuncTerm.h \
 	KinSparseMatrix.h \
 	../kinetics/Pool.h \
 	../kinetics/lookupSizeFromMesh.h \
@@ -61,18 +72,27 @@ default: $(TARGET)
 
 $(OBJ)	: $(HEADERS)
 Stoich.o:	../kinetics/PoolBase.h ZombiePool.h ../kinetics/ReacBase.h ZombieReac.h ZombieBufPool.h ../kinetics/EnzBase.h ZombieEnz.h ZombieMMenz.h ../kinetics/Pool.h ../kinetics/Reac.h ../kinetics/BufPool.h ../kinetics/FuncPool.h ../kinetics/Enz.h ../kinetics/MMenz.h ../mesh/Boundary.h ../mesh/ChemMesh.h ../mesh/Stencil.h
+StoichCore.o:	../kinetics/PoolBase.h ZombiePool.h ../kinetics/ReacBase.h ZombieReac.h ZombieBufPool.h ../kinetics/EnzBase.h ZombieEnz.h ZombieMMenz.h ../kinetics/Pool.h ../kinetics/Reac.h ../kinetics/BufPool.h ../kinetics/FuncPool.h ../kinetics/Enz.h ../kinetics/MMenz.h ../mesh/Boundary.h ../mesh/ChemMesh.h ../mesh/Stencil.h
+StoichPools.o: StoichPools.h
 GssaStoich.o:	GssaStoich.h ../kinetics/PoolBase.h ZombiePool.h ../kinetics/ReacBase.h ZombieReac.h ZombieBufPool.h ../kinetics/EnzBase.h ZombieEnz.h ZombieMMenz.h ../kinetics/Pool.h ../kinetics/Reac.h ../kinetics/BufPool.h ../kinetics/FuncPool.h ../kinetics/Enz.h ../kinetics/MMenz.h ../mesh/Boundary.h ../mesh/ChemMesh.h ../randnum/randnum.h
+GslStoich.o:	GslStoich.h
 KinSparseMatrix.o:	KinSparseMatrix.h ../basecode/SparseMatrix.h
 ZombiePool.o:	../kinetics/PoolBase.h ZombiePool.h
+ZPool.o:	../kinetics/PoolBase.h ZPool.h
 ZombieBufPool.o:	../kinetics/PoolBase.h ZombiePool.h ZombieBufPool.h
+ZBufPool.o:	../kinetics/PoolBase.h ZPool.h ZBufPool.h
 ZombieFuncPool.o:	../kinetics/PoolBase.h ZombiePool.h ZombieFuncPool.h ZombieSumFunc.h
-ZombieReac.o:	../kinetics/Reac.h ZombieReac.h
+ZFuncPool.o:	../kinetics/PoolBase.h ZPool.h ZFuncPool.h
+ZombieReac.o:	../kinetics/ReacBase.h ../kinetics/Reac.h ZombieReac.h
+ZReac.o:	../kinetics/ReacBase.h ZReac.h
 ZombieEnz.o:	ZombieEnz.h
+ZEnz.o:	ZEnz.h
 ZombieMMenz.o:	ZombieMMenz.h
+ZMMenz.o:	ZMMenz.h
 ZombieSumFunc.o:	../kinetics/SumFunc.h ZombieSumFunc.h
+SolverJunction.o:	../mesh/VoxelJunction.h SolverJunction.h
 testKsolve.o:	../kinetics/ReadKkit.h ../shell/Shell.h
 RateTerm.o:		RateTerm.h
-FuncTerm.o:		FuncTerm.h
 
 #KineticHub.o:	KineticHub.h
 

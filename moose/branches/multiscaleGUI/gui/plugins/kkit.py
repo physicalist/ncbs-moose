@@ -116,7 +116,7 @@ class  KineticsWidget(DefaultEditorWidget):
         
         #A map between mooseId of all the mooseObject (except compartment) with QGraphicsObject
         self.mooseId_GObj = {}
-
+        self.srcdesConnection = {}
         self.border = 5
 
         hLayout = QtGui.QGridLayout(self)
@@ -128,15 +128,65 @@ class  KineticsWidget(DefaultEditorWidget):
         
         """ Compartment and its members are put on the qgraphicsscene """
         self.mooseObjOntoscene()
+        #print "pat",self.modelRoot
+        self.setupItem(self.modelRoot,self.srcdesConnection)
         self.view = GraphicalView(self.sceneContainer,self.border,self)
         hLayout.addWidget(self.view)
         #self.view.fitInView(self.sceneContainer.itemsBoundingRect().x()-10,self.sceneContainer.itemsBoundingRect().y()-10,self.sceneContainer.itemsBoundingRect().width()+20,self.sceneContainer.itemsBoundingRect().height()+20,Qt.Qt.IgnoreAspectRatio)
+    
+    def setupItem(self,modlePath,cntDict):
+        ''' Reaction's and enzyme's substrate and product and sumtotal is collected '''
+        zombieType = ['ReacBase','EnzBase','FuncBase']
+        for baseObj in zombieType:
+            path = modlePath+'/##[ISA='+baseObj+']'
+            if baseObj != 'FuncBase':
+                for items in wildcardFind(path):
+                    sublist = []
+                    prdlist = []
+                    for sub in items[0].getNeighbors('sub'): 
+                        sublist.append((sub,'s'))
+                    for prd in items[0].getNeighbors('prd'):
+                        prdlist.append((prd,'p'))
+                    if (baseObj == 'CplxEnzBase') :
+                        for enzpar in items[0].getNeighbors('toEnz'):
+                            sublist.append((enzpar,'t'))
+                        for cplx in items[0].getNeighbors('cplxDest'):
+                            prdlist.append((cplx,'cplx'))
+                    if (baseObj == 'EnzBase'):
+                        for enzpar in items[0].getNeighbors('enzDest'):
+                            sublist.append((enzpar,'t'))
+                    cntDict[items] = sublist,prdlist
+                    #print "s and p",sublist,prdlist
+            else:
+                #ZombieSumFunc adding inputs
+                #print "path",path,wildcardFind(path)
+                for items in wildcardFind(path):
+                    inputlist = []
+                    outputlist = []
+                    funplist = []
+                    nfunplist = []
+                    #print "!",items[0].getNeighbors('input')
+                    for inpt in items[0].getNeighbors('input'):
+                        inputlist.append((inpt,'st'))
+                    #print "inputlist",inputlist
+                    for zfun in items[0].getNeighbors('output'): funplist.append(zfun)
+                    #print "f",funplist
+                    for i in funplist: nfunplist.append(element(i).getId())
+                    #print 'n',nfunplist
+                    nfunplist = list(set(nfunplist))
+                    #print 'n1',nfunplist
+                    if(len(nfunplist) > 1): print "SumFunPool has multiple Funpool"
+                    else:
+                        for el in funplist:
+                            if(element(el).getId() == nfunplist[0]):
+                                cntDict[element(el)] = inputlist
+                                return
 
     def mooseObjOntoscene(self):
         """  All the compartments are put first on to the scene \
              Need to do: Check With upi if empty compartments exist """
         for cmpt in sorted(self.meshEntry.iterkeys()):
-            print "cmpt",cmpt
+            #print "cmpt",cmpt
             self.createCompt(cmpt)
             comptRef = self.qGraCompt[cmpt]
         
@@ -205,7 +255,7 @@ class  KineticsWidget(DefaultEditorWidget):
 
     def emitItemtoEditor(self,mooseObject):
         print "selected"
-        self.emit(QtCore.SIGNAL("itemDoubleClicked(PyQt_PyObject)"),mooseObject)
+        self.emit(QtCore.SIGNAL("itemPressed(PyQt_PyObject)"),mooseObject)
 
     def setupDisplay(self,info,graphicalObj,objClass):
         x = float(element(info).getField('x'))

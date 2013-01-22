@@ -18775,3 +18775,1547 @@ it hard to run valgrind on regression tests as it tends to catch it.
 Fixed a bug with GssaStoich.cpp where it would get into an infinite loop
 if there were no molecules present.
 ============================================================================
+29 Sep 2012.
+More documentation stuff.
+============================================================================
+30 Sep 2012.
+MooseGui documentation now more or less OK.
+For the kinetics documentation I should really make a little model with
+all the possible icons. Done. Called it kkit_objects_example.g.
+
+Used it to make up the icons. Updated the Kkit documentation. I think that is
+it for documentation for this round.
+
+============================================================================
+01 Oct 2012.
+Harsha had pointed out a problem with going back and forth between GSL and
+GSSA. Turned out to be a problem with unzombification of SumTotals. 
+Fixed that. Unfortunately there is still a problem when actually running the
+model.
+============================================================================
+02 Oct 2012
+Some fixes to the HDF5 code.
+Revisiting the (small) memory leak in the unit test setupTicks that valgrind
+detected. Still unable to clear it. Continuing issues also with the 
+runtime: the call for data at reinit is not adding an entry to the table.
+
+
+Now back to the neuronal diffusion code. Plan to redo as sparse matrix.
+
+i : index for left voxel
+j : index for right voxel
+k : mol index
+Dk : Diffusion const for molecule k.
+Fijk : Flux from i to j for molecule k
+Sik : Molecule counts
+VSi : volscale
+Ai : Cross-section Area of voxel (sub-cylinder) i.
+Aij : Area at interface between i and j. This is symmetric and is the
+	smaller of Ai and Aj. So one could do with a vector of min area of 
+	junction with parent.
+Li : Length of sub-cylinder i.
+
+Lij : Length from cylinder i to j. Obtained in a heuristic as:
+	Lij = 0.5 * ( Lmax * Amin / Amax + Lmin )
+	Reasoning is that if we have cylinders of the same area, then the
+	concentration gradient is linear. But if we have very different area
+	cylinders (e.g., small dendrite on soma), then most of the conc
+	gradient is on the smaller cylinder and the gradient on the large
+	voxel will be short and steep.
+
+With all this, the # flux equation for the diffusion going from i to j is:
+
+Fijk = -Fjik = Dk * NA * Aij * ( Sik / VSi - Sjk / VSj ) / Lij
+
+We could extend this further if we have motors. The flux equation for a 
+motor is
+
+Fijk = -Fjik = Vk * Sik / ((Li + Lj)/2)
+
+Where Vk is the transport speed of molecule k
+and we use geometrical cylinder lengths because we assume the motor just
+chugs along at a fixed speed regardless of gradient.
+This will typically be used for a very small number of cargo complexes, and
+I'll want to expose the cargo to some off reaction processes that can then
+separate out the components.
+
+To compute this, I'll put Lij on the sparse matrix. I'll need to precompute
+Aij and VSi. Given the odd access sequence of the Stoich (with various 
+threads) it is a little awkward to march through the sparse matrix, but
+anyway much better than the previous incarnation of NeuroStencil.
+
+Should look into building thread/range specific subdivisions of SparseMatrix
+for faster access and thread safety.
+
+
+============================================================================
+03 Oct 2012
+Made the SparseMatrix version. Far cleaner and easier to understand, probably
+faster too.
+Now handles the linear diffusion calculations.
+The assignment of the sparse matrix for branching seems wrong.
+Fixed it. Now the test seems to be getting close, down to the numerical
+issues of spatial discretization.
+
+============================================================================
+04 Oct 2012.
+NeuroMesh branching cell unit test built. There are assorted numerical issues
+ with getting the test grid size right, but finally it seems OK. Checkin 4109.
+
+============================================================================
+06 Oct 2012.
+Designing for neuronal traffic. This is to be a function implemented on top
+of the NeuroMesh.
+Based on the discussion with John Mercer, I need to do the following:
+- Have stochastic movement of molecular 'blobs' back, forth, on, off, etc.
+	Do this by making a standard set of reactions between compartments:
+	forward motors, backward, on and off.
+- Assemble and disassemble the molecular 'blobs' with varying composition. 
+	Assume the blob remains intact during traffic.
+	Note that this creates a new kind of simulation entity, where 
+		each entity of a given kind may have a different composition
+		of molecules. PoolBlob.
+		This is similar to rule-based modeling, see Hlavacek et al.
+		We're not going the full way with the rule-based models at
+		this point, just making, moving and decomposing the entities.
+		Specifically, no reactions on the composite entities. Yet.
+
+There are two ways to go about this.
+- Multiple instances of single particle Gillespie, one for each 'blob'.
+	Here we just let the blob go about its operations, and we do an 
+	independent set of calculations for each blob. This will need lots of
+	Gillespie solvers, as many as molecular blobs. Which is itself a 
+	variable.
+- Multi particle Gillespie, in which we do the regular Gillespie calculations
+	but keep track of specific molecular 'blobs' that are part of the
+	stochastically reacting pools.
+	So, on each firing involving a blob we pick one of the blobs to
+	do the transition. 
+	This requires a new subclass of Pool, which maintains a list of 
+	individual entities. RulePool.
+	This requires additional features in the Gillespie solver, to pick
+	one of the entities on the RulePool whenever there is a a transition.
+
+The Multi particle Gillespie approach seems best for now. It lets me set up
+arbitrary reaction schemes for each compartment in the mesh, using existing
+infrastructure.
+
+Design of Blobs.
+	- They are single-particle, hence stochastic.
+	- Note that the PSD might also be implemented in this manner, but it
+		would have to allow internal reactions as well.
+	- The simple way to do this is to have them like compartments, with
+		a bunch of transport reactions that bring each molecule in.
+		When the blobbing reaction fires, the (integral) molecules in
+		the compartment are assembled into the blob, and the remainder
+		stay put till there are enough for another blob.
+	- Release of blob is a reversal of this process. Also easy.
+	- Mostly based on existing formalisms. The only new thing the
+		blob does is to vacuum up the integral molecules.
+	- For the case where we have specific binding 
+		sites, with limiting stoichiometry of on-reactions:
+			- We could maintain a compartment-specific set of
+			target 'sites' (just pools) with a suitable conc
+			to ensure stoichiometry.
+			- Sites with arbitrary capacity are just buffered.
+	- Need a trigger to convert compartment contents into the blob.
+		This would probably
+		need to be a rule that requires a certain composition
+		of filled sites in the blob, and then applies a certain
+		transition probability.
+			- Rule also has to decide if this blob-grouping is
+			allowed to keep generating blobs, or only one.
+			- The only-one case would be easy if the sites are
+			zeroed out as soon as the blob is formed. 
+	- We would like a way to have new scaffold molecules come in,
+		and when they do, a stoichiometric set of new sites appears.
+			- Scaffold molecules can also be regular pools that
+			are transported in.
+			- Problem with the scaffold going out again. How to
+			deal with things that may have bound to its sites?
+				- Can get this to work if the scaffold _is_ the 
+				compartment. Then all the individual site
+				reactions play well with the rest of the 
+				chemical system.
+				- Do not allow exit of scaffolds. Entry would
+				correspond either to synthesis, or transport in.
+			- Problem with multiple scaffold molecules. Which one
+				 owns which sites?
+				Option 1: Make separate scaffold/compts for
+				each molecule.
+					- Need an array of them.
+					- May need to expand/contract.
+					- Needs additional sim infrastructure.
+					- Linear increase in sim cost with more
+						scaffold molecules.
+				Option 2: Put multiple scaffolds in the
+					compartment.
+					- Don't care which owns which sites.
+					- At 'firing' time, just randomly sort
+						out a set to take.
+					- No particular extra sim cost.
+
+
+To do:
+	Implement RulePool that manages an array of specific entities: MolBlobs.
+	Implement MolBlobs that keep an array of pool Ids and their 
+		stoichiometry.
+	Implement MolBlobTriggers that manage a list of pool Ids, and spawn/
+		kill MolBlobs.
+	Implement extension to Gillespie to accomplish all this.
+	Test case 1: simple scaffold formation/destruction system implemented
+		both as regular combinatoric set of pools, as well as with
+		MolBlobs.
+	Test case 2: simple diffusion implemented with the Multi particle
+		Gillespie set up in a cylinder. Compare with analytical.
+
+Note added later:
+	I should permit reactions of specific states of scaffolds in and out
+	of the system. On the rule-based compartment side, we have detailed
+	site occupancy information. On the bulk side we have whatever
+	combinatorial subset is modeled, including cases which meld together
+	sets of sites. For example, CaMKII phospho states expressed just
+	as CaMKII_12.P_y. This does not preclude specific limited interfaces,
+	like just the newly synthesized molecule and just the degraded form.
+	It allows more flexibility.
+
+============================================================================
+07 Oct 2012.
+Prioritizing. 
+SigNeur: needed for Spatial pattern sims. Specifically the Stargazin model
+	and friends.
+Traffic: Needed for consolidating Pragati's two models. Also tie to expts on
+	motion of molecules.
+
+Stuff to do to get SigNeur code working.
+	+Diffusion in subsets of dendritic tree
+	SpineMesh implementation
+	Coupling of different meshes/compartments: spines and dends
+	+Reimplementation of adaptors.
+	(?) Specify signaling compts in .p
+	Specify entire thing in a NeuroML extension.
+	SimManager features for setting all this up.
+	Array calculations in Gillespie solver.
+	Coupling between stochastic calculations in spines and deterministic
+		 in dends.
+	Test case 1: Diffusion in and out of spines
+	Test case 2: Ca computed simultaneously in elec and chem models.
+	Test case 3: Replicate model from Neural Networks paper
+	
+
+Tons of stuff to do but I'll go with the SigNeur code. Starting with 
+setting up a signeur directory and an Adaptor in it.
+Checkin 4119.
+
+============================================================================
+
+09 Oct 2012
+Coupling meshes/compartments is the key step.
+- How to define it in as SBML/kkit compatible a manner as possible
+	- Use a single kkit model that defines all compartments, and uses
+		permitted inter-compartment transport reactions. These include:
+		- Exchange and binding reactions
+		- Enzyme-catalyzed steps
+		- Note that diffusion and Motors would have to be excluded
+			here. Even with diffusion we do not permit molecular
+			transfer without a special binding step.
+	- Within-compartment transfer includes:
+		- Diffusion. Implicitly defined in kkit from diffusion const.
+		- Motors. Cannot currently define properly in kkit.
+- How to solve it.
+	- Reactions between compts need to know which mesh entries correspond.
+		Examples:
+		- Spines on a dendrite
+		- Dend/spine signaling with extracellular diffusion
+		- Compartments on either side of a membrane.
+	- If both sides are deterministic, compute the rate of each reaction
+		across for a each molecule across the given boundary. 
+		This is almost identical to what the reacs
+		do anyway. To do this the reacs need mol concs on either side
+		of the boundary, at the finer of the two mesh divisions. Assume
+		for now integral mesh matching.
+		- Provide this rate term to both the solvers, with appropriate
+		summing up for the coarser grid.
+		- Keep this rate fixed during the entire interval between
+		the synchronization between solvers.
+	- If one of the solvers is stochastic, and the other is not,
+		then the reac should be stochastic. I think it can be within 
+		the regular Gillespie form, just taking a non-integral # from
+		the deterministic side. The stochastic side obtains mol concs
+		from the deterministic side, and does the usual calculations.
+		The # actually changed are used to update the deterministic
+		side. 
+		In rare cases this update will give a negative conc on the
+		deterministic side. If so, we roll back the increment by the
+		minimum number of molecules, and now have to update both the
+		stoch and deterministic sides. The stoch update will cascade
+		to multiple affected reactions, as usual.
+	- If both solvers are stochastic proceed again as above. Do the
+		Gillespie calculation on the smaller voxel side.
+	- If one solver is Smoldyn, its entire volume is a single division.
+		I think Smoldyn will let us have reactions with an external
+		pool. We assign this pool conc each sync step. Use Smoldyn
+		to decide how many molecules actually transit each time.
+		Still have potential issue of local -ve concs.
+
+- How to set it up.
+	Sim Manager will need hint about whether to load in a multicompt
+	model into multiple solvers or a single one. Substantially different
+	setup in the two cases.
+	- Stoichs themselves will need to traverse paths differently, 
+		If they are in multiple sover mode, then they have to set
+		up lists of cross-compartment reactions and identify
+		whether they are on the sender or receiver mesh.
+
+	- Message between Stoichs: 
+		Send vector of doubles of pools needed for cross-compt reacs,
+			for a given meshIndex. Or all indices?
+		Recv vector of doubles of cross-compt V, ie, reac rates.
+			In the case of rk5 calculations, V is the rate at the
+			start of the time interval, and remains fixed.
+			In the case of Gillespie calculations, V is the 
+			(integer) # of transitions on each reacn.
+		Send Rollback vector of doubles if recved rate V gives a 
+			negative anywhere, esp for Gillespie. The Rollback
+			vector contains the permitted values of V.
+
+Currently we have an issue as all reacs and enzymes seem to be set into
+the kinetics compartment. Error.
+
+Working on this. 
+
+============================================================================
+10 Oct 2012.
+Got reacs to go into correct compartment.
+Got enzs to go into correct compartment.
+Both were an issue with readKkit. 
+
+============================================================================
+13 Oct.
+Using revision 4125, getting close to release candidate.
+Ran valgrind -u. Still has the 96 bytes of leak. Acceptable.
+Ran valgrind -r. Not so good. Loses 576 bytes, seems to be in the ReadKkit 
+	tests. Barely acceptable.
+
+
+============================================================================
+14 Oct.
+Steps for stoich communication
+* Set up test having A<===>B into different meshes.
+* Set up messaging between Stoichs. Test should create message.
+- Set up ode calculations. Test should directly call update operations and see.
+- Set up traversal with listing of cross-compt reactions and pools
+- Set up Manager. 
+- Set up Gillespie-ODE calculations. Test should call update ops.
+- Set up rollback for Gillespie-ODE calculations. Test rollback ops
+
+============================================================================
+15 Oct 
+	Set up the test for A<==>B into different meshes.
+
+To set up Stoich paths restricted to one compartment.  Options:
+	- Set compartment base as path. 
+		- It will digest all contained objects that have not yet 
+			been solved. 
+		- Every time it runs into a reac with a dangling message, 
+			it will traverse the msg to the target pool.
+			- Assume reac is assigned to correct compt. This is
+			the one which has the finest mesh size.
+			- Possible problem of assignment of enzymes. Currently
+			put, logically enough, into compt which has the 
+			enzyme molecule. By this rule we would possibly have
+			different parts of enzyme in different places.
+			- Best solution is to allow either case. If we get
+			it wrong all that happens is we do fewer calculations
+			at a coarser grid size. So it would be nice but
+			not critical to optimize a bit by correctly placing 
+			the reac during setup time.
+		- Assumes common base for all the related compts. Consider
+			dendritic spines. They have to be in a single compt,
+			indexed by spine # in some way.
+	- Special command specifying both full path and compartment base
+			Doesn't seem necessary, see above.
+		
+
+I've now set up the framework for the messaging between Stoichs. Doesn't
+actually do anything, just the placeholders for the handlers and 'send' calls.
+Tested that the shared message is created.
+
+============================================================================
+16 Oct
+Some minor refactoring of Stoich.cpp, to clean up some overly long functions.
+Checkin 4137.
+============================================================================
+21 Oct
+Based on the Charm++ rewrite that Pritish is doing, I will need to revisit
+how the Stoichs work. Currently they take one meshIndex at a time as an 
+argument that the Process method passes in via GSL. The Charm++ framework
+instead treats each processor as a completely separate object, ignoring
+possible shared memory. If I take this idea to the Stoichs, then each has
+a range of meshEntries that it deals with, and handles all the iteration
+internally. In this framework the inter-Stoich operations are much the same,
+since in either case the equivalent info has to be passed around.
+However, the intra-stoich operations can be done much more cleanly and quickly.
+Also, the Stencil design for diffusion can be much improved.
+Also, the numerical integration of the diffusion within the Stoich can be
+done perhaps using the GSL, fixed timestep Runge-Kutta or something.
+
+
+Reran Unit tests. Still the same 96 bytes from testScheduling
+Reran regression tests. Still the same 576 bytes from ReadKkit::buildSumTotal.
+
+
+Another design option: Merge the diffusion and the compartment exchange
+calculations. Motors should also fall in this framework.
+
+Similarities: 
+	Rates can be expressed in terms of regular kf and kb, 
+	Rates parameters need special calculations to set up at meshing time.
+	The rate calculations cross processors
+	The rate calculations cross solvers (GSL<-->GSSA<-->Smoldyn)
+	The rate calculations cross boundaries between compts
+	A subset of molecules are involved
+	May need many-to-one mesh exchanges.
+	
+Differences:
+	The setup calculations differ.
+	Diffusion and motors need calculations among voxels within a Stoich.
+	Diffusion/motors only use A <---> B. Exchange calculations may involve 
+		many mols
+	Diffusion involves most/all molecules. Compt exchange involves few.
+		Motors involve few.
+	Diffusion across compts will need special matching.
+	Motors will typically handle Blobs/RulePools later.
+
+Implementation:
+	Cross solver/processor/boundary calculations in all cases 
+		will be shared, and mol-specific.
+	Need a special general-mol subsystem for within-processor diffusion
+	Need another specific-mol subsystem for within-processor cross-voxel
+		movement like motors. Either that or put the motors on another
+		solver and use the diffusion framework plus cross-solver
+		framework to talk to other molecules. Defer.
+	Need the core ODE/GSSA update calculations.
+	Split up Stoich into:
+		- StoichCore: This has the code for set up reac system,
+			zombification and unzombification.
+			It sets up the Stoichiometry matrix, the RateTerms,
+			and the Sinit_ and S_ arrays for all the molecules.
+			MOOSE interface only for path.
+			If there is one StoichCore per processor, then 
+			one would like to share the Stoich matrix and RateTerms.
+		- Diffusion: For diffusion handling within a processor.
+			This defines the diffusion, and sets up rate calculation
+			framework, but does not compute it.
+		- Boundaries: For boundary handling between 
+			processors/stoichs/compartments
+		- Integrators: GSL, Gillespie etc.
+			These independently set up the calculations. A bit
+			different from what I do now in the GSL, where I leave
+			the calculations to the Stoich. More like the GSSA,
+			which is a subclass of Stoich and does its own
+			calculations. I think the latter is better.
+
+
+Implemented StoichCore. Basically chopped out lots of stuff from Stoich.
+Working on implementing GslStoich, derived from StoichCore.
+
+============================================================================
+22 Oct 2012.
+Following discussion with Pritish, some more design decisions about how to
+partition things. In Charm++, there are things that are one per node,
+others that are one per thread/processor. 
+Charm++ tries to avoid having the user deal with explicit multithreading.
+
+Option 1:
+Separate the StoichCore further into StoichCore and StoichPools. 
+The latter deals with the molecule arrays.
+StoichCore is present one per address space/node
+StoichPools are present one per thread/processor
+	All the StoichPools on a given node share a const StoichCore ptr.
+	So StoichPools are NOT derived from StoichCore.
+	Each StoichPools handles the storage of a given range of meshIndices.
+GslStoich is present one per thread/processor
+	Has a pointer to StoichCore and the matching StoichPools
+
+Option 1.5:
+GslStoich is derived from StoichPools. So it has the pools but encapsulates
+the pool assignment operations.
+
+Option 2:
+StoichCore is present one per address-space/node.
+	StoichCore manages all the voxels on a node.
+GslStoich is present one per thread/processor
+	Each GslStoich points to the StoichCore, but only updates a 
+	section of its mols.
+		Fragile partitioning.
+		Shared StoichCore should really be read-only.
+
+Option 3:
+Separate StoichCore into portion that only does the setup and RateTerms.
+One StoichCore per node.
+GslStoich is present one per thread/processor
+	Has a pointer to StoichCore 
+	Manages the pool arrays itself.
+	GslStoich becomes bulky.
+	May want Pools to be available to some other solver.
+
+Conclusion: Choose option 1.5 even though it has most components. 
+
+Starting on implementation of StoichPools.
+
+============================================================================
+23 Oct 2012.
+
+Setup sequence:
+Create a StoichCore. 
+	Assign its Path
+Create a small array of GslStoichs, one per thread.
+	Assign the StoichCore to each of these.
+	Assign some kind of meshing to each.
+
+Issue: If we have distinct GslStoichs, how does the 
+	Stoich::convertIdToPoolIndex function work? We cannot ask the singleton
+	stoich to do it for us as it isn't handling the pools. But we 
+	do not know which of the GslStoichs to use.
+	- Partly a mismatch between global containers (Elements holding pools)
+	with local specific entities (the stoich)
+	- If the pool has the Id of the handling Stoich rather than the ptr,
+	we could look up a thread-specific stoich, but it wouldn't help.
+	- We could consult all the stoichs to find which is handling this 
+	pool meshIndex. May well be on another node.
+		- This shifts responsibility from DataHandler to the Stoichs.
+	- We could ask the DataHandler of the current ZombiePool what to do.
+	It could indicate which Stoich to use. It could also say that it isn't
+	on the current node. What then? 
+	The current code doesn't deal with this situation.
+		- Set calls are easy: just ignore.
+		- Get calls go two ways: through messaging and direct to
+		parser. In both cases they return the value. No way to 
+		either ignore or say no-value.
+		- Alternate is to have a query call go out to check presence.
+		- Or, pair< node, thread > ObjId.locate()
+
+Turns out this isn't an issue. Each ZombiePool has its own stoich field. 
+	Unless we're doing something funny with it.
+============================================================================
+24 Oct 2012.
+
+Made the GslStoich, compiles. Now to set up some tests for this whole
+subsystem. So far I have StoichCore, StoichPools, and GslStoich. Between them
+they should handle most of the functionality of the original Stoich.
+
+Set up a test in testKsolve.cpp, doesn't clear it yet. Checkin 4182.
+
+
+
+Can clean up n and nInit access by having innerGetN and innerGetNinit on the
+GslStoich. But I still need to handle DiffConst, and Species. Either I
+make the StoichCore accessible from the GslStoich, or I provide these as
+virtual funcs from the StoichPools class.
+	We have to choose between various kinds of ugliness:
+	- Providing a bunch of virtual wrapper set/get funcs in StoichPools, and
+	- Using the Id::value() as an integer index for all these funcs.
+	Or:
+	- Exposing the StoichCore from the StoichPools as a virtual func.
+
+The virtual wrappers have the merit that they let us handle meshing within
+the GslStoichs. More complicated threadwise lookup is then easier.
+
+============================================================================
+25 Oct 2012.
+Added ZPool class, so we can incrementally convert from the old Zombie class.
+Compiles.
+
+Setting up the model zombification code in StoichCore. I will need to
+refer to parent of the StoichCore for the GslStoich or GssaStoich when
+zombifying pools.  Other issue is to assign the correct GslStoich to each
+Pool. When remeshed, I would have to have a distinct GslStoich matching the
+zonation of the threads.
+
+============================================================================
+26 Oct 2012.
+Got the GslSolver system to load in a model, yet to see if it did so correctly.
+
+Numerous fixes later, GslSolver now clears unit tests comparing output of
+a simple reaction with analytic solution. Checkin 4190.
+Added in clones for ZombieEnz and ZombieMMEnz into the GslSolver fold.
+Checkin 4192.
+
+Working on SumFuncs. This is messy. Should define a generic func system base
+class like I have for Pools etc.
+
+============================================================================
+27 Oct 2012. 
+Cleaner design for functions: Define a FuncBase in moose/kinetics. This 
+provides a virtual FuncTerm to handle its operations. Derived classes can
+simply adopt the FuncTerms hitherto used in ksolve. Then no zombification
+needed other than removing them from the schedule list. 
+
+I should now be able to get rid of ZombieSumFunc.
+
+Compiles, and clears unit tests. Still haven't deployed the GslStoich
+in a big way.
+============================================================================
+28 Oct 2012
+
+Redid a few more FuncTerm and FuncBase derived classes. Did a make clean, this
+turned up a lot of dependencies needing fixing. Clears tests. Checkin 4207.
+
+Now I need to get GslStoich to take over all these things and confirm it
+does everything that Stoich does. Then change gears to building in the
+compartmental and diffusion calculations.
+
+GslStoich now takes over all the things, at least in principle. Tests to
+commence.
+
+Replaced the old Stoich with GslStoich in SimManager. Breaks unit tests.
+
+============================================================================
+29 Oct 2012
+Struggled a bit with testSimManager:testRemeshing(). Turns out I need to
+define my policy for handling the per-thread entities like solvers. 
+
+Where does the remesh call come? To the GslStoich ie, StoichPools; and 
+also to the ZPools. 
+
+Policy for solvers (here, GslStoich) is clear: Make one on each thread,
+at creation time.
+
+Policy for pools to be worked out. Options:
+- Flat array over all memory space, manage by index
+- Subdivide as per thread. Separate sections of DataHandler.
+
+Also, who controls it:
+	- The solver: remesh call to solver then subdivides pools
+	- The pools themselves: Remesh call goes to each pool entry.
+	- Some thread-level subdivision: Remesh goes to DataHandler.
+		
+If we do one solver per thread, then by default it will subdivide its managed
+pools by thread.
+
+Data Handler design options:
+- One per Element, and it figures out which sub-address-space to use
+- One per Thread, so a small array on each Element.
+
+In both cases a key problem is how does a message figure out which
+node/handler to ask for. Currently the Handler maintains the policy. If we
+have one Handler per thread, then how?
+
+Suppose we go with:
+- One Element per node
+- One DataHandler per thread: there is a small array of Handlers on the Element
+	- What if there is a single object? Most of the Handlers will be empty.
+- Element carries decomposition policy info, if in doubt can refer up.
+- GslStoich is on a OnePerThreadHandler.
+	- Handles the pools already assigned to its thread
+- Remeshing request comes to StoichPools, as it knows best about policy.
+	This simply means that the ZPools ignore the message.
+	But I would have to then always define one ZPool per thread, since
+	each needs to know its stoich. 
+	No, just need matching ZPools and GslStoichs
+
+
+For now: Just resize the S and Sinit and y vectors.
+
+Good progress with this. Have had to disable testSimManager.cpp:testRemeshing()
+because it tests diffusion which isn't yet on. Incrementally working through
+unit tests. Those cleared, now grinding through regression tests which are
+significantly nastier. Currently it fails to work with MMenz.
+============================================================================
+31 Oct 2012
+Inching ahead with regression tests. I suspect there is something missing
+in my Func zombification. Fixed.
+
+Now a small error due to lack of reinit value update on SumTotal.
+
+Now clears all unit and regression tests, except for the diffusion tests.
+I've disabled those till I code in the features for that.
+There is a segv on exit.
+The GUI does not work with the new classes. Will need to work with Harsha
+to fix. Will checkin anyway.
+
+============================================================================
+01 Nov 2012
+
+Lots to do:
+Track down segv on exit
+Convert GSSA to ZPools etc; eliminate old Zombies and Stoich.
+Put in intra-solver diffusion
+Put in between-solver transfer of stuff.
+
+Start with intra-solver diffusion, then between solver stuff. Idea is that I
+should tinker with the interface for just one of the solvers before converting
+the GSSA solver as well.
+
+I'm thinking of just using a SparseMatrix for all diffusion, regardless of
+mesh type. The entries would indicate vol scaling between voxels. If I do this
+I should perhaps invent a SymmetricSparseMatrix, thus halve storage. But it
+would slow things down for lookup.
+
+Need a vector of flux across all mesh boundaries, equivalent to v. This would
+be used just twice, on either side of the boundary. May be faster to compute
+on the fly. Easier too.
+
+flux = D[mol] * ( N[other]*kf[i,j] - N[self]*kb[i,j])
+Can I eliminate one of the sparse matrices? 
+
+flux = D[mol] * area_scale_term[other,self] * ( conc[other] - conc[self] ) /
+		 dx[other,self]
+
+The area term and dx term can be merged into 'adx.
+To convert conc terms to N, we do:
+
+flux = D[mol] * adx[other,self] * ( N[other]/vol[other] - N[self]/vol[self] )/NA
+
+So in principle the calculation only needs one sparse matrix. The job of the
+mesh is to provide this sparse matrix (instead of the earlier stencil).
+The sparse matrix also makes it easy to handle irregular boundaries, e.g., in
+a cubic mesh.
+
+From this we need to be able to provide updates to yprime for every given 
+MeshEntry. That is, self.
+For every given value of the MeshEntry, we look up a row of terms from the
+SparseMatrix. Even better, all terms other than the diffusion const are the
+same for all molecules.
+
+
+============================================================================
+02 Nov 2012
+Minor fix resolves issue of segv on exit. But took a long while to figure it 
+out. Had to do with the updated ordering of deleting element trees twig first
+rather than root first.
+
+Making good progress on diffusion framework within stoich. It looks a lot
+faster and cleaner than old one. Key issue is to get pointer to the mesh.
+
+
+Now the code compiles and clears unit tests, without actually being exercised.
+The ChemMesh subclasses need to define a useful getStencil function.
+Checkin 4239.
+
+Opportunity here to do completely general 1,2,3-D boundaries in the CubeMesh,
+and other good things. 
+
+============================================================================
+04 Nov 2012.
+Put in a prototype getStencil function for the CylMesh. This revealed need to
+change its interface, done. Checkin 4242.
+
+For the CubeMesh, the design depends on whether I want a truly general mesh
+with arbitrary borders, or just a cube of points. I assume it is the first.
+Options:
+	1. Define each mesh point individually, sequencing arbitrary, record
+		coords for each point, use sparse matrix to indicate which 
+		points are connected.
+	2. Embed entire system in a 3-D mesh. Individually define mesh points
+		by a) indices into 3-D, and b) identifiers for stencil.
+
+Both these have the problem of how to find an index, given a point in 3-D space.
+
+Worked through options. Going for a simple SparseMatrix for the whole thing,
+even if we do the default cube.
+
+Need to revisit getNeighbours (now nicely encoded in sparse matrix) and
+m2s and s2m.
+
+============================================================================
+06 Nov
+Compiles now with reasonable CubeMesh code, fails in testMesh:testCubeMesh.
+
+Now clears fairly stringent CubeMesh unit tests. Would like to do tests with a
+sphere imposed on it. Later.
+
+============================================================================
+07 Nov.
+Fixed up and extended the unit tests for CubeMesh. In due course I will need
+to come back to it to provide an interface for generalized 3-D geometries. 
+For now move on. Should really check it in.
+Next: Revive testSimManager::testRemeshing.
+
+Did so. Now it is going through the motions but getting the wrong answer.
+Not off by a huge amount.
+Checkin 4247 after temporarily commenting out the testRemeshing.
+
+Fixed up some stuff in the testRemeshing, still doesn't work. Because the
+mesh is cubic, the fix ended up being identical to the earlier version.
+
+============================================================================
+08 Nov.
+Slowly grinding through unit tests.
+
+============================================================================
+09 Nov
+Fixed an error in the handling of recalculations for changed mesh size.
+Now strugging to work out a reasonable dt.
+============================================================================
+10 Nov
+Now calculations are OK enough. Clears unit tests, some regression tests
+still to revive.
+============================================================================
+11 Nov.
+Working through regression tests. It is clear that the new numerical approach
+is actually worse than the previous one. I need a smaller dt in all cases to
+get to the criterion. I'm trying to use the RK method along with the 
+flux, to handle all the time-advance calculations but this seems wrong.
+Will later try something cleaner but for now I'll take half the RK timestep
+for the diffusion calculations, and use forward Euler for the calculations.
+
+Now clears all unit and regression tests. Indeed the accuracy is better than
+it was.
+
+Spent a while tracking down the long-pending memory leak in the unit
+tests. Finally caught it: using an unallocated vector index for the queue,
+that was nevertheless safe because of how vectors are assigned.
+
+The regression tests still lose 192+168 bytes, all from ReadKkit it seems.
+Deal with it later. Checkin 4269.
+
+Next:
+Cross-boundary diffusion
+Cross-boundary reactions.
+============================================================================
+14 Nov.
+I have a skeleton for how junction messages may go back and forth.
+This will used an array of class SolverJunction, each of whose entries 
+is accessed through a FieldElement.
+The hard thing here is to figure out how to set up the SolverJunctions.
+Cases:
+Description		Solver A		Solver B
+Multinode diff mesh	GSL same model		GSL same model
+Different compt chem	GSL A, mesh		GSL B, mesh
+Different compt diffn	GSL A, mesh		GSL B, mesh
+Diff compt reac+diff	GSL A, mesh		GSL B, mesh
+Different solvers	Solver A		Solver B
+Motors			any of the above.
+
+The key thing is to embed all info needed to set up the junctions in the 
+object definition of the model, and to update whenever mesh changes.
+
+Use case is the SigNeur system. Here I have the combo case of different
+compartment reac+diff. There are also special diffusion interchanges through
+the spine neck. Will need a special SpineCompartment class for that.
+
+To identify reactions: Just follow the messages. 
+To identify diffusion: 
+	- Nonzero DiffConst.
+	- Identity:
+		- Molecule with identical name? 
+		- Molecule with identical SpeciesId?
+		I don't yet set up SpeciesId from ReadKkit. Easy though.
+		But this just regresses the problem: Who sets up the species 
+		info? SBML might.
+		-> So for now just take the name.
+	- Diffusion within, but not across compts, or special rates across 
+		compts.
+		- Compt sets a single global scale factor for diffn consts
+			across junctions, over and above geometry.
+		- Junctions permit more fine-tuning, beyond what is automatic.
+To identify mesh entries on the junction: Options.
+	- SimManager does it based on preprogrammed ideas. Not general.
+	- Rely on the 'geometry' objects. 
+		- Shared panels? But we don't always have clear-cut panels
+		that match: cylinder of dendrite and cylinder ends of spine.
+	- Find subdomain of space where junction should lie, then scan mesh.
+	- Query to compartment with other one as arg.
+		Return vector< pair< meshindex, meshindex > >.
+		where reacs or diffusion can occur across the pair.
+	-> The last option works best. The compartments can use internal
+		logic or reference to geoms, etc, to build mesh pairs.
+To specify which kinds of ChemMesh: put the correct ones in place.
+To specify which compartments have a stoich, and of which kind: 
+
+current layout is messy:
+/model	
+	/kinetics
+		/mesh
+		/<pools>
+		/<reacs>
+		/<enzs>
+		/<groups (deprecated)>
+	/compartment_<1,2,3...>
+		/mesh
+		(ToBeImplemented:
+		/<pools>
+		/<reacs>
+		/<enzs>
+	/stoich
+		/stoichCore
+	/geometry
+	/graphs
+	/groups
+
+I want to traverse this to figure out how to set up stoichs. Preferably
+stoichs should explicitly reside within the compartment they manage, but
+a stoich may manage multiple nested compartments so it isn't easy.
+- Simple approach: Permit a stoich only to manage a single compartment.
+- Compromise: Stoich can manage either a single compt, or all the compts in
+	a model provided they are all single voxel compts.
+	- Should implement a default single-voxel ChemMesh
+	- Should encourage use of ZombieSwap for changing mesh properties.
+
+-> If there is a stoich on the /model, it is a global stoich
+-> Otherwise there should be a stoich within each compt.
+-> SimManager has to traverse the tree and tell the stoichs about each other
+	so they can set up interfaces by referring to their Compartments.
+
+
+Working on implementation of baseclass fuctions for handling the junctions
+between two StoichSolvers.
+==========================================================================
+16 Nov.
+Implementation taking shape. Current issue: where do I store the vector of
+RateTerms that define the flux? 
+- On original StoichCore
+	- Has much of the infrastructure for managing reacs, including some
+	but not all of what I'll need for handling rate changes.
+	- Will need to do some fixes so as to use only part of the rates_ 
+	vector for the regular calculations.
+	- Need new stuff to handle changes in diff consts.
+- On GslStoich
+	- Neither here nor there: will need to sub-map between the RateTerm
+	vector and the SolverJunction that each entry belongs to.
+- On the SolverJunctions
+	- Logically reasonable subdivision
+	- Need to rebuild entire management structure from StoichCore.
+-> Store it on the original StoichCore.
+
+Specific issues with handling rate changes for cross-compartment reacs:
+	- A single rate may control many RateTerms. 
+	- Or, a single RateTerm may control many but not all cross reacs. 
+		This is cleaner. It is similar to what we have in the regular
+		reacs anyway: a single RateTerm controls the calculations in
+		all voxels. 
+		- The Junction handles this part of the calculation anyway.
+		- The Junction should identify the rate term and then the
+		range of voxels to apply, for outgoing fluxes.
+	- Updates on the parameters can control the RateTerm in the usual way.
+-> Good, the cross compartment reacs are done comfortably in the current
+	framework.
+	
+Specific issues with handling DiffusionConst updates.
+	- Single update will control multiple RateTerms as well as multiple
+	meshEntries. The multiple RateTerms are one for each Junction, as the
+	meshing may differ.
+	- Other implementation: tap into the DiffConst vector from the 
+	StoichCore. 
+	
+==========================================================================
+17 Nov.
+
+General architecture for solver communication taking shape:
+
+- StoichPools is the base class for GslStoich and in due course for
+	GssaStoich and Smol. 
+- StoichPools has a vector of FieldElements called SolverJunctions. These
+	can talk to one another through the 'junction' shared message. 
+- All reaction and diffusion communication between solvers, including internode
+	communication, goes through the SolverJunctions and their messages.
+- Communications happen through 'process'
+- Data transferred is currently the increment in the remote object in a time dt.
+	This amounts to a Simple Euler calculation.
+- Junctions are built using the StoichPools::addJunction, which takes the 
+	target StoichPool Id as an argument.
+
+Designing tests for this.
+
+Checkin 4281.
+==========================================================================
+19 Nov.
+Incrementally building in the structure for setting up the junctions based on
+the object structure of the simulation. Long way to go yet. Checkin 4282.
+Starting on unit tests just for the junction setup. Fails already.
+Fixed that. Looks like junctions are now OK.
+
+Further elaboration of junction setup in StoichPools:;addJunction.
+Skeleton code laid out, significant work to do to fill in.
+==========================================================================
+20 Nov.
+Really stuck on how to build the junction mesh entry list. Want to avoid
+N^2 scan of all possible positions.
+Use cases:
+	- NeuroMesh and SpineMesh.	// neuronal model
+		Sort by axis with largest variation, for both meshes
+		March up axis on each mesh, doing a match.
+	- NeuroMesh and CubeMesh	// intra to extracellular diffusion
+		Make list of NeuroMesh entries within CubeMesh
+		Use coord lookup trick to find (s2m)
+	- SpineMesh and CubeMesh	// intraspine to extracellular diffusion
+		Same as above.
+	- CubeMesh and CubeMesh		// General case.
+		Compute line between centroids
+		Pick axis.
+		Confirm no overlap
+		Assign matching plane
+		
+
+Tackle CubeMesh in all its horribleness first.
+New functions:
+	double nearest( x, y, z, unsigned int& index )
+	returns the distance from the specified point xyz to the nearest point
+	in the CubeMesh. The meshIndex of the nearest voxel is passed back.
+	Assumption: the mesh is (nearly) cubical. Won't break otherwise, but
+	the distance isn't so useful if you're looking to find junctions.
+	Finds this in 3D by using the standard grid subdivision and estimating
+	resultant coords. If within, returns directly. If outside, finds the
+	face where the line from xyz to middle crosses, and then just scans
+	through that section of the 'surface' vector to locate the point.
+	In 2D it is similar.
+	Speedup if the 'fullmesh' flag is set. Then it just uses the crossing
+	point on the face to find the nearest.
+	In 1D it just returns centre-to-centre distance.
+
+	bool inside( x, y, z )
+		Easy, the s2m function does this.
+
+	unsigned int numDims() const
+
+	int compareMeshSpacing( const ChemMesh* other )
+		-1: me smaller. 0: equal. 1: other bigger.
+
+
+Got the reference code in for CubeMesh. Compiles, fails unit tests.
+==========================================================================
+21 Nov.
+Cleaner idea for finding contacting surfaces: 
+1. Define the intersecting cuboid, if any, between the respective CubeMeshes.
+2. Allocate entire volume with uint voxels at the coarser mesh size. 
+3. Scan through the coarser mesh surface, putting meshIndices into the
+	relevant locations of the intersecting cuboid
+4. Scan through the finer mesh surface, looking up locations on intersecting
+	cuboid. If occupied then add pair to list.
+
+Cost: linear in number of surface voxels. Memory will be steeper but not
+too bad either.
+
+Issues:
+	- What if the meshes intersect, not just abut?
+	- How to deal with cuboid centre offset? Should I shift positions
+		toward each other on the centroid? Or just define a generous
+		intersection radius?
+	- Extend to neurons in a volume. Specially for surface emission.
+
+For what it's worth, compiled and cleared unit and regression tests
+for previous implementation. It just bypasses the actual mesh handling at
+this point. Checkin 4287.
+
+Implemented but not tested the new algorithm. For it to work I need also to
+get the surface_ vector set up in the mesh. Did it. Checkin 4288.
+
+Marching through tests. Now at crux point:
+How to deal with the zero volume of intersection cuboid in cases where there
+is perfect abutment.
+1. Make intersection cuboid bigger by 1 voxel each way. This way it will
+	capture all the relevent voxels. Easy.
+2. When the fine-mesh surface scans the intersection cuboid, look for 
+	abutment rather than overlap, on a suitable stencil.
+	Moderately easy. 6x more checks isn't too bad.
+		Or, at time of coarse-mesh filling, could also paint outer
+		abutting voxels and inner abutting voxels with neighbour
+		indices.
+		- Could 'paint' singleton abutters with actual index, and flag
+		others. But then how do we distinguish between surface and
+		abutting voxels?
+		- intersection cuboid could have pair< index, flag >
+			where flag tells if point is surface, inside, or 
+			outside. Could even have an extra case where the flag
+			field too is an index, for 2 outside points.
+		- Note that we can have up to 3 outside points for a 2-d 
+			surface, and 5 for 3-d surfaces.
+			
+	2a. Warn if there is actual overlap.
+
+
+
+Did some systematic unit tests for the functions setIntersectVoxel and 
+	checkAbut, which are at the heart of these calcuations. Clears.
+	Fails the subsequent unit test to actually define the meshEntries at
+	a diffusion junction. But it seems close.
+==========================================================================
+24 Nov
+Cleared the unit test now for generating the mesh junction vector. 
+Checkin 4291.
+
+Next:
+	- Set up code to harvest the mesh junction vector for use in the 
+		solver calculations. See GslStoich::matchMeshEntries.
+		Should perhaps migrate up to the StoichPool
+	- Set up test code for 3D junction.
+
+
+==========================================================================
+25 Nov.
+Some documentation for the mess of data structures I'm using to pass data around
+between solvers.
+
+Wrapped up implementation for setting up the mesh-related arrays in the
+SolverJunction. Yet to compile. Now compiled.
+*Next: Unit test for this setup.
+*Next: set up diffusion across junctions
+*Next: test diffusion across junctions
+Next: set up reactions across junctions
+Next: test reactions across junctions
+Next: Return to CubeMesh using a general voxel assignment routine and
+	automatic set up of s2m_, m2s_, surface_ and m_.
+==========================================================================
+28 Nov
+Trying unit test for setup of SolverJunction. Error because the surface_
+vector of the CubeMesh is not being set up properly.
+
+==========================================================================
+30 Nov
+Seems to report spaceIndex rather than meshIndex.
+Worked through, fixed it. Now clears unit tests, though I have lots more to put
+into testKsolve.cpp:testMatchMeshEntries. Checkin 4312.
+Put in additional unit tests into the same function, just sailed through.
+Next: set up diffusion across junctions
+
+This went smoothly till I started actual calculations. Then major issue 
+arose: I need to specify a scale factor for diffusion between every two
+coupled voxels. Currently no way to do so.
+
+==========================================================================
+1 Dec
+To handle the diffusion scale factor, I need to 
+	- Figure out direction
+	- note h/2 for each of the meshes in the selected direction
+	- Decide smaller of two XAs
+
+Added in VoxelJunction for passing around the diffusion scale factor.
+Cascading changes in many files. Clears unit tests with the exception
+of the preliminary ones to test cross-junction diffusion.
+Checkin 4316.
+	
+
+2 Dec.
+Stuck on compilation.
+Issues with varying mesh sizes, see testMesh.cpp:1285.
+Issue with the calculations.
+
+==========================================================================
+3 Dec: Now it seems like the sent message with the diff info isn't being
+received on the target SolverJunction.
+Fixed.
+After some effort, incorporated the n-dim analytic diffusion test from the 
+regression tests. Now it clears this, though not with stellar accuracy.
+Takes a 15x15 diffusion calculation and splits it among 9 (that is, 3x3)
+solvers.
+Anyway, major step cleared.  Checkin 4321. See 25 Nov for next step, 
+reactions across junctions.
+
+Here the crux step is exemplified in ZReac::makeHalfReaction,
+where it calls stoich_->convertIdToPoolIndex.
+The Id is obtained through regular messaging, but the PoolIndex
+will be invalid because it isn't in the path of this Stoich.
+
+One option is to return a flag for the PoolIndex which tells us
+to put the reaction on a special temporary rates_ list.
+Furthermore we need to be able to encode the target stoich/solver that
+does handle the pool. This will be needed to decide which Junction should
+take it forward.
+
+==========================================================================
+4 Dec.
+
+A perspective view:
+1. I need to push mol# around in all cases, not just reacs. Currently 
+	diffusion calculations use the symmetry of the flux term, but for better
+	numerics and GSSA I need to use mol#. 
+
+2. I need to do calculations only on one side. Don't duplicate them. The
+	Pool transfer also becomes asymmetric.
+
+3. It is too messy to predefine any given pool, let alone a solver, as
+	being Leader or Follower in these calculations. Complicated meshing
+	and reactions will throw things out regardless, and any given pool may
+	be involved in multiple fluxes. So, all pools and
+	solvers have to be prepared to be involved in some calculations 
+	locally, and to have fluxes dictated to them by remote calculations.
+
+4. Do the calculations in the following sequence
+	Init: Send out current Pool values
+		Init_handle: recv current remote Pool values.
+	Process: Do all computations, local and cross. Send out fluxes.
+		Process_handle: recv fluxes. Update Pool values.
+
+
+Where to put the transferred mols?
+- In S_: 
+	Easy to incorporate with ongoing reac and diffn calculations
+		But how meaningful are ongoing reac calculations? Will the
+		S_ term be buffered?
+	S_ becomes bigger: nmols gets bigger with X reacs, and nmesh with diffn.
+		nmols: not a problem, only a few
+		nmesh: Will need to break S_ mesh indexing, or have lots of 
+			blanks. But possibly the sparse matrix stencil will
+			rescue this, so minimal number of extra mesh indices.
+		
+- Separate data struct:
+	Excruciating to incorporate.
+	Can employ distinct numerical methods.
+
+While there are possibly only a few junctions,
+	Need selective execution of the extra reac terms on junction voxels.
+	
+
+*1. Get data into S_ vector. Done skeleton for it.
+*2. Write up the messaging stuff and the Init phase.
+3. Extract setup info to pad out the S_ vector
+4. Use setup info to add terms to the stencil so that the regular diffusion 
+	calculations will see the transferred pools
+5. Modify the delta_V calculations to harvest instead from the changes in the
+	terms in the S_ vector.
+6. Check that it still works
+7. Get back to doing the reaction calculations.
+
+Successfully did 1 and 2, clears unit tests. Checkin 4324.
+
+==========================================================================
+S_ along surface only, expands to handle additional mols for reacn interface.
+	These are nominally in the same voxels.
+S_ also expands by a few mesh entries but not having any reactions, to handle
+	abutting locations for diffusion interface.
+
+rates_ expands too, for the additional reacs. Invoked only at boundary.
+N_ expands to handle the stoichiometry of the additional reacs.
+
+
+Call chart for setup:
+StoichPools::addJunction( Id other )
+	-> DerivedClass::vAddJunction: doesn't do anything!
+	- Validates
+	- Sets up messages
+	- vBuildReacTerms: // Todo: Add to the N_ matrix and to rates_.
+	- SolverJunction::setReacTerms
+	- other->vBuildReacTerms
+	- other->SolverJunction::setReacTerms
+	- findDiffusionTerms: figures out which mols diffuse
+	- SolverJunction::setDiffTerms
+	- other->SolverJunction::setDiffTerms
+	- ChemMesh::matchMeshEntries: Figures out surface abutment
+	- SolverJunction::setMeshIndex: stores surface abut info
+	>- SolverJunction->setSendPools: stores info about pools to transfer.
+	>- SolverJunction->setRecvPools: stores info about pools to transfer.
+	- other->SolverJunction::setMeshIndex: stores surface abut info
+	- expandSForDiffusion: Add meshEntries to S_ for diff to abutting mesh
+	>- other->SolverJunction->setSendPools: See above
+	>- other->SolverJunction->setRecvPools: See above
+	Todo:
+		Add new reac terms in vBuildReacTerms
+			Expand S for new pools but only in surface voxels.
+			Add rows and cols to Stencil.
+		add xa term to diffusionMesh for junctions,or fill from Junction
+			No, it will have to be on the mesh. The stencil is 
+			there too
+
+	
+Call chart for runtime:
+	GslStoich::init
+		foreach Junction
+			harvest outgoing pools
+			send msg
+	StoichPools::handleJunctionPoolNum
+		GslStoich::vHandleJunctionPoolNum
+			// Assigns values. 
+
+	GslStoich::process
+		Advance sim using Gsl etc. // To be fixed to handle X reacs.
+		updateDiffusion // To be fixed to deal with more entries
+			foreach meshEntries // To fix to use bdry Entries too.
+					// Also to add rows&cols to Stencil.
+		SubClass::vUpdateJunction
+			foreach Junction
+				foreach meshIndex
+					stoich_->updateJunctionRates 
+					// (Reacs, to remove)
+				foreach Voxel on surface
+					GslStoich::updateJunctionDiffusion
+					// Perhaps to remove this too.
+				foreach transfer vector v
+					multiply by dt // Remove
+				Send msg to junctionPoolDelta
+					// Fix to send actual change in concs.
+				
+	StoichPools::handleJunctionPoolDelta
+		Junction::incrementTargets
+	
+
+The Stencil lives on the ChemMesh subclass. I can expand it so that it accounts
+for all junction diffusion terms as well. Or I can have each junction
+maintain its own little Stencil.
+- Single big stencil:
+	Easy and clean to compute
+	marginally faster
+	More opaque: can't easily check and alter any one junction.
+
+Related, will need to expand getMeshEntrySize to include junction voxels if
+	I have a monolithic Stencil, otherwise will have to partition.
+
+Overall, a single big stencil is far easier to subsequently fold into a better
+	numerical method than a bunch of separate calculations. So let's go
+	monolithic and hope for the best.
+
+Implemented the extended Stencil fillup. Yet to compile, let alone test.
+==========================================================================
+7 Dec. 
+Compiled and cleared unit tests on Stencil fillup. Yet to put in tests for it.
+Checkin 4335.
+
+To do the diffusion, should I buffer or float the external meshEntries?
+- Buffer: 
+	I won't be able to measure the change in conc. 
+	The fixed conc may be more consistent with actual behaviour. 
+	Same as computing the flux term using explicit Euler, if one only
+		does one timestep advance.
+
+Float: Only differs if the computation is done using multiple timesteps. Here
+	a second order option would be to compute values on both sides and
+	exchange estimates: effectively a trapezoidal approximation.
+
+Clearly, have to float it if I want to estimate how much it has changed during
+the timestep.
+
+Unit test: *confirm that the correct number of S have been set up
+	*Confirm that the correct entries get exchanged
+	Confirm that the extended stencil is right.
+
+Full test: clean out the old diffusion calculations, replace with the new
+	stencil form.
+
+
+==========================================================================
+8 Dec.
+Added unit test to confirm mesh data transfer of Pool #s. Works, data gets
+to the right place. Check 4336.
+
+Checking that stencils are properly extended. Seems OK for the limited
+unit test in testMesh::testCubeMeshExtendStencil(), but fails in the more
+complete test in testKcolve::checkDiffusionStencil: 633
+
+Fixed, partly. But now it seems like the meshIndices of the abutting 
+neighbour are rotated.
+I'll have to see what the VoxelJunction vj vector in CubeMesh::extendStencil
+was doing.
+==========================================================================
+9 Dec.
+The values sent over seem to be OK, even if the meshIndices are scrambled. So
+let's move on.
+The nans are happening for every single voxel.
+Discrepancies in allocated size for S_, Sinit_, and presumably y_.
+That might account for it.
+
+Put in various assertions to check for these, They actually seem OK.
+Try valgrind.
+
+
+Valgrind doesn't help
+
+Going through the upidateDiffusion since at Process, only the 
+diffusion-connected entries are nans.
+
+
+==========================================================================
+11 Dec.
+This turned out, after really tedious debugging, to happen because the
+volumes in extendedMeshEntrySize were all zero. Which turned out to be 
+because I had declared it as unsigned ints.
+With this we get sensible numbers transferred over. Next to figure out 
+the change in junction concs following the diffusion calculations, and use
+it to send over delta.
+Implemented something for this. It isn't yet right, but error in mass consv
+is small. Possibly I'm on the right track.
+
+One possibility: I'm doing the diffusion calculation on both sides of the
+junction. Should it be just one?
+
+
+A	B	C	D
+
+A and B are in compt1, C and D in compt 2, B and C are the interface voxels.
+The two compts see:
+
+
+A	B	c		b	C	D
+
+
+Now 'c' gets a new value, this change is transmitted over to C. This would
+conserve mass because any mols lost from c end up in B and A.
+Vice versa is also true. So there's some other issue to cause the lack of
+mass consv.
+
+==========================================================================
+13 Dec
+Added a 1-D diffusion test in testKsolve.cpp. This too doesn't work.
+Symptom is that both voxels across a junction have the same conc.
+
+==========================================================================
+15 Dec
+Picking out details of 1-D test in 
+testKsolve.cpp:testOneDimDiffusionAcrossJunctions. 
+After a single timestep in case where there
+is a uniform gradient from 100 to 109, it seems OK.
+Stencils look OK
+But its mass consv fails when doing calculation in another way.
+Points indexed 5 and 6 both take up on the same value. 
+
+Fixed, I was using the wrong arrany (for targets rather than recv
+entries). Now clears unit test for 1-D diffusion across a junction.
+Fails still on 2-D diffusion.
+
+Will put in starting defaults to better check the data transfer at init.
+
+Did so. Something goes wrong for dummy meshEntries used to do the
+diffn calculations.
+
+==========================================================================
+16 Dec 2012. Data transfer at INIT is happening to the first tile, but not
+to the others that I've tested. See testKsolve.cpp:979.
+Possibly the addJunction function isn't finishing the symmetric junction.
+I know it is being created as I count num_junction.
+
+==========================================================================
+17 Dec 2012.
+painstakingly traced all the recvd messages. 24 go, correct: 12 junctions and
+data each way. But fieldIndex is only 0 or 1. 
+
+Tracked down. Thoroughly insidious bug, I really need to revisit fieldindex
+stuff. I had set a number of 2 for the default # of field Elements. When 
+the thing exceeded this number it just truncated it. I need to handle this
+better and it has to work across nodes. Cleanest is to have
+a separate unsigned int always assigned for it.
+
+Anyway, for now hacked in a limit of 16 junctions.
+With that we are not stuck with the calculations after 1 timestep.
+
+      p svec[25] $1 = (double &) @0xda1cc8: 181.40000000000001
+(gdb) p svec[26] $3 = (double &) @0xda1cd0: 185.90000000000001
+(gdb) p svec[27] $5 = (double &) @0xda1cd8: 190.90000000000001
+(gdb) p svec[28] $6 = (double &) @0xda1ce0: 195.90000000000001
+(gdb) p svec[29] $7 = (double &) @0xda1ce8: 178.40000000000001
+(gdb) p svec[30] $8 = (double &) @0xda1cf0: 264.60000000000002
+(gdb) p svec[31] $9 = (double &) @0xda1cf8: 265.5
+(gdb) p svec[32] $10 = (double &) @0xda1d00: 266.5
+(gdb) p svec[33] $11 = (double &) @0xda1d08: 267.5
+(gdb) p svec[34] $12 = (double &) @0xda1d10: 238
+
+==========================================================================
+18 Dec
+Worked out a logical error in the diffusion algorithm:
+	- Transfer mol# from abutting voxels over
+	- Compute local diffusion including these abutting voxels.
+	* Compute change in mol# in abutting voxels
+	* send back to originating solver and apply delta to its mol#
+The items in * are wrong. 
+Put more generally, I have a variety of cases depending on solution method.
+General principle is that the more detailed method does the calculation and then
+sends over DeltaMol#, and the less detailed just sends over mol#.
+This will also work better for cases where I have reactions, where I do need
+to send over deltas.
+	1. Deterministic, Deterministic: 
+		#A -> B
+		#B -> A
+	2. Gillespie, Gillespie:
+		#A -> B
+		DeltaB -> A
+	3. Smoldyn, Smoldyn:
+		?
+	4. Deterministic, Gillespie:
+		#A -> B
+		DeltaB -> A
+	5. Deterministic, Smoldyn:
+		#A -> B
+		DeltaB -> A	
+	6. Gillespie, Smoldyn
+		#A -> B
+		DeltaB -> A	
+
+Looks like the general approach is #A -> B; DeltaB->A. Can I apply to 
+Deterministic, Deterministic case?
+
+
+For now: simply commented out the transfer of the deltaMol#. Now it clears
+all unit tests. Fails in a regression test for cylinder diffusion, probably
+need to update the cylinder class.
+
+Since I have gone a very long time without a checkin, I'll put this in after
+commenting out the cylinder regression test. Checkin 4348.
+
+==========================================================================
+22 Dec.
+Some cleaning up later, we now have the unit and regression tests clear with
+the asymmetric calculations for diffusion. Checkin 4350.
+
+List of pending things here.
+- Implement cross-compartment reactions
+- Set up sim manager to handle coupled solvers
+- Extend to CylMesh and NeuroMesh
+- Write SpineMesh, extend to it.
+- Put in stuff for SigNeur.
+- Extend CubeMesh to figure out surfaces from Geom classes and bitmaps.
+- Convert GssaStoich to use new zombie classes
+- Derive GssaStoich from StoichPools
+- Get GssaStoich to talk to each other through diffusion
+- Get GssaStoich and GslStoich to talk to each other through diffusion
+- SBML read and write
+- Reorder KKit reader to put things more sensibly into compartments.
+
+==========================================================================
+
+24 Dec.
+Doing the cross-compartment reactions.
+1. Assume that the off-solver pools do not figure in the elist that is
+sent to StoichCore::allocateModel. 
+2. Put the offending pools in new poolIds.
+3. Put the offending reactions in a special subset that is not run
+	normally.
+
+Pools: separate voxel or same voxel? In other words, does it live in
+	the same S_ and Sinit_ as the other pools in the voxel?
+	- Hard to implement stoich calculations across voxels, the structure
+		is designed to be self-contained.
+	- The pool will be in a separate list anyway.
+	- The pool maintains its own volume anyway.
+	- This amounts to institutionalizing the idea that S and Sinit are
+		not simply the pools within a voxel, but the pools with a solver.
+		Usually the two overlap perfectly.
+
+The StoichCore for a compartment has to know about all reacs and pools,
+even if they are not used in a given compartment.
+
+Data structures:
+- Put all pools in S_ and Sinit_, including offSolverPools
+- Put all reacs/enz in rates_, including reacs going offSolver.
+- Record offSolverReacOffset_. Later reac terms are offSolver.
+- Record offSolverPoolOffset_. Later pools are offSolver.
+
+Functions:
+- in setPath, traverse the elist to find offSolverReacs and offSolverPools.
+	Trim the offSolverReacs off elist. This is in locateOffSolverReacs.
+- Do the allocation so that the offSolver entries are at the end of the 
+	respective portions.
+
+Runtime:
+- The extra reacTerms will run based on SolverJunction::reacTerms_ vector.
+	Each solver will go through its set of junctions to find the terms.
+- Ext solver pools are updated just as usual
+	- Input values come through targetMols_ * meshIndex for each junction.
+	- Delta values go through the same.
+
+==========================================================================
+25 Dec.
+Set up first pass code for cross-compartment reactions. Current StoichCore code 
+finds the reactions, finds any off-solver pools that they talk to, and puts 
+these pools into the idMap for the StoichCore. They also are put into the 
+S_ and Sinit_ matrices. 
+Clears a really simple new unit test that all this is done correctly.
+Checkin 4351.
+
+Next: Set up Junctions to handle cross-solver terms.
+
+
+==========================================================================
+26 Dec.
+Did the setup for cross-solver terms. Yet to test it, but it does clear all the
+older unit tests. Cleaned up a lot of cruft in Junctions.
+
+==========================================================================
