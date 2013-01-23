@@ -107,7 +107,7 @@ def copyTree(src, dst, progressDialog=None):
         dstdir = os.path.join(dst, dirpath[len(src)+1:])
         # print 'Destination dir', dstdir, dirpath[len(src)+1:]
         try:
-            os.makedirs(dstdir) # can make nested directories
+            os.makedirs(dstdir)
         except OSError, e:
             # print e
             errors.append(e)
