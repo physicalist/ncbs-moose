@@ -1341,11 +1341,11 @@ void ReadKkit::addmsg( const vector< string >& args)
 
 		if ( args[4] == "Co" || args[4] == "CoComplex" ) {
 			MsgId ret = shell_->doAddMsg( "Single",
-				plot, "requestData", pool, "get_conc" );
+				plot, "requestData", pool, "getconc" );
 			assert( ret != Msg::bad );
 		} else if ( args[4] == "n" || args[4] == "nComplex") {
 			MsgId ret = shell_->doAddMsg( "Single",
-				plot, "requestData", pool, "get_n" );
+				plot, "requestData", pool, "getn" );
 			assert( ret != Msg::bad );
 		} else {
 			cout << "Unknown PLOT msg field '" << args[4] << "'\n";

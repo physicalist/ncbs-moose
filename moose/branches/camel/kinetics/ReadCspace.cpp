@@ -162,7 +162,7 @@ void ReadCspace::makePlots( double plotdt )
 			assert( tab != Id() );
 			// cout << "ReadCspace made plot " << plotname << endl;
 			MsgId mid = shell->doAddMsg( "Single", 
-				tab, "requestData", children[i], "get_conc" );
+				tab, "requestData", children[i], "getconc" );
 			assert( mid != Msg::bad );
 		}
 	}
@@ -350,7 +350,7 @@ void ReadCspace::deployParameters( )
 		return;
 	}
 	for ( i = 0; i < mol_.size(); i++ ) {
-		// MsgId ret = shell->doAddMsg( "OneToOne", mol_[i], "requestSize", mesh_, "get_size" );
+		// MsgId ret = shell->doAddMsg( "OneToOne", mol_[i], "requestSize", mesh_, "getsize" );
 		MsgId ret = shell->doAddMsg( "OneToOne", mol_[i], "mesh", mesh_, "mesh" );
 		assert( ret != Msg::bad );
 		// SetField(mol_[ i ], "volscale", volscale );

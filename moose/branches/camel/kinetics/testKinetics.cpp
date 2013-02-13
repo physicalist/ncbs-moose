@@ -216,7 +216,7 @@ void testPoolVolumeScaling()
 
 	MsgId mid = shell->doAddMsg( "OneToOne", 
 		ObjId( poolId, 0 ), "requestSize",
-		ObjId( meshId, 0 ), "get_size" );
+		ObjId( meshId, 0 ), "getsize" );
 
 	assert( mid != Msg::bad );
 
@@ -267,10 +267,10 @@ void testReacVolumeScaling()
 	double vol1 = 1e-15;
 
 	MsgId mid = shell->doAddMsg( "OneToOne", 
-		subId, "requestSize", meshId, "get_size" );
+		subId, "requestSize", meshId, "getsize" );
 	assert( mid != Msg::bad );
 	mid = shell->doAddMsg( "OneToOne", 
-		prdId, "requestSize", meshId, "get_size" );
+		prdId, "requestSize", meshId, "getsize" );
 	assert( mid != Msg::bad );
 
 	vector< double > coords( 9, 10.0e-6 );

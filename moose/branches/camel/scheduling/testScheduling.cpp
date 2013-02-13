@@ -755,7 +755,7 @@ void testMultiNodeIntFireNetwork()
 	assert( ret );
 
 	shell->doSyncDataHandler( synId );
-	// shell->doSyncDataHandler( e2.id(), "get_numSynapses", synId );
+	// shell->doSyncDataHandler( e2.id(), "getnumSynapses", synId );
 
 	unsigned int fieldSize = 
 		Field< unsigned int >::get( synId, "lastDimension" );

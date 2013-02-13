@@ -35,7 +35,7 @@ public:
 	template< class T, class A >
 	static A get( Id id, string field )
 	{
-		const Finfo* finfo = id()->cinfo()->findFinfo( "get_" + field );
+		const Finfo* finfo = id()->cinfo()->findFinfo( "get" + field );
 		assert( finfo );
 		
 		const DestFinfo* dest = dynamic_cast< const DestFinfo* >( finfo );

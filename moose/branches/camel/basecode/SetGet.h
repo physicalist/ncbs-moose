@@ -29,7 +29,7 @@ template< class T, class A > class GetOpFunc;
 template< class T, class A >
 A localGet( const Eref& er, string field )
 {
-	const Finfo* finfo = er.element()->cinfo()->findFinfo( "get_" + field );
+	const Finfo* finfo = er.element()->cinfo()->findFinfo( "get" + field );
 	assert( finfo );
 	
 	const DestFinfo* dest = dynamic_cast< const DestFinfo* >( finfo );
@@ -236,21 +236,21 @@ template< class A > class Field: public SetGet1< A >
 		 */
 		static bool set( const ObjId& dest, const string& field, A arg )
 		{
-			string temp = "set_" + field;
+			string temp = "set" + field;
 			return SetGet1< A >::set( dest, temp, arg );
 		}
 
 		static bool setVec( Id destId, const string& field, 
 			const vector< A >& arg )
 		{
-			string temp = "set_" + field;
+			string temp = "set" + field;
 			return SetGet1< A >::setVec( destId, temp, arg );
 		}
 
 		static bool setRepeat( Id destId, const string& field, 
 			A arg )
 		{
-			string temp = "set_" + field;
+			string temp = "set" + field;
 			return SetGet1< A >::setRepeat( destId, temp, arg );
 		}
 
@@ -261,7 +261,7 @@ template< class A > class Field: public SetGet1< A >
 			const string& val )
 		{
 			A arg;
-			// Do NOT add 'set_' to the field name, as the 'set' func
+			// Do NOT add 'set' to the field name, as the 'set' func
 			// does it anyway.
 			Conv< A >::str2val( arg, val );
 			return set( dest, field, arg );
@@ -274,7 +274,7 @@ template< class A > class Field: public SetGet1< A >
 			Field< A > sg( dest );
 			ObjId tgt( dest );
 			FuncId fid;
-			string fullFieldName = "get_" + field;
+			string fullFieldName = "get" + field;
 			if ( const OpFunc* func = 
 				sg.checkSet( fullFieldName, tgt, fid ) ) {
 				/// Do something else if off-node.
@@ -301,7 +301,7 @@ template< class A > class Field: public SetGet1< A >
 			Field< A > sg( dest );
 			ObjId tgt( dest );
 			FuncId fid;
-			string fullFieldName = "get_" + field;
+			string fullFieldName = "get" + field;
 			if ( const OpFunc* func = 
 				sg.checkSet( fullFieldName, tgt, fid ) )
 			{
@@ -531,7 +531,7 @@ template< class L, class A > class LookupField: public SetGet2< L, A >
 		static bool set( const ObjId& dest, const string& field, 
 			L index, A arg )
 		{
-			string temp = "set_" + field;
+			string temp = "set" + field;
 			return SetGet2< L, A >::set( dest, temp, index, arg );
 		}
 
@@ -542,7 +542,7 @@ template< class L, class A > class LookupField: public SetGet2< L, A >
 		static bool setVec( Id destId, const string& field, 
 			const vector< L >& index, const vector< A >& arg )
 		{
-			string temp = "set_" + field;
+			string temp = "set" + field;
 			return SetGet2< L, A >::setVec( destId, temp, index, arg );
 		}
 
@@ -555,7 +555,7 @@ template< class L, class A > class LookupField: public SetGet2< L, A >
 		static bool setVec( ObjId dest, const string& field, 
 			const vector< L >& index, const vector< A >& arg )
 		{
-			string temp = "set_" + field;
+			string temp = "set" + field;
 			return SetGet2< L, A >::setVec( dest, temp, index, arg );
 		}
 
@@ -596,7 +596,7 @@ template< class L, class A > class LookupField: public SetGet2< L, A >
 			cerr << "Error: LookupField::innerGet not yet working\n";
 			assert( 0 );
 
-			string fullFieldName = "get_" + field;
+			string fullFieldName = "get" + field;
 			if ( const OpFunc* func = 
 				sg.checkSet( fullFieldName, tgt, fid ) ) 
 			{
@@ -633,7 +633,7 @@ template< class L, class A > class LookupField: public SetGet2< L, A >
 			LookupField< L, A > sg( dest );
 			ObjId tgt( dest );
 			FuncId fid;
-			string fullFieldName = "get_" + field;
+			string fullFieldName = "get" + field;
 			if ( const OpFunc* func = 
 				sg.checkSet( fullFieldName, tgt, fid ) ) {
 				const LookupGetOpFuncBase< L, A >* gof = 

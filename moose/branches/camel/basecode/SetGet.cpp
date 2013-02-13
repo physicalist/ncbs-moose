@@ -36,7 +36,7 @@ const vector< double* >* SetGet::dispatchGet(
 const OpFunc* SetGet::checkSet( 
 	const string& field, ObjId& tgt, FuncId& fid ) const
 {
-	// string field = "set_" + destField;
+	// string field = "set" + destField;
 	const Finfo* f = oid_.element()->cinfo()->findFinfo( field );
 	if ( !f ) { // Could be a child element? Note that field name will 
 		// change from set_<name> to just <name>
@@ -46,10 +46,10 @@ const OpFunc* SetGet::checkSet(
 			cout << "Error: SetGet:checkSet:: No field or child named '" <<
 				field << "' was found on\n" << tgt.id.path() << endl;
 		} else {
-			if ( field.substr( 0, 4 ) == "set_" )
-				f = child()->cinfo()->findFinfo( "set_this" );
-			else if ( field.substr( 0, 4 ) == "get_" )
-				f = child()->cinfo()->findFinfo( "get_this" );
+			if ( field.substr( 0, 3 ) == "set" )
+				f = child()->cinfo()->findFinfo( "setthis" );
+			else if ( field.substr( 0, 3 ) == "get" )
+				f = child()->cinfo()->findFinfo( "getthis" );
 			assert( f ); // should always work as Neutral has the field.
 			if ( child()->dataHandler()->totalEntries() == 
 				oid_.element()->dataHandler()->totalEntries() ) {

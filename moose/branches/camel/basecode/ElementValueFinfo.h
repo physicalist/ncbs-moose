@@ -27,13 +27,13 @@ template < class T, class F > class ElementValueFinfo: public ValueFinfoBase
 			F ( T::*getFunc )( const Eref&, const Qinfo* ) const )
 			: ValueFinfoBase( name, doc )
 		{
-				string setname = "set_" + name;
+				string setname = "set" + name;
 				set_ = new DestFinfo(
 					setname,
 					"Assigns field value.",
 					new EpFunc1< T, F >( setFunc ) );
 
-				string getname = "get_" + name;
+				string getname = "get" + name;
 				get_ = new DestFinfo(
 					getname,
 					"Requests field value. The requesting Element must "
@@ -78,7 +78,7 @@ template < class T, class F > class ReadOnlyElementValueFinfo: public ValueFinfo
 			F ( T::*getFunc )( const Eref& e, const Qinfo* q ) const )
 			: ValueFinfoBase( name, doc )
 		{
-				string getname = "get_" + name;
+				string getname = "get" + name;
 				get_ = new DestFinfo(
 					getname,
 					"Requests field value. The requesting Element must "

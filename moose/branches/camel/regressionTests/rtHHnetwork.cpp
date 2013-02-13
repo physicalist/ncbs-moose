@@ -283,7 +283,7 @@ void rtHHnetwork( unsigned int numCopies )
 
 	Id tabId = shell->doCreate( "Table", copyParentId, "tab", dims );
 	mid = shell->doAddMsg( "single", ObjId( tabId, 0 ), "requestData",
-		ObjId( copyId, numCopies/2 ), "get_Vm" );
+		ObjId( copyId, numCopies/2 ), "getVm" );
 	assert( mid != Msg::bad );
 
 	//////////////////////////////////////////////////////////////////////
@@ -329,7 +329,7 @@ void rtHHnetwork( unsigned int numCopies )
 	SetGet2< double, long >::set( manager.objId(), "setRandomConnectivity",
 		connectionProbability, 1234UL );
 	
-	// shell->doSyncDataHandler( kids[2], "get_numSynapses", synCopyId );
+	// shell->doSyncDataHandler( kids[2], "getnumSynapses", synCopyId );
 	shell->doSyncDataHandler( synCopyId );
 
 	// Make it twice as big as expected probability, for safety.

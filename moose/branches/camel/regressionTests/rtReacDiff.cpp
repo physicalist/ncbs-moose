@@ -162,7 +162,7 @@ static void rtReplicateModels()
 	vector< int > dims( 1, 8 );
 	Id plots = shell->doCreate( "Table", modelId, "table", dims );
 	assert( plots != Id() );
-	MsgId mid = shell->doAddMsg( "OneToOne", plots, "requestData", a, "get_conc" );
+	MsgId mid = shell->doAddMsg( "OneToOne", plots, "requestData", a, "getconc" );
 	assert( mid != Msg::bad );
 
 	// Set up scheduling.
