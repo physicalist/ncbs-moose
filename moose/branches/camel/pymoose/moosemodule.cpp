@@ -4470,7 +4470,7 @@ static struct module_state _state;
             const string& destFinfo_name = destFinfo->name();
             // get_{xyz} and set_{xyz} are internal destFinfos for
             // accessing valueFinfos. Ignore them.
-            if (destFinfo_name.find("get_") == 0 || destFinfo_name.find("set_") == 0){
+            if (destFinfo_name.find("get") == 0 || destFinfo_name.find("set") == 0){
                 continue;
             }
             PyGetSetDef destFieldGetSet;

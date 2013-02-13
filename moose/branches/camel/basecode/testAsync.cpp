@@ -112,7 +112,7 @@ void insertIntoQ( )
 	unsigned int size = 100;
 
 	const DestFinfo* df = dynamic_cast< const DestFinfo* >(
-		ac->findFinfo( "set_outputValue" ) );
+		ac->findFinfo( "setoutputValue" ) );
 	assert( df != 0 );
 	FuncId fid = df->getFid();
 
@@ -172,7 +172,7 @@ void testSendMsg()
 	unsigned int size = 100;
 
 	const DestFinfo* df = dynamic_cast< const DestFinfo* >(
-		ac->findFinfo( "set_outputValue" ) );
+		ac->findFinfo( "setoutputValue" ) );
 	assert( df != 0 );
 	FuncId fid = df->getFid();
 
@@ -288,7 +288,7 @@ void testInnerSet()
 	Eref e2 = i2.eref();
 
 	assert( ret->getName() == "test2" );
-	const Finfo* finfo = ret->cinfo()->findFinfo( "set_name" );
+	const Finfo* finfo = ret->cinfo()->findFinfo( "setname" );
 	assert( finfo );
 	FuncId f1 = dynamic_cast< const DestFinfo* >( finfo )->getFid();
 	Conv< string > conv( "New Improved Test" );
@@ -300,7 +300,7 @@ void testInnerSet()
 	assert( ret->getName() == "New Improved Test" );
 	
 
-	finfo = ret->cinfo()->findFinfo( "set_outputValue" );
+	finfo = ret->cinfo()->findFinfo( "setoutputValue" );
 	assert( finfo );
 	FuncId f2 = dynamic_cast< const DestFinfo* >( finfo )->getFid();
 
@@ -344,7 +344,7 @@ void testInnerGet() // Uses low-level ops to do a 'get'.
 	ProcInfo p;
 
 	Eref e2 = i2.eref();
-	const Finfo* finfo = ret->cinfo()->findFinfo( "get_name" );
+	const Finfo* finfo = ret->cinfo()->findFinfo( "getname" );
 	assert( finfo );
 	FuncId f1 = dynamic_cast< const DestFinfo* >( finfo )->getFid();
 	Qinfo q;
@@ -372,7 +372,7 @@ void testInnerGet() // Uses low-level ops to do a 'get'.
 		reinterpret_cast< Arith* >(e2.element()->dataHandler()->data( i ))->setOutput( temp );
 	}
 
-	finfo = ret->cinfo()->findFinfo( "get_outputValue" );
+	finfo = ret->cinfo()->findFinfo( "getoutputValue" );
 	assert( finfo );
 	FuncId f2 = dynamic_cast< const DestFinfo* >( finfo )->getFid();
 	for ( unsigned int i = 0; i < size; ++i ) {
@@ -457,7 +457,7 @@ void testStrSet()
 		ss << setw( 10 ) << x;
 		ok = SetGet::strSet( dest, "outputValue", ss.str() );
 		assert( ok );
-		// SetGet1< double >::set( dest, "set_outputValue", x );
+		// SetGet1< double >::set( dest, "setoutputValue", x );
 	}
 
 	for ( unsigned int i = 0; i < size; ++i ) {
@@ -638,7 +638,7 @@ void testSetGetSynapse()
 	** Can't run this here: the Process Loop has to be running first.
 	Eref sheller = Id().eref();
 	Shell* shell = reinterpret_cast< Shell* >( sheller.data() );
-	const Finfo* f = IntFire::initCinfo()->findFinfo( "get_numSynapses" );
+	const Finfo* f = IntFire::initCinfo()->findFinfo( "getnumSynapses" );
 	const DestFinfo* df = dynamic_cast< const DestFinfo* >( f );
 	assert( df );
 	shell->doSyncDataHandler( i2, df->getFid() );
@@ -804,7 +804,7 @@ void testFastGet()
 {
 	const Cinfo* ic = IntFire::initCinfo();
 	const Finfo* gf = ic->findFinfo("spike");
-	const Finfo* vmf = ic->findFinfo("get_Vm");
+	const Finfo* vmf = ic->findFinfo("getVm");
 	assert( gf );
 	const SrcFinfo* sgf = dynamic_cast< const SrcFinfo* >( gf );
 	assert( sgf );
@@ -869,7 +869,7 @@ void testFastGet()
 	/*
 	* The OneToOneMsg between regular and field entries is undefined.
 	const Cinfo* sc = Synapse::initCinfo();
-	const Finfo* wtf = sc->findFinfo("get_weight");
+	const Finfo* wtf = sc->findFinfo("getweight");
 	Msg* m2 = new OneToOneMsg( Msg::nextMsgId(), src, syn );
 	assert( m2 );
 	assert( sgf->addMsg( wtf, m2->mid(), src ) );
@@ -1810,7 +1810,7 @@ void testMsgField()
 	unsigned int size = 10;
 
 	const DestFinfo* df = dynamic_cast< const DestFinfo* >(
-		ac->findFinfo( "set_outputValue" ) );
+		ac->findFinfo( "setoutputValue" ) );
 	assert( df != 0 );
 	FuncId fid = df->getFid();
 
@@ -2730,8 +2730,8 @@ void testFinfoFields()
 	assert( vmFinfo->docs() == "Membrane potential" );
 	assert( vmFinfo->src().size() == 0 );
 	assert( vmFinfo->dest().size() == 2 );
-	assert( vmFinfo->dest()[0] == "set_Vm" );
-	assert( vmFinfo->dest()[1] == "get_Vm" );
+	assert( vmFinfo->dest()[0] == "setVm" );
+	assert( vmFinfo->dest()[1] == "getVm" );
 	assert( vmFinfo->type() == "double" );
 
 	assert( synFinfo->name() == "synapse" );
@@ -2793,15 +2793,15 @@ void testCinfoFields()
 	unsigned int sdf = SynBase::initCinfo()->getNumDestFinfo();
 	assert( sdf == 23 );
 	assert( cinfo->getNumDestFinfo() == 10 + sdf );
-	assert( cinfo->getDestFinfo( 0+sdf ) == cinfo->findFinfo( "set_Vm" ) );
-	assert( cinfo->getDestFinfo( 1+sdf ) == cinfo->findFinfo( "get_Vm" ) );
-	assert( cinfo->getDestFinfo( 2+sdf ) == cinfo->findFinfo( "set_tau" ) );
-	assert( cinfo->getDestFinfo( 3+sdf ) == cinfo->findFinfo( "get_tau" ) );
+	assert( cinfo->getDestFinfo( 0+sdf ) == cinfo->findFinfo( "setVm" ) );
+	assert( cinfo->getDestFinfo( 1+sdf ) == cinfo->findFinfo( "getVm" ) );
+	assert( cinfo->getDestFinfo( 2+sdf ) == cinfo->findFinfo( "settau" ) );
+	assert( cinfo->getDestFinfo( 3+sdf ) == cinfo->findFinfo( "gettau" ) );
 
-	assert( cinfo->getDestFinfo( 4+sdf ) == cinfo->findFinfo( "set_thresh" ) );
-	assert( cinfo->getDestFinfo( 5+sdf ) == cinfo->findFinfo( "get_thresh" ) );
-	assert( cinfo->getDestFinfo( 6+sdf ) == cinfo->findFinfo( "set_refractoryPeriod" ) );
-	assert( cinfo->getDestFinfo( 7+sdf ) == cinfo->findFinfo( "get_refractoryPeriod" ) );
+	assert( cinfo->getDestFinfo( 4+sdf ) == cinfo->findFinfo( "setthresh" ) );
+	assert( cinfo->getDestFinfo( 5+sdf ) == cinfo->findFinfo( "getthresh" ) );
+	assert( cinfo->getDestFinfo( 6+sdf ) == cinfo->findFinfo( "setrefractoryPeriod" ) );
+	assert( cinfo->getDestFinfo( 7+sdf ) == cinfo->findFinfo( "getrefractoryPeriod" ) );
 	assert( cinfo->getDestFinfo( 8+sdf ) == cinfo->findFinfo( "process" ) );
 	assert( cinfo->getDestFinfo( 9+sdf ) == cinfo->findFinfo( "reinit" ) );
 
@@ -2863,7 +2863,7 @@ void testCinfoElements()
 
 	temp = ObjId( intFireDestFinfoId, DataId( 7 + sdf ) );
 	string str = Field< string >::get( temp, "name" );
-	assert( str == "get_refractoryPeriod");
+	assert( str == "getrefractoryPeriod");
 	temp = ObjId( intFireDestFinfoId, DataId( 9 + sdf ) );
 	// temp.dataId.fieldu= 11;
 	str = Field< string >::get( temp, "name" );

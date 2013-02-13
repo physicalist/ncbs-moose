@@ -29,13 +29,13 @@ template < class T, class L, class F > class LookupElementValueFinfo: public Loo
 			F ( T::*getFunc )( const Eref&, const Qinfo*, L ) const )
 			: LookupValueFinfoBase( name, doc )
 		{
-				string setname = "set_" + name;
+				string setname = "set" + name;
 				set_ = new DestFinfo(
 					setname,
 					"Assigns field value.",
 					new EpFunc2< T, L, F >( setFunc ) );
 
-				string getname = "get_" + name;
+				string getname = "get" + name;
 				get_ = new DestFinfo(
 					getname,
 					"Requests field value. The requesting Element must "
@@ -88,7 +88,7 @@ template < class T, class L, class F >
 			F ( T::*getFunc )( const Eref& e, const Qinfo* q, L ) const )
 			: LookupValueFinfoBase( name, doc )
 		{
-				string getname = "get_" + name;
+				string getname = "get" + name;
 				get_ = new DestFinfo(
 					getname,
 					"Requests field value. The requesting Element must "

@@ -1011,7 +1011,7 @@ void Shell::clearRestructuringQ()
 void Shell::doSyncDataHandler( Id tgt )
 {
 	/*
-	const Finfo* f = tgt()->cinfo()->findFinfo( "get_localNumField" );
+	const Finfo* f = tgt()->cinfo()->findFinfo( "getlocalNumField" );
 	assert( f );
 	const DestFinfo* df = dynamic_cast< const DestFinfo* >( f );
 	assert( df );
@@ -1045,7 +1045,7 @@ void Shell::doSyncDataHandler( Id tgt )
  */
 void Shell::handleReMesh( Id baseMesh )
 {
-	static const Finfo* finfo = MeshEntry::initCinfo()->findFinfo( "get_size" );
+	static const Finfo* finfo = MeshEntry::initCinfo()->findFinfo( "getsize" );
 	static const DestFinfo* df = dynamic_cast< const DestFinfo* >( finfo );
 	assert( df );
 	vector< Id > tgts;

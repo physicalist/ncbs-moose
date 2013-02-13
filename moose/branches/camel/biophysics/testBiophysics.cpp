@@ -320,7 +320,7 @@ void testHHChannel()
 
 	Id tabId = shell->doCreate( "Table", nid, "tab", dims );
 	mid = shell->doAddMsg( "Single", ObjId( tabId, 0 ), "requestData",
-		ObjId( comptId, 0 ), "get_Vm" );
+		ObjId( comptId, 0 ), "getVm" );
 	
 	//////////////////////////////////////////////////////////////////////
 	// set up compartment properties
@@ -554,7 +554,7 @@ void testMarkovGslSolver()
 			ObjId( gslSolverId ), "handleQ" ); 
 
 	mid = shell->doAddMsg( "Single", ObjId( tabId, 0 ), "requestData",
-			ObjId( mChanId, 0 ), "get_Ik" );
+			ObjId( mChanId, 0 ), "getIk" );
 	assert( mid != Msg::bad );
 
 	//////////////////////////////////////////////////////////////////////
@@ -790,12 +790,12 @@ void testMarkovChannel()
 
 	//Get the current values from the GSL solver based channel.
 	mid = shell->doAddMsg( "Single", ObjId( gslTableId ), "requestData", 
-				ObjId( mChanGslId ), "get_Ik" );
+				ObjId( mChanGslId ), "getIk" );
 	assert( mid != Msg::bad );
 
 	//Get the current values from the matrix exponential solver based channel.
 	mid = shell->doAddMsg( "Single", ObjId( exptlTableId ), "requestData", 
-				ObjId( mChanExptlId ), "get_Ik" );
+				ObjId( mChanExptlId ), "getIk" );
 	assert( mid != Msg::bad );
 
 	////////////////////

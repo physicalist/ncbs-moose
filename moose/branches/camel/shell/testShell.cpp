@@ -1513,7 +1513,7 @@ void testSyncSynapseSize()
 {
 	Eref sheller = Id().eref();
 	Shell* shell = reinterpret_cast< Shell* >( sheller.data() );
-	const Finfo* f = Cinfo::find( "IntFire" )->findFinfo( "get_numSynapses" );
+	const Finfo* f = Cinfo::find( "IntFire" )->findFinfo( "getnumSynapses" );
 	const DestFinfo* df = dynamic_cast< const DestFinfo* >( f );
 	assert( df );
 	unsigned int size = 1000;
@@ -1543,7 +1543,7 @@ void testSyncSynapseSize()
 	assert( syn->dataHandler()->localEntries() == ( size * (size - 1) ) / 2 );
 	*/
 
-	// shell->doSyncDataHandler( neuronId, "get_numSynapses", synId );
+	// shell->doSyncDataHandler( neuronId, "getnumSynapses", synId );
 	synId.element()->syncFieldDim();
 	// shell->doSyncDataHandler( synId );
 
@@ -1776,7 +1776,7 @@ void testShellMesh()
 	Id pool = shell->doCreate( "Pool", compt, "pool", dimensions );
 	shell->doAddMsg( "OneToOne",
 		ObjId( pool, 0 ), "requestSize",
-		ObjId( mesh, 0 ), "get_size" );
+		ObjId( mesh, 0 ), "getsize" );
 
 	vector< double > meshCoords( 9, 0.0 );
 	meshCoords[3] = meshCoords[4] = meshCoords[5] = 10.0;

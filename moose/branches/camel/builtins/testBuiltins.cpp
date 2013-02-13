@@ -309,7 +309,7 @@ void testGetMsg()
 	// Table* t = reinterpret_cast< Table* >( tabid.eref().data() );
 	MsgId ret = shell->doAddMsg( "Single", 
 		tabid.eref().objId(), "requestData",
-		arithid.eref().objId(), "get_outputValue" );
+		arithid.eref().objId(), "getoutputValue" );
 	assert( ret != Msg::bad );
 	ret = shell->doAddMsg( "Single", arithid.eref().objId(), "output",
 		arithid.eref().objId(), "arg1" );
@@ -415,7 +415,7 @@ void testStatsReduce()
 
 	MsgId mid = shell->doAddMsg( "Reduce", 
 		statsid.eref().objId(), "reduce",
-		syner.objId(), "get_delay" );
+		syner.objId(), "getdelay" );
 	assert( mid != Msg::bad );
 	/*
 	shell->doSetClock( 0, 1 );
@@ -517,7 +517,7 @@ void testMpiStatsReduce()
 
 	MsgId mid = shell->doAddMsg( "Reduce", 
 		statsid.eref().objId(), "reduce",
-		syner.objId(), "get_delay" );
+		syner.objId(), "getdelay" );
 	assert( mid != Msg::bad );
 	SetGet0::set( statsid, "trig" );
 	double x = Field< double >::get( statsid, "sum" );
