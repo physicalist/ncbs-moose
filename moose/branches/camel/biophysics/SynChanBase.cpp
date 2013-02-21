@@ -14,11 +14,11 @@
 #include "ChanBase.h"
 #include "SynChanBase.h"
 
-static SrcFinfo1< double >* permeability()
+static SrcFinfo1< double >* permeabilityOut()
 {
-	static SrcFinfo1< double > permeability( "permeability", 
+	static SrcFinfo1< double > permeabilityOut( "permeabilityOut", 
 		"Conductance term going out to GHK object" );
-	return &permeability;
+	return &permeabilityOut;
 }
 
 static SrcFinfo2< double, double >* channelOut()
@@ -73,7 +73,7 @@ const Cinfo* SynChanBase::initCinfo()
 	/// Permability SrcFinfo defined above.
 	static Finfo* ghkShared[] =
 	{
-		&Vm, permeability()
+		&Vm, permeabilityOut()
 	};
 	static SharedFinfo ghk( "ghk", 
 		"Message to Goldman-Hodgkin-Katz object",
@@ -218,7 +218,7 @@ void SynChanBase::process(  const Eref& e, const ProcPtr info )
 	// handles influx of ions giving rise to a concentration change.
 	IkOut()->send( e, info->threadIndexInGroup, cb.getIk() );
 	// Needed by GHK-type objects
-	permeability()->send( e, info->threadIndexInGroup, cb.getGk() );
+	permeabilityOut()->send( e, info->threadIndexInGroup, cb.getGk() );
 }
 
 
@@ -226,7 +226,7 @@ void SynChanBase::reinit(  const Eref& e, const ProcPtr info )
 {
 	channelOut()->send( e, info->threadIndexInGroup, cb.getGk(), cb.getEk() );
 	// Needed by GHK-type objects
-	permeability()->send( e, info->threadIndexInGroup, cb.getGk() );
+	permeabilityOut()->send( e, info->threadIndexInGroup, cb.getGk() );
 }
 
 void SynChanBase::updateIk()

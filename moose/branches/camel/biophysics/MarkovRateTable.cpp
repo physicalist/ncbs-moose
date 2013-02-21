@@ -16,7 +16,7 @@
 //to the solver object. 
 static SrcFinfo1< vector< vector< double > > >* instRatesOut()
 {
-	static SrcFinfo1< vector< vector< double > > > instRatesOut( "instratesOut",	
+	static SrcFinfo1< vector< vector< double > > > instRatesOut( "instRatesOut",	
 		"Sends out instantaneous rate information of varying transition rates at each time step." 
 		);
 

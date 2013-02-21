@@ -35,11 +35,11 @@
 
 #include "LeakyIaF.h"
 
-static SrcFinfo1< double >* spike() {
-    static SrcFinfo1< double > spike(
-            "spike", 
+static SrcFinfo1< double >* spikeOut() {
+    static SrcFinfo1< double > spikeOut(
+            "spikeOut", 
             "Sends out spike events");
-    return &spike;
+    return &spikeOut;
 }
 
 static SrcFinfo1< double >* VmOut() {
@@ -187,7 +187,7 @@ const Cinfo* LeakyIaF::initCinfo()
             &inject,
             &tSpike,
             &proc,					// SharedFinfo
-            spike(), 		// MsgSrc
+            spikeOut(), 		// MsgSrc
             VmOut(),
             &injectDest,            
 	};
@@ -344,7 +344,7 @@ void LeakyIaF::process(const Eref & eref, ProcPtr proc)
     VmOut()->send(eref, proc->threadIndexInGroup, Vm_);
     if ((Vm_ > Vthreshold_) && (time > tSpike_ + refractoryPeriod_)){
         tSpike_ = time;
-        spike()->send(eref, proc->threadIndexInGroup, time);
+        spikeOut()->send(eref, proc->threadIndexInGroup, time);
         Vm_ = Vreset_;
     }
 }
