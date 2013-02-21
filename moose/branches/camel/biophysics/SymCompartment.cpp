@@ -24,10 +24,10 @@ static SrcFinfo1< double > *sumRaxialOut() {
 	return &sumRaxialOut;
 }
 
-static SrcFinfo0 *requestSumAxial() {
-	static SrcFinfo0 requestSumAxial( "requestSumAxial",
+static SrcFinfo0 *requestSumAxialOut() {
+	static SrcFinfo0 requestSumAxialOut( "requestSumAxialOut",
 			"Sends out request for Ra." );
-	return &requestSumAxial;
+	return &requestSumAxialOut;
 }
 
 static SrcFinfo2< double, double > *raxial2Out() {
@@ -42,10 +42,10 @@ static SrcFinfo1< double > *sumRaxial2Out() {
 	return &sumRaxial2Out;
 }
 
-static SrcFinfo0 *requestSumAxial2() {
-	static SrcFinfo0 requestSumAxial2( "requestSumAxial2",
+static SrcFinfo0 *requestSumAxial2Out() {
+	static SrcFinfo0 requestSumAxial2Out( "requestSumAxial2Out",
 			"Sends out request for Ra." );
-	return &requestSumAxial2;
+	return &requestSumAxial2Out;
 }
 
 const Cinfo* SymCompartment::initCinfo()
@@ -67,13 +67,13 @@ const Cinfo* SymCompartment::initCinfo()
 		&SymCompartment::handleSumRaxialRequest )
 	);
 
-	// The SrcFinfos raxialOut, sumRaxialOut and requestSumAxial
+	// The SrcFinfos raxialOut, sumRaxialOut and requestSumAxialOut
 	// are defined above to get them into file-wide scope.
 
 	static Finfo* raxial1Shared[] =
 	{
 		&raxialSym, &sumRaxial, &handleSumRaxialRequest, 
-		raxialOut(), sumRaxialOut(), requestSumAxial()
+		raxialOut(), sumRaxialOut(), requestSumAxialOut()
 	};
 
 	static SharedFinfo raxial1( "raxial1",
@@ -104,13 +104,13 @@ const Cinfo* SymCompartment::initCinfo()
 			new EpFunc0< SymCompartment >(
 				&SymCompartment::handleSumRaxial2Request )
 	);
-	// The SrcFinfos raxial2Out, sumRaxial2Out and requestSumAxial2
+	// The SrcFinfos raxial2Out, sumRaxial2Out and requestSumAxial2Out
 	// are defined above to get them into file-wide scope.
 
 	static Finfo* raxial2Shared[] =
 	{
 		&raxial2sym, &sumRaxial2, &handleSumRaxial2Request,
-		raxial2Out(), sumRaxial2Out(), requestSumAxial2()
+		raxial2Out(), sumRaxial2Out(), requestSumAxial2Out()
 		
 	};
 
@@ -247,8 +247,8 @@ void SymCompartment::innerInitReinit( const Eref& e, ProcPtr p )
 {
 	coeff_ = 0.0;
 	coeff2_ = 0.0;
-	requestSumAxial()->send( e, p->threadIndexInGroup );
-	requestSumAxial2()->send( e, p->threadIndexInGroup );
+	requestSumAxialOut()->send( e, p->threadIndexInGroup );
+	requestSumAxial2Out()->send( e, p->threadIndexInGroup );
 }
 
 void SymCompartment::handleSumRaxialRequest( const Eref& e, const Qinfo* q )

@@ -68,11 +68,11 @@
 ///////////////////////////////////////////////////////
 // MsgSrc definitions
 ///////////////////////////////////////////////////////
-static SrcFinfo1< double > *unblocked() {
-	static SrcFinfo1< double > unblocked( "unblockedOut", 
+static SrcFinfo1< double > *unblockedOut() {
+	static SrcFinfo1< double > unblockedOut( "unblockedOut", 
 		"Sends fraction of unblocked channels"
 	);
-	return &unblocked;
+	return &unblockedOut;
 }
 
 const Cinfo* NMDAChan::initCinfo()
@@ -118,7 +118,7 @@ const Cinfo* NMDAChan::initCinfo()
 	);
     static Finfo* NMDAChanFinfos[] =
 	{
-		&unblocked,			// Src
+		unblockedOut(),			// Src
 		&transitionParam,	// LookupValue
 		&MgConc,			// Value
 		&unblocked,			// ReadOnlyValue
@@ -331,7 +331,7 @@ void NMDAChan::process( const Eref& e, ProcPtr info )
     // Usually needed by GHK-type objects
     send1< double >( e, gkSlot, Gk_ );
 	*/
-	unblocked()->send( e, info->threadIndexInGroup, unblocked_ );
+	unblockedOut()->send( e, info->threadIndexInGroup, unblocked_ );
     // send1< double >( e, unblockedSlot, unblocked_);
 }
 

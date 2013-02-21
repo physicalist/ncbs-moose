@@ -13,10 +13,10 @@
 	///////////////////////////////////////////////////////
 	// MsgSrc definitions
 	///////////////////////////////////////////////////////
-static SrcFinfo1< double > *event() {
-	static SrcFinfo1< double > event( "event", 
+static SrcFinfo1< double > *eventOut() {
+	static SrcFinfo1< double > eventOut( "eventOut", 
 			"Sends out a trigger for an event.");
-	return &event;
+	return &eventOut;
 }
 
 const Cinfo* SpikeGen::initCinfo()
@@ -84,7 +84,7 @@ const Cinfo* SpikeGen::initCinfo()
 
 	static Finfo* spikeGenFinfos[] = 
 	{
-		event(),	// SrcFinfo
+		eventOut(),	// SrcFinfo
 		&proc,		// Shared
 		&Vm,		// Dest
 		&threshold,	// Value
@@ -117,7 +117,7 @@ static const Cinfo* spikeGenCinfo = SpikeGen::initCinfo();
 
 /*
 static const Slot eventSlot =
-	initSpikeGenCinfo()->getSlot( "event" );
+	initSpikeGenCinfo()->getSlot( "eventOut" );
 	*/
 
 SpikeGen::SpikeGen()
@@ -196,7 +196,7 @@ void SpikeGen::process( const Eref& e, ProcPtr p )
 	if ( V_ > threshold_ ) {
 		if ((t + p->dt/2.0) >= (lastEvent_ + refractT_)) {
 			if ( !( edgeTriggered_ && fired_ ) ) {
-				event()->send( e, p->threadIndexInGroup, t );
+				eventOut()->send( e, p->threadIndexInGroup, t );
 				lastEvent_ = t;
 				fired_ = true;                    
 			}

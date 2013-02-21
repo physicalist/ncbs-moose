@@ -32,11 +32,11 @@
 #include "IzhikevichNrn.h"
 
 
-static SrcFinfo1< double >* spike()
+static SrcFinfo1< double >* spikeOut()
 {
-    static SrcFinfo1< double > spike("spike",
+    static SrcFinfo1< double > spikeOut("spikeOut",
                                       "Sends out spike events");
-    return &spike;
+    return &spikeOut;
 }
 
 static SrcFinfo1< double >* VmOut()
@@ -199,7 +199,7 @@ const Cinfo* IzhikevichNrn::initCinfo()
         &bDest,
         &aDest,
         VmOut(),
-        spike(),
+        spikeOut(),
     };
     
     static string doc[] = {
@@ -400,7 +400,7 @@ void IzhikevichNrn::process(const Eref& eref, ProcPtr proc)
         u_ += d_;
         savedVm_ = Vmax_;
         VmOut()->send(eref, proc->threadIndexInGroup, Vmax_);
-        spike()->send(eref, proc->threadIndexInGroup, proc->currTime);
+        spikeOut()->send(eref, proc->threadIndexInGroup, proc->currTime);
     } else {
         savedVm_ = Vm_;
         VmOut()->send(eref, proc->threadIndexInGroup, Vm_);
