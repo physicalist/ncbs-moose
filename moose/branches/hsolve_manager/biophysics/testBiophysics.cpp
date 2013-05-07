@@ -10,6 +10,7 @@
 #ifdef DO_UNIT_TESTS
 
 #include "header.h"
+#include "CompartmentInterface.h"
 #include "Compartment.h"
 #include "HHGate.h"
 #include "ChanBase.h"
@@ -1269,7 +1270,7 @@ void testNMDAChan()
 // This tests stuff without using the messaging.
 void testBiophysics()
 {
-	testCompartment();
+	//~ testCompartment();
 	testHHGateCreation();
 	testHHGateLookup();
 	testHHGateSetup();

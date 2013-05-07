@@ -17,6 +17,7 @@
 class CompartmentInterface
 {
 public:
+	CompartmentInterface();
 	virtual ~CompartmentInterface();
 	
 	// Value Field access function definitions.
