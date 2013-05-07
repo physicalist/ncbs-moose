@@ -15,8 +15,10 @@ OBJ = \
 	IzhikevichNrn.o	\
 	LeakyIaF.o	\
 	Synapse.o	\
-	Compartment.o	\
+	CompartmentInterface.o	\
+	CompartmentWrapper.o	\
 	SymCompartment.o	\
+	Compartment.o	\
 	ChanBase.o	\
 	SynChanBase.o	\
 	HHChannel.o	\
@@ -57,8 +59,10 @@ IntFire.o:	IntFire.h SynBase.h Synapse.h
 IzhikevichNrn.o: IzhikevichNrn.h
 LeakyIaF.o: LeakyIaF.h
 Synapse.o:	SynBase.h Synapse.h
-Compartment.o: Compartment.h
-SymCompartment.o: Compartment.h SymCompartment.h
+CompartmentWrapper.o: CompartmentInterface.h
+CompartmentWrapper.o: CompartmentWrapper.h CompartmentInterface.h
+Compartment.o: Compartment.h CompartmentInterface.h
+#~ SymCompartment.o: Compartment.h SymCompartment.h
 ChanBase.o: ChanBase.h
 HHChannel.o: ChanBase.h HHChannel.h HHGate.h
 HHGate.o: HHGate.h
@@ -82,7 +86,7 @@ MarkovSolver.o : MarkovSolverBase.h MarkovSolver.h
 MarkovChannel.o : VectorTable.h ../builtins/Interpol2D.h MarkovRateTable.h ChanBase.h MarkovChannel.h 
 ReadCell.o: ReadCell.h ../shell/Shell.h ../utility/utility.h
 VClamp.o: VClamp.h
-testBiophysics.o: SynBase.h IntFire.h Synapse.h Compartment.h HHChannel.h HHGate.h 
+testBiophysics.o: SynBase.h IntFire.h Synapse.h Compartment.h CompartmentInterface.h HHChannel.h HHGate.h 
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I. -I../basecode -I../msg $< -c

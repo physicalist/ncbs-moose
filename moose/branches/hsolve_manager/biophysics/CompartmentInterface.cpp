@@ -8,3 +8,17 @@
 ** See the file copyleft for the full notice.
 **********************************************************************/
 
+#include "header.h"
+#include "CompartmentInterface.h"
+
+CompartmentInterface::CompartmentInterface()
+{ ; }
+
+CompartmentInterface::~CompartmentInterface()
+{ ; }
+
+void CompartmentInterface::cable()
+{ ; }
+
+//~ void CompartmentInterface::initReinit()
+//~ { ; }

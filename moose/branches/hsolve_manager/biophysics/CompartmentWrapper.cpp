@@ -8,7 +8,8 @@
 **********************************************************************/
 
 #include "header.h"
-#include "../randnum/randnum.h"
+#include "ElementValueFinfo.h"
+//~ #include "../randnum/randnum.h"
 #include "CompartmentInterface.h"
 #include "CompartmentWrapper.h"
 
@@ -163,7 +164,7 @@ const Cinfo* CompartmentWrapper::initCinfo()
 	///////////////////////////////////////////////////////////////////
 	static DestFinfo handleAxial( "handleAxial", 
 		"Handles Axial information. Argument is just Vm.",
-		new OpFunc1< CompartmentWrapper, double >( &CompartmentWrapper::handleAxial ) );
+		new EpFunc1< CompartmentWrapper, double >( &CompartmentWrapper::handleAxial ) );
 	// rxialOut declared above as it is needed in file scope
 	static Finfo* raxialShared[] =
 	{
@@ -340,35 +341,35 @@ static const Cinfo* compartmentCinfo = CompartmentWrapper::initCinfo();
 // Here we put the CompartmentWrapper class functions.
 //////////////////////////////////////////////////////////////////
 
-CompartmentWrapper::CompartmentWrapper()
-{
-	Vm_ = -0.06;
-	Em_ = -0.06;
-	Cm_ = 1.0;
-	Rm_ = 1.0;
-	invRm_ = 1.0;
-	Ra_ = 1.0;
-	Im_ = 0.0;
-	lastIm_ = 0.0;
-	Inject_ = 0.0;
-	sumInject_ = 0.0;
-	initVm_ = -0.06;
-	A_ = 0.0;
-	B_ = 0.0;
-	x_ = 0.0;
-	y_ = 0.0;
-	z_ = 0.0;
-	x0_ = 0.0;
-	y0_ = 0.0;
-	z0_ = 0.0;
-	diameter_ = 0.0;
-	length_ = 0.0;
-}
-
-CompartmentWrapper::~CompartmentWrapper()
-{
-	;
-}
+//~ CompartmentWrapper::CompartmentWrapper()
+//~ {
+	//~ Vm_ = -0.06;
+	//~ Em_ = -0.06;
+	//~ Cm_ = 1.0;
+	//~ Rm_ = 1.0;
+	//~ invRm_ = 1.0;
+	//~ Ra_ = 1.0;
+	//~ Im_ = 0.0;
+	//~ lastIm_ = 0.0;
+	//~ Inject_ = 0.0;
+	//~ sumInject_ = 0.0;
+	//~ initVm_ = -0.06;
+	//~ A_ = 0.0;
+	//~ B_ = 0.0;
+	//~ x_ = 0.0;
+	//~ y_ = 0.0;
+	//~ z_ = 0.0;
+	//~ x0_ = 0.0;
+	//~ y0_ = 0.0;
+	//~ z0_ = 0.0;
+	//~ diameter_ = 0.0;
+	//~ length_ = 0.0;
+//~ }
+//~ 
+//~ CompartmentWrapper::~CompartmentWrapper()
+//~ {
+	//~ ;
+//~ }
 
 //~ bool CompartmentWrapper::rangeWarning( const string& field, double value )
 //~ {
@@ -575,27 +576,32 @@ void CompartmentWrapper::initReinit( const Eref& e, ProcPtr p )
 	//~ this->innerInitReinit( e, p );
 }
 
-void CompartmentWrapper::innerInitReinit( const Eref& e, ProcPtr p )
+//~ void CompartmentWrapper::innerInitReinit( const Eref& e, ProcPtr p )
+//~ {
+//~ }
+
+void CompartmentWrapper::handleChannel(
+	const Eref& e, const Qinfo* q, double Gk, double Ek )
 {
 }
 
-void CompartmentWrapper::handleChannel( double Gk, double Ek )
+void CompartmentWrapper::handleRaxial(
+	const Eref& e, const Qinfo* q, double Ra, double Vm )
 {
 }
 
-void CompartmentWrapper::handleRaxial( double Ra, double Vm )
+void CompartmentWrapper::handleAxial(
+	const Eref& e, const Qinfo* q, double Vm )
 {
 }
 
-void CompartmentWrapper::handleAxial( double Vm )
+void CompartmentWrapper::injectMsg(
+	const Eref& e, const Qinfo* q, double current )
 {
 }
 
-void CompartmentWrapper::injectMsg( double current )
-{
-}
-
-void CompartmentWrapper::randInject( double prob, double current )
+void CompartmentWrapper::randInject(
+	const Eref& e, const Qinfo* q, double prob, double current )
 {
 	//~ if ( mtrand() < prob * dt_ ) {
 		//~ sumInject_ += current;
@@ -603,132 +609,136 @@ void CompartmentWrapper::randInject( double prob, double current )
 	//~ }
 }
 
-void CompartmentWrapper::cable()
-{
-	;
-}
+//~ void CompartmentWrapper::cable()
+//~ {
+	//~ ;
+//~ }
 
 /////////////////////////////////////////////////////////////////////
 
 #ifdef DO_UNIT_TESTS
 
-void testCompartmentWrapper()
-{
-	const Cinfo* comptCinfo = CompartmentWrapper::initCinfo();
-	Id comptId = Id::nextId();
-	vector< DimInfo > dims;
-	Element* n = new Element( comptId, comptCinfo, "compt", dims, 1, true );
-	assert( n != 0 );
-	Eref compter( n, 0 );
-	CompartmentWrapper* c = reinterpret_cast< CompartmentWrapper* >( compter.data() );
-	ProcInfo p;
-	p.dt = 0.002;
-	c->setInject( 1.0 );
-	c->setRm( 1.0 );
-	c->setRa( 0.0025 );
-	c->setCm( 1.0 );
-	c->setEm( 0.0 );
-	c->setVm( 0.0 );
-	
-	// First, test charging curve for a single compartment
-	// We want our charging curve to be a nice simple exponential
-	// Vm = 1.0 - 1.0 * exp( - t / 1.0 );
-	double delta = 0.0;
-	double Vm = 0.0;
-	double tau = 1.0;
-	double Vmax = 1.0;
-	for ( p.currTime = 0.0; p.currTime < 2.0; p.currTime += p.dt ) 
-	{
-		Vm = c->getVm();
-		double x = Vmax - Vmax * exp( -p.currTime / tau );
-		delta += ( Vm - x ) * ( Vm - x );
-		c->process( compter, &p );
-	}
-	assert( delta < 1.0e-6 );
-	
-	comptId.destroy();
-	cout << "." << flush;
-}
+//~ void testCompartment()
+//~ { ; }
 
-// Comment out this define if it takes too long (about 5 seconds on
-// a modest machine, but could be much longer with valgrind)
-#define DO_SPATIAL_TESTS
-/**
- * Function to test the spatial spread of charge.
- * We make the cable long enough to get another nice exponential.
- * Vm = Vm0 * exp( -x/lambda)
- * lambda = sqrt( Rm/Ra ) where these are the actual values, not
- * the values per unit length.
- * So here lambda = 20, so that each compt is lambda/20
- */
-#include "../shell/Shell.h"
-void testCompartmentWrapperProcess()
-{
-	Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
-	unsigned int size = 100;
-	vector< int > dims( 1, size );
-	
-	double Rm = 1.0;
-	double Ra = 0.01;
-	double Cm = 1.0;
-	double dt = 0.01;
-	double runtime = 10;
-	double lambda = sqrt( Rm / Ra );
-	
-	Id cid = shell->doCreate( "Compartment", Id(), "compt", dims );
-	assert( cid != Id() );
-	assert( cid()->dataHandler()->totalEntries() == size );
-	
-	bool ret = Field< double >::setRepeat( cid, "initVm", 0.0 );
-	assert( ret );
-	Field< double >::setRepeat( cid, "inject", 0 );
-	// Only apply current injection in first compartment
-	Field< double >::set( ObjId( cid, 0 ), "inject", 1.0 ); 
-	Field< double >::setRepeat( cid, "Rm", Rm );
-	Field< double >::setRepeat( cid, "Ra", Ra );
-	Field< double >::setRepeat( cid, "Cm", Cm );
-	Field< double >::setRepeat( cid, "Em", 0 );
-	Field< double >::setRepeat( cid, "Vm", 0 );
-	
-	// The diagonal message has a default stride of 1, so it connects
-	// successive compartments.
-	// Note that the src and dest elements here are identical, so we cannot
-	// use a shared message. The messaging system will get confused about
-	// direction to send data. So we split up the shared message that we
-	// might have used, below, into two individual messages.
-	// MsgId mid = shell->doAddMsg( "Diagonal", ObjId( cid ), "raxial", ObjId( cid ), "axial" );
-	MsgId mid = shell->doAddMsg( "Diagonal", ObjId( cid ), "axialOut", ObjId( cid ), "handleAxial" );
-	assert( mid != Msg::bad);
-	// mid = shell->doAddMsg( "Diagonal", ObjId( cid ), "handleRaxial", ObjId( cid ), "raxialOut" );
-	mid = shell->doAddMsg( "Diagonal", ObjId( cid ), "raxialOut", ObjId( cid ), "handleRaxial" );
-	assert( mid != Msg::bad );
-	ObjId managerId = Msg::getMsg( mid )->manager().objId();
-	// Make the raxial data go from high to lower index compartments.
-	Field< int >::set( managerId, "stride", -1 );
-	
-#ifdef DO_SPATIAL_TESTS
-	shell->doSetClock( 0, dt );
-	shell->doSetClock( 1, dt );
-	shell->doUseClock( "/compt", "init", 0 );
-	shell->doUseClock( "/compt", "process", 1 );
-	
-	shell->doReinit();
-	shell->doStart( runtime );
-	
-	double Vmax = Field< double >::get( ObjId( cid, 0 ), "Vm" );
-	
-	double delta = 0.0;
-	// We measure only the first 50 compartments as later we 
-	// run into end effects because it is not an infinite cable
-	for ( unsigned int i = 0; i < 50; i++ ) {
-		double Vm = Field< double >::get( ObjId( cid, i ), "Vm" );
-		double x = Vmax * exp( - static_cast< double >( i ) / lambda );
-		delta += ( Vm - x ) * ( Vm - x );
-	 	// cout << i << " (x, Vm) = ( " << x << ", " << Vm << " )\n";
-	}
-	assert( delta < 1.0e-5 );
-#endif // DO_SPATIAL_TESTS
-	shell->doDelete( cid );
-	cout << "." << flush;
-}
+//~ void testCompartmentWrapper()
+//~ {
+	//~ const Cinfo* comptCinfo = CompartmentWrapper::initCinfo();
+	//~ Id comptId = Id::nextId();
+	//~ vector< DimInfo > dims;
+	//~ Element* n = new Element( comptId, comptCinfo, "compt", dims, 1, true );
+	//~ assert( n != 0 );
+	//~ Eref compter( n, 0 );
+	//~ CompartmentWrapper* c = reinterpret_cast< CompartmentWrapper* >( compter.data() );
+	//~ ProcInfo p;
+	//~ p.dt = 0.002;
+	//~ c->setInject( 1.0 );
+	//~ c->setRm( 1.0 );
+	//~ c->setRa( 0.0025 );
+	//~ c->setCm( 1.0 );
+	//~ c->setEm( 0.0 );
+	//~ c->setVm( 0.0 );
+	//~ 
+	//~ // First, test charging curve for a single compartment
+	//~ // We want our charging curve to be a nice simple exponential
+	//~ // Vm = 1.0 - 1.0 * exp( - t / 1.0 );
+	//~ double delta = 0.0;
+	//~ double Vm = 0.0;
+	//~ double tau = 1.0;
+	//~ double Vmax = 1.0;
+	//~ for ( p.currTime = 0.0; p.currTime < 2.0; p.currTime += p.dt ) 
+	//~ {
+		//~ Vm = c->getVm();
+		//~ double x = Vmax - Vmax * exp( -p.currTime / tau );
+		//~ delta += ( Vm - x ) * ( Vm - x );
+		//~ c->process( compter, &p );
+	//~ }
+	//~ assert( delta < 1.0e-6 );
+	//~ 
+	//~ comptId.destroy();
+	//~ cout << "." << flush;
+//~ }
+//~ 
+//~ // Comment out this define if it takes too long (about 5 seconds on
+//~ // a modest machine, but could be much longer with valgrind)
+//~ #define DO_SPATIAL_TESTS
+//~ /**
+ //~ * Function to test the spatial spread of charge.
+ //~ * We make the cable long enough to get another nice exponential.
+ //~ * Vm = Vm0 * exp( -x/lambda)
+ //~ * lambda = sqrt( Rm/Ra ) where these are the actual values, not
+ //~ * the values per unit length.
+ //~ * So here lambda = 20, so that each compt is lambda/20
+ //~ */
+//~ #include "../shell/Shell.h"
+//~ void testCompartmentWrapperProcess()
+//~ {
+	//~ Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
+	//~ unsigned int size = 100;
+	//~ vector< int > dims( 1, size );
+	//~ 
+	//~ double Rm = 1.0;
+	//~ double Ra = 0.01;
+	//~ double Cm = 1.0;
+	//~ double dt = 0.01;
+	//~ double runtime = 10;
+	//~ double lambda = sqrt( Rm / Ra );
+	//~ 
+	//~ Id cid = shell->doCreate( "Compartment", Id(), "compt", dims );
+	//~ assert( cid != Id() );
+	//~ assert( cid()->dataHandler()->totalEntries() == size );
+	//~ 
+	//~ bool ret = Field< double >::setRepeat( cid, "initVm", 0.0 );
+	//~ assert( ret );
+	//~ Field< double >::setRepeat( cid, "inject", 0 );
+	//~ // Only apply current injection in first compartment
+	//~ Field< double >::set( ObjId( cid, 0 ), "inject", 1.0 ); 
+	//~ Field< double >::setRepeat( cid, "Rm", Rm );
+	//~ Field< double >::setRepeat( cid, "Ra", Ra );
+	//~ Field< double >::setRepeat( cid, "Cm", Cm );
+	//~ Field< double >::setRepeat( cid, "Em", 0 );
+	//~ Field< double >::setRepeat( cid, "Vm", 0 );
+	//~ 
+	//~ // The diagonal message has a default stride of 1, so it connects
+	//~ // successive compartments.
+	//~ // Note that the src and dest elements here are identical, so we cannot
+	//~ // use a shared message. The messaging system will get confused about
+	//~ // direction to send data. So we split up the shared message that we
+	//~ // might have used, below, into two individual messages.
+	//~ // MsgId mid = shell->doAddMsg( "Diagonal", ObjId( cid ), "raxial", ObjId( cid ), "axial" );
+	//~ MsgId mid = shell->doAddMsg( "Diagonal", ObjId( cid ), "axialOut", ObjId( cid ), "handleAxial" );
+	//~ assert( mid != Msg::bad);
+	//~ // mid = shell->doAddMsg( "Diagonal", ObjId( cid ), "handleRaxial", ObjId( cid ), "raxialOut" );
+	//~ mid = shell->doAddMsg( "Diagonal", ObjId( cid ), "raxialOut", ObjId( cid ), "handleRaxial" );
+	//~ assert( mid != Msg::bad );
+	//~ ObjId managerId = Msg::getMsg( mid )->manager().objId();
+	//~ // Make the raxial data go from high to lower index compartments.
+	//~ Field< int >::set( managerId, "stride", -1 );
+	//~ 
+//~ #ifdef DO_SPATIAL_TESTS
+	//~ shell->doSetClock( 0, dt );
+	//~ shell->doSetClock( 1, dt );
+	//~ shell->doUseClock( "/compt", "init", 0 );
+	//~ shell->doUseClock( "/compt", "process", 1 );
+	//~ 
+	//~ shell->doReinit();
+	//~ shell->doStart( runtime );
+	//~ 
+	//~ double Vmax = Field< double >::get( ObjId( cid, 0 ), "Vm" );
+	//~ 
+	//~ double delta = 0.0;
+	//~ // We measure only the first 50 compartments as later we 
+	//~ // run into end effects because it is not an infinite cable
+	//~ for ( unsigned int i = 0; i < 50; i++ ) {
+		//~ double Vm = Field< double >::get( ObjId( cid, i ), "Vm" );
+		//~ double x = Vmax * exp( - static_cast< double >( i ) / lambda );
+		//~ delta += ( Vm - x ) * ( Vm - x );
+	 	//~ // cout << i << " (x, Vm) = ( " << x << ", " << Vm << " )\n";
+	//~ }
+	//~ assert( delta < 1.0e-5 );
+//~ #endif // DO_SPATIAL_TESTS
+	//~ shell->doDelete( cid );
+	//~ cout << "." << flush;
+//~ }
+
 #endif // DO_UNIT_TESTS
