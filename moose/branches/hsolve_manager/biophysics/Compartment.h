@@ -19,176 +19,183 @@
  */
 namespace moose
 {
-class Compartment
+class Compartment: public CompartmentInterface
 {
-	public:
-			Compartment();
-			virtual ~Compartment();
-
-			// Value Field access function definitions.
-			void setVm( double Vm );
-			double getVm() const;
-			void setEm( double Em );
-			double getEm() const;
-			void setCm( double Cm );
-			double getCm() const;
-			void setRm( double Rm );
-			double getRm() const;
-			void setRa( double Ra );
-			double getRa() const;
-			void setIm( double Im );
-			double getIm() const;
-			void setInject( double Inject );
-			double getInject() const;
-			void setInitVm( double initVm );
-			double getInitVm() const;
-			void setDiameter( double diameter );
-			double getDiameter() const;
-			void setLength( double length );
-			double getLength() const;
-			void setX0( double value );
-			double getX0() const;
-			void setY0( double value );
-			double getY0() const;
-			void setZ0( double value );
-			double getZ0() const;
-			void setX( double value );
-			double getX() const;
-			void setY( double value );
-			double getY() const;
-			void setZ( double value );
-			double getZ() const;
-
-			// Dest function definitions.
-			/**
-			 * The process function does the object updating and sends out
-			 * messages to channels, nernsts, and so on.
-			 */
-			void process( const Eref& e, ProcPtr p );
-
-			/**
-			 * The reinit function reinitializes all fields.
-			 */
-			void reinit( const Eref& e, ProcPtr p );
-
-			/**
-			 * The initProc function is for a second phase of 'process'
-			 * operations. It sends the axial and raxial messages
-			 * to other compartments. It has to be executed out of phase
-			 * with the main process so that all compartments are 
-			 * equivalent and there is no calling order dependence in 
-			 * the results.
-			 */
-			void initProc( const Eref& e, ProcPtr p );
-
-			/**
-			 * Empty function to do another reinit step out of phase
-			 * with the main one. Nothing needs doing there.
-			 */
-			void initReinit( const Eref& e, ProcPtr p );
-
-			/**
-			 * handleChannel handles information coming from the channel
-			 * to the compartment
-			 */
-			void handleChannel( double Gk, double Ek);
-
-			/**
-			 * handleRaxial handles incoming raxial message data.
-			 */
-			void handleRaxial( double Ra, double Vm);
-
-			/**
-			 * handleAxial handles incoming axial message data.
-			 */
-			void handleAxial( double Vm);
-
-			/**
-			 * Injects a constantly updated current into the compartment.
-			 * Unlike the 'inject' field, this injected current is
-			 * applicable only for a single timestep. So this is meant to
-			 * be used as the destination of a message rather than as a
-			 * one-time assignment.
-			 */
-			void injectMsg( double current);
-
-			/**
-			 * Injects a constantly updated current into the
-			 * compartment, with a probability prob. Note that it isn't
-			 * the current amplitude that is random, it is the presence
-			 * or absence of the current that is probabilistic.
-			 */
-			void randInject( double prob, double current);
-
-			/**
-			 * Dummy function to act as recipient of 'cable' message,
-			 * which is just for grouping compartments.
-			 */
-			void cable();
-
-			/**
-			 * A utility function to check for assignment to fields that
-			 * must be > 0
-			 */
-			bool rangeWarning( const string& field, double value );
-
-			/**
-			 * Initializes the class info.
-			 */
-			static const Cinfo* initCinfo();
-
-			/*
-			 * This Finfo is used to send out Vm to channels, spikegens, etc.
-			 * 
-			 * It is exposed here so that HSolve can also use it to send out
-			 * the Vm to the recipients.
-			 */
-			static SrcFinfo1< double >* VmOut();
-
-			/**
-			 * Virtual function to handle Reinit.
-			 */
-			virtual void innerReinit( const Eref& e, ProcPtr p );
-
-			/**
-			 * Virtual function to handle the Proc part of the Init cycle.
-			 */
-			virtual void innerInitProc( const Eref& e, ProcPtr p );
-
-			/**
-			 * Virtual function to handle the Reinit part of the Init cycle.
-			 * This does nothing here, but is needed in SymCompartment.
-			 */
-			virtual void innerInitReinit( const Eref& e, ProcPtr p );
-	protected:
-			double Ra_;
-			double Vm_;
-			double Im_;
-			double lastIm_;
-			double A_;
-			double B_;
-
-	private:
-			double Em_;
-			double Cm_;
-			double Rm_;
-			// double Ra_;
-			double initVm_;
-			double Inject_;
-			double diameter_;
-			double length_;
-			// double A_;
-			// double B_;
-			double invRm_;
-			double sumInject_;
-			double x0_;
-			double y0_;
-			double z0_;
-			double x_;
-			double y_;
-			double z_;
-			double dt_;
-			static const double EPSILON;
+public:
+	Compartment();
+	virtual ~Compartment();
+	
+	// Value Field access function definitions.
+	virtual void   setVm( const Eref& e, const Qinfo* q, double value );
+	virtual double getVm( const Eref& e, const Qinfo* q ) const;
+	virtual void   setEm( const Eref& e, const Qinfo* q, double value );
+	virtual double getEm( const Eref& e, const Qinfo* q ) const;
+	virtual void   setCm( const Eref& e, const Qinfo* q, double value );
+	virtual double getCm( const Eref& e, const Qinfo* q ) const;
+	virtual void   setRm( const Eref& e, const Qinfo* q, double value );
+	virtual double getRm( const Eref& e, const Qinfo* q ) const;
+	virtual void   setRa( const Eref& e, const Qinfo* q, double value );
+	virtual double getRa( const Eref& e, const Qinfo* q ) const;
+	// Im is read-only.
+	virtual double getIm( const Eref& e, const Qinfo* q ) const;
+	virtual void   setInject( const Eref& e, const Qinfo* q, double value );
+	virtual double getInject( const Eref& e, const Qinfo* q ) const;
+	virtual void   setInitVm( const Eref& e, const Qinfo* q, double value );
+	virtual double getInitVm( const Eref& e, const Qinfo* q ) const;
+	virtual void   setDiameter(
+		const Eref& e, const Qinfo* q, double value );
+	virtual double getDiameter( const Eref& e, const Qinfo* q ) const;
+	virtual void   setLength( const Eref& e, const Qinfo* q, double value );
+	virtual double getLength( const Eref& e, const Qinfo* q ) const;
+	virtual void   setX0( const Eref& e, const Qinfo* q, double value );
+	virtual double getX0( const Eref& e, const Qinfo* q ) const;
+	virtual void   setY0( const Eref& e, const Qinfo* q, double value );
+	virtual double getY0( const Eref& e, const Qinfo* q ) const;
+	virtual void   setZ0( const Eref& e, const Qinfo* q, double value );
+	virtual double getZ0( const Eref& e, const Qinfo* q ) const;
+	virtual void   setX( const Eref& e, const Qinfo* q, double value );
+	virtual double getX( const Eref& e, const Qinfo* q ) const;
+	virtual void   setY( const Eref& e, const Qinfo* q, double value );
+	virtual double getY( const Eref& e, const Qinfo* q ) const;
+	virtual void   setZ( const Eref& e, const Qinfo* q, double value );
+	virtual double getZ( const Eref& e, const Qinfo* q ) const;
+	
+	// Dest function definitions.
+	/**
+	 * The process function does the object updating and sends out
+	 * messages to channels, nernsts, and so on.
+	 */
+	virtual void process( const Eref& e, ProcPtr p );
+	
+	/**
+	 * The reinit function reinitializes all fields.
+	 */
+	virtual void reinit( const Eref& e, ProcPtr p );
+	
+	/**
+	 * The initProc function is for a second phase of 'process'
+	 * operations. It sends the axial and raxial messages
+	 * to other compartments. It has to be executed out of phase
+	 * with the main process so that all compartments are 
+	 * equivalent and there is no calling order dependence in 
+	 * the results.
+	 */
+	virtual void initProc( const Eref& e, ProcPtr p );
+	
+	/**
+	 * Empty function to do another reinit step out of phase
+	 * with the main one. Nothing needs doing there.
+	 */
+	virtual void initReinit( const Eref& e, ProcPtr p );
+	
+	/**
+	 * handleChannel handles information coming from the channel
+	 * to the compartment
+	 */
+	virtual void handleChannel(
+		const Eref& e, const Qinfo* q, double Gk, double Ek );
+	
+	/**
+	 * handleRaxial handles incoming raxial message data.
+	 */
+	virtual void handleRaxial(
+		const Eref& e, const Qinfo* q, double Ra, double Vm );
+	
+	/**
+	 * handleAxial handles incoming axial message data.
+	 */
+	virtual void handleAxial(
+		const Eref& e, const Qinfo* q, double Vm );
+	
+	/**
+	 * Injects a constantly updated current into the compartment.
+	 * Unlike the 'inject' field, this injected current is
+	 * applicable only for a single timestep. So this is meant to
+	 * be used as the destination of a message rather than as a
+	 * one-time assignment.
+	 */
+	virtual void injectMsg(
+		const Eref& e, const Qinfo* q, double current );
+	
+	/**
+	 * Injects a constantly updated current into the
+	 * compartment, with a probability prob. Note that it isn't
+	 * the current amplitude that is random, it is the presence
+	 * or absence of the current that is probabilistic.
+	 */
+	virtual void randInject(
+		const Eref& e, const Qinfo* q, double prob, double current );
+	
+	/**
+	 * Dummy function to act as recipient of 'cable' message,
+	 * which is just for grouping compartments.
+	 */
+	void cable();
+	
+	/**
+	 * A utility function to check for assignment to fields that
+	 * must be > 0
+	 */
+	bool rangeWarning( const string& field, double value );
+	
+	/**
+	 * Initializes the class info.
+	 */
+	static const Cinfo* initCinfo();
+	
+	/*
+	 * This Finfo is used to send out Vm to channels, spikegens, etc.
+	 * 
+	 * It is exposed here so that HSolve can also use it to send out
+	 * the Vm to the recipients.
+	 */
+	static SrcFinfo1< double >* VmOut();
+	
+	/**
+	 * Virtual function to handle Reinit.
+	 */
+	virtual void innerReinit( const Eref& e, ProcPtr p );
+	
+	/**
+	 * Virtual function to handle the Proc part of the Init cycle.
+	 */
+	virtual void innerInitProc( const Eref& e, ProcPtr p );
+	
+	/**
+	 * Virtual function to handle the Reinit part of the Init cycle.
+	 * This does nothing here, but is needed in SymCompartment.
+	 */
+	virtual void innerInitReinit( const Eref& e, ProcPtr p );
+	
+protected:
+	double Ra_;
+	double Vm_;
+	double Im_;
+	double lastIm_;
+	double A_;
+	double B_;
+	
+private:
+	double Em_;
+	double Cm_;
+	double Rm_;
+	// double Ra_;
+	double initVm_;
+	double Inject_;
+	double diameter_;
+	double length_;
+	// double A_;
+	// double B_;
+	double invRm_;
+	double sumInject_;
+	double x0_;
+	double y0_;
+	double z0_;
+	double x_;
+	double y_;
+	double z_;
+	double dt_;
+	static const double EPSILON;
 };
 }
 

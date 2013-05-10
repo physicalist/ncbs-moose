@@ -15,14 +15,15 @@
 #include "RateLookup.h"
 #include "HSolveActive.h"
 #include "HSolve.h"
-#include "../biophysics/Compartment.h"
-#include "ZombieCompartment.h"
+#include "../biophysics/CompartmentInterface.h"
+#include "../biophysics/CompartmentWrapper.h"
+//~ #include "ZombieCompartment.h"
 #include "../biophysics/CaConc.h"
-#include "ZombieCaConc.h"
+//~ #include "ZombieCaConc.h"
 #include "../biophysics/HHGate.h"
 #include "../biophysics/ChanBase.h"
 #include "../biophysics/HHChannel.h"
-#include "ZombieHHChannel.h"
+//~ #include "ZombieHHChannel.h"
 
 const Cinfo* HSolve::initCinfo()
 {
@@ -202,16 +203,16 @@ void HSolve::reinit( const Eref& hsolve, ProcPtr p )
 
 void HSolve::zombify( Eref hsolve ) const
 {
-	vector< Id >::const_iterator i;
-	
-	for ( i = compartmentId_.begin(); i != compartmentId_.end(); ++i )
-		ZombieCompartment::zombify( hsolve.element(), i->eref().element() );
-	
-	for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
-		ZombieCaConc::zombify( hsolve.element(), i->eref().element() );
-	
-	for ( i = channelId_.begin(); i != channelId_.end(); ++i )
-		ZombieHHChannel::zombify( hsolve.element(), i->eref().element() );
+	//~ vector< Id >::const_iterator i;
+	//~ 
+	//~ for ( i = compartmentId_.begin(); i != compartmentId_.end(); ++i )
+		//~ ZombieCompartment::zombify( hsolve.element(), i->eref().element() );
+	//~ 
+	//~ for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
+		//~ ZombieCaConc::zombify( hsolve.element(), i->eref().element() );
+	//~ 
+	//~ for ( i = channelId_.begin(); i != channelId_.end(); ++i )
+		//~ ZombieHHChannel::zombify( hsolve.element(), i->eref().element() );
 }
 
 void HSolve::setup( Eref hsolve )
@@ -308,7 +309,7 @@ Id HSolve::deepSearchForCompartment( Id base )
 		} else {
 			current = cstack.back().back();
 			
-			if ( current()->cinfo() == moose::Compartment::initCinfo() ) {
+			if ( current()->cinfo() == CompartmentWrapper::initCinfo() ) {
 				result = current;
 				break;
 			}

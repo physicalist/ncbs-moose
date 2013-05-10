@@ -10,6 +10,7 @@
 #include "header.h"
 #include "ElementValueFinfo.h"
 #include "../randnum/randnum.h"
+#include "../biophysics/CompartmentInterface.h"
 #include "../biophysics/Compartment.h"
 #include "HinesMatrix.h"
 #include "HSolveStruct.h"
