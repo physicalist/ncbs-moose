@@ -9,7 +9,9 @@
 
 #include "header.h"
 
+#include "CompartmentInterface.h"
 #include "Compartment.h"
+#include "CompartmentWrapper.h"
 #include "SymCompartment.h"
 
 static SrcFinfo2< double, double > *raxialOut() {
@@ -172,7 +174,7 @@ const Cinfo* SymCompartment::initCinfo()
 	};
 	static Cinfo symCompartmentCinfo(
 			"SymCompartment",
-			moose::Compartment::initCinfo(),
+			CompartmentWrapper::initCinfo(),
 			symCompartmentFinfos,
 			sizeof( symCompartmentFinfos ) / sizeof( Finfo* ),
 			new Dinfo< SymCompartment >()

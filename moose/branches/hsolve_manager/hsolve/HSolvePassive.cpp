@@ -8,6 +8,7 @@
 **********************************************************************/
 
 #include "header.h"
+#include "../biophysics/CompartmentInterface.h"
 #include "../biophysics/Compartment.h"
 using namespace moose; // For moose::Compartment from 'Compartment.h'
 #include "HSolveUtils.h"

@@ -15,10 +15,10 @@
 #include "RateLookup.h"
 #include "HSolveActive.h"
 #include "HSolve.h"
-#include "../biophysics/Compartment.h"
+#include "../biophysics/CompartmentInterface.h"
+#include "../biophysics/CompartmentWrapper.h"
 #include "../biophysics/CaConc.h"
 #include "ZombieCaConc.h"
-using namespace moose;
 //~ #include "ZombieCompartment.h"
 //~ #include "ZombieCaConc.h"
 
@@ -302,7 +302,7 @@ void HSolveActive::sendValues( ProcPtr info ) {
 	vector< unsigned int >::iterator i;
 	
 	for ( i = outVm_.begin(); i != outVm_.end(); ++i )
-		moose::Compartment::VmOut()->send(
+		CompartmentWrapper::VmOut()->send(
 		//~ ZombieCompartment::VmOut()->send(
 			compartmentId_[ *i ].eref(),
 			info->threadIndexInGroup,
@@ -311,9 +311,10 @@ void HSolveActive::sendValues( ProcPtr info ) {
 	
 	for ( i = outCa_.begin(); i != outCa_.end(); ++i )
 		//~ CaConc::concOut()->send(
-		ZombieCaConc::concOut()->send(
-			caConcId_[ *i ].eref(),
-			info->threadIndexInGroup,
-			ca_[ *i ]
-		);
+		//~ ZombieCaConc::concOut()->send(
+			//~ caConcId_[ *i ].eref(),
+			//~ info->threadIndexInGroup,
+			//~ ca_[ *i ]
+		//~ );
+		;
 }

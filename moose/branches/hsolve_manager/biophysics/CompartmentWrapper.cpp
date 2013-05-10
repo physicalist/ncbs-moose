@@ -12,16 +12,17 @@
 //~ #include "../randnum/randnum.h"
 #include "CompartmentInterface.h"
 #include "CompartmentWrapper.h"
+#include "Compartment.h"
 
 /*
  * This Finfo is used to send out Vm to channels, spikegens, etc.
- * 
+ *
  * It is exposed here so that HSolve can also use it to send out
  * the Vm to the recipients.
  */
 // Static function.
 SrcFinfo1< double >* CompartmentWrapper::VmOut() {
-	static SrcFinfo1< double > VmOut( "VmOut", 
+	static SrcFinfo1< double > VmOut( "VmOut",
 		"Sends out Vm value of compartment on each timestep" );
 	return &VmOut;
 }
@@ -30,16 +31,16 @@ SrcFinfo1< double >* CompartmentWrapper::VmOut() {
 // have to define a new SrcFinfo even though the contents of the msg
 // are still only Vm.
 
-static SrcFinfo1< double >* axialOut() {
-	static SrcFinfo1< double > axialOut( "axialOut", 
+SrcFinfo1< double >* CompartmentWrapper::axialOut() {
+	static SrcFinfo1< double > axialOut( "axialOut",
 		"Sends out Vm value of compartment to adjacent compartments,"
 		"on each timestep" );
 	return &axialOut;
 }
 
-static SrcFinfo2< double, double >* raxialOut()
+SrcFinfo2< double, double >* CompartmentWrapper::raxialOut()
 {
-	static SrcFinfo2< double, double > raxialOut( "raxialOut", 
+	static SrcFinfo2< double, double > raxialOut( "raxialOut",
 		"Sends out Raxial information on each timestep, "
 		"fields are Ra and Vm" );
 	return &raxialOut;
@@ -58,11 +59,11 @@ const Cinfo* CompartmentWrapper::initCinfo()
 	///////////////////////////////////////////////////////////////////
 	// Shared messages
 	///////////////////////////////////////////////////////////////////
-	static DestFinfo process( "process", 
+	static DestFinfo process( "process",
 		"Handles 'process' call",
 		new ProcOpFunc< CompartmentWrapper >( &CompartmentWrapper::process ) );
 	
-	static DestFinfo reinit( "reinit", 
+	static DestFinfo reinit( "reinit",
 		"Handles 'reinit' call",
 		new ProcOpFunc< CompartmentWrapper >( &CompartmentWrapper::reinit ) );
 	
@@ -84,12 +85,12 @@ const Cinfo* CompartmentWrapper::initCinfo()
 	);
 	///////////////////////////////////////////////////////////////////
 	
-	static DestFinfo initProc( "initProc", 
+	static DestFinfo initProc( "initProc",
 		"Handles Process call for the 'init' phase of the CompartmentWrapper "
 		"calculations. These occur as a separate Tick cycle from the "
 		"regular proc cycle, and should be called before the proc msg.",
 		new ProcOpFunc< CompartmentWrapper >( &CompartmentWrapper::initProc ) );
-	static DestFinfo initReinit( "initReinit", 
+	static DestFinfo initReinit( "initReinit",
 		"Handles Reinit call for the 'init' phase of the CompartmentWrapper "
 		"calculations.",
 		new ProcOpFunc< CompartmentWrapper >( &CompartmentWrapper::initReinit ) );
@@ -98,7 +99,7 @@ const Cinfo* CompartmentWrapper::initCinfo()
 		&initProc, &initReinit
 	};
 	
-	static SharedFinfo init( "init", 
+	static SharedFinfo init( "init",
 			"This is a shared message to receive Init messages from "
 			"the scheduler objects. Its job is to separate the "
 			"compartmental calculations from the message passing. "
@@ -115,7 +116,7 @@ const Cinfo* CompartmentWrapper::initCinfo()
 	
 	///////////////////////////////////////////////////////////////////
 	
-	static DestFinfo handleChannel( "handleChannel", 
+	static DestFinfo handleChannel( "handleChannel",
 		"Handles conductance and Reversal potential arguments from Channel",
 		new EpFunc2< CompartmentWrapper, double, double >( &CompartmentWrapper::handleChannel ) );
 	// VmOut is declared above as it needs to be in scope for later funcs.
@@ -124,7 +125,7 @@ const Cinfo* CompartmentWrapper::initCinfo()
 	{
 		&handleChannel, VmOut()
 	};
-	static SharedFinfo channel( "channel", 
+	static SharedFinfo channel( "channel",
 			"This is a shared message from a compartment to channels. "
 			"The first entry is a MsgDest for the info coming from "
 			"the channel. It expects Gk and Ek from the channel "
@@ -133,17 +134,17 @@ const Cinfo* CompartmentWrapper::initCinfo()
 	);
 	///////////////////////////////////////////////////////////////////
 	// axialOut declared above as it is needed in file scope
-	static DestFinfo handleRaxial( "handleRaxial", 
+	static DestFinfo handleRaxial( "handleRaxial",
 		"Handles Raxial info: arguments are Ra and Vm.",
-		new EpFunc2< CompartmentWrapper, double, double >( 
+		new EpFunc2< CompartmentWrapper, double, double >(
 			&CompartmentWrapper::handleRaxial )
 	);
-
+	
 	static Finfo* axialShared[] =
 	{
 		axialOut(), &handleRaxial
 	};
-	static SharedFinfo axial( "axial", 
+	static SharedFinfo axial( "axial",
 			"This is a shared message between asymmetric compartments. "
 			"axial messages (this kind) connect up to raxial "
 			"messages (defined below). The soma should use raxial "
@@ -162,7 +163,7 @@ const Cinfo* CompartmentWrapper::initCinfo()
 	);
 	
 	///////////////////////////////////////////////////////////////////
-	static DestFinfo handleAxial( "handleAxial", 
+	static DestFinfo handleAxial( "handleAxial",
 		"Handles Axial information. Argument is just Vm.",
 		new EpFunc1< CompartmentWrapper, double >( &CompartmentWrapper::handleAxial ) );
 	// rxialOut declared above as it is needed in file scope
@@ -170,7 +171,7 @@ const Cinfo* CompartmentWrapper::initCinfo()
 	{
 		&handleAxial, raxialOut()
 	};
-	static SharedFinfo raxial( "raxial", 
+	static SharedFinfo raxial( "raxial",
 			"This is a raxial shared message between asymmetric "
 			"compartments. The first entry is a MsgDest for the info "
 			"coming from the other compt. It expects Vm from the "
@@ -178,116 +179,117 @@ const Cinfo* CompartmentWrapper::initCinfo()
 			"Ra and Vm to the raxialFunc of the target compartment. ",
 			raxialShared, sizeof( raxialShared ) / sizeof( Finfo* )
 	);
+	
 	///////////////////////////////////////////////////////////////////
 	// Value Finfos.
 	///////////////////////////////////////////////////////////////////
-	
-		static ElementValueFinfo< CompartmentWrapper, double > Vm( "Vm", 
-			"membrane potential",
-			&CompartmentWrapper::setVm,
-			&CompartmentWrapper::getVm
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > Cm( "Cm", 
-			"Membrane capacitance",
-			&CompartmentWrapper::setCm,
-			&CompartmentWrapper::getCm
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > Em( "Em", 
-			"Resting membrane potential",
-			&CompartmentWrapper::setEm,
-			&CompartmentWrapper::getEm
-		);
-		static ReadOnlyElementValueFinfo< CompartmentWrapper, double > Im( "Im", 
-			"Current going through membrane",
-			&CompartmentWrapper::getIm
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > inject( "inject", 
-			"Current injection to deliver into compartment",
-			&CompartmentWrapper::setInject,
-			&CompartmentWrapper::getInject
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > initVm( "initVm", 
-			"Initial value for membrane potential",
-			&CompartmentWrapper::setInitVm,
-			&CompartmentWrapper::getInitVm
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > Rm( "Rm", 
-			"Membrane resistance",
-			&CompartmentWrapper::setRm,
-			&CompartmentWrapper::getRm
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > Ra( "Ra", 
-			"Axial resistance of compartment",
-			&CompartmentWrapper::setRa,
-			&CompartmentWrapper::getRa
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > diameter( "diameter", 
-			"Diameter of compartment",
-			&CompartmentWrapper::setDiameter,
-			&CompartmentWrapper::getDiameter
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > length( "length", 
-			"Length of compartment",
-			&CompartmentWrapper::setLength,
-			&CompartmentWrapper::getLength
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > x0( "x0", 
-			"X coordinate of start of compartment",
-			&CompartmentWrapper::setX0,
-			&CompartmentWrapper::getX0
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > y0( "y0", 
-			"Y coordinate of start of compartment",
-			&CompartmentWrapper::setY0,
-			&CompartmentWrapper::getY0
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > z0( "z0", 
-			"Z coordinate of start of compartment",
-			&CompartmentWrapper::setZ0,
-			&CompartmentWrapper::getZ0
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > x( "x",
-			"x coordinate of end of compartment",
-			&CompartmentWrapper::setX,
-			&CompartmentWrapper::getX
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > y( "y",
-			"y coordinate of end of compartment",
-			&CompartmentWrapper::setY,
-			&CompartmentWrapper::getY
-		);
-		static ElementValueFinfo< CompartmentWrapper, double > z( "z", 
-			"z coordinate of end of compartment",
-			&CompartmentWrapper::setZ,
-			&CompartmentWrapper::getZ
-		);
+	static ElementValueFinfo< CompartmentWrapper, double > Vm( "Vm",
+		"membrane potential",
+		&CompartmentWrapper::setVm,
+		&CompartmentWrapper::getVm
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > Cm( "Cm",
+		"Membrane capacitance",
+		&CompartmentWrapper::setCm,
+		&CompartmentWrapper::getCm
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > Em( "Em",
+		"Resting membrane potential",
+		&CompartmentWrapper::setEm,
+		&CompartmentWrapper::getEm
+	);
+	static ReadOnlyElementValueFinfo< CompartmentWrapper, double > Im( "Im",
+		"Current going through membrane",
+		&CompartmentWrapper::getIm
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > inject( "inject",
+		"Current injection to deliver into compartment",
+		&CompartmentWrapper::setInject,
+		&CompartmentWrapper::getInject
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > initVm( "initVm",
+		"Initial value for membrane potential",
+		&CompartmentWrapper::setInitVm,
+		&CompartmentWrapper::getInitVm
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > Rm( "Rm",
+		"Membrane resistance",
+		&CompartmentWrapper::setRm,
+		&CompartmentWrapper::getRm
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > Ra( "Ra",
+		"Axial resistance of compartment",
+		&CompartmentWrapper::setRa,
+		&CompartmentWrapper::getRa
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > diameter( "diameter",
+		"Diameter of compartment",
+		&CompartmentWrapper::setDiameter,
+		&CompartmentWrapper::getDiameter
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > length( "length",
+		"Length of compartment",
+		&CompartmentWrapper::setLength,
+		&CompartmentWrapper::getLength
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > x0( "x0",
+		"X coordinate of start of compartment",
+		&CompartmentWrapper::setX0,
+		&CompartmentWrapper::getX0
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > y0( "y0",
+		"Y coordinate of start of compartment",
+		&CompartmentWrapper::setY0,
+		&CompartmentWrapper::getY0
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > z0( "z0",
+		"Z coordinate of start of compartment",
+		&CompartmentWrapper::setZ0,
+		&CompartmentWrapper::getZ0
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > x( "x",
+		"x coordinate of end of compartment",
+		&CompartmentWrapper::setX,
+		&CompartmentWrapper::getX
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > y( "y",
+		"y coordinate of end of compartment",
+		&CompartmentWrapper::setY,
+		&CompartmentWrapper::getY
+	);
+	static ElementValueFinfo< CompartmentWrapper, double > z( "z",
+		"z coordinate of end of compartment",
+		&CompartmentWrapper::setZ,
+		&CompartmentWrapper::getZ
+	);
 	
 	//////////////////////////////////////////////////////////////////
 	// DestFinfo definitions
 	//////////////////////////////////////////////////////////////////
-		static DestFinfo injectMsg( "injectMsg", 
-			"The injectMsg corresponds to the INJECT message in the "
-			"GENESIS compartment. Unlike the 'inject' field, any value "
-			"assigned by handleInject applies only for a single timestep."
-			"So it needs to be updated every dt for a steady (or varying)"
-			"injection current",
-			new EpFunc1< CompartmentWrapper,  double >( &CompartmentWrapper::injectMsg )
-		);
-		
-		static DestFinfo randInject( "randInject",
-			"Sends a random injection current to the compartment. Must be"
-			"updated each timestep."
-			"Arguments to randInject are probability and current.",
-			new EpFunc2< CompartmentWrapper, double, double > (
-				&CompartmentWrapper::randInject ) );
+	static DestFinfo injectMsg( "injectMsg",
+		"The injectMsg corresponds to the INJECT message in the "
+		"GENESIS compartment. Unlike the 'inject' field, any value "
+		"assigned by handleInject applies only for a single timestep."
+		"So it needs to be updated every dt for a steady (or varying)"
+		"injection current",
+		new EpFunc1< CompartmentWrapper,  double >( &CompartmentWrapper::injectMsg )
+	);
 	
-		static DestFinfo cable( "cable", 
-			"Message for organizing compartments into groups, called"
-			"cables. Doesn't do anything.",
-			new OpFunc0< CompartmentWrapper >( &CompartmentWrapper::cable )
-		);
+	static DestFinfo randInject( "randInject",
+		"Sends a random injection current to the compartment. Must be"
+		"updated each timestep."
+		"Arguments to randInject are probability and current.",
+		new EpFunc2< CompartmentWrapper, double, double > (
+			&CompartmentWrapper::randInject ) );
+	
+	static DestFinfo cable( "cable",
+		"Message for organizing compartments into groups, called"
+		"cables. Doesn't do anything.",
+		new OpFunc0< CompartmentWrapper >( &CompartmentWrapper::cable )
+	);
+	
 	///////////////////////////////////////////////////////////////////
-	static Finfo* compartmentFinfos[] = 
+	static Finfo* compartmentFinfos[] =
 	{
 		&Vm,				// Value
 		&Cm,				// Value
@@ -321,7 +323,8 @@ const Cinfo* CompartmentWrapper::initCinfo()
 		"Name", "Compartment",
 		"Author", "Upi Bhalla",
 		"Description", "Compartment object, for branching neuron models.",
-	};	
+	};
+	
 	static Cinfo compartmentCinfo(
 				"Compartment",
 				Neutral::initCinfo(),
@@ -340,6 +343,11 @@ static const Cinfo* compartmentCinfo = CompartmentWrapper::initCinfo();
 //////////////////////////////////////////////////////////////////
 // Here we put the CompartmentWrapper class functions.
 //////////////////////////////////////////////////////////////////
+
+CompartmentWrapper::CompartmentWrapper()
+{
+	compartment_ = new moose::Compartment();
+}
 
 //~ CompartmentWrapper::CompartmentWrapper()
 //~ {
@@ -376,7 +384,7 @@ static const Cinfo* compartmentCinfo = CompartmentWrapper::initCinfo();
 	//~ if ( value < CompartmentWrapper::EPSILON ) {
 		//~ cout << "Warning: Ignored attempt to set " << field <<
 				//~ " of compartment " <<
-				//~ // c->target().e->name() << 
+				//~ // c->target().e->name() <<
 				//~ " to less than " << EPSILON << endl;
 		//~ return 1;
 	//~ }
@@ -564,7 +572,7 @@ void CompartmentWrapper::reinit( const Eref& e, ProcPtr p )
 void CompartmentWrapper::initProc( const Eref& e, ProcPtr p )
 {
 	//~ // Separate variants for regular and SymCompartmentWrapper
-	//~ this->innerInitProc( e, p ); 
+	//~ this->innerInitProc( e, p );
 }
 
 //~ void CompartmentWrapper::innerInitProc( const Eref& e, ProcPtr p )
@@ -646,7 +654,7 @@ void CompartmentWrapper::randInject(
 	//~ double Vm = 0.0;
 	//~ double tau = 1.0;
 	//~ double Vmax = 1.0;
-	//~ for ( p.currTime = 0.0; p.currTime < 2.0; p.currTime += p.dt ) 
+	//~ for ( p.currTime = 0.0; p.currTime < 2.0; p.currTime += p.dt )
 	//~ {
 		//~ Vm = c->getVm();
 		//~ double x = Vmax - Vmax * exp( -p.currTime / tau );
@@ -692,7 +700,7 @@ void CompartmentWrapper::randInject(
 	//~ assert( ret );
 	//~ Field< double >::setRepeat( cid, "inject", 0 );
 	//~ // Only apply current injection in first compartment
-	//~ Field< double >::set( ObjId( cid, 0 ), "inject", 1.0 ); 
+	//~ Field< double >::set( ObjId( cid, 0 ), "inject", 1.0 );
 	//~ Field< double >::setRepeat( cid, "Rm", Rm );
 	//~ Field< double >::setRepeat( cid, "Ra", Ra );
 	//~ Field< double >::setRepeat( cid, "Cm", Cm );
@@ -727,7 +735,7 @@ void CompartmentWrapper::randInject(
 	//~ double Vmax = Field< double >::get( ObjId( cid, 0 ), "Vm" );
 	//~ 
 	//~ double delta = 0.0;
-	//~ // We measure only the first 50 compartments as later we 
+	//~ // We measure only the first 50 compartments as later we
 	//~ // run into end effects because it is not an infinite cable
 	//~ for ( unsigned int i = 0; i < 50; i++ ) {
 		//~ double Vm = Field< double >::get( ObjId( cid, i ), "Vm" );

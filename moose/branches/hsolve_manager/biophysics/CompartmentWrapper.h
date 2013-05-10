@@ -23,6 +23,10 @@
 class CompartmentWrapper: public CompartmentInterface
 {
 public:
+	CompartmentWrapper();
+	virtual ~CompartmentWrapper()
+	{;}
+	
 	// Value Field access function definitions.
 	virtual void   setVm( const Eref& e, const Qinfo* q, double value );
 	virtual double getVm( const Eref& e, const Qinfo* q ) const;
@@ -136,6 +140,8 @@ public:
 	 * the Vm to the recipients.
 	 */
 	static SrcFinfo1< double >* VmOut();
+	static SrcFinfo1< double >* axialOut();
+	static SrcFinfo2< double, double >* raxialOut();
 	
 private:
 	CompartmentInterface* compartment_;
