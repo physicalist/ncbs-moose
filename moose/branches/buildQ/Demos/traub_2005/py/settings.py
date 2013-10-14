@@ -29,6 +29,7 @@
 
 # Code:
 import exceptions
+import os
 
 class ReinitializationWarning(exceptions.Warning):
     def __init__(self, *args, **kwargs):
@@ -67,7 +68,8 @@ class ModelSettings(Settings):
     def __init__(self):
         self.container = '/'
         self.libpath = '/library'
-        self.protodir = 'proto'
+        self.mydir = os.path.dirname(__file__)
+        self.protodir = os.path.join(self.mydir, 'proto')
         self.populationSize = {}
         self.numpy_seed = None
         

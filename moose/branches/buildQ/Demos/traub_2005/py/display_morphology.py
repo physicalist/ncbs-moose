@@ -81,7 +81,7 @@ def cell_to_graph(cell, label=False):
     g.add_edges_from(es)
     if label:
         for v in g.nodes():
-            g.node[v]['label'] = v.rpartition('/')[-1]
+            g.node[v]['label'] = v.rpartition('_')[-1]
     return g
 
 def axon_dendrites(g):
