@@ -256,6 +256,9 @@ class StoichCore
 
 		/// Utility function, prints out N_, used for debugging
 		void print() const;
+
+		/// Another utility function, prints out all Kf, kf, Kb, kb.
+		void printRates() const;
 		//////////////////////////////////////////////////////////////////
 		// Utility funcs for numeric calculations
 		//////////////////////////////////////////////////////////////////

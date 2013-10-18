@@ -23395,5 +23395,52 @@ the compartments to the signature.
 Actually it just turned out to be an ordering issue. Now clears the 
 config part of the regression test, but continues to fail (as earlier) on
 the quantitative comparison of the plot trace.
-For now, check this in.
+For now, check this in. 4784.
+
+These fixes do not fix the problems in loadMulti.py:
+- The tr0 rates are still peculiar: 0.1 0.0111111111111 0.1 0.0277777777778
+- There is no translocation to psd for either tr0 or transloc1 reactions.
+
+==========================================================================
+13 Oct 2013
+Repeated tests after recompiling entire source tree. Same issues.
+OK, big clue: the compt volumes are not the same as their mesh vols:
+
+old NSP vols =  1e-18 9e-20 1e-20
+old NSP.mesh vols =  1e-18 9e-20 1e-20
+transloc_1 54000.0 1.11111111111e-07 0.996323317876 1e-06
+transloc_2 5.4 1.11111111111e-07 9.96323317876e-05 1e-06
+tr0 rates =  0.1 0.0111111111111 0.1 0.1
+new NSP vols =  1.0 1.0 1.0
+new NSP.mesh vols =  7.85398163397e-19 7.85398163397e-19 3.92699081699e-20
+tr0 rates =  0.1 0.0111111111111 0.1 0.222222222222
+transloc_1 54000.0 1.11111111111e-07 0.11417024229 2.22222222222e-06
+transloc_2 5.4 1.11111111111e-07 1.1417024229e-05 2.22222222222e-06
+
+So, where did the volumes come from?
+
+Turns out that even if I change the rescaled vols to the compt
+rather than the mesh volume, the rate calculations still
+refer to the mesh volumes and so we hve it fail anyway.
+==========================================================================
+15 Oct 2013
+
+The Kf and Kb are OK, so in theory it should generate the correct rates.
+
+==========================================================================
+17 Oct 2013
+Tracking it down. Looks like the ZReac remembers the concKb but the numKb
+has some other value. Implemented a conversion, to compile and test.
+
+After much messing, turns out to be something rather simple: the meshes
+are resized in order. The reac is in one of the earlier meshes to be resized.
+The correct vol isn't present in the other vol until later. So its scaling
+is messed up.
+==========================================================================
+18 Oct 2013
+Fixed the scaling for the reac rates. I simply defer the calculation of 
+scaling to the 'reinit'. This seems to fix the various rates. 
+But this doesn't fix the problem that the cross-compartment reactions do not 
+actually transfer over any molecules.
+
 ==========================================================================

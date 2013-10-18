@@ -28,12 +28,18 @@ import sys
 sys.path.append('../../python')
 import os
 os.environ['NUMPTHREADS'] = '1'
+import signal
 import math
 
 import moose
 import proto18
 
 EREST_ACT = -70e-3
+
+# These three lines are used to break script for gdb to track.
+PID = os.getpid()
+def do_nothing( *args ):
+		pass
 
 def loadElec():
 	library = moose.Neutral( '/library' )
@@ -109,6 +115,9 @@ def loadChem( neuroCompt, spineCompt, psdCompt ):
 	oldS = moose.element( '/model/chem/compartment_1' )
 	oldP = moose.element( '/model/chem/compartment_2' )
 	print 'old NSP vols = ', oldN.volume, oldS.volume, oldP.volume
+	print 'old NSP.mesh vols = ', oldN.mesh[0].volume, oldS.mesh[0].volume, oldP.mesh[0].volume 
+	print 'new NSP vols = ', neuroCompt.volume, spineCompt.volume, psdCompt.volume 
+	print 'new NSP.mesh vols = ', neuroCompt.mesh[0].volume, spineCompt.mesh[0].volume, psdCompt.mesh[0].volume 
 	for i in moose.wildcardFind( '/model/chem/#/#/#/transloc#' ):
 		print i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb
 	tr0 = moose.element( '/model/chem/kinetics/SPINE/CaMKII_BULK/tr0[6]' )
@@ -116,7 +125,13 @@ def loadChem( neuroCompt, spineCompt, psdCompt ):
 	oldN.volume = neuroCompt.mesh[0].volume
 	oldS.volume = spineCompt.mesh[0].volume
 	oldP.volume = psdCompt.mesh[0].volume
+	#oldN.volume = neuroCompt.volume
+	#oldS.volume = spineCompt.volume
+	#oldP.volume = psdCompt.volume
+	print 'old NSP vols = ', oldN.volume, oldS.volume, oldP.volume
+	print 'old NSP.mesh vols = ', oldN.mesh[0].volume, oldS.mesh[0].volume, oldP.mesh[0].volume 
 	print 'new NSP vols = ', neuroCompt.volume, spineCompt.volume, psdCompt.volume 
+	print 'new NSP.mesh vols = ', neuroCompt.mesh[0].volume, spineCompt.mesh[0].volume, psdCompt.mesh[0].volume 
 	print "tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb
 	for i in moose.wildcardFind( '/model/chem/#/#/#/transloc#' ):
 		print i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb
@@ -193,6 +208,7 @@ def makeNeuroMeshModel():
 	# Now to set up the model.
 	#neuroCompt.cell = elec # This loads the chem pathways into the entire neuronal model
 	# It is preferable to put chem only in selected compartments, as here:
+	os.kill( PID, signal.SIGUSR1)
 	neuroCompt.cellPortion( elec, '/model/elec/lat_14_#,/model/elec/spine_neck#,/model/elec/spine_head#' )
 	ns = neuroCompt.numSegments
 	#assert( ns == 11 ) # dend, 5x (shaft+head)
@@ -331,6 +347,8 @@ def makeChemPlots():
 	print "bar,foo vols = ", bar.volume, foo.volume, bar.concInit, foo.concInit
 	tr0 = moose.element( '/model/chem/spineMesh/SPINE/CaMKII_BULK/tr0[6]' )
 	print "tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb
+
+signal.signal( signal.SIGUSR1, do_nothing)
 
 def testNeuroMeshMultiscale():
 	elecDt = 50e-6

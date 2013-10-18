@@ -623,8 +623,11 @@ unsigned int StoichCore::convertIdToReacIndex( Id id ) const
 	unsigned int i = id.value() - objMapStart_;
 	assert( i < objMap_.size() );
 	i = objMap_[i];
-	assert( i < rates_.size() );
-	return i;
+	if ( i < rates_.size() )
+			return i;
+	return ~0U;
+	// assert( i < rates_.size() );
+	// return i;
 }
 
 unsigned int StoichCore::convertIdToFuncIndex( Id id ) const
@@ -780,8 +783,9 @@ void StoichCore::setReacKf( const Eref& e, double v ) const
 	assert( toSub );
 
 	double volScale = convertConcToNumRateUsingMesh( e, toSub, false );
-
-	rates_[ convertIdToReacIndex( e.id() ) ]->setR1( v / volScale );
+	unsigned int i = convertIdToReacIndex( e.id() );
+	if ( i != ~0U )
+		rates_[ i ]->setR1( v / volScale );
 }
 
 /**
@@ -797,6 +801,7 @@ void StoichCore::setReacKb( const Eref& e, double v ) const
 	assert( toPrd );
 	assert( toSub );
 	double volScale = convertConcToNumRateUsingMesh( e, toPrd, false );
+	// cout << "Id=" << e.id() << ", Kb = " << v << ", volScale = " << volScale << endl;
 	/*
 	 * This rescaling is now done in the convertConc func itself.
 	// Assume first substrate is the reference volume. Scale down by this.
@@ -806,11 +811,14 @@ void StoichCore::setReacKb( const Eref& e, double v ) const
 	assert( vols[0] > 0.0 );
 	volScale /= vols[0] * NA;
 	*/
+	unsigned int i = convertIdToReacIndex( e.id() );
+	if ( i == ~0U )
+		return;
 
 	if ( useOneWay_ )
-		 rates_[ convertIdToReacIndex( e.id() ) + 1 ]->setR1( v / volScale);
+		 rates_[ i + 1 ]->setR1( v / volScale);
 	else
-		 rates_[ convertIdToReacIndex( e.id() ) ]->setR2( v / volScale );
+		 rates_[ i ]->setR2( v / volScale );
 }
 
 void StoichCore::setMMenzKm( const Eref& e, double v ) const
@@ -931,6 +939,20 @@ void StoichCore::setSpecies( unsigned int poolIndex, SpeciesId s )
 void StoichCore::print() const
 {
 	N_.print();
+}
+
+// for debugging
+void StoichCore::printRates() const
+{
+	for ( vector< Id >::const_iterator 
+		i = reacMap_.begin(); i != reacMap_.end(); ++i ) {
+		double Kf = Field< double >::get( *i, "Kf");
+		double Kb = Field< double >::get( *i, "Kb");
+		double kf = Field< double >::get( *i, "kf");
+		double kb = Field< double >::get( *i, "kb");
+			cout << "Id=" << *i << ", (Kf,Kb) = (" << Kf << ", " << Kb <<
+				  "), (kf, kb) = (" << kf << ", " << kb << ")\n";
+	}
 }
 
 /////////////////////////////////////////////////////////////////////

@@ -121,6 +121,9 @@ void ZReac::vSetConcKb( const Eref& e, const Qinfo* q, double v )
 
 double ZReac::vGetConcKb( const Eref& e, const Qinfo* q ) const
 {
+	// double volScale = convertConcToNumRateUsingMesh( e, toPrd, 0 );
+	// double kb = solver_->getReacNumKb( e );
+	// return kb / volScale;
 	return concKb_;
 }
 

@@ -316,7 +316,13 @@ class GslStoich: public SolverBase
 		Id compartmentId_;
 		ChemCompt* compartment_;
 
-		// Used to keep track of meshEntry when passing self into GSL.
+		/// Used to keep track of meshEntry when passing self into GSL.
 		unsigned int currMeshEntry_; 
+
+		/**
+		 * Used to keep track when the solvers need to have rates 
+		 * updated after a remeshing.
+		 */
+		bool needToUpdateRates_;
 };
 #endif // _GSL_STOICH_H
