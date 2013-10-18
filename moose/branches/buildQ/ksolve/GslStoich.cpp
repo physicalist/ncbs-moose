@@ -218,7 +218,9 @@ GslStoich::GslStoich()
 	ode_(0), // 
 	pools_(0), // Don't need to set up compts or pools, setPath does it..
 	compartmentId_( 0 ),
-	compartment_( 0 )
+	compartment_( 0 ),
+	currMeshEntry_( 0 ),
+	needToUpdateRates_( false )
 {
 		;
 }

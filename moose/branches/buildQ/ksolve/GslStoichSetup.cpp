@@ -456,7 +456,13 @@ void GslStoich::remesh( const Eref& e, const Qinfo* q,
 	vector< double > temp( numPools, 0.0 );
 	y_.resize( vols.size(), temp );
 
+	needToUpdateRates_ = true;
+	/*
+	 * These operations are now shifted to reinit.
 	coreStoich_.updateRatesAfterRemesh();
+	for( vector< OdeSystem >::iterator i = ode_.begin(); i != ode_.end(); ++i )
+		i->stoich_->updateRatesAfterRemesh();
+		*/
 	junctionsNotReady_ = true;
 }
 

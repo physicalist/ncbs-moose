@@ -202,6 +202,15 @@ void GslStoich::reinit( const Eref& e, ProcPtr info )
 {
 	if ( !isInitialized_ )
 			return;
+	if ( needToUpdateRates_ ) {
+		// cout << "Before update\n"; coreStoich_.printRates();
+		coreStoich_.updateRatesAfterRemesh();
+		for( vector< OdeSystem >::iterator 
+				i = ode_.begin(); i != ode_.end(); ++    i )     
+				i->stoich_->updateRatesAfterRemesh();
+		needToUpdateRates_ = 0;
+		// cout << "After update\n"; coreStoich_.printRates();
+	}
 	/*
 	if ( junctionsNotReady_ ) {
 			// This is a little dangerous, as it relies on the stencils
