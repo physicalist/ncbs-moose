@@ -2,7 +2,6 @@
 <!-- First describe the domains inside the cells -->
 <domains>
 
-
   <domain id="1" name="Soma" cellId="PurkinjeCell_t" type="electrical">
     <!-- 
          Morphology of domain describes the shape and its location. 
@@ -33,7 +32,14 @@
         <segment id="0" name="Soma"></segment>
       </import>
     </morphology>
-    <propterty></propterty>
+    <!-- Electrical properties of this segment. -->
+    <propterty>
+      <model name="soma" type="simpleCompartment">
+        <Vm unit="V">1</Vm>
+        <Cm unit="F">1.0</Cm>
+        <Rm unit="Ohm">10e3</Rm>
+      </model>
+    </propterty>
   </domain>
 
  
@@ -43,7 +49,13 @@
       <proximal x="0.0" y="-240.0" z="0.0" diameter="2.0"/>
       <distal x="-5.0" y="-260.0" z="0.0" diameter="2.0"/>
     </morphology>
-    <propterty></propterty>
+    <property>
+      <model name="soma" type="simpleCompartment">
+        <Vm unit="V">1</Vm>
+        <Cm unit="F">1.0</Cm>
+        <Rm unit="Ohm">10e3</Rm>
+      </model>
+    </property>
   </domain>
 
 
@@ -58,7 +70,12 @@
         <z>-1</z>
       </coordinates>
     </morphology>
-    <propterty></propterty>
+    <propterty>
+      <model name="dendrite" type="simpleCompartment">
+        <length unit="um">100</length>
+        <diameter unit="um">6</diameter>
+      </model>
+    </propterty>
   </domain>
 
   <!-- Chemincal domains. -->
@@ -74,7 +91,25 @@
         <z>11</z>
       </coordinates>
     </morphology>
-    <property></property>
+    <property>
+      <model name="CaCurrent">
+        <ICa unit="uA">1.2e-5</ICa>
+        <CCa unit="m/V">3.2</CCa>
+      </model>
+    </property>
   </domain>
 
 </domains>
+
+<mappings>
+  <mapping fromDomain="2" toDomain="5">
+    <relation type="linear">
+      <lhs>Vm</lhs>
+      <rhs>3.4 * CCa - 0.9</rhs>
+    </relation>
+    <relation type="linear">
+      <lhs>Rm</lhs>
+      <rhs>-3.4 * ICa + 23</rhs>
+    </relation>
+  </mapping>
+</mappings>
