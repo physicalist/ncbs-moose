@@ -1,10 +1,11 @@
-# loadMulti2.py --- 
+# lm2.py --- 
 # Upi Bhalla, NCBS Bangalore 2013.
 #
 # Commentary: 
 # 
 # Testing system for loading in arbirary multiscale models based on
 # model definition files.
+# This is a cleaned up and modular version of loadMulti.py
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -69,7 +70,6 @@ def addPlot( objpath, field, plot ):
 			print "addPlot failed: object is a Neutral: ", objpath
 			return moose.element( '/' )
 		else:
-			#print "object was found: ", objpath, obj.className
 			moose.connect( tab, 'requestData', obj, field )
 			return tab
 	else:
@@ -136,7 +136,6 @@ def loadChem( chemFile, diffLength ):
 	return modelId
 
 def loadStimulus( freq, receptorPath, weight, delay ):
-	"""
 	synInput = moose.SpikeGen( '/model/elec/synInput' )
 	synInput.threshold = -1.0
 	synInput.edgeTriggered = 0
@@ -150,21 +149,6 @@ def loadStimulus( freq, receptorPath, weight, delay ):
 		moose.connect( synInput, 'event', syn, 'addSpike', 'Single' )
 		syn.weight = weight # 0.5
 		syn.delay = delay # 1 ms ish.
-	"""
-	numSyn = 13
-	synInput = moose.SpikeGen( '/model/elec/synInput' )
-	synInput.threshold = -1.0
-	synInput.edgeTriggered = 0
-	synInput.Vm( 0 )
-	synInput.refractT = 47e-3
-	for i in range( numSyn ):
-		name = '/model/elec/spine_head_14_' + str( i + 1 )
-		r = moose.element( name + '/glu' )
-		r.synapse.num = 1 
-		syn = moose.element( r.path + '/synapse' )
-		moose.connect( synInput, 'event', syn, 'addSpike', 'Single' )
-		syn.weight = 0.2 * i * ( numSyn - 1 - i )
-		syn.delay = i * 1.0e-3
 
 # generalize this later.
 def setAdaptor( chemCaPath):
@@ -179,14 +163,10 @@ def setAdaptor( chemCaPath):
 		path = '/model/elec/spine_head_14_' + str( i + 1 ) + '/NMDA_Ca_conc'
 		elecCa = moose.element( path )
 		moose.connect( elecCa, 'concOut', adaptCa[i], 'input', 'Single' )
-		print path
 	moose.connect( adaptCa, 'outputSrc', chemCa, 'set_conc', 'OneToOne' )
 	adaptCa.inputOffset = 0.0	# 
 	adaptCa.outputOffset = 0.00008	# 80 nM offset in chem.
    	adaptCa.scale = 1e-5	# 520 to 0.0052 mM
-	print adaptCa.inputOffset
-	print adaptCa.outputOffset
-	print adaptCa.scale
 	"""
 	aGluR = moose.Adaptor( '/model/chem/psdMesh/adaptGluR', 5 )
     adaptGluR = moose.ematrix( '/model/chem/psdMesh/adaptGluR' )
@@ -275,8 +255,15 @@ def testNeuroMeshMultiscale():
 	plotDt = 5e-4
 	plotName = 'lm2.plot'
 
+	# These are the key parameters that define how to set up the multiscale
+	# model. Arguments are: 
+	# cellmodel, chemmodel, path_to_fill_with_chem, path_to_use_for_adaptor
+	# If the path_to_fill_with_chem is an empty string, then the entire
+	# cell model is filled with the chem system.
 	makeNeuroMeshModel( 'ca1_asym.p', 'psd_merged31e.g', '/model/elec/lat_14_#,/model/elec/spine_neck#,/model/elec/spine_head#', '/model/chem/psdMesh/PSD/CaM/Ca' )
 
+	# Here we set up plots. These are not really part of the model
+	# definition, but useful to have a standard place to define them.
 	graphs = moose.Neutral( '/graphs' )
 	makeElecPlots( '/model/elec/apical_14,/model/elec/spine_head_14_7' )
 	makeChemPlots( '/model/chem/psdMesh/PSD/CaM', 6 )

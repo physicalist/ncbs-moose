@@ -23473,3 +23473,11 @@ I need to march through increasing numbers of such reactions to see if this
 breaks it eventually.
 
 ==========================================================================
+19 Oct 2013
+Checked in the lm2.py, first (checkin 1799) the version that matches the
+loadMulti.py.
+Then checked in a cleaned up version to act as a workhorse for trying out 
+different cell and chem models. First pass on these, of course, is to find
+out why we fail to get proper cross-compartment reactions in this case.
+
+==========================================================================
