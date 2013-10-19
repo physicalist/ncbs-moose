@@ -23441,6 +23441,35 @@ is messed up.
 Fixed the scaling for the reac rates. I simply defer the calculation of 
 scaling to the 'reinit'. This seems to fix the various rates. 
 But this doesn't fix the problem that the cross-compartment reactions do not 
-actually transfer over any molecules.
+actually transfer over any molecules. Checkin 4797.
+
+Note that the foo.py test I did earlier with a simpler chemical model, does
+do the cross-compartment reactions just fine.
+
+To move to doing better tests and also toward getting the interface for an
+XML spec to work better, I'm working on a derivation of loadModel.py that
+can take generic electrical and chemical model files.
+
+This is in lm2.py and is inching toward matching the run from loadModel.py.
+Currently trying to understand why SpineCa and PsdCa are different from 
+the loadModel version.
+Possibly the diffusion consts differ. In the loadModel we set them 
+explicitly.
+Fixed this. The runs are much closer now but still not matching.
+Confirmed that all volumes match those of the loadMulti.py
+Confirmed that all reac and enz rates match those of the loadMulti.py
+Confirmed that all pool CoInit and conc match those of the loadMulti.py
+Confirmed that the adaptor is doing the same thing.
+Ah, the stimulus - this was different. Let's see...
+Yes, this is it. Now the runs are identical on all the plots I've tested.
+So this is good to go for testing out where things go wrong, and also for
+testing loading in many models when we have this bug sorted.
+
+Also made an lm3.py which substitutes in the x_compt3.g. Quite easy.
+Only 3 things to change: the plot name, the line specifying files and paths
+for makeNeuroMeshModel, and the lines specifying the plots.
+But this model _does_ work for cross-compartment reactions.
+I need to march through increasing numbers of such reactions to see if this
+breaks it eventually.
 
 ==========================================================================

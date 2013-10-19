@@ -256,10 +256,14 @@ def makeNeuroMeshModel():
 		path = '/model/elec/spine_head_14_' + str( i + 1 ) + '/NMDA_Ca_conc'
 		elecCa = moose.element( path )
 		moose.connect( elecCa, 'concOut', adaptCa[i], 'input', 'Single' )
+		print path
 	moose.connect( adaptCa, 'outputSrc', chemCa, 'set_conc', 'OneToOne' )
 	adaptCa.inputOffset = 0.0	# 
 	adaptCa.outputOffset = 0.00008	# 80 nM offset in chem.
    	adaptCa.scale = 1e-5	# 520 to 0.0052 mM
+	print adaptCa.inputOffset
+	print adaptCa.outputOffset
+	print adaptCa.scale
 	#print adaptCa.outputOffset
 	#print adaptCa.scale
 
