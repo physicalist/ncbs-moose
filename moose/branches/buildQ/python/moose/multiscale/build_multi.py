@@ -16,6 +16,7 @@ import debug.debug as debug
 import logging
 import parser.parser as parser
 import core.moose_builder as moose_builder
+import sys
 
 def pathsAreOk(paths) :
   ''' Verify if path exists and are valid. '''
