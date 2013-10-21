@@ -55,13 +55,15 @@ import sys, os
 from itertools import izip
 from urllib2 import urlopen
 import numpy as np
-import moose
 import neuroml2_parser as nml
 from units import SI
 import hhfit
 import logging
 import debug.debug as debug
 from IPython import embed
+
+sys.path.append('../../../python/')
+import moose
 
 loglevel = logging.DEBUG
 logstream = logging.StreamHandler()

@@ -1,17 +1,16 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
-# Filename       : main.py
-# Created on     : Fri 06 Sep 2013 08:20:50 PM IST
+# Filename       : build_multi.py 
+# Created on     : 2013-10-20
 # Author         : Dilawar Singh
 # Email          : dilawars@ncbs.res.in
 #
-# Description    : Entry point if this application is to be run in stand-alone
-#   mode.
+# Description    :
 #
 # Logs           :
 
-import os
-import sys
+import core.load_multi as load_multi
+import os 
 import argparse
 import debug.debug as debug
 import logging
@@ -33,9 +32,8 @@ def pathsAreOk(paths) :
   return True
 
 
-logger = logging.getLogger('multiscale')
-
-if __name__ == "__main__" :
+if __name__ == '__main__' :
+  
   # This section build the command line parser
   argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
   argParser.add_argument('--nml', metavar='nmlpath'
@@ -50,15 +48,20 @@ if __name__ == "__main__" :
   # There must be at least one model present
   if args.nml or args.sbml : 
     if pathsAreOk(args) :
-      logger.info("Started parsing XML models")
       debug.printDebug("INFO", "Started parsing XML models")
       etreeList = parser.parseModels(args)
-
-      # Build the storehouse so that moose can simulate it.
-      moose_builder.buildMooseObjects(etreeList)
     else :
       debug.printDebug("FATAL", "One or more model file does not exists.")
       sys.exit()
   else :
     debug.printDebug("FATAL", "Please provide at least one model. None given.")
     sys.exit()
+
+  debug.printDebug("DEVELOP", "Modifying Upi scripts")
+  elecDt = 50e-6
+  chemDt = 1e-4
+  plotDt = 5e-4
+  if not os.path.exists('./plots') :
+    os.makedirs('./plots')
+  load_multi.makeNeuroMeshModel()
+  plotname = 'plots/nm.plot'
