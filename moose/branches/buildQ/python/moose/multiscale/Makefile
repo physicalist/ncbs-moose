@@ -1,17 +1,3 @@
-###############################################################################
-# Makefile for literate Python programes. It creates pdf and dvi documents as
-# well as generate codes for execution,
-#
-# USAGE : make <target> file=<filename>
-# <fileaname> must be without any extension. For example, if one wants to make
-# example.snw for generating a dvi file then one should use following command.
-# $ make dvi file=example
-#
-# (c) Dilawar, 2011
-# Email : dilawar@ee.iitb.ac.in
-# 
-# June 30, 2011
-###############################################################################
 SHELL = /bin/sh
 NOTANGLE = notangle
 NOWEAVE = noweave # it implies -n option. Automatic latex wrapper will not be includeded in out tex file.
@@ -29,14 +15,16 @@ run : $(modules_py)
 	python src/main.py
 
 %.py : %.nw
+	target=$<
 	$(NOTANGLE) $< -R$@ > ./src/$@
-	$(NOWEAVE)  $< > ./docs/$(<:.nw=.tex)
 
-pdf : $(module_pdf)
+pdf : $(modules_pdf) $(modules)
 
-%.pdf : %.nw
-	$(NOWEAVE)  $< > ./docs/$($,.pdf=.tex)
-	pdflatex -output-directory=docs ./docs/$@
+%.pdf : %.tex
+	pdflatex -output-directory=docs ./docs/$<
+
+%.tex : %.nw
+	$(NOWEAVE)  $< > ./docs/$@
 
 showdvi : 
 	if $(shell test -e ./docs/$(file).dvi) \

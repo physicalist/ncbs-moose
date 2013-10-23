@@ -6,40 +6,21 @@ Program structure is following.
 <<Import>>
 <<Functions>>
 <<main.py>>
-@
+@ %def structure
 
 \par Dependencies and import
 
-  Let's import all we need. We need a module for XML parsing and one for logging
-  and printing debugging messages, we'll write our own module.
+  We need [lxml.etree] for XML parsing. To print error and warning messages, I
+  wrote a small module [DebugModule] by myself. This module is in file
+  [debug.nw]. We'd be needing these modules in almost every python file. Lets
+  keep them in one chunck [Import].
 
 <<Import>>=
-<<DebugModule>>
-<<XMLModule>>
-@ 
+# Important imports 
 
-<<DebugModule>>=
-import debug
-@
-
-<<XMLModule>>= 
-import parser
-@
-
-\par What we want to do 
-
-  Lets write what we want to do in main. Currently I have nothing on my mind. So
-  lets just leave it empty.
-
-<<main.py>>=
-<<imports>>
-print("Doing really nothing")
-@
-
-
-<<imports>>=
+import debug 
 import logging 
-import debug
+
 logger = logging.getLogger('multiscale')
 try:
     from lxml import etree
@@ -68,5 +49,65 @@ except ImportError:
                     debug.prefix("FATAL", "Failed to import ElementTree")
                     os._exit(1)
 
+@ %def import
+
+
+\par Imports
+
+    Lets just import the mimimal required. We'll try import cElement tree first
+    and then some other implementation of [etree].
+
+<<main.py>>=
+<<Import>>
+<<argument parser>>
+
+@ %def main
+
+<<Import>>=
+import logging 
+import debug
+logger = logging.getLogger('multiscale')
+try:
+    import cElementTree as etree
+    debug.printDebug("DEBUG", "running with lxml.etree")
+except ImportError:
+    try:
+        # Python 2.5
+        import xml.etree.cElementTree as etree
+        debug.printDebug("DEBUG", "running with cElementTree")
+    except ImportError:
+        try:
+            # Python 2.5
+            import xml.etree.cElementTree as etree
+            debug.printDebug("DEBUG", "running with ElementTree")
+        except ImportError:
+            try:
+              # normal cElementTree install
+              import cElementTree as etree
+              debug.printDebug("DEBUG", "running with cElementTree")
+            except ImportError:
+                try:
+                    # normal ElementTree install
+                    import elementtree.ElementTree as etree
+                    debug.printDebug("DEBUG", "running with ElementTree")
+                except ImportError:
+                    try : 
+                      import lxml.etree as etree
+                    except ImportError :
+                        debug.prefix("FATAL", "Failed to import ElementTree")
+                        os._exit(1)
+
+@ %def imports
+
+\par Agrument parser
+
+  We pass xml models from the command line. More than one xml model can be
+  passed. We use [argparser] library.
+
+<<argument parser>>=
+import argparse
+
 @
+
+
 
