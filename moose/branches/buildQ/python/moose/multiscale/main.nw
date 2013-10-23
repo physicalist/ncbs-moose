@@ -1,0 +1,72 @@
+\section{Multiscale modelling}
+
+Program structure is following.
+
+<<*>>= 
+<<Import>>
+<<Functions>>
+<<main.py>>
+@
+
+\par Dependencies and import
+
+  Let's import all we need. We need a module for XML parsing and one for logging
+  and printing debugging messages, we'll write our own module.
+
+<<Import>>=
+<<DebugModule>>
+<<XMLModule>>
+@ 
+
+<<DebugModule>>=
+import debug
+@
+
+<<XMLModule>>= 
+import parser
+@
+
+\par What we want to do 
+
+  Lets write what we want to do in main. Currently I have nothing on my mind. So
+  lets just leave it empty.
+
+<<main.py>>=
+<<imports>>
+print("Doing really nothing")
+@
+
+
+<<imports>>=
+import logging 
+import debug
+logger = logging.getLogger('multiscale')
+try:
+    from lxml import etree
+    debug.printDebug("DEBUG", "running with lxml.etree")
+except ImportError:
+    try:
+        # Python 2.5
+        import xml.etree.cElementTree as etree
+        debug.printDebug("DEBUG", "running with cElementTree")
+    except ImportError:
+        try:
+            # Python 2.5
+            import xml.etree.ElementTree as etree
+            debug.printDebug("DEBUG", "running with ElementTree")
+        except ImportError:
+            try:
+              # normal cElementTree install
+              import cElementTree as etree
+              debug.printDebug("DEBUG", "running with cElementTree")
+            except ImportError:
+                try:
+                    # normal ElementTree install
+                    import elementtree.ElementTree as etree
+                    debug.printDebug("DEBUG", "running with ElementTree")
+                except ImportError:
+                    debug.prefix("FATAL", "Failed to import ElementTree")
+                    os._exit(1)
+
+@
+

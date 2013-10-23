@@ -25,6 +25,8 @@ import math
 import proto
 import parser.importer 
 import debug.debug as debug
+
+from IPython import embed
   
 EREST_ACT = -70e-3
 
@@ -146,7 +148,7 @@ def makeNeuroMeshModel():
     diffLength = 20e-6 # But we only want diffusion over part of the model.
     numSyn = 13
     elec = loadElec()
-    print("here")
+    debug.printDebug("INFO", "Electrical model is added to moose")
     synInput = moose.SpikeGen( '/model/elec/synInput' )
     synInput.threshold = -1.0
     synInput.edgeTriggered = 0
