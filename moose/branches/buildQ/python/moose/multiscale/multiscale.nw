@@ -8,10 +8,11 @@
   
 \paragraph{Imports}
 
-  This chunks keeps the essentials modules which we need in almost all files.
-  We'll try to import [[cElementTree]] first and then some other implementation of
-  [[etree]]. Some other modules such as [[os]], [[sys]], [[re]] etc are also
-  needed.
+  This chunks [[Imports]] keeps the essentials modules which we need in almost
+  all files.  We'll try to import [[cElementTree]] first, and then some other
+  implementation of [[etree]]. Some other modules such as [[os]], [[sys]],
+  [[re]] etc are also needed.
+
 <<Import>>=
 # Basic imports
 import os 
@@ -20,35 +21,7 @@ import logging
 import debug 
 
 logger = logging.getLogger('multiscale')
-try:
-    import cElementTree as etree
-    debug.printDebug("DEBUG", "running with lxml.etree")
-except ImportError:
-    try:
-        # Python 2.5
-        import xml.etree.cElementTree as etree
-        debug.printDebug("DEBUG", "running with cElementTree")
-    except ImportError:
-        try:
-            # Python 2.5
-            import xml.etree.cElementTree as etree
-            debug.printDebug("DEBUG", "running with ElementTree")
-        except ImportError:
-            try:
-              # normal cElementTree install
-              import cElementTree as etree
-              debug.printDebug("DEBUG", "running with cElementTree")
-            except ImportError:
-                try:
-                    # normal ElementTree install
-                    import elementtree.ElementTree as etree
-                    debug.printDebug("DEBUG", "running with ElementTree")
-                except ImportError:
-                    try : 
-                      import lxml.etree as etree
-                    except ImportError :
-                        debug.prefix("FATAL", "Failed to import ElementTree")
-                        os._exit(1)
+from lxml import etree
 
 @ %def imports
 
@@ -136,7 +109,7 @@ def ifPathsAreValid(paths) :
   color=red!20]{configure command line to raise error if at least one xmlpath is
   not provided}.
 
-<<parse models>>=
+<<parse xml models>>=
 
 # There must be at least one model specified by user at command line.
 import parser
@@ -144,14 +117,15 @@ if args.nml or args.sbml :
   if ifPathsAreValid(args) :
     logger.info("Started parsing XML models")
     debug.printDebug("INFO", "Started parsing XML models")
-    etreeList = parser.parseModels(args)
+    etreeDict = parser.parseModels(args, validate=False)
+    print etreeDict
   else :
     debug.printDebug("FATAL", "One or more model file does not exists.")
     sys.exit()
 else :
   debug.printDebug("FATAL", "Please provide at least one model. None given.")
   sys.exit()
-
 debug.printDebug("INFO", "Parsing of models is done")
-@
+
+@ %def parse_models 
 

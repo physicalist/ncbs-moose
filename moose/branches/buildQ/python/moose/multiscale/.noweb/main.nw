@@ -90,10 +90,11 @@ Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
   
 \paragraph{Imports}
 
-  This chunks keeps the essentials modules which we need in almost all files.
-  We'll try to import [[cElementTree]] first and then some other implementation of
-  [[etree]]. Some other modules such as [[os]], [[sys]], [[re]] etc are also
-  needed.
+  This chunks [[Imports]] keeps the essentials modules which we need in almost
+  all files.  We'll try to import [[cElementTree]] first, and then some other
+  implementation of [[etree]]. Some other modules such as [[os]], [[sys]],
+  [[re]] etc are also needed.
+
 <<Import>>=
 # Basic imports
 import os 
@@ -102,35 +103,7 @@ import logging
 import debug 
 
 logger = logging.getLogger('multiscale')
-try:
-    import cElementTree as etree
-    debug.printDebug("DEBUG", "running with lxml.etree")
-except ImportError:
-    try:
-        # Python 2.5
-        import xml.etree.cElementTree as etree
-        debug.printDebug("DEBUG", "running with cElementTree")
-    except ImportError:
-        try:
-            # Python 2.5
-            import xml.etree.cElementTree as etree
-            debug.printDebug("DEBUG", "running with ElementTree")
-        except ImportError:
-            try:
-              # normal cElementTree install
-              import cElementTree as etree
-              debug.printDebug("DEBUG", "running with cElementTree")
-            except ImportError:
-                try:
-                    # normal ElementTree install
-                    import elementtree.ElementTree as etree
-                    debug.printDebug("DEBUG", "running with ElementTree")
-                except ImportError:
-                    try : 
-                      import lxml.etree as etree
-                    except ImportError :
-                        debug.prefix("FATAL", "Failed to import ElementTree")
-                        os._exit(1)
+from lxml import etree
 
 @ %def imports
 
@@ -218,7 +191,7 @@ def ifPathsAreValid(paths) :
   color=red!20]{configure command line to raise error if at least one xmlpath is
   not provided}.
 
-<<parse models>>=
+<<parse xml models>>=
 
 # There must be at least one model specified by user at command line.
 import parser
@@ -226,16 +199,17 @@ if args.nml or args.sbml :
   if ifPathsAreValid(args) :
     logger.info("Started parsing XML models")
     debug.printDebug("INFO", "Started parsing XML models")
-    etreeList = parser.parseModels(args)
+    etreeDict = parser.parseModels(args, validate=False)
+    print etreeDict
   else :
     debug.printDebug("FATAL", "One or more model file does not exists.")
     sys.exit()
 else :
   debug.printDebug("FATAL", "Please provide at least one model. None given.")
   sys.exit()
-
 debug.printDebug("INFO", "Parsing of models is done")
-@
+
+@ %def parse_models 
 
 \section{Debug module, print debugging messages}
 \label{sec:debug}
@@ -283,58 +257,112 @@ def printDebug(label, msg):
 @ %def debug_module 
 
 \section{XML parser}
+\label{sec:parser}
 
-This document deals with parser of XML models.
+  This section deals with parser of XML models. In [[multiscale.nw]], we call
+  function [[parseModels]] of this modudle. This function receives argument from
+  the command line, having paths of XML models. These paths of model files are
+  valid and readable, this has been verified before sending arguments to this
+  function. We need to parse the XMLs and return a dictionary, with keys as path
+  of XML models and value as top-most XML element.
+
+  Following captures what this module suppose to do.
 
 %file:src/parser.py
 <<parser.py>>=
 <<Import>>
-
-def getModels(models) :
-
-    """ 
-    
-    Parses given xml models. We can pass either one or two models; one described
-    in neuroML and the other in sbml. 
-    
-    Notes: Document is properly. See 
-
-      http://www.biomedcentral.com/1752-0509/7/88/abstract
-
-    sent by Aditya Girla. It a online composition tool for SBML. In its
-    references, some other tools are mentioned.
-
-    Args :
-
-    Raises :
-
-    Return 
-    return a list of elementTree of given models.
-
-    """
-    elemDict = dict()
-    if models.nml :
-        # Get the schema 
-        with open(models.nml, "r") as nmlFile :
-            elemDict['nml'] = models.nml
-        
-    if models.sbml :
-        elemDict['sbml'] = models.sbml
-    return elemDict
- 
-
-@ %def getModel 
-
-\paragraph{Parse xml}
-
-  Let's write a function to parse xml and return the root element.
-
-<<parser.py>>=
-def parseModel(modelPath):
-   if not os.path.exists(modelPath) :
-     pass
+<<helper functions>>
+<<function [[parseModels]] for parsing models>>
 @
 
-                                       
+\paragraph{Parse models}
+
+  Function [[parseModels]] parses the model, and it creates a dictionary to be
+  returned. This function first read the file and validate it with a given
+  schema. Validation can be turned on/off by setting the optional argument
+  [[validate]] to [[False]].
+
+<<function [[parseModels]] for parsing models>>=
+def parseModels(commandLineArgs, validate=False) :
+    '''
+    Parse given models.
+   
+    '''
+    xmlRootElemDict = dict()
+
+    models = vars(commandLineArgs)
+    for model in models :
+      if models[model] :
+        modelPath = models[model]
+        debug.printDebug("INFO", "Parsing {0}".format(models[model]))
+        if validate :
+          # parse model and valid it with schama
+          modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
+        else :
+          # Simple parse the model without validating it with schema.
+          modelXMLRootElem = parseWithoutValidation(model, modelPath)
+        xmlRootElemDict[model] = modelXMLRootElem 
+    return xmlRootElemDict 
+
+@  %def parseModels 
+
+\paragraph{Validating with schema}
+
+  We need two helper functions, [[parseAndValidateWithSchema]] to parse a given
+  XML when a schema is available and [[parseWithoutValidation]] validation is
+  off \textbf{schema is not available}. Ideally, schema should be provided as an
+  argument to this module, but we can fix their location. Folder [[./moose_xml]]
+  must contains all the schemas we need to validate. Currently
+  [[./moose_xml/NeuroML_v2beta1.xsd]] and [[./moose_xml/sbml.xsd]] are schemas
+  available for [[nml]] and [[sbml]] models.
+
+%  What should be the relative path of these schemas; the source code generated
+%  is always in one level below than the directory of this literate file e.g.
+%  generated python file resides in \texttt{./src} directory while this file is
+%  in \texttt{.} directory. Therefore, paths of these schemas are different in
+%  the implementation of following functions than they are in this literate file.
+%
+
+<<helper functions>>=
+def parseAndValidateWithSchema(modelName, modelPath) :
+    
+    prefixPath = ''
+    if modelName == 'nml' :
+      schemaPath = os.path.join(prefixPath, 'moose_xml/NeuroML_v2beta1.xsd')
+    elif modelName == 'sbml' :
+      schemaPath = os.path.join(prefixPath, 'moose_xml/sbml.xsd')
+
+    try :
+      schemaH = open(schemaPath, "r")
+      schemaText = schemaH.read()
+      schemaH.close()
+    except Exception as e :
+      debug.printDebug("WARN", "Error reading schema for validation."+
+        " Falling back to validation-disabled parser."
+        + " Failed with error {0}".format(e))
+      return parseWithoutValidation(modelName, modelPath)
+    # Now we have the schema text 
+    schema = etree.XMLSchema(etree.XML(schemaText))
+    xmlParser = etree.XMLParser(schema=schema)
+    with open(modelPath, "r") as xmlTextFile :
+        return etree.parse(xmlTextFile, xmlParser)
+
+@ %def parseAndValidateWithSchema 
+
+<<helper functions>>=
+def parseWithoutValidation(modelName, modelPath) :
+    try :
+      xmlRootElem = etree.parse(modelPath)
+    except e :
+      debug.printDebug("ERROR", "Failed to parse model with error {0}".format(e))
+      return 
+    return xmlRootElem 
+
+@ %def parseWithoutValidation 
+
+
+
+
+
 \listoftodos
 \end{document}          
