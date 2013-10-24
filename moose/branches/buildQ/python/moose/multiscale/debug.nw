@@ -1,7 +1,9 @@
-\par Print debugging messages
+\section{Debug module, print debugging messages}
+\label{sec:debug}
 
   Different type of messages are printed in different colors.
 
+%file:src/debug.py
 <<debug.py>>=
 HEADER = '\033[95m'
 OKBLUE = '\033[94m'

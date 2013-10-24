@@ -1,17 +1,12 @@
-\section{XML parser}
+\documentclass{article}\usepackage{noweb}\pagestyle{noweb}\noweboptions{}\begin{document}\nwfilename{parser.nw}\nwbegindocs{0}This document deals with parser of XML models.% ===> this file was generated automatically by noweave --- better not edit it
 
-This document deals with parser of XML models.
+\nwenddocs{}\nwbegincode{1}\moddef{parser.py}\endmoddef\nwstartdeflinemarkup\nwenddeflinemarkup
+import imports
+def parseModels(models) :
 
-%file:src/parser.py
-<<parser.py>>=
-<<Import>>
-
-def getModels(models) :
-
-    """ 
-    
-    Parses given xml models. We can pass either one or two models; one described
-    in neuroML and the other in sbml. 
+    """
+    Parses given xml models. We can pass either one or two models; one described in
+    neuroML and the other in sbml. 
     
     Notes: Document is properly. See 
 
@@ -37,18 +32,6 @@ def getModels(models) :
     if models.sbml :
         elemDict['sbml'] = models.sbml
     return elemDict
- 
+\eatline
+\nwendcode{}\end{document}
 
-@ %def getModel 
-
-\paragraph{Parse xml}
-
-  Let's write a function to parse xml and return the root element.
-
-<<parser.py>>=
-def parseModel(modelPath):
-   if not os.path.exists(modelPath) :
-     pass
-@
-
-                                       

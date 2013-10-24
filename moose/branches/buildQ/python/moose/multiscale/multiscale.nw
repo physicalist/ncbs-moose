@@ -1,0 +1,157 @@
+\section{Multiscale modelling}
+
+\paragraph{Dependencies and import}
+
+  We need [[lxml.etree]] for XML parsing. To print error and warning messages, I
+  wrote a small module [[DebugModule]] \ref{sec:debug}. This module is
+  implemented in file [[debug.nw]]. 
+  
+\paragraph{Imports}
+
+  This chunks keeps the essentials modules which we need in almost all files.
+  We'll try to import [[cElementTree]] first and then some other implementation of
+  [[etree]]. Some other modules such as [[os]], [[sys]], [[re]] etc are also
+  needed.
+<<Import>>=
+# Basic imports
+import os 
+import sys 
+import logging 
+import debug 
+
+logger = logging.getLogger('multiscale')
+try:
+    import cElementTree as etree
+    debug.printDebug("DEBUG", "running with lxml.etree")
+except ImportError:
+    try:
+        # Python 2.5
+        import xml.etree.cElementTree as etree
+        debug.printDebug("DEBUG", "running with cElementTree")
+    except ImportError:
+        try:
+            # Python 2.5
+            import xml.etree.cElementTree as etree
+            debug.printDebug("DEBUG", "running with ElementTree")
+        except ImportError:
+            try:
+              # normal cElementTree install
+              import cElementTree as etree
+              debug.printDebug("DEBUG", "running with cElementTree")
+            except ImportError:
+                try:
+                    # normal ElementTree install
+                    import elementtree.ElementTree as etree
+                    debug.printDebug("DEBUG", "running with ElementTree")
+                except ImportError:
+                    try : 
+                      import lxml.etree as etree
+                    except ImportError :
+                        debug.prefix("FATAL", "Failed to import ElementTree")
+                        os._exit(1)
+
+@ %def imports
+
+\paragraph{Entry point}
+
+  This is entry point of this program. Let's write down the sturcture of
+  program. This is what we want to do in this application.
+  
+%file:src/main.py
+<<main.py>>=
+<<Import>>
+<<functions in main>>
+<<argument parser>>
+<<parse xml models>>
+<<build multiscale models in moose>>
+<<run and test the multiscale models>>
+
+@ %def entry_point
+
+\paragraph{Agrument parser}
+
+  Paths of models files are to be passed  from the command line. More than one
+  xml file can be passed. We use [[argparse]] library to build a command-line
+  interface.
+
+<<argument parser>>=
+
+'''
+command line parser
+'''
+
+# standard module for building a command line parser.
+
+import argparse
+
+# This section build the command line parser
+argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
+argParser.add_argument('--nml', metavar='nmlpath'
+    , help = 'File having neuron described in neuroML'
+    )
+argParser.add_argument('--sbml', metavar='sbmlpath'
+    , help = 'File having neuron described in SBML'
+    , required = False
+    )
+args = argParser.parse_args()
+
+# command line parser ends here.
+
+@ %def argParser 
+
+  We need a module to parse the xml models. This module has its own literate
+  file [[parser.nw]]. You can see the documentation in \ref{sec:parser}.
+
+
+\paragraph{Parse xml models}
+
+  We pass two kind of models from command line to this application, [[sbml]] and
+  [[neuroML]]. Parse them and we'll think of next step. We need at least one
+  model to start with (neuroML?).
+
+  But before we parse, we need a helper function to check if given paths exists
+  and are readable.
+
+<<functions in main>>=
+def ifPathsAreValid(paths) :
+  ''' Verify if path exists and are readable. '''
+  if paths.nml :
+    if os.path.isfile(paths.nml) : pass
+    else :
+      debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.nml))
+      return False
+  if paths.sbml :
+    if os.path.isfile(paths.sbml) : pass 
+    else :
+      debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.sbml))
+      return False
+  return True
+
+@ %def ifPathsAreValid
+
+
+\paragraph{Parse xml files}
+
+  At least one model must be provided by the user \todo[size=\small,
+  color=red!20]{configure command line to raise error if at least one xmlpath is
+  not provided}.
+
+<<parse models>>=
+
+# There must be at least one model specified by user at command line.
+import parser
+if args.nml or args.sbml : 
+  if ifPathsAreValid(args) :
+    logger.info("Started parsing XML models")
+    debug.printDebug("INFO", "Started parsing XML models")
+    etreeList = parser.parseModels(args)
+  else :
+    debug.printDebug("FATAL", "One or more model file does not exists.")
+    sys.exit()
+else :
+  debug.printDebug("FATAL", "Please provide at least one model. None given.")
+  sys.exit()
+
+debug.printDebug("INFO", "Parsing of models is done")
+@
+
