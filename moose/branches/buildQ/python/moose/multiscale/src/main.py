@@ -43,15 +43,16 @@ if args.xml :
     logger.info("Started parsing XML models")
     debug.printDebug("INFO", "Started parsing XML models")
     etreeDict = parser.parseModels(args, validate=False)
-    print etreeDict
+    debug.printDebug("INFO", "Parsing of models is done")
+    import multiscale
+    multiScaleObj = multiscale.Multiscale(etreeDict)
+    multiScaleObj.buildMultiscaleModel()
+    print("Done!")
   else :
     debug.printDebug("FATAL", "One or more model file does not exists.")
     sys.exit()
 else :
   debug.printDebug("FATAL", "Please provide at least one model. None given.")
   sys.exit()
-debug.printDebug("INFO", "Parsing of models is done")
-
-
 
 
