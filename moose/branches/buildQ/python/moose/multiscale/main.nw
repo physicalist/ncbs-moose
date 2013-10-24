@@ -81,8 +81,8 @@ Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
 
 
 %\include{multiscale.nw}
-%\include{debug.nw}
 %\include{parser.nw}
+%\include{debug.nw}
 
 \listoftodos
 \end{document}          

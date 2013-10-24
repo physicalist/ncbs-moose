@@ -10,10 +10,8 @@ from lxml import etree
 def parseAndValidateWithSchema(modelName, modelPath) :
     
     prefixPath = ''
-    if modelName == 'nml' :
-      schemaPath = os.path.join(prefixPath, 'moose_xml/NeuroML_v2beta1.xsd')
-    elif modelName == 'sbml' :
-      schemaPath = os.path.join(prefixPath, 'moose_xml/sbml.xsd')
+    if modelName == 'xml' :
+      schemaPath = os.path.join(prefixPath, 'moose_xml/moose.xsd')
 
     try :
       schemaH = open(schemaPath, "r")
@@ -33,8 +31,8 @@ def parseAndValidateWithSchema(modelName, modelPath) :
 def parseWithoutValidation(modelName, modelPath) :
     try :
       xmlRootElem = etree.parse(modelPath)
-    except e :
-      debug.printDebug("ERROR", "Failed to parse model with error {0}".format(e))
+    except Exception as e :
+      debug.printDebug("ERROR", "Parsing failed. {0}".format(e))
       return 
     return xmlRootElem 
 
