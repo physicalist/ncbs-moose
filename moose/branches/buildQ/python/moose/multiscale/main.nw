@@ -1,113 +1,88 @@
-\section{Multiscale modelling}
+\documentclass{article}
+%\usepackage[margin=10mm]{geometry}
+\usepackage{pgf,tikz}
+%\usepackage{algorithm2e}
+%\usepackage{subfig}
+\usepackage{noweb}
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{amssymb}
+\usepackage{listings}
+\usetikzlibrary{circuits.logic.US}
+\usetikzlibrary{positioning}
+\usetikzlibrary{matrix}
+ 
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
 
-Program structure is following.
+\lstset{ %
+  language=python,                % the language of the code
+  basicstyle=\footnotesize,           % the size of the fonts that are used for the code
+  numbers=left,                   % where to put the line-numbers
+  numberstyle=\tiny\color{gray},  % the style that is used for the line-numbers
+  stepnumber=2,                   % the step between two line-numbers. If it's 1, each line 
+                                  % will be numbered
+  numbersep=5pt,                  % how far the line-numbers are from the code
+  backgroundcolor=\color{white},      % choose the background color. You must add \usepackage{color}
+  showspaces=false,               % show spaces adding particular underscores
+  showstringspaces=false,         % underline spaces within strings
+  showtabs=false,                 % show tabs within strings adding particular underscores
+%  frame=single,                   % adds a frame around the code
+  rulecolor=\color{black},        % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. commens (green here))
+  tabsize=2,                      % sets default tabsize to 2 spaces
+  captionpos=b,                   % sets the caption-position to bottom
+  breaklines=true,                % sets automatic line breaking
+  breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+  title=\lstname,                   % show the filename of files included with \lstinputlisting;
+                                  % also try caption instead of title
+  keywordstyle=\color{blue},          % keyword style
+  commentstyle=\color{dkgreen},       % comment style
+  stringstyle=\color{mauve},         % string literal style
+  escapeinside={\%*}{*)},            % if you want to add LaTeX within your code
+  morekeywords={*,...}               % if you want to add more keywords to the set
+}
+\usepackage{amsthm}
+\usepackage{todonotes}
+\usepackage{hyperref}
+\setlength{\parskip}{3mm}
+\newtheorem{axiom}{Axiom}
+\newtheorem{definition}{Definition}
+\newtheorem{comment}{Comment}
+\newtheorem{example}{Example}
+\newtheorem{lemma}{Lemma}
+\newtheorem{prop}{Property}
+\newtheorem{problem}{Problem}
+\newtheorem{remark}{Remark}
+\newtheorem{theorem}{Theorem}
 
-<<*>>= 
-<<Import>>
-<<Functions>>
-<<main.py>>
-@ %def structure
+% Title Page
+\title{\textbf{Developer documentation} \\
+Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
+\author{Dilawar Singh}
+\date{\today}
 
-\par Dependencies and import
+\begin{document}
+\maketitle
 
-  We need [lxml.etree] for XML parsing. To print error and warning messages, I
-  wrote a small module [DebugModule] by myself. This module is in file
-  [debug.nw]. We'd be needing these modules in almost every python file. Lets
-  keep them in one chunck [Import].
+\begin{abstract}
 
-<<Import>>=
-# Important imports 
+  This documentation is a literate program. This is an attempt to develop
+  multiscale modelling capabilities in Moose simulator.
 
-import debug 
-import logging 
+  You need [[noweb]] tool to generate documentation out of these files. Run
+  [[./run_web.sh --doc]] to generate documentation after installing [[noweb]].
+  Run [[./run_web.sh]] to run the application.
 
-logger = logging.getLogger('multiscale')
-try:
-    from lxml import etree
-    debug.printDebug("DEBUG", "running with lxml.etree")
-except ImportError:
-    try:
-        # Python 2.5
-        import xml.etree.cElementTree as etree
-        debug.printDebug("DEBUG", "running with cElementTree")
-    except ImportError:
-        try:
-            # Python 2.5
-            import xml.etree.ElementTree as etree
-            debug.printDebug("DEBUG", "running with ElementTree")
-        except ImportError:
-            try:
-              # normal cElementTree install
-              import cElementTree as etree
-              debug.printDebug("DEBUG", "running with cElementTree")
-            except ImportError:
-                try:
-                    # normal ElementTree install
-                    import elementtree.ElementTree as etree
-                    debug.printDebug("DEBUG", "running with ElementTree")
-                except ImportError:
-                    debug.prefix("FATAL", "Failed to import ElementTree")
-                    os._exit(1)
+  Contact \href{mailto:dilawars@ncbs.res.in}{Dilawar Singh} if you need any help.
+  \todo[color=red!60]{Write introduction to multiscale modelling}
 
-@ %def import
-
-
-\par Imports
-
-    Lets just import the mimimal required. We'll try import cElement tree first
-    and then some other implementation of [etree].
-
-<<main.py>>=
-<<Import>>
-<<argument parser>>
-
-@ %def main
-
-<<Import>>=
-import logging 
-import debug
-logger = logging.getLogger('multiscale')
-try:
-    import cElementTree as etree
-    debug.printDebug("DEBUG", "running with lxml.etree")
-except ImportError:
-    try:
-        # Python 2.5
-        import xml.etree.cElementTree as etree
-        debug.printDebug("DEBUG", "running with cElementTree")
-    except ImportError:
-        try:
-            # Python 2.5
-            import xml.etree.cElementTree as etree
-            debug.printDebug("DEBUG", "running with ElementTree")
-        except ImportError:
-            try:
-              # normal cElementTree install
-              import cElementTree as etree
-              debug.printDebug("DEBUG", "running with cElementTree")
-            except ImportError:
-                try:
-                    # normal ElementTree install
-                    import elementtree.ElementTree as etree
-                    debug.printDebug("DEBUG", "running with ElementTree")
-                except ImportError:
-                    try : 
-                      import lxml.etree as etree
-                    except ImportError :
-                        debug.prefix("FATAL", "Failed to import ElementTree")
-                        os._exit(1)
-
-@ %def imports
-
-\par Agrument parser
-
-  We pass xml models from the command line. More than one xml model can be
-  passed. We use [argparser] library.
-
-<<argument parser>>=
-import argparse
-
-@
+\end{abstract}
 
 
+%\include{multiscale.nw}
+%\include{debug.nw}
+%\include{parser.nw}
 
+\listoftodos
+\end{document}          

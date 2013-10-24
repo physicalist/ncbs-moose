@@ -12,7 +12,7 @@ all : run
 
 run : $(modules_py)
 	echo "Build : $?"
-	python src/main.py
+	python src/main.py --nml=./models/neuroML2/Purk2M9s.nml
 
 %.py : %.nw
 	target=$<

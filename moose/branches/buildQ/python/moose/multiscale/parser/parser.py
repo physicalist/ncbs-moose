@@ -5,13 +5,44 @@ import logging
 import os
 import importer 
 
-logger = importer.logger
+logger = logging.getLogger('multiscale')
+try:
+    import cElementTree as etree
+    debug.printDebug("DEBUG", "running with lxml.etree")
+except ImportError:
+    try:
+        # Python 2.5
+        import xml.etree.cElementTree as etree
+        debug.printDebug("DEBUG", "running with cElementTree")
+    except ImportError:
+        try:
+            # Python 2.5
+            import xml.etree.cElementTree as etree
+            debug.printDebug("DEBUG", "running with ElementTree")
+        except ImportError:
+            try:
+              # normal cElementTree install
+              import cElementTree as etree
+              debug.printDebug("DEBUG", "running with cElementTree")
+            except ImportError:
+                try:
+                    # normal ElementTree install
+                    import elementtree.ElementTree as etree
+                    debug.printDebug("DEBUG", "running with ElementTree")
+                except ImportError:
+                    try : 
+                      import lxml.etree as etree
+                    except ImportError :
+                        debug.prefix("FATAL", "Failed to import ElementTree")
+                        os._exit(1)
 
-def parseModels(models) :
 
-    """
-    Parses given xml models. We can pass either one or two models; one described in
-    neuroML and the other in sbml. 
+def getModels(models) :
+
+    """ 
+    
+    Parses given xml models. We can pass either one or two models; one described
+    in neuroML and the other in sbml. 
     
     Notes: Document is properly. See 
 
@@ -37,4 +68,8 @@ def parseModels(models) :
     if models.sbml :
         elemDict['sbml'] = models.sbml
     return elemDict
+ 
 
+def parseModel(modelPath):
+   if not os.path.exists(modelPath) :
+     pass
