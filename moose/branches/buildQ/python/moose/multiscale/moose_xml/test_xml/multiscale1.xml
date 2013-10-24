@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- First describe the domains inside the cells -->
-<domains>
-
-  <domain id="1" name="Soma" cellId="PurkinjeCell_t" type="electrical">
-    <!-- 
+<multiscale>
+  <domains>
+    <domain id="1" name="Soma" cellId="PurkinjeCell_t" type="electrical">
+      <!-- 
          Morphology of domain describes the shape and its location. 
          Morphology can have a absolute coordinate system or anatomical one. 
      -->
@@ -20,8 +20,8 @@
     </morphology>
     <propterty></propterty>
   </domain>
-  
-  
+
+
   <domain id="2" cellId="PurkinjeCell_t" type="electrical">
     <!-- 
          We can also import the morphology from a sengment of a cell.
@@ -42,7 +42,7 @@
     </propterty>
   </domain>
 
- 
+
   <domain id="3" cellId="PurkinjeCell_t" type="electrical">
     <!-- By default, use the proximal/distal coordinate system. -->
     <morphology import="no">
@@ -98,7 +98,6 @@
       </model>
     </property>
   </domain>
-
 </domains>
 
 <mappings>
@@ -113,3 +112,4 @@
     </relation>
   </mapping>
 </mappings>
+</multiscale>

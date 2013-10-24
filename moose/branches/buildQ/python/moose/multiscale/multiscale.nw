@@ -1,126 +1,40 @@
-\section{Multiscale modelling}
+\section{Map multiscale model onto Moose}
+\label{sec:multiscale}
+ 
+\paragraph{Structure} Structure of this module is following. 
 
-\paragraph{Dependencies and import}
-
-  We need [[lxml.etree]] for XML parsing. To print error and warning messages, I
-  wrote a small module [[DebugModule]] \ref{sec:debug}. This module is
-  implemented in file [[debug.nw]]. 
-  
-\paragraph{Imports}
-
-  This chunks [[Imports]] keeps the essentials modules which we need in almost
-  all files.  We'll try to import [[cElementTree]] first, and then some other
-  implementation of [[etree]]. Some other modules such as [[os]], [[sys]],
-  [[re]] etc are also needed.
-
-<<Import>>=
-# Basic imports
-import os 
-import sys 
-import logging 
-import debug 
-
-logger = logging.getLogger('multiscale')
-from lxml import etree
-
-@ %def imports
-
-\paragraph{Entry point}
-
-  This is entry point of this program. Let's write down the sturcture of
-  program. This is what we want to do in this application.
-  
-%file:src/main.py
-<<main.py>>=
+%file:src/multiscale.py
+<<multiscale>>=
 <<Import>>
-<<functions in main>>
-<<argument parser>>
-<<parse xml models>>
-<<build multiscale models in moose>>
-<<run and test the multiscale models>>
+<<Local imports>>
+<<definition of class [[Multiscale]]>>
+@ %def multiscale 
 
-@ %def entry_point
+\paragraph{A skeleton of class}
 
-\paragraph{Agrument parser}
-
-  Paths of models files are to be passed  from the command line. More than one
-  xml file can be passed. We use [[argparse]] library to build a command-line
-  interface.
-
-<<argument parser>>=
-
-'''
-command line parser
-'''
-
-# standard module for building a command line parser.
-
-import argparse
-
-# This section build the command line parser
-argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
-argParser.add_argument('--xml', metavar='nmlpath'
-    , required = True
-    , help = 'multiscale model in XML'
-    )
-args = argParser.parse_args()
-
-# command line parser ends here.
-
-@ %def argParser 
-
-  We need a module to parse the xml models. This module has its own literate
-  file [[parser.nw]]. You can see the documentation in \ref{sec:parser}.
-
-
-\paragraph{Parse xml models}
-
-  We pass two kind of models from command line to this application, [[sbml]] and
-  [[neuroML]]. Parse them and we'll think of next step. We need at least one
-  model to start with (neuroML?).
-
-  But before we parse, we need a helper function to check if given paths exists
-  and are readable.
-
-<<functions in main>>=
-def ifPathsAreValid(paths) :
-  ''' Verify if path exists and are readable. '''
-  if paths.xml :
-    if os.path.isfile(paths.xml) : pass
-    else :
-      debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.nml))
-      return False
-  return True
-
-@ %def ifPathsAreValid
-
-
-\paragraph{Parse xml files}
-
-  At least one model must be provided by the user \todo[size=\small,
-  color=red!20]{configure command line to raise error if at least one xmlpath is
-  not provided}.
+  Now we have parsed XML. We are passing the parsed XML in dictionary to a
+  method [[buildMultiscaleModel]] of this class. We know, what this class must
+  have at this point. Let's write it down and we'll wonder later how to add more
+  functionality. 
   
-  Validation is not enable in this version. \todo[inline, color=red!60]{Download
-  new neuroML2 models and turn validate=True in [[parseModels]] function call.}
+<<definition of class [[Multiscale]]>>=
 
-<<parse xml models>>=
+class Multiscale :
+  
+  def __init__(self, xmlDict) :
+    self.xmlDict = xmlDict 
+    <<initialize members>>
 
-# There must be at least one model specified by user at command line.
-import parser
-if args.xml : 
-  if ifPathsAreValid(args) :
-    logger.info("Started parsing XML models")
-    debug.printDebug("INFO", "Started parsing XML models")
-    etreeDict = parser.parseModels(args, validate=False)
-    print etreeDict
-  else :
-    debug.printDebug("FATAL", "One or more model file does not exists.")
-    sys.exit()
-else :
-  debug.printDebug("FATAL", "Please provide at least one model. None given.")
-  sys.exit()
-debug.printDebug("INFO", "Parsing of models is done")
+  <<methods in class [[Multiscale]]>>
 
-@ %def parse_models 
+  # This is the entry point of this class.
+  def buildMultiscaleModel(self) :
+      debug.printDebug("INFO", "Starting to build multiscale model")   
+      <<flow of executation>>
+  
+  <<tests in class [[Multiscale]]>>
+
+@ %def [[Multiscale]]
+
+
 

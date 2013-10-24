@@ -79,8 +79,8 @@ Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
 
 \end{abstract}
 
-
-\section{Multiscale modelling}
+\section{Initialize store-house and setup the application}
+\label{sec:setup}
 
 \paragraph{Dependencies and import}
 
@@ -117,9 +117,7 @@ from lxml import etree
 <<Import>>
 <<functions in main>>
 <<argument parser>>
-<<parse xml models>>
-<<build multiscale models in moose>>
-<<run and test the multiscale models>>
+<<parse xml models and handover control to main class>>
 
 @ %def entry_point
 
@@ -157,10 +155,6 @@ args = argParser.parse_args()
 
 \paragraph{Parse xml models}
 
-  We pass two kind of models from command line to this application, [[sbml]] and
-  [[neuroML]]. Parse them and we'll think of next step. We need at least one
-  model to start with (neuroML?).
-
   But before we parse, we need a helper function to check if given paths exists
   and are readable.
 
@@ -186,7 +180,7 @@ def ifPathsAreValid(paths) :
   Validation is not enable in this version. \todo[inline, color=red!60]{Download
   new neuroML2 models and turn validate=True in [[parseModels]] function call.}
 
-<<parse xml models>>=
+<<parse xml models and handover control to main class>>=
 
 # There must be at least one model specified by user at command line.
 import parser
@@ -195,16 +189,72 @@ if args.xml :
     logger.info("Started parsing XML models")
     debug.printDebug("INFO", "Started parsing XML models")
     etreeDict = parser.parseModels(args, validate=False)
-    print etreeDict
+    debug.printDebug("INFO", "Parsing of models is done")
+    <<hand over control to class in multiscale module>>
+    print("Done!")
   else :
     debug.printDebug("FATAL", "One or more model file does not exists.")
     sys.exit()
 else :
   debug.printDebug("FATAL", "Please provide at least one model. None given.")
   sys.exit()
-debug.printDebug("INFO", "Parsing of models is done")
 
 @ %def parse_models 
+
+\paragraph{Create multi-scale models in Moose}
+  
+  We are done initializing our application. Lets define a class [[Multiscale]]
+  and hand over the control to its object. This class is defined in defined in
+  [[multiscale.nw]]. We need to import module [[multiscale]] to be able to
+  initialize and object of this class.
+
+<<hand over control to class in multiscale module>>=
+import multiscale
+multiScaleObj = multiscale.Multiscale(etreeDict)
+multiScaleObj.buildMultiscaleModel()
+@ %def multiScaleObj 
+
+Over to \ref{sec:multiscale}.
+
+\section{Map multiscale model onto Moose}
+\label{sec:multiscale}
+ 
+\paragraph{Structure} Structure of this module is following. 
+
+%file:src/multiscale.py
+<<multiscale>>=
+<<Import>>
+<<Local imports>>
+<<definition of class [[Multiscale]]>>
+@ %def multiscale 
+
+\paragraph{A skeleton of class}
+
+  Now we have parsed XML. We are passing the parsed XML in dictionary to a
+  method [[buildMultiscaleModel]] of this class. We know, what this class must
+  have at this point. Let's write it down and we'll wonder later how to add more
+  functionality. 
+  
+<<definition of class [[Multiscale]]>>=
+
+class Multiscale :
+  
+  def __init__(self, xmlDict) :
+    self.xmlDict = xmlDict 
+    <<initialize members>>
+
+  <<methods in class [[Multiscale]]>>
+
+  # This is the entry point of this class.
+  def buildMultiscaleModel(self) :
+      debug.printDebug("INFO", "Starting to build multiscale model")   
+      <<flow of executation>>
+  
+  <<tests in class [[Multiscale]]>>
+
+@ %def [[Multiscale]]
+
+
 
 \section{XML parser}
 \label{sec:parser}
