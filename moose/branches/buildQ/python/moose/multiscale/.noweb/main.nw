@@ -141,12 +141,9 @@ import argparse
 
 # This section build the command line parser
 argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
-argParser.add_argument('--nml', metavar='nmlpath'
-    , help = 'File having neuron described in neuroML'
-    )
-argParser.add_argument('--sbml', metavar='sbmlpath'
-    , help = 'File having neuron described in SBML'
-    , required = False
+argParser.add_argument('--xml', metavar='nmlpath'
+    , required = True
+    , help = 'multiscale model in XML'
     )
 args = argParser.parse_args()
 
@@ -170,15 +167,10 @@ args = argParser.parse_args()
 <<functions in main>>=
 def ifPathsAreValid(paths) :
   ''' Verify if path exists and are readable. '''
-  if paths.nml :
-    if os.path.isfile(paths.nml) : pass
+  if paths.xml :
+    if os.path.isfile(paths.xml) : pass
     else :
       debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.nml))
-      return False
-  if paths.sbml :
-    if os.path.isfile(paths.sbml) : pass 
-    else :
-      debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.sbml))
       return False
   return True
 
@@ -190,12 +182,15 @@ def ifPathsAreValid(paths) :
   At least one model must be provided by the user \todo[size=\small,
   color=red!20]{configure command line to raise error if at least one xmlpath is
   not provided}.
+  
+  Validation is not enable in this version. \todo[inline, color=red!60]{Download
+  new neuroML2 models and turn validate=True in [[parseModels]] function call.}
 
 <<parse xml models>>=
 
 # There must be at least one model specified by user at command line.
 import parser
-if args.nml or args.sbml : 
+if args.xml : 
   if ifPathsAreValid(args) :
     logger.info("Started parsing XML models")
     debug.printDebug("INFO", "Started parsing XML models")
@@ -210,51 +205,6 @@ else :
 debug.printDebug("INFO", "Parsing of models is done")
 
 @ %def parse_models 
-
-\section{Debug module, print debugging messages}
-\label{sec:debug}
-
-  Different type of messages are printed in different colors.
-
-%file:src/debug.py
-<<debug.py>>=
-HEADER = '\033[95m'
-OKBLUE = '\033[94m'
-OKGREEN = '\033[92m'
-WARNING = '\033[93m'
-ERR = '\033[91m'
-ENDC = '\033[0m'
-RED = ERR
-WARN = WARNING
-INFO = OKGREEN 
-TODO = OKBLUE
-DEBUG = HEADER
-
-prefix = dict(
-    ERR = ERR
-    , WARN = WARN
-    , FATAL = ERR
-    , INFO = INFO
-    , TODO = TODO 
-    , NOTE = HEADER 
-    , DEBUG = DEBUG
-    )
-
-def colored(msg, label) :
-    """
-    Return a colored string. Formatting is optional.
-    """
-    global prefix
-    if label in prefix :
-        color = prefix[label]
-    else :
-        color = ""
-    return "[{0}] {1} {2}".format(label, color+msg, ENDC)
-
-def printDebug(label, msg):
-    print(colored(msg, label))
-
-@ %def debug_module 
 
 \section{XML parser}
 \label{sec:parser}
@@ -312,25 +262,17 @@ def parseModels(commandLineArgs, validate=False) :
   XML when a schema is available and [[parseWithoutValidation]] validation is
   off \textbf{schema is not available}. Ideally, schema should be provided as an
   argument to this module, but we can fix their location. Folder [[./moose_xml]]
-  must contains all the schemas we need to validate. Currently
-  [[./moose_xml/NeuroML_v2beta1.xsd]] and [[./moose_xml/sbml.xsd]] are schemas
-  available for [[nml]] and [[sbml]] models.
+  contains the schema we are going to build and use in this application. Its
+  path is [[./moose_xml/moose.xsd]].
 
-%  What should be the relative path of these schemas; the source code generated
-%  is always in one level below than the directory of this literate file e.g.
-%  generated python file resides in \texttt{./src} directory while this file is
-%  in \texttt{.} directory. Therefore, paths of these schemas are different in
-%  the implementation of following functions than they are in this literate file.
-%
+ \todo[size=\small]{Write moose.xsd schema in ./moose\_xml/moose.xsd path.}
 
 <<helper functions>>=
 def parseAndValidateWithSchema(modelName, modelPath) :
     
     prefixPath = ''
-    if modelName == 'nml' :
-      schemaPath = os.path.join(prefixPath, 'moose_xml/NeuroML_v2beta1.xsd')
-    elif modelName == 'sbml' :
-      schemaPath = os.path.join(prefixPath, 'moose_xml/sbml.xsd')
+    if modelName == 'xml' :
+      schemaPath = os.path.join(prefixPath, 'moose_xml/moose.xsd')
 
     try :
       schemaH = open(schemaPath, "r")
@@ -353,8 +295,8 @@ def parseAndValidateWithSchema(modelName, modelPath) :
 def parseWithoutValidation(modelName, modelPath) :
     try :
       xmlRootElem = etree.parse(modelPath)
-    except e :
-      debug.printDebug("ERROR", "Failed to parse model with error {0}".format(e))
+    except Exception as e :
+      debug.printDebug("ERROR", "Parsing failed. {0}".format(e))
       return 
     return xmlRootElem 
 
@@ -363,6 +305,51 @@ def parseWithoutValidation(modelName, modelPath) :
 
 
 
+
+\section{Debug module, print debugging messages}
+\label{sec:debug}
+
+  Different type of messages are printed in different colors.
+
+%file:src/debug.py
+<<debug.py>>=
+HEADER = '\033[95m'
+OKBLUE = '\033[94m'
+OKGREEN = '\033[92m'
+WARNING = '\033[93m'
+ERR = '\033[91m'
+ENDC = '\033[0m'
+RED = ERR
+WARN = WARNING
+INFO = OKGREEN 
+TODO = OKBLUE
+DEBUG = HEADER
+
+prefix = dict(
+    ERR = ERR
+    , WARN = WARN
+    , FATAL = ERR
+    , INFO = INFO
+    , TODO = TODO 
+    , NOTE = HEADER 
+    , DEBUG = DEBUG
+    )
+
+def colored(msg, label) :
+    """
+    Return a colored string. Formatting is optional.
+    """
+    global prefix
+    if label in prefix :
+        color = prefix[label]
+    else :
+        color = ""
+    return "[{0}] {1} {2}".format(label, color+msg, ENDC)
+
+def printDebug(label, msg):
+    print(colored(msg, label))
+
+@ %def debug_module 
 
 \listoftodos
 \end{document}          
