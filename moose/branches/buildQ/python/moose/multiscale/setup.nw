@@ -12,7 +12,7 @@
   This chunks [[Imports]] keeps the essentials modules which we need in almost
   all files.  We'll try to import [[cElementTree]] first, and then some other
   implementation of [[etree]]. Some other modules such as [[os]], [[sys]],
-  [[re]] etc are also needed.
+  [[re]] etc. are also needed.
 
 <<Import>>=
 # Basic imports
@@ -40,7 +40,7 @@ from lxml import etree
 
 @ %def entry_point
 
-\paragraph{Agrument parser}
+\paragraph{Argument parser}
 
   Paths of models files are to be passed  from the command line. More than one
   xml file can be passed. We use [[argparse]] library to build a command-line
@@ -62,6 +62,10 @@ argParser.add_argument('--xml', metavar='nmlpath'
     , required = True
     , help = 'multiscale model in XML'
     )
+argParser.add_argument('--adaptor', metavar='nmlpath'
+    , required = True
+    , help = 'AdaptorML for moose'
+    )
 args = argParser.parse_args()
 
 # command line parser ends here.
@@ -72,7 +76,7 @@ args = argParser.parse_args()
   file [[parser.nw]]. You can see the documentation in \ref{sec:parser}.
 
 
-\paragraph{Parse xml models}
+\paragraph{Parse XML models}
 
   But before we parse, we need a helper function to check if given paths exists
   and are readable.
