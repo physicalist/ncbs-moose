@@ -36,5 +36,11 @@ class Multiscale :
 
 @ %def [[Multiscale]]
 
+Before we move on, lets discuss some models developed by others we need to
+import into moose.
+
+%\include{proto.nw}
+
+
 
 
