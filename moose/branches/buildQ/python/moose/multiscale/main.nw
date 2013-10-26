@@ -8,6 +8,8 @@
 \usepackage{color}
 \usepackage{amssymb}
 \usepackage{listings}
+%\usepackage{glossaries}
+
 \usetikzlibrary{circuits.logic.US}
 \usetikzlibrary{positioning}
 \usetikzlibrary{matrix}
@@ -54,6 +56,7 @@
 \newtheorem{prop}{Property}
 \newtheorem{problem}{Problem}
 \newtheorem{remark}{Remark}
+\newtheorem{note}{Note}
 \newtheorem{theorem}{Theorem}
 
 % Title Page
@@ -84,5 +87,6 @@ Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
 %\include{adaptor.nw}
 %\include{parser.nw}
 %\include{debug.nw}
+\include{glossary}
 \listoftodos
 \end{document}          
