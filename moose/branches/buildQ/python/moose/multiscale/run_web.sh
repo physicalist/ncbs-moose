@@ -5,5 +5,5 @@ topFile=main.nw
 if [ "$1" == "--doc" ]; then 
   pdflatex -output-directory=docs "./docs/$topFile.tex"
 else 
-  python src/main.py --xml ./moose_xml/test_xml/multiscale1.xml
+  python src/main.py --xml ./moose_xml/test_xml/multiscale1.xml --adaptor ./moose_xml/adaptor.xml 
 fi

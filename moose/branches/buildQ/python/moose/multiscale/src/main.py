@@ -31,6 +31,10 @@ argParser.add_argument('--xml', metavar='nmlpath'
     , required = True
     , help = 'multiscale model in XML'
     )
+argParser.add_argument('--adaptor', metavar='nmlpath'
+    , required = True
+    , help = 'AdaptorML for moose'
+    )
 args = argParser.parse_args()
 
 # command line parser ends here.
