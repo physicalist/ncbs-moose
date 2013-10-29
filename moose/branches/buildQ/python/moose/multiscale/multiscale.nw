@@ -112,6 +112,7 @@ sys.exit()
     such that we can query it easily.
 
 <<flow of executation>>=
+<<initialize database>>
 <<populate database with models>>
 <<build queries from adaptorML>>
 <<run queries and generate moose scripts>>
@@ -162,7 +163,14 @@ for xml in self.xmlDict :
     self.extractTransformLoad(xml, xmlRootNode)
 @ %def ETL
 
-  Now the hard part of populating the database.
+  Now the hard part of populating the database starts. We need to initialize the
+  database first before we can use it. Its a serious task. Let's initialize
+  tables first and document them. The description of database is available in
+  section \ref{sec:database}.
+
+<<initialize database>>=
+self.initDB()
+@ 
 
 <<methods to deal with database>>=
 def extractTransformLoad(self, modelType, xmlRootNode) :
@@ -176,10 +184,20 @@ def extractTransformLoad(self, modelType, xmlRootNode) :
 
 \paragraph{ETL a NML model}
 
-  ETL an neuroML model. 
+  ETL an neuroML model. Model specified in [[neuroML]]  other
+  files too. As soon as we get to know the names of these files, we must demand
+  them from the user after parsing of [[neuroML]] model is over. If these files
+  are given from command line, ETL them silently, else demand these files from
+  command-line.
 
 <<methods to deal with database>>=
 def etlNMLModel(self, nmlRootNode) :
   debug.printDebug("STEP", "ETLing a nml model")
+  for child in nmlRootNode.iter() :
+    print child
  
 @ %def etlNMLModel  
+
+%%% Description of database
+%\include{database.nw}
+
