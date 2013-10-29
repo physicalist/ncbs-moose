@@ -35,11 +35,53 @@ class Multiscale :
 
   def etlNMLModel(self, nmlRootNode) :
     debug.printDebug("STEP", "ETLing a nml model")
+    for child in nmlRootNode.iter() :
+      print child
    
+  def initDB(self) :
+    query = '''DROP TABLE IF EXISTS segment'''
+    self.cursor.execute(query)
+    query = '''CREATE TABLE IF NOT EXISTS segment 
+      (id INTEGER PRIMARY KEY ASC
+      , name VARCHAR
+      , parent INTEGER 
+      , proximal REAL
+      , distal REAL
+      , x REAL 
+      , y REAL  
+      , z REAL 
+      , remark TEXT)'''
+    self.cursor.execute(query)
+    query = 'DROP TABLE IF EXISTS cells'
+    self.cursor.execute(query)
+    query = '''CREATE TABLE IF NOT EXISTS cells
+      (type VARCHAR PRIMARY KEY -- Type of cell
+      , leakReversal REAL       -- leakReversal potential
+      , threshold REAL          -- Threshold voltage
+      , reset REAL
+      , tau REAL
+      , refract REAL
+      , capacitance REAL
+      , leakConductance REAL
+      , a REAL                  -- Izhikenvich Cell model
+      , b REAL                  -- Izhikenvich cell model
+      , c REAL                  -- Izhikenvich cell model 
+      , d REAL                  -- Izhikenvich cell model
+      , gL REAL
+      , EL REAL
+      , reset REAL
+      , VT REAL
+      , delT REAL
+      , tauw REAL
+      , Idel REAL
+      , Idur REAL
+      )'''
+
 
   # This is the entry point of this class.
   def buildMultiscaleModel(self) :
       debug.printDebug("INFO", "Starting to build multiscale model")   
+      self.initDB()
       for xml in self.xmlDict :
         xmlRootNodeList = self.xmlDict[xml]
         for xmlRootNode in xmlRootNodeList :
