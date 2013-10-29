@@ -119,7 +119,7 @@ def executeNoweb(args, nowebTempDir) :
     if len(wargs) > 0 :
       args = args.weave[0].strip()
       args = args.split(">")
-      nowebCommand = ["noweave"] + args[0].split() + [mainFilepath.strip()]
+      nowebCommand = ["noweave", "-latex", "-x"] + args[0].split() + [mainFilepath.strip()]
       if len(args) > 1 :
         outFile = args[1].strip()
         executeCommand(nowebCommand, outFile)

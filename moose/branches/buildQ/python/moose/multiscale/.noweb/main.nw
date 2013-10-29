@@ -60,7 +60,7 @@
 \newtheorem{theorem}{Theorem}
 
 % Title Page
-\title{\textbf{Developer documentation} \\
+\title{\textbf{Developer document} \\
 Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
 \author{Dilawar Singh}
 \date{\today}
@@ -69,20 +69,35 @@ Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
 \maketitle
 
 \begin{abstract}
+\label{abstract}
 
-  This documentation is a literate program. This is an attempt to develop
-  multiscale modelling capabilities in Moose simulator.
-
-  You need [[noweb]] tool to generate documentation out of these files. Run
-  [[./run_web.sh --doc]] to generate documentation after installing [[noweb]].
-  Run [[./run_web.sh]] to run the application.
-
-  Contact \href{mailto:dilawars@ncbs.res.in}{Dilawar Singh} if you need any help.
-  \todo[color=red!60]{Write introduction to multiscale modelling}
+  This documentation is a literate program. This describes and ongoing attempt
+  to make moose more capable of doing multi-scale modelling. There are various
+  XML based models available, each describing a particular aspect of neural
+  activities. Some describes the chemical activities inside neuron while some
+  other describe their electrical properties etc. We wish to write a super-XML
+  model which can make use of all these models and map them onto moose.
+  Currently, we call it [[adaptorML]]. Later we should find a cool name for it
+  such as [[mooseML]] or [[mooooml]].
 
 \end{abstract}
 
-\section{Initialize store-house and setup the application}
+\paragraph{Dependencies}
+
+  You need [[noweb]] tool to generate documentation from this file. This file
+  contains some macros which are not understood by [[noweb]]. These macros are
+  used by a python script [[./pynoweb.py]] to generate [[noweb]] file. You need
+  not know how to use it. Just run [[./generate_code_and_docs.sh --doc]] to
+  generate documentation after installing [[noweb]].  Run the same command
+  without [[--doc]] switch and you have your working application in [[src]]
+  directory. 
+  
+  Contact the very friendly Homo Sapience Sapience named
+  \href{mailto:dilawars@ncbs.res.in}{Dilawar Singh} if you need any help.
+  He can be reached at \url{dilawars@ncbs.res.in}.
+  \todo[color=red!60]{Write introduction to multiscale modelling}
+
+\section{Initialize store-house}
 \label{sec:setup}
 
 \paragraph{Dependencies and import}
@@ -93,10 +108,9 @@ Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
   
 \paragraph{Imports}
 
-  This chunks [[Imports]] keeps the essentials modules which we need in almost
-  all files.  We'll try to import [[cElementTree]] first, and then some other
-  implementation of [[etree]]. Some other modules such as [[os]], [[sys]],
-  [[re]] etc. are also needed.
+  This chunk [[Imports]] keeps the essentials modules which we'll need in almost
+  all files. We might occasionally also need a logger from python [[logging]]
+  library. Let's create a standard logger too.
 
 <<Import>>=
 # Basic imports
@@ -126,24 +140,23 @@ from lxml import etree
 
 \paragraph{Argument parser}
 
-  Paths of models files are to be passed  from the command line. More than one
-  xml file can be passed. We use [[argparse]] library to build a command-line
-  interface.
+  This application accepts paths of XML based models from command line. More
+  than one XML model can be passed from command line. Python comes with a
+  standard library [[argparse]] well suited to do this job. If more than two
+  XML models are to be passed, each should be passed with its own [[--xml]]
+  switch e.g. to pass [[modelA.xml]] and [[modelB.xml]] from command line, use
+  the string {\color{blue}[[--xml modelA.xml --xml modelB.xml]]}. We must also
+  provide the path of [[adaptorML]] file.
 
 <<argument parser>>=
-
-'''
-command line parser
-'''
-
 # standard module for building a command line parser.
-
 import argparse
 
 # This section build the command line parser
 argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
 argParser.add_argument('--xml', metavar='nmlpath'
     , required = True
+    , nargs = '+'
     , help = 'multiscale model in XML'
     )
 argParser.add_argument('--adaptor', metavar='nmlpath'
@@ -152,12 +165,11 @@ argParser.add_argument('--adaptor', metavar='nmlpath'
     )
 args = argParser.parse_args()
 
-# command line parser ends here.
-
 @ %def argParser 
 
-  We need a module to parse the xml models. This module has its own literate
-  file [[parser.nw]]. You can see the documentation in \ref{sec:parser}.
+  Once we have verified paths of XML models, we need a module to parse them. For
+  the purpose of modularity, we wrote this module in its on literate file
+  [[parser.nw]] and you can see its documentation in section \ref{sec:parser}.
 
 
 \paragraph{Parse XML models}
@@ -169,27 +181,26 @@ args = argParser.parse_args()
 def ifPathsAreValid(paths) :
   ''' Verify if path exists and are readable. '''
   if paths.xml :
-    if os.path.isfile(paths.xml) : pass
-    else :
-      debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.nml))
-      return False
+    for path in paths.xml :
+      if os.path.isfile(path) : pass
+      else :
+        debug.printDebug("ERROR", "Filepath {0} does not exists".format(path))
+        return False
+    # check if file is readable 
+    if not os.access(path, os.R_OK) :
+      debug.printDebug("ERROR", "File {0} is not readable".format(path))
   return True
 
 @ %def ifPathsAreValid
 
 
-\paragraph{Parse xml files}
+\paragraph{Parse XML files}
 
-  At least one model must be provided by the user \todo[size=\small,
-  color=red!20]{configure command line to raise error if at least one xmlpath is
-  not provided}.
-  
-  Validation is not enable in this version. \todo[inline, color=red!60]{Download
-  new neuroML2 models and turn validate=True in [[parseModels]] function call.}
+  At least one model must be provided by the user.  Validation is not enable in
+  this version. \todo[inline, color=red!60]{Download new neuroML2 models and
+  turn validate=True in [[parseModels]] function call.}
 
 <<parse xml models and handover control to main class>>=
-
-# There must be at least one model specified by user at command line.
 import parser
 if args.xml : 
   if ifPathsAreValid(args) :
@@ -211,7 +222,7 @@ else :
 \paragraph{Create multi-scale models in Moose}
   
   We are done initializing our application. Lets define a class [[Multiscale]]
-  and hand over the control to its object. This class is defined in defined in
+  and hand over the control to its object. This class is defined in 
   [[multiscale.nw]]. We need to import module [[multiscale]] to be able to
   initialize and object of this class.
 
@@ -223,8 +234,25 @@ multiScaleObj.buildMultiscaleModel()
 
 Over to \ref{sec:multiscale}.
 
-\section{Map multiscale model onto Moose}
+\section{Construct a Database/AST from XML models}
 \label{sec:multiscale}
+  
+  This is our defining module and it contains the basic functionality of this
+  application. All XML modules are parsed into a dictionary and this dictionary
+  is passed to the object of class [[Multiscale]] which is the main class in
+  this module. We also have [[adaptorML]] file parsed in dictionary. 
+
+\begin{remark}{Why AST/Database?}
+ 
+ Should I directly map XML models to moose objects or a intermediate
+ representation would be better. I am leaning towards haivng a intermediate
+ sqlite3 based data-structure. The benefit of using sqlite is that we can simply
+ insert and query the database without having to keep all XML models open. We'll
+ simply populate the database for each given model. Details are bit hazy in my
+ mind right now and I should add the them to this document as they become
+ clearer to me.
+
+\end{remark}
  
 \paragraph{Structure} Structure of this module is following. 
 
@@ -232,7 +260,8 @@ Over to \ref{sec:multiscale}.
 <<multiscale>>=
 <<Import>>
 <<Local imports>>
-<<definition of class [[Multiscale]]>>
+<<Definition of class [[Multiscale]]>>
+
 @ %def multiscale 
 
 \paragraph{A skeleton of class}
@@ -242,13 +271,14 @@ Over to \ref{sec:multiscale}.
   have at this point. Let's write it down and we'll wonder later how to add more
   functionality. 
   
-<<definition of class [[Multiscale]]>>=
+<<Definition of class [[Multiscale]]>>=
 
 class Multiscale :
   
   def __init__(self, xmlDict) :
     self.xmlDict = xmlDict 
     <<initialize members>>
+    debug.printDebug("INFO", "Object of class Multiscale intialized ...")
 
   <<methods in class [[Multiscale]]>>
 
@@ -257,7 +287,14 @@ class Multiscale :
       debug.printDebug("INFO", "Starting to build multiscale model")   
       <<flow of executation>>
   
+  def exit(self) :
+    # Clean up before you leave
+    <<clean up the mess>>
+
+  # Write down the tests, whenever needed.
   <<tests in class [[Multiscale]]>>
+
+
 
 @ %def [[Multiscale]]
 
@@ -406,22 +443,22 @@ Gbar = {Gk}X^{Xpower}Y^{Ypower}Z^{Zpower}
 <<Ordinary Ca channel>>=
 # Traub tabulated calcium channel
 def make_Ca():
-	if moose.exists( 'Ca' ):
-		return
-	Ca = moose.HHChannel( 'Ca' )
-	Ca.Ek = ECA
-	Ca.Gbar = 40 * SOMA_A
-	Ca.Gk = 0
-	Ca.Xpower = 2
-	Ca.Ypower = 1
-	Ca.Zpower = 0
-    
-	xgate = moose.element( 'Ca/gateX' )
-    <<setup X-gate using Traub model>>
+  if moose.exists( 'Ca' ):
+      return
+  Ca = moose.HHChannel( 'Ca' )
+  Ca.Ek = ECA
+  Ca.Gbar = 40 * SOMA_A
+  Ca.Gk = 0
+  Ca.Xpower = 2
+  Ca.Ypower = 1
+  Ca.Zpower = 0
 
-	ygate = moose.element( 'Ca/gateY' )
-    <<setup Y-gate using Traub model>>
-    <<put information into cell-reader>>
+  xgate = moose.element( 'Ca/gateX' )
+  <<setup X-gate using Traub model>>
+
+  ygate = moose.element( 'Ca/gateY' )
+  <<setup Y-gate using Traub model>>
+  <<put information into cell-reader>>
 @
 
 \paragraph{Set-up X-gate}
@@ -454,12 +491,12 @@ yB = numpy.zeros( (ygate.divs + 1), dtype=float)
 dx = (ygate.max - ygate.min)/ygate.divs
 x = ygate.min
 for i in range( ygate.divs + 1 ):
-	if ( x > EREST_ACT):
-		yA[i] = 5.0 * math.exp( -50 * (x - EREST_ACT) )
-	else:
-		yA[i] = 5.0
-	yB[i] = 5.0
-	x += dx
+  if ( x > EREST_ACT):
+    yA[i] = 5.0 * math.exp( -50 * (x - EREST_ACT) )
+  else:
+    yA[i] = 5.0
+  yB[i] = 5.0
+  x += dx
 ygate.tableA = yA
 ygate.tableB = yB
 @
@@ -483,12 +520,12 @@ ygate.tableB = yB
 # Tell the cell reader that the current from this channel must be fed into
 # the Ca_conc pool of calcium.
 addmsg1 = moose.Mstring( '/library/Ca/addmsg1' )
-addmsg1.value = '.	IkOut	../Ca_conc	current'
+addmsg1.value = '.  IkOut  ../Ca_conc  current'
 
 # in some compartments, whe have an NMDA_Ca_conc object to put the current
 # into.
 addmsg2 = moose.Mstring( '/library/Ca/addmsg2' )
-addmsg2.value = '.	IkOut	../NMDA_Ca_conc	current'
+addmsg2.value = '.  IkOut  ../NMDA_Ca_conc  current'
 @ %def cell-reader
  
 \paragraph{Convert Ca current to Ca concentration}
@@ -522,12 +559,12 @@ addmsg2.value = '.	IkOut	../NMDA_Ca_conc	current'
 
 <<Functions to maniputate property of channels>>=
 def make_Ca_conc():
-	if moose.exists( 'Ca_conc' ):
-		return
-	conc = moose.CaConc( 'Ca_conc' )
-	conc.tau = 0.013333  # sec
-	conc.B  = 17.402e12 # Curr to conc conversion for soma
-	conc.Ca_base = 0.0
+  if moose.exists( 'Ca_conc' ):
+    return
+  conc = moose.CaConc( 'Ca_conc' )
+  conc.tau = 0.013333  # sec
+  conc.B  = 17.402e12 # Curr to conc conversion for soma
+  conc.Ca_base = 0.0
 @ %def make_Ca_conc
 
 This [[Ca_concen]] element should receive a message from any calcium channels with
@@ -546,8 +583,8 @@ values which are functions of concentration, instead of voltage.
 
 <<Ca-dependent K-AHP channel>>=
 def make_K_AHP():
-	if moose.exists( 'K_AHP' ):
-		return
+    if moose.exists( 'K_AHP' ):
+        return
 
     K_AHP = moose.HHChannel( 'K_AHP' )
     K_AHP.Ek = EK                      # V
@@ -557,30 +594,30 @@ def make_K_AHP():
     K_AHP.Ypower = 0
     K_AHP.Zpower = 1
 
-	zgate = moose.element( 'K_AHP/gateZ' )
-	xmax = 500.0
-	zgate.min = 0
-	zgate.max = xmax
-	zgate.divs = 3000
-	zA = numpy.zeros( (zgate.divs + 1), dtype=float)
-	zB = numpy.zeros( (zgate.divs + 1), dtype=float)
-	dx = (zgate.max - zgate.min)/zgate.divs
-	x = zgate.min
-	for i in range( zgate.divs + 1 ):
-		if (x < (xmax / 2.0 )):
-			zA[i] = 0.02*x
-		else:
-			zA[i] = 10.0
-		zB[i] = zA[i] + 1.0
-		x = x + dx
+    zgate = moose.element( 'K_AHP/gateZ' )
+    xmax = 500.0
+    zgate.min = 0
+    zgate.max = xmax
+    zgate.divs = 3000
+    zA = numpy.zeros( (zgate.divs + 1), dtype=float)
+    zB = numpy.zeros( (zgate.divs + 1), dtype=float)
+    dx = (zgate.max - zgate.min)/zgate.divs
+    x = zgate.min
+    for i in range( zgate.divs + 1 ):
+        if (x < (xmax / 2.0 )):
+            zA[i] = 0.02*x
+        else:
+            zA[i] = 10.0
+        zB[i] = zA[i] + 1.0
+        x = x + dx
 
-	zgate.tableA = zA
-	zgate.tableB = zB
-    
+    zgate.tableA = zA
+    zgate.tableB = zB
+
     # Use an added field to tell the cell reader to set up a message from the
     # Ca_Conc with concentration info, to the current K_AHP object.
-	addmsg1 = moose.Mstring( '/library/K_AHP/addmsg1' )
-	addmsg1.value = '../Ca_conc	concOut	. concen'
+    addmsg1 = moose.Mstring( '/library/K_AHP/addmsg1' )
+    addmsg1.value = '../Ca_conc  concOut  . concen'
 
 @ %def make_K_AHP
 
@@ -603,71 +640,71 @@ and tabgate}
 
 <<Ca-dependent K-C channel>>=
 def make_K_C():
-	if moose.exists( 'K_C'):
-		return
+  if moose.exists( 'K_C'):
+    return
 
-	K_C = moose.HHChannel( 'K_C' )
-	K_C.Ek = EK					#	V
-	K_C.Gbar = 100.0 * SOMA_A 	#	S
-	K_C.Gk = 0					#	S
-	K_C.Xpower = 1
-	K_C.Zpower = 1
-	K_C.instant = 4				# Flag: 0x100 means Z gate is instant.
+  K_C = moose.HHChannel( 'K_C' )
+  K_C.Ek = EK          #  V
+  K_C.Gbar = 100.0 * SOMA_A   #  S
+  K_C.Gk = 0          #  S
+  K_C.Xpower = 1
+  K_C.Zpower = 1
+  K_C.instant = 4        # Flag: 0x100 means Z gate is instant.
 
-	# Now make a X-table for the voltage-dependent activation parameter.
-	xgate = moose.element( 'K_C/gateX' )
-	xgate.min = -0.1
-	xgate.max = 0.05
-	xgate.divs = 3000
-	xA = numpy.zeros( (xgate.divs + 1), dtype=float)
-	xB = numpy.zeros( (xgate.divs + 1), dtype=float)
-	dx = (xgate.max - xgate.min)/xgate.divs
-	x = xgate.min
-	for i in range( xgate.divs + 1 ):
-		alpha = 0.0
-		beta = 0.0
-		if (x < EREST_ACT + 0.05):
-			alpha = math.exp( 53.872 * (x - EREST_ACT) - 0.66835 ) / 0.018975
-			beta = 2000* (math.exp ( (EREST_ACT + 0.0065 - x)/0.027)) - alpha
-		else:
-			alpha = 2000 * math.exp( ( EREST_ACT + 0.0065 - x)/0.027 )
-			beta = 0.0
-		xA[i] = alpha
-		xB[i] = alpha + beta
-		x = x + dx
-	xgate.tableA = xA
-	xgate.tableB = xB
+  # Now make a X-table for the voltage-dependent activation parameter.
+  xgate = moose.element( 'K_C/gateX' )
+  xgate.min = -0.1
+  xgate.max = 0.05
+  xgate.divs = 3000
+  xA = numpy.zeros( (xgate.divs + 1), dtype=float)
+  xB = numpy.zeros( (xgate.divs + 1), dtype=float)
+  dx = (xgate.max - xgate.min)/xgate.divs
+  x = xgate.min
+  for i in range( xgate.divs + 1 ):
+    alpha = 0.0
+    beta = 0.0
+    if (x < EREST_ACT + 0.05):
+      alpha = math.exp( 53.872 * (x - EREST_ACT) - 0.66835 ) / 0.018975
+      beta = 2000* (math.exp ( (EREST_ACT + 0.0065 - x)/0.027)) - alpha
+    else:
+      alpha = 2000 * math.exp( ( EREST_ACT + 0.0065 - x)/0.027 )
+      beta = 0.0
+    xA[i] = alpha
+    xB[i] = alpha + beta
+    x = x + dx
+  xgate.tableA = xA
+  xgate.tableB = xB
 
     # Create a table for the function of concentration, allowing a
     # concentration range of 0 to 1000, with 50 divisions.  This is done
     # using the Z gate, which can receive a CONCEN message.  By using
     # the "instant" flag, the A and B tables are evaluated as lookup tables,
     #  rather than being used in a differential equation.
-	zgate = moose.element( 'K_C/gateZ' )
-	zgate.min = 0.0
-	xmax = 500.0
-	zgate.max = xmax
-	zgate.divs = 3000
-	zA = numpy.zeros( (zgate.divs + 1), dtype=float)
-	zB = numpy.zeros( (zgate.divs + 1), dtype=float)
-	dx = ( zgate.max -  zgate.min)/ zgate.divs
-	x = zgate.min
-	for i in range( xgate.divs + 1 ):
-		if ( x < ( xmax / 4.0 ) ):
-			zA[i] = x * 4.0 / xmax
-		else:
-			zA[i] = 1.0
-		zB[i] = 1.0
-		x += dx
-	zgate.tableA = zA
-	zgate.tableB = zB
+  zgate = moose.element( 'K_C/gateZ' )
+  zgate.min = 0.0
+  xmax = 500.0
+  zgate.max = xmax
+  zgate.divs = 3000
+  zA = numpy.zeros( (zgate.divs + 1), dtype=float)
+  zB = numpy.zeros( (zgate.divs + 1), dtype=float)
+  dx = ( zgate.max -  zgate.min)/ zgate.divs
+  x = zgate.min
+  for i in range( xgate.divs + 1 ):
+    if ( x < ( xmax / 4.0 ) ):
+      zA[i] = x * 4.0 / xmax
+    else:
+      zA[i] = 1.0
+    zB[i] = 1.0
+    x += dx
+  zgate.tableA = zA
+  zgate.tableB = zB
    
    # Now we need to provide for messages that link to external elements.
    # The message that sends the Ca concentration to the Z gate tables is stored
    # in an added field of the channel, so that it may be found by the cell
    # reader.
-	addmsg1 = moose.Mstring( '/library/K_C/addmsg1' )
-	addmsg1.value = '../Ca_conc	concOut	. concen'
+  addmsg1 = moose.Mstring( '/library/K_C/addmsg1' )
+  addmsg1.value = '../Ca_conc  concOut  . concen'
 @
 
 \paragraph{Tabchannel Na Hippocampal cell channel}
@@ -675,29 +712,29 @@ def make_K_C():
 
 <<Tabchannel Na Hippocampal cell channel>>=
 def make_Na():
-	if moose.exists( 'Na' ):
-		return
-	Na = moose.HHChannel( 'Na' )
-	Na.Ek = ENA				#	V
-	Na.Gbar = 300 * SOMA_A	#	S
-	Na.Gk = 0				#	S
-	Na.Xpower = 2
-	Na.Ypower = 1
-	Na.Zpower = 0
+  if moose.exists( 'Na' ):
+    return
+  Na = moose.HHChannel( 'Na' )
+  Na.Ek = ENA        #  V
+  Na.Gbar = 300 * SOMA_A  #  S
+  Na.Gk = 0        #  S
+  Na.Xpower = 2
+  Na.Ypower = 1
+  Na.Zpower = 0
 
-	xgate = moose.element( 'Na/gateX' )
-	xA = numpy.array( [ 320e3 * (0.0131 + EREST_ACT),
-		-320e3, -1.0, -1.0 * (0.0131 + EREST_ACT), -0.004, 
-		-280e3 * (0.0401 + EREST_ACT), 280e3, -1.0, 
-		-1.0 * (0.0401 + EREST_ACT), 5.0e-3, 
-		3000, -0.1, 0.05 ] )
-	xgate.setupAlpha( xA )
+  xgate = moose.element( 'Na/gateX' )
+  xA = numpy.array( [ 320e3 * (0.0131 + EREST_ACT),
+    -320e3, -1.0, -1.0 * (0.0131 + EREST_ACT), -0.004, 
+    -280e3 * (0.0401 + EREST_ACT), 280e3, -1.0, 
+    -1.0 * (0.0401 + EREST_ACT), 5.0e-3, 
+    3000, -0.1, 0.05 ] )
+  xgate.setupAlpha( xA )
 
-	ygate = moose.element( 'Na/gateY' )
-	yA = numpy.array( [ 128.0, 0.0, 0.0, -1.0 * (0.017 + EREST_ACT), 0.018,
-		4.0e3, 0.0, 1.0, -1.0 * (0.040 + EREST_ACT), -5.0e-3, 
-		3000, -0.1, 0.05 ] )
-	ygate.setupAlpha( yA )
+  ygate = moose.element( 'Na/gateY' )
+  yA = numpy.array( [ 128.0, 0.0, 0.0, -1.0 * (0.017 + EREST_ACT), 0.018,
+    4.0e3, 0.0, 1.0, -1.0 * (0.040 + EREST_ACT), -5.0e-3, 
+    3000, -0.1, 0.05 ] )
+  ygate.setupAlpha( yA )
 
 @ %def make_Na
 
@@ -707,22 +744,22 @@ def make_Na():
 
 <<Tabchannel K-DR Hippocampal cell channel>>=
 def make_K_DR():
-	if moose.exists( 'K_DR' ):
-		return
-	K_DR = moose.HHChannel( 'K_DR' )
-	K_DR.Ek = EK				#	V
-	K_DR.Gbar = 150 * SOMA_A	#	S
-	K_DR.Gk = 0				#	S
-	K_DR.Xpower = 1
-	K_DR.Ypower = 0
-	K_DR.Zpower = 0
+  if moose.exists( 'K_DR' ):
+    return
+  K_DR = moose.HHChannel( 'K_DR' )
+  K_DR.Ek = EK        #  V
+  K_DR.Gbar = 150 * SOMA_A  #  S
+  K_DR.Gk = 0        #  S
+  K_DR.Xpower = 1
+  K_DR.Ypower = 0
+  K_DR.Zpower = 0
 
-	xgate = moose.element( 'K_DR/gateX' )
-	xA = numpy.array( [ 16e3 * (0.0351 + EREST_ACT), 
-		-16e3, -1.0, -1.0 * (0.0351 + EREST_ACT), -0.005,
-		250, 0.0, 0.0, -1.0 * (0.02 + EREST_ACT), 0.04,
-		3000, -0.1, 0.05 ] )
-	xgate.setupAlpha( xA )
+  xgate = moose.element( 'K_DR/gateX' )
+  xA = numpy.array( [ 16e3 * (0.0351 + EREST_ACT), 
+    -16e3, -1.0, -1.0 * (0.0351 + EREST_ACT), -0.005,
+    250, 0.0, 0.0, -1.0 * (0.02 + EREST_ACT), 0.04,
+    3000, -0.1, 0.05 ] )
+  xgate.setupAlpha( xA )
 @
 
 
@@ -730,42 +767,42 @@ def make_K_DR():
 
 <<Tabchannel K-A Hippocampal cell channell>>=
 def make_K_A():
-	if moose.exists( 'K_A' ):
-		return
-	K_A = moose.HHChannel( 'K_A' )
-	K_A.Ek = EK				#	V
-	K_A.Gbar = 50 * SOMA_A	#	S
-	K_A.Gk = 0				#	S
-	K_A.Xpower = 1
-	K_A.Ypower = 1
-	K_A.Zpower = 0
+  if moose.exists( 'K_A' ):
+    return
+  K_A = moose.HHChannel( 'K_A' )
+  K_A.Ek = EK        #  V
+  K_A.Gbar = 50 * SOMA_A  #  S
+  K_A.Gk = 0        #  S
+  K_A.Xpower = 1
+  K_A.Ypower = 1
+  K_A.Zpower = 0
 
-	xgate = moose.element( 'K_A/gateX' )
-	xA = numpy.array( [ 20e3 * (0.0131 + EREST_ACT), 
-		-20e3, -1.0, -1.0 * (0.0131 + EREST_ACT), -0.01,
-		-17.5e3 * (0.0401 + EREST_ACT), 
-		17.5e3, -1.0, -1.0 * (0.0401 + EREST_ACT), 0.01,
-		3000, -0.1, 0.05 ] )
-	xgate.setupAlpha( xA )
+  xgate = moose.element( 'K_A/gateX' )
+  xA = numpy.array( [ 20e3 * (0.0131 + EREST_ACT), 
+    -20e3, -1.0, -1.0 * (0.0131 + EREST_ACT), -0.01,
+    -17.5e3 * (0.0401 + EREST_ACT), 
+    17.5e3, -1.0, -1.0 * (0.0401 + EREST_ACT), 0.01,
+    3000, -0.1, 0.05 ] )
+  xgate.setupAlpha( xA )
 
-	ygate = moose.element( 'K_A/gateY' )
-	yA = numpy.array( [ 1.6, 0.0, 0.0, 0.013 - EREST_ACT, 0.018,
-		50.0, 0.0, 1.0, -1.0 * (0.0101 + EREST_ACT), -0.005,
-		3000, -0.1, 0.05 ] )
-	ygate.setupAlpha( yA )
+  ygate = moose.element( 'K_A/gateY' )
+  yA = numpy.array( [ 1.6, 0.0, 0.0, 0.013 - EREST_ACT, 0.018,
+    50.0, 0.0, 1.0, -1.0 * (0.0101 + EREST_ACT), -0.005,
+    3000, -0.1, 0.05 ] )
+  ygate.setupAlpha( yA )
 @ %def make_K_A
 
 \paragraph{SynChan: Glu receptor}
 
 <<Glu receptor>>=
 def make_glu():
-	if moose.exists( 'glu' ):
-		return
-	glu = moose.SynChan( 'glu' )
-	glu.Ek = 0.0
-	glu.tau1 = 2.0e-3
-	glu.tau2 = 9.0e-3
-	glu.Gbar = 40 * SOMA_A
+  if moose.exists( 'glu' ):
+    return
+  glu = moose.SynChan( 'glu' )
+  glu.Ek = 0.0
+  glu.tau1 = 2.0e-3
+  glu.tau2 = 9.0e-3
+  glu.Gbar = 40 * SOMA_A
 @ %def make_glu 
 
 
@@ -773,30 +810,30 @@ def make_glu():
 
 <<NMDA receptor>>=
 def make_NMDA():
-	if moose.exists( 'NMDA' ):
-		return
-	NMDA = moose.SynChan( 'NMDA' )
-	NMDA.Ek = 0.0
-	NMDA.tau1 = 20.0e-3
-	NMDA.tau2 = 20.0e-3
-	NMDA.Gbar = 5 * SOMA_A
+  if moose.exists( 'NMDA' ):
+    return
+  NMDA = moose.SynChan( 'NMDA' )
+  NMDA.Ek = 0.0
+  NMDA.tau1 = 20.0e-3
+  NMDA.tau2 = 20.0e-3
+  NMDA.Gbar = 5 * SOMA_A
 
-	block = moose.MgBlock( '/library/NMDA/block' )
-	block.CMg = 1.2		#	[Mg] in mM
-	block.Zk = 2
-	block.KMg_A = 1.0/0.28
-	block.KMg_B = 1.0/62
+  block = moose.MgBlock( '/library/NMDA/block' )
+  block.CMg = 1.2    #  [Mg] in mM
+  block.Zk = 2
+  block.KMg_A = 1.0/0.28
+  block.KMg_B = 1.0/62
 
-	moose.connect( NMDA, 'channelOut', block, 'origChannel', 'OneToOne' )
-	addmsg1 = moose.Mstring( '/library/NMDA/addmsg1' )
-	addmsg1.value = '.. channel	./block	channel'
-	#Here we want to also tell the cell reader to _remove_ the original
-	#Gk, Ek term going from the channel to the compartment, as this is
-	# now handled by the MgBlock.
-	#addmsg2 = moose.Mstring( 'NMDA/addmsg2'
-	#addmsg2.value = 'DropMsg	..	channel'
-	addmsg3 = moose.Mstring( '/library/NMDA/addmsg3' )
-	addmsg3.value = '.. VmOut	.	Vm'
+  moose.connect( NMDA, 'channelOut', block, 'origChannel', 'OneToOne' )
+  addmsg1 = moose.Mstring( '/library/NMDA/addmsg1' )
+  addmsg1.value = '.. channel  ./block  channel'
+  #Here we want to also tell the cell reader to _remove_ the original
+  #Gk, Ek term going from the channel to the compartment, as this is
+  # now handled by the MgBlock.
+  #addmsg2 = moose.Mstring( 'NMDA/addmsg2'
+  #addmsg2.value = 'DropMsg  ..  channel'
+  addmsg3 = moose.Mstring( '/library/NMDA/addmsg3' )
+  addmsg3.value = '.. VmOut  .  Vm'
 
 @ %def make_NMDA
 
@@ -811,26 +848,26 @@ def make_NMDA():
 
 <<NMDA receptor>>=
 def make_Ca_NMDA():
-	if moose.exists( 'Ca_NMDA' ):
-		return
-	Ca_NMDA = moose.SynChan( 'Ca_NMDA' )
-	Ca_NMDA.Ek = ECA
-	Ca_NMDA.tau1 = 20.0e-3
-	Ca_NMDA.tau2 = 20.0e-3
-	Ca_NMDA.Gbar = 5 * SOMA_A
+  if moose.exists( 'Ca_NMDA' ):
+    return
+  Ca_NMDA = moose.SynChan( 'Ca_NMDA' )
+  Ca_NMDA.Ek = ECA
+  Ca_NMDA.tau1 = 20.0e-3
+  Ca_NMDA.tau2 = 20.0e-3
+  Ca_NMDA.Gbar = 5 * SOMA_A
 
-	block = moose.MgBlock( '/library/Ca_NMDA/block' )
-	block.CMg = 1.2		#	[Mg] in mM
-	block.Zk = 2
-	block.KMg_A = 1.0/0.28
-	block.KMg_B = 1.0/62
+  block = moose.MgBlock( '/library/Ca_NMDA/block' )
+  block.CMg = 1.2    #  [Mg] in mM
+  block.Zk = 2
+  block.KMg_A = 1.0/0.28
+  block.KMg_B = 1.0/62
 
-	moose.connect( Ca_NMDA, 'channelOut', block, 'origChannel', 'OneToOne' )
-	addmsg1 = moose.Mstring( '/library/Ca_NMDA/addmsg1' )
-	addmsg1.value = '.. VmOut	./block	Vm'
-	addmsg2 = moose.Mstring( '/library/Ca_NMDA/addmsg2' )
-	addmsg2.value = './block	IkOut ../NMDA_Ca_conc current'
-	# The original model has the Ca current also coming here.
+  moose.connect( Ca_NMDA, 'channelOut', block, 'origChannel', 'OneToOne' )
+  addmsg1 = moose.Mstring( '/library/Ca_NMDA/addmsg1' )
+  addmsg1.value = '.. VmOut  ./block  Vm'
+  addmsg2 = moose.Mstring( '/library/Ca_NMDA/addmsg2' )
+  addmsg2.value = './block  IkOut ../NMDA_Ca_conc current'
+  # The original model has the Ca current also coming here.
 
 @ %def make_Ca_NMDA 
 
@@ -841,12 +878,12 @@ def make_Ca_NMDA():
 
 <<Functions to maniputate property of channels>>=
 def make_NMDA_Ca_conc():
-	if moose.exists( 'NMDA_Ca_conc' ):
-		return
-	NMDA_Ca_conc = moose.CaConc( 'NMDA_Ca_conc' )
-	NMDA_Ca_conc.tau = 0.004   	# sec. Faster in spine than dend
-	NMDA_Ca_conc.B = 17.402e12	# overridden by cellreader.
-	NMDA_Ca_conc.Ca_base = 0.0
+  if moose.exists( 'NMDA_Ca_conc' ):
+    return
+  NMDA_Ca_conc = moose.CaConc( 'NMDA_Ca_conc' )
+  NMDA_Ca_conc.tau = 0.004     # sec. Faster in spine than dend
+  NMDA_Ca_conc.B = 17.402e12  # overridden by cellreader.
+  NMDA_Ca_conc.Ca_base = 0.0
 
 @ %def make_NMDA_Ca_conc 
 
@@ -854,19 +891,99 @@ def make_NMDA_Ca_conc():
 
 <<Spike detector>>=
 def make_axon():
-	if moose.exists( 'axon' ):
-		return
-	axon = moose.SpikeGen( 'axon' )
-	axon.threshold = -40e-3         # V
-	axon.abs_refract = 10e-3        # sec
+  if moose.exists( 'axon' ):
+    return
+  axon = moose.SpikeGen( 'axon' )
+  axon.threshold = -40e-3         # V
+  axon.abs_refract = 10e-3        # sec
     
 @ %def make_axon
 
 
 
+\subsection{Database to keep the XML models}
+\label{subsec:database}
+
+  We use sqlite3 database. Let import it and add a section in our class to
+  handle this database.
+
+<<Local imports>>=
+import sqlite3 as sql 
+@ 
+
+<<methods in class [[Multiscale]]>>=
+<<methods to deal with database>>
+@
+
+  And lets open a database and initialize it. And add code to clean up the
+  connection before exiting the class.
+
+<<initialize members>>=
+self.dbdir = 'db'
+self.dbname = 'models.db'
+self.dbpath = os.path.join(self.dbdir, self.dbname)
+if not os.path.exists(self.dbpath) :
+  try :
+    os.makedirs(self.dbdir)
+  except Exception as e :
+    debug.printDebug("ERROR"
+        , "Faild to create directory {0} with error {1}".format(self.dbdir, e))
+    sys.exit(0)
+self.conn = sql.connect(self.dbpath)
+self.cursor = self.conn.cursor()
+@ %def database 
+
+<<clean up the mess>>=
+self.cursor.commit()
+self.conn.close()
+sys.exit()
+@ %def exit
+
+\subsection{Populate database}
+
+    We have the parsed models and we would be searching them extensively when
+    combining them together to map onto moose. Populate the sqlite3 database
+    such that we can query it easily.
+
+<<flow of executation>>=
+<<populate database with models>>
+<<build queries from adaptorML>>
+<<run queries and generate moose scripts>>
+@ %def flow
+
+\paragraph{Populating database}
+
+    Should be directly translated XML to [[sqlite3]]? No, that would defeat the
+    purpose of using sqlite3 in the middle. We must transform the XML as much as
+    we can to create a well-defined database which we can simply query and build
+    moose scripts. Let's me describe the flow. 
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+    [every node/.style = {minimum size = 1.5cm}, font=\small]
+    
+    %\input{macro.tex};
+    %\myscript{(0,1)}{3}{4}{hello};
+
+    \node[draw, rectangle] (model1) at (0,0) {\texttt{model1.xml}};
+    \node[draw, rectangle] (model2) at (0,2) {\texttt{model2.xml}};
+    \node[draw, rectangle] (model3) at (0,4) {\texttt{model3.xml}};
+    \node[draw, circle] (db) at (4,2) {\texttt{sqlite3}};
+    \node[draw, rectangle] (gen) at (8,2)  {\texttt{moose generator}};
+    \node[draw, rectangle] (adaptorML) at (8,4) {adaptorML};
+    \node[rectangle] (moose) at (8,0) {moose.py};
+    \draw[->] (model1) -- node [below, midway] {$f1$} (db);
+    \draw[->] (model2) -- node [label={[xshift=0cm,yshift=-0.5cm]$f2$}] {} (db);
+    \draw[->] (model3) -- node [above, midway] {$f3$} (db) -- (gen);
+    \draw[->] (adaptorML) -- (gen) -- (moose);
+
+\end{tikzpicture}
+\label{fig:multiscale_flow}
+\caption{Flow of multi-scale modelling}
+\end{figure}
 
 
-
+  
 \section{AdaptorML for Moose}
 \label{sec:adaptor}
   
@@ -898,11 +1015,10 @@ def make_axon():
 \label{sec:parser}
 
   This section deals with parser of XML models. In [[multiscale.nw]], we call
-  function [[parseModels]] of this modudle. This function receives argument from
-  the command line, having paths of XML models. These paths of model files are
-  valid and readable, this has been verified before sending arguments to this
-  function. We need to parse the XMLs and return a dictionary, with keys as path
-  of XML models and value as top-most XML element.
+  function [[parseModels]] belonging to this module. This function receives its
+  arguments, a dictionary of paths of XML models. These file-paths are already
+  verified; they exists and are readable. We now parse the XMLs and return a
+  dictionary, with keys as path of XML models and value as top-most XML element.
 
   Following captures what this module suppose to do.
 
@@ -922,25 +1038,20 @@ def make_axon():
 
 <<function [[parseModels]] for parsing models>>=
 def parseModels(commandLineArgs, validate=False) :
-    '''
-    Parse given models.
-   
-    '''
-    xmlRootElemDict = dict()
-
-    models = vars(commandLineArgs)
-    for model in models :
-      if models[model] :
-        modelPath = models[model]
-        debug.printDebug("INFO", "Parsing {0}".format(models[model]))
-        if validate :
-          # parse model and valid it with schama
-          modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
-        else :
-          # Simple parse the model without validating it with schema.
-          modelXMLRootElem = parseWithoutValidation(model, modelPath)
-        xmlRootElemDict[model] = modelXMLRootElem 
-    return xmlRootElemDict 
+  xmlRootElemDict = dict()
+  models = vars(commandLineArgs)
+  for model in models :
+    if models[model] :
+      modelPath = models[model]
+      debug.printDebug("INFO", "Parsing {0}".format(models[model]))
+      if validate :
+        # parse model and valid it with schama
+        modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
+      else :
+        # Simple parse the model without validating it with schema.
+        modelXMLRootElem = parseWithoutValidation(model, modelPath)
+      xmlRootElemDict[model] = modelXMLRootElem 
+  return xmlRootElemDict 
 
 @  %def parseModels 
 
@@ -990,14 +1101,13 @@ def parseWithoutValidation(modelName, modelPath) :
 
 @ %def parseWithoutValidation 
 
-
-
-
+This ends our parser module and we can now go back to section
+\ref{sec:multiscale} to do some real programming related stuff.
 
 \section{Debug module, print debugging messages}
 \label{sec:debug}
 
-  Different type of messages are printed in different colors.
+  Different type of messages are printed in different colors. 
 
 %file:src/debug.py
 <<debug.py>>=
@@ -1039,5 +1149,7 @@ def printDebug(label, msg):
 
 @ %def debug_module 
 
+\nowebchunks
+\nowebindex
 \listoftodos
 \end{document}          

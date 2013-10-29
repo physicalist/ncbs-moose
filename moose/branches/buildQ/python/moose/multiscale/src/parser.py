@@ -37,23 +37,18 @@ def parseWithoutValidation(modelName, modelPath) :
     return xmlRootElem 
 
 def parseModels(commandLineArgs, validate=False) :
-    '''
-    Parse given models.
-   
-    '''
-    xmlRootElemDict = dict()
-
-    models = vars(commandLineArgs)
-    for model in models :
-      if models[model] :
-        modelPath = models[model]
-        debug.printDebug("INFO", "Parsing {0}".format(models[model]))
-        if validate :
-          # parse model and valid it with schama
-          modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
-        else :
-          # Simple parse the model without validating it with schema.
-          modelXMLRootElem = parseWithoutValidation(model, modelPath)
-        xmlRootElemDict[model] = modelXMLRootElem 
-    return xmlRootElemDict 
+  xmlRootElemDict = dict()
+  models = vars(commandLineArgs)
+  for model in models :
+    if models[model] :
+      modelPath = models[model]
+      debug.printDebug("INFO", "Parsing {0}".format(models[model]))
+      if validate :
+        # parse model and valid it with schama
+        modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
+      else :
+        # Simple parse the model without validating it with schema.
+        modelXMLRootElem = parseWithoutValidation(model, modelPath)
+      xmlRootElemDict[model] = modelXMLRootElem 
+  return xmlRootElemDict 
 

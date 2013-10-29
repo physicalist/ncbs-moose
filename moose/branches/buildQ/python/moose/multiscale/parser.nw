@@ -2,11 +2,10 @@
 \label{sec:parser}
 
   This section deals with parser of XML models. In [[multiscale.nw]], we call
-  function [[parseModels]] of this modudle. This function receives argument from
-  the command line, having paths of XML models. These paths of model files are
-  valid and readable, this has been verified before sending arguments to this
-  function. We need to parse the XMLs and return a dictionary, with keys as path
-  of XML models and value as top-most XML element.
+  function [[parseModels]] belonging to this module. This function receives its
+  arguments, a dictionary of paths of XML models. These file-paths are already
+  verified; they exists and are readable. We now parse the XMLs and return a
+  dictionary, with keys as path of XML models and value as top-most XML element.
 
   Following captures what this module suppose to do.
 
@@ -26,25 +25,20 @@
 
 <<function [[parseModels]] for parsing models>>=
 def parseModels(commandLineArgs, validate=False) :
-    '''
-    Parse given models.
-   
-    '''
-    xmlRootElemDict = dict()
-
-    models = vars(commandLineArgs)
-    for model in models :
-      if models[model] :
-        modelPath = models[model]
-        debug.printDebug("INFO", "Parsing {0}".format(models[model]))
-        if validate :
-          # parse model and valid it with schama
-          modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
-        else :
-          # Simple parse the model without validating it with schema.
-          modelXMLRootElem = parseWithoutValidation(model, modelPath)
-        xmlRootElemDict[model] = modelXMLRootElem 
-    return xmlRootElemDict 
+  xmlRootElemDict = dict()
+  models = vars(commandLineArgs)
+  for model in models :
+    if models[model] :
+      modelPath = models[model]
+      debug.printDebug("INFO", "Parsing {0}".format(models[model]))
+      if validate :
+        # parse model and valid it with schama
+        modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
+      else :
+        # Simple parse the model without validating it with schema.
+        modelXMLRootElem = parseWithoutValidation(model, modelPath)
+      xmlRootElemDict[model] = modelXMLRootElem 
+  return xmlRootElemDict 
 
 @  %def parseModels 
 
@@ -94,7 +88,6 @@ def parseWithoutValidation(modelName, modelPath) :
 
 @ %def parseWithoutValidation 
 
-
-
-
+This ends our parser module and we can now go back to section
+\ref{sec:multiscale} to do some real programming related stuff.
 

@@ -60,7 +60,7 @@
 \newtheorem{theorem}{Theorem}
 
 % Title Page
-\title{\textbf{Developer documentation} \\
+\title{\textbf{Developer document} \\
 Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
 \author{Dilawar Singh}
 \date{\today}
@@ -69,18 +69,33 @@ Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
 \maketitle
 
 \begin{abstract}
+\label{abstract}
 
-  This documentation is a literate program. This is an attempt to develop
-  multiscale modelling capabilities in Moose simulator.
-
-  You need [[noweb]] tool to generate documentation out of these files. Run
-  [[./run_web.sh --doc]] to generate documentation after installing [[noweb]].
-  Run [[./run_web.sh]] to run the application.
-
-  Contact \href{mailto:dilawars@ncbs.res.in}{Dilawar Singh} if you need any help.
-  \todo[color=red!60]{Write introduction to multiscale modelling}
+  This documentation is a literate program. This describes and ongoing attempt
+  to make moose more capable of doing multi-scale modelling. There are various
+  XML based models available, each describing a particular aspect of neural
+  activities. Some describes the chemical activities inside neuron while some
+  other describe their electrical properties etc. We wish to write a super-XML
+  model which can make use of all these models and map them onto moose.
+  Currently, we call it [[adaptorML]]. Later we should find a cool name for it
+  such as [[mooseML]] or [[mooooml]].
 
 \end{abstract}
+
+\paragraph{Dependencies}
+
+  You need [[noweb]] tool to generate documentation from this file. This file
+  contains some macros which are not understood by [[noweb]]. These macros are
+  used by a python script [[./pynoweb.py]] to generate [[noweb]] file. You need
+  not know how to use it. Just run [[./generate_code_and_docs.sh --doc]] to
+  generate documentation after installing [[noweb]].  Run the same command
+  without [[--doc]] switch and you have your working application in [[src]]
+  directory. 
+  
+  Contact the very friendly Homo Sapience Sapience named
+  \href{mailto:dilawars@ncbs.res.in}{Dilawar Singh} if you need any help.
+  He can be reached at \url{dilawars@ncbs.res.in}.
+  \todo[color=red!60]{Write introduction to multiscale modelling}
 
 %\include{setup.nw}
 %\include{multiscale.nw}
@@ -88,5 +103,7 @@ Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
 %\include{parser.nw}
 %\include{debug.nw}
 \include{glossary}
+\nowebchunks
+\nowebindex
 \listoftodos
 \end{document}          

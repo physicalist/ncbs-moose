@@ -10,25 +10,24 @@ from lxml import etree
 def ifPathsAreValid(paths) :
   ''' Verify if path exists and are readable. '''
   if paths.xml :
-    if os.path.isfile(paths.xml) : pass
-    else :
-      debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.nml))
-      return False
+    for path in paths.xml :
+      if os.path.isfile(path) : pass
+      else :
+        debug.printDebug("ERROR", "Filepath {0} does not exists".format(path))
+        return False
+    # check if file is readable 
+    if not os.access(path, os.R_OK) :
+      debug.printDebug("ERROR", "File {0} is not readable".format(path))
   return True
 
-
-'''
-command line parser
-'''
-
 # standard module for building a command line parser.
-
 import argparse
 
 # This section build the command line parser
 argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
 argParser.add_argument('--xml', metavar='nmlpath'
     , required = True
+    , nargs = '+'
     , help = 'multiscale model in XML'
     )
 argParser.add_argument('--adaptor', metavar='nmlpath'
@@ -37,10 +36,6 @@ argParser.add_argument('--adaptor', metavar='nmlpath'
     )
 args = argParser.parse_args()
 
-# command line parser ends here.
-
-
-# There must be at least one model specified by user at command line.
 import parser
 if args.xml : 
   if ifPathsAreValid(args) :
