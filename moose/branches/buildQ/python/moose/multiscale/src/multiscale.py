@@ -27,12 +27,23 @@ class Multiscale :
     self.cursor = self.conn.cursor()
     debug.printDebug("INFO", "Object of class Multiscale intialized ...")
 
-  
+  def extractTransformLoad(self, modelType, xmlRootNode) :
+    if modelType == 'nml' :
+      self.etlNMLModel(xmlRootNode)
+    else :
+        pass 
+
+  def etlNMLModel(self, nmlRootNode) :
+    debug.printDebug("STEP", "ETLing a nml model")
+   
 
   # This is the entry point of this class.
   def buildMultiscaleModel(self) :
       debug.printDebug("INFO", "Starting to build multiscale model")   
-      
+      for xml in self.xmlDict :
+        xmlRootNodeList = self.xmlDict[xml]
+        for xmlRootNode in xmlRootNodeList :
+          self.extractTransformLoad(xml, xmlRootNode)
 
 
   

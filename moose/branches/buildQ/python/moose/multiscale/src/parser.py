@@ -7,6 +7,7 @@ import debug
 logger = logging.getLogger('multiscale')
 from lxml import etree
 
+import collections
 def parseAndValidateWithSchema(modelName, modelPath) :
     
     prefixPath = ''
@@ -37,18 +38,19 @@ def parseWithoutValidation(modelName, modelPath) :
     return xmlRootElem 
 
 def parseModels(commandLineArgs, validate=False) :
-  xmlRootElemDict = dict()
+  xmlRootElemDict = collections.defaultdict(list)
   models = vars(commandLineArgs)
   for model in models :
     if models[model] :
-      modelPath = models[model]
-      debug.printDebug("INFO", "Parsing {0}".format(models[model]))
-      if validate :
-        # parse model and valid it with schama
-        modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
-      else :
-        # Simple parse the model without validating it with schema.
-        modelXMLRootElem = parseWithoutValidation(model, modelPath)
-      xmlRootElemDict[model] = modelXMLRootElem 
+      for modelPath in models[model] :
+        debug.printDebug("INFO", "Parsing {0}".format(models[model]))
+        if validate :
+          # parse model and valid it with schama
+          modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
+        else :
+          # Simple parse the model without validating it with schema.
+          modelXMLRootElem = parseWithoutValidation(model, modelPath)
+        if modelXMLRootElem :
+          xmlRootElemDict[model].append(modelXMLRootElem)
   return xmlRootElemDict 
 

@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[draft]{article}
 %\usepackage[margin=10mm]{geometry}
 \usepackage{pgf,tikz}
 %\usepackage{algorithm2e}
@@ -62,7 +62,9 @@
 % Title Page
 \title{\textbf{Developer document} \\
 Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
-\author{Dilawar Singh}
+\author{Dilawar Singh \footnote{Junior Research Fellow at National Center for
+Biological Sciences. Ph.D. candidate at EE IIT Bombay (currently on leave)} \\
+\texttt{dilawars@ncbs.res.in}}
 \date{\today}
 
 \begin{document}

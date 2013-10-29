@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[draft]{article}
 %\usepackage[margin=10mm]{geometry}
 \usepackage{pgf,tikz}
 %\usepackage{algorithm2e}
@@ -62,7 +62,9 @@
 % Title Page
 \title{\textbf{Developer document} \\
 Multiscale modelling in \href{www.moose.ncbs.res.in}{Moose}}
-\author{Dilawar Singh}
+\author{Dilawar Singh \footnote{Junior Research Fellow at National Center for
+Biological Sciences. Ph.D. candidate at EE IIT Bombay (currently on leave)} \\
+\texttt{dilawars@ncbs.res.in}}
 \date{\today}
 
 \begin{document}
@@ -154,13 +156,34 @@ import argparse
 
 # This section build the command line parser
 argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
-argParser.add_argument('--xml', metavar='nmlpath'
+argParser.add_argument('--nml', metavar='nmlpath'
     , required = True
     , nargs = '+'
-    , help = 'multiscale model in XML'
+    , help = 'nueroml model'
     )
-argParser.add_argument('--adaptor', metavar='nmlpath'
+argParser.add_argument('--sbml', metavar='nmlpath'
+    , nargs = '*'
+    , help = 'sbml model'
+    )
+argParser.add_argument('--mechml', metavar='mechml'
+    , nargs = '*'
+    , help = 'mechml model'
+    )
+argParser.add_argument('--chml', metavar='channelml'
+    , nargs = '*'
+    , help = 'Channelml model'
+    )
+argParser.add_argument('--3dml', metavar='3dml'
+    , nargs = '*'
+    , help = '3DMCML model'
+    )
+argParser.add_argument('--meshml', metavar='meshml'
+    , nargs = '*'
+    , help = 'MeshML model'
+    )
+argParser.add_argument('--adaptor', metavar='adaptor'
     , required = True
+    , nargs = '+'
     , help = 'AdaptorML for moose'
     )
 args = argParser.parse_args()
@@ -180,15 +203,20 @@ args = argParser.parse_args()
 <<functions in main>>=
 def ifPathsAreValid(paths) :
   ''' Verify if path exists and are readable. '''
-  if paths.xml :
-    for path in paths.xml :
-      if os.path.isfile(path) : pass
-      else :
-        debug.printDebug("ERROR", "Filepath {0} does not exists".format(path))
-        return False
-    # check if file is readable 
-    if not os.access(path, os.R_OK) :
-      debug.printDebug("ERROR", "File {0} is not readable".format(path))
+  if paths :
+    paths = vars(paths)
+    for p in paths :
+      if not paths[p] : continue
+      for path in paths[p] :
+        if not path : continue
+        if os.path.isfile(path) : pass
+        else :
+          debug.printDebug("ERROR"
+            , "Filepath {0} does not exists".format(path))
+          return False
+      # check if file is readable 
+      if not os.access(path, os.R_OK) :
+        debug.printDebug("ERROR", "File {0} is not readable".format(path))
   return True
 
 @ %def ifPathsAreValid
@@ -202,7 +230,7 @@ def ifPathsAreValid(paths) :
 
 <<parse xml models and handover control to main class>>=
 import parser
-if args.xml : 
+if args : 
   if ifPathsAreValid(args) :
     logger.info("Started parsing XML models")
     debug.printDebug("INFO", "Started parsing XML models")
@@ -956,7 +984,9 @@ sys.exit()
     Should be directly translated XML to [[sqlite3]]? No, that would defeat the
     purpose of using sqlite3 in the middle. We must transform the XML as much as
     we can to create a well-defined database which we can simply query and build
-    moose scripts. Let's me describe the flow. 
+    moose scripts. Let's me describe the flow. ETL stands for standard practise
+    of \textbf{E}xtract, \textbf{Transform}, and \textbf{L}oad.
+
 \begin{figure}[h]
 \centering
 \begin{tikzpicture}
@@ -972,18 +1002,49 @@ sys.exit()
     \node[draw, rectangle] (gen) at (8,2)  {\texttt{moose generator}};
     \node[draw, rectangle] (adaptorML) at (8,4) {adaptorML};
     \node[rectangle] (moose) at (8,0) {moose.py};
-    \draw[->] (model1) -- node [below, midway] {$f1$} (db);
-    \draw[->] (model2) -- node [label={[xshift=0cm,yshift=-0.5cm]$f2$}] {} (db);
-    \draw[->] (model3) -- node [above, midway] {$f3$} (db) -- (gen);
+    \draw[->] (model1) -- node [below, midway] {ETL} (db);
+    \draw[->] (model2) -- node [label={[xshift=0cm,yshift=-0.5cm]ETL}] {} (db);
+    \draw[->] (model3) -- node [above, midway] {ETL} (db) -- (gen);
     \draw[->] (adaptorML) -- (gen) -- (moose);
 
 \end{tikzpicture}
 \label{fig:multiscale_flow}
-\caption{Flow of multi-scale modelling}
+\caption{Flow of multi-scale modelling. ETL stands for \textbf{E}xtract
+\textbf{T}ransform and \textbf{L}oad.}
 \end{figure}
 
+\paragraph{Extract, Load and Transform}
 
-  
+  Now we are ready. Lets do ELT on each XML file.
+
+<<populate database with models>>=
+for xml in self.xmlDict :
+  xmlRootNodeList = self.xmlDict[xml]
+  for xmlRootNode in xmlRootNodeList :
+    self.extractTransformLoad(xml, xmlRootNode)
+@ %def ETL
+
+  Now the hard part of populating the database.
+
+<<methods to deal with database>>=
+def extractTransformLoad(self, modelType, xmlRootNode) :
+  if modelType == 'nml' :
+    self.etlNMLModel(xmlRootNode)
+  else :
+      pass 
+
+@ %def extractTransformLoad
+
+
+\paragraph{ETL a NML model}
+
+  ETL an neuroML model. 
+
+<<methods to deal with database>>=
+def etlNMLModel(self, nmlRootNode) :
+  debug.printDebug("STEP", "ETLing a nml model")
+ 
+@ %def etlNMLModel  
 \section{AdaptorML for Moose}
 \label{sec:adaptor}
   
@@ -1025,32 +1086,34 @@ sys.exit()
 %file:src/parser.py
 <<parser.py>>=
 <<Import>>
+import collections
 <<helper functions>>
 <<function [[parseModels]] for parsing models>>
 @
 
 \paragraph{Parse models}
 
-  Function [[parseModels]] parses the model, and it creates a dictionary to be
-  returned. This function first read the file and validate it with a given
-  schema. Validation can be turned on/off by setting the optional argument
-  [[validate]] to [[False]].
+  Function [[parseModels]] parses the model, and it creates a dictionary
+  containing root elements of parsed files to be returned. This function first
+  read the file and validate it with a given schema. Validation can be turned
+  on/off by setting the optional argument [[validate]] to [[False]].
 
 <<function [[parseModels]] for parsing models>>=
 def parseModels(commandLineArgs, validate=False) :
-  xmlRootElemDict = dict()
+  xmlRootElemDict = collections.defaultdict(list)
   models = vars(commandLineArgs)
   for model in models :
     if models[model] :
-      modelPath = models[model]
-      debug.printDebug("INFO", "Parsing {0}".format(models[model]))
-      if validate :
-        # parse model and valid it with schama
-        modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
-      else :
-        # Simple parse the model without validating it with schema.
-        modelXMLRootElem = parseWithoutValidation(model, modelPath)
-      xmlRootElemDict[model] = modelXMLRootElem 
+      for modelPath in models[model] :
+        debug.printDebug("INFO", "Parsing {0}".format(models[model]))
+        if validate :
+          # parse model and valid it with schama
+          modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
+        else :
+          # Simple parse the model without validating it with schema.
+          modelXMLRootElem = parseWithoutValidation(model, modelPath)
+        if modelXMLRootElem :
+          xmlRootElemDict[model].append(modelXMLRootElem)
   return xmlRootElemDict 
 
 @  %def parseModels 
@@ -1115,16 +1178,18 @@ HEADER = '\033[95m'
 OKBLUE = '\033[94m'
 OKGREEN = '\033[92m'
 WARNING = '\033[93m'
-ERR = '\033[91m'
+ERR = '\033[31m'
 ENDC = '\033[0m'
 RED = ERR
 WARN = WARNING
-INFO = OKGREEN 
-TODO = OKBLUE
+INFO = OKBLUE
+TODO = OKGREEN
 DEBUG = HEADER
+ERROR = ERR
 
 prefix = dict(
     ERR = ERR
+    , ERROR = ERR
     , WARN = WARN
     , FATAL = ERR
     , INFO = INFO

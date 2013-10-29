@@ -12,32 +12,34 @@
 %file:src/parser.py
 <<parser.py>>=
 <<Import>>
+import collections
 <<helper functions>>
 <<function [[parseModels]] for parsing models>>
 @
 
 \paragraph{Parse models}
 
-  Function [[parseModels]] parses the model, and it creates a dictionary to be
-  returned. This function first read the file and validate it with a given
-  schema. Validation can be turned on/off by setting the optional argument
-  [[validate]] to [[False]].
+  Function [[parseModels]] parses the model, and it creates a dictionary
+  containing root elements of parsed files to be returned. This function first
+  read the file and validate it with a given schema. Validation can be turned
+  on/off by setting the optional argument [[validate]] to [[False]].
 
 <<function [[parseModels]] for parsing models>>=
 def parseModels(commandLineArgs, validate=False) :
-  xmlRootElemDict = dict()
+  xmlRootElemDict = collections.defaultdict(list)
   models = vars(commandLineArgs)
   for model in models :
     if models[model] :
-      modelPath = models[model]
-      debug.printDebug("INFO", "Parsing {0}".format(models[model]))
-      if validate :
-        # parse model and valid it with schama
-        modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
-      else :
-        # Simple parse the model without validating it with schema.
-        modelXMLRootElem = parseWithoutValidation(model, modelPath)
-      xmlRootElemDict[model] = modelXMLRootElem 
+      for modelPath in models[model] :
+        debug.printDebug("INFO", "Parsing {0}".format(models[model]))
+        if validate :
+          # parse model and valid it with schama
+          modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
+        else :
+          # Simple parse the model without validating it with schema.
+          modelXMLRootElem = parseWithoutValidation(model, modelPath)
+        if modelXMLRootElem :
+          xmlRootElemDict[model].append(modelXMLRootElem)
   return xmlRootElemDict 
 
 @  %def parseModels 

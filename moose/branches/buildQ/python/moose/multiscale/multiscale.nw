@@ -122,7 +122,9 @@ sys.exit()
     Should be directly translated XML to [[sqlite3]]? No, that would defeat the
     purpose of using sqlite3 in the middle. We must transform the XML as much as
     we can to create a well-defined database which we can simply query and build
-    moose scripts. Let's me describe the flow. 
+    moose scripts. Let's me describe the flow. ETL stands for standard practise
+    of \textbf{E}xtract, \textbf{Transform}, and \textbf{L}oad.
+
 \begin{figure}[h]
 \centering
 \begin{tikzpicture}
@@ -138,15 +140,46 @@ sys.exit()
     \node[draw, rectangle] (gen) at (8,2)  {\texttt{moose generator}};
     \node[draw, rectangle] (adaptorML) at (8,4) {adaptorML};
     \node[rectangle] (moose) at (8,0) {moose.py};
-    \draw[->] (model1) -- node [below, midway] {$f1$} (db);
-    \draw[->] (model2) -- node [label={[xshift=0cm,yshift=-0.5cm]$f2$}] {} (db);
-    \draw[->] (model3) -- node [above, midway] {$f3$} (db) -- (gen);
+    \draw[->] (model1) -- node [below, midway] {ETL} (db);
+    \draw[->] (model2) -- node [label={[xshift=0cm,yshift=-0.5cm]ETL}] {} (db);
+    \draw[->] (model3) -- node [above, midway] {ETL} (db) -- (gen);
     \draw[->] (adaptorML) -- (gen) -- (moose);
 
 \end{tikzpicture}
 \label{fig:multiscale_flow}
-\caption{Flow of multi-scale modelling}
+\caption{Flow of multi-scale modelling. ETL stands for \textbf{E}xtract
+\textbf{T}ransform and \textbf{L}oad.}
 \end{figure}
 
+\paragraph{Extract, Load and Transform}
 
-  
+  Now we are ready. Lets do ELT on each XML file.
+
+<<populate database with models>>=
+for xml in self.xmlDict :
+  xmlRootNodeList = self.xmlDict[xml]
+  for xmlRootNode in xmlRootNodeList :
+    self.extractTransformLoad(xml, xmlRootNode)
+@ %def ETL
+
+  Now the hard part of populating the database.
+
+<<methods to deal with database>>=
+def extractTransformLoad(self, modelType, xmlRootNode) :
+  if modelType == 'nml' :
+    self.etlNMLModel(xmlRootNode)
+  else :
+      pass 
+
+@ %def extractTransformLoad
+
+
+\paragraph{ETL a NML model}
+
+  ETL an neuroML model. 
+
+<<methods to deal with database>>=
+def etlNMLModel(self, nmlRootNode) :
+  debug.printDebug("STEP", "ETLing a nml model")
+ 
+@ %def etlNMLModel  
