@@ -20,7 +20,8 @@
 #include "../shell/Neutral.h"
 #include <set>
 #include <sstream>
-
+#include "../shell/Shell.h"
+#include "../manager/SimManager.h"
 /**
 *  write a Model after validation
 */
@@ -107,6 +108,19 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
 
   cremodel_ = sbmlDoc.createModel();
   cremodel_->setId(filename);
+  Id baseId(path);
+  SimManager* sm = reinterpret_cast< SimManager* >(baseId.eref().data());
+  double runtime = sm->getRunTime();
+  double simdt = sm->getSimDt();
+  double plotdt = sm->getPlotDt();
+  ostringstream modelAnno;
+  modelAnno << "<moose:ModelAnnotation>\n";
+  modelAnno << "<moose:runTime> " << runtime << " </moose:runTime>\n";
+  modelAnno << "<moose:simdt> " << simdt << " </moose:simdt>\n";
+  modelAnno << "<moose:plotdt> " << plotdt << " </moose:plotdt>\n";
+  modelAnno << "</moose:ModelAnnotation>";
+  XMLNode* xnode =XMLNode::convertStringToXMLNode( modelAnno.str() ,&xmlns);
+  cremodel_->setAnnotation( xnode );	
 
   UnitDefinition *ud1 = cremodel_->createUnitDefinition();
   ud1->setId("volume");
