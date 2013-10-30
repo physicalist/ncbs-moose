@@ -23474,10 +23474,113 @@ breaks it eventually.
 
 ==========================================================================
 19 Oct 2013
-Checked in the lm2.py, first (checkin 1799) the version that matches the
+Checked in the lm2.py, first (checkin 4799) the version that matches the
 loadMulti.py.
 Then checked in a cleaned up version to act as a workhorse for trying out 
 different cell and chem models. First pass on these, of course, is to find
 out why we fail to get proper cross-compartment reactions in this case.
+Checkin 4800.
+
+==========================================================================
+23 Oct 2013.
+x_compt4.g in lm4.py. I've added another reaction binding to Ca_CaM. This
+is to test the idea that the bug has to do with multiple cross-compartment
+reactions sharing a substrate.
+
+Next hypothesis: Buffers or sumtotals mess things up.
+x_compt5.g: Added a sumtotal of the two CaMKII forms in the PSD. The sumtotal
+remains stubbornly at zero. Is this a clue?
+x_compt6.g: Changed name of the sumtotal from tot_CaMKII to act_CaMKII to 
+see if alphabetic order matters. No change.
+x_compt7.g: Added another sumtotal. It too remains steadily at zero, but does
+	not mess up anyone else.
+
+Next: check code to see why sumtots remain at zero. Did I not put in the
+proper function?
+==========================================================================
+25 Oct 2013.
+Checked code and executed using GDB. Code seems to be executed, and gives
+nonzero values. But output is still all zeros.
+
+==========================================================================
+27 Oct 2013.
+More gdb. Turns out that in the innerGslFunc the array of values is OK,
+including the sumtots. But in GslStoich::gslFunc the funcTerm entries are zero.
+
+Tracked it down. I'm using two different 2-d vectors for the pool integration.
+One is a y_ vector used in GslStoich. Another is in the pools_ class, each
+of which has its own S_ vector. Quite messy. While copying back and forth
+we seem to miss out the entries for functions.
+
+Unclear why there is a separate y_ vector.
+
+
+==========================================================================
+29 Oct. 
+Turns out that in GslStoich::vHandleJunctionPoolDelta, the pools_[i].S_[j]
+entries all get reassigned to the y_ vector. This is where the 
+func pool calculations are lost.
+As a hack around this, I've inserted an update to the y_ vector in 
+GslStoich::process that ought to put in the correct funcPool values.
+That seems to fix the zeroed out plots in lm4.py.
+In the full model in loadMulti.py and lm2.py: No, we still do not get 
+cross-compartment reactions to go properly.
+
+OK, this doesn't work. So let's reduce the number of compartments to just 1
+spine, but still with the same messy chem model. See if it works then. Tried
+lm5.py.
+-> reduced to 1 spine but still lots of dend compts. Doesn't work.
+-> reduced to 1 spine and 1 dend compt. Doesn't work.
+
+OK, so let's see what to add to the simple signaling model to get this issue.
+Try adding some buffered molecules.
+In lm6.py and x_compt8.g: Lots of molecules now messed up. Oddly the buffering
+is in spine and the messups are in psd.
+
+Changed the initConc of one of the affected psd molecules (Ca_CK2). Now it 
+holds steady at the init value, as if it were buffered.
+The actually buffered molecule is spine/CK2, and it acts like it isn't
+buffered. Nice reaction decay curve. Let me see if something like this
+happens with a buffered molecule in lm2.
+Oddly enough, there are no buffered molecules at all in lm2.
+Not so much misplaced buffering, as not running at all.
+
+Many little things
+- Identification of categories of pools is messy: buffers, local, 
+	sumtotalled, diffused, cross-reacted 
+
+
+Crucial test: I set one of the PSD molecules in psd_merged31e.g to nonzero 
+init conc. Not buffered - none of them are.
+Outcome: It decays quite nicely. More to the point, many of the other molecules
+which had started out as zero, also now show activity.
+Note also that the postsynaptic molecule 'bar' stays staeady at its initial
+value. It has no other reaction.
+From this I infer that the cross-compt reactions are simply not working.
+Maybe too many of them? But the x_compt8.g has 3 or 4.
+Possibly all the sumtotals are confused.
+
+
+My plan is to get this to work in this mess of a code base, then design a 
+proper fix with separated reaction-diffusion using the efficient, 
+implicit method.
+==========================================================================
+30 Oct. 
+I think the code is too much of a mess. Simplify.
+1. Have only a single type of stoich matrix and reaction scheme for each
+	compartment. Very carefully assign pools for variable, func and
+	buffered. Nothing else.
+2. Handle cross-compartment reactions specially. They are already identified
+	in a clean manner. Use a trapezoid rule. Solve det or stochastic
+	depending on context.
+3. Set up a diffusion grid using a single matrix for each compartment.
+4. Handle cross-compartment diffusion specially. Look into the option of 
+	linear combination of solutions in order to handle side compartments.
+	Actually, given the size ratio of the dend to spine compartments, it
+	is probably safe to assume that any change is local to the parend dend.
+	Unfortunately soma compartment will be something else, unless I
+	treat it as continuous in the original matrix.
+5. Put diffusion calculations as a separate solver closely affiliated with the
+	mesh.
 
 ==========================================================================

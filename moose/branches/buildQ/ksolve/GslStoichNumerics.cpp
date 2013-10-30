@@ -270,6 +270,13 @@ void GslStoich::process( const Eref& e, ProcPtr info )
 				break;
 
 		}
+		// Added this little patch so y_ gets updated with func pool values
+		unsigned int start = os.stoich_->getNumVarPools();
+		unsigned int end = os.stoich_->getNumAllPools();
+		assert( start <= end );
+		for ( unsigned int i = start; i != end; ++i ) {
+			y_[currMeshEntry_][i] = pools_[currMeshEntry_].S()[i];
+		}
 	}
 	// if ( compartment_ && compartment_->innerGetNumEntries() > 1 )
 	if ( compartment_ && pools_.size() > 1 )

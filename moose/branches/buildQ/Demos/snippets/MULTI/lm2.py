@@ -260,7 +260,8 @@ def testNeuroMeshMultiscale():
 	# cellmodel, chemmodel, path_to_fill_with_chem, path_to_use_for_adaptor
 	# If the path_to_fill_with_chem is an empty string, then the entire
 	# cell model is filled with the chem system.
-	makeNeuroMeshModel( 'ca1_asym.p', 'psd_merged31e.g', '/model/elec/lat_14_#,/model/elec/spine_neck#,/model/elec/spine_head#', '/model/chem/psdMesh/PSD/CaM/Ca' )
+	#makeNeuroMeshModel( 'ca1_asym.p', 'psd_merged31e.g', '/model/elec/lat_14_#,/model/elec/spine_neck#,/model/elec/spine_head#', '/model/chem/psdMesh/PSD/CaM/Ca' )
+	makeNeuroMeshModel( 'ca1_asym.p', 'dumpreac.g', '/model/elec/lat_14_#,/model/elec/spine_neck#,/model/elec/spine_head#', '/model/chem/psdMesh/PSD/CaM/Ca' )
 
 	# Here we set up plots. These are not really part of the model
 	# definition, but useful to have a standard place to define them.
