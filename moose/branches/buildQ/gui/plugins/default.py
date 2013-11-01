@@ -718,18 +718,20 @@ class PlotWidget(QtGui.QWidget):
                     self.colorMap = pickle.load(colormap_file)
                     colormap_file.close()
                     hexchars = "0123456789ABCDEF"
-                    color = moose.element(species).getField('color')
-                    if ((not isinstance(color,(list,tuple)))):
-                        if color.isdigit():
-                            tc = int(color)
-                            tc = (tc * 2 )
-                            r,g,b = self.colorMap[tc]
-                            color = "#"+ hexchars[r / 16] + hexchars[r % 16] + hexchars[g / 16] + hexchars[g % 16] + hexchars[b / 16] + hexchars[b % 16]
+                    #Genesis model exist the path and color will be set but not xml file so bypassing
+                    if moose.exists(species):
+                        color = moose.element(species).getField('color')
+                        if ((not isinstance(color,(list,tuple)))):
+                            if color.isdigit():
+                                tc = int(color)
+                                tc = (tc * 2 )
+                                r,g,b = self.colorMap[tc]
+                                color = "#"+ hexchars[r / 16] + hexchars[r % 16] + hexchars[g / 16] + hexchars[g % 16] + hexchars[b / 16] + hexchars[b % 16]
                 lines = self.pathToLine[tab.path]
 
                 if len(lines) == 0:
-                    #Harsha: pass color if singnalling model by checking chemcompt but xml file doesn't have color
-                    if (len(moose.wildcardFind('%s/##[ISA=ChemCompt]' %(modelroot))) and color != 'white'):
+                    #Harsha: pass color for plot if exist and not white else random color
+                    if (color != 'white'):
                         newLines = self.addTimeSeries(tab, label=tab.name,color=color)
                     else:
                         newLines = self.addTimeSeries(tab, label=tab.name)
@@ -748,7 +750,8 @@ class PlotWidget(QtGui.QWidget):
                         line.set_data(ts, tab.vec.copy())
                 tabList.append(tab)
         if len(tabList) > 0:
-            self.canvas.callAxesFn('legend')
+            #self.canvas.callAxesFn('legend')
+	    self.canvas.callAxesFn('legend',loc='upper center',prop={'size':10}, bbox_to_anchor=(0.5, -0.03),fancybox=True, shadow=True, ncol=5)
         self.canvas.draw()
                 
     def addTimeSeries(self, table, *args, **kwargs):        

@@ -40,9 +40,9 @@ class SbmlReader
 		SbmlReader() {errorFlag_ = false;}
 		~SbmlReader() {;}
 		Id read(string filename,string location,string solverClass);
-		map< string, Id> createCompartment(string location);
-		map< string, Id> createMolecule(map<string,Id>&);
-		void  createReaction(map<string,Id> &);
+		map< string, Id> createCompartment(string location,Id parentId,string modelName,Id base_);
+		map< string, Id > createMolecule(map<string,Id>&);
+		void  createReaction(map< string, Id> &);
 		
 	private:
 		bool errorFlag_;
@@ -59,7 +59,7 @@ class SbmlReader
 		void getKLaw( KineticLaw * klaw,bool rev,vector< double > & rate );
 		void pushParmstoVector( const ASTNode* p,vector <string> & parameters );
 		void getParameters( const ASTNode* node,vector <string> & parameters );
-		void setupMMEnzymeReaction( Reaction * reac,string id ,string name,map<string,Id> &);
+		void setupMMEnzymeReaction( Reaction * reac,string id ,string name,map<string, Id> &);
 		string getAnnotation( Reaction* reaction,map<string,EnzymeInfo> & );
 		void setupEnzymaticReaction( const EnzymeInfo & einfo,string name,map< string, Id > & ,string name1);
 		void findModelParent( Id cwe, const string& path,Id& parentId, string& modelName );

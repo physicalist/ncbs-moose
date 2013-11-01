@@ -1342,10 +1342,9 @@ extern "C" {
       } else {
 	model->id_ = SHELLPTR->doReadSBML(string(fname), string(modelpath), string(solverclass));
       }
-      
       if (model->id_ == Id()){
 	Py_XDECREF(model);
-	PyErr_SetString(PyExc_IOError, "could not load model");
+	PyErr_SetString(PyExc_IOError, "could not read sbml model");
 	return NULL;
       }
       PyObject * ret = reinterpret_cast<PyObject*>(model);
@@ -1376,7 +1375,6 @@ extern "C" {
         char * fname = NULL, * modelpath = NULL, * solverclass = NULL;
 
         if(!PyArg_ParseTuple(args, "ss|s:moose_loadModel", &fname, &modelpath, &solverclass)){
-	  cout << "here in moose load";
             return NULL;
         }
         _Id * model = (_Id*)PyObject_New(_Id, &IdType);

@@ -670,6 +670,7 @@ class MWindow(QtGui.QMainWindow):
                 if '/' in modelName:
                     raise mexception.ElementNameError('Model name cannot contain `/`')
                 ret = loadFile(str(fileName), '/model/%s' % (modelName), merge=False)
+		#Harsha: This will clear out object editor's objectpath and make it invisible
                 self.objectEditSlot('/',False)
 
                 # Harsha: if subtype is None, in case of cspace then pluginLookup = /cspace/None 
@@ -681,7 +682,7 @@ class MWindow(QtGui.QMainWindow):
                     pluginName = 'default'
                 print 'Loaded model', ret['model'].path
                 self.setPlugin(pluginName, ret['model'].path)
-                #Harsha: This will clear out object editor's objectpath and make it invisible
+                
         
     def newModelDialogSlot(self):
         #Harsha: Create a new dialog widget for model building

@@ -328,10 +328,11 @@ Id SimManager::findChemCompt() const
 {
 	vector< Id > ret;
 	string basePath = baseId_.path();
-
+	cout << " here in findchemcompt"<<endl;
 	int num = simpleWildcardFind( basePath + "/##[ISA=ChemCompt]", ret );
 	if ( num == 0 )
 		return Id();
+	cout << " ret " << ret[0]<<endl;
 	return ret[0];
 }
 
@@ -369,7 +370,6 @@ void SimManager::build( const Eref& e, const Qinfo* q, string method )
 	// of the chemical system. If not, put in a single-voxel ChemCompt.
 	baseId_ = e.id();
 	Id mesh = findChemCompt();
-
 	if ( mesh == Id() ) {
 		 cout << "SimManager::build: No chem mesh found, still need to sort this out\n";
 		 return;
@@ -378,7 +378,7 @@ void SimManager::build( const Eref& e, const Qinfo* q, string method )
 		buildFromKkitTree( e, q, "Neutral" );
 		buildAllComptSolvers( e, q, method.substr( 5 ) );
 	} else {
-		buildFromKkitTree( e, q, method );
+	  buildFromKkitTree( e, q, method );
 	}
 
 	// Apply heuristic for threads and nodes
@@ -508,7 +508,6 @@ void SimManager::buildGsl( const Eref& e, const Qinfo* q,
 	Shell* shell, const string& method )
 {
 	vector< int > dims( 1, 1 );
-
 	string basePath = baseId_.path();
 	Id compt( basePath + "/kinetics" );
 	assert( compt != Id() );
@@ -540,6 +539,40 @@ void SimManager::buildGsl( const Eref& e, const Qinfo* q,
 		basePath + "/kinetics/##[ISA=StimulusTable]";
 	shell->doUseClock( path0, "process", 4);
 	shell->doUseClock( basePath + "/kinetics/stoich", "process", 5);
+}
+void SimManager::buildGslForSbml( const Eref& e, const Qinfo* q, 
+	Shell* shell, const string& method )
+{
+        Id baseId_ = e.id();
+	vector< int > dims( 1, 1 );
+	vector< Id > chemCompt;
+	Id compt1 = Id();
+	int num = simpleWildcardFind( "/##[ISA=ChemCompt]", chemCompt );
+	if (num != 0)
+	  compt1 = chemCompt[0];
+	string basePath = baseId_.path();
+	//Id compt( basePath + "/compartment" );
+	Id compt (compt1.path());
+	assert( compt != Id() );
+	Id mesh( compt1.path() + "/mesh" );
+	assert( mesh != Id() );
+	stoich_ = shell->doCreate( "GslStoich", compt, "stoich", dims );
+	//Field< string >::set( stoich_, "path", 
+	//				baseId_.path() + "/compartment/##");
+	Field< string >::set( stoich_, "path", 
+					compt1.path() + "/##");
+	MsgId mid = shell->doAddMsg( "OneToAll", mesh, "remesh", 
+		stoich_, "remesh" );
+	assert( mid != Msg::bad );
+
+	bool ret = Field< string >::set( stoich_, "method", method );
+	assert( ret );
+	// The GSL does some massaging of the method string, so we ask it back.
+	method_ = Field< string >::get( stoich_, "method" );
+	string path0 = compt1.path() + "/mesh," + 
+	  compt1.path() + "/##[ISA=StimulusTable]";
+	shell->doUseClock( path0, "process", 4);
+	shell->doUseClock( compt1.path() + "/stoich", "process", 5);
 }
 
 /**
@@ -586,9 +619,9 @@ void generateComptElists( Id baseId,
 void SimManager::buildAllComptSolvers( const Eref& e, const Qinfo* q,
 				string defaultMethod )
 {
+
 	vector< int > dims( 1, 1 );
 	baseId_ = e.id();
-
 	vector< pair< Id, vector< Id > > > comptElists;
 	generateComptElists( baseId_, comptElists, 0 );
 	vector< Id > stoich( comptElists.size() );
@@ -673,6 +706,19 @@ Id SimManager::buildSolverOnCompt( Id compt, const vector< Id >& elist,
 	return stoich;
 }
 
+void SimManager::buildForSBML(const Eref& e,const Qinfo* q,const string& method)
+{ 
+  Shell* shell = reinterpret_cast<Shell * >(Id().eref().data() );
+  vector< int > dims (1,1);
+  autoPlot_ = 0;
+  shell->doSetClock(4,0.1);
+  shell->doSetClock(5,0.1);
+  shell->doSetClock(8,0.1);
+  shell->doSetClock( 9, 0 );
+  Field< double >::set( Id( 1 ), "runTime", 100 );
+  buildGslForSbml(e, q, shell,method);
+
+}
 void SimManager::buildFromKkitTree( const Eref& e, const Qinfo* q,
 	const string& method )
 {

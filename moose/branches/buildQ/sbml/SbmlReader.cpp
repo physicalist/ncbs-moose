@@ -1,6 +1,10 @@
 /*******************************************************************
  * File:            SbmlReader.cpp
- * Description:      
+ * Description:      The biomodel 11 works with this files as I have explicity 
+			converted as per paper description where units species
+			in uMolar, and associated rate uMolar-1s-1 which I have
+			populated initconc and Kf
+
  * Author:          
  * E-mail:          
  ********************************************************************/
@@ -65,11 +69,18 @@ Id SbmlReader::read( string filename,string location, string solverClass)
     }
 	
   if ( !errorFlag_ )
-    { 
+    { string modelName;
+      Id parentId;
+      findModelParent ( Id(), location, parentId, modelName ) ; 
+      Shell* s = reinterpret_cast< Shell* >( Id().eref().data() );
+      vector < int > dims(1,1);
+      Id base_ = s->doCreate( "SimManager", parentId, modelName, dims, true );
+      assert( base_ != Id() );
+
       map< string,Id > comptIdMap;
-      map< string,Id > molcomptMap;
+      map< string, Id > molcomptMap;
       if ( !errorFlag_ )
-	comptIdMap = createCompartment( location);
+	comptIdMap = createCompartment( location,parentId,modelName,base_);
       
       if ( !errorFlag_ )
 	molcomptMap = createMolecule( comptIdMap);
@@ -78,33 +89,56 @@ Id SbmlReader::read( string filename,string location, string solverClass)
 	getRules();
       
       if ( !errorFlag_ )
-	createReaction( molcomptMap );
+      	createReaction( molcomptMap );
+      //cout << " AFTER REactiom" << errorFlag_;
       if ( errorFlag_ )
 	{ 
 	  return baseId;
 	}
       else
-	{
+	{ 
 	  SimManager* sm = reinterpret_cast< SimManager* >(baseId.eref().data());
-	  sm->setSimDt(1);
-	  sm->setRunTime(100);
-	  sm->setPlotDt(1);
-	  Qinfo q;
+          XMLNode * annotationNode = model_->getAnnotation();
+	  if( annotationNode != NULL ){	
+	    unsigned int num_children = annotationNode->getNumChildren();
+	    for( unsigned int child_no = 0; child_no < num_children; child_no++ ){
+	      XMLNode childNode = annotationNode->getChild( child_no );
+	      if ( childNode.getPrefix() == "moose" && childNode.getName() == "ModelAnnotation" ){
+		unsigned int num_gchildren = childNode.getNumChildren();
+		for( unsigned int gchild_no = 0; gchild_no < num_gchildren; gchild_no++ ){
+		  XMLNode &grandChildNode = childNode.getChild( gchild_no );
+		  string nodeName = grandChildNode.getName();
+		  double nodeValue;
+		  if (grandChildNode.getNumChildren() == 1 )
+		    nodeValue = atof ((grandChildNode.getChild(0).toXMLString()).c_str());
+		  else
+		    cout << "Error: expected exactly ONE child of " << nodeName << endl;
+		  if (nodeName == "runTime")
+		    sm->setRunTime(nodeValue);
+		  else if (nodeName == "simdt")
+		    sm->setSimDt(nodeValue);
+		  else if(nodeName == "plotdt")
+		    sm->setPlotDt(nodeValue);
+		}
+	      }
+	    }
+	  }
+	  Qinfo q; 
+	  Id pathexist(base_.path()+"/kinetics");
 	  if (solverClass.empty())
-	    sm->build(baseId.eref(),&q, "rk5");
+	    { 
+	      if( pathexist != Id())
+		sm->build(base_.eref(),&q,"rk5");
+	      else
+		sm->buildForSBML(base_.eref(),&q,"rk5");
+	    }
 	  else
-	    sm->build(baseId.eref(),&q,solverClass);
-	  Shell* s = reinterpret_cast< Shell* >( Id().eref().data() );
-	  s->doReinit();
-	  s->doSetClock(4,0.01);
-	  s->doSetClock(5,0.01);
-	  s->doSetClock(8,0.1);
-	  s->doSetClock(7,0);
-	  string poolpath = baseId.path() + "/##[ISA=Pool]";
-	  string reacpath = baseId.path() + "/##[ISA!=Pool]";
-	  s->doUseClock( reacpath, "process", 4 );
-	  s->doUseClock( poolpath, "process", 5 );
-	  return baseId;
+	    { if(pathexist != Id())
+		sm->build(base_.eref(),&q,solverClass);
+	      else
+		sm->buildForSBML(base_.eref(),&q,solverClass);
+	    }
+	  return base_;
 	}
     }
   else
@@ -113,7 +147,7 @@ Id SbmlReader::read( string filename,string location, string solverClass)
 
 /* Pulling COMPARTMENT  */
 
-map< string,Id > SbmlReader::createCompartment( string location)
+map< string,Id > SbmlReader::createCompartment( string location,Id parentId,string modelName,Id base_)
 {
   /* In compartment: pending to add 
      -- the group
@@ -128,18 +162,13 @@ map< string,Id > SbmlReader::createCompartment( string location)
   double msize = 0.0, size = 0.0;	
   ::Compartment* compt;
   unsigned int num_compts = model_->getNumCompartments();
+  //cout << "num of compt" << num_compts;
   if (num_compts == 0)
     { errorFlag_ = "TRUE";
       return comptIdMap;
 	
     }
-  string modelName;
-  Id parentId;
-
-  findModelParent ( Id(), location, parentId, modelName ) ; 
-  Id base = s->doCreate( "SimManager", parentId, modelName, dims, true );
-  assert( base != Id() );
-  baseId = base;
+  baseId = base_;
   for ( unsigned int i = 0; i < num_compts; i++ )
     {
       compt = model_->getCompartment(i);
@@ -168,22 +197,17 @@ map< string,Id > SbmlReader::createCompartment( string location)
 	if(! id.empty() )
 	  {
 	    name = id;
-	    cout << "Compartment name is empty so id is used";
+	    //cout << "Compartment name is empty so id is used";
 	  }
 	else
 	  cout << "Compartment name and Id is empty";
       }
-      //Id neutral = s->doCreate("Neutral",base,dims);
-      //Id neutral = s->doCreate("Neutral",Id(),location,dims);
-      //cout << " \n \t neutral " << neutral << "  " << neutral.path();
-      //Id compt = s->doCreate( "CubeMesh", neutral, name, dims );
-      Id compt = s->doCreate( "CubeMesh", base, name, dims );
+      Id compt = s->doCreate( "CubeMesh", base_, name, dims );
       Id meshEntry =  Neutral::child( compt.eref(), "mesh" );
-
+      //cout << "\n " << compt << " ME " << meshEntry;
       comptIdMap[id] = compt;
       if (size != 0.0)
 	Field< double >::set( compt, "volume", size );
-
       if (dimension != 0)
 	continue;
 	//Field < int > :: set(compt, "numDimensions", dimension);
@@ -192,7 +216,7 @@ map< string,Id > SbmlReader::createCompartment( string location)
 }
 
 /* create MOLECULE */
-map< string,Id > SbmlReader::createMolecule( map< string,Id > &comptIdMap)
+map< string, Id > SbmlReader::createMolecule( map< string,Id > &comptIdMap)
 {
   Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
   vector< int > dims( 1, 1 );
@@ -223,8 +247,7 @@ map< string,Id > SbmlReader::createMolecule( map< string,Id > &comptIdMap)
       }
       std::string name = "";
       if ( spe->isSetName() )
-	;
-      //name = spe->getName();
+	name = spe->getName();
       else
 	cout << " ";
 	//cout << "Species name is empty"<< endl;
@@ -256,6 +279,7 @@ map< string,Id > SbmlReader::createMolecule( map< string,Id > &comptIdMap)
 	  return molcomptMap;
 	}
       }
+      //cout << " init value : "<<initvalue;
       Id comptEl = comptIdMap[compt];
       Id meshEntry = Neutral::child( comptEl.eref(), "mesh" );
       bool constant = spe->getConstant(); 
@@ -267,6 +291,7 @@ map< string,Id > SbmlReader::createMolecule( map< string,Id > &comptIdMap)
       else
 	pool = shell->doCreate("Pool", comptEl, name );
       molcomptMap[id] = comptEl;
+      //Map to Molecule Id to Molecule name
       elmtMolMap_[id] = pool;
       shell->doAddMsg( "OneToOne",pool, "mesh", meshEntry, "mesh" );
       bool bcondition = spe->getBoundaryCondition();
@@ -274,12 +299,12 @@ map< string,Id > SbmlReader::createMolecule( map< string,Id > &comptIdMap)
 	cout <<"The species "<< name << " should not appear in reactant or product as per sbml Rules"<< endl;
 
       unsigned int spatialDimen =Field< unsigned int >::get( comptEl, "numDimensions");
-      
+
       UnitDefinition * ud = spe->getDerivedUnitDefinition();
       assert(ud != NULL);
       bool hasonlySubUnit = spe->getHasOnlySubstanceUnits();
       double transvalue = 0.0;
-
+      //double v = Field< double >::get( comptEl.path(), "volume" );
       transvalue = transformUnits(1,ud,"substance",hasonlySubUnit);
       if (hasonlySubUnit){
 	// In Moose, no. of molecules (nInit) and unit is "item"
@@ -303,7 +328,7 @@ void SbmlReader::getRules()
   unsigned int nr = model_->getNumRules();
   if (nr > 0)
     cout << "\n ##### Need to populate funcpool and sumtotal which is pending due to equations \n";
-  /*
+  
   for ( unsigned int r = 0;r < nr;r++ ){
     
     Rule * rule = model_->getRule(r);
@@ -317,8 +342,8 @@ void SbmlReader::getRules()
       if (v_iter != elmtMolMap_.end()){
 	Id rVariable = elmtMolMap_.find(rule_variable)->second;
 
-	cout << " \n \n variable:" << rule_variable;
-	cout << " = " << rule->getFormula() << endl;
+	//cout << " \n \n variable:" << rule_variable;
+	//cout << " = " << rule->getFormula() << endl;
 	const ASTNode * ast = rule->getMath();
 	vector< string > ruleMembers;
 	ruleMembers.clear();
@@ -350,11 +375,10 @@ void SbmlReader::getRules()
       errorFlag_ = true;
     }
   }
-  */
 }
 
 //REACTION
-void SbmlReader::createReaction( map< string, Id > &molcomptMap )
+void SbmlReader::createReaction(map< string, Id > &molcomptMap )
 { 
   vector < int > dims(1,1);
   Reaction* reac;
@@ -363,26 +387,23 @@ void SbmlReader::createReaction( map< string, Id > &molcomptMap )
   map< string,double >prdMap;
   map< string,double >::iterator prdMap_iter;
   map< string,EnzymeInfo >enzInfoMap;
+
   for ( unsigned int r = 0; r < model_->getNumReactions(); r++ ){
     Id reaction_;
     reac = model_->getReaction( r ); 
-    
+
     std:: string id; //=reac->getId();
     if ( reac->isSetId() )
       id = reac->getId();
+
     std::string name;
-    
     if ( reac->isSetName() )
       name = reac->getName();
-    //cout << "reaction name " << name;
     if (name.empty()){
-      //cout << "\n \t 1# ";
       if (id.empty())
 	assert("Reaction id and name is empty");
       else
-	{//cout << "\n \t 2#";
-	  name = id;
-	}
+	name = id;
     }
     string grpname = getAnnotation( reac,enzInfoMap );
     if ( (grpname != "") && (enzInfoMap[grpname].stage == 3) )
@@ -430,6 +451,7 @@ void SbmlReader::createReaction( map< string, Id > &molcomptMap )
 	    Id meshEntry = Neutral::child( comptRef.eref(), "mesh" );
 	    Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
 	    reaction_ = shell->doCreate("Reac", comptRef, name, dims);
+
 	    shell->doAddMsg( "Single", meshEntry, "remeshReacs", reaction_, "remesh");
 	    //Get Substrate 
 	    addSubPrd(reac,reaction_,"sub");
@@ -445,8 +467,16 @@ void SbmlReader::createReaction( map< string, Id > &molcomptMap )
 	    if ( errorFlag_ )
 	      return;
 	    else if ( !errorFlag_ ){
+	      //cout << " Reaction name " << name << " kf " << rate[0] << " kb " << rate[1]<<endl;
 	      Field < double > :: set( reaction_, "kf", rate[0] ); 
-	      Field < double > :: set( reaction_, "kb", rate[1] );	
+	      Field < double > :: set( reaction_, "kb", rate[1] );
+	      /*
+	      if (numRcts > 1)
+		rate[0] = rate[0]*pow(1e3,1.0);
+	      cout << "Reaction " << id << " " << name << " " << rate[0] << "  " << rate[1]<<endl;
+	      Field < double > :: set( reaction_, "Kf", rate[0] ); 
+	      Field < double > :: set( reaction_, "Kb", rate[1] );   
+	      */
 	    }
 	  } //issetKineticLaw
 	  } //else
@@ -458,7 +488,6 @@ void SbmlReader::createReaction( map< string, Id > &molcomptMap )
 void SbmlReader::setupEnzymaticReaction( const EnzymeInfo & einfo,string enzname, map< string, Id > &molcomptMap,string name1){
   Id enzPar = einfo.enzyme;
   string enzParname = Field<string>::get(ObjId(enzPar),"name");
-  //cout << "$$$$$$$$$$$$$$$$$$$$$$$ " << name1 << " enzname " << enzname;
   Id comptRef = molcomptMap.find(enzParname)->second; //gives compartment of sp
   Id meshEntry = Neutral::child( comptRef.eref(), "mesh" );
   Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
@@ -469,10 +498,9 @@ void SbmlReader::setupEnzymaticReaction( const EnzymeInfo & einfo,string enzname
   shell->doAddMsg( "Single", meshEntry, "remeshReacs", enzyme_, "remesh");
 
   Id complex = einfo.complex;
-  //cout << " Complex " << complex.path() << complex;
   Id enzId = enzyme_;
+  //Moving enzyme site under enzyme
   shell->doMove(complex,enzId);
-  //cout << " after move " << complex.path();
   shell->doAddMsg("OneToAll",enzyme_,"cplx",complex,"reac");
 
   Id enzymePool = einfo.enzyme;
@@ -584,7 +612,6 @@ void SbmlReader::setupMMEnzymeReaction( Reaction * reac,string rid,string rname,
     int strlen = rid.length(); 
     rid.erase( loc,strlen-loc );
   }
-  
   unsigned int num_modifr = reac->getNumModifiers();
   for ( unsigned int m = 0; m < num_modifr; m++ )
     { 
@@ -622,7 +649,6 @@ void SbmlReader::setupMMEnzymeReaction( Reaction * reac,string rid,string rname,
 	    shell->doAddMsg( "OneToOne", enzyme_, "prd" ,P, "reac" );
 	  }
 	Field < double > :: set( enzyme_, "kcat", rate[0] );
-	
 	Field < double > :: set( enzyme_, "numKm", rate[1] );
       }
       
@@ -633,7 +659,6 @@ void SbmlReader::setupMMEnzymeReaction( Reaction * reac,string rid,string rname,
 void SbmlReader::getParameters( const ASTNode* node,vector <string> & parameters )
 {
   assert( parameters.empty() );	
-  
   if ( node->getType() == AST_MINUS ){
     const ASTNode* lchild = node->getLeftChild();  
     pushParmstoVector( lchild,parameters );
@@ -642,9 +667,7 @@ void SbmlReader::getParameters( const ASTNode* node,vector <string> & parameters
       const ASTNode* rchild = node->getRightChild();
       pushParmstoVector( rchild,parameters );		
     }
-    
   }
-  
   else if ( node->getType() == AST_DIVIDE ){
     const ASTNode* lchild = node->getLeftChild();  
     pushParmstoVector( lchild,parameters );
@@ -744,8 +767,6 @@ void SbmlReader::getKLaw( KineticLaw * klaw,bool rev,vector< double > & rate )
 	kfud = kfp->getDerivedUnitDefinition();
 	//cout << "parameter unit :" << UnitDefinition::printUnits(kfp->getDerivedUnitDefinition())<< endl;
 	double transkf = transformUnits( 1,kfud ,"substance",true);	
-	//cout<<"parm kf trans value : "<<transkf<<endl;
-	//cout<<"kfvalue :"<<kfvalue<<endl;
 	kf = kfvalue * transkf;
 	kb = 0.0;
       }
@@ -755,10 +776,7 @@ void SbmlReader::getKLaw( KineticLaw * klaw,bool rev,vector< double > & rate )
       }
       if ( ( kbp->isSetUnits() ) && ( rev ) ){ 
 	kbud = kbp->getDerivedUnitDefinition();	
-	//cout << "parameter unit :" << UnitDefinition::printUnits(kbp->getDerivedUnitDefinition()) << endl;
 	double transkb = transformUnits( 1,kbud,"substance",true );
-	//cout<<"parm kb trans value : "<<transkb<<endl;
-	//cout<<"kbvalue :"<<kbvalue<<endl;
 	kb = kbvalue * transkb;	
       }			
       if ( (! kbp->isSetUnits() ) && ( rev ) ){
@@ -766,9 +784,7 @@ void SbmlReader::getKLaw( KineticLaw * klaw,bool rev,vector< double > & rate )
       }
       rate.push_back( kf );
       rate.push_back( kb );
-      
     }
-  
 } 
 
 void SbmlReader::addSubPrd(Reaction * reac,Id reaction_,string type)
@@ -789,7 +805,8 @@ void SbmlReader::addSubPrd(Reaction * reac,Id reaction_,string type)
     else
       rct = reac->getProduct(rt);
     std:: string sp = rct->getSpecies();
-    rctMap_iter = rctMap.find(sp);			
+    cout << " sp " << sp;
+    rctMap_iter = rctMap.find(sp);
     if ( rctMap_iter != rctMap.end() )	
       rctcount = rctMap_iter->second;
     else
@@ -798,7 +815,9 @@ void SbmlReader::addSubPrd(Reaction * reac,Id reaction_,string type)
     rctcount += rct->getStoichiometry();
     rctMap[sp] = rctcount;
     for ( int i=0;(int)i<rct->getStoichiometry();i++ )
-      shell->doAddMsg( "OneToOne", reaction_, type ,elmtMolMap_[sp] , "reac" );
+      { cout << " er" << elmtMolMap_[sp].path() <<endl;
+	shell->doAddMsg( "OneToOne", reaction_, type ,elmtMolMap_[sp] , "reac" );
+      }
   }
 }
 /* Transform units from SBML to MOOSE 
@@ -843,8 +862,9 @@ double SbmlReader::transformUnits( double mvalue,UnitDefinition * ud,string type
 	  // In SBML if initial Amount is set to mole then convert from mole to items (#)
 	  lvalue *= pow( NA ,exponent);
 	else
-	  // if hasonlySubstanceUnit is false, then unit is in substance/size = Molar
-	  //Then convert Molar to milli Molar for moose as concentration units are in milliMolar
+	  // if hasonlySubstanceUnit is false, 
+	  //Then convert mole to milli Molar for moose as concentration units are in milliMolar
+	  // Molar = mole/size
 	  lvalue *= pow(1e+3,exponent); 
 	return lvalue;
       }
@@ -874,14 +894,13 @@ void SbmlReader::printMembers( const ASTNode* p,vector <string> & ruleMembers )
     }
 } 
 
-
 void SbmlReader ::findModelParent( Id cwe, const string& path, Id& parentId, string& modelName )
 { //Taken from LoadModels.cpp
   //If path exist example /model when come from GUI it creates model under /model/filename
-  // i.e. because we have default created genesis/sbml under '/model', which is created before and path exist
+  // i.e. because by default we creat genesis,sbml models under '/model', which is created before and path exist
   // at the time it comes to SbmlReader.cpp
   //When run directly (command line readSBML() )it ignores the path and creates under '/' and filename takes as "SBMLtoMoose"
-  modelName = "test";
+  //modelName = "test";
   string fullPath = path;
   if ( path.length() == 0 )
     parentId = cwe;
@@ -907,9 +926,11 @@ void SbmlReader ::findModelParent( Id cwe, const string& path, Id& parentId, str
       ;//return 0;
     parentId = ret;
     modelName = fullPath.substr( pos + 1 );
-  } else { // Path is an existing element.
+  }
+  
+  else { // Path is an existing element.
     parentId = paId;
+    
   }
 }
 #endif // USE_SBML
-
