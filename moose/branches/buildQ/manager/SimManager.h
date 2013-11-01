@@ -93,11 +93,13 @@ class SimManager
 		/////////////////////////////////////////////////////////////////
 		//TreeType findTreeType( const Eref& e );
 		Id findChemCompt() const;
+		void buildForSBML(const Eref& e,const Qinfo* q,const string& method);
 		void buildFromBareKineticTree( const string& method );
 		void buildFromKkitTree( const Eref& e, const Qinfo* q, const string& method );
 
 		void buildEE( Shell* shell );
 		void buildGsl( const Eref& e, const Qinfo* q, Shell* shell, const string& method );
+		void buildGslForSbml( const Eref& e, const Qinfo* q, Shell* shell, const string& method );
 		void buildGssa( const Eref& e, const Qinfo* q, Shell* shell );
 		void buildSmoldyn( Shell* shell );
 
