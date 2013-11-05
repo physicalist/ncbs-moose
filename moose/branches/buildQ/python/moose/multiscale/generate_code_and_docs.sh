@@ -5,5 +5,6 @@ topFile=main.nw
 if [ "$1" == "--doc" ]; then 
   pdflatex -output-directory=docs "./docs/$topFile.tex"
 else 
-  python src/main.py --nml ./models/neuroML2/NML2_FullCell.nml --adaptor ./moose_xml/adaptor.xml 
+  python src/main.py --nml ./models/neuroML2/NML2_FullCell.nml \
+    --adaptor ./moose_xml/adaptor.xml --mumbl ./moose_xml/mumbl.xml
 fi

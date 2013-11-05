@@ -1,14 +1,13 @@
-\documentclass[draft]{article}
-%\usepackage[margin=10mm]{geometry}
+\documentclass[]{article}
+\usepackage[margin=10mm, left=25mm]{geometry}
 \usepackage{pgf,tikz}
-%\usepackage{algorithm2e}
-%\usepackage{subfig}
 \usepackage{noweb}
 \usepackage{amsmath}
 \usepackage{color}
+\usepackage{syntax}
 \usepackage{amssymb}
 \usepackage{listings}
-%\usepackage{glossaries}
+\usepackage[xindy]{glossaries}
 
 \usetikzlibrary{circuits.logic.US}
 \usetikzlibrary{positioning}
@@ -18,30 +17,24 @@
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
 
-\lstset{ %
-  language=python,                % the language of the code
-  basicstyle=\footnotesize,           % the size of the fonts that are used for the code
-  numbers=left,                   % where to put the line-numbers
-  numberstyle=\tiny\color{gray},  % the style that is used for the line-numbers
-  stepnumber=2,                   % the step between two line-numbers. If it's 1, each line 
-                                  % will be numbered
-  numbersep=5pt,                  % how far the line-numbers are from the code
-  backgroundcolor=\color{white},      % choose the background color. You must add \usepackage{color}
-  showspaces=false,               % show spaces adding particular underscores
-  showstringspaces=false,         % underline spaces within strings
-  showtabs=false,                 % show tabs within strings adding particular underscores
-%  frame=single,                   % adds a frame around the code
-  rulecolor=\color{black},        % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. commens (green here))
-  tabsize=2,                      % sets default tabsize to 2 spaces
-  captionpos=b,                   % sets the caption-position to bottom
-  breaklines=true,                % sets automatic line breaking
-  breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
-  title=\lstname,                   % show the filename of files included with \lstinputlisting;
-                                  % also try caption instead of title
-  keywordstyle=\color{blue},          % keyword style
-  commentstyle=\color{dkgreen},       % comment style
+\lstset{
+  basicstyle=\footnotesize\ttfamily, % the size of the fonts that are used for the code
+  numbers=left,                      % where to put the line-numbers
+  numberstyle=\tiny\color{gray},     % the style that is used for the line-numbers
+  stepnumber=2,                      % the step between two line-numbers. If it's 1, each line
+  numbersep=5pt,                     % how far the line-numbers are from the code
+  backgroundcolor=\color{white},     % choose the background color. You must add \usepackage{color}
+  showspaces=false,                  % show spaces adding particular underscores
+  showstringspaces=false,            % underline spaces within strings
+  showtabs=false,                    % show tabs within strings adding particular underscores
+  rulecolor=\color{black},           % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. commens (green here))
+  tabsize=2,                         % sets default tabsize to 2 spaces
+  captionpos=b,                      % sets the caption-position to bottom
+  breaklines=true,                   % sets automatic line breaking
+  breakatwhitespace=false,           % sets if automatic breaks should only happen at whitespace
+  keywordstyle=\color{blue},         % keyword style
+  commentstyle=\color{dkgreen},      % comment style
   stringstyle=\color{mauve},         % string literal style
-  escapeinside={\%*}{*)},            % if you want to add LaTeX within your code
   morekeywords={*,...}               % if you want to add more keywords to the set
 }
 \usepackage{amsthm}
@@ -184,7 +177,12 @@ argParser.add_argument('--meshml', metavar='meshml'
 argParser.add_argument('--adaptor', metavar='adaptor'
     , required = True
     , nargs = '+'
-    , help = 'AdaptorML for moose'
+    , help = 'Adaptor for moose'
+    )
+argParser.add_argument('--mumbl', metavar='mumbl'
+    , required = True
+    , nargs = '+'
+    , help = 'Lanaguge to do multi-scale modelling in moose'
     )
 args = argParser.parse_args()
 
@@ -271,14 +269,10 @@ Over to \ref{sec:multiscale}.
   this module. We also have [[adaptorML]] file parsed in dictionary. 
 
 \begin{remark}{Why AST/Database?}
- 
- Should I directly map XML models to moose objects or a intermediate
- representation would be better. I am leaning towards haivng a intermediate
- sqlite3 based data-structure. The benefit of using sqlite is that we can simply
- insert and query the database without having to keep all XML models open. We'll
- simply populate the database for each given model. Details are bit hazy in my
- mind right now and I should add the them to this document as they become
- clearer to me.
+    
+  In one previous version, [[sqlite3]] database was used to integrate all XML
+  models. We no longer use [[sqlite3]] database but rather integrate all XML
+  files into one XML file.
 
 \end{remark}
  
@@ -292,23 +286,32 @@ Over to \ref{sec:multiscale}.
 
 @ %def multiscale 
 
+   
+
 \paragraph{A skeleton of class}
 
-  Now we have parsed XML. We are passing the parsed XML in dictionary to a
-  method [[buildMultiscaleModel]] of this class. We know, what this class must
-  have at this point. Let's write it down and we'll wonder later how to add more
-  functionality. 
+    This class will build a combined model which we can map on to [[moose]]
+    later by using [[mumbl]]. 
   
 <<Definition of class [[Multiscale]]>>=
+from lxml.builder import E
+import nml_parser
+import cStringIO
+import sys
+sys.path.append("../../../python")
+import moose
 
 class Multiscale :
   
   def __init__(self, xmlDict) :
     self.xmlDict = xmlDict 
+    self.xmlExpr = "//*[local-name() = $name]"
+    self.rootModelPath = '/model'
+    self.model = moose.Neutral(self.rootModelPath)
     <<initialize members>>
     debug.printDebug("INFO", "Object of class Multiscale intialized ...")
 
-  <<methods in class [[Multiscale]]>>
+  <<methods>> 
 
   # This is the entry point of this class.
   def buildMultiscaleModel(self) :
@@ -317,10 +320,12 @@ class Multiscale :
   
   def exit(self) :
     # Clean up before you leave
+    debug.printDebug("WARN", "Cleaning up before existing..")
     <<clean up the mess>>
+    sys.exit(0)
 
   # Write down the tests, whenever needed.
-  <<tests in class [[Multiscale]]>>
+  <<tests>>
 
 
 
@@ -929,206 +934,112 @@ def make_axon():
 
 
 
-\subsection{Database to keep the XML models}
-\label{subsec:database}
+\paragraph{Multi-scale Modelling in Biological Language (MuMBL)}
 
-  We use sqlite3 database. Let import it and add a section in our class to
-  handle this database.
+   The [[neuroML]] is our starting point. Get the [[adaptorML]] and map things
+   onto moose. If more models appears then map them onto moose also and add
+   support to do so in [[adaptorML]]. Not everything can be mapped and user
+   inputs are also required to do modelling, this we do using a XML based
+   language [[MuMBL]]. The user must supply at least three XML files, neuroml
+   model, adaprorML and mumbl files. Both adaptor and mumbl are explained in
+   appendix.
 
-<<Local imports>>=
-import sqlite3 as sql 
-@ 
-
-<<methods in class [[Multiscale]]>>=
-<<methods to deal with database>>
-@
-
-  And lets open a database and initialize it. And add code to clean up the
-  connection before exiting the class.
-
-<<initialize members>>=
-self.dbdir = 'db'
-self.dbname = 'models.db'
-self.dbpath = os.path.join(self.dbdir, self.dbname)
-if not os.path.exists(self.dbpath) :
-  try :
-    os.makedirs(self.dbdir)
-  except Exception as e :
-    debug.printDebug("ERROR"
-        , "Faild to create directory {0} with error {1}".format(self.dbdir, e))
-    sys.exit(0)
-self.conn = sql.connect(self.dbpath)
-self.cursor = self.conn.cursor()
-@ %def database 
-
-<<clean up the mess>>=
-self.cursor.commit()
-self.conn.close()
-sys.exit()
-@ %def exit
-
-\subsection{Populate database}
-
-    We have the parsed models and we would be searching them extensively when
-    combining them together to map onto moose. Populate the sqlite3 database
-    such that we can query it easily.
+   \todo[inline]{We have already parsed all of our xml files. We are using
+   [[generateDS.py]] to generate python class from the XSD. Remove all etree
+   based parsing later.}
 
 <<flow of executation>>=
-<<initialize database>>
-<<populate database with models>>
-<<build queries from adaptorML>>
-<<run queries and generate moose scripts>>
-@ %def flow
+<<map onto moose>>
+<<setup simulation using mumbl>>
+<<simulate>>
+@ %def flow_of_execution
 
-\paragraph{Populating database}
+\paragraph{Mapping onto moose}
 
-    Should be directly translated XML to [[sqlite3]]? No, that would defeat the
-    purpose of using sqlite3 in the middle. We must transform the XML as much as
-    we can to create a well-defined database which we can simply query and build
-    moose scripts. Let's me describe the flow. ETL stands for standard practise
-    of \textbf{E}xtract, \textbf{Transform}, and \textbf{L}oad.
+  Lets map XML models onto moose.
 
-\begin{figure}[h]
-\centering
-\begin{tikzpicture}
-    [every node/.style = {minimum size = 1.5cm}, font=\small]
+<<map onto moose>>=
+# NeuroML to moose
+self.neuroML2Moose()
+@
+
+\paragraph{NeuroML to moose}
+
+  We need capabilities to map an ion-channel to moose.
+
+<<methods>>=            
+def mapIonChannel(self, ionChannelXml) :
+  debug.printDebug("INFO"
+    , "Mapping ion-channel {0} onto moose".format(ionChannelXml.tag))
+  type = ionChannelXml.get('type')
+  id = ionChannelXml.get('id')
+
+def mapIncludedFile(self, filePath) :
+  debug.printDebug("INFO", "Mapping included file {0}".format(filePath))
+  incXml = etree.parse(filePath)
+  for ionChannel in incXml.xpath(self.xmlExpr, name="ionChannel") :
+    self.mapIonChannel(ionChannel)
+
+def neuroML2Moose(self) :
+  debug.printDebug("INFO", "Mapping neuroML to moose")
+  nmlElems = self.xmlDict['nml']
+  if len(nmlElems) > 1 :
+    debug.printDebug("ERR", "More than one nueroml file is not supported yet.")
+    self.exit()
+  else : 
+    nmlElem, nmlPath = nmlElems[0]
+  self.nml = nml_parser.parse(nmlPath, silence=True)
+  <<map morphology>>
+  <<map ionchannels>>
+@ %def neuroML2Moose
+
+<<map morphology>>=
+for cell in self.nml.cell :
+  morphology = cell.morphology 
+  compartmentDict = dict()
+  for segment in morphology.segment :
+    if not segment.parent :
+      compartmentPath = os.path.join(self.rootModelPath, segment.name)
+      comp = moose.Compartment(compartmentPath)
+      compartmentDict[segment.id] = comp
+    else  :
+      parentPath = compartmentDict[segment.parent.segment].path
+      comp = moose.Compartment(os.path.join(parentPath, segment.name))
+      compartmentDict[segment.id] = comp
+    proximalDiameter = 0.0
+    distalDiameter = 0.0
+    if segment.proximal :
+      comp.x0 = segment.proximal.x
+      comp.y0 = segment.proximal.y
+      comp.z0 = segment.proximal.z 
+      proximalDiameter = segment.proximal.diameter
+    if segment.distal :
+      comp.x = segment.distal.x
+      comp.y = segment.distal.y
+      comp.z = segment.distal.z 
+      distalDiameter = segment.distal.diameter 
     
-    %\input{macro.tex};
-    %\myscript{(0,1)}{3}{4}{hello};
+    if proximalDiameter > 0.0 and distalDiameter > 0.0 :
+      comp.diameter = (proximalDiameter + distalDiameter) / 2
+    elif proximalDiameter > 0.0 :
+      comp.distalDiameter = proximalDiameter 
+    else : 
+      comp.diameter = distalDiameter 
+    # check if this comparment has a parent 
+   
+@ %def map_morphology
 
-    \node[draw, rectangle] (model1) at (0,0) {\texttt{model1.xml}};
-    \node[draw, rectangle] (model2) at (0,2) {\texttt{model2.xml}};
-    \node[draw, rectangle] (model3) at (0,4) {\texttt{model3.xml}};
-    \node[draw, circle] (db) at (4,2) {\texttt{sqlite3}};
-    \node[draw, rectangle] (gen) at (8,2)  {\texttt{moose generator}};
-    \node[draw, rectangle] (adaptorML) at (8,4) {adaptorML};
-    \node[rectangle] (moose) at (8,0) {moose.py};
-    \draw[->] (model1) -- node [below, midway] {ETL} (db);
-    \draw[->] (model2) -- node [label={[xshift=0cm,yshift=-0.5cm]ETL}] {} (db);
-    \draw[->] (model3) -- node [above, midway] {ETL} (db) -- (gen);
-    \draw[->] (adaptorML) -- (gen) -- (moose);
-
-\end{tikzpicture}
-\label{fig:multiscale_flow}
-\caption{Flow of multi-scale modelling. ETL stands for \textbf{E}xtract
-\textbf{T}ransform and \textbf{L}oad.}
-\end{figure}
-
-\paragraph{Extract, Load and Transform}
-
-  Now we are ready. Lets do ELT on each XML file.
-
-<<populate database with models>>=
-for xml in self.xmlDict :
-  xmlRootNodeList = self.xmlDict[xml]
-  for xmlRootNode in xmlRootNodeList :
-    self.extractTransformLoad(xml, xmlRootNode)
-@ %def ETL
-
-  Now the hard part of populating the database starts. We need to initialize the
-  database first before we can use it. Its a serious task. Let's initialize
-  tables first and document them. The description of database is available in
-  section \ref{sec:database}.
-
-<<initialize database>>=
-self.initDB()
-@ 
-
-<<methods to deal with database>>=
-def extractTransformLoad(self, modelType, xmlRootNode) :
-  if modelType == 'nml' :
-    self.etlNMLModel(xmlRootNode)
+<<map ionchannels>>=
+expr = self.xmlExpr
+modelDir = os.path.dirname(nmlPath)
+for i in  nmlElem.xpath(expr, name="include") :
+  incFile = os.path.join(modelDir, i.get('href'))
+  if os.path.isfile(incFile) :
+    self.mapIncludedFile(incFile)
   else :
-      pass 
+    debug.printDebug("WARN", "Included file {0} does not exists".format(incFile))
 
-@ %def extractTransformLoad
-
-
-\paragraph{ETL a NML model}
-
-  ETL an neuroML model. Model specified in [[neuroML]]  other
-  files too. As soon as we get to know the names of these files, we must demand
-  them from the user after parsing of [[neuroML]] model is over. If these files
-  are given from command line, ETL them silently, else demand these files from
-  command-line.
-
-<<methods to deal with database>>=
-def etlNMLModel(self, nmlRootNode) :
-  debug.printDebug("STEP", "ETLing a nml model")
-  for child in nmlRootNode.iter() :
-    print child
- 
-@ %def etlNMLModel  
-
-%%% Description of database
-\section{Describe and initialize database}
-\label{sec:database}
- 
-  We have four tables in our database. 
-
-  \begin{table}[h]
-  \centering
-  \begin{tabular}{lp{6cm}}
-
-    \hline
-    
-    \texttt{segment} & One entry for each segment along with its
-    chemical and electrical properties. \\
-    
-    \texttt{connection} & Connection information. How a compartment is connected
-    to other compartments \\
-    
-    \texttt{cellTypes} & Types of cell available in this network and their
-    properties. \\
-    
-    \texttt{network} & Some other information about network. \\
-    
-    \hline
-  \end{tabular}
-  \end{table}
-
-
-<<methods to deal with database>>=
-def initDB(self) :
-  query = '''DROP TABLE IF EXISTS segment'''
-  self.cursor.execute(query)
-  query = '''CREATE TABLE IF NOT EXISTS segment 
-    (id INTEGER PRIMARY KEY ASC
-    , name VARCHAR
-    , parent INTEGER 
-    , proximal REAL
-    , distal REAL
-    , x REAL 
-    , y REAL  
-    , z REAL 
-    , remark TEXT)'''
-  self.cursor.execute(query)
-  query = 'DROP TABLE IF EXISTS cells'
-  self.cursor.execute(query)
-  query = '''CREATE TABLE IF NOT EXISTS cells
-    (type VARCHAR PRIMARY KEY -- Type of cell
-    , leakReversal REAL       -- leakReversal potential
-    , threshold REAL          -- Threshold voltage
-    , reset REAL
-    , tau REAL
-    , refract REAL
-    , capacitance REAL
-    , leakConductance REAL
-    , a REAL                  -- Izhikenvich Cell model
-    , b REAL                  -- Izhikenvich cell model
-    , c REAL                  -- Izhikenvich cell model 
-    , d REAL                  -- Izhikenvich cell model
-    , gL REAL
-    , EL REAL
-    , reset REAL
-    , VT REAL
-    , delT REAL
-    , tauw REAL
-    , Idel REAL
-    , Idur REAL
-    )'''
-
-@ %def initDB
+@ %def map_ionchannels
 \section{AdaptorML for Moose}
 \label{sec:adaptor}
   
@@ -1156,6 +1067,72 @@ def initDB(self) :
   </listOfAdaptors>
 </adapterML>
 @ %def adaptorML
+\section{MuMBL : A language for multi-scale modelling}
+\label{sec:mumbl}
+
+    This XML based language must be provided by user to do multi-scale modelling
+    with [[moose]]. An example is given below which is used during development
+    of this document. Mumble contains one or more domains of various type. Its
+    tentative grammar is below.
+
+\todo[inline]{Write the full grammar}
+
+\setlength{\grammarparsep}{20pt plus 1pt minus 1pt} % increase separation between rules
+\setlength{\grammarindent}{12em} % increase separation between LHS/RHS 
+\begin{grammar}
+<mumbl-file> ::= <domains>
+
+<domains> ::= <domains> \alt <domain> 
+
+<domain> ::= <electrical> \alt <chemical> \alt <simulation>
+\end{grammar}
+
+    An example of this script is following.
+
+%file:moose_xml/mumbl.xml
+<<mumbl.xml>>=
+<?xml version="1.0"?>
+<mumbl>
+  <<electrical domain>>
+  <<chemical domain>>
+  <<simulation domain>>
+</mumbl>
+@ %def mumbl.xml
+
+<<electrical domain>>=
+<!-- Electrical domain and its parameter -->
+<domain type="electrical">
+  <elecDt type="parameter">50e-6</elecDt>
+</domain>
+@ %def 
+
+<<chemical domain>>=
+<!-- Chemical domain and its parameters-->
+<domain type="chemical">
+  <chemDt type="parameter">1e-4</chemDt>
+</domain>
+@
+
+<<simulation domain>>=
+<domain type="simulation">
+  <startTime type="time">0</startTime>
+  <endTime type="time">100e-3</endTime>
+
+  <!-- Add plots here -->
+  <plots>
+    <plot2D type="line">
+      <yaxis scale="log" min="0" max="10" step="1">
+        <var name="Vm" of="soma" path="/model/elec/soma" />
+        <label>Voltage at Soma</label>
+      </yaxis>
+      <xaxis scale="log" min="0" max="100e-3" step="1e-3">
+        <var name="time" />
+        <label>Simulation time</label>
+      </xaxis>
+    </plot2D>
+  </plots>
+</domain>
+@
 \section{XML parser}
 \label{sec:parser}
 
@@ -1197,7 +1174,7 @@ def parseModels(commandLineArgs, validate=False) :
           # Simple parse the model without validating it with schema.
           modelXMLRootElem = parseWithoutValidation(model, modelPath)
         if modelXMLRootElem :
-          xmlRootElemDict[model].append(modelXMLRootElem)
+          xmlRootElemDict[model].append((modelXMLRootElem, modelPath))
   return xmlRootElemDict 
 
 @  %def parseModels 
@@ -1231,7 +1208,7 @@ def parseAndValidateWithSchema(modelName, modelPath) :
       return parseWithoutValidation(modelName, modelPath)
     # Now we have the schema text 
     schema = etree.XMLSchema(etree.XML(schemaText))
-    xmlParser = etree.XMLParser(schema=schema)
+    xmlParser = etree.XMLParser(schema=schema, remove_comments=True)
     with open(modelPath, "r") as xmlTextFile :
         return etree.parse(xmlTextFile, xmlParser)
 
@@ -1239,8 +1216,9 @@ def parseAndValidateWithSchema(modelName, modelPath) :
 
 <<helper functions>>=
 def parseWithoutValidation(modelName, modelPath) :
+    xmlParser = etree.XMLParser(remove_comments=True)
     try :
-      xmlRootElem = etree.parse(modelPath)
+      xmlRootElem = etree.parse(modelPath, xmlParser)
     except Exception as e :
       debug.printDebug("ERROR", "Parsing failed. {0}".format(e))
       return 

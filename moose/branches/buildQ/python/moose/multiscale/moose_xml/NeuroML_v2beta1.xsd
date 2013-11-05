@@ -838,7 +838,7 @@
 
     <xs:complexType name="Segment">
         <xs:complexContent>
-            <xs:extension base="BaseWithoutId">  <!-- Don't want to allow string value as with NmlId, want just non negative integer-->
+            <xs:extension base="BaseWithoutId">  <!-- Dont want to allow string value as with NmlId, want just non negative integer-->
 
                 <xs:sequence>
                     <xs:element name="parent" type="SegmentParent" minOccurs="0"/>

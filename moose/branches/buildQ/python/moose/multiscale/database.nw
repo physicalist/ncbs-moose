@@ -1,0 +1,113 @@
+\section{Describe and initialize database}
+\label{sec:database}
+ 
+  We have four tables in our database. 
+
+  \begin{table}[h]
+  \centering
+  \begin{tabular}{lp{10cm}}
+
+    \hline
+    
+    \texttt{segment} & One entry for each segment along with its
+    chemical and electrical properties. Since [[parent]] is specified for each
+    segment, we can figure out the topology from this table only. \\
+    
+    \texttt{cells} & Types of cell available in this network and their
+    properties. \\
+    
+    \texttt{mapping} & Map a segment to another segment. Specify the relation in
+    terms of $lhs=rhsExpr$. \\
+
+    \hline
+  \end{tabular}
+  \end{table}
+
+  See the chunk [[methods to deal with database]] for table documentation.
+  \textbf{All units must be in S.I.}.
+
+<<methods to deal with database>>=
+def initDB(self, dropOldTables = False) :
+  query = '''CREATE TABLE IF NOT EXISTS topology
+    (id INTEGER PRIMARY KEY ASC
+    , name VARCHAR
+    , parent INTEGER 
+    , fractionAlong REAL default '0.0'
+    , proximal_x REAL
+    , proximal_y REAL 
+    , proximal_z REAL
+    , proximal_diameter REAL
+    , distal_x REAL
+    , distal_y REAL
+    , distal_z REAL
+    , distal_diameter REAL
+    , x REAL 
+    , y REAL  
+    , z REAL 
+    , segment_group VARCHAR
+    , remark TEXT
+    )'''
+  self.executeQuery(query)
+ 
+  query = '''CREATE TABLE IF NOT EXISTS electrical
+    (type VARCHAR PRIMARY KEY -- Type of cell
+    , leakReversal REAL       -- leakReversal potential
+    , threshold REAL          -- Threshold voltage
+    , reset REAL
+    , tau REAL
+    , refract REAL
+    , capacitance REAL
+    , leakConductance REAL
+    , a REAL                  -- Izhikenvich Cell model
+    , b REAL                  -- Izhikenvich cell model
+    , c REAL                  -- Izhikenvich cell model 
+    , d REAL                  -- Izhikenvich cell model
+    , gL REAL
+    , EL REAL
+    , VT REAL
+    , delT REAL
+    , tauw REAL
+    , Idel REAL
+    , Idur REAL
+    )'''
+  self.executeQuery(query)
+
+  query = '''CREATE TABLE IF NOT EXISTS mapping
+    (id INTEGER
+    , seg_from INTEGER, fromType VARCHAR
+    , seg_to INTEGER,  toType VARCHAR
+    , lhsVar VARCHAR
+    , rhsExpr VARCHAR 
+    , comment TEXT
+    , PRIMARY KEY (seg_from, seg_to, lhsVar)
+    )'''
+  self.executeQuery(query)
+
+  query = '''CREATE TABLE IF NOT EXISTS property
+    (segment_group VARCHAR    -- Group of segment
+    , p_name VARCHAR            -- Name of property 
+    , p_type VARCHAR            -- type of property 
+    , p_value REAL              -- Value of property 
+    , p_unit  VARCHAR           -- Unit of property
+    , comment TEXT              -- Optional comment 
+    )'''
+  self.executeQuery(query)
+
+
+@ %def initDB
+
+\paragraph{Execute query}
+
+  This method make sure to roll-back if the query is not executed successfully.
+
+<<methods to deal with database>>=
+def executeQuery(self, query) :
+  with self.conn :
+    try :
+      self.cursor.execute(query)
+    except Exception as e :
+      debug.printDebug("ERR", "Failed to execute query with error {0}".format(e))
+      print("+ Query was: {0}".format(query))
+
+@ %def executeQuery 
+
