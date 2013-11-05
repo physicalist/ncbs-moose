@@ -1,0 +1,66 @@
+\section{MuMBL : A language for multi-scale modelling}
+\label{sec:mumbl}
+
+    This XML based language must be provided by user to do multi-scale modelling
+    with [[moose]]. An example is given below which is used during development
+    of this document. Mumble contains one or more domains of various type. Its
+    tentative grammar is below.
+
+\todo[inline]{Write the full grammar}
+
+\setlength{\grammarparsep}{20pt plus 1pt minus 1pt} % increase separation between rules
+\setlength{\grammarindent}{12em} % increase separation between LHS/RHS 
+\begin{grammar}
+<mumbl-file> ::= <domains>
+
+<domains> ::= <domains> \alt <domain> 
+
+<domain> ::= <electrical> \alt <chemical> \alt <simulation>
+\end{grammar}
+
+    An example of this script is following.
+
+%file:moose_xml/mumbl.xml
+<<mumbl.xml>>=
+<?xml version="1.0"?>
+<mumbl>
+  <<electrical domain>>
+  <<chemical domain>>
+  <<simulation domain>>
+</mumbl>
+@ %def mumbl.xml
+
+<<electrical domain>>=
+<!-- Electrical domain and its parameter -->
+<domain type="electrical">
+  <elecDt type="parameter">50e-6</elecDt>
+</domain>
+@ %def 
+
+<<chemical domain>>=
+<!-- Chemical domain and its parameters-->
+<domain type="chemical">
+  <chemDt type="parameter">1e-4</chemDt>
+</domain>
+@
+
+<<simulation domain>>=
+<domain type="simulation">
+  <startTime type="time">0</startTime>
+  <endTime type="time">100e-3</endTime>
+
+  <!-- Add plots here -->
+  <plots>
+    <plot2D type="line">
+      <yaxis scale="log" min="0" max="10" step="1">
+        <var name="Vm" of="soma" path="/model/elec/soma" />
+        <label>Voltage at Soma</label>
+      </yaxis>
+      <xaxis scale="log" min="0" max="100e-3" step="1e-3">
+        <var name="time" />
+        <label>Simulation time</label>
+      </xaxis>
+    </plot2D>
+  </plots>
+</domain>
+@

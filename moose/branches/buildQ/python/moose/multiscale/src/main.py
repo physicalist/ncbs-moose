@@ -58,7 +58,12 @@ argParser.add_argument('--meshml', metavar='meshml'
 argParser.add_argument('--adaptor', metavar='adaptor'
     , required = True
     , nargs = '+'
-    , help = 'AdaptorML for moose'
+    , help = 'Adaptor for moose'
+    )
+argParser.add_argument('--mumbl', metavar='mumbl'
+    , required = True
+    , nargs = '+'
+    , help = 'Lanaguge to do multi-scale modelling in moose'
     )
 args = argParser.parse_args()
 

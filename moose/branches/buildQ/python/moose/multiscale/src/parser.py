@@ -25,13 +25,14 @@ def parseAndValidateWithSchema(modelName, modelPath) :
       return parseWithoutValidation(modelName, modelPath)
     # Now we have the schema text 
     schema = etree.XMLSchema(etree.XML(schemaText))
-    xmlParser = etree.XMLParser(schema=schema)
+    xmlParser = etree.XMLParser(schema=schema, remove_comments=True)
     with open(modelPath, "r") as xmlTextFile :
         return etree.parse(xmlTextFile, xmlParser)
 
 def parseWithoutValidation(modelName, modelPath) :
+    xmlParser = etree.XMLParser(remove_comments=True)
     try :
-      xmlRootElem = etree.parse(modelPath)
+      xmlRootElem = etree.parse(modelPath, xmlParser)
     except Exception as e :
       debug.printDebug("ERROR", "Parsing failed. {0}".format(e))
       return 
@@ -51,6 +52,6 @@ def parseModels(commandLineArgs, validate=False) :
           # Simple parse the model without validating it with schema.
           modelXMLRootElem = parseWithoutValidation(model, modelPath)
         if modelXMLRootElem :
-          xmlRootElemDict[model].append(modelXMLRootElem)
+          xmlRootElemDict[model].append((modelXMLRootElem, modelPath))
   return xmlRootElemDict 
 

@@ -1,0 +1,87 @@
+\subsection{Transform XML to sqlite3 queries}
+\label{subsec:transform}
+
+<<methods to deal with database>>=
+<<segmentToQuery>>
+<<segmentGroupToQuery>>
+<<biophysicalPropertiesToQuery>>
+
+@ %def transform 
+
+\paragraph{Insert a segment into database}
+    
+    Element [[segment]] has the following schema in neuroML. While attribute
+    [[id]] is required, [[name]] is optional. Let's build a query to insert a
+    [[segment]] into database.
+
+\lstinputlisting[firstline=839,lastline=855
+,language=XML,frame=single
+,caption=XML schema of element \texttt{segment}]{./moose_xml/NeuroML_v2beta1.xsd}
+
+<<segmentToQuery>>=
+def segmentToQuery(self, segXML) :
+    values = dict()
+    for k in segXML.keys() :
+      values[k] = segXML.get(k)
+    # get parent, distal and proximal.
+    for elem in segXML :
+      if self.isTag('parent', elem) :
+        values['parent'] = elem.get('segment')
+        if elem.get('fractionAlong') :
+          values['fractionAlong'] =  elem.get('fractionAlong')
+      elif self.isTag('proximal', elem) :
+        for k in elem.keys() :
+          values["proximal_"+k.strip()] = elem.get(k)
+      elif self.isTag('distal', elem) :
+        for k in elem.keys() :
+          values["distal_"+k.strip()] = elem.get(k)
+    # build query
+    query = "INSERT OR REPLACE INTO topology ("
+    query += ",".join(values.keys())
+    query += ') VALUES (' + ", ".join(["'"+v.strip()+"'" for v in values.values()]) + ')'
+    return query
+@ %def segmentToQuery 
+
+\paragraph{Segment-group to query}
+  
+  Schema for this element is following.
+
+\lstinputlisting[firstline=874,lastline=892
+    ,language=XML,frame=single
+    ,caption=XML schema of element \texttt{segmentGroup}]{./moose_xml/NeuroML_v2beta1.xsd}
+
+<<segmentGroupToQuery>>=
+def insertSegmentGroupsIntoDB(self, segGrpXML) :
+    groupId = segGrpXML.get('id')
+    for k in segGrpXML :
+      query = "UPDATE OR REPLACE topology SET "
+      query += "segment_group='"+groupId+"' WHERE id='" + k.get('segment') + "'"
+      self.executeQuery(query)
+
+      if 'include' in k.keys() : 
+        debug.printDebug("WARN", "Element include is not implemented")
+      if 'path' in k.keys() : 
+        debug.printDebug("WARN", "Element path is not implemented")
+      if 'subTree' in k.keys() :
+        debug.printDebug("WARN", "Element subTree is not implemented")
+      if 'inhomogeneousParam' in k.keys() : 
+        debug.printDebug("WARN", "Element inhomogeneousParam is not implemented")
+
+@ %def segmentGroupToQuery
+
+\paragraph{Turn bio-physical properties to queries}
+
+<<biophysicalPropertiesToQuery>>=
+def insertBioPhysicalPropertiesIntoDB(self, elemXML) :
+    for c in elemXML.getchildren() :
+      if self.isTag('membraneProperties', c) :
+        for prop in c :
+          print prop
+      elif self.isTag('intracellularProperties', c) :
+        print "Intracellular properties"
+      elif self.isTag('extracellularProperties', c) :
+        print "Extracellular properties"
+      else :
+        debug.printDebug("WARN", "Unimplemented element {0}".format(c))
+
+@ %def biophysicalPropertiesToQuery 
