@@ -1,6 +1,8 @@
 \section{Construct a Database/AST from XML models}
 \label{sec:multiscale}
   
+\todo[inline]{Write some Design Rule Check (SRC) when building moose}
+
   This is our defining module and it contains the basic functionality of this
   application. All XML modules are parsed into a dictionary and this dictionary
   is passed to the object of class [[Multiscale]] which is the main class in
@@ -29,22 +31,28 @@
 \paragraph{A skeleton of class}
 
     This class will build a combined model which we can map on to [[moose]]
-    later by using [[mumbl]]. 
+    later by using [[mumbl]]. We build a graph object before we build a
+    [[moose]] objects.
   
-<<Definition of class [[Multiscale]]>>=
+<<Local imports>>=
 from lxml.builder import E
+import networkx as nx
 import nml_parser
 import cStringIO
 import sys
 sys.path.append("../../../python")
 import moose
+@
 
+<<Definition of class [[Multiscale]]>>=
 class Multiscale :
   
   def __init__(self, xmlDict) :
     self.xmlDict = xmlDict 
     self.xmlExpr = "//*[local-name() = $name]"
     self.rootModelPath = '/model'
+    # To hold the topology of the network 
+    self.mooseG = nx.MultiDiGraph()
     self.model = moose.Neutral(self.rootModelPath)
     <<initialize members>>
     debug.printDebug("INFO", "Object of class Multiscale intialized ...")
@@ -76,19 +84,20 @@ import into moose.
 
 \paragraph{Multi-scale Modelling in Biological Language (MuMBL)}
 
-   The [[neuroML]] is our starting point. Get the [[adaptorML]] and map things
-   onto moose. If more models appears then map them onto moose also and add
-   support to do so in [[adaptorML]]. Not everything can be mapped and user
-   inputs are also required to do modelling, this we do using a XML based
-   language [[MuMBL]]. The user must supply at least three XML files, neuroml
-   model, adaprorML and mumbl files. Both adaptor and mumbl are explained in
-   appendix.
+   The [[neuroML]] is our starting point. All other XML models are merged into
+   this one. Get the [[adaptorML]] and map this model onto moose. If more models
+   appears then map them onto moose also and add support to do so in
+   [[adaptorML]]. Not everything can be mapped and user inputs are also required
+   to do modelling, this we do using a XML based language [[MuMBL]]. The user
+   must supply at least three XML files, neuroml model, adaprorML and mumbl
+   files. Both adaptor and mumbl are explained in appendix.
 
    \todo[inline]{We have already parsed all of our xml files. We are using
    [[generateDS.py]] to generate python class from the XSD. Remove all etree
    based parsing later.}
 
 <<flow of executation>>=
+<<build network graph>>
 <<map onto moose>>
 <<setup simulation using mumbl>>
 <<simulate>>
@@ -98,85 +107,11 @@ import into moose.
 
   Lets map XML models onto moose.
 
-<<map onto moose>>=
+<<build network graph>>=
 # NeuroML to moose
-self.neuroML2Moose()
+<<neuroml to network>>
+<<sbml to network>>
+<<otherml to network>>
 @
 
-\paragraph{NeuroML to moose}
-
-  We need capabilities to map an ion-channel to moose.
-
-<<methods>>=            
-def mapIonChannel(self, ionChannelXml) :
-  debug.printDebug("INFO"
-    , "Mapping ion-channel {0} onto moose".format(ionChannelXml.tag))
-  type = ionChannelXml.get('type')
-  id = ionChannelXml.get('id')
-
-def mapIncludedFile(self, filePath) :
-  debug.printDebug("INFO", "Mapping included file {0}".format(filePath))
-  incXml = etree.parse(filePath)
-  for ionChannel in incXml.xpath(self.xmlExpr, name="ionChannel") :
-    self.mapIonChannel(ionChannel)
-
-def neuroML2Moose(self) :
-  debug.printDebug("INFO", "Mapping neuroML to moose")
-  nmlElems = self.xmlDict['nml']
-  if len(nmlElems) > 1 :
-    debug.printDebug("ERR", "More than one nueroml file is not supported yet.")
-    self.exit()
-  else : 
-    nmlElem, nmlPath = nmlElems[0]
-  self.nml = nml_parser.parse(nmlPath, silence=True)
-  <<map morphology>>
-  <<map ionchannels>>
-@ %def neuroML2Moose
-
-<<map morphology>>=
-for cell in self.nml.cell :
-  morphology = cell.morphology 
-  compartmentDict = dict()
-  for segment in morphology.segment :
-    if not segment.parent :
-      compartmentPath = os.path.join(self.rootModelPath, segment.name)
-      comp = moose.Compartment(compartmentPath)
-      compartmentDict[segment.id] = comp
-    else  :
-      parentPath = compartmentDict[segment.parent.segment].path
-      comp = moose.Compartment(os.path.join(parentPath, segment.name))
-      compartmentDict[segment.id] = comp
-    proximalDiameter = 0.0
-    distalDiameter = 0.0
-    if segment.proximal :
-      comp.x0 = segment.proximal.x
-      comp.y0 = segment.proximal.y
-      comp.z0 = segment.proximal.z 
-      proximalDiameter = segment.proximal.diameter
-    if segment.distal :
-      comp.x = segment.distal.x
-      comp.y = segment.distal.y
-      comp.z = segment.distal.z 
-      distalDiameter = segment.distal.diameter 
-    
-    if proximalDiameter > 0.0 and distalDiameter > 0.0 :
-      comp.diameter = (proximalDiameter + distalDiameter) / 2
-    elif proximalDiameter > 0.0 :
-      comp.distalDiameter = proximalDiameter 
-    else : 
-      comp.diameter = distalDiameter 
-    # check if this comparment has a parent 
-   
-@ %def map_morphology
-
-<<map ionchannels>>=
-expr = self.xmlExpr
-modelDir = os.path.dirname(nmlPath)
-for i in  nmlElem.xpath(expr, name="include") :
-  incFile = os.path.join(modelDir, i.get('href'))
-  if os.path.isfile(incFile) :
-    self.mapIncludedFile(incFile)
-  else :
-    debug.printDebug("WARN", "Included file {0} does not exists".format(incFile))
-
-@ %def map_ionchannels
+%\include{neuroml2network.nw}
