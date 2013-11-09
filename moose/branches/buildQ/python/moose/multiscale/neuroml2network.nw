@@ -1,0 +1,171 @@
+\subsection{Map neuroML to network}
+    
+  Both topology or the network and relations among them are kept in a graph
+  [[mooseG]]. Merge all XML models into this graph, later use adaptorML to
+  transform this graph to moose scripts. We can do a dfs and check for some
+  properties easily.
+
+\paragraph{Network graph}
+  
+  This is a netoworkx library [[MultiDiGraph]] graph. Adding parallel edges and
+  self loops are allowed in this graph. And we can attach any hash-able data to
+  nodes and edges. This is one data-structure to rule them all and no other
+  data-structure is maintained. All information is attached either to nodes or
+  edges. We explain them as soon as we use them.
+
+  The basic idea is to create one node for each compartment and cluster them
+  according to the cell they are part of. An outgoing edge $a \rightarrow b$
+  says that there is relation between $b$ and  $a$ and edge describe that
+  relation e.g. some change in $a$ causes a change in $b$.
+
+  Each compartment must have a unique label. And each compartment can only
+  belong to one cell.
+
+<<neuroml to network>>=
+self.neuroml2Network(test=False)
+@ %def neuroml2Network 
+
+\begin{itemize}
+\item Convert morphology to network.
+\item Merge other XML model to this network.
+\end{itemize}
+
+<<methods>>=
+def neuroml2Network(self, test=False) :
+  debug.printDebug("INFO", "Converting neuroml to netowrk graph")
+  nmlElems = self.xmlDict['nml']
+  if len(nmlElems) > 1 :
+    debug.printDebug("ERR", "More than one nueroml file is not supported yet.")
+    self.exit()
+  else : 
+    nmlElem, nmlPath = nmlElems[0]
+  self.nml = nml_parser.parse(nmlPath, silence=True)
+  <<add cell morphology>>
+@ %def neuroML2Moose
+
+<<Local imports>>=
+import collections 
+import os
+import helper.graph_methods as helper
+@ 
+
+<<add cell morphology>>=
+if not self.nml.network :
+  debug.printDebug("WARN", "No network found in model. Assuming a single"+
+    " cell model. ")
+  <<build a single cell model>>
+else :
+  <<build network>>
+
+debug.printDebug("INFO", "Dumping graph into a dot file")
+helper.write_dot(self.mooseG, 'graphs/moose.dot')
+@
+
+\paragraph{Cell}
+
+   In [[neuroml]], a cell schema is following.
+
+\input|"./fragment.py CellTypes 19"
+\input|"./fragment.py Cell 10"
+
+<<build a single cell model>>=
+for cell in self.nml.cell :
+  self.insertCellIntoNetwork(cell) 
+@
+
+\paragraph{[[insertCellIntoNetwork]]}
+
+    To insert a new segment into a graph would be tricky. Each segment inside a
+    cell has unique id but two segments in different cells might have same ids.
+    To avoid this, we identify each segment with a tuple of [[(cellid,
+    segmentid)]].
+
+<<methods>>=
+def insertCellIntoNetwork(self, cell, test=False) :
+  '''
+  This function maps a cell onto Moose simulator.
+  '''
+  cellId = cell.get_id()
+  cellMetaId = cell.get_metaid()
+  # get morphology and build the network 
+  for segment in cell.morphology.segment :
+    # Add this segment to graph, segment ids are unique within a cell.
+    nodeId = (cellId, segment.id)
+    self.mooseG.add_node(nodeId, label=segment.name)
+    if segment.proximal :
+      self.mooseG.node[nodeId]['proximal'] = (segment.proximal.x
+        , segment.proximal.y, segment.proximal.z, segment.proximal.diameter)
+    if segment.distal :
+      self.mooseG.node[nodeId]['distal'] = (segment.distal.x
+        , segment.distal.y, segment.distal.z, segment.distal.diameter)
+    if segment.parent :
+      # if parent is given and proximal is not specified, then use distal 
+      # of the parent as proximal of child.
+      parentNodeId = (cellId, segment.parent.segment)
+      self.mooseG.node[nodeId]['proximal'] = self.mooseG.node[parentNodeId]['distal']
+      self.mooseG.add_edge(parentNodeId, nodeId)
+
+  # Groups the segment 
+  if cell.morphology.segmentGroup :
+    for grp in cell.morphology.segmentGroup :
+      for member in grp.member :
+        nodeId = (cellId, member.segment)
+        self.mooseG.node[nodeId]['segmentGroup'] = grp.id 
+
+  if cell.biophysicalProperties :
+    <<map membrane properties onto compartment>>
+
+@ %def insertCellIntoNetwork
+
+<<build network>>=
+debug.printDebug("INFO", "Build network")
+
+@ %def build_model
+
+\paragraph{Adding membrane properties on to compartment}
+
+    Lets write a generic function [[attachToCompartment]] which we will use to
+    attach various thingies to a compartment (node of a graph).
+
+<<methods>>=
+def attachToCompartment(self, cellId, element, value) :
+  if element.segment :
+    # only for a segment 
+    self.mooseG.node[(cellId, int(element.segment))]['channelPopulation'] = \
+      value
+  elif element.segmentGroup and element.segmentGroup != "all" :
+    for n in self.mooseG.nodes() :
+      if self.mooseG.node[n]['segmentGroup'] == element.segmentGroup :
+        self.mooseG.node[n]['channelPopulation'] = value 
+  else : # Attach on all nodes 
+    for n in self.mooseG.nodes() :
+      self.mooseG.node[n]['channelPopulation'] = value
+
+@ %def attachToCompartment 
+
+<<map membrane properties onto compartment>>=
+prop = cell.biophysicalProperties 
+if prop.membraneProperties :
+  memProp = prop.membraneProperties 
+  if memProp.channelDensity :
+    for cd in memProp.channelDensity :
+      cdp = {}
+      # fill dict here 
+      cdp['id'] = cd.get_id()
+      cdp['ionChannel'] = cd.get_ionChannel()
+      cdp['condDensity'] = cd.get_condDensity()
+      self.attachToCompartment(cellId, cd, cdp)
+      
+  if memProp.channelPopulation :
+    for cp in memProp.channelPopulation :
+      chp = {}
+      chp['id'] = cp.get_id()
+      chp['ionChannel'] = cp.get_ionChannel()
+      chp['number'] = cp.get_number()
+      self.attachToCompartment(cellId, cp, chp)
+
+  if memProp.specificCapacitance :
+    for sc in memProp.specificCapacitance :
+      self.attachToCompartment(cellId, sc, sc.value)
+
+@ %def map membrane 
