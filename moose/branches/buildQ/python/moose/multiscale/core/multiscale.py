@@ -2,24 +2,21 @@
 import os 
 import sys 
 import logging 
-import debug 
+import debug.debug as debug
 import inspect
-
-logger = logging.getLogger('multiscale')
 from lxml import etree
-
-from lxml.builder import E
-import networkx as nx
-import nml_parser
-import cStringIO
-import sys
-import unittest as ut
 sys.path.append("../../../python")
 import moose
+
+logger = logging.getLogger('multiscale')
+
+import networkx as nx
+import parser.nml_parser as nml_parser
 import collections 
-import os
 import helper.graph_methods as graph_helper
 import helper.xml_methods as xml_helper
+
+
 class Multiscale :
   
   def __init__(self, xmlDict) :
@@ -52,8 +49,34 @@ class Multiscale :
       for cellXml in cellList :
         self.insertCellIntoNetwork(cellXml) 
     else :
-      debug.printDebug("INFO", "Build network")
+      self.networkG = nx.MultiDiGraph()
+      for network in networkElem :
+        networkId = network.get('id')
+        for nw in network :
+          if xml_helper.isTaggedWith(nw, "population") :
+            try :
+              populationId = nw.get('id')
+              if 'cell' in nw.keys() :
+                typeOfPopulation = 'cell'
+                populationId = nw.get('cell')
+              elif 'network' in nw.keys() :
+                typeOfPopulation = 'network'
+                populationId = nw.get('network')
+              elif 'component' in nw.keys() :
+                debug.printDebug("DEVL", "Component in network is not implmeneted yet.")
+              else : pass
+              print typeOfPopulation, populationId 
+            except :
+              debug.printDebug("WARN", "Failed adding network to networkG")
+              print(sys.exc_info())
+                
 
+          else :
+            debug.printDebug("WARN", "{0} not supported yet.".format(nw.tag))
+
+
+
+          
 
     debug.printDebug("INFO", "Dumping graph into a dot file")
     graph_helper.write_dot(self.mooseG, 'graphs/moose.dot')

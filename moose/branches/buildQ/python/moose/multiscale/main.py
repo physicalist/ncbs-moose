@@ -1,64 +1,90 @@
-#!/usr/bin/env python2.7
-
-# Filename       : main.py
-# Created on     : Fri 06 Sep 2013 08:20:50 PM IST
-# Author         : Dilawar Singh
-# Email          : dilawars@ncbs.res.in
-#
-# Description    : Entry point if this application is to be run in stand-alone
-#   mode.
-#
-# Logs           :
-
-import os
-import sys
-import argparse
+# Basic imports
+import os 
+import sys 
+import logging 
 import debug.debug as debug
-import logging
-import parser.parser as parser
-import core.moose_builder as moose_builder
-
-def pathsAreOk(paths) :
-  ''' Verify if path exists and are valid. '''
-  if paths.nml :
-    if os.path.isfile(paths.nml) : pass
-    else :
-      debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.nml))
-      return False
-  if paths.sbml :
-    if os.path.isfile(paths.sbml) : pass 
-    else :
-      debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.sbml))
-      return False
-  return True
-
+import inspect
+import core.multiscale as multiscale 
 
 logger = logging.getLogger('multiscale')
+from lxml import etree
 
-if __name__ == "__main__" :
-  # This section build the command line parser
-  argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
-  argParser.add_argument('--nml', metavar='nmlpath'
-      , help = 'File having neuron described in neuroML'
-      )
-  argParser.add_argument('--sbml', metavar='sbmlpath'
-      , help = 'File having neuron described in SBML'
-      , required = False
-      )
-  args = argParser.parse_args()
+def ifPathsAreValid(paths) :
+  ''' Verify if path exists and are readable. '''
+  if paths :
+    paths = vars(paths)
+    for p in paths :
+      if not paths[p] : continue
+      for path in paths[p] :
+        if not path : continue
+        if os.path.isfile(path) : pass
+        else :
+          debug.printDebug("ERROR"
+            , "Filepath {0} does not exists".format(path))
+          return False
+      # check if file is readable 
+      if not os.access(path, os.R_OK) :
+        debug.printDebug("ERROR", "File {0} is not readable".format(path))
+  return True
 
-  # There must be at least one model present
-  if args.nml or args.sbml : 
-    if pathsAreOk(args) :
-      logger.info("Started parsing XML models")
-      debug.printDebug("INFO", "Started parsing XML models")
-      etreeList = parser.parseModels(args)
+# standard module for building a command line parser.
+import argparse
 
-      # Build the storehouse so that moose can simulate it.
-      moose_builder.buildMooseObjects(etreeList)
-    else :
-      debug.printDebug("FATAL", "One or more model file does not exists.")
-      sys.exit()
+# This section build the command line parser
+argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
+argParser.add_argument('--nml', metavar='nmlpath'
+    , required = True
+    , nargs = '+'
+    , help = 'nueroml model'
+    )
+argParser.add_argument('--sbml', metavar='nmlpath'
+    , nargs = '*'
+    , help = 'sbml model'
+    )
+argParser.add_argument('--mechml', metavar='mechml'
+    , nargs = '*'
+    , help = 'mechml model'
+    )
+argParser.add_argument('--chml', metavar='channelml'
+    , nargs = '*'
+    , help = 'Channelml model'
+    )
+argParser.add_argument('--3dml', metavar='3dml'
+    , nargs = '*'
+    , help = '3DMCML model'
+    )
+argParser.add_argument('--meshml', metavar='meshml'
+    , nargs = '*'
+    , help = 'MeshML model'
+    )
+argParser.add_argument('--adaptor', metavar='adaptor'
+    , required = True
+    , nargs = '+'
+    , help = 'Adaptor for moose'
+    )
+argParser.add_argument('--mumbl', metavar='mumbl'
+    , required = True
+    , nargs = '+'
+    , help = 'Lanaguge to do multi-scale modelling in moose'
+    )
+args = argParser.parse_args()
+
+import parser.parser as parser 
+
+if args : 
+  if ifPathsAreValid(args) :
+    logger.info("Started parsing XML models")
+    debug.printDebug("INFO", "Started parsing XML models")
+    etreeDict = parser.parseModels(args, validate=False)
+    debug.printDebug("INFO", "Parsing of models is done")
+    multiScaleObj = multiscale.Multiscale(etreeDict)
+    multiScaleObj.buildMultiscaleModel()
+    print("Done!")
   else :
-    debug.printDebug("FATAL", "Please provide at least one model. None given.")
+    debug.printDebug("FATAL", "One or more model file does not exists.")
     sys.exit()
+else :
+  debug.printDebug("FATAL", "Please provide at least one model. None given.")
+  sys.exit()
+
+

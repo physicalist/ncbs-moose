@@ -434,7 +434,7 @@ def neuroml2Network(self, test=False) :
   else : 
     nmlElem, nmlPath = nmlElems[0]
   self.nml = nmlElem
-  <<add cell morphology>>
+  <<add nml element>>
 @ %def neuroML2Moose
 
 <<Local imports>>=
@@ -444,14 +444,17 @@ import helper.graph_methods as graph_helper
 import helper.xml_methods as xml_helper
 @ 
 
-<<add cell morphology>>=
+<<add nml element>>=
 networkElem = xml_helper.getElement(self.nml, self.xmlExpr, "network")
 if not  networkElem :
   debug.printDebug("WARN", "No network found in model. Assuming a single"+
     " cell model. ", inspect.currentframe())
   <<build a single cell model>>
 else :
-  <<build network>>
+  self.networkG = nx.MultiDiGraph()
+  for network in networkElem :
+    networkId = network.get('id')
+    <<build network>>
 
 debug.printDebug("INFO", "Dumping graph into a dot file")
 graph_helper.write_dot(self.mooseG, 'graphs/moose.dot')
@@ -531,9 +534,37 @@ def insertCellIntoNetwork(self, cell, test=False) :
 
 @ %def insertCellIntoNetwork
 
-<<build network>>=
-debug.printDebug("INFO", "Build network")
+\paragraph{Building network}
 
+    Building network is tricky. We create a graph for each population in network
+    and we merge them later into one big-graph [[self.mooseG]].
+
+<<build network>>=
+for nw in network :
+  if xml_helper.isTaggedWith(nw, "population") :
+    try :
+      populationId = nw.get('id')
+      if 'cell' in nw.keys() :
+        typeOfPopulation = 'cell'
+        populationId = nw.get('cell')
+      elif 'network' in nw.keys() :
+        typeOfPopulation = 'network'
+        populationId = nw.get('network')
+      elif 'component' in nw.keys() :
+        debug.printDebug("DEVL", "Component in network is not implmeneted yet.")
+      else : pass
+      print typeOfPopulation, populationId 
+    except :
+      debug.printDebug("WARN", "Failed adding network to networkG")
+      print(sys.exc_info())
+        
+
+  else :
+    debug.printDebug("WARN", "{0} not supported yet.".format(nw.tag))
+
+
+
+  
 @ %def build_model
 
 \paragraph{Adding membrane properties on to compartment}
