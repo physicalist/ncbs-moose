@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<mumbl>
+  <!-- Electrical domain and its parameter -->
+  <domain type="electrical">
+    <elecDt type="parameter">50e-6</elecDt>
+  </domain>
+  <!-- Chemical domain and its parameters-->
+  <domain type="chemical">
+    <chemDt type="parameter">1e-4</chemDt>
+  </domain>
+  <domain type="simulation">
+    <startTime type="time">0</startTime>
+    <endTime type="time">100e-3</endTime>
+
+    <!-- Add plots here -->
+    <plots>
+      <plot2D type="line">
+        <yaxis scale="log" min="0" max="10" step="1">
+          <var name="Vm" of="soma" path="/model/elec/soma" />
+          <label>Voltage at Soma</label>
+        </yaxis>
+        <xaxis scale="log" min="0" max="100e-3" step="1e-3">
+          <var name="time" />
+          <label>Simulation time</label>
+        </xaxis>
+      </plot2D>
+    </plots>
+  </domain>
+</mumbl>

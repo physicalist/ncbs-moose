@@ -1,25 +1,38 @@
 \subsection{Map neuroML to network}
     
-  Both topology or the network and relations among them are kept in a graph
-  [[mooseG]]. Merge all XML models into this graph, later use adaptorML to
-  transform this graph to moose scripts. We can do a dfs and check for some
-  properties easily.
-
+  Topology of the network is encoded in a networkx graph [[mooseG]] and we are
+  attaching XML element to its node.  Merge all XML models into this graph,
+  later use adaptorML to transform this graph to moose scripts. 
+  
 \paragraph{Network graph}
+\label{mooseG}
   
   This is a netoworkx library [[MultiDiGraph]] graph. Adding parallel edges and
   self loops are allowed in this graph. And we can attach any hash-able data to
-  nodes and edges. This is one data-structure to rule them all and no other
-  data-structure is maintained. All information is attached either to nodes or
-  edges. We explain them as soon as we use them.
+  nodes and edges. Graph is one data-structure build to rule them all. No other
+  data-structure is maintained in this application for global reading and
+  writing. All information is attached to nodes, edges or graphs. We explain
+  them when we encounter them.
 
   The basic idea is to create one node for each compartment and cluster them
-  according to the cell they are part of. An outgoing edge $a \rightarrow b$
-  says that there is relation between $b$ and  $a$ and edge describe that
-  relation e.g. some change in $a$ causes a change in $b$.
+  according to the cell they are part of. Each node has a property called
+  [[segmentGroup]]. When we are dumping the graph into a graphviz file using
+  methods [[write_dot]] written in [[src/helper/graph_methods.py]] file, we are
+  coloring nodes according to their segment group. 
+  
+  An outgoing edge $a \rightarrow b$ says that there is relation between $b$ and
+  $a$ and edge describe that relation e.g. some change in $a$ causes a change in
+  $b$. Properties attached to the edge are essentially relations. We color the
+  edges according to properties.
+
+\todo[inline]{Implement this test}
+\begin{test}{Membership test}
+\label{test:membership}
 
   Each compartment must have a unique label. And each compartment can only
   belong to one cell.
+
+\end{test}
 
 <<neuroml to network>>=
 self.neuroml2Network(test=False)
@@ -39,81 +52,101 @@ def neuroml2Network(self, test=False) :
     self.exit()
   else : 
     nmlElem, nmlPath = nmlElems[0]
-  self.nml = nml_parser.parse(nmlPath, silence=True)
+  self.nml = nmlElem
   <<add cell morphology>>
 @ %def neuroML2Moose
 
 <<Local imports>>=
 import collections 
 import os
-import helper.graph_methods as helper
+import helper.graph_methods as graph_helper
+import helper.xml_methods as xml_helper
 @ 
 
 <<add cell morphology>>=
-if not self.nml.network :
+networkElem = xml_helper.getElement(self.nml, self.xmlExpr, "network")
+if not  networkElem :
   debug.printDebug("WARN", "No network found in model. Assuming a single"+
-    " cell model. ")
+    " cell model. ", inspect.currentframe())
   <<build a single cell model>>
 else :
   <<build network>>
 
 debug.printDebug("INFO", "Dumping graph into a dot file")
-helper.write_dot(self.mooseG, 'graphs/moose.dot')
+graph_helper.write_dot(self.mooseG, 'graphs/moose.dot')
 @
 
 \paragraph{Cell}
 
-   In [[neuroml]], a cell schema is following.
+   Following is the fragment of schema of [[CellType]]. Zero or more element of
+   this type must be there in the document.
 
 \input|"./fragment.py CellTypes 19"
 \input|"./fragment.py Cell 10"
 
 <<build a single cell model>>=
-for cell in self.nml.cell :
-  self.insertCellIntoNetwork(cell) 
+cellList = xml_helper.getElement(self.nml, self.xmlExpr, "cell")
+for cellXml in cellList :
+  self.insertCellIntoNetwork(cellXml) 
 @
 
 \paragraph{[[insertCellIntoNetwork]]}
 
-    To insert a new segment into a graph would be tricky. Each segment inside a
-    cell has unique id but two segments in different cells might have same ids.
-    To avoid this, we identify each segment with a tuple of [[(cellid,
-    segmentid)]].
+    Each segment inside a cell has unique id but two segments in two different
+    cells might have same id.  To avoid this, we identify each segment with a
+    tuple of [[(cellid, segmentid)]].
 
 <<methods>>=
 def insertCellIntoNetwork(self, cell, test=False) :
   '''
-  This function maps a cell onto Moose simulator.
+  This function takes a XML representation of cell and insert in onto a graph.
   '''
-  cellId = cell.get_id()
-  cellMetaId = cell.get_metaid()
+  cellId = cell.get('id')
+  cellMetaId = cell.get('metaid')
   # get morphology and build the network 
-  for segment in cell.morphology.segment :
-    # Add this segment to graph, segment ids are unique within a cell.
-    nodeId = (cellId, segment.id)
-    self.mooseG.add_node(nodeId, label=segment.name)
-    if segment.proximal :
-      self.mooseG.node[nodeId]['proximal'] = (segment.proximal.x
-        , segment.proximal.y, segment.proximal.z, segment.proximal.diameter)
-    if segment.distal :
-      self.mooseG.node[nodeId]['distal'] = (segment.distal.x
-        , segment.distal.y, segment.distal.z, segment.distal.diameter)
-    if segment.parent :
-      # if parent is given and proximal is not specified, then use distal 
-      # of the parent as proximal of child.
-      parentNodeId = (cellId, segment.parent.segment)
-      self.mooseG.node[nodeId]['proximal'] = self.mooseG.node[parentNodeId]['distal']
-      self.mooseG.add_edge(parentNodeId, nodeId)
+  for elem in cell :
+    # Keep the type of segments in a dictionary.
+    if xml_helper.isTaggedWith(elem, "morphology") :
+      for e in elem :
+        if xml_helper.isTaggedWith(e, "segment") :
+          nodeId = (cellId, e.get('id'))
+          self.mooseG.add_node(nodeId, label=e.get('name'))
+          # Attach the segment to the node
+          self.mooseG.node[nodeId]['segment'] = e
+          parents = e.xpath("./*[local-name()='parent'][position()=1]") 
+          if parents :
+            if test :
+              assert len(parents) == 1
+            parent = parents[0]
+            parentNodeId =(cellId, parent.get('segment'))
+            try :
+              self.mooseG.add_edge(parentNodeId, nodeId)
+            except :
+              debug.printDebug("ERR", sys.exc_info())
+            
+        elif xml_helper.isTaggedWith(e, "segmentGroup") :
+          groupId = e.get('id')
+          self.mooseG.graph['gProp']['segmentGroup'].add(groupId)
+          for sg in e :
+            if xml_helper.isTaggedWith(sg, "member") :
+              nodeId = (cellId, sg.get('segment'))
+              self.mooseG.node[nodeId]['segmentGroup'] = groupId
+            else :
+              debug.printDebug("NOTE", "This tag {0} is not supported.".format(sg.tag))
 
-  # Groups the segment 
-  if cell.morphology.segmentGroup :
-    for grp in cell.morphology.segmentGroup :
-      for member in grp.member :
-        nodeId = (cellId, member.segment)
-        self.mooseG.node[nodeId]['segmentGroup'] = grp.id 
-
-  if cell.biophysicalProperties :
-    <<map membrane properties onto compartment>>
+    elif xml_helper.isTaggedWith(elem, "biophysicalProperties") :
+      for prop in elem :
+        if xml_helper.isTaggedWith(prop, "membraneProperties") :
+          <<attach membrane properties to compartment>>
+        elif  xml_helper.isTaggedWith(prop, "intracellularProperties") :
+          <<attach intracellular properties to compartment>>
+        elif xml_helper.isTaggedWith(prop, "extracellularProperties") :
+          print "Extra-cellular properties"
+    elif xml_helper.isTaggedWith(elem, "notes") : pass
+    elif xml_helper.isTaggedWith(elem, "annotation") : pass
+    else :
+      debug.printDebug("WARN", "Element {0} not supported yet.".format(elem.tag)
+        , inspect.currentframe())
 
 @ %def insertCellIntoNetwork
 
@@ -128,44 +161,49 @@ debug.printDebug("INFO", "Build network")
     attach various thingies to a compartment (node of a graph).
 
 <<methods>>=
-def attachToCompartment(self, cellId, element, value) :
-  if element.segment :
-    # only for a segment 
-    self.mooseG.node[(cellId, int(element.segment))]['channelPopulation'] = \
-      value
-  elif element.segmentGroup and element.segmentGroup != "all" :
-    for n in self.mooseG.nodes() :
-      if self.mooseG.node[n]['segmentGroup'] == element.segmentGroup :
-        self.mooseG.node[n]['channelPopulation'] = value 
-  else : # Attach on all nodes 
-    for n in self.mooseG.nodes() :
-      self.mooseG.node[n]['channelPopulation'] = value
-
+def attachToCompartment(self, cellId, xmlElem) :
+  debug.printDebug("INFO", "Attaching properties to element")
+  
 @ %def attachToCompartment 
 
-<<map membrane properties onto compartment>>=
-prop = cell.biophysicalProperties 
-if prop.membraneProperties :
-  memProp = prop.membraneProperties 
-  if memProp.channelDensity :
-    for cd in memProp.channelDensity :
-      cdp = {}
-      # fill dict here 
-      cdp['id'] = cd.get_id()
-      cdp['ionChannel'] = cd.get_ionChannel()
-      cdp['condDensity'] = cd.get_condDensity()
-      self.attachToCompartment(cellId, cd, cdp)
-      
-  if memProp.channelPopulation :
-    for cp in memProp.channelPopulation :
-      chp = {}
-      chp['id'] = cp.get_id()
-      chp['ionChannel'] = cp.get_ionChannel()
-      chp['number'] = cp.get_number()
-      self.attachToCompartment(cellId, cp, chp)
+\paragraph{Attaching properties}
 
-  if memProp.specificCapacitance :
-    for sc in memProp.specificCapacitance :
-      self.attachToCompartment(cellId, sc, sc.value)
+    Properties are attached as tuple. First element of tuple is the name of the
+    property and the second element of the tuple is the sub-type of the
+    property.
 
-@ %def map membrane 
+<<attach membrane properties to compartment>>=
+debug.printDebug("INFO", "Attaching properties to membrane")
+for e in prop :
+  propName = xml_helper.getTagName(e.tag)
+  if e.get('segment') and e.get('segment') != 'all' :
+    nodeId = (cellId, e.get('segment'))
+    self.mooseG.node[nodeId][('membraneProperties', propName)] = e
+  elif e.get('segmentGroup') :
+    group = e.get('segmentGroup')
+    for n in self.mooseG.nodes() :
+      if self.mooseG.node[n]['segmentGroup'] == group :
+        self.mooseG.node[n][('membraneProperties', propName)] = e
+      else : pass
+  else :
+    for n in self.mooseG.nodes() :
+      self.mooseG.node[n][('membraneProperties', propName)] = e
+@ %def membrane_properties_to_comparment
+
+\paragraph{Attach intracellular properties to the compartment}
+
+    These ion channels are present in all comparments of a cell. Attach them to
+    all compartments which are inside this cell. Unfortunately neuroML does not
+    have a fixed SI units and that will create a headache. Write a function
+    which converts these units to a SI units. A function to do this task
+    [[toSIUnits]] is written in [[./src/helper/xml_methods.py]] file.
+
+<<attach intracellular properties to compartment>>=
+debug.printDebug("INFO", "Attaching intracellular properties")
+for e in prop :
+  propId = xml_helper.getTagName(e.tag)
+  for n in self.mooseG.nodes() :
+    if n[0] == cellId :
+      self.mooseG.node[n][('intracellularProperties', propId)] = e
+
+@ %def intracellular_properites_to_compartment

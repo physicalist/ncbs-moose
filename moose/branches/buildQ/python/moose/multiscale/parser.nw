@@ -53,14 +53,14 @@ def parseModels(commandLineArgs, validate=False) :
   contains the schema we are going to build and use in this application. Its
   path is [[./moose_xml/moose.xsd]].
 
- \todo[size=\small]{Write moose.xsd schema in ./moose\_xml/moose.xsd path.}
-
 <<helper functions>>=
 def parseAndValidateWithSchema(modelName, modelPath) :
     
     prefixPath = ''
     if modelName == 'xml' :
-      schemaPath = os.path.join(prefixPath, 'moose_xml/moose.xsd')
+      schemaPath = os.path.join(prefixPath, 'schema/moose/moose.xsd')
+      if not os.path.isfile(schemaPath) :
+        debug.printDebug("WARN", "Schema {0} does not exists..".format(schemaPath))
 
     try :
       schemaH = open(schemaPath, "r")

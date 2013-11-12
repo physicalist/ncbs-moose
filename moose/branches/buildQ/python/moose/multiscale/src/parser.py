@@ -3,6 +3,7 @@ import os
 import sys 
 import logging 
 import debug 
+import inspect
 
 logger = logging.getLogger('multiscale')
 from lxml import etree
@@ -12,7 +13,9 @@ def parseAndValidateWithSchema(modelName, modelPath) :
     
     prefixPath = ''
     if modelName == 'xml' :
-      schemaPath = os.path.join(prefixPath, 'moose_xml/moose.xsd')
+      schemaPath = os.path.join(prefixPath, 'schema/moose/moose.xsd')
+      if not os.path.isfile(schemaPath) :
+        debug.printDebug("WARN", "Schema {0} does not exists..".format(schemaPath))
 
     try :
       schemaH = open(schemaPath, "r")

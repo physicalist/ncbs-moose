@@ -3,6 +3,7 @@ import os
 import sys 
 import logging 
 import debug 
+import inspect
 
 logger = logging.getLogger('multiscale')
 from lxml import etree
