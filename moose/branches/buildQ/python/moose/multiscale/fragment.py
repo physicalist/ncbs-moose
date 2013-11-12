@@ -9,7 +9,7 @@ __log__     = """
 
 import re 
 import sys 
-filename = "./moose_xml/NeuroML_v2beta1.xsd"
+filename = "./schema/neuroml/v2/NeuroML_v2beta1.xsd"
 tag = sys.argv[1]
 totalLine = int(sys.argv[2])
 

@@ -9,10 +9,9 @@
   this module. We also have [[adaptorML]] file parsed in dictionary. 
 
 \begin{remark}{Why AST/Database?}
-    
-  In one previous version, [[sqlite3]] database was used to integrate all XML
-  models. We no longer use [[sqlite3]] database but rather integrate all XML
-  files into one XML file.
+
+    AST is maintained now in [[networkX]] graph. We are attaching XML-elements
+    to the nodes of the graph.
 
 \end{remark}
  
@@ -40,6 +39,7 @@ import networkx as nx
 import nml_parser
 import cStringIO
 import sys
+import unittest as ut
 sys.path.append("../../../python")
 import moose
 @
@@ -49,11 +49,12 @@ class Multiscale :
   
   def __init__(self, xmlDict) :
     self.xmlDict = xmlDict 
+    # This expression is useful for getting an element which is not sensitive to
+    # name-space.
     self.xmlExpr = "//*[local-name() = $name]"
     self.rootModelPath = '/model'
-    # To hold the topology of the network 
-    self.mooseG = nx.MultiDiGraph()
-    self.model = moose.Neutral(self.rootModelPath)
+
+
     <<initialize members>>
     debug.printDebug("INFO", "Object of class Multiscale intialized ...")
 
@@ -73,28 +74,28 @@ class Multiscale :
   # Write down the tests, whenever needed.
   <<tests>>
 
-
-
 @ %def [[Multiscale]]
 
-Before we move on, lets discuss some models developed by others we need to
-import into moose.
+\paragraph{Initialize the main data-structures}
 
-%\include{proto.nw}
+    A graph to hold the network and properties and a moose-object. 
 
-\paragraph{Multi-scale Modelling in Biological Language (MuMBL)}
+<<initialize members>>=
+# Initialize some attributes also.
+self.mooseG = nx.MultiDiGraph(gProp={'segmentGroup' : set()})
+self.model = moose.Neutral(self.rootModelPath)
+@ %def initialization
 
-   The [[neuroML]] is our starting point. All other XML models are merged into
-   this one. Get the [[adaptorML]] and map this model onto moose. If more models
-   appears then map them onto moose also and add support to do so in
-   [[adaptorML]]. Not everything can be mapped and user inputs are also required
-   to do modelling, this we do using a XML based language [[MuMBL]]. The user
-   must supply at least three XML files, neuroml model, adaprorML and mumbl
-   files. Both adaptor and mumbl are explained in appendix.
+\paragraph{Multi-scale Modelling in Biological-system, Language (MuMBL)}
 
-   \todo[inline]{We have already parsed all of our xml files. We are using
-   [[generateDS.py]] to generate python class from the XSD. Remove all etree
-   based parsing later.}
+   The [[neuroML]] is our starting point; parse this model and build a graph.
+   Other XML models are merged into this one. Get the [[adaptorML]] and map this
+   graph onto moose. If more models appears then map them onto moose also and
+   add support to do so in [[adaptorML]]. Not everything can be mapped and user
+   inputs are also required to do modelling, this we do using a XML based
+   language [[MuMBL]]. The user must supply at least three XML files, neuroml
+   model, adaprorML and mumbl files. Both adaptor and mumbl are explained in
+   appendix.
 
 <<flow of executation>>=
 <<build network graph>>

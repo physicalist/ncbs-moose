@@ -51,6 +51,7 @@
 \newtheorem{remark}{Remark}
 \newtheorem{note}{Note}
 \newtheorem{theorem}{Theorem}
+\newtheorem{test}{Test}
 
 % Title Page
 \title{\textbf{Developer document} \\
@@ -72,8 +73,8 @@ Biological Sciences. Ph.D. candidate at EE IIT Bombay (currently on leave)} \\
   activities. Some describes the chemical activities inside neuron while some
   other describe their electrical properties etc. We wish to write a super-XML
   model which can make use of all these models and map them onto moose.
-  Currently, we call it [[adaptorML]]. Later we should find a cool name for it
-  such as [[mooseML]] or [[mooooml]].
+
+  \todo[inline]{Describe MumMBL}.
 
 \end{abstract}
 
@@ -87,10 +88,10 @@ Biological Sciences. Ph.D. candidate at EE IIT Bombay (currently on leave)} \\
   without [[--doc]] switch and you have your working application in [[src]]
   directory. 
   
-  Contact the very friendly Homo Sapience Sapience named
-  \href{mailto:dilawars@ncbs.res.in}{Dilawar Singh} if you need any help.
-  He can be reached at \url{dilawars@ncbs.res.in}.
-  \todo[color=red!60]{Write introduction to multiscale modelling}
+  Contact  very friendly Homo Sapience
+  \href{mailto:dilawars@ncbs.res.in}{Dilawar} if you need any help.  He can be
+  reached at \url{dilawars@ncbs.res.in}.  \todo[color=red!60,inline]{Write introduction
+  to multiscale modelling for a developer.}
 
 %\include{setup.nw}
 %\include{multiscale.nw}
@@ -98,6 +99,7 @@ Biological Sciences. Ph.D. candidate at EE IIT Bombay (currently on leave)} \\
 %\include{mumbl.nw}
 %\include{parser.nw}
 %\include{debug.nw}
+
 \include{glossary}
 \nowebchunks
 \nowebindex
