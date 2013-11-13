@@ -1,4 +1,4 @@
-# Basic imports
+# This is our main script.
 import os 
 import sys 
 import logging 
@@ -79,7 +79,7 @@ if args :
     debug.printDebug("INFO", "Parsing of models is done")
     multiScaleObj = multiscale.Multiscale(etreeDict)
     multiScaleObj.buildMultiscaleModel()
-    print("Done!")
+    print("== Done!")
   else :
     debug.printDebug("FATAL", "One or more model file does not exists.")
     sys.exit()
