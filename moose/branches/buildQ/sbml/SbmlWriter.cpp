@@ -29,69 +29,68 @@
  */
 int SbmlWriter::write( string filepath,string target )
 {
-	cout << "Sbml Writer: " << filepath << " ---- " << target << endl;
-	//cout << "use_SBML:" << USE_SBML << endl;
-	
-	#ifdef USE_SBML
-	string::size_type loc;
-	while ( ( loc = filepath.find( "\\" ) ) != string::npos ) 
-	  {
-	    filepath.replace( loc, 1, "/" );
-	  }
-	if ( filepath[0]== '~' )
-	  {
-	    cerr << "Error : Replace ~ with absolute path " << endl;
-	  }
-	string filename = filepath;
-	string::size_type last_slashpos = filename.find_last_of("/");
-	filename.erase( 0,last_slashpos + 1 );  
-
-	/** Check:  I have to comeback to this and check what to do with file like text.xml2 cases and also shd keep an eye on special char **/
-	vector< string > fileextensions;
-	fileextensions.push_back( ".xml" );
-	fileextensions.push_back( ".zip" );
-	fileextensions.push_back( ".bz2" );
-	fileextensions.push_back( ".gz" );
-	vector< string >::iterator i;
-	for( i = fileextensions.begin(); i != fileextensions.end(); i++ ) 
-	  {
-	    string::size_type loc = filename.find( *i );
-	    if ( loc != string::npos ) 
-	      {
-		int strlen = filename.length(); 
-		filename.erase( loc,strlen-loc );
-		break;
-	      }
-	  }
-	if ( i == fileextensions.end() && filename.find( "." ) != string::npos )
-	  {
-	    string::size_type loc;
-	    while ( ( loc = filename.find( "." ) ) != string::npos ) 
-	      {
-		filename.replace( loc, 1, "_" );
-	      }
-	  }
-
-	if ( i == fileextensions.end() )
-	  filepath += ".xml";
-
-	cout << " filepath " << filepath << " " << filename << endl;
-
-	SBMLDocument sbmlDoc = 0;
-  	bool SBMLok = false;
-	createModel( filename,sbmlDoc,target ); 
-  	SBMLok  = validateModel( &sbmlDoc );
-
-	if ( SBMLok ) 
-		writeModel( &sbmlDoc, filepath );
-    	//delete sbmlDoc;
-	if ( !SBMLok ) {
-		cerr << "Errors encountered " << endl;
-		return 1;
+  //cout << "Sbml Writer: " << filepath << " ---- " << target << endl;
+  //cout << "use_SBML:" << USE_SBML << endl;
+  
+#ifdef USE_SBML
+  string::size_type loc;
+  while ( ( loc = filepath.find( "\\" ) ) != string::npos ) 
+    {
+      filepath.replace( loc, 1, "/" );
+    }
+  if ( filepath[0]== '~' )
+    {
+      cerr << "Error : Replace ~ with absolute path " << endl;
+    }
+  string filename = filepath;
+  string::size_type last_slashpos = filename.find_last_of("/");
+  filename.erase( 0,last_slashpos + 1 );  
+  
+  /** Check:  I have to comeback to this and check what to do with file like text.xml2 cases and also shd keep an eye on special char **/
+  vector< string > fileextensions;
+  fileextensions.push_back( ".xml" );
+  fileextensions.push_back( ".zip" );
+  fileextensions.push_back( ".bz2" );
+  fileextensions.push_back( ".gz" );
+  vector< string >::iterator i;
+  for( i = fileextensions.begin(); i != fileextensions.end(); i++ ) 
+    {
+      string::size_type loc = filename.find( *i );
+      if ( loc != string::npos ) 
+	{
+	  int strlen = filename.length(); 
+	  filename.erase( loc,strlen-loc );
+	  break;
 	}
-       
-	#endif     
-	return 0;
+    }
+  if ( i == fileextensions.end() && filename.find( "." ) != string::npos )
+    {
+      string::size_type loc;
+      while ( ( loc = filename.find( "." ) ) != string::npos ) 
+	{
+	  filename.replace( loc, 1, "_" );
+	}
+    }
+  
+  if ( i == fileextensions.end() )
+    filepath += ".xml";
+  
+  //cout << " filepath " << filepath << " " << filename << endl;
+  
+  SBMLDocument sbmlDoc = 0;
+  bool SBMLok = false;
+  createModel( filename,sbmlDoc,target ); 
+  SBMLok  = validateModel( &sbmlDoc );
+  if ( SBMLok ) 
+    writeModel( &sbmlDoc, filepath );
+  //delete sbmlDoc;
+  if ( !SBMLok ) {
+    cerr << "Errors encountered " << endl;
+    return 1;
+  }
+  
+#endif     
+  return 0;
 }
 #ifdef USE_SBML
 
@@ -113,11 +112,30 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
   double runtime = sm->getRunTime();
   double simdt = sm->getSimDt();
   double plotdt = sm->getPlotDt();
+
+  vector< Id > graphs;
+  string plots;
+  wildcardFind(path+"/##[TYPE=Table]",graphs);
+  for ( vector< Id >::iterator itrgrp = graphs.begin(); itrgrp != graphs.end();itrgrp++)
+    { 
+      vector< Id > graphsrc =LookupField< string, vector< Id > >::get(*itrgrp, "neighbours", "requestData" );
+      for (vector <Id> :: iterator itrsrc = graphsrc.begin();itrsrc != graphsrc.end();itrsrc++)
+	{  string species = nameString(Field<string> :: get(ObjId(*itrsrc),"name"));
+	  vector< Id > comptplot = LookupField<string, vector< Id > > ::get(*itrsrc,"neighbours","requestVolume");
+	  for (vector <Id> :: iterator comptp = comptplot.begin();comptp != comptplot.end();comptp++)
+	    { 
+	      ObjId meshParent = Neutral::parent( comptp->eref() );
+	      string speciesCompt = nameString(Field<string>::get(ObjId(meshParent),"name") );
+	      plots += "/"+speciesCompt+"/"+species+";";
+	    }
+	}
+    }
   ostringstream modelAnno;
   modelAnno << "<moose:ModelAnnotation>\n";
   modelAnno << "<moose:runTime> " << runtime << " </moose:runTime>\n";
   modelAnno << "<moose:simdt> " << simdt << " </moose:simdt>\n";
   modelAnno << "<moose:plotdt> " << plotdt << " </moose:plotdt>\n";
+  modelAnno << "<moose:plots> "<< plots<< "</moose:plots>\n";
   modelAnno << "</moose:ModelAnnotation>";
   XMLNode* xnode =XMLNode::convertStringToXMLNode( modelAnno.str() ,&xmlns);
   cremodel_->setAnnotation( xnode );	
@@ -142,7 +160,7 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
   vector< Id > chemCompt;
 
   wildcardFind(path+"/##[TYPE=MeshEntry]",chemCompt);
-
+  
   for ( vector< Id >::iterator itr = chemCompt.begin(); itr != chemCompt.end();itr++)
     {
       vector <unsigned int>dims = Field <vector <unsigned int> > :: get(ObjId(*itr),"objectDimensions");
@@ -182,6 +200,7 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
 	   /* All the pools are taken here */
 	  vector< Id > Compt_spe = LookupField< string, vector< Id > >::get(*itr, "neighbours", "remesh" );
 	  int species_size = 1;
+	  string objname;
 	  for (vector <Id> :: iterator itrp = Compt_spe.begin();itrp != Compt_spe.end();itrp++)
 	    { string objclass = Field<string> :: get(ObjId(*itrp),"className");
 	      if (objclass != "GslStoich")
@@ -190,8 +209,26 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
 		  double initAmt = Field<double> :: get(ObjId(*itrp),"nInit");
 		  Species *sp = cremodel_->createSpecies();
 		  sp->setId( clean_poolname );
-		  string objname = Field<string> :: get(ObjId(*itrp),"name");
-		  objname = nameString(objname);
+		  string poolname = Field<string> :: get(ObjId(*itrp),"name");
+		  std::size_t found = poolname.find("cplx");
+		  //If Species name has cplx then assuming its cplx molecule, since genesis there can be same cplx
+		  // name in number place, as its build under site, but in SBML this is not possible
+		  // so adding enzsite_enzname_cplxname
+		  if (found!=std::string::npos)
+		    {vector < Id > rct = LookupField <string,vector < Id> >::get(*itrp, "neighbours","reacDest");
+		      std::set < Id > rctprd;
+		      rctprd.insert(rct.begin(),rct.end());
+		      for (std::set < Id> :: iterator rRctPrd = rctprd.begin();rRctPrd!=rctprd.end();rRctPrd++)
+			{ 
+			  string enz = Field<string> :: get(ObjId(*rRctPrd),"name");
+			  ObjId meshParent = Neutral::parent( rRctPrd->eref() );
+			  string enzPoolsite = Field<string>::get(ObjId(meshParent),"name") ;
+			  objname = nameString(enzPoolsite)+"_"+nameString(enz)+"_"+nameString(poolname);
+			}
+		    }
+		  else
+		    objname = nameString(poolname);
+
 		  sp->setName( objname);
 		  sp->setCompartment( clean_comptname );
 		  /* AS of 12-6-2013
@@ -264,6 +301,7 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
 		    } //zfunPool
 		} //poolclass != gsl
 	    } //itrp
+	  
 	  vector< Id > Compt_ReacEnz = LookupField< string, vector< Id > >::get(*itr, "neighbours", "remeshReacs" );
 	  for (vector <Id> :: iterator itrRE= Compt_ReacEnz.begin();itrRE != Compt_ReacEnz.end();itrRE++)
 	    { string clean_reacname = cleanNameId(*itrRE,index);
@@ -375,7 +413,6 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
 
 		  XMLNode* xnode =XMLNode::convertStringToXMLNode( enzAnno ,&xmlns);
 		  reaction->setAnnotation( xnode );	
-
 		  kl = reaction->createKineticLaw();
 		  kl->setFormula( rate_law.str() );
 		  string unit=parmUnit( rct_order-1 );
@@ -405,7 +442,8 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
 		  string enzAnno2 = "<moose:EnzymaticReaction>";
 		  getSubPrd(reaction,"cplxDest","sub",*itrRE,index,enzrate_law,erct_order,true,re_enClass);
 		  for(unsigned int i =0;i<nameList_.size();i++)
-		    enzAnno2 += "<moose:complex>"+nameList_[i]+"</moose:complex>\n";
+		    enzAnno2 +=  "<moose:complex>"+nameList_[i]+"</moose:complex>\n";
+
 		  getSubPrd(reaction,"toEnz","prd",*itrRE,index,enzrate_law,eprd_order,false,re_enClass);
 		  for(unsigned int i =0;i<nameList_.size();i++)
 		    enzAnno2 += "<moose:enzyme>"+nameList_[i]+"</moose:enzyme>\n";
@@ -470,7 +508,7 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
 bool SbmlWriter::writeModel( const SBMLDocument* sbmlDoc, const string& filename )
 {
   SBMLWriter sbmlWriter;
-  cout << "sbml writer" << filename << sbmlDoc << endl;
+  //cout << "sbml writer" << filename << sbmlDoc << endl;
   bool result = sbmlWriter.writeSBML( sbmlDoc, filename );
   if ( result )
     {
@@ -519,16 +557,16 @@ void SbmlWriter::getSubPrd(Reaction* rec,string type,string enztype,Id itrRE, in
       string objname = Field<string> :: get(ObjId(*rRctPrd),"name");
       string cleanObjname = nameString(objname);
       string clean_name = cleanNameId(*rRctPrd,index);
+      string fname;
       if (type == "sub" or (type == "toEnz" and enztype == "sub" ) or (type == "cplxDest" and enztype == "sub")) 
-	{
-	  spr = rec->createReactant();
-	  spr->setSpecies( clean_name );
+	{ spr = rec->createReactant();
+	  spr->setSpecies(clean_name);
 	  spr->setStoichiometry( stoch );
 	}
       else if(type == "prd" or (type == "toEnz" and enztype == "prd" ) or (type == "cplxDest" and enztype == "prd"))
 	{
 	  spr = rec->createProduct();
-  	  spr->setSpecies( clean_name );
+	  spr->setSpecies( clean_name );
 	  spr->setStoichiometry( stoch );
 	}
       else if(type == "enzDest")
@@ -536,11 +574,13 @@ void SbmlWriter::getSubPrd(Reaction* rec,string type,string enztype,Id itrRE, in
 	  mspr = rec->createModifier();
 	  mspr->setSpecies(clean_name);
 	}
-      /* Updating list of object for annotation for Enzymetic reaction */
+      /* Updating list of object for annotation for Enzymatic reaction */
       if (re_enClass =="ZEnz")
 	nameList_.push_back(clean_name);
 
       /* Rate law is also updated in rate_law string */
+      //std::size_t found = clean_name.find("cplx");
+      //cout << " stoch" << stoch << " c name " << clean_name;
       if (w)
 	{
 	  rct_order += stoch;
@@ -600,7 +640,11 @@ string SbmlWriter::nameString1( string str )
 	    str.replace( i,1,str1 );
 	    len += str1.length()-1;
 	    break; 
-
+	case '':
+	    str1 = "&#176;";
+	    str.replace( i,1,str1 );
+	    len += str1.length()-1;
+	    break; 
 	}
     i++;
     }while ( i < len );
