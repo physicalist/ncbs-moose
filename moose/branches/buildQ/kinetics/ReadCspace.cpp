@@ -144,7 +144,7 @@ Id ReadCspace::readModelString( const string& model,
 	q.setThreadNum( ScriptThreadNum );
 	sm->setPlotDt( 1 );
 	sm->build( base_.eref(), &q, solverClass );
-
+	Field< double >::set( Id( 1 ), "runTime", 10 );
 	return base_;
 }
 

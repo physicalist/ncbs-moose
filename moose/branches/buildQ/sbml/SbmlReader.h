@@ -24,7 +24,7 @@
 //class Id;
 typedef struct
 {
-  Id enzyme;
+  string enzyme;
   Id complex;
   vector<Id> substrates;
   vector<Id> products;
@@ -50,7 +50,7 @@ class SbmlReader
 		Model* model_;		
 		SBMLDocument* document_;
 		SBMLReader reader_;
-		map< string, Id >elmtMolMap_;
+		map< string, Id >molSidMIdMap_;
 		Id baseId;
 		double transformUnits( double msize,UnitDefinition * ud,string type,bool hasonlySubUnit );
 		void getRules();
@@ -63,6 +63,7 @@ class SbmlReader
 		string getAnnotation( Reaction* reaction,map<string,EnzymeInfo> & );
 		void setupEnzymaticReaction( const EnzymeInfo & einfo,string name,map< string, Id > & ,string name1);
 		void findModelParent( Id cwe, const string& path,Id& parentId, string& modelName );
+		void getGlobalParameter();
 #endif
 		
 };
