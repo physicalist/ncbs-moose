@@ -751,7 +751,7 @@ class PlotWidget(QtGui.QWidget):
                 tabList.append(tab)
         if len(tabList) > 0:
             #self.canvas.callAxesFn('legend')
-	    self.canvas.callAxesFn('legend',loc='upper center',prop={'size':10}, bbox_to_anchor=(0.5, -0.03),fancybox=True, shadow=True, ncol=5)
+	    self.canvas.callAxesFn('legend',loc='upper center',prop={'size':10}, bbox_to_anchor=(0.5, -0.03),fancybox=True, shadow=True, ncol=3)
         self.canvas.draw()
                 
     def addTimeSeries(self, table, *args, **kwargs):        
