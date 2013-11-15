@@ -36,18 +36,25 @@ def write_dot(g, filename):
     """
     dotFile = []
     dotFile.append("digraph moose {")
-    #dotFile.append("dim=3")
+    dotFile.append("dim=3")
+    #dotFile.append("concentrate=True")
+    if g.number_of_nodes() > 100:
+        dotFile.append("node[fixedsize=true,width=0.2,height=0.2]")
     #dotFile.append("node[shape=box]")
     segmentGroups = g.graph['gProp']
+    i = 0
     for n in g.nodes():
-        nodeLabel = "["
+        i += 1
+        nodeLabel = "[label=\"\"".format(i)
         if 'proximal' in g.node[n].keys():
-            x = (g.node[n]['proximal'][0] + g.node[n]['distal'][0])/2
-            y = (g.node[n]['proximal'][1] + g.node[n]['distal'][1])/2
-            z = (g.node[n]['proximal'][2] + g.node[n]['distal'][2])/2
-            nodeLabel += "pos=\"{0},{1},{2}!\,".format(x,y,z)
+            x = (float(g.node[n]['proximal'].get('x')) + float(g.node[n]['distal'].get('x')))/2
+            y = (float(g.node[n]['proximal'].get('y')) + float(g.node[n]['distal'].get('y')))/2
+            z = (float(g.node[n]['proximal'].get('z')) + float(g.node[n]['distal'].get('z')))/2
+            nodeLabel += "pos=\"{0},{1},{2}!\"".format(x,y,z)
 
         # color the segment groups
+        if g.node[n]['color']:
+            nodeLabel += ",style=filled,color=\""+g.node[n]['color']+"\""
         segG = g.node[n].get('segmentGroup')
         if segG:
             colorName = segGrp2Color(segG, g.graph['gProp']['segmentGroup'])
@@ -55,8 +62,15 @@ def write_dot(g, filename):
 
         nodeLabel += "]"
         dotFile.append(g.node[n]['label'] + " " + nodeLabel)
-        for (f, t) in g.edges():
-            dotFile.append(g.node[f]['label'] + " -> " + g.node[t]['label'])
+    for (f, t) in g.edges():
+        edge = g.node[f]['label'] + " -> " + g.node[t]['label']
+        edge += " ["
+        if 'synapse' in g.edge[f][t].keys():
+            # color this edge and make it look like a synapse
+            edge += " label=\"{0}\",".format(g.edge[f][t]['id'])
+            edge += "color=blue,style=dotted,"
+        edge += "]"
+        dotFile.append(edge)
 
     # End the file
     dotFile.append("}")

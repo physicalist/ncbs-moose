@@ -844,7 +844,7 @@ Network connection: NetConn_1 contains 319 individual synaptic connections
     <population name="PurkinjeCells" cell_type="PurkinjeCell">
         <meta:properties>
             <meta:property tag="color" value="0.796875 0.0 0.19921875">    
-    </meta:property>
+            </meta:property>
         </meta:properties>
         <instances size="4">
             <instance id="0">
