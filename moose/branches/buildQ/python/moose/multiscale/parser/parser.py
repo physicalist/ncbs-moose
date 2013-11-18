@@ -1,7 +1,7 @@
 # Basic imports
-import os 
-import sys 
-import logging 
+import os
+import sys
+import logging
 import debug.debug as debug
 import inspect
 
@@ -10,7 +10,7 @@ from lxml import etree
 
 import collections
 def parseAndValidateWithSchema(modelName, modelPath) :
-    
+
     prefixPath = ''
     if modelName == 'xml' :
       schemaPath = os.path.join(prefixPath, 'schema/moose/moose.xsd')
@@ -26,7 +26,7 @@ def parseAndValidateWithSchema(modelName, modelPath) :
         " Falling back to validation-disabled parser."
         + " Failed with error {0}".format(e))
       return parseWithoutValidation(modelName, modelPath)
-    # Now we have the schema text 
+    # Now we have the schema text
     schema = etree.XMLSchema(etree.XML(schemaText))
     xmlParser = etree.XMLParser(schema=schema, remove_comments=True)
     with open(modelPath, "r") as xmlTextFile :
@@ -37,9 +37,10 @@ def parseWithoutValidation(modelName, modelPath) :
     try :
       xmlRootElem = etree.parse(modelPath, xmlParser)
     except Exception as e :
-      debug.printDebug("ERROR", "Parsing failed. {0}".format(e))
-      return 
-    return xmlRootElem 
+      debug.printDebug("ERROR", "Parsing of {0} failed.".format(modelPath))
+      debug.printDebug("DEBUG", "Error: {0}".format(e))
+      return
+    return xmlRootElem
 
 def parseModels(commandLineArgs, validate=False) :
   xmlRootElemDict = collections.defaultdict(list)
@@ -56,5 +57,5 @@ def parseModels(commandLineArgs, validate=False) :
           modelXMLRootElem = parseWithoutValidation(model, modelPath)
         if modelXMLRootElem :
           xmlRootElemDict[model].append((modelXMLRootElem, modelPath))
-  return xmlRootElemDict 
+  return xmlRootElemDict
 
