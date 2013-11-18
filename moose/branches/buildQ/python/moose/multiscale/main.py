@@ -3,6 +3,7 @@ import os
 import sys
 import debug.debug as debug
 import inspect
+import parser.NeuroML as loader
 
 from lxml import etree
 
@@ -48,8 +49,9 @@ if args :
     debug.printDebug("INFO", "Started parsing NML models")
     etreeDict = parser.parseModels(args, validate=False)
     debug.printDebug("INFO", "Parsing of models is done")
-    multiScaleObj = multiscale.Multiscale(etreeDict)
-    multiScaleObj.buildMultiscaleModel()
+    nmlObj = loader.NeuroML()
+    nml = etreeDict['nml'][0]
+    nmlObj.loadNML(nml)
     print("== Done!")
   else :
     debug.printDebug("FATAL", "One or more model file does not exists.")
