@@ -1,9 +1,12 @@
 # This is our main script.
-import os
-import sys
+import os 
+import sys 
+import logging 
 import debug.debug as debug
 import inspect
+import core.multiscale as multiscale 
 
+logger = logging.getLogger('multiscale')
 from lxml import etree
 
 def ifPathsAreValid(paths) :
@@ -19,7 +22,7 @@ def ifPathsAreValid(paths) :
           debug.printDebug("ERROR"
             , "Filepath {0} does not exists".format(path))
           return False
-      # check if file is readable
+      # check if file is readable 
       if not os.access(path, os.R_OK) :
         debug.printDebug("ERROR", "File {0} is not readable".format(path))
   return True
@@ -34,6 +37,31 @@ argParser.add_argument('--nml', metavar='nmlpath'
     , nargs = '+'
     , help = 'nueroml model'
     )
+argParser.add_argument('--sbml', metavar='nmlpath'
+    , nargs = '*'
+    , help = 'sbml model'
+    )
+argParser.add_argument('--mechml', metavar='mechml'
+    , nargs = '*'
+    , help = 'mechml model'
+    )
+argParser.add_argument('--chml', metavar='channelml'
+    , nargs = '*'
+    , help = 'Channelml model'
+    )
+argParser.add_argument('--3dml', metavar='3dml'
+    , nargs = '*'
+    , help = '3DMCML model'
+    )
+argParser.add_argument('--meshml', metavar='meshml'
+    , nargs = '*'
+    , help = 'MeshML model'
+    )
+argParser.add_argument('--adaptor', metavar='adaptor'
+    , required = True
+    , nargs = '+'
+    , help = 'Adaptor for moose'
+    )
 argParser.add_argument('--mumbl', metavar='mumbl'
     , required = True
     , nargs = '+'
@@ -41,11 +69,12 @@ argParser.add_argument('--mumbl', metavar='mumbl'
     )
 args = argParser.parse_args()
 
-import parser.parser as parser
+import parser.parser as parser 
 
-if args :
+if args : 
   if ifPathsAreValid(args) :
-    debug.printDebug("INFO", "Started parsing NML models")
+    logger.info("Started parsing XML models")
+    debug.printDebug("INFO", "Started parsing XML models")
     etreeDict = parser.parseModels(args, validate=False)
     debug.printDebug("INFO", "Parsing of models is done")
     multiScaleObj = multiscale.Multiscale(etreeDict)
