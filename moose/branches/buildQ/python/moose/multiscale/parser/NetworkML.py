@@ -1,28 +1,41 @@
-## Description: class NetworkML for loading NetworkML from file or xml element into MOOSE
-## Version 1.0 by Aditya Gilra, NCBS, Bangalore, India, 2011 for serial MOOSE
-## Version 1.5 by Niraj Dudani, NCBS, Bangalore, India, 2012, ported to parallel MOOSE
-## Version 1.6 by Aditya Gilra, NCBS, Bangalore, India, 2012, further changes for parallel MOOSE
-## Version 1.7 by Aditya Gilra, NCBS, Bangalore, India, 2013, further support for NeuroML 1.8.1
-
 """
-NeuroML.py is the preferred interface. Use this only if NeuroML L1,L2,L3 files are misnamed/scattered.
-Instantiate NetworlML class, and thence use method:
-readNetworkMLFromFile(...) to load a standalone NetworkML file, OR
-readNetworkML(...) to load from an xml.etree xml element (could be part of a larger NeuroML file).
+
+ Description: class NetworkML for loading NetworkML from file or xml element
+ into MOOSE
+
+ Version 1.0 by Aditya Gilra, NCBS, Bangalore, India, 2011 for serial MOOSE
+
+ Version 1.5 by Niraj Dudani, NCBS, Bangalore, India, 2012, ported to parallel
+ MOOSE
+
+ Version 1.6 by Aditya Gilra, NCBS, Bangalore, India, 2012, further changes for
+ parallel MOOSE
+
+ Version 1.7 by Aditya Gilra, NCBS, Bangalore, India, 2013, further support for
+ NeuroML 1.8.1
+
+    NeuroML.py is the preferred interface. Use this only if NeuroML L1,L2,L3
+    files are misnamed/scattered.  Instantiate NetworlML class, and thence use
+    method: readNetworkMLFromFile(...) to load a standalone NetworkML file, OR
+    readNetworkML(...) to load from an xml.etree xml element (could be part of a
+    larger NeuroML file).
+
 """
 
 from xml.etree import cElementTree as ET
 import string
 import os
 import sys
-from math import cos, sin
-from .MorphML import MorphML
-from .ChannelML import ChannelML
+import MorphML
+import ChannelML
 import moose
-from moose.neuroml.utils import meta_ns, nml_ns, find_first_file
-from moose import utils
+import moose.neuroml.utils as nmu
 import debug.debug as debug
 import inspect
+import helper.xml_methods as xml_methods
+
+from math import cos, sin
+from moose import utils
 
 class NetworkML():
 
@@ -31,40 +44,63 @@ class NetworkML():
         self.cellDictByCableId={}
         self.nml_params = nml_params
         self.model_dir = nml_params['model_dir']
+        self.elecPath = '/elec'
 
     def readNetworkMLFromFile(self,filename,cellSegmentDict,params={}):
+
+        """ readNetworkML 
+
+        specify tweak 
+        params = {
+            'excludePopulations':[popname1,...]
+            , 'excludeProjections':[projname1,...]
+            , 'onlyInclude':{'includePopulation':(popname,[id1,...])
+            ,'includeProjections':(projname1,...)
+            }
+        } 
+        
+        If excludePopulations is present, then excludeProjections must also be
+        present. Thus if you exclude some populations, ensure that you exclude
+        projections that refer to those populations also!  Though for
+        onlyInclude, you may specify only included cells and this reader will
+        also keep cells connected to those in onlyInclude.  This reader first
+        prunes the exclude-s, then keeps the onlyInclude-s and those that are
+        connected.  Use 'includeProjections' if you want to keep some
+        projections not connected to the primary 'includePopulation' cells but
+        connected to secondary cells that connected to the primary ones: e.g.
+        baseline synapses on granule cells connected to 'includePopulation'
+        mitrals; these synapses receive file based pre-synaptic events, not
+        presynaptically connected to a cell.  
+        
         """
-        specify tweak params = {'excludePopulations':[popname1,...], 'excludeProjections':[projname1,...], \
-            'onlyInclude':{'includePopulation':(popname,[id1,...]),'includeProjections':(projname1,...)} }
-        If excludePopulations is present, then excludeProjections must also be present:
-        Thus if you exclude some populations,
-            ensure that you exclude projections that refer to those populations also!
-        Though for onlyInclude, you may specify only included cells and this reader will
-            also keep cells connected to those in onlyInclude.
-        This reader first prunes the exclude-s,
-            then keeps the onlyInclude-s and those that are connected.
-        Use 'includeProjections' if you want to keep some projections not connected to
-            the primary 'includePopulation' cells
-        but connected to secondary cells that connected to the primary ones:
-        e.g. baseline synapses on granule cells connected to 'includePopulation' mitrals;
-            these synapses receive file based pre-synaptic events,
-            not presynaptically connected to a cell.
-        """
+
         debug.printDebug("INFO", "reading file ... ", filename)
         tree = ET.parse(filename)
         root_element = tree.getroot()
         debug.printDebug("INFO", "Tweaking model ... ")
         utils.tweak_model(root_element, params)
         debug.printDebug("INFO", "Loading model into MOOSE ... ")
-        return self.readNetworkML(root_element,cellSegmentDict,params,root_element.attrib['lengthUnits'])
+        return self.readNetworkML(
+                root_element
+               , cellSegmentDict
+               , params
+               , root_element.attrib['lengthUnits']
+               )
 
     def readNetworkML(self, network, cellSegmentDict , params={}
         , lengthUnits="micrometer"):
 
         """
         This returns 
-         populationDict = { 'populationName1':(cellname,{int(instanceid1):moosecell, ... }) , ... }
-         projectionDict = { 'projectionName1':(source,target,[(syn_name1,pre_seg_path,post_seg_path),...]) , ... }
+         populationDict = { 
+           'populationName1':(cellname
+           ,{int(instanceid1):moosecell, ...F}) , ... 
+           }
+         projectionDict = {
+            'projectionName1':(source,target
+            ,[(syn_name1,pre_seg_path,post_seg_path),...]) 
+            , ... 
+            }
         """
 
         if lengthUnits in ['micrometer','micron']:
@@ -83,60 +119,104 @@ class NetworkML():
         return (self.populationDict, self.projectionDict)
 
     def createInputs(self):
-        for inputs in self.network.findall(".//{"+nml_ns+"}inputs"):
+
+        """ createInputs 
+
+        Create inputs as given in NML file and attach them to moose.
+        """
+
+        for inputs in self.network.findall(".//{"+nmu.nml_ns+"}inputs"):
             units = inputs.attrib['units']
-            if units == 'Physiological Units': # see pg 219 (sec 13.2) of Book of Genesis
-                Vfactor = 1e-3 # V from mV
-                Tfactor = 1e-3 # s from ms
-                Ifactor = 1e-6 # A from microA
+
+            # This dict is to be passed to function which attach an input
+            # element to moose.
+            factors = {}
+
+            # see pg 219 (sec 13.2) of Book of Genesis
+            if units == 'Physiological Units': 
+                factors['Vfactor'] = 1e-3 # V from mV
+                factors['Tfactor'] = 1e-3 # s from ms
+                factors['Ifactor'] = 1e-6 # A from microA
             else:
-                Vfactor = 1.0
-                Tfactor = 1.0
-                Ifactor = 1.0
-            for inputelem in inputs.findall(".//{"+nml_ns+"}input"):
-                inputname = inputelem.attrib['name']
-                pulseinput = inputelem.find(".//{"+nml_ns+"}pulse_input")
-                if pulseinput is not None:
-                    ## If /elec doesn't exists it creates /elec
-                    ## and returns a reference to it. If it does,
-                    ## it just returns its reference.
-                    moose.Neutral('/elec')
-                    pulsegen = moose.PulseGen('/elec/pulsegen_'+inputname)
-                    iclamp = moose.DiffAmp('/elec/iclamp_'+inputname)
-                    iclamp.saturation = 1e6
-                    iclamp.gain = 1.0
-                    pulsegen.trigMode = 0 # free run
-                    pulsegen.baseLevel = 0.0
-                    pulsegen.firstDelay = float(pulseinput.attrib['delay'])*Tfactor
-                    pulsegen.firstWidth = float(pulseinput.attrib['duration'])*Tfactor
-                    pulsegen.firstLevel = float(pulseinput.attrib['amplitude'])*Ifactor
-                    pulsegen.secondDelay = 1e6 # to avoid repeat
-                    pulsegen.secondLevel = 0.0
-                    pulsegen.secondWidth = 0.0
-                    ## do not set count to 1, let it be at 2 by default
-                    ## else it will set secondDelay to 0.0 and repeat the first pulse!
-                    #pulsegen.count = 1
-                    moose.connect(pulsegen,'outputOut',iclamp,'plusIn')
-                    target = inputelem.find(".//{"+nml_ns+"}target")
-                    population = target.attrib['population']
-                    for site in target.findall(".//{"+nml_ns+"}site"):
-                        cell_id = site.attrib['cell_id']
-                        if 'segment_id' in site.attrib: segment_id = site.attrib['segment_id']
-                        else: segment_id = 0 # default segment_id is specified to be 0
-                        ## population is populationName, self.populationDict[population][0] is cellname
-                        cell_name = self.populationDict[population][0]
-                        if cell_name == 'LIF':
-                            LIF = self.populationDict[population][1][int(cell_id)]
-                            moose.connect(iclamp,'outputOut',LIF,'injectDest')
-                        else:
-                            segment_path = self.populationDict[population][1][int(cell_id)].path+'/'+\
-                                self.cellSegmentDict[cell_name][segment_id][0]
-                            compartment = moose.Compartment(segment_path)
-                            moose.connect(iclamp,'outputOut',compartment,'injectMsg')
+                debug.printDebug("NOTE", "We got {0}".format(units))
+                factors['Vfactor'] = 1.0
+                factors['Tfactor'] = 1.0
+                factors['Ifactor'] = 1.0
+
+            for inputElem in inputs.findall(".//{"+nmu.nml_ns+"}input"):
+                self.attachInputToMoose(inputElem, factors)
+
+    def attachInputToMoose(self, inElemXml, factors):
+
+        """attachInputToMoose
+        This function create StimulousTable in moose
+
+        There can be two type of stimulous: random_stim or pulse_input.
+        """
+
+        ## If /elec doesn't exists it creates /elec
+        ## and returns a reference to it. If it does,
+        ## it just returns its reference.
+        moose.Neutral(self.elecPath)
+
+        random_stim = inElemXml.find('.//{'+nmu.nml_ns+'}random_stim')
+        pulse_stim = inElemXml.find('.//{'+nmu.nml_ns+'}pulse_input')
+        print random_stim, pulse_stim
+        
+        if random_stim is not None:
+            debug.printDebug("INFO", "Generating random stimulous")
+            # Create random stimulus 
+            stimTable = moose.StimulusTable("/elec/random_stimuls")
+            # Get the frequency of stimulus
+            stimFrew = random_stim.get('frequency')
+            synpMechanism = random_stim.get('synaptic_mechanism')
+
+        elif pulse_stim is not None:
+            pulseinput = inElemXml.find(".//{"+nmu.nml_ns+"}pulse_input")
+            if pulseinput is not None:
+                pulsegen = moose.PulseGen('/elec/pulsegen_'+inputName)
+                iclamp = moose.DiffAmp('/elec/iclamp_'+inputName)
+                iclamp.saturation = 1e6
+                iclamp.gain = 1.0
+                pulsegen.trigMode = 0 # free run
+                pulsegen.baseLevel = 0.0
+                pulsegen.firstDelay = float(pulseinput.attrib['delay'])*Tfactor
+                pulsegen.firstWidth = float(pulseinput.attrib['duration'])*Tfactor
+                pulsegen.firstLevel = float(pulseinput.attrib['amplitude'])*Ifactor
+                pulsegen.secondDelay = 1e6 # to avoid repeat
+                pulsegen.secondLevel = 0.0
+                pulsegen.secondWidth = 0.0
+                ## do not set count to 1, let it be at 2 by default
+                ## else it will set secondDelay to 0.0 and repeat the first pulse!
+                #pulsegen.count = 1
+                moose.connect(pulsegen,'outputOut',iclamp,'plusIn')
+                # Attach targets
+                target = inElemXml.find(".//{"+nmu.nml_ns+"}target")
+                population = target.attrib['population']
+                for site in target.findall(".//{"+nmu.nml_ns+"}site"):
+                    cell_id = site.attrib['cell_id']
+                    if 'segment_id' in site.attrib: segment_id = site.attrib['segment_id']
+                    else: segment_id = 0 # default segment_id is specified to be 0
+                    ## population is populationName, self.populationDict[population][0] is cellname
+                    cell_name = self.populationDict[population][0]
+                    if cell_name == 'LIF':
+                        LIF = self.populationDict[population][1][int(cell_id)]
+                        moose.connect(iclamp,'outputOut',LIF,'injectDest')
+                    else:
+                        segment_path = self.populationDict[population][1][int(cell_id)].path+'/'+\
+                            self.cellSegmentDict[cell_name][segment_id][0]
+                        compartment = moose.Compartment(segment_path)
+                        moose.connect(iclamp,'outputOut',compartment,'injectMsg')
+            else:
+                debug.printDebug("WARN"
+                        , "This type of stimulous not stimulous is not supported."
+                        )
+                return 
+
 
     def createPopulations(self):
         self.populationDict = {}
-        for population in self.network.findall(".//{"+nml_ns+"}population"):
+        for population in self.network.findall(".//{"+nmu.nml_ns+"}population"):
             cellname = population.attrib["cell_type"]
             populationName = population.attrib["name"]
             debug.printDebug("INFO", "Loading {0}".format(populationName))
@@ -146,7 +226,7 @@ class NetworkML():
                 model_filenames = (cellname+'.xml', cellname+'.morph.xml')
                 success = False
                 for model_filename in model_filenames:
-                    model_path = find_first_file(model_filename, self.model_dir)
+                    model_path = nmu.find_first_file(model_filename, self.model_dir)
                     if model_path is not None:
                         cellDict = mmlR.readMorphMLFromFile(model_path)
                         success = True
@@ -164,10 +244,10 @@ class NetworkML():
                 libcell = moose.Neuron('/library/'+cellname) #added cells as a Neuron class.
             self.populationDict[populationName] = (cellname,{})
             moose.Neutral('/cells')
-            for instance in population.findall(".//{"+nml_ns+"}instance"):
+            for instance in population.findall(".//{"+nmu.nml_ns+"}instance"):
                 instanceid = instance.attrib['id']
-                location = instance.find('./{'+nml_ns+'}location')
-                rotationnote = instance.find('./{'+meta_ns+'}notes')
+                location = instance.find('./{'+nmu.nml_ns+'}location')
+                rotationnote = instance.find('./{'+nmu.meta_ns+'}notes')
                 if rotationnote is not None:
                     ## the text in rotationnote is zrotation=xxxxxxx
                     zrotation = float(string.split(rotationnote.text,'=')[1])
@@ -219,7 +299,7 @@ class NetworkML():
         """
         synapse_type = list()
         projectionName = projection.attrib['name']
-        for syn in projection.findall('./{'+nml_ns+'}synapse_props'):
+        for syn in projection.findall('./{'+nmu.nml_ns+'}synapse_props'):
             synapse_type.append(syn.get('synapse_type'))
 
         pre_cell_id = connection.attrib['pre_cell_id']
@@ -257,7 +337,7 @@ class NetworkML():
             print self.projectionDict.keys()
             sys.exit(0)
 
-        properties = connection.findall('./{'+nml_ns+'}properties')
+        properties = connection.findall('./{'+nmu.nml_ns+'}properties')
         if len(properties) == 0:
             self.connect(syn_name, pre_segment_path, post_segment_path
                     , weight, threshold, prop_delay)
@@ -281,7 +361,7 @@ class NetworkML():
 
     def createProjections(self):
         self.projectionDict={}
-        projections = self.network.find(".//{"+nml_ns+"}projections")
+        projections = self.network.find(".//{"+nmu.nml_ns+"}projections")
         if projections is not None:
             if projections.attrib["units"] == 'Physiological Units': 
                 # see pg 219 (sec 13.2) of Book of Genesis
@@ -290,19 +370,19 @@ class NetworkML():
             else:
                 Efactor = 1.0
                 Tfactor = 1.0
-        for projection in self.network.findall(".//{"+nml_ns+"}projection"):
+        for projection in self.network.findall(".//{"+nmu.nml_ns+"}projection"):
             projectionName = projection.attrib["name"]
             debug.printDebug("INFO", "Projection {0}".format(projectionName))
             source = projection.attrib["source"]
             target = projection.attrib["target"]
             self.projectionDict[projectionName] = (source,target,[])
-            for syn_props in projection.findall(".//{"+nml_ns+"}synapse_props"):
+            for syn_props in projection.findall(".//{"+nmu.nml_ns+"}synapse_props"):
                 syn_name = syn_props.attrib['synapse_type']
                 ## if synapse does not exist in library load it from xml file
                 if not moose.exists("/library/"+syn_name):
                     cmlR = ChannelML(self.nml_params)
                     model_filename = syn_name+'.xml'
-                    model_path = find_first_file(model_filename, self.model_dir)
+                    model_path = nmu.find_first_file(model_filename, self.model_dir)
                     if model_path is not None:
                         cmlR.readChannelMLFromFile(model_path)
                     else:
@@ -318,7 +398,7 @@ class NetworkML():
                 elif 'internal_delay' in syn_props.attrib:
                     prop_delay = float(syn_props.attrib['internal_delay'])*Tfactor
                 else: prop_delay = 0.0
-                for connection in projection.findall(".//{"+nml_ns+"}connection"):
+                for connection in projection.findall(".//{"+nmu.nml_ns+"}connection"):
                     self.addConnection(connection, projection, syn_name, source, target)
 
     def connect(self, syn_name, pre_path, post_path, weight, threshold, delay):

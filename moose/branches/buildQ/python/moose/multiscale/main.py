@@ -53,6 +53,7 @@ if args :
     nml = etreeDict['nml'][0]
     nmlObj.loadNML(nml)
     print("== Done!")
+    sys.exit()
   else :
     debug.printDebug("FATAL", "One or more model file does not exists.")
     sys.exit()

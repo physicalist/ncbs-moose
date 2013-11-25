@@ -29,7 +29,7 @@ CHANGE LOG:
  MOOSE Version 1.6 by Aditya Gilra, NCBS, Bangalore, India, 2012, further
  changes for parallel MOOSE.
 
- Removed parsing errors when parsing some standard models. Dilawar Singh
+ Dilawar Singh; Removed parsing errors when parsing some standard models.
 
 """
 
@@ -38,73 +38,105 @@ from xml.etree import cElementTree as ET
 from .ChannelML import ChannelML
 from .MorphML import MorphML
 from .NetworkML import NetworkML
-import string
 import sys
 sys.path.append('../../moose/')
 import moose
-from moose.utils import *
-from moose.neuroml.utils import *
+import moose.utils
+import moose.neuroml.utils as mnu
+#from moose.neuroml.utils import *
 import debug.debug as debug
 
 from os import path
 
-class NeuroML():
 
+class NeuroML:
+
+    """
+    This class parses neuroml models and build moose-data structures.
+
+    """
     def __init__(self):
-        pass
+        self.model_dir = ""
+        self.lengthUnits = ""
+        self.temperature = 25
+        self._CELSIUS_default = ""
+        self.temperature_default = True
+        self.nml_params = None
+        self.channelUnits = "Physiological Units"
 
-    def readNeuroMLFromFile(self,filename,params={}):
+    def readNeuroMLFromFile(self, filename, params=dict()):
+
         """
         For the format of params required to tweak what cells are loaded,
-         refer to the doc string of NetworkML.readNetworkMLFromFile().
+        refer to the doc string of NetworkML.readNetworkMLFromFile().
         Returns (populationDict,projectionDict),
-         see doc string of NetworkML.readNetworkML() for details.
+        see doc string of NetworkML.readNetworkML() for details.
         """
-        debug.printDebug("STEP", "Loading neuroml file {0} ... ".format(filename))
-        moose.Neutral('/library') # creates /library in MOOSE tree; elif present, wraps
+
+        debug.printDebug("STEP"
+                , "Loading neuroml file {0} ... ".format(filename))
+        # creates /library in MOOSE tree; elif present, wraps
+        moose.Neutral('/library')
         tree = ET.parse(filename)
         root_element = tree.getroot()
-        self.model_dir = path.dirname( path.abspath( filename ) )
+        self.model_dir = path.dirname(path.abspath(filename))
         self.lengthUnits = root_element.attrib['lengthUnits']
-        self.temperature = CELSIUS_default # gets replaced below if tag for temperature is present
-        self.temperature_default = True
-        for meta_property in root_element.findall('.//{'+meta_ns+'}property'):
-            tagname = meta_property.attrib['tag']
+
+        # gets replaced below if tag for temperature is present
+        self.temperature = self._CELSIUS_default
+
+        for mp in root_element.findall('.//{'+mnu.meta_ns+'}property'):
+            tagname = mp.attrib['tag']
             if 'temperature' in tagname:
-                self.temperature = float(meta_property.attrib['value'])
+                self.temperature = float(mp.attrib['value'])
                 self.temperature_default = False
         if self.temperature_default:
-            debug.printDebug(("Using default temperature of", self.temperature,"degrees Celsius."))
+            debug.printDebug( "INFO"
+                , "Using default temperature of % C".format(self.temperature)
+                )
         self.nml_params = {
                 'temperature':self.temperature,
                 'model_dir':self.model_dir,
         }
 
-        #print "Loading channels and synapses into MOOSE /library ..."
+        # Loading channels and synapses into MOOSE /library ...
         cmlR = ChannelML(self.nml_params)
-        for channels in root_element.findall('.//{'+neuroml_ns+'}channels'):
-            self.channelUnits = channels.attrib['units']
-            for channel in channels.findall('.//{'+cml_ns+'}channel_type'):
-                ## ideally I should read in extra params
-                ## from within the channel_type element and put those in also.
-                ## Global params should override local ones.
-                cmlR.readChannelML(channel,params={},units=self.channelUnits)
-            for synapse in channels.findall('.//{'+cml_ns+'}synapse_type'):
-                cmlR.readSynapseML(synapse,units=self.channelUnits)
-            for ionConc in channels.findall('.//{'+cml_ns+'}ion_concentration'):
-                cmlR.readIonConcML(ionConc,units=self.channelUnits)
+        chnlList = root_element.findall('.//{'+mnu.neuroml_ns+'}channels')
+        if chnlList: [self.channelToMoose(cmlR, ch) for ch in chnlList]
+        else: pass
 
         #print "Loading cell definitions into MOOSE /library ..."
         mmlR = MorphML(self.nml_params)
         self.cellsDict = {}
-        for cells in root_element.findall('.//{'+neuroml_ns+'}cells'):
-            for cell in cells.findall('.//{'+neuroml_ns+'}cell'):
-                cellDict = mmlR.readMorphML(cell,params={},lengthUnits=self.lengthUnits)
+        for cells in root_element.findall('.//{'+mnu.neuroml_ns+'}cells'):
+            for cell in cells.findall('.//{'+mnu.neuroml_ns+'}cell'):
+                cellDict = mmlR.readMorphML(
+                        cell
+                        , params={}
+                        , lengthUnits=self.lengthUnits
+                        )
                 self.cellsDict.update(cellDict)
 
         #print "Loading individual cells into MOOSE root ... "
         nmlR = NetworkML(self.nml_params)
-        return nmlR.readNetworkML(root_element,self.cellsDict,params=params,lengthUnits=self.lengthUnits)
+        return nmlR.readNetworkML(
+                root_element
+                , self.cellsDict
+                , params=params
+                , lengthUnits=self.lengthUnits
+                )
+
+    def channelToMoose(self, cmlR, channels):
+        for channel in channels.findall('.//{'+mnu.cml_ns+'}channel_type'):
+            ## ideally I should read in extra params
+            ## from within the channel_type element and put those in also.
+            ## Global params should override local ones.
+            cmlR.readChannelML(channel, params={}, units=self.channelUnits)
+        for synapse in channels.findall('.//{'+mnu.cml_ns+'}synapse_type'):
+            cmlR.readSynapseML(synapse, units=self.channelUnits)
+        for ionConc in channels.findall('.//{'+mnu.cml_ns+'}ion_concentration'):
+            cmlR.readIonConcML(ionConc, units=self.channelUnits)
+
 
     def loadNML(self, nml):
         neuromlR = NeuroML()
