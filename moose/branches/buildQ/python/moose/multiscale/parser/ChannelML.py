@@ -12,6 +12,7 @@ readChannelML(...) / readSynapseML to load from an xml.etree xml element (could 
 """
 
 from xml.etree import cElementTree as ET
+import debug.debug as debug
 import string
 import os, sys
 import math
@@ -22,12 +23,12 @@ from moose.neuroml import utils
 
 class ChannelML():
 
-    def __init__(self,nml_params):
+    def __init__(self, nml_params):
         self.cml='http://morphml.org/channelml/schema'
         self.nml_params = nml_params
         self.temperature = nml_params['temperature']
 
-    def readChannelMLFromFile(self,filename,params={}):
+    def readChannelMLFromFile(self, _filename, _params={}):
         """ specify params as a dict: e.g. temperature that you need to pass to channels """
         tree = ET.parse(filename)
         channelml_element = tree.getroot()
@@ -50,8 +51,9 @@ class ChannelML():
             Tfactor = 1.0
             Gfactor = 1.0
         else:
-            print(("wrong units", units,": exiting ..."))
+            debug.printDebug("INFO", "Wrong units {0}".format(units))
             sys.exit(1)
+
         moose.Neutral('/library') # creates /library in MOOSE tree; elif present, wraps
         if utils.neuroml_debug: print(("loading synapse :",synapseElement.attrib['name'],"into /library ."))
         moosesynapse = moose.SynChan('/library/'+synapseElement.attrib['name'])

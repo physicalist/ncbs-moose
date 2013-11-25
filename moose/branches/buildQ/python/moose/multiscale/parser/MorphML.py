@@ -1,23 +1,20 @@
-## Description: class MorphML for loading MorphML from file or xml element into MOOSE
-## Version 1.0 by Aditya Gilra, NCBS, Bangalore, India, 2011 for serial MOOSE
-## Version 1.5 by Niraj Dudani, NCBS, Bangalore, India, 2012, ported to parallel MOOSE
-## Version 1.6 by Aditya Gilra, NCBS, Bangalore, India, 2012, further changes for parallel MOOSE
-## Version 1.7 by Aditya Gilra, NCBS, Bangalore, India, 2013, further support for NeuroML 1.8.1
-
 """
-NeuroML.py is the preferred interface. Use this only if NeuroML L1,L2,L3 files are misnamed/scattered.
-Instantiate MorphML class, and thence use methods:
+
+Description: class MorphML for loading MorphML from file or xml element into
+MOOSE.
+
+NeuroML.py is the preferred interface. Use this only if NeuroML L1,L2,L3 files
+are misnamed/scattered.  Instantiate MorphML class, and thence use methods:
 readMorphMLFromFile(...) to load a standalone MorphML from file OR
-readMorphML(...) to load from an xml.etree xml element (could be part of a larger NeuroML file).
-It is assumed that any channels and synapses referred to by above MorphML
-have already been loaded under that same name in /library in MOOSE (use ChannelML loader).
-"""
+readMorphML(...) to load from an xml.etree xml element (could be part of a
+larger NeuroML file).  It is assumed that any channels and synapses referred to
+by above MorphML have already been loaded under that same name in /library in
+MOOSE (use ChannelML loader).
 
-from xml.etree import cElementTree as ET # cELementTree is mostly API-compatible but faster than ElementTree
-import string
-import sys
+"""
+# cELementTree is mostly API-compatible but faster than ElementTree
+from xml.etree import cElementTree as ET 
 import math
-from os import path
 import moose
 from moose import utils as moose_utils
 from moose.neuroml import utils as neuroml_utils
