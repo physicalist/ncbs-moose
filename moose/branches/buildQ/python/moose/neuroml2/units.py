@@ -64,7 +64,11 @@ units = dict([(el.symbol, el) for el in unitsdoc.getroot() if el.tag == 'Unit'])
 magnitude_regex = re.compile(r'^[\+-]?\d*\.?\d*([eE][\+-]?\d+)?')
 
 def SI(expression):
-    match = magnitude_regex.match(expression)
+    try:
+        match = magnitude_regex.match(expression)
+    except Exception, e:
+        print 'Error %s with expression: %s' % (e, expression)
+        raise(e)
     magnitude = float(match.group(0))
     unitstr = re.split(magnitude_regex, expression)[-1]
     try:
