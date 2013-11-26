@@ -214,9 +214,9 @@ class NML2Reader(object):
             comp.x0, comp.y0, comp.z0 = map(lambda x: x * self.lunit, map(float, (p0.x, p0.y, p0.z)))            
             p1 = segment.distal
             comp.x, comp.y, comp.z = map(lambda x: x * self.lunit, map(float, (p1.x, p1.y, p1.z)))
-            comp.length = np.sqrt((comp.x - comp.x0)**2
-                                  + (comp.y - comp.y0)**2
-                                  + (comp.z - comp.z0)**2)
+            comp.length = np.linalg.norm((comp.x - comp.x0,
+                                         comp.y - comp.y0,
+                                         comp.z - comp.z0))
             # This can pose problem with moose where both ends of
             # compartment have same diameter. We are averaging the two
             # - may be splitting the compartment into two is better?
