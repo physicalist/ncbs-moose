@@ -35,10 +35,11 @@ CHANGE LOG:
 
 
 from xml.etree import cElementTree as ET
+from .ChannelML import ChannelML
+from .MorphML import MorphML
+from .NetworkML import NetworkML
 import sys
-import MorphML
-import NetworkML
-import ChannelML
+sys.path.append('../../moose/')
 import moose
 import moose.utils
 import moose.neuroml.utils as mnu
@@ -99,13 +100,13 @@ class NeuroML:
         }
 
         # Loading channels and synapses into MOOSE /library ...
-        cmlR = ChannelML.ChannelML(self.nml_params)
+        cmlR = ChannelML(self.nml_params)
         chnlList = root_element.findall('.//{'+mnu.neuroml_ns+'}channels')
         if chnlList: [self.channelToMoose(cmlR, ch) for ch in chnlList]
         else: pass
 
         #print "Loading cell definitions into MOOSE /library ..."
-        mmlR = MorphML.MorphML(self.nml_params)
+        mmlR = MorphML(self.nml_params)
         self.cellsDict = {}
         for cells in root_element.findall('.//{'+mnu.neuroml_ns+'}cells'):
             for cell in cells.findall('.//{'+mnu.neuroml_ns+'}cell'):
@@ -117,7 +118,7 @@ class NeuroML:
                 self.cellsDict.update(cellDict)
 
         #print "Loading individual cells into MOOSE root ... "
-        nmlR = NetworkML.NetworkML(self.nml_params)
+        nmlR = NetworkML(self.nml_params)
         return nmlR.readNetworkML(
                 root_element
                 , self.cellsDict
