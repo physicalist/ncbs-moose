@@ -13,7 +13,7 @@ MOOSE (use ChannelML loader).
 
 """
 # cELementTree is mostly API-compatible but faster than ElementTree
-from xml.etree import cElementTree as ET 
+from xml.etree import cElementTree as ET
 import math
 import sys
 import moose
@@ -21,6 +21,7 @@ from moose import utils as moose_utils
 from moose.neuroml import utils as neuroml_utils
 from ChannelML import ChannelML
 import debug.debug as debug
+import inspect
 
 class MorphML():
 
@@ -36,7 +37,14 @@ class MorphML():
         self.model_dir = nml_params['model_dir']
         self.temperature = nml_params['temperature']
 
-    def readMorphMLFromFile(self,filename,params={}):
+    def stringToFloat(self, tempString):
+        tempString = tempString.strip()
+        if len(tempString) == 0 or tempString is None:
+            return 0.0
+        else:
+            return float(tempString)
+
+    def readMorphMLFromFile(self, filename, params={}):
         """
         specify global params as a dict (presently none implemented)
         returns { cellName1 : segDict, ... }
@@ -47,7 +55,11 @@ class MorphML():
         neuroml_element = tree.getroot()
         cellsDict = {}
         for cell in neuroml_element.findall('.//{'+self.neuroml+'}cell'):
-            cellDict = self.readMorphML(cell,params,neuroml_element.attrib['lengthUnits'])
+            cellDict = self.readMorphML(
+                cell
+                , params
+                , neuroml_element.attrib['lengthUnits']
+            )
             cellsDict.update(cellDict)
         return cellsDict
 
@@ -190,26 +202,26 @@ class MorphML():
         cellName = cell.attrib["name"]
         # creates /library in MOOSE tree; elif present, wraps
         moose.Neutral('/library')
-        debug.printDebug("INFO", "Loading cell {0} into /library".format(cellName))
 
         if cellName == 'LIF':
             moosecell = moose.LeakyIaF('/library/'+cellName)
             self.segDict = {}
         else:
-            #~ moosecell = moose.Cell('/library/'+cellName)
-            #using moose Neuron class - in previous version 'Cell' class Chaitanya
+            # using moose Neuron class - in previous version 'Cell' class
+            # Chaitanya.
+
             moosecell = moose.Neuron('/library/'+cellName)
             self.cellDictBySegmentId[cellName] = [moosecell,{}]
             self.cellDictByCableId[cellName] = [moosecell,{}]
             self.segDict = {}
 
-            ############################################################
-            #### load morphology and connections between compartments
-            ## Many neurons exported from NEURON have multiple segments in a section
-            ## Combine those segments into one Compartment / section
-            ## assume segments of a compartment/section are in increasing order and
-            ## assume all segments of a compartment/section have the same cableid
-            ## findall() returns elements in document order:
+            # load morphology and connections between compartments Many neurons
+            # exported from NEURON have multiple segments in a section Combine
+            # those segments into one Compartment / section assume segments of
+            # a compartment/section are in increasing order and assume all
+            # segments of a compartment/section have the same cableid findall()
+            # returns elements in document order:
+
             self.running_cableid = ''
             running_segid = ''
             running_comp = None
@@ -220,10 +232,11 @@ class MorphML():
             for segnum, segment in enumerate(segments):
                 self.addSegment(moosecell, cellName, segnum, segment)
 
-        ## load cablegroups into a dictionary
+        # load cablegroups into a dictionary
         self.cablegroupsDict = {}
-        ## Two ways of specifying cablegroups in neuroml 1.x
-        ## <cablegroup>s with list of <cable>s
+
+        # Two ways of specifying cablegroups in neuroml 1.x
+        # <cablegroup>s with list of <cable>s
         cablegroups = cell.findall(".//{"+self.mml+"}cablegroup")
         for cablegroup in cablegroups:
             cablegroupname = cablegroup.attrib['name']
@@ -231,7 +244,8 @@ class MorphML():
             for cable in cablegroup.findall(".//{"+self.mml+"}cable"):
                 cableid = cable.attrib['id']
                 self.cablegroupsDict[cablegroupname].append(cableid)
-        ## <cable>s with list of <meta:group>s
+
+        # <cable>s with list of <meta:group>s
         cables = cell.findall(".//{"+self.mml+"}cable")
         for cable in cables:
             cableid = cable.attrib['id']
@@ -243,154 +257,310 @@ class MorphML():
                 else:
                     self.cablegroupsDict[cablegroupname] = [cableid]
 
-        ###############################################
-        #### load biophysics into the compartments
-        biophysics = cell.find(".//{"+self.neuroml+"}biophysics")
-        if biophysics is not None:
-            if biophysics.attrib["units"] == 'Physiological Units': # see pg 219 (sec 13.2) of Book of Genesis
-                CMfactor = 1e-2 # F/m^2 from microF/cm^2
-                Cfactor = 1e-6 # F from microF
-                RAfactor = 1e1 # Ohm*m from KOhm*cm
-                RMfactor = 1e-1 # Ohm*m^2 from KOhm*cm^2
-                Rfactor = 1e-3 # Ohm from KOhm
-                Efactor = 1e-3 # V from mV
-                Gfactor = 1e1 # S/m^2 from mS/cm^2
-                Ifactor = 1e-6 # A from microA
-                Tfactor = 1e-3 # s from ms
-            else:
-                CMfactor = 1.0
-                Cfactor = 1.0
-                RAfactor = 1.0
-                RMfactor = 1.0
-                Rfactor = 1.0
-                Efactor = 1.0
-                Gfactor = 1.0
-                Ifactor = 1.0
-                Tfactor = 1.0
+        # Add bioPhysics to the cell
+        self.addBiophysics(cell, cellName)
 
-            IaFpresent = False
-            for mechanism in cell.findall(".//{"+self.bio+"}mechanism"):
-                mechanismname = mechanism.attrib["name"]
-                if mechanismname == "integrate_and_fire": IaFpresent = True
-            ## integrate-and-fire-meachanism
-            if IaFpresent:
-                mech_params = mechanism.findall(".//{"+self.bio+"}parameter")
-                if len(mech_params) != 0:
-                    for parameter in mech_params:
-                        parametername = parameter.attrib['name']
-                        if parametername == 'inject':
-                            moosecell.inject = float(parameter.attrib["value"])*Ifactor
-                        elif parametername == 'Rm':
-                            moosecell.Rm = float(parameter.attrib["value"])*Rfactor
-                        elif parametername == 'Cm':
-                            moosecell.Cm = float(parameter.attrib["value"])*Cfactor
-                        elif parametername == 'Em':
-                            moosecell.Em = float(parameter.attrib["value"])*Efactor
-                        elif parametername == 'v_reset':
-                            moosecell.Vreset = float(parameter.attrib["value"])*Efactor # voltage after spike, typicaly below resting
-                            moosecell.initVm = moosecell.Vreset
-                        elif parametername == 'threshold':
-                            moosecell.Vthreshold = float(parameter.attrib["value"])*Efactor # firing threshold potential
-                        elif parametername == 't_refrac':
-                            moosecell.refractoryPeriod = float(parameter.attrib["value"])*Tfactor # min refractory time before next spike
-                        elif parametername == 'inject':
-                            moosecell.refractoryPeriod = float(parameter.attrib["value"])*Ifactor # inject into soma
-            ## non integrate-and-fire mechanisms
-            else:
-                spec_capacitance = cell.find(".//{"+self.bio+"}spec_capacitance")
-                for parameter in spec_capacitance.findall(".//{"+self.bio+"}parameter"):
-                    self.set_group_compartment_param(cell, cellName, parameter,\
-                     'CM', float(parameter.attrib["value"])*CMfactor, self.bio)
-                spec_axial_resitance = cell.find(".//{"+self.bio+"}spec_axial_resistance")
-                for parameter in spec_axial_resitance.findall(".//{"+self.bio+"}parameter"):
-                    self.set_group_compartment_param(cell, cellName, parameter,\
-                     'RA', float(parameter.attrib["value"])*RAfactor, self.bio)
-                init_memb_potential = cell.find(".//{"+self.bio+"}init_memb_potential")
-                for parameter in init_memb_potential.findall(".//{"+self.bio+"}parameter"):
-                    self.set_group_compartment_param(cell, cellName, parameter,\
-                     'initVm', float(parameter.attrib["value"])*Efactor, self.bio)
-                for mechanism in cell.findall(".//{"+self.bio+"}mechanism"):
-                    mechanismname = mechanism.attrib["name"]
-                    passive = False
-                    if "passive_conductance" in mechanism.attrib:
-                        if mechanism.attrib['passive_conductance'] in ["true",'True','TRUE']:
-                            passive = True
-                    debug.printDebug("INFO", "Loading mechanism {0}".format(mechanismname))
-                    ## ONLY creates channel if at least one parameter (like gmax) is specified in the xml
-                    ## Neuroml does not allow you to specify all default values.
-                    ## However, granule cell example in neuroconstruct has Ca ion pool without
-                    ## a parameter, applying default values to all compartments!
-                    mech_params = mechanism.findall(".//{"+self.bio+"}parameter")
-                    ## if no params, apply all default values to all compartments
-                    if len(mech_params) == 0:
-                        for compartment in list(self.cellDictByCableId[cellName][1].values()):
-                            self.set_compartment_param(compartment,None,'default',mechanismname)
-                    ## if params are present, apply params to specified cable/compartment groups
-                    for parameter in mech_params:
-                        parametername = parameter.attrib['name']
-                        if passive:
-                            if parametername in ['gmax']:
-                                self.set_group_compartment_param(cell, cellName, parameter,\
-                                 'RM', RMfactor*1.0/float(parameter.attrib["value"]), self.bio)
-                            elif parametername in ['e','erev']:
-                                self.set_group_compartment_param(cell, cellName, parameter,\
-                                 'Em', Efactor*float(parameter.attrib["value"]), self.bio)
-                            elif parametername in ['inject']:
-                                self.set_group_compartment_param(cell, cellName, parameter,\
-                                 'inject', Ifactor*float(parameter.attrib["value"]), self.bio)
-                            else:
-                                debug.printDebug("WARNING: Yo programmer of MorphML! You didn't implement parameter ",\
-                                 parametername, " in mechanism ",mechanismname)
-                        else:
-                            if parametername in ['gmax']:
-                                gmaxval = float(eval(parameter.attrib["value"],{"__builtins__":None},{}))
-                                self.set_group_compartment_param(cell, cellName, parameter,\
-                                 'Gbar', Gfactor*gmaxval, self.bio, mechanismname)
-                            elif parametername in ['e','erev']:
-                                self.set_group_compartment_param(cell, cellName, parameter,\
-                                 'Ek', Efactor*float(parameter.attrib["value"]), self.bio, mechanismname)
-                            elif parametername in ['depth']: # has to be type Ion Concentration!
-                                self.set_group_compartment_param(cell, cellName, parameter,\
-                                 'thick', self.length_factor*float(parameter.attrib["value"]),\
-                                 self.bio, mechanismname)
-                            else:
-                                debug.printDebug("WARNING: Yo programmer of MorphML import! You didn't implement parameter ",\
-                                 parametername, " in mechanism ",mechanismname)
-                #### Connect the Ca pools and channels
-                #### Am connecting these at the very end so that all channels and pools have been created
-                #### Note: this function is in moose.utils not moose.neuroml.utils !
-                moose_utils.connect_CaConc(list(self.cellDictByCableId[cellName][1].values()),\
-                    self.temperature+neuroml_utils.ZeroCKelvin) # temperature should be in Kelvin for Nernst
-
-        ##########################################################
-        #### load connectivity / synapses into the compartments
+        # load connectivity / synapses into the compartments
         connectivity = cell.find(".//{"+self.neuroml+"}connectivity")
         if connectivity is not None:
-            self.addConnectivity(cell, connectivity)
-            debug.printDebug("STEP" , "Finished loading cell {0} ".format(cellName))
+            self.addConnectivity(cell, cellName, connectivity)
         return {cellName:self.segDict}
 
-    def addConnectivity(self, cell, connectivity):
+    def addConnectivity(self, cell, cellName, connectivity):
 
-      """ 
+      """
       Add connectivity to cell.
       """
       synLocs = cell.findall(".//{"+self.nml+"}potential_syn_loc")
       for psl in synLocs:
         if 'synapse_direction' in list(psl.attrib.keys()):
             if psl.attrib['synapse_direction'] in ['post']:
-                self.set_group_compartment_param(cell, cellName, psl
-                    , 'synapse_type', psl.attrib['synapse_type'], self.nml
-                    , mechanismname='synapse')
+                self.set_group_compartment_param(
+                    cell
+                    , cellName
+                    , psl
+                    , 'synapse_type'
+                    , psl.attrib['synapse_type']
+                    , self.nml
+                    , mechName='synapse'
+                )
             if psl.attrib['synapse_direction'] in ['pre']:
-                self.set_group_compartment_param(cell, cellName, psl
-                    , 'spikegen_type', psl.attrib['synapse_type'], self.nml
-                    , mechanismname='spikegen')
+                self.set_group_compartment_param(
+                    cell
+                    , cellName
+                    , psl
+                    , 'spikegen_type'
+                    , psl.attrib['synapse_type']
+                    , self.nml
+                    , mechName='spikegen'
+                )
 
+
+    def addBiophysics(self, cell, cellName):
+        """Add Biophysics to cell
+        """
+        biophysics = cell.find(".//{"+self.neuroml+"}biophysics")
+        if biophysics is None: return None
+
+        if biophysics.attrib["units"] == 'Physiological Units':
+            # see pg 219 (sec 13.2) of Book of Genesis
+            self.CMfactor = 1e-2 # F/m^2 from microF/cm^2
+            self.Cfactor = 1e-6  # F from microF
+            self.RAfactor = 1e1  # Ohm*m from KOhm*cm
+            self.RMfactor = 1e-1 # Ohm*m^2 from KOhm*cm^2
+            self.Rfactor = 1e-3  # Ohm from KOhm
+            self.Efactor = 1e-3  # V from mV
+            self.Gfactor = 1e1   # S/m^2 from mS/cm^2
+            self.Ifactor = 1e-6  # A from microA
+            self.Tfactor = 1e-3  # s from ms
+        else:
+            self.CMfactor = 1.0
+            self.Cfactor = 1.0
+            self.RAfactor = 1.0
+            self.RMfactor = 1.0
+            self.Rfactor = 1.0
+            self.Efactor = 1.0
+            self.Gfactor = 1.0
+            self.Ifactor = 1.0
+            self.Tfactor = 1.0
+
+        IaFpresent = False
+        for mechanism in cell.findall(".//{"+self.bio+"}mechanism"):
+            mechName = mechanism.attrib["name"]
+            if mechName == "integrate_and_fire": IaFpresent = True
+            ## integrate-and-fire-meachanism
+            if IaFpresent:
+                self.integateAndFireMechanism(mechanism, moosecell)
+
+        # Other mechanism are non-I&F type
+        sc = cell.find(".//{"+self.bio+"}spec_capacitance")
+        if sc is not None:
+            self.addSpecCapacitance(sc, cell, cellName)
+
+        sar = cell.find(".//{"+self.bio+"}spec_axial_resistance")
+        if sar is not None:
+            self.addSpecAxialResistance(sar, cell, cellName)
+
+        imp = cell.find(".//{"+self.bio+"}init_memb_potential")
+        if imp is not None:
+            self.addInitMembPotential(imp, cell, cellName)
+
+        # Add mechanisms
+        for mechanism in cell.findall(".//{"+self.bio+"}mechanism"):
+            self.addMechanism(mechanism, cell, cellName)
+
+
+    def addMechanism(self, mechanism, cell, cellName):
+        """ Add mechanism to cell.
+        """
+        mechName = mechanism.attrib["name"]
+        debug.printDebug("INFO", "Loading mechanism {0}".format(mechName))
+        passive = False
+        if "passive_conductance" in mechanism.attrib:
+            if mechanism.attrib['passive_conductance'].lower() == "true":
+                passive = True
+
+        # ONLY creates channel if at least one parameter (like gmax) is
+        # specified in the xml  Neuroml does not allow you to specify all
+        # default values.  However, granule cell example in neuroconstruct has
+        # Ca ion pool without a parameter, applying default values to all
+        # compartments!
+
+        mech_params = mechanism.findall(".//{"+self.bio+"}parameter")
+
+        ## if no params, apply all default values to all compartments
+        if len(mech_params) == 0:
+            compartmnets = self.cellDictByCableId[cellName][1].values()
+            for c in compartments:
+                self.set_compartment_param(c, None, 'default', mechName)
+
+        # if params are present, apply params to specified cable/compartment
+        # groups.
+
+        for parameter in mech_params:
+            options = { 'cellName' : cellName
+                       , 'mechName' : mechName
+                       , 'passive' : passive
+                       }
+            self.addParameterToCompartment(parameter, cell, options)
+
+        # Connect the Ca pools and channels Am connecting these at the very end
+        # so that all channels and pools have been created Note: this function
+        # is in moose.utils not moose.neuroml.utils !
+
+        # temperature should be in Kelvin for Nernst
+        temperature = self.stringToFloat(self.temperature)
+        moose_utils.connect_CaConc(
+            list(self.cellDictByCableId[cellName][1].values())
+            , temperature + neuroml_utils.ZeroCKelvin
+        )
+
+    def addParameterToCompartment(self, parameter, cell, options):
+        """ Add parameter to compartment
+        """
+        cellName = options['cellName']
+        mechName = options['mechName']
+        passive = options['passive']
+
+        paramName = parameter.attrib['name']
+        if passive:
+            if paramName in ['gmax']:
+                self.set_group_compartment_param(
+                    cell
+                    , cellName
+                    , parameter
+                    , 'RM'
+                    , self.RMfactor*1.0/float(parameter.attrib["value"])
+                    , self.bio
+                )
+            elif paramName in ['e','erev']:
+                self.set_group_compartment_param(
+                    cell
+                    , cellName
+                    , parameter
+                    , 'Em'
+                    , self.Efactor*float(parameter.attrib["value"])
+                    , self.bio
+                )
+            elif paramName in ['inject']:
+                self.set_group_compartment_param(
+                    cell
+                    , cellName
+                    , parameter
+                    , 'inject'
+                    , self.Ifactor*float(parameter.attrib["value"])
+                    , self.bio
+                )
+            else:
+                msg = "Yo programmar of MorphML! You did not implemented"
+                msg += " parameter {0} in mechanism {1} ".format(
+                    paramName
+                    , mechName
+                    )
+                debug.printDebug("WARN", msg, frame=inspect.currentframe())
+        else:
+            if paramName in ['gmax']:
+                gmaxval = float(eval( parameter.attrib["value"]
+                                     ,{"__builtins__":None},{}
+                                     )
+                                )
+                self.set_group_compartment_param(
+                    cell
+                    , cellName
+                    , parameter
+                    , 'Gbar'
+                    , self.Gfactor*gmaxval
+                    , self.bio
+                    , mechName
+                )
+            elif paramName in ['e','erev']:
+                self.set_group_compartment_param(
+                    cell
+                    , cellName
+                    , parameter
+                    , 'Ek'
+                    , self.Efactor*float(parameter.attrib["value"])
+                    , self.bio
+                    , mechName
+                )
+            elif paramName in ['depth']: # has to be type Ion Concentration!
+                self.set_group_compartment_param(
+                    cell
+                    , cellName
+                    , parameter
+                    , 'thick'
+                    , self.length_factor*float(parameter.attrib["value"])
+                    , self.bio
+                    , mechName
+                )
+            else:
+                msg = "Yo programmar of MorphML! You did not implemented"
+                msg += " parameter {0} in mechanism {1} ".format(
+                    paramName
+                    , mechName
+                    )
+                debug.printDebug("WARN", msg, frame=inspect.currentframe())
+
+    def addSpecCapacitance(self, spec_capacitance, cell, cellName):
+        """
+        Adding specific capacitance to cell
+        """
+        for parameter in spec_capacitance.findall(".//{"+self.bio+"}parameter"):
+            self.set_group_compartment_param(
+                cell
+                , cellName
+                , parameter
+                , 'CM'
+                , float(parameter.attrib["value"])*self.CMfactor
+                , self.bio
+            )
+
+
+    def addSpecAxialResistance(self, spec_axial_resistance, cell, cellName):
+        """
+        Add specific axial resistance to cell.
+        """
+        for p in spec_axial_resistance.findall(".//{"+self.bio+"}parameter"):
+            self.set_group_compartment_param(
+                cell
+                , cellName
+                , p
+                , 'RA'
+                , float(p.attrib["value"])*self.RAfactor
+                , self.bio
+            )
+
+    def integateAndFireMechanism(self, mechanism, mooseCell):
+        """  Integrate and fire mechanism
+        """
+        mech_params = mechanism.findall(".//{"+self.bio+"}parameter")
+        for parameter in mech_params:
+            paramName = parameter.attrib['name']
+            if paramName == 'inject':
+                mooseCell.inject = float(parameter.attrib["value"])*self.Ifactor
+            elif paramName == 'Rm':
+                mooseCell.Rm = float(parameter.attrib["value"])*self.Rfactor
+            elif paramName == 'Cm':
+                mooseCell.Cm = float(parameter.attrib["value"])*self.Cfactor
+            elif paramName == 'Em':
+                mooseCell.Em = float(parameter.attrib["value"])*self.Efactor
+            elif paramName == 'v_reset':
+                # voltage after spike, typicaly below resting
+                mooseCell.Vreset = float(parameter.attrib["value"])*self.Efactor
+                mooseCell.initVm = moosecell.Vreset
+            elif paramName == 'threshold':
+                # firing threshold potential
+                mooseCell.Vthreshold = \
+                        float(parameter.attrib["value"])*self.Efactor
+            elif paramName == 't_refrac':
+                # min refractory time before next spike
+                comment = "Use this refractory period in simulation"
+                debug.printDebug("TODO" , msg, frame=inspect.currentframe())
+                mooseCell.refractoryPeriod = \
+                        float(parameter.attrib["value"])*self.Tfactor
+            elif paramName == 'inject':
+                # inject into soma
+                mooseCell.refractoryPeriod = \
+                        float(parameter.attrib["value"])*self.Ifactor
+
+
+    def addInitMembPotential(self, init_memb_potential, cell, cellName):
+        """Add init membrane potential to cell.
+        """
+        parameters = init_memb_potential.findall(".//{"+self.bio+"}parameter")
+        for parameter in parameters:
+            self.set_group_compartment_param(
+                    cell
+                    , cellName
+                    , parameter
+                    , 'initVm'
+                    , float(parameter.attrib["value"]) * self.Efactor
+                    , self.bio
+                    )
 
 
     def set_group_compartment_param(self, cell, cellName, parameter, name
-        , value, grouptype, mechanismname=None):
+        , value, grouptype, mechName=None):
 
         """
         Find the compartments that belong to the cablegroups refered to
@@ -400,15 +570,25 @@ class MorphML():
         for group in parameter.findall(".//{"+grouptype+"}group"):
             cablegroupname = group.text
             if cablegroupname == 'all':
-                for compartment in list(self.cellDictByCableId[cellName][1].values()):
-                    self.set_compartment_param(compartment,name,value,mechanismname)
+                for compartment in self.cellDictByCableId[cellName][1].values():
+                    self.set_compartment_param(
+                        compartment
+                        , name
+                        , value
+                        , mechName
+                    )
             else:
                 for cableid in self.cablegroupsDict[cablegroupname]:
                     compartment = self.cellDictByCableId[cellName][1][cableid]
-                    self.set_compartment_param(compartment,name,value,mechanismname)
+                    self.set_compartment_param(
+                        compartment
+                        , name
+                        , value
+                        , mechName
+                    )
 
-    def set_compartment_param(self, compartment, name, value, mechanismname):
-        """ Set the param for the compartment depending on name and mechanismname. """
+    def set_compartment_param(self, compartment, name, value, mechName):
+        """ Set the param for the compartment depending on name and mechName. """
         if name == 'CM':
             compartment.Cm = value*math.pi*compartment.diameter*compartment.length
         elif name == 'RM':
@@ -422,16 +602,18 @@ class MorphML():
         elif name == 'inject':
             debug.printDebug(compartment.name, 'inject', value, 'A.')
             compartment.inject = value
-        elif mechanismname is 'synapse': 
+        elif mechName is 'synapse':
 
            # synapse being added to the compartment
            ## these are potential locations, we do not actually make synapses.
            #synapse = self.context.deepCopy(self.context.pathToId('/library/'+value),\
            # I assume below that compartment name has _segid at its end
-           segid = string.split(compartment.name,'_')[-1] # get segment id from compartment name
+
+           # get segment id from compartment name
+           segid = compartment.name.split('_')[-1]
            self.segDict[segid][5].append(value)
 
-        elif mechanismname is 'spikegen': # spikegen being added to the compartment
+        elif mechName is 'spikegen': # spikegen being added to the compartment
             ## these are potential locations, we do not actually make the spikegens.
             ## spikegens for different synapses can have different thresholds,
             ## hence include synapse_type in its name
@@ -439,28 +621,28 @@ class MorphML():
             #spikegen = moose.SpikeGen(compartment.path+'/'+value+'_spikegen')
             #moose.connect(compartment,"VmSrc",spikegen,"Vm")
             pass
-        elif mechanismname is not None:
+        elif mechName is not None:
             ## if mechanism is not present in compartment, deep copy from library
-            if not moose.exists(compartment.path+'/'+mechanismname):
+            if not moose.exists(compartment.path+'/'+mechName):
                 ## if channel does not exist in library load it from xml file
-                if not moose.exists("/library/"+mechanismname):
+                if not moose.exists("/library/"+mechName):
                     cmlR = ChannelML(self.nml_params)
-                    model_filename = mechanismname+'.xml'
+                    model_filename = mechName+'.xml'
                     model_path = neuroml_utils.find_first_file(model_filename,self.model_dir)
                     if model_path is not None:
                         cmlR.readChannelMLFromFile(model_path)
                     else:
                         raise IOError(
                             'For mechanism {0}: files {1} not found under {2}.'.format(
-                                mechanismname, model_filename, self.model_dir
+                                mechName, model_filename, self.model_dir
                             )
                         )
 
-                neutralObj = moose.Neutral("/library/"+mechanismname)
+                neutralObj = moose.Neutral("/library/"+mechName)
                 if 'CaConc' == neutralObj.className: # Ion concentration pool
-                    libcaconc = moose.CaConc("/library/"+mechanismname)
+                    libcaconc = moose.CaConc("/library/"+mechName)
                     ## deep copies the library caconc under the compartment
-                    caconc = moose.copy(libcaconc,compartment,mechanismname)
+                    caconc = moose.copy(libcaconc,compartment,mechName)
                     caconc = moose.CaConc(caconc)
                     ## CaConc connections are made later using connect_CaConc()
                     ## Later, when calling connect_CaConc,
@@ -468,27 +650,27 @@ class MorphML():
                     ## OR based on the Mstring phi under CaConc path.
                     channel = None
                 elif 'HHChannel2D' == neutralObj.className : ## HHChannel2D
-                    libchannel = moose.HHChannel2D("/library/"+mechanismname)
+                    libchannel = moose.HHChannel2D("/library/"+mechName)
                     ## deep copies the library channel under the compartment
-                    channel = moose.copy(libchannel,compartment,mechanismname)
+                    channel = moose.copy(libchannel,compartment,mechName)
                     channel = moose.HHChannel2D(channel)
                     moose.connect(channel,'channel',compartment,'channel')
                 elif 'HHChannel' == neutralObj.className : ## HHChannel
-                    libchannel = moose.HHChannel("/library/"+mechanismname)
+                    libchannel = moose.HHChannel("/library/"+mechName)
                     ## deep copies the library channel under the compartment
-                    channel = moose.copy(libchannel,compartment,mechanismname)
+                    channel = moose.copy(libchannel,compartment,mechName)
                     channel = moose.HHChannel(channel)
                     moose.connect(channel,'channel',compartment,'channel')
             ## if mechanism is present in compartment, just wrap it
             else:
-                neutralObj = moose.Neutral(compartment.path+'/'+mechanismname)
+                neutralObj = moose.Neutral(compartment.path+'/'+mechName)
                 if 'CaConc' == neutralObj.className: # Ion concentration pool
-                    caconc = moose.CaConc(compartment.path+'/'+mechanismname) # wraps existing channel
+                    caconc = moose.CaConc(compartment.path+'/'+mechName) # wraps existing channel
                     channel = None
                 elif 'HHChannel2D' == neutralObj.className : ## HHChannel2D
-                    channel = moose.HHChannel2D(compartment.path+'/'+mechanismname) # wraps existing channel
+                    channel = moose.HHChannel2D(compartment.path+'/'+mechName) # wraps existing channel
                 elif 'HHChannel' == neutralObj.className : ## HHChannel
-                    channel = moose.HHChannel(compartment.path+'/'+mechanismname) # wraps existing channel
+                    channel = moose.HHChannel(compartment.path+'/'+mechName) # wraps existing channel
             if name == 'Gbar':
                 if channel is None: # if CaConc, neuroConstruct uses gbar for thickness or phi
                     ## If child Mstring 'phi' is present, set gbar as phi

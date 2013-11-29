@@ -195,18 +195,26 @@ class NetworkML():
                    LIF = self.populationDict[population][1][int(cell_id)]
                    moose.connect(stim, "event", LIF, "addSpike")
                else:
-                   segment_path = self.populationDict[population][1][int(cell_id)].path+'/'+\
-                       self.cellSegmentDict[cell_name][segment_id][0]
-                   compartment = moose.Compartment(segment_path)
-                   synchan = moose.SynChan(os.path.join(compartment.path, '/synchan'))
-                   synchan.Gbar = 1e-6
-                   synchan.Ek = 0.0
-                   moose.connect(synchan, 'channel', compartment, 'channel')
-                   synchan.synapse.num = 1
-                   moose.connect(stim, "event"
-                                 , moose.element(synchan.path+'/synapse')
-                                 , "addSpike"
-                                 )
+
+                    segId = '{0}'.format(segment_id)
+                    segment_path = self.populationDict[population][1][int(cell_id)].path \
+                            + '/' + self.cellSegmentDict[cell_name][segId][0]
+                    compartment = moose.Compartment(segment_path)
+                    synchan = moose.SynChan(
+                        os.path.join(compartment.path
+                                     , '/synchan'
+                                     )
+                    )
+                    synchan.Gbar = 1e-6
+                    synchan.Ek = 0.0
+                    moose.connect(synchan, 'channel', compartment, 'channel')
+                    synchan.synapse.num = 1
+                    moose.connect(
+                        stim
+                        , "event"
+                        , moose.element(synchan.path+'/synapse')
+                        , "addSpike"
+                    )
         elif pulse_stim is not None:
             pulseinput = inElemXml.find(".//{"+nmu.nml_ns+"}pulse_input")
             if pulseinput is not None:
@@ -328,11 +336,18 @@ class NetworkML():
             if len(childobj.children)>0:
                 self.translate_rotate(childobj,x,y,z,ztheta) # recursive translation+rotation
 
-    def addConnection(self, connection, projection, syn_name, source, target):
+    def addConnection(self, connection, projection, options):
 
         """
         This function adds connection
         """
+        syn_name = options['syn_name']
+        source = options['source']
+        target = options['target']
+        weight = options['weight']
+        threshold = options['threshold']
+        prop_delay = options['prop_delay']
+
         synapse_type = list()
         projectionName = projection.attrib['name']
         for syn in projection.findall('./{'+nmu.nml_ns+'}synapse_props'):
@@ -434,8 +449,13 @@ class NetworkML():
                 elif 'internal_delay' in syn_props.attrib:
                     prop_delay = float(syn_props.attrib['internal_delay'])*Tfactor
                 else: prop_delay = 0.0
+
+                options = { 'syn_name' : syn_name , 'weight' : weight
+                           , 'source' : source , 'target' : target
+                           , 'threshold' : threshold , 'prop_delay' : prop_delay }
+
                 for connection in projection.findall(".//{"+nmu.nml_ns+"}connection"):
-                    self.addConnection(connection, projection, syn_name, source, target)
+                    self.addConnection(connection, projection, options)
 
     def connect(self, syn_name, pre_path, post_path, weight, threshold, delay):
         postcomp = moose.Compartment(post_path)

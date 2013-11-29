@@ -16,7 +16,7 @@ fi
 # Function which run the main script.
 runCode() {
   $PYC main.py \
-    --nml ./models/neuroml/v1.8/Cerebellum.xml \
+    --nml ./models/neuroml/v1.8/CompleteNetwork.xml \
     --mumbl ./models/mumbl.xml
   #twopi -Teps graphs/moose.dot > graphs/topology.eps
 }
