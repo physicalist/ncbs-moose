@@ -328,7 +328,6 @@ Id SimManager::findChemCompt() const
 {
 	vector< Id > ret;
 	string basePath = baseId_.path();
-	cout << " here in findchemcompt"<<endl;
 	int num = simpleWildcardFind( basePath + "/##[ISA=ChemCompt]", ret );
 	if ( num == 0 )
 		return Id();
@@ -735,7 +734,6 @@ void SimManager::buildFromKkitTree( const Eref& e, const Qinfo* q,
 	shell->doSetClock( 6, simdt_ );
 	shell->doSetClock( 8, plotdt_ );
 	shell->doSetClock( 9, 0 );
-
 	Field< double >::set( Id( 1 ), "runTime", runTime_ );
 
 	string basePath = baseId_.path();
