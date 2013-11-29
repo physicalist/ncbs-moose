@@ -15,6 +15,7 @@ MOOSE (use ChannelML loader).
 # cELementTree is mostly API-compatible but faster than ElementTree
 from xml.etree import cElementTree as ET 
 import math
+import sys
 import moose
 from moose import utils as moose_utils
 from moose.neuroml import utils as neuroml_utils
