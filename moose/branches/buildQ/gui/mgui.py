@@ -65,6 +65,7 @@ from shell import get_shell_class
 from objectedit import ObjectEditDockWidget
 from newmodeldialog import DialogWidget
 import re
+from biomodelsclient import BioModelsClientWidget
 __author__ = 'Subhasis Ray'
 
 # This maps model subtypes to corresponding plugin names. Should be
@@ -119,6 +120,7 @@ class MWindow(QtGui.QMainWindow):
         self.helpActions = None
         self.viewActions = None
         self.editActions = None        
+        self.connectMenu = None
         self.toolBars = []
         self._loadedPlugins = {}
         self._plugins = {}
@@ -304,6 +306,7 @@ class MWindow(QtGui.QMainWindow):
                  self.getViewMenu(),
                  self.getPluginsMenu(),
                  self.getRunMenu(),
+                 self.getConnectMenu(),
                  self.getHelpMenu()]
         for menu in menus:
             self.menuBar().addMenu(menu)
@@ -421,6 +424,14 @@ class MWindow(QtGui.QMainWindow):
             self.helpMenu.clear()
         self.helpMenu.addActions(self.getHelpActions())        
         return self.helpMenu
+
+    def getConnectMenu(self):
+        if self.connectMenu is None:
+            self.connectMenu = QtGui.QMenu('&Connect')
+        else:
+            self.connectMenu.clear()
+        self.connectMenu.addActions(self.getConnectActions())
+        return self.connectMenu
 
     def getViewMenu(self):
         if (not hasattr(self, 'viewMenu')) or (self.viewMenu is None):
@@ -542,11 +553,27 @@ class MWindow(QtGui.QMainWindow):
             self.connect(self.actionBug, QtCore.SIGNAL('triggered()'), self.reportBug)
             self.helpActions = [self.actionAbout, self.actionBuiltInDocumentation, self.actionBug]
         return self.helpActions
-        
+
+    def getConnectActions(self):
+        if(not hasattr(self,'connectActions')) or(self.connectActions is None):
+            self.actionBioModel = QtGui.QAction('BioModels',self)
+            self.connect(self.actionBioModel, QtCore.SIGNAL('triggered()'), self.connectBioModel)
+            self.connectActions = [self.actionBioModel]
+        return self.connectActions
+    
+    def connectBioModel(self):
+        bioModelDialog = QtGui.QDialog(self)
+        bioModelDialog.setWindowTitle(self.tr('BioModels DataBase '))
+        connecttoBioModel = BioModelsClientWidget(bioModelDialog)
+        layout = QtGui.QGridLayout()
+        layout.addWidget(connecttoBioModel)
+        bioModelDialog.setLayout(layout)
+        bioModelDialog.show()
+
     def showAboutMoose(self):
         with open(config.MOOSE_ABOUT_FILE, 'r') as aboutfile:
             QtGui.QMessageBox.about(self, 'About MOOSE', ''.join(aboutfile.readlines()))
-
+        
     def showDocumentation(self, source):
         if not hasattr(self, 'documentationViewer'):
             self.documentationViewer = QtGui.QTextBrowser()
