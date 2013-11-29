@@ -1,5 +1,5 @@
 from __future__ import print_function
-import inspect 
+import inspect
 import sys
 
 HEADER = '\033[95m'
@@ -21,8 +21,8 @@ prefix = dict(
     , WARN = WARN
     , FATAL = ERR
     , INFO = INFO
-    , TODO = TODO 
-    , NOTE = HEADER 
+    , TODO = TODO
+    , NOTE = HEADER
     , DEBUG = DEBUG
     )
 
@@ -37,16 +37,18 @@ def colored(msg, label="INFO") :
         color = ""
     return "{0} {1}".format(color+msg, ENDC)
 
-def printDebug(label, msg, frame=None):
+def printDebug(label, msg, frame=None, exception=None):
     if not frame :
-      print("[{0}] {1}".format(label, colored(msg,label)), file=sys.stderr)
+        print("[{0}] {1}".format(label, colored(msg,label)), file=sys.stderr)
     else :
-      filename = frame.f_code.co_filename 
-      filename = "/".join(filename.split("/")[-2:])
-      print("[{3}] @...{0}:{1} {2}".format(filename
-        , frame.f_lineno
-        , colored(msg, label)
-        , label)
-        , file=sys.stderr
-        )
+        filename = frame.f_code.co_filename
+        filename = "/".join(filename.split("/")[-2:])
+        print("[{3}] @...{0}:{1} {2}".format(filename
+                                             , frame.f_lineno
+                                             , colored(msg, label)
+                                             , label)
+              , file=sys.stderr
+              )
+    if exception:
+        print(" [Expcetion] {0}".format(e))
 

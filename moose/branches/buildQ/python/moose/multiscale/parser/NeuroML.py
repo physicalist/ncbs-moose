@@ -79,7 +79,13 @@ class NeuroML:
         tree = ET.parse(filename)
         root_element = tree.getroot()
         self.model_dir = path.dirname(path.abspath(filename))
-        self.lengthUnits = root_element.attrib['lengthUnits']
+        try:
+            self.lengthUnits = root_element.attrib['lengthUnits']
+        except KeyError as e:
+            # This is preferred in NeuroML v2
+            self.lengthUnits = root_element.attrib['length_units']
+        except Exception as e:
+            debug.printDebug("WARN", "Failed to get length_unit", e)
 
         # gets replaced below if tag for temperature is present
         self.temperature = self._CELSIUS_default
