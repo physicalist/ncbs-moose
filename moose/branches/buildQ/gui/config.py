@@ -69,6 +69,7 @@ KEY_DOCS_DIR = 'main/docsdir'
 KEY_HOME_DIR = 'main/homedir' 
 KEY_ICON_DIR = 'main/icondir' 
 KEY_COLORMAP_DIR = 'main/colormapdir' 
+KEY_BIOMODEL_DIR ='main/biomodeldir'
 KEY_LOCAL_DEMOS_DIR = 'main/localdemosdir'
 KEY_MOOSE_LOCAL_DIR = 'main/localdir'
 KEY_NUMPTHREADS = 'main/numpthreads'
@@ -131,6 +132,7 @@ class MooseSetting(dict):
             if firsttime:
                 cls._instance.qsettings.setValue(KEY_FIRSTTIME, True)
                 cls._instance.qsettings.setValue(KEY_COLORMAP_DIR, os.path.join(MOOSE_GUI_DIR, 'colormaps'))
+                cls._instance.qsettings.setValue(KEY_BIOMODEL_DIR, os.path.join(MOOSE_GUI_DIR, 'bioModels'))
                 cls._instance.qsettings.setValue(KEY_ICON_DIR, os.path.join(MOOSE_GUI_DIR, 'icons'))
                 cls._instance.qsettings.setValue(KEY_NUMPTHREADS, '1')
                 cls._instance.qsettings.setValue(KEY_UNDO_LENGTH, str(MOOSE_UNDO_LENGTH))
