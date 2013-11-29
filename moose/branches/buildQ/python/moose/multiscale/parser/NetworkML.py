@@ -33,7 +33,6 @@ import moose.neuroml.utils as nmu
 import debug.debug as debug
 import inspect
 import helper.xml_methods as xml_methods
-import core.stimulus as stimulus
 
 from math import cos, sin
 from moose import utils
@@ -46,22 +45,20 @@ class NetworkML():
         self.nml_params = nml_params
         self.model_dir = nml_params['model_dir']
         self.elecPath = '/elec'
-        self.dt = 1e-3 # In seconds.
-        self.simTime = 1000e-3
 
     def readNetworkMLFromFile(self,filename,cellSegmentDict,params={}):
 
-        """ readNetworkML
+        """ readNetworkML 
 
-        specify tweak
+        specify tweak 
         params = {
             'excludePopulations':[popname1,...]
             , 'excludeProjections':[projname1,...]
             , 'onlyInclude':{'includePopulation':(popname,[id1,...])
             ,'includeProjections':(projname1,...)
             }
-        }
-
+        } 
+        
         If excludePopulations is present, then excludeProjections must also be
         present. Thus if you exclude some populations, ensure that you exclude
         projections that refer to those populations also!  Though for
@@ -73,8 +70,8 @@ class NetworkML():
         connected to secondary cells that connected to the primary ones: e.g.
         baseline synapses on granule cells connected to 'includePopulation'
         mitrals; these synapses receive file based pre-synaptic events, not
-        presynaptically connected to a cell.
-
+        presynaptically connected to a cell.  
+        
         """
 
         debug.printDebug("INFO", "reading file ... ", filename)
@@ -94,15 +91,15 @@ class NetworkML():
         , lengthUnits="micrometer"):
 
         """
-        This returns
-         populationDict = {
+        This returns 
+         populationDict = { 
            'populationName1':(cellname
-           ,{int(instanceid1):moosecell, ...F}) , ...
+           ,{int(instanceid1):moosecell, ...F}) , ... 
            }
          projectionDict = {
             'projectionName1':(source,target
-            ,[(syn_name1,pre_seg_path,post_seg_path),...])
-            , ...
+            ,[(syn_name1,pre_seg_path,post_seg_path),...]) 
+            , ... 
             }
         """
 
@@ -123,7 +120,7 @@ class NetworkML():
 
     def createInputs(self):
 
-        """ createInputs
+        """ createInputs 
 
         Create inputs as given in NML file and attach them to moose.
         """
@@ -136,7 +133,7 @@ class NetworkML():
             factors = {}
 
             # see pg 219 (sec 13.2) of Book of Genesis
-            if units == 'Physiological Units':
+            if units == 'Physiological Units': 
                 factors['Vfactor'] = 1e-3 # V from mV
                 factors['Tfactor'] = 1e-3 # s from ms
                 factors['Ifactor'] = 1e-6 # A from microA
@@ -161,52 +158,19 @@ class NetworkML():
         ## and returns a reference to it. If it does,
         ## it just returns its reference.
         moose.Neutral(self.elecPath)
-        inputName = inElemXml.get('name')
 
         random_stim = inElemXml.find('.//{'+nmu.nml_ns+'}random_stim')
         pulse_stim = inElemXml.find('.//{'+nmu.nml_ns+'}pulse_input')
-
+        print random_stim, pulse_stim
+        
         if random_stim is not None:
             debug.printDebug("INFO", "Generating random stimulous")
-            debug.printDebug("TODO", "Test this Poission spike train table")
+            # Create random stimulus 
             stimTable = moose.StimulusTable("/elec/random_stimuls")
             # Get the frequency of stimulus
-            frequency = float(random_stim.get('frequency')) / factors['Tfactor']
+            stimFrew = random_stim.get('frequency')
             synpMechanism = random_stim.get('synaptic_mechanism')
 
-            # Create random stimulus
-            vec = stimulus.generateSpikeTrainPoission(frequency
-                                                      , dt=self.dt
-                                                      , simTime=self.simTime
-                                                      )
-            # Stimulus table
-            stim = moose.TimeTable(self.elecPath+'/stim_'+inputName)
-            stim.vec = vec
-            target = inElemXml.find(".//{"+nmu.nml_ns+"}target")
-            population = target.get('population')
-            for site in target.findall(".//{"+nmu.nml_ns+"}site"):
-               cell_id = site.attrib['cell_id']
-               if 'segment_id' in site.attrib:
-                   segment_id = site.attrib['segment_id']
-               else:
-                   segment_id = 0 # default segment_id is specified to be 0
-               cell_name = self.populationDict[population][0]
-               if cell_name == 'LIF':
-                   LIF = self.populationDict[population][1][int(cell_id)]
-                   moose.connect(stim, "event", LIF, "addSpike")
-               else:
-                   segment_path = self.populationDict[population][1][int(cell_id)].path+'/'+\
-                       self.cellSegmentDict[cell_name][segment_id][0]
-                   compartment = moose.Compartment(segment_path)
-                   synchan = moose.SynChan(os.path.join(compartment.path, '/synchan'))
-                   synchan.Gbar = 1e-6
-                   synchan.Ek = 0.0
-                   moose.connect(synchan, 'channel', compartment, 'channel')
-                   synchan.synapse.num = 1
-                   moose.connect(stim, "event"
-                                 , moose.element(synchan.path+'/synapse')
-                                 , "addSpike"
-                                 )
         elif pulse_stim is not None:
             pulseinput = inElemXml.find(".//{"+nmu.nml_ns+"}pulse_input")
             if pulseinput is not None:
@@ -247,7 +211,7 @@ class NetworkML():
                 debug.printDebug("WARN"
                         , "This type of stimulous not stimulous is not supported."
                         )
-                return
+                return 
 
 
     def createPopulations(self):
@@ -258,7 +222,7 @@ class NetworkML():
             debug.printDebug("INFO", "Loading {0}".format(populationName))
             ## if cell does not exist in library load it from xml file
             if not moose.exists('/library/'+cellname):
-                mmlR = MorphML.MorphML(self.nml_params)
+                mmlR = MorphML(self.nml_params)
                 model_filenames = (cellname+'.xml', cellname+'.morph.xml')
                 success = False
                 for model_filename in model_filenames:
@@ -399,7 +363,7 @@ class NetworkML():
         self.projectionDict={}
         projections = self.network.find(".//{"+nmu.nml_ns+"}projections")
         if projections is not None:
-            if projections.attrib["units"] == 'Physiological Units':
+            if projections.attrib["units"] == 'Physiological Units': 
                 # see pg 219 (sec 13.2) of Book of Genesis
                 Efactor = 1e-3 # V from mV
                 Tfactor = 1e-3 # s from ms
