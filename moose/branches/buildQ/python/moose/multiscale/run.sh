@@ -5,19 +5,32 @@ set +e
 # If first argument is not "d" then normal execution else run inside python
 # debugger.
 
-PYC=python2.7
-if [ "$1" == "d" ]; then
-  PYC=pydb
-else
-  PYC=python2.7
-fi
-
-# Function which run the main script.
-runCode() {
+function runCode 
+{
   $PYC main.py \
     --nml ./models/neuroml/v1.8/CompleteNetwork.xml \
     --mumbl ./models/mumbl.xml
   #twopi -Teps graphs/moose.dot > graphs/topology.eps
 }
 
-runCode
+function testPythonCode 
+{
+    pf=$1
+    echo "Checking .... $pf"
+    pylint -E $pf
+}
+
+PYC=python2.7
+if [ "$1" == "d" ]; then
+  PYC=pydb
+  runCode
+elif [ "$1" == "c" ]; then 
+    FILES=$(find . -name "*.py" -type f)
+    for pf in $FILES; do
+        testPythonCode $pf
+    done
+else
+  PYC=python2.7
+  runCode
+fi
+
