@@ -64,11 +64,14 @@ class MorphML():
         return cellsDict
 
 
-    def addSegment(self, moosecell, cellName, segnum, segment):
+    def addSegment(self, cellName, segnum, segment):
 
         """
         Adding segment to cell.
         """
+        run_dia = 0.0
+        running_comp = None
+        running_dia_nums = 0
         segmentname = segment.attrib['name']
 
         # cable is an optional attribute. WARNING: Here I assume it is always
@@ -82,11 +85,11 @@ class MorphML():
             self.cellDictBySegmentId[cellName][1][segmentid] = running_comp
             proximal = segment.find('./{'+self.mml+'}proximal')
             if proximal is not None:
-                running_diameter += float(proximal.attrib["diameter"]) * self.length_factor
+                run_dia += float(proximal.attrib["diameter"])*self.length_factor
                 running_dia_nums += 1
             distal = segment.find('./{'+self.mml+'}distal')
             if distal is not None:
-                running_diameter += float(distal.attrib["diameter"]) * self.length_factor
+                run_dia += float(distal.attrib["diameter"])*self.length_factor
                 running_dia_nums += 1
 
         # new cableid starts, hence start a new compartment; also finish
@@ -101,7 +104,7 @@ class MorphML():
             # just segmentname is NOT unique - eg: mitral bbmit exported from
             # NEURON.
             mooseCompname = segmentname+'_'+segmentid
-            mooseComppath = moosecell.path+'/'+mooseCompname
+            mooseComppath = self.mooseCell.path+'/'+mooseCompname
             mooseComp = moose.Compartment(mooseComppath)
             self.cellDictBySegmentId[cellName][1][segmentid] = mooseComp
 
@@ -112,7 +115,7 @@ class MorphML():
             self.running_cableid = cableid
             running_segid = segmentid
             running_comp = mooseComp
-            running_diameter = 0.0
+            run_dia = 0.0
             running_dia_nums = 0
 
             if 'parent' in segment.attrib:
@@ -138,10 +141,10 @@ class MorphML():
                 parent = None
             proximal = segment.find('./{'+self.mml+'}proximal')
             if proximal is None:
-                # If proximal tag is not present,
-                # then parent attribute MUST be present in the segment tag!
-                # if proximal is not present, then
-                # by default the distal end of the parent is the proximal end of the child
+                # If proximal tag is not present, then parent attribute MUST be
+                # present in the segment tag!  if proximal is not present, then
+                # by default the distal end of the parent is the proximal end
+                # of the child
                 mooseComp.x0 = parent.x
                 mooseComp.y0 = parent.y
                 mooseComp.z0 = parent.z
@@ -149,39 +152,60 @@ class MorphML():
                 mooseComp.x0 = float(proximal.attrib["x"])*self.length_factor
                 mooseComp.y0 = float(proximal.attrib["y"])*self.length_factor
                 mooseComp.z0 = float(proximal.attrib["z"])*self.length_factor
-                running_diameter += float(proximal.attrib["diameter"]) * self.length_factor
+                run_dia += float(proximal.attrib["diameter"])*self.length_factor
                 running_dia_nums += 1
             distal = segment.find('./{'+self.mml+'}distal')
             if distal is not None:
-                running_diameter += float(distal.attrib["diameter"]) * self.length_factor
+                run_dia += float(distal.attrib["diameter"]) * self.length_factor
                 running_dia_nums += 1
 
-            ## finished creating new compartment
-            # Update the end position, diameter and length, and segDict of
-            # this comp/cable/section with each segment that is part of
-            # this cable (assumes contiguous segments in xml).  This
-            # ensures that we don't have to do any 'closing ceremonies', if
-            # a new cable is encoutered in next iteration.
+            # finished creating new compartment Update the end position,
+            # diameter and length, and segDict of this comp/cable/section with
+            # each segment that is part of this cable (assumes contiguous
+            # segments in xml).  This ensures that we don't have to do any
+            # 'closing ceremonies', if a new cable is encoutered in next
+            # iteration.
 
             if distal is not None:
                 running_comp.x = float(distal.attrib["x"])*self.length_factor
                 running_comp.y = float(distal.attrib["y"])*self.length_factor
                 running_comp.z = float(distal.attrib["z"])*self.length_factor
-            ## Set the compartment diameter as the average diameter of all the segments in this section
-            running_comp.diameter = running_diameter / float(running_dia_nums)
-            ## Set the compartment length
-            running_comp.length = math.sqrt((running_comp.x-running_comp.x0)**2+\
-                (running_comp.y-running_comp.y0)**2+(running_comp.z-running_comp.z0)**2)
-            ## NeuroML specs say that if (x0,y0,z0)=(x,y,z), then round compartment e.g. soma.
-            ## In Moose set length = dia to give same surface area as sphere of dia.
+
+            # Set the compartment diameter as the average diameter of all the
+            # segments in this section
+            running_comp.diameter = run_dia / float(running_dia_nums)
+
+            # Set the compartment length
+            running_comp.length = math.sqrt(
+                (running_comp.x-running_comp.x0)**2+\
+                (running_comp.y-running_comp.y0)**2+\
+                (running_comp.z-running_comp.z0)**2
+            )
+
+            # NeuroML specs say that if (x0,y0,z0)=(x,y,z), then round
+            # compartment e.g. soma.  In Moose set length = dia to give same
+            # surface area as sphere of dia.
+
             if running_comp.length == 0.0:
                 running_comp.length = running_comp.diameter
-            ## Set the segDict
-            ## the empty list at the end below will get populated
-            ## with the potential synapses on this segment, in function set_compartment_param(..)
-            self.segDict[running_segid] = [running_comp.name,(running_comp.x0,running_comp.y0,running_comp.z0),\
-                (running_comp.x,running_comp.y,running_comp.z),running_comp.diameter,running_comp.length,[]]
-            if neuroml_utils.neuroml_debug: debug.printDebug('Set up compartment/section', running_comp.name)
+
+            # Set the segDict the empty list at the end below will get
+            # populated with the potential synapses on this segment, in
+            # function set_compartment_param(..)
+            self.segDict[running_segid] = [
+                running_comp.name
+                , (running_comp.x0 , running_comp.y0 , running_comp.z0)
+                , (running_comp.x,running_comp.y,running_comp.z)
+                , running_comp.diameter
+                , running_comp.length
+                , []
+            ]
+
+            if neuroml_utils.neuroml_debug:
+                debug.printDebug(
+                    "STEP"
+                    , "Set up compartment/section %s" % running_comp.name
+                )
 
 
 
@@ -189,8 +213,10 @@ class MorphML():
 
         """
         returns {cellName:segDict}
-        where segDict = { segid1 : [ segname,(proximalx,proximaly,proximalz),
-            (distalx,distaly,distalz),diameter,length,[potential_syn1, ... ] ] , ... }
+        where segDict = { segid1 : [ segname
+        , (proximalx,proximaly,proximalz)
+        , (distalx,distaly,distalz),diameter,length,[potential_syn1, ... ] ]
+        , ... }
         segname is "<name>_<segid>" because 1) guarantees uniqueness,
         2) later scripts obtain segid from the compartment's name!
         """
@@ -204,15 +230,15 @@ class MorphML():
         moose.Neutral('/library')
 
         if cellName == 'LIF':
-            moosecell = moose.LeakyIaF('/library/'+cellName)
+            self.mooseCell = moose.LeakyIaF('/library/'+cellName)
             self.segDict = {}
         else:
             # using moose Neuron class - in previous version 'Cell' class
             # Chaitanya.
 
-            moosecell = moose.Neuron('/library/'+cellName)
-            self.cellDictBySegmentId[cellName] = [moosecell,{}]
-            self.cellDictByCableId[cellName] = [moosecell,{}]
+            self.mooseCell = moose.Neuron('/library/'+cellName)
+            self.cellDictBySegmentId[cellName] = [self.mooseCell,{}]
+            self.cellDictByCableId[cellName] = [self.mooseCell,{}]
             self.segDict = {}
 
             # load morphology and connections between compartments Many neurons
@@ -224,13 +250,10 @@ class MorphML():
 
             self.running_cableid = ''
             running_segid = ''
-            running_comp = None
-            running_diameter = 0.0
-            running_dia_nums = 0
             segments = cell.findall(".//{"+self.mml+"}segment")
             segmentstotal = len(segments)
             for segnum, segment in enumerate(segments):
-                self.addSegment(moosecell, cellName, segnum, segment)
+                self.addSegment(cellName, segnum, segment)
 
         # load cablegroups into a dictionary
         self.cablegroupsDict = {}
@@ -330,7 +353,7 @@ class MorphML():
             if mechName == "integrate_and_fire": IaFpresent = True
             ## integrate-and-fire-meachanism
             if IaFpresent:
-                self.integateAndFireMechanism(mechanism, moosecell)
+                self.integateAndFireMechanism(mechanism)
 
         # Other mechanism are non-I&F type
         sc = cell.find(".//{"+self.bio+"}spec_capacitance")
@@ -370,7 +393,7 @@ class MorphML():
 
         ## if no params, apply all default values to all compartments
         if len(mech_params) == 0:
-            compartmnets = self.cellDictByCableId[cellName][1].values()
+            compartments = self.cellDictByCableId[cellName][1].values()
             for c in compartments:
                 self.set_compartment_param(c, None, 'default', mechName)
 
@@ -510,37 +533,37 @@ class MorphML():
                 , self.bio
             )
 
-    def integateAndFireMechanism(self, mechanism, mooseCell):
+    def integateAndFireMechanism(self, mechanism):
         """  Integrate and fire mechanism
         """
         mech_params = mechanism.findall(".//{"+self.bio+"}parameter")
         for parameter in mech_params:
             paramName = parameter.attrib['name']
             if paramName == 'inject':
-                mooseCell.inject = float(parameter.attrib["value"])*self.Ifactor
+                self.mooseCell.inject = float(parameter.attrib["value"])*self.Ifactor
             elif paramName == 'Rm':
-                mooseCell.Rm = float(parameter.attrib["value"])*self.Rfactor
+                self.mooseCell.Rm = float(parameter.attrib["value"])*self.Rfactor
             elif paramName == 'Cm':
-                mooseCell.Cm = float(parameter.attrib["value"])*self.Cfactor
+                self.mooseCell.Cm = float(parameter.attrib["value"])*self.Cfactor
             elif paramName == 'Em':
-                mooseCell.Em = float(parameter.attrib["value"])*self.Efactor
+                self.mooseCell.Em = float(parameter.attrib["value"])*self.Efactor
             elif paramName == 'v_reset':
                 # voltage after spike, typicaly below resting
-                mooseCell.Vreset = float(parameter.attrib["value"])*self.Efactor
-                mooseCell.initVm = moosecell.Vreset
+                self.mooseCell.Vreset = float(parameter.attrib["value"])*self.Efactor
+                self.mooseCell.initVm = self.mooseCell.Vreset
             elif paramName == 'threshold':
                 # firing threshold potential
-                mooseCell.Vthreshold = \
+                self.mooseCell.Vthreshold = \
                         float(parameter.attrib["value"])*self.Efactor
             elif paramName == 't_refrac':
                 # min refractory time before next spike
-                comment = "Use this refractory period in simulation"
+                msg = "Use this refractory period in simulation"
                 debug.printDebug("TODO" , msg, frame=inspect.currentframe())
-                mooseCell.refractoryPeriod = \
+                self.mooseCell.refractoryPeriod = \
                         float(parameter.attrib["value"])*self.Tfactor
             elif paramName == 'inject':
                 # inject into soma
-                mooseCell.refractoryPeriod = \
+                self.mooseCell.refractoryPeriod = \
                         float(parameter.attrib["value"])*self.Ifactor
 
 
@@ -590,7 +613,7 @@ class MorphML():
     def set_compartment_param(self, compartment, name, value, mechName):
         """ Set the param for the compartment depending on name and mechName. """
         if name == 'CM':
-            compartment.Cm = value*math.pi*compartment.diameter*compartment.length
+            compartment.Cm = value *math.pi*compartment.diameter*compartment.length
         elif name == 'RM':
             compartment.Rm = value/(math.pi*compartment.diameter*compartment.length)
         elif name == 'RA':
@@ -693,4 +716,9 @@ class MorphML():
                 ## Later, when calling connect_CaConc,
                 ## B is set for caconc based on thickness of Ca shell and compartment l and dia.
                 ## OR based on the Mstring phi under CaConc path.
-        if neuroml_utils.neuroml_debug: debug.printDebug("Setting ",name," for ",compartment.path," value ",value)
+
+        if neuroml_utils.neuroml_debug:
+            msg = "Setting {0} for {1} value {2}".format(name, compartment.path
+                                                         , value
+                                                         )
+            debug.printDebug("DEBUG", msg, frame=inspect.currentframe())
