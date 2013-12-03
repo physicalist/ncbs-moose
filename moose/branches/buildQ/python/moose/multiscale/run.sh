@@ -2,7 +2,6 @@
 set +e
 
 # Set pythonpath
-export PYTHONPATH=./../../
 # If first argument is not "d" then normal execution else run inside python
 # debugger.
 

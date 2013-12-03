@@ -1,14 +1,16 @@
-## Description: class ChannelML for loading ChannelML from file or xml element into MOOSE
-## Version 1.0 by Aditya Gilra, NCBS, Bangalore, India, 2011 for serial MOOSE
-## Version 1.5 by Niraj Dudani, NCBS, Bangalore, India, 2012, ported to parallel MOOSE
-## Version 1.6 by Aditya Gilra, NCBS, Bangalore, India, 2012, minor changes for parallel MOOSE
-## Version 1.7 by Aditya Gilra, NCBS, Bangalore, India, 2013, further support for NeuroML 1.8.1
+# Description: class ChannelML for loading ChannelML from file or xml element
+# into MOOSE Version 1.0 by Aditya Gilra, NCBS, Bangalore, India, 2011 for
+# serial MOOSE Version 1.5 by Niraj Dudani, NCBS, Bangalore, India, 2012,
+# ported to parallel MOOSE Version 1.6 by Aditya Gilra, NCBS, Bangalore, India,
+# 2012, minor changes for parallel MOOSE Version 1.7 by Aditya Gilra, NCBS,
+# Bangalore, India, 2013, further support for NeuroML 1.8.1
 
 """
-NeuroML.py is the preferred interface. Use this only if NeuroML L1,L2,L3 files are misnamed/scattered.
-Instantiate ChannelML class, and thence use method:
-readChannelMLFromFile(...) to load a standalone ChannelML file (synapse/channel), OR
-readChannelML(...) / readSynapseML to load from an xml.etree xml element (could be part of a larger NeuroML file).
+NeuroML.py is the preferred interface. Use this only if NeuroML L1,L2,L3 files
+are misnamed/scattered.  Instantiate ChannelML class, and thence use method:
+    readChannelMLFromFile(...) to load a standalone ChannelML file
+    (synapse/channel), OR readChannelML(...) / readSynapseML to load from an
+    xml.etree xml element (could be part of a larger NeuroML file).
 """
 
 from xml.etree import cElementTree as ET
@@ -29,20 +31,33 @@ class ChannelML():
         self.temperature = nml_params['temperature']
 
     def readChannelMLFromFile(self, _filename, _params={}):
-        """ specify params as a dict: e.g. temperature that you need to pass to channels """
+
+        """ specify params as a dict: e.g. temperature that you need to pass to
+        channels """
+
         tree = ET.parse(filename)
         channelml_element = tree.getroot()
-        for channel in channelml_element.findall('.//{'+self.cml+'}channel_type'):
-            ## ideally I should read in extra params from within the channel_type element
-            ## and put those in also. Global params should override local ones.
+
+
+        channelml_element.findall('.//{'+self.cml+'}channel_type')
+        for channel in cts:
+            # ideally I should read in extra params from within the
+            # channel_type element and put those in also. Global params should
+            # override local ones.
             self.readChannelML(channel,params,channelml_element.attrib['units'])
-        for synapse in channelml_element.findall('.//{'+self.cml+'}synapse_type'):
+
+        syns = channelml_element.findall('.//{'+self.cml+'}synapse_type')
+        for synapse in syns:
             self.readSynapseML(synapse,channelml_element.attrib['units'])
-        for ionConc in channelml_element.findall('.//{'+self.cml+'}ion_concentration'):
+
+
+        chics = channelml_element.findall('.//{'+self.cml+'}ion_concentration')
+        for ionConc in chics:
             self.readIonConcML(ionConc,channelml_element.attrib['units'])
 
     def readSynapseML(self,synapseElement,units="SI units"):
-        if 'Physiological Units' in units: # see pg 219 (sec 13.2) of Book of Genesis
+        # see pg 219 (sec 13.2) of Book of Genesis
+        if 'Physiological Units' in units:
             Vfactor = 1e-3 # V from mV
             Tfactor = 1e-3 # s from ms
             Gfactor = 1e-3 # S from mS
@@ -54,7 +69,8 @@ class ChannelML():
             debug.printDebug("INFO", "Wrong units {0}".format(units))
             sys.exit(1)
 
-        moose.Neutral('/library') # creates /library in MOOSE tree; elif present, wraps
+        # creates /library in MOOSE tree; elif present, wraps
+        moose.Neutral('/library')
         if utils.neuroml_debug: print(("loading synapse :",synapseElement.attrib['name'],"into /library ."))
         moosesynapse = moose.SynChan('/library/'+synapseElement.attrib['name'])
         doub_exp_syn = synapseElement.find('./{'+self.cml+'}doub_exp_syn')
