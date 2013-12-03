@@ -30,13 +30,14 @@ import MorphML
 import ChannelML
 import moose
 import moose.neuroml.utils as nmu
+import moose.utils as mu
 import debug.debug as debug
 import inspect
 import helper.xml_methods as xml_methods
 import core.stimulus as stimulus
 
 from math import cos, sin
-from moose import utils
+import utils
 
 class NetworkML():
 
@@ -216,6 +217,8 @@ class NetworkML():
                         , "addSpike"
                     )
         elif pulse_stim is not None:
+            Ifactor = factors['Ifactor']
+            Tfactor = factors['Tfactor']
             pulseinput = inElemXml.find(".//{"+nmu.nml_ns+"}pulse_input")
             if pulseinput is not None:
                 pulsegen = moose.PulseGen('/elec/pulsegen_'+inputName)
@@ -431,7 +434,7 @@ class NetworkML():
                 syn_name = syn_props.attrib['synapse_type']
                 ## if synapse does not exist in library load it from xml file
                 if not moose.exists("/library/"+syn_name):
-                    cmlR = ChannelML(self.nml_params)
+                    cmlR = ChannelML.ChannelML(self.nml_params)
                     model_filename = syn_name+'.xml'
                     model_path = nmu.find_first_file(model_filename, self.model_dir)
                     if model_path is not None:
@@ -468,15 +471,15 @@ class NetworkML():
         ## ALSO for a saturating synapse i.e. KinSynChan, we always make a new synapse
         ## as KinSynChan is not meant to represent multiple synapses
         libsyn = moose.SynChan('/library/'+syn_name)
-        gradedchild = utils.get_child_Mstring(libsyn,'graded')
+        gradedchild = mu.get_child_Mstring(libsyn,'graded')
         if libsyn.className == 'KinSynChan' or gradedchild.value == 'True': # create a new synapse
-            syn_name_full = syn_name+'_'+utils.underscorize(pre_path)
+            syn_name_full = syn_name+'_'+mu.underscorize(pre_path)
             self.make_new_synapse(syn_name, postcomp, syn_name_full)
         else:
             ##### BUG BUG BUG in MOOSE:
             ##### Subhasis said addSpike below always adds to the first element in syn.synapse
             ##### So here, create a new SynChan everytime.
-            syn_name_full = syn_name+'_'+utils.underscorize(pre_path)
+            syn_name_full = syn_name+'_'+ mu.underscorize(pre_path)
             self.make_new_synapse(syn_name, postcomp, syn_name_full)
             ##### Once above bug is resolved in MOOSE, revert to below:
             ### if syn doesn't exist in this compartment, create it
@@ -484,7 +487,7 @@ class NetworkML():
             #if not moose.exists(post_path+'/'+syn_name_full):
             #    self.make_new_synapse(syn_name, postcomp, syn_name_full)
         syn = moose.SynChan(post_path+'/'+syn_name_full) # wrap the synapse in this compartment
-        gradedchild = utils.get_child_Mstring(syn,'graded')
+        gradedchild = mu.get_child_Mstring(syn,'graded')
         #### weights are set at the end according to whether the synapse is graded or event-based
 
 
@@ -579,12 +582,12 @@ class NetworkML():
     def make_new_synapse(self, syn_name, postcomp, syn_name_full):
         ## if channel does not exist in library load it from xml file
         if not moose.exists('/library/'+syn_name):
-            cmlR = ChannelML(self.nml_params)
+            cmlR = ChannelML.ChannelML(self.nml_params)
             cmlR.readChannelMLFromFile(syn_name+'.xml')
         ## deep copies the library synapse to an instance under postcomp named as <arg3>
         synid = moose.copy(moose.Neutral('/library/'+syn_name),postcomp,syn_name_full)
         syn = moose.SynChan(synid)
-        childmgblock = utils.get_child_Mstring(syn,'mgblock')
+        childmgblock = mu.get_child_Mstring(syn,'mgblock')
         #### connect the post compartment to the synapse
         if childmgblock.value=='True': # If NMDA synapse based on mgblock, connect to mgblock
             mgblock = moose.Mg_block(syn.path+'/mgblock')

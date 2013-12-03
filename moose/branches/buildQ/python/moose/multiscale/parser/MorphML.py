@@ -617,7 +617,8 @@ class MorphML():
         elif name == 'RM':
             compartment.Rm = value/(math.pi*compartment.diameter*compartment.length)
         elif name == 'RA':
-            compartment.Ra = value*compartment.length/(math.pi*(compartment.diameter/2.0)**2)
+            compartment.Ra = value * compartment.length / \
+                    (math.pi*(compartment.diameter/2.0)**2)
         elif name == 'Em':
             compartment.Em = value
         elif name == 'initVm':
@@ -628,7 +629,7 @@ class MorphML():
         elif mechName is 'synapse':
 
            # synapse being added to the compartment
-           ## these are potential locations, we do not actually make synapses.
+           # these are potential locations, we do not actually make synapses.
            #synapse = self.context.deepCopy(self.context.pathToId('/library/'+value),\
            # I assume below that compartment name has _segid at its end
 
@@ -637,41 +638,52 @@ class MorphML():
            self.segDict[segid][5].append(value)
 
         elif mechName is 'spikegen': # spikegen being added to the compartment
-            ## these are potential locations, we do not actually make the spikegens.
-            ## spikegens for different synapses can have different thresholds,
-            ## hence include synapse_type in its name
-            ## value contains name of synapse i.e. synapse_type
+            # these are potential locations, we do not actually make the
+            # spikegens.  spikegens for different synapses can have different
+            # thresholds, hence include synapse_type in its name value contains
+            # name of synapse i.e. synapse_type
             #spikegen = moose.SpikeGen(compartment.path+'/'+value+'_spikegen')
             #moose.connect(compartment,"VmSrc",spikegen,"Vm")
             pass
         elif mechName is not None:
-            ## if mechanism is not present in compartment, deep copy from library
+
+            # if mechanism is not present in compartment, deep copy from library
             if not moose.exists(compartment.path+'/'+mechName):
-                ## if channel does not exist in library load it from xml file
+
+                # if channel does not exist in library load it from xml file
                 if not moose.exists("/library/"+mechName):
                     cmlR = ChannelML(self.nml_params)
                     model_filename = mechName+'.xml'
-                    model_path = neuroml_utils.find_first_file(model_filename,self.model_dir)
+                    model_path = neuroml_utils.find_first_file(
+                        model_filename
+                        , self.model_dir
+                    )
                     if model_path is not None:
                         cmlR.readChannelMLFromFile(model_path)
                     else:
-                        raise IOError(
-                            'For mechanism {0}: files {1} not found under {2}.'.format(
-                                mechName, model_filename, self.model_dir
-                            )
-                        )
+                        msg = 'Mechanism {0}: files {1} not found under {2}'\
+                                .format( mechName
+                                        , model_filename
+                                        , self.model_dir
+                                        )
+                        raise IOError(msg)
 
                 neutralObj = moose.Neutral("/library/"+mechName)
-                if 'CaConc' == neutralObj.className: # Ion concentration pool
+
+                # Ion concentration pool
+                if 'CaConc' == neutralObj.className:
                     libcaconc = moose.CaConc("/library/"+mechName)
-                    ## deep copies the library caconc under the compartment
+
+                    # deep copies the library caconc under the compartment
                     caconc = moose.copy(libcaconc,compartment,mechName)
                     caconc = moose.CaConc(caconc)
-                    ## CaConc connections are made later using connect_CaConc()
-                    ## Later, when calling connect_CaConc,
-                    ## B is set for caconc based on thickness of Ca shell and compartment l and dia
-                    ## OR based on the Mstring phi under CaConc path.
+
+                    # CaConc connections are made later using connect_CaConc()
+                    # Later, when calling connect_CaConc, B is set for caconc
+                    # based on thickness of Ca shell and compartment l and dia
+                    # OR based on the Mstring phi under CaConc path.
                     channel = None
+
                 elif 'HHChannel2D' == neutralObj.className : ## HHChannel2D
                     libchannel = moose.HHChannel2D("/library/"+mechName)
                     ## deep copies the library channel under the compartment
@@ -680,26 +692,32 @@ class MorphML():
                     moose.connect(channel,'channel',compartment,'channel')
                 elif 'HHChannel' == neutralObj.className : ## HHChannel
                     libchannel = moose.HHChannel("/library/"+mechName)
-                    ## deep copies the library channel under the compartment
+
+                    # deep copies the library channel under the compartment
                     channel = moose.copy(libchannel,compartment,mechName)
                     channel = moose.HHChannel(channel)
                     moose.connect(channel,'channel',compartment,'channel')
-            ## if mechanism is present in compartment, just wrap it
+            # if mechanism is present in compartment, just wrap it
             else:
                 neutralObj = moose.Neutral(compartment.path+'/'+mechName)
-                if 'CaConc' == neutralObj.className: # Ion concentration pool
-                    caconc = moose.CaConc(compartment.path+'/'+mechName) # wraps existing channel
+                # Ion concentration pool
+                if 'CaConc' == neutralObj.className:
+                    # wraps existing channel
+                    caconc = moose.CaConc(compartment.path+'/'+mechName)
                     channel = None
-                elif 'HHChannel2D' == neutralObj.className : ## HHChannel2D
-                    channel = moose.HHChannel2D(compartment.path+'/'+mechName) # wraps existing channel
+                elif 'HHChannel2D' == neutralObj.className: ## HHChannel2D
+                    # wraps existing channel
+                    channel = moose.HHChannel2D(compartment.path+'/'+mechName)
                 elif 'HHChannel' == neutralObj.className : ## HHChannel
-                    channel = moose.HHChannel(compartment.path+'/'+mechName) # wraps existing channel
+                    # wraps existing channel
+                    channel = moose.HHChannel(compartment.path+'/'+mechName)
             if name == 'Gbar':
-                if channel is None: # if CaConc, neuroConstruct uses gbar for thickness or phi
-                    ## If child Mstring 'phi' is present, set gbar as phi
-                    ## BUT, value has been multiplied by Gfactor as a Gbar,
-                    ## SI or physiological not known here,
-                    ## ignoring Gbar for CaConc, instead of passing units here
+                # if CaConc, neuroConstruct uses gbar for thickness or phi
+                if channel is None:
+                    # If child Mstring 'phi' is present, set gbar as phi BUT,
+                    # value has been multiplied by Gfactor as a Gbar, SI or
+                    # physiological not known here, ignoring Gbar for CaConc,
+                    # instead of passing units here
                     child = moose_utils.get_child_Mstring(caconc,'phi')
                     if child is not None:
                         #child.value = value
@@ -708,14 +726,18 @@ class MorphML():
                         #caconc.thick = value
                         pass
                 else: # if ion channel, usual Gbar
-                    channel.Gbar = value*math.pi*compartment.diameter*compartment.length
+                    channel.Gbar = value * math.pi * compartment.diameter \
+                            * compartment.length
             elif name == 'Ek':
                 channel.Ek = value
-            elif name == 'thick': # thick seems to be NEURON's extension to NeuroML level 2.
-                caconc.thick = value ## JUST THIS WILL NOT DO - HAVE TO SET B based on this thick!
-                ## Later, when calling connect_CaConc,
-                ## B is set for caconc based on thickness of Ca shell and compartment l and dia.
-                ## OR based on the Mstring phi under CaConc path.
+
+            # thick seems to be NEURON's extension to NeuroML level 2.
+            elif name == 'thick':
+                # JUST THIS WILL NOT DO - HAVE TO SET B based on this thick!
+                caconc.thick = value
+                # Later, when calling connect_CaConc, B is set for caconc based
+                # on thickness of Ca shell and compartment l and dia.  OR based
+                # on the Mstring phi under CaConc path.
 
         if neuroml_utils.neuroml_debug:
             msg = "Setting {0} for {1} value {2}".format(name, compartment.path
