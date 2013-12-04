@@ -127,6 +127,7 @@ class BioModelsClientWidget(QtGui.QWidget):
         self.setLayout(layout)
         self.setupActions()
         self.client.set_options(proxy=proxyOpts)
+        
 	# TODO:
 	# proxy = [ can be set using set_option(proxy={'http':'proxyhost:port', ...}) function
 
@@ -139,10 +140,15 @@ class BioModelsClientWidget(QtGui.QWidget):
         selectedRow = self.resultsPanel.currentRow()
         modelId = self.resultsPanel.item(selectedRow, 0).text()
         modelSBML = self.client.service.getModelSBMLbyId(modelId)
-        print modelSBML
+        #print modelSBML
 
     def runQuery(self):
-        print 'Running query'
+        print 'Running query .....'
+        #self.progressDialog()
+        progressDialog = QtGui.QProgressDialog()
+        progressDialog.setLabelText('Retrieving data from BioModels Database')
+        progressDialog.setModal(True)
+        progressDialog.setVisible(True)
         index = self.queryModelCombo.currentIndex()
         query = self.queryModelCombo.itemData(index).toString()
         argument = self.queryLineEdit.text().trimmed()
@@ -151,6 +157,7 @@ class BioModelsClientWidget(QtGui.QWidget):
             result = function(str(argument))
         else:
             result = function()
+
         self.resultsPanel.clear()
 
         row = 0
@@ -158,6 +165,9 @@ class BioModelsClientWidget(QtGui.QWidget):
         self.resultsPanel.setColumnCount(2)
         self.resultsPanel.setHorizontalHeaderItem(column, QtGui.QTableWidgetItem('Id'))
         self.resultsPanel.setHorizontalHeaderItem(column + 1, QtGui.QTableWidgetItem('Name'))
+        self.resultsPanel.setRowCount(0)
+        display = True
+        totalRows = 0
         if type(result) is type(''):
             self.resultsPanel.insertRow(row)
             item = QtGui.QTableWidgetItem(argument)
@@ -167,41 +177,61 @@ class BioModelsClientWidget(QtGui.QWidget):
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
             self.resultsPanel.setItem(row, column + 1, item)
         elif type(result) is type([]):
+            totalRows = len(result)
             updatepickleFile = False
-            filename = str(query+'.pkl')
-            filePath = os.path.join(config.settings[config.KEY_BIOMODEL_DIR], filename)
+            filename = str(query)
+            filePath = os.path.join(config.settings[config.KEY_BIOMODEL_DIR], filename+'.pkl')
+            print filePath
             pickleResult = {}
             if os.path.isfile(filePath):
                 pickleFile = open(filePath,'rb')
                 pickleResult = pickle.load(pickleFile)
 
             #If there is update from BioModels,then pickle file is updated.
+            r = 0
+            if progressDialog:
+                progressDialog.setMaximum(totalRows)
+
             for item in result:
                 if item not in pickleResult:
-                    name = unicode(self.client.service.getModelNameById(item)).encode("utf-8")
+                    if progressDialog:
+                        progressDialog.setValue(r)            
+                        if progressDialog.wasCanceled():
+                            return 0
+                        name = unicode(self.client.service.getModelNameById(item)).encode("utf-8")
+                        r = r+1
                     pickleResult.update({item:name})
                     updatepickleFile = True
             if updatepickleFile:
-                output = open(os.path.join(config.settings[config.KEY_BIOMODEL_DIR], filename),'wb')
+                output = open(os.path.join(config.settings[config.KEY_BIOMODEL_DIR], filename+'.pkl'),'wb')
                 pickle.dump(pickleResult,output)
                 output.close()
+                
 
             if not argument.isEmpty():
-                name = pickleResult[str(argument)]
-                pickleResult = {}
-                pickleResult[argument] = name;
-            for value,name in pickleResult.items():
-                self.resultsPanel.insertRow(row)
-                item = QtGui.QTableWidgetItem(self.tr(value))
-                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-                # item.setData(Qt.DisplayRole, QtCore.QVariant(value))
-                self.resultsPanel.setItem(row, column, item)
-                #name = self.client.service.getModelNameById(value)
-                
-                item = QtGui.QTableWidgetItem(name)
-                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-                self.resultsPanel.setItem(row, column + 1, item)
-                row = row + 1
+                try:
+                    name = pickleResult[str(argument)]
+                    pickleResult = {}
+                    pickleResult[argument] = name;
+
+                except KeyError, e:
+                    print 'A KeyError - "%s"' % str(e) ,' not found in ',filename
+                    QtGui.QMessageBox.critical(None, "BioModels Database"," The Id "+ str(e) +" not found in "+ filename,QtGui.QMessageBox.Ok | QtGui.QMessageBox.Default,QtGui.QMessageBox.NoButton)
+                    display = False
+            if display:
+                for value,name in pickleResult.items():
+                    self.resultsPanel.insertRow(row)
+                    item = QtGui.QTableWidgetItem(self.tr(value))
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                    #item.setData(Qt.DisplayRole, QtCore.QVariant(value))
+                    self.resultsPanel.setItem(row, column, item)
+                    #name = self.client.service.getModelNameById(value)
+                    item = QtGui.QTableWidgetItem(name)
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                    self.resultsPanel.setItem(row, column + 1, item)
+                    row = row + 1
+        if progressDialog:
+            progressDialog.close()
         print 'Finished running query'
     
 if __name__ == '__main__':
