@@ -46,9 +46,10 @@ def printDebug(label, msg, frame=None, exception=None):
         print("[{3}] @...{0}:{1} {2}".format(filename
                                              , frame.f_lineno
                                              , colored(msg, label)
-                                             , label)
+                                             , label
+                                             )
               , file=sys.stderr
               )
     if exception:
-        print(" [Expcetion] {0}".format(e))
+        print(" [Expcetion] {0}".format(exception))
 
