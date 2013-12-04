@@ -149,6 +149,7 @@ class BioModelsClientWidget(QtGui.QWidget):
         progressDialog.setLabelText('Retrieving data from BioModels Database')
         progressDialog.setModal(True)
         progressDialog.setVisible(True)
+        progressDialog.setWindowTitle("BioModels Database")
         index = self.queryModelCombo.currentIndex()
         query = self.queryModelCombo.itemData(index).toString()
         argument = self.queryLineEdit.text().trimmed()
