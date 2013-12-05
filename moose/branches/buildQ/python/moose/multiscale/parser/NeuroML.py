@@ -147,4 +147,3 @@ class NeuroML:
         neuromlR = NeuroML()
         xml, filename = nml
         return neuromlR.readNeuroMLFromFile(filename)
-

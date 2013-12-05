@@ -3,7 +3,9 @@ import os
 import sys
 import debug.debug as debug
 import inspect
-import parser.NeuroML as loader
+import parser.NeuroML as nml_loader
+import core.mumbl as mumbl
+import core.moose_config as moose_config
 
 from lxml import etree
 
@@ -40,6 +42,11 @@ argParser.add_argument('--mumbl', metavar='mumbl'
     , nargs = '+'
     , help = 'Lanaguge to do multi-scale modelling in moose'
     )
+argParser.add_argument('--config', metavar='config'
+    , required = True
+    , nargs = '+'
+    , help = 'Simulation specific settings for moose in a xml file'
+    )
 args = argParser.parse_args()
 
 import parser.parser as parser
@@ -49,10 +56,17 @@ if args :
     debug.printDebug("INFO", "Started parsing NML models")
     etreeDict = parser.parseModels(args, validate=False)
     debug.printDebug("INFO", "Parsing of models is done")
-    nmlObj = loader.NeuroML()
+    nmlObj = nml_loader.NeuroML()
+    simObj = moose_config.Simulator(etreeDict['config'][0])
+
     nml = etreeDict['nml'][0]
-    nmlObj.loadNML(nml)
-    print("== Done!")
+    populationDict, projectionDict = nmlObj.loadNML(nml)
+    debug.printDebug("STEP", " .. Neuroml loaded")
+
+    # Start processing mumbl
+    mumblObj = mumbl.Mumble(etreeDict['mumbl'])
+    mumblObj.load()
+
     sys.exit()
   else :
     debug.printDebug("FATAL", "One or more model file does not exists.")
