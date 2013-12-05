@@ -37,13 +37,10 @@ argParser.add_argument('--nml', metavar='nmlpath'
     , nargs = '+'
     , help = 'nueroml model'
     )
-argParser.add_argument('--mumbl', metavar='mumbl'
-    , required = True
-    , nargs = '+'
+argParser.add_argument('--mumbl', metavar='mumbl', required = True, nargs = '+'
     , help = 'Lanaguge to do multi-scale modelling in moose'
     )
-argParser.add_argument('--config', metavar='config'
-    , required = True
+argParser.add_argument('--config', metavar='config', required = True
     , nargs = '+'
     , help = 'Simulation specific settings for moose in a xml file'
     )
@@ -51,28 +48,31 @@ args = argParser.parse_args()
 
 import parser.parser as parser
 
-if args :
-  if ifPathsAreValid(args) :
-    debug.printDebug("INFO", "Started parsing NML models")
-    etreeDict = parser.parseModels(args, validate=False)
-    debug.printDebug("INFO", "Parsing of models is done")
-    nmlObj = nml_loader.NeuroML()
-    simObj = moose_config.Simulator(etreeDict['config'][0])
+if args:
+    if ifPathsAreValid(args):
+        debug.printDebug("INFO", "Started parsing NML models")
+        etreeDict = parser.parseModels(args, validate=False)
+        debug.printDebug("INFO", "Parsing of models is done")
+        nmlObj = nml_loader.NeuroML()
 
-    nml = etreeDict['nml'][0]
-    populationDict, projectionDict = nmlObj.loadNML(nml)
-    debug.printDebug("STEP", " .. Neuroml loaded")
+        simObj = moose_config.Simulator(etreeDict['config'][0])
 
-    # Start processing mumbl
-    mumblObj = mumbl.Mumble(etreeDict['mumbl'])
-    mumblObj.load()
+        nml = etreeDict['nml'][0]
+        populationDict, projectionDict = nmlObj.loadNML(nml)
 
+        debug.printDebug("STEP", "Updating moose for simulation")
+        simObj.updateMoose(populationDict, projectionDict)
+
+        # Start processing mumbl
+        mumblObj = mumbl.Mumble(etreeDict['mumbl'])
+        mumblObj.load()
+
+        sys.exit()
+    else:
+        debug.printDebug("FATAL", "One or more model file does not exists.")
+        sys.exit()
+else:
+    debug.printDebug("FATAL", "Please provide at least one model. None given.")
     sys.exit()
-  else :
-    debug.printDebug("FATAL", "One or more model file does not exists.")
-    sys.exit()
-else :
-  debug.printDebug("FATAL", "Please provide at least one model. None given.")
-  sys.exit()
 
 
