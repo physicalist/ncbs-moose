@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Thu Dec 05, 2013  04:44PM
+Last modified: Thu Dec 05, 2013  05:02PM
 
 """
 
@@ -24,4 +24,12 @@ class Simulator(object):
         self.arg = arg
         self.simXml = arg[0]
         self.simXmlPath = arg[1]
-        
+ 
+    def updateMoose(self, populationDict, projectionDict):
+        """Update the moose, as per the simulation specific settings.
+        """
+        print self.simXml
+        print populationDict['CellGroupA']
+        print populationDict.keys(), projectionDict.keys()
+
+
