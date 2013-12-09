@@ -1,0 +1,33 @@
+<!-- Write your simulation specific settings here. -->
+<moose>
+    <simulation> 
+        <start>0</start>
+        <step>10e-6</step>
+        <stop>0.6</stop>
+        <!-- Write which variable you want to plot -->
+        <plot variable="somaVm">
+        </plot>
+    </simulation>
+
+    <!-- This setup recording settings for soma -->
+    <element type="soma" population="CellGroupA" cell_group="CellA" cell_id="0">
+        <record type="table">
+            <!--
+                 This is to be formed into following python statement.
+                 somaVm = moose.setupTable('somaVm'
+                         , moose.Compartment(parentPath+'/'+path, 'Vm'
+                     )
+             -->
+            <variable name="Vm">
+                <location type="Compartment" path="Soma_0" prefixedByParent="true" />
+            </variable>
+            <variable name="Ca">
+                <!-- If path is not given, parent path should be used. -->
+                <location type="CaConc" path="Path1" prefixedByParent="true" /> 
+            </variable>
+            <variable name="IKCa">
+                <localtion type="HHChannel" path="path2" prefixedByParent="true" />
+            </variable>
+        </record>
+    </element>
+</moose>
