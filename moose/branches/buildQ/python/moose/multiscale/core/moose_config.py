@@ -3,12 +3,13 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Mon Dec 09, 2013  10:10PM
+Last modified: Tue Dec 10, 2013  02:44AM
 
 """
 
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2013, NCBS Bangalore"
+
 __credits__          = ["NCBS Bangalore", "Bhalla Lab"]
 __license__          = "GPL"
 __version__          = "1.0.0"
@@ -63,17 +64,40 @@ class Simulator(object):
 
     def setupRecored(self, recordXml, params):
         print("Setting up records")
+        tableDict = {}
         populationType = params['population']
         variableType = params['type']
-        instanceId = params['cell_group']
-        cellId = int(params['cell_id'])
+        cellGroup = params['cell_group']
+        instanceId = int(params['instance_id'])
+        
+        targetPath = self.popDict[populationType][1][instanceId].path
 
-        #targetPath = self.popDict[populationType][cellGroup][cellId].path
         for variable in recordXml:
             varName = variable.get('name')
             target = variable.find("target_in_simulator")
             targetType = target.get('type')
+            rootPath = target.get('path')
+            path = rootPath
             if target.get('prefixed_by_element') == "true":
-                pass
+                path = rootPath+'/'+path
 
-            print "Variable in record", variable
+            # Path has been set, now attach 
+            print(path,  targetType, varName)
+            if targetType == "Compartment":
+                try:
+                    tableDict[path] = moose.utils.setupTable(path
+                            , moose.Compartment(path)
+                            , varName
+                            )
+                except NameError as e:
+                    debug.printDebug("WARN"
+                            , "Failed to find element you are trying to connect"
+                            , frame = inspect.currentframe()
+                            )
+                    debug.printDebug("INFO", " Path : {0}".format(path))
+                    debug.printDebug("DEBUG", moose.le(rootPath))
+                except :
+                    pass
+
+
+

@@ -42,6 +42,7 @@ import utils
 class NetworkML():
 
     def __init__(self, nml_params):
+        self.populationDict = dict()
         self.libraryPath = '/library'
         self.cellDictBySegmentId={}
         self.cellDictByCableId={}
@@ -167,9 +168,8 @@ class NetworkML():
         There can be two type of stimulous: random_stim or pulse_input.
         """
 
-        ## If /elec doesn't exists it creates /elec
-        ## and returns a reference to it. If it does,
-        ## it just returns its reference.
+        # If /elec doesn't exists it creates /elec and returns a reference to
+        # it. If it does, it just returns its reference.
         moose.Neutral(self.elecPath)
         inputName = inElemXml.get('name')
 
@@ -292,7 +292,6 @@ class NetworkML():
         """
         Create population dictionary.
         """
-        self.populationDict = {}
         populations =  self.network.findall(".//{"+nmu.nml_ns+"}population")
         for population in populations:
             cellname = population.attrib["cell_type"]
