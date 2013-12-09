@@ -9,24 +9,28 @@
         </plot>
     </simulation>
 
-    <!-- This setup recording settings for soma -->
+    <!-- This setup recording settings for soma. Each type of element should
+        be contained in <element> </element> tag. In nutshell, we write the group
+        of variable first then we write its individual details.
+        -->
     <element type="soma" population="CellGroupA" cell_group="CellA" cell_id="0">
         <record type="table">
             <!--
-                 This is to be formed into following python statement.
-                 somaVm = moose.setupTable('somaVm'
+                 We should be able to form the following from this XML.
+                 somaVm = moose.setupTable(
+                        'somaVm'
                          , moose.Compartment(parentPath+'/'+path, 'Vm'
                      )
              -->
             <variable name="Vm">
-                <location type="Compartment" path="Soma_0" prefixedByParent="true" />
+                <target_in_simulator type="Compartment" path="Soma_0" prefixed_by_element="true" />
             </variable>
             <variable name="Ca">
                 <!-- If path is not given, parent path should be used. -->
-                <location type="CaConc" path="Path1" prefixedByParent="true" /> 
+                <target_in_simulator type="CaConc" path="Path1" prefixed_by_element="true" /> 
             </variable>
             <variable name="IKCa">
-                <localtion type="HHChannel" path="path2" prefixedByParent="true" />
+                <target_in_simulator type="HHChannel" path="path2" prefixed_by_element="true" />
             </variable>
         </record>
     </element>

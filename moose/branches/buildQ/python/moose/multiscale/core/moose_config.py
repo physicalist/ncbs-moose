@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Sat Dec 07, 2013  09:22AM
+Last modified: Mon Dec 09, 2013  10:10PM
 
 """
 
@@ -43,21 +43,37 @@ class Simulator(object):
         [self.mapSimulationElement(x) for x in 
                 self.simXml.findall(self.simElemString) ]
 
-#        print populationDict['CellGroupA']
-#        print populationDict.keys(), projectionDict.keys()
-#        b = populationDict['CellGroupA'][1][0]
-#        print moose.le(b.path)
-
-
-    def mapSimulationElement(self, simXml):
+    def mapSimulationElement(self, xmlElem):
         debug.printDebug("STEP", "Mapping simulation element")
-        if simXml.get('type') == 'soma':
-            pop = simXml.get('population')
-            cellT = simXml.get('cell_group')
-            cellId = simXml.get('cell_id')
-            print pop, cellT, cellId 
+        if xmlElem.get('type') == 'soma':
+            # Now get all records and setup moose for them.
+            records = xmlElem.findall('record')
+            if records:
+                [ self.setupRecored(x, xmlElem.attrib) for x in records ]
+            else: 
+                debug.printDebug("WARN"
+                        , "No record elements found in config.xml file." 
+                        )
+
         else:
             debug.printDebug("TODO"
                     , "Not implemented {0}".format(simXml)
                     , frame = inspect.currentframe()
                     )
+
+    def setupRecored(self, recordXml, params):
+        print("Setting up records")
+        populationType = params['population']
+        variableType = params['type']
+        instanceId = params['cell_group']
+        cellId = int(params['cell_id'])
+
+        #targetPath = self.popDict[populationType][cellGroup][cellId].path
+        for variable in recordXml:
+            varName = variable.get('name')
+            target = variable.find("target_in_simulator")
+            targetType = target.get('type')
+            if target.get('prefixed_by_element') == "true":
+                pass
+
+            print "Variable in record", variable

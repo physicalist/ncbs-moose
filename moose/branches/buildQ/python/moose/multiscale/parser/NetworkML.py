@@ -42,6 +42,7 @@ import utils
 class NetworkML():
 
     def __init__(self, nml_params):
+        self.libraryPath = '/library'
         self.cellDictBySegmentId={}
         self.cellDictByCableId={}
         self.nml_params = nml_params
@@ -96,10 +97,12 @@ class NetworkML():
 
         """
         This returns
+        j
          populationDict = {
            'populationName1':(cellname
-           ,{int(instanceid1):moosecell, ...F}) , ...
+           , {int(instanceid1):moosecell, ...F}) , ...
            }
+
          projectionDict = {
             'projectionName1':(source,target
             ,[(syn_name1,pre_seg_path,post_seg_path),...])
@@ -115,11 +118,17 @@ class NetworkML():
         self.cellSegmentDict = cellSegmentDict
         self.params = params
         debug.printDebug("INFO", "Creating populations ... ")
-        self.createPopulations() # create cells
+
+        # create cells
+        self.createPopulations() 
         debug.printDebug("INFO", "Creating connections ... ")
-        self.createProjections() # create connections
+        self.createProjections() 
+
+        # create connections
         debug.printDebug("INFO", "Creating inputs in /elec ... ")
-        self.createInputs() # create inputs (only current pulse supported)
+
+        # create inputs (only current pulse supported)
+        self.createInputs() 
         return (self.populationDict, self.projectionDict)
 
     def createInputs(self):
@@ -191,6 +200,8 @@ class NetworkML():
                    segment_id = site.attrib['segment_id']
                else:
                    segment_id = 0 # default segment_id is specified to be 0
+
+               # To find the cell name fetch the first element of tuple.
                cell_name = self.populationDict[population][0]
                if cell_name == 'LIF':
                    LIF = self.populationDict[population][1][int(cell_id)]
@@ -198,8 +209,9 @@ class NetworkML():
                else:
 
                     segId = '{0}'.format(segment_id)
-                    segment_path = self.populationDict[population][1][int(cell_id)].path \
-                            + '/' + self.cellSegmentDict[cell_name][segId][0]
+                    segment_path = self.populationDict[population][1]\
+                            [int(cell_id)].path + '/' + \
+                            self.cellSegmentDict[cell_name][segId][0]
                     compartment = moose.Compartment(segment_path)
                     synchan = moose.SynChan(
                         os.path.join(compartment.path
@@ -225,35 +237,50 @@ class NetworkML():
                 iclamp = moose.DiffAmp('/elec/iclamp_'+inputName)
                 iclamp.saturation = 1e6
                 iclamp.gain = 1.0
-                pulsegen.trigMode = 0 # free run
+
+                # free run
+                pulsegen.trigMode = 0 
                 pulsegen.baseLevel = 0.0
                 pulsegen.firstDelay = float(pulseinput.attrib['delay'])*Tfactor
                 pulsegen.firstWidth = float(pulseinput.attrib['duration'])*Tfactor
                 pulsegen.firstLevel = float(pulseinput.attrib['amplitude'])*Ifactor
-                pulsegen.secondDelay = 1e6 # to avoid repeat
+
+                # to avoid repeat
+                pulsegen.secondDelay = 1e6 
                 pulsegen.secondLevel = 0.0
                 pulsegen.secondWidth = 0.0
-                ## do not set count to 1, let it be at 2 by default
-                ## else it will set secondDelay to 0.0 and repeat the first pulse!
+
+                # do not set count to 1, let it be at 2 by default else it will
+                # set secondDelay to 0.0 and repeat the first pulse!
                 #pulsegen.count = 1
                 moose.connect(pulsegen,'outputOut',iclamp,'plusIn')
+
                 # Attach targets
                 target = inElemXml.find(".//{"+nmu.nml_ns+"}target")
                 population = target.attrib['population']
                 for site in target.findall(".//{"+nmu.nml_ns+"}site"):
                     cell_id = site.attrib['cell_id']
-                    if 'segment_id' in site.attrib: segment_id = site.attrib['segment_id']
-                    else: segment_id = 0 # default segment_id is specified to be 0
-                    ## population is populationName, self.populationDict[population][0] is cellname
+                    if 'segment_id' in site.attrib: 
+                        segment_id = site.attrib['segment_id']
+                    else: 
+                        segment_id = 0 # default segment_id is specified to be 0
+
+                    # population is populationName,
+                    # self.populationDict[population][0] is cellname
                     cell_name = self.populationDict[population][0]
                     if cell_name == 'LIF':
                         LIF = self.populationDict[population][1][int(cell_id)]
                         moose.connect(iclamp,'outputOut',LIF,'injectDest')
                     else:
-                        segment_path = self.populationDict[population][1][int(cell_id)].path+'/'+\
-                            self.cellSegmentDict[cell_name][segment_id][0]
+                        segment_path = self.populationDict[population][1]\
+                                [int(cell_id)].path+'/'+\
+                                 self.cellSegmentDict[cell_name][segment_id][0]
                         compartment = moose.Compartment(segment_path)
-                        moose.connect(iclamp,'outputOut',compartment,'injectMsg')
+                        moose.connect(iclamp
+                                ,'outputOut'
+                                ,compartment
+                                ,'injectMsg'
+                                )
             else:
                 debug.printDebug("WARN"
                         , "This type of stimulous not stimulous is not supported."
@@ -262,18 +289,25 @@ class NetworkML():
 
 
     def createPopulations(self):
+        """
+        Create population dictionary.
+        """
         self.populationDict = {}
-        for population in self.network.findall(".//{"+nmu.nml_ns+"}population"):
+        populations =  self.network.findall(".//{"+nmu.nml_ns+"}population")
+        for population in populations:
             cellname = population.attrib["cell_type"]
             populationName = population.attrib["name"]
             debug.printDebug("INFO", "Loading {0}".format(populationName))
-            ## if cell does not exist in library load it from xml file
+
+            # if cell does not exist in library load it from xml file
             if not moose.exists('/library/'+cellname):
                 mmlR = MorphML.MorphML(self.nml_params)
                 model_filenames = (cellname+'.xml', cellname+'.morph.xml')
                 success = False
                 for model_filename in model_filenames:
-                    model_path = nmu.find_first_file(model_filename, self.model_dir)
+                    model_path = nmu.find_first_file(model_filename
+                            , self.model_dir
+                            )
                     if model_path is not None:
                         cellDict = mmlR.readMorphMLFromFile(model_path)
                         success = True
@@ -286,58 +320,76 @@ class NetworkML():
                     )
                 self.cellSegmentDict.update(cellDict)
             if cellname == 'LIF':
-                libcell = moose.LeakyIaF('/library/'+cellname)
+                libcell = moose.LeakyIaF(self.libraryPath+'/'+cellname)
             else:
-                libcell = moose.Neuron('/library/'+cellname) #added cells as a Neuron class.
+                # added cells as a Neuron class.
+                libcell = moose.Neuron(self.libraryPath+'/'+cellname) 
+
             self.populationDict[populationName] = (cellname,{})
             moose.Neutral('/cells')
+
             for instance in population.findall(".//{"+nmu.nml_ns+"}instance"):
                 instanceid = instance.attrib['id']
                 location = instance.find('./{'+nmu.nml_ns+'}location')
                 rotationnote = instance.find('./{'+nmu.meta_ns+'}notes')
                 if rotationnote is not None:
-                    ## the text in rotationnote is zrotation=xxxxxxx
+                    # the text in rotationnote is zrotation=xxxxxxx
                     zrotation = float(string.split(rotationnote.text,'=')[1])
                 else:
                     zrotation = 0
-                ## deep copies the library cell to an instance under '/cells' named as <arg3>
-                ## /cells is useful for scheduling clocks as all sim elements are in /cells
-                cellid = moose.copy(libcell,moose.Neutral('/cells'),populationName+"_"+instanceid)
+
+                # deep copies the library cell to an instance under '/cells'
+                # named as <arg3> /cells is useful for scheduling clocks as all
+                # sim elements are in /cells
+                cellid = moose.copy(libcell
+                        , moose.Neutral('/cells')
+                        , populationName + "_"+instanceid
+                        )
                 if cellname == 'LIF':
                     cell = moose.LeakyIaF(cellid)
-                    self.populationDict[populationName][1][int(instanceid)]=cell
+                    self.populationDict[populationName][1][int(instanceid)] = cell
                 else:
-                    cell = moose.Neuron(cellid) # No Cell class in MOOSE anymore! :( addded Neuron class - Chaitanya
-                    self.populationDict[populationName][1][int(instanceid)]=cell
-                    x = float(location.attrib['x'])*self.length_factor
-                    y = float(location.attrib['y'])*self.length_factor
-                    z = float(location.attrib['z'])*self.length_factor
-                    self.translate_rotate(cell,x,y,z,zrotation)
+                    # No Cell class in MOOSE anymore! :( addded Neuron class -
+                    # Chaitanya
+                    cell = moose.Neuron(cellid) 
+                    self.populationDict[populationName][1][int(instanceid)] = cell
+                    x = float(location.attrib['x']) * self.length_factor
+                    y = float(location.attrib['y']) * self.length_factor
+                    z = float(location.attrib['z']) * self.length_factor
+                    self.translate_rotate(cell, x, y, z, zrotation)
 
-    def translate_rotate(self,obj,x,y,z,ztheta): # recursively translate all compartments under obj
+    # recursively translate all compartments under obj
+    def translate_rotate(self,obj,x,y,z,ztheta): 
         for childId in obj.children:
             childobj = moose.Neutral(childId)
-            ## if childobj is a compartment or symcompartment translate, else skip it
+            # if childobj is a compartment or symcompartment translate, else
+            # skip it
             if childobj.className in ['Compartment','SymCompartment']:
-                ## SymCompartment inherits from Compartment,
-                ## so below wrapping by Compartment() is fine for both Compartment and SymCompartment
+                # SymCompartment inherits from Compartment, so below wrapping by
+                # Compartment() is fine for both Compartment and SymCompartment
                 child = moose.Compartment(childId)
                 x0 = child.x0
                 y0 = child.y0
-                x0new = x0*cos(ztheta)-y0*sin(ztheta)
-                y0new = x0*sin(ztheta)+y0*cos(ztheta)
+                x0new = x0 * cos(ztheta) - y0 * sin(ztheta)
+                y0new = x0 * sin(ztheta) + y0 * cos(ztheta)
                 child.x0 = x0new + x
                 child.y0 = y0new + y
                 child.z0 += z
                 x1 = child.x
                 y1 = child.y
-                x1new = x1*cos(ztheta)-y1*sin(ztheta)
-                y1new = x1*sin(ztheta)+y1*cos(ztheta)
+                x1new = x1 * cos(ztheta) - y1 * sin(ztheta)
+                y1new = x1 * sin(ztheta) + y1 * cos(ztheta)
                 child.x = x1new + x
                 child.y = y1new + y
                 child.z += z
             if len(childobj.children)>0:
-                self.translate_rotate(childobj,x,y,z,ztheta) # recursive translation+rotation
+                # recursive translation+rotation
+                self.translate_rotate(childobj
+                        , x
+                        , y
+                        , z
+                        , ztheta
+                        )
 
     def addConnection(self, connection, projection, options):
 
@@ -360,11 +412,14 @@ class NetworkML():
         post_cell_id = connection.attrib['post_cell_id']
 
         if 'file' not in pre_cell_id:
-            # source could be 'mitrals', self.populationDict[source][0] would be 'mitral'
+            # source could be 'mitrals', self.populationDict[source][0] would be
+            # 'mitral'
             pre_cell_name = self.populationDict[source][0]
             if 'pre_segment_id' in connection.attrib:
                 pre_segment_id = connection.attrib['pre_segment_id']
-            else: pre_segment_id = "0" # assume default segment 0, usually soma
+            # assume default segment 0, usually soma
+            else: 
+                pre_segment_id = "0"
             pre_segment_path = self.populationDict[source][1][int(pre_cell_id)].path+'/'+\
                 self.cellSegmentDict[pre_cell_name][pre_segment_id][0]
         else:
