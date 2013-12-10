@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Tue Dec 10, 2013  03:35AM
+Last modified: Tue Dec 10, 2013  07:32PM
 
 """
 
@@ -24,12 +24,20 @@ import inspect
 class Simulator(object):
 
     def __init__(self, arg):
-        print arg
         super(Simulator, self).__init__()
         self.arg = arg
         self.simXml = arg[0]
         self.simXmlPath = arg[1]
         self.simElemString = "element"
+        self.cellPath = '/cells'
+        self.elecPath = self.simXml.getroot().get('elecPath')
+        if self.elecPath is None:
+            debug.printDebug("WARN"
+                    , "elecPath is not specified. Using default /elec"
+                    )
+        else:
+            pass
+
  
     def updateMoose(self, populationDict, projectionDict):
         """Update the moose, as per the simulation specific settings.
@@ -77,34 +85,54 @@ class Simulator(object):
             target = variable.find("target_in_simulator")
             targetType = target.get('type')
             rootPath = target.get('path')
-            path = rootPath
-            if target.get('prefixed_by_element') == "true":
-                path = targetPath + '/' + rootPath
 
-            # Path has been set, now attach 
-            if targetType == "Compartment":
-                try:
+            path = targetPath + '/' + rootPath
+
+            # If the path is not prefixed by element then take the absolute
+            # path.
+            if target.get('prefixed_by_element') == "false":
+                path = rootPath
+            else: 
+                pass
+
+            # Path has been set, now attach it to moooooose.
+            try:
+                if targetType == "Compartment":
                     tableDict[path] = moose.utils.setupTable(targetType+varName
                             , moose.Compartment(path)
                             , varName
                             )
-                except NameError as e:
+                elif targetType == "CaConc":
+                    tableDict[path] = moose.utils.setupTable(targetType+varName
+                            , moose.CaConc(path)
+                            , varName
+                            )
+                elif targetType == "HHChannel":
+                    tableDict[path] = moose.utils.setupTable(targetType+varName
+                            , moose.HHChannel(path)
+                            , varName
+                            )
+                else:
                     debug.printDebug("WARN"
-                            , "Can not find element you are trying to connect"
+                            , "Unsupported type {0}".format(targetType)
                             , frame = inspect.currentframe()
                             )
-                    print("\t|- Which is {0}".format(path))
-                    print("\t|- Available paths")
-                    print(moose.le(targetPath))
-                except Exception as e:
-                    debug.printDebug("WARN"
-                            , "Failed with exception {0}".format(e)
-                            , frame = inspect.currentframe()
-                            )
-            else:
+            except NameError as e:
                 debug.printDebug("WARN"
-                        , "Target type {0} is not supported".format(targetType)
+                        , "Can not find element you are trying to connect"
+                        , frame = inspect.currentframe()
                         )
+                print("\t|- Which is {0}".format(path))
+                print("\t|- Available paths")
+                print(moose.le(targetPath))
+            except Exception as e:
+                debug.printDebug("WARN"
+                        , "Failed with exception {0}".format(e)
+                        , frame = inspect.currentframe()
+                        )
+
+        # Now reinitialize moose
+
 
 
 
