@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Tue Dec 10, 2013  02:44AM
+Last modified: Tue Dec 10, 2013  03:35AM
 
 """
 
@@ -79,25 +79,34 @@ class Simulator(object):
             rootPath = target.get('path')
             path = rootPath
             if target.get('prefixed_by_element') == "true":
-                path = rootPath+'/'+path
+                path = targetPath + '/' + rootPath
 
             # Path has been set, now attach 
-            print(path,  targetType, varName)
             if targetType == "Compartment":
                 try:
-                    tableDict[path] = moose.utils.setupTable(path
+                    tableDict[path] = moose.utils.setupTable(targetType+varName
                             , moose.Compartment(path)
                             , varName
                             )
                 except NameError as e:
                     debug.printDebug("WARN"
-                            , "Failed to find element you are trying to connect"
+                            , "Can not find element you are trying to connect"
                             , frame = inspect.currentframe()
                             )
-                    debug.printDebug("INFO", " Path : {0}".format(path))
-                    debug.printDebug("DEBUG", moose.le(rootPath))
-                except :
-                    pass
+                    print("\t|- Which is {0}".format(path))
+                    print("\t|- Available paths")
+                    print(moose.le(targetPath))
+                except Exception as e:
+                    debug.printDebug("WARN"
+                            , "Failed with exception {0}".format(e)
+                            , frame = inspect.currentframe()
+                            )
+            else:
+                debug.printDebug("WARN"
+                        , "Target type {0} is not supported".format(targetType)
+                        )
+
+
 
 
 
