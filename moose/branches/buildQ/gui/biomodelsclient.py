@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Mar  2 07:57:39 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Jun  7 18:31:32 2010 (+0530)
-#           By: Subhasis Ray
-#     Update #: 203
+# Last-Updated: Wed Dec  11 15:47:32 2010 (+0530)
+#           By: 
+#     Update #: 
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -51,7 +51,7 @@ from suds.transport.http import HttpTransport as SudsHttpTransport
 import os
 import config
 import pickle
-
+import moose
 
 BIOMODELS_WSDL_URI = 'http://www.ebi.ac.uk/biomodels-main/services/BioModelsWebServices?wsdl'
 proxyOpts = dict()
@@ -86,7 +86,7 @@ class BioModelsClient(Client):
 from PyQt4.Qt import Qt
 from PyQt4 import QtCore, QtGui
 
-class BioModelsClientWidget(QtGui.QWidget):
+class BioModelsClientWidget(QtGui.QDialog):
     """This is a widget with a Biomodels Client. It provides simple
     access to the biomodel queries and gives the user a view of the
     results"""
@@ -104,26 +104,38 @@ class BioModelsClientWidget(QtGui.QWidget):
                             ('Model Ids by Taxonomy', 'getModelsIdByTaxonomy'),]
     def __init__(self, parent=None):
 	QtGui.QWidget.__init__(self, parent)
+        self.setWindowTitle('Connect to BioModels')
 	self.client = BioModelsClient()
         self.queryPanel = QtGui.QWidget(self)
         self.queryModelLabel = QtGui.QLabel('Get ', self.queryPanel)
         self.queryModelCombo = QtGui.QComboBox(self.queryPanel)
         self.queryLineEdit = QtGui.QLineEdit(self.queryPanel)
         self.goButton = QtGui.QPushButton('Go', self.queryPanel)
-        
+        self.filePath = ''
         layout = QtGui.QHBoxLayout(self.queryPanel)
         layout.addWidget(self.queryModelLabel)
         layout.addWidget(self.queryModelCombo)
         layout.addWidget(self.queryLineEdit)
         layout.addWidget(self.goButton)
-        
         self.queryPanel.setLayout(layout)
+        
         for entry in BioModelsClientWidget.COMBO_ITEM_QUERY_MAP:
             self.queryModelCombo.addItem(self.tr(entry[0]), QtCore.QVariant(entry[1]))
         self.resultsPanel = QtGui.QTableWidget(self)
         layout = QtGui.QVBoxLayout(self)
         layout.addWidget(self.queryPanel)
         layout.addWidget(self.resultsPanel)
+        
+        self.queryPanel1 = QtGui.QWidget(self)
+        self.importButton = QtGui.QPushButton('Import',self.queryPanel1)
+        self.importButton.setEnabled(False)
+        self.closeButton = QtGui.QPushButton('Close',self.queryPanel1)
+        hbox = QtGui.QHBoxLayout(self.queryPanel1)
+        hbox.addStretch(1)
+        hbox.addWidget(self.importButton)
+        hbox.addWidget(self.closeButton)
+        layout.addWidget(self.queryPanel1)
+
         self.setLayout(layout)
         self.setupActions()
         self.client.set_options(proxy=proxyOpts)
@@ -134,17 +146,44 @@ class BioModelsClientWidget(QtGui.QWidget):
     def setupActions(self):
         self.connect(self.queryLineEdit, QtCore.SIGNAL('returnPressed()'), self.runQuery)
         self.connect(self.goButton, QtCore.SIGNAL('clicked()'), self.runQuery)
-
-    def download(self):
+        self.connect(self.closeButton, QtCore.SIGNAL('clicked()'),self.close)
+        self.connect(self.importButton,QtCore.SIGNAL('clicked()'),self.downloadModel)
+        self.connect(self.resultsPanel, QtCore.SIGNAL('cellClicked(int,int)'),self.enableimportButton)
+    def closeWidget(self):
+        self.close()
+    
+    def downloadModel(self):
         """Download the selected model"""
+        """ If user select multi row, only data from currentRow is downloaded and loaded into moose """
         selectedRow = self.resultsPanel.currentRow()
         modelId = self.resultsPanel.item(selectedRow, 0).text()
-        modelSBML = self.client.service.getModelSBMLbyId(modelId)
-        #print modelSBML
+        modelSBML = unicode(self.client.service.getModelSBMLById(modelId)).encode("utf-8")
+        self.filePath = os.path.join(config.settings[config.KEY_LOCAL_DEMOS_DIR], str(modelId)+'.xml')
+        f = open(str(self.filePath), 'w')
+        f.write(modelSBML)
+        self.close()
+       
+        type_sbml = 'SBML'
+        filters = {'SBML(*.xml)': type_sbml}
+        filepath,filter_ = QtGui.QFileDialog.getSaveFileNameAndFilter(None,'Save File',modelId,';;'.join(filters))
+        if filepath:
+            if str(filepath).rfind('.') != -1:
+                filepath = filepath[:str(filepath).rfind('.')]
+            if str(filter_).rfind('.') != -1:
+                extension = filter_[str(filter_).rfind('.'):len(filter_)-1]
+            self.filePath = str(filepath+extension)
+
+            if filters[str(filter_)] == 'SBML':
+                f = open(str(self.filePath), 'w')
+                f.write(modelSBML)
+                f.close()
+         
+    def getTargetPath(self):
+        return str(self.filePath)
 
     def runQuery(self):
         print 'Running query .....'
-        #self.progressDialog()
+        #self.resultsPanel.cellClicked.connect(self.enableDownload)
         progressDialog = QtGui.QProgressDialog()
         progressDialog.setLabelText('Retrieving data from BioModels Database')
         progressDialog.setModal(True)
@@ -182,7 +221,7 @@ class BioModelsClientWidget(QtGui.QWidget):
             updatepickleFile = False
             filename = str(query)
             filePath = os.path.join(config.settings[config.KEY_BIOMODEL_DIR], filename+'.pkl')
-            print filePath
+            #print filePath
             pickleResult = {}
             if os.path.isfile(filePath):
                 pickleFile = open(filePath,'rb')
@@ -231,9 +270,14 @@ class BioModelsClientWidget(QtGui.QWidget):
                     item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                     self.resultsPanel.setItem(row, column + 1, item)
                     row = row + 1
+                    
         if progressDialog:
             progressDialog.close()
+        #self.importButton.setEnabled(True)
         print 'Finished running query'
+
+    def enableimportButton(self):
+        self.importButton.setEnabled(True)
     
 if __name__ == '__main__':
     client = BioModelsClient()
@@ -242,7 +286,7 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication([])
     clientWidget = BioModelsClientWidget()
-    clientWidget.show()
+    #clientWidget.exec_()
     app.exec_()
 
 # 
