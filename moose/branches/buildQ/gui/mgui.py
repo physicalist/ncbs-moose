@@ -562,14 +562,29 @@ class MWindow(QtGui.QMainWindow):
         return self.connectActions
     
     def connectBioModel(self):
-        bioModelDialog = QtGui.QDialog(self)
-        bioModelDialog.setWindowTitle(self.tr('BioModels DataBase '))
-        connecttoBioModel = BioModelsClientWidget(bioModelDialog)
-        layout = QtGui.QGridLayout()
-        layout.addWidget(connecttoBioModel)
-        bioModelDialog.setLayout(layout)
-        bioModelDialog.show()
+        connecttoBioModel = BioModelsClientWidget()
+        if connecttoBioModel.exec_():
+            pass
+        filepath = connecttoBioModel.filePath
+        if filepath:
+            head, fileName = os.path.split(filepath)
+            modelName = os.path.splitext(fileName)[0]
+            print " filename " ,fileName, " modelName ", modelName, " filepath ",filepath
+            pwe = moose.getCwe()
+            print " path ",pwe
+            ret = loadFile(str(filepath), '/model/%s' % (modelName), merge=False)
+            self.objectEditSlot('/',False)
+            pluginLookup = '%s/%s' % (ret['modeltype'], ret['subtype'])
+            try:
+                pluginName = subtype_plugin_map['%s/%s' % (ret['modeltype'], ret['subtype'])]
+            except KeyError:
+                pluginName = 'default'
+            
+            print 'Loaded model', ret['model'].path
+            self.setPlugin(pluginName, ret['model'].path)
 
+
+        
     def showAboutMoose(self):
         with open(config.MOOSE_ABOUT_FILE, 'r') as aboutfile:
             QtGui.QMessageBox.about(self, 'About MOOSE', ''.join(aboutfile.readlines()))
