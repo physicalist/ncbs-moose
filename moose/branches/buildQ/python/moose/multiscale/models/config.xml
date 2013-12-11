@@ -1,13 +1,6 @@
 <!-- Write your simulation specific settings here. -->
-<moose elecPath='/elec'>
-    <simulation> 
-        <start>0</start>
-        <step>10e-6</step>
-        <stop>0.6</stop>
-        <!-- Write which variable you want to plot -->
-        <plot variable="somaVm">
-        </plot>
-    </simulation>
+<moose elec_path='/elec'>
+    <global sim_dt="10e-6" plot_dt="10e-6" sim_method="hsolve" />
 
     <!-- This setup recording settings for soma. Each type of element should
         be contained in <element> </element> tag. In nutshell, we write the group
@@ -23,9 +16,18 @@
                         , 'Vm'
                      )
                 prefixed_by_element, if not specified, will be treated as true.
-             -->
+            -->
             <variable name="Vm">
-                <target_in_simulator type="Compartment" path="Soma_0" prefixed_by_element="true" />
+                <target_in_simulator type="Compartment" path="Soma_0"
+                     prefixed_by_element="true" />
+                <plot output="somavm.pdf">
+                    <!-- If star, step and stop are not given use globals -->
+                    <x unit="time" start="0.0" step="0.1" stop="1.0" />
+                    <!-- One can pass full python expression to y. TODO: Convert it into
+                        proper xml later.
+                    -->
+                    <y expr_type="python">somaVm.vec[1:]</y>
+                </plot>
             </variable>
             <variable name="Ca">
                 <target_in_simulator type="CaConc"  path="Soma_0/Gran_CaPool_98" />
@@ -35,4 +37,5 @@
             </variable>
         </record>
     </element>
+
 </moose>
