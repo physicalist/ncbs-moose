@@ -369,7 +369,9 @@ class MorphML():
             self.addInitMembPotential(imp, cell, cellName)
 
         # Add mechanisms
-        for mechanism in cell.findall(".//{"+self.bio+"}mechanism"):
+
+        mechanisms = cell.findall(".//{"+self.bio+"}mechanism")
+        for mechanism in mechanisms:
             self.addMechanism(mechanism, cell, cellName)
 
 
@@ -377,7 +379,7 @@ class MorphML():
         """ Add mechanism to cell.
         """
         mechName = mechanism.attrib["name"]
-        debug.printDebug("INFO", "Loading mechanism {0}".format(mechName))
+        debug.printDebug("STEP", "Loading mechanism {0}".format(mechName))
         passive = False
         if "passive_conductance" in mechanism.attrib:
             if mechanism.attrib['passive_conductance'].lower() == "true":
@@ -624,20 +626,21 @@ class MorphML():
         elif name == 'initVm':
             compartment.initVm = value
         elif name == 'inject':
-            debug.printDebug(compartment.name, 'inject', value, 'A.')
+            msg = " {0} inject {1} A.".format(compartment.name, value)
+            debug.printDebug("INFO", msg)
             compartment.inject = value
         elif mechName is 'synapse':
 
            # synapse being added to the compartment
            # these are potential locations, we do not actually make synapses.
-           #synapse = self.context.deepCopy(self.context.pathToId('/library/'+value),\
            # I assume below that compartment name has _segid at its end
 
            # get segment id from compartment name
            segid = compartment.name.split('_')[-1]
            self.segDict[segid][5].append(value)
 
-        elif mechName is 'spikegen': # spikegen being added to the compartment
+        # spikegen being added to the compartment
+        elif mechName is 'spikegen': 
             # these are potential locations, we do not actually make the
             # spikegens.  spikegens for different synapses can have different
             # thresholds, hence include synapse_type in its name value contains
