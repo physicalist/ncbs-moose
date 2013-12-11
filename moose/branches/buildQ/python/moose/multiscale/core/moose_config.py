@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Wed Dec 11, 2013  10:56PM
+Last modified: Thu Dec 12, 2013  01:35AM
 
 """
 
@@ -21,7 +21,7 @@ import moose
 import debug.debug as debug
 import inspect
 import numpy
-import core.dynamic_vars as dynvar
+import pylab
 
 class Simulator(object):
 
@@ -32,11 +32,23 @@ class Simulator(object):
         self.simXmlPath = arg[1]
         self.simElemString = "element"
         self.cellPath = '/cells'
-        self.elecPath = self.simXml.getroot().get('elec_path')
-        self.globalVar = self.simXml.getroot().find('global')
+        self.rootElem = self.simXml.getroot()
+        self.elecPath = self.rootElem.get('elec_path')
+        self.globalVar = self.rootElem.find('global')
         self.simDt = float(self.globalVar.get('sim_dt'))
         self.plotDt = float(self.globalVar.get('plot_dt'))
         self.simMethod = self.globalVar.get('sim_method')
+        self.simulate = True
+
+        if self.rootElem.get('simulate') == "false":
+            self.simulate = False
+        if self.rootElem.get('runtime'):
+            self.runtime = float(self.rootElem.get('runtime'))
+        else:
+            debug.printDebug("INFO"
+                    , "No run-time for simulation is given. Using default 10.0"
+                    )
+            self.runtime = 10.0
 
         if self.elecPath is None:
             debug.printDebug("WARN"
@@ -81,14 +93,31 @@ class Simulator(object):
         """
         Params is a dictionary having attributes to <element>
         """
-        print("Setting up records")
-        tableDict = {}
+        debug.printDebug("STEP"
+                , "Setting up records during simulation. "
+                )
+
+        # this dictionary keeps the object created by function setupTable in a
+        # variable name. This object of setupTable can be accessed later 
+        self.tableDict = {}
+
         populationType = params['population']
         variableType = params['type']
-        cellGroup = params['cell_group']
+
+        # NOTE: This is useless.
+        cellGroup = params.get('cell_group')
+
         instanceId = int(params['instance_id'])
         
-        targetBasePath = self.popDict[populationType][1][instanceId].path
+        try:
+            targetBasePath = self.popDict[populationType][1][instanceId].path
+        except KeyError as e:
+            debug.printDebug("ERR", "Key {0} not found".format(populationType))
+            print("\t|- Available population in this model are following. ")
+            print("\t+ {0} -| ".format(self.popDict.keys()))
+            raise UserWarning, "Unknown population type"
+
+        variablesToPlot = list()
 
         for variable in recordXml:
             varName = variable.get('name')
@@ -109,19 +138,23 @@ class Simulator(object):
             try:
                 path = path.strip()
                 targetPath = variableType + varName
+                print "Target path : ", targetPath, " --> ", path
 
                 if targetType == "Compartment":
-                    tableDict[path] = moose.utils.setupTable(targetPath
+                    self.tableDict[targetPath] = moose.utils.setupTable(
+                            targetPath
                             , moose.Compartment(path)
                             , varName
                             )
                 elif targetType == "CaConc":
-                    tableDict[path] = moose.utils.setupTable(targetPath
+                    self.tableDict[targetPath] = moose.utils.setupTable(
+                            targetPath
                             , moose.CaConc(path)
                             , varName
                             )
                 elif targetType == "HHChannel":
-                    tableDict[path] = moose.utils.setupTable(targetPath
+                    self.tableDict[targetPath] = moose.utils.setupTable(
+                            targetPath
                             , moose.HHChannel(path)
                             , varName
                             )
@@ -149,26 +182,49 @@ class Simulator(object):
 
             # If plot element is available then plot it.
             if variable.find('plot') is not None:
-                self.addPlot(variable.find('plot'), varName)
+                variablesToPlot.append(
+                        (variableType, varName, variable.find('plot'))
+                        )
         # Now reinitialize moose
-
         assert self.simDt > 0.0
         assert self.plotDt > 0.0 
 
+        print "Simulation :", self.simDt, self.plotDt
         moose.utils.resetSim([self.elecPath, self.cellPath]
                 , self.simDt
                 , self.plotDt
                 , simmethod = self.simMethod 
                 )
 
-    def addPlot(self, plot, variableName):
+        if self.simulate:
+            debug.printDebug("USER"
+                    , "Simulating for {0} seconds.".format(self.runtime)
+                    )
+            moose.start(self.runtime)
+
+            # After simulation, plot user-requested variables.
+            [ self.addPlot(pXml) for pXml in variablesToPlot ] 
+
+    def addPlot(self, plotVar):
         """
-        Add plot to moose
+        Draws given variables.
+
+
         """
-        print("Adding plot for {0}".format(variableName))
-        if plot.get('type') is None or plot.get('type') == "2d":
-            xXml = plot.find('x')
-            yXml = plot.find('y')
+        varType, variableName, plotXml = plotVar
+        plotVarName = varType + variableName 
+
+        # We must get a table object. If object is not available the program
+        # must terminate here.
+        assert plotVarName in self.tableDict.keys()
+        tableObj = self.tableDict[plotVarName]
+
+        debug.printDebug("INFO"
+                , "Adding plotXml for {0}".format(plotVarName)
+                )
+        if plotXml.get('type') is None or plot.get('type') == "2d":
+            xXml = plotXml.find('x')
+            yXml = plotXml.find('y')
             try:
                 start = float(xXml.attrib['start'])
             except Exception as e:
@@ -181,10 +237,10 @@ class Simulator(object):
                 try:
                     step = self.simDt 
                 except Exception as e:
+                    step = 10e-6
                     debug.printDebug("WARN"
-                            , "No step size specified. Using 1e-6"
+                            , "No step size specified. Using {0}".format(step)
                             )
-                    step = 1e-6
             if step <= 0.0:
                 debug.printDebug("ERR", "Non-positive step size.  {0}".format(
                     step))
@@ -193,19 +249,41 @@ class Simulator(object):
             try:
                 stop = float(xXml.attrib['stop'])
             except Exception as e:
+                stop = self.runtime
                 debug.printDebug("WARN"
                         , "No stop time is specified. Using default {0}".format(
-                            1)
+                            stop)
                         )
-                stop = 1.0
             assert stop > 0.0
 
-            xvec = numpy.arange(start, stop, step)
+            xvec = numpy.arange(start, stop*2, step)
 
-            # Start, step and stop are implemented. Now setup plotting. In short
-            # x-axis has been initialized.
+            # Resize xvec to fit the simulation size.
+            xvec = xvec[ : tableObj.vec.size ]
 
-        elif plot.get('type').lower() == "3d":
-            debug.printDebug("TODO", "3d plotting is not implemented yet.")
+            if plotXml.get('plot') == "false":
+                return 
+
+            if plotXml.get('output'):
+                filename = plotXml.get('output')
+
+            if plotXml.get('plot_args') is None:
+                plotArgs = 'b'
+            else:
+                plotArgs = plotXml.get('plot_args')
+
+            pylab.plot(xvec, tableObj.vec, plotArgs)
+            
+            label = plotXml.find('label')
+            if label is not None:
+                pylab.xlabel(label.get('x'))
+                pylab.ylabel(label.get('y'))
+
+            pylab.figure()
+            pylab.show()
+            
+
+        elif plotXml.get('type') in ["3d", "3D"]:
+            debug.printDebug("TODO", "3d plotXmlting is not implemented yet.")
             raise UserWarning, "Feature not implemented"
 

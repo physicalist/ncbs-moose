@@ -29,7 +29,11 @@ class ChannelML():
     def __init__(self, nml_params):
         self.cml='http://morphml.org/channelml/schema'
         self.nml_params = nml_params
-        self.temperature = nml_params['temperature']
+        temp = nml_params['temperature'].strip()
+        if temp is None or len(temp) == 0:
+            self.temperature = 25.0
+        else:
+            self.temperature = float(temp)
 
     def readChannelMLFromFile(self, _filename, _params={}):
 
@@ -379,7 +383,8 @@ class ChannelML():
                 #moosegate_tableB.dy = dCa*concfactor
                 moosegate_tableB.tableVector2D = tableB
 
-    def setQ10(self,q10settings):
+    def setQ10(self, q10settings):
+       
         if 'q10_factor' in list(q10settings.attrib.keys()):
             expTemp = float(q10settings.attrib['experimental_temp'])
             self.q10factor = float(q10settings.attrib['q10_factor']) ** (
