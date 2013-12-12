@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Thu Dec 12, 2013  02:49PM
+Last modified: Thu Dec 12, 2013  07:00PM
 
 """
 
@@ -138,7 +138,9 @@ class Simulator(object):
             try:
                 path = path.strip()
                 targetPath = variableType + varName
-                print "Target path : ", targetPath, " --> ", path
+                debug.printDebug("DEBUG"
+                        , "Target path : {0} --> {1}".format(targetPath, path)
+                        )
 
                 if targetType == "Compartment":
                     self.tableDict[targetPath] = moose.utils.setupTable(
