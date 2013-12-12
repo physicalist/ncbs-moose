@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Thu Dec 12, 2013  02:33PM
+Last modified: Thu Dec 12, 2013  02:49PM
 
 """
 
@@ -280,6 +280,8 @@ class Simulator(object):
             if label is not None:
                 pylab.xlabel(label.get('x'))
                 pylab.ylabel(label.get('y'))
+                pylab.title(label.get('title'))
+
             outputFile = plotXml.get('output')
             if outputFile is not None and len(outputFile.strip()) > 0:
                 debug.printDebug("USER"
