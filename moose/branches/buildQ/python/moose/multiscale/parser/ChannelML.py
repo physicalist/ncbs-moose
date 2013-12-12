@@ -31,9 +31,15 @@ class ChannelML():
         self.nml_params = nml_params
         temp = nml_params['temperature'].strip()
         if temp is None or len(temp) == 0:
-            self.temperature = 25.0
+            self.temperature = 32.0
+            debug.printDebug("INFO"
+                    , "Using default temp of {0} C".format(self.temperature)
+                    )
         else:
             self.temperature = float(temp)
+            debug.printDebug("INFO"
+                    , "Using temperature {0}".format(self.temperature)
+                    )
 
     def readChannelMLFromFile(self, _filename, _params={}):
 
