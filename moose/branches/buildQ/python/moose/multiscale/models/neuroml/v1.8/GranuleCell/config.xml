@@ -1,5 +1,5 @@
 <!-- Write your simulation specific settings here. -->
-<moose elec_path='/elec' simulate='true' runtime="0.01">
+<moose elec_path='/elec' simulate='true' runtime="0.6">
     <global sim_dt="10e-6" plot_dt="10e-6" sim_method="hsolve" />
 
     <!-- This setup recording settings for soma. Each type of element should
@@ -20,7 +20,7 @@
             <variable name="Vm">
                 <target_in_simulator type="Compartment" path="Soma_0"
                      prefixed_by_element="true" />
-                <plot plot="true" output="somavm.pdf" plot_args='b'>
+                <plot plot="true" output="somavm.eps" plot_args="go-">
                     <!-- If star, step and stop are not given, use globals -->
                     <x unit="time" start="0.0" step="10e-6" stop="0.6" />
                     <label x="Time" y="Soma Vm (V)" />
@@ -28,6 +28,9 @@
             </variable>
             <variable name="Ca">
                 <target_in_simulator type="CaConc"  path="Soma_0/Gran_CaPool_98" />
+                <plot output="soma_ca.eps" plot_args='g.'>
+                </plot>
+                   
             </variable>
             <variable name="Gk">
                 <target_in_simulator type="HHChannel" path="Soma_0/Gran_KCa_98" />

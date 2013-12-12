@@ -10,7 +10,7 @@ function runCode
   $PYC main.py \
     --nml ./models/neuroml/v1.8/GranuleCell/GranuleCell.net.xml \
     --mumbl ./models/mumbl.xml \
-    --config ./models/config.xml
+    --config ./models/neuroml/v1.8/GranuleCell/config.xml
   #twopi -Teps graphs/moose.dot > graphs/topology.eps
 }
 
