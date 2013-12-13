@@ -1,33 +1,64 @@
 <?xml version="1.0"?>
 <!--
-     This is the main top-level XML file to do multiscale modelling.
-     We parse it after mapping neuroML to moose.
+    All comments by : Dilawar, dilawars@ncbs.res.in
+
+    This is the main top-level XML file to do multiscale modelling.
+    We parse it after mapping neuroML to moose.
  -->
 <mumbl>
-  <!-- Electrical domain and its parameter -->
-  <domain type="electrical">
-    <elecDt type="parameter">50e-6</elecDt>
-  </domain>
-  <!-- Chemical domain and its parameters-->
-  <domain type="chemical">
-    <chemDt type="parameter">1e-4</chemDt>
-  </domain>
-  <domain type="simulation">
-    <startTime type="time">0</startTime>
-    <endTime type="time">100e-3</endTime>
 
-    <!-- Add plots here -->
-    <plots>
-      <plot2D type="line">
-        <yaxis scale="log" min="0" max="10" step="1">
-          <var name="Vm" of="soma" path="/model/elec/soma" />
-          <label>Voltage at Soma</label>
-        </yaxis>
-        <xaxis scale="log" min="0" max="100e-3" step="1e-3">
-          <var name="time" />
-          <label>Simulation time</label>
-        </xaxis>
-      </plot2D>
-    </plots>
-  </domain>
+    <!-- If any of global variables is specified in <domain> then global is
+       over-ridden by domain value.
+    -->
+    <global elec_dt="50e-6" chem_dt="50e-6"/>
+
+    <!-- If model_path is specified then execute the model. It will populate
+        the moose. Otherwise, assume that neuroml is already loaded into 
+        moose and we only have to do some tinkering.
+    -->
+    <model domain_type="electrical" already_loaded="true" path="/elec" 
+        type="neuroml" version="1.8" />
+
+    <!-- Not sure if solver should be part of this -->
+    <model domain_type="eletrical" already_loaded="false" path="/model/elec"
+        type="genesis" file_path="ca1_asym.p" solver="hsolver" />
+
+    <!-- This model is not loaded by moose. We have to run an external script to
+        load it. TODO: For moose, we should not use an external script.
+    -->
+    <model type="chemical" already_loaded="false" root_path="/chem"
+        model_type="miscellenous"
+        load_using_external_script="yes"
+        loader_script="proto8.py"
+        />
+
+    <!-- Here are mappings from compartment to compartment. -->
+    <!-- if adaptor_type is source and this compartment influence others, if it
+        is target than this compartment gets influenced by other compartments.
+    -->
+    <!-- id is moose like path, it can influence either a single compartment of
+         a group of compartments depending on the nature of paths.
+         TODO: It should be more generic than this.
+     -->
+    <domain type="path" id="/model/elec/Compartment" adaptor_type="source">
+        <!-- These are currently moose-specific.
+             TODO: Make them generic.
+         -->
+         <!-- if adaptor_type is source then the this list can only contain
+            targets.
+            -->
+        <adaptor type="one_to_many">
+            <target identifier="Group1" path="/n/chem/neuroMesh/kChan" field="ConcentrationInside">
+                <!-- Describe the relation in MathML format. Or use python
+                    MathDOM to parse the string into xml. 
+                    NOTE: A standard notation for descrining variables is needed.
+                -->
+                <relation lhs="ICa" rhs="0.3 * CCa - 0.9" type="=" />
+            </target>
+        </adaptor>
+        <adaptor type="one_to_all">
+            <target identifier="All" path="/n/elec/compt/ca" field="ConcentrationOutside" />
+        </adaptor>
+	</adaptor>
+    </domain>
 </mumbl>
