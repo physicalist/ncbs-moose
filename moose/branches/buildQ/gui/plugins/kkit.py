@@ -82,6 +82,7 @@ class KkitEditorView(MooseEditorView):
 
     def SaveModelDialogSlot(self):
         type_sbml = 'SBML'
+	print " here in saveModelDialog"
         filters = {'SBML(*.xml)': type_sbml}
         filename,filter_ = QtGui.QFileDialog.getSaveFileNameAndFilter(None,'Save File','',';;'.join(filters))
         extension = ""
@@ -89,9 +90,11 @@ class KkitEditorView(MooseEditorView):
             filename = filename[:str(filename).rfind('.')]
             if str(filter_).rfind('.') != -1:
                 extension = filter_[str(filter_).rfind('.'):len(filter_)-1]
-                filename = filename+extension
-                if filters[str(filter_)] == 'SBML':
-                    moose.writeSBML(str(filename),self.plugin.modelRoot)
+        if filename:
+            filename = filename+extension
+            if filters[str(filter_)] == 'SBML':
+                print "here",filename," ",self.plugin.modelRoot
+                moose.writeSBML(str(filename),self.plugin.modelRoot)
     def getToolPanes(self):
         return super(KkitEditorView, self).getToolPanes()
 

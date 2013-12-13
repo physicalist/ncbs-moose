@@ -716,6 +716,11 @@ string SbmlWriter::nameString( string str )
 	  str.replace( i,1,str1 );
 	  len += str1.length()-1;
 	  break;
+	case ' ':
+	  str1 = "_";
+	  str.replace( i,1,str1 );
+	  len += str1.length()-1;
+	  break;  
 	}//end switch 
       i++;
     }while ( i < len );
