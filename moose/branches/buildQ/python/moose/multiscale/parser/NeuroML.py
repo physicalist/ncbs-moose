@@ -133,9 +133,9 @@ class NeuroML:
 
     def channelToMoose(self, cmlR, channels):
         for channel in channels.findall('.//{'+mnu.cml_ns+'}channel_type'):
-            ## ideally I should read in extra params
-            ## from within the channel_type element and put those in also.
-            ## Global params should override local ones.
+            # ideally I should read in extra params
+            # from within the channel_type element and put those in also.
+            # Global params should override local ones.
             cmlR.readChannelML(channel, params={}, units=self.channelUnits)
         for synapse in channels.findall('.//{'+mnu.cml_ns+'}synapse_type'):
             cmlR.readSynapseML(synapse, units=self.channelUnits)

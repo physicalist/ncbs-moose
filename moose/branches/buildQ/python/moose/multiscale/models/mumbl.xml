@@ -20,16 +20,20 @@
         type="neuroml" version="1.8" />
 
     <!-- Not sure if solver should be part of this -->
-    <model domain_type="eletrical" already_loaded="false" path="/model/elec"
+    <model domain_type="electrical" already_loaded="false" moose_path="/model/elec"
         type="genesis" file_path="ca1_asym.p" solver="hsolver" />
 
     <!-- This model is not loaded by moose. We have to run an external script to
         load it. TODO: For moose, we should not use an external script.
+        if load_using_external_script is false then do not use 'loader_script'
+        attribute.
     -->
-    <model type="chemical" already_loaded="false" root_path="/chem"
-        model_type="miscellenous"
-        load_using_external_script="yes"
-        loader_script="proto8.py"
+    <model domain_type="chemical" already_loaded="false" moose_path="/model/chem"
+        model_type = "miscellenous"
+        load_using_external_script = "false"
+        loader_script = "proto8.py"
+        diff_length = "20e-6"
+        file_path = "dumpreac.g"
         />
 
     <!-- Here are mappings from compartment to compartment. -->
@@ -59,6 +63,5 @@
         <adaptor type="one_to_all">
             <target identifier="All" path="/n/elec/compt/ca" field="ConcentrationOutside" />
         </adaptor>
-	</adaptor>
     </domain>
 </mumbl>
