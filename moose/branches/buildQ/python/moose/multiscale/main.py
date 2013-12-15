@@ -3,29 +3,30 @@ import os
 import sys
 import debug.debug as debug
 import inspect
-import parser.NeuroML as nml_loader
+import parser.NeuroML as NeuroML
 import core.mumbl as mumbl
 import core.moose_config as moose_config
 
 from lxml import etree
 
 def ifPathsAreValid(paths) :
-  ''' Verify if path exists and are readable. '''
-  if paths :
-    paths = vars(paths)
-    for p in paths :
-      if not paths[p] : continue
-      for path in paths[p] :
-        if not path : continue
-        if os.path.isfile(path) : pass
-        else :
-          debug.printDebug("ERROR"
-            , "Filepath {0} does not exists".format(path))
-          return False
-      # check if file is readable
-      if not os.access(path, os.R_OK) :
-        debug.printDebug("ERROR", "File {0} is not readable".format(path))
-  return True
+    ''' Verify if path exists and are readable. '''
+    if paths :
+        paths = vars(paths)
+        for p in paths :
+            if not paths[p] : continue
+            for path in paths[p] :
+                if not path : continue
+                if os.path.isfile(path) : pass
+                else :
+                    debug.printDebug("ERROR"
+                        , "Filepath {0} does not exists".format(path))
+                    return False
+            # check if file is readable
+            if not os.access(path, os.R_OK) :
+              debug.printDebug("ERROR", "File {0} is not readable".format(path))
+              return False
+    return True
 
 # standard module for building a command line parser.
 import argparse
@@ -50,22 +51,25 @@ import parser.parser as parser
 
 if args:
     if ifPathsAreValid(args):
-        debug.printDebug("INFO", "Started parsing NML models")
-        etreeDict = parser.parseModels(args, validate=False)
-        debug.printDebug("INFO", "Parsing of models is done")
-        nmlObj = nml_loader.NeuroML()
+        debug.printDebug("INFO", "Started parsing XML models")
+        etreeDict = parser.parseXMLs(args, validate=False)
 
-        simObj = moose_config.Simulator(etreeDict['config'][0])
+        debug.printDebug("INFO", "Parsing of XMLs is done")
+
 
         nml = etreeDict['nml'][0]
+        nmlObj = NeuroML.NeuroML()
         populationDict, projectionDict = nmlObj.loadNML(nml)
 
-        debug.printDebug("STEP", "Updating moose for simulation")
-        simObj.updateMoose(populationDict, projectionDict)
-
         # Start processing mumbl
-        mumblObj = mumbl.Mumble(etreeDict['mumbl'])
+        mumblObj = mumbl.Mumble(etreeDict['mumbl'][0])
         mumblObj.load()
+
+        sys.exit()
+ 
+        debug.printDebug("STEP", "Updating moose for simulation")
+        simObj = moose_config.Simulator(etreeDict['config'][0])
+        simObj.updateMoose(populationDict, projectionDict)
 
         sys.exit()
     else:
