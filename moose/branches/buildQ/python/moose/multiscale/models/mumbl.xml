@@ -7,34 +7,46 @@
  -->
 <mumbl>
 
-    <!-- If any of global variables is specified in <domain> then global is
-       over-ridden by domain value.
+    <!-- 
+        Locals can override them.
     -->
     <global elec_dt="50e-6" chem_dt="50e-6"/>
 
-    <!-- If model_path is specified then execute the model. It will populate
-        the moose. Otherwise, assume that neuroml is already loaded into 
-        moose and we only have to do some tinkering.
+    <!-- 
+        Model. Electrical models are usually described in neuroml. Other models
+        can also be specified. By default, neuroml is assumed.
     -->
-    <model domain_type="electrical" already_loaded="true" path="/elec" 
-        type="neuroml" version="1.8" />
+    <model id="0" domain_type="electrical" 
+        sub_type = "compartments"
+        already_loaded="true" 
+        language="neuroml" version="1.8" 
+        />
 
     <!-- Not sure if solver should be part of this -->
-    <model domain_type="electrical" already_loaded="false" moose_path="/model/elec"
-        type="genesis" file_path="ca1_asym.p" solver="hsolver" />
+    <model id="1"
+        domain_type="electrical" 
+        already_loaded="false"
+        language="genesis" 
+        file_path="ca1_asym.p" 
+        solver="hsolver" 
+        />
 
     <!-- This model is not loaded by moose. We have to run an external script to
-        load it. TODO: For moose, we should not use an external script.
+        load it.
+
+        TODO: For moose, we should not use an external script.
         if load_using_external_script is false then do not use 'loader_script'
         attribute.
     -->
-    <model domain_type="chemical" already_loaded="false" moose_path="/model/chem"
-        model_type = "miscellenous"
-        load_using_external_script = "false"
-        loader_script = "proto8.py"
-        diff_length = "20e-6"
-        file_path = "dumpreac.g"
-        />
+    <model id="2" 
+        domain_type="chemical" 
+        already_loaded="false" 
+        model_type="miscellenous"
+        load_using_external_script="false"
+        loader_script="proto8.py"
+        diff_length="20e-6"
+        file_path="dumpreac.g" >
+    </model>
 
     <!-- Here are mappings from compartment to compartment. -->
     <!-- if adaptor_type is source and this compartment influence others, if it
@@ -44,7 +56,11 @@
          a group of compartments depending on the nature of paths.
          TODO: It should be more generic than this.
      -->
-    <domain type="path" id="/model/elec/Compartment" adaptor_type="source">
+    <domain type="electrical" 
+        sub_type="compartment" 
+        sub_type_id="0"
+        adaptor_type="source"
+        >
         <!-- These are currently moose-specific.
              TODO: Make them generic.
          -->
@@ -52,16 +68,20 @@
             targets.
             -->
         <adaptor type="one_to_many">
-            <target identifier="Group1" path="/n/chem/neuroMesh/kChan" field="ConcentrationInside">
+            <target type="chemical"  species="Ca" >
                 <!-- Describe the relation in MathML format. Or use python
                     MathDOM to parse the string into xml. 
                     NOTE: A standard notation for descrining variables is needed.
+
+                    This is a list if adaptor/type is one_to_many.
                 -->
                 <relation lhs="ICa" rhs="0.3 * CCa - 0.9" type="=" />
             </target>
         </adaptor>
         <adaptor type="one_to_all">
-            <target identifier="All" path="/n/elec/compt/ca" field="ConcentrationOutside" />
+            <target type="chemical" species="Ca"  >
+                <relation lhs="VCa" rhs="0.3 * ICa - 0.1" type="=" />
+            </target>
         </adaptor>
     </domain>
 </mumbl>

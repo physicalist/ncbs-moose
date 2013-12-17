@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Sun Dec 15, 2013  10:08PM
+Last modified: Tue Dec 17, 2013  05:33PM
 
 """
 
@@ -34,6 +34,10 @@ class Mumble(object):
         self.countElecModels = 0
         self.countChemModels = 0
 
+        # Insert each model to this list, if model is already added then raise a
+        # warning and don't insert the model.
+        self.modelList = list()
+
     def initPaths(self, paths):
         """
         Initialize all parents.
@@ -54,6 +58,15 @@ class Mumble(object):
         """
         Load additional model to moose.
         """
+        modelId = modelXml.get('id')
+        if modelId in self.modelList:
+            debug.printDebug("INFO"
+                    , "Two models have same id {0}! Ignoring...".format(modelId)
+                    )
+            return 
+        self.modelList.append(modelId)
+
+        # Get the type of model and call appropriate function.
         modelType = modelXml.get('domain_type')
         if modelType == "electrical":
             self.loadElectricalModel(modelXml)
@@ -64,6 +77,22 @@ class Mumble(object):
                     , "{0} : Un-supported Mumbl model".format(modelType)
                     , frame = inspect.currentframe()
                     )
+
+    def loadChemicalModel(modelNo, modelType):
+        """
+        Create moose path for this chemical model.
+        """
+        modelPath = "/models/{0}_{1}"
+        if modelType == "chemical":
+            return modelPath.format("chemical", self.countChemModels)
+        elif modelType == "electrical":
+            return modelPath.format("electrical", self.countElecModels)
+        else:
+            debug.printDebug("TODO"
+                    , "Unsupported model type : {0}".format(modelType)
+                    )
+            raise UserWarning, "Unsupported model type"
+        return None 
 
     def loadElectricalModel(self, modelXml):
         """
@@ -89,9 +118,8 @@ class Mumble(object):
 
         # Else load the model onto moose.
         self.countChemModels += 1
-        chemPath = modelXml.get('moose_path')
-
-        # This call make sure that all paths exists before we start using them.
+        
+        chemPath = self.createMoosePathForModel(self.countChemModels, "chemical")
         self.initPaths(chemPath)
 
         if modelXml.get('load_using_external_script') == "yes":
@@ -99,7 +127,7 @@ class Mumble(object):
                     , "Loading user external script is not supported yet."
                     , frame = inspect.currentframe()
                     )
-            raise UserWarning, "Non-implemented feature"
+            raise UserWarning, "Unimplemented feature"
         else:
             # load here 
             modelFilePath = modelXml.get('file_path')
@@ -110,8 +138,7 @@ class Mumble(object):
                         , frame = inspect.currentframe()
                         )
                 raise RuntimeError, "Failed to open a file"
-            
-            # Continue loading.
+            # After model is loaded. Need to create neuro-mesh.
             neuroComp = moose.NeuroMesh( 
                     chemPath + '/neuro-mesh_%d' % self.countChemModels
                     )
