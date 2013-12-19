@@ -7,9 +7,12 @@ NeuroML.py is the preferred interface. Use this only if NeuroML L1,L2,L3 files
 are misnamed/scattered.  Instantiate MorphML class, and thence use methods:
 readMorphMLFromFile(...) to load a standalone MorphML from file OR
 readMorphML(...) to load from an xml.etree xml element (could be part of a
-larger NeuroML file).  It is assumed that any channels and synapses referred to
-by above MorphML have already been loaded under that same name in /library in
-MOOSE (use ChannelML loader).
+larger NeuroML file).  
+
+It is assumed that any channels and synapses referred to by above MorphML have
+already been loaded under that same name in /library in MOOSE (use ChannelML
+loader).  Note: This has been changed. Default path is now /neuroml/library 
+
 
 """
 # cELementTree is mostly API-compatible but faster than ElementTree
@@ -36,6 +39,8 @@ class MorphML():
         self.nml_params = nml_params
         self.model_dir = nml_params['model_dir']
         self.temperature = nml_params['temperature']
+        self.libraryPath = '/neuroml/library'
+        #moose.Neutral(self.libraryPath)
 
     def stringToFloat(self, tempString):
         tempString = tempString.strip()
@@ -226,17 +231,15 @@ class MorphML():
         else:
             self.length_factor = 1.0
         cellName = cell.attrib["name"]
-        # creates /library in MOOSE tree; elif present, wraps
-        moose.Neutral('/library')
 
         if cellName == 'LIF':
-            self.mooseCell = moose.LeakyIaF('/library/'+cellName)
+            self.mooseCell = moose.LeakyIaF(self.libraryPath+'/'+cellName)
             self.segDict = {}
         else:
             # using moose Neuron class - in previous version 'Cell' class
             # Chaitanya.
 
-            self.mooseCell = moose.Neuron('/library/'+cellName)
+            self.mooseCell = moose.Neuron(self.libraryPath+'/'+cellName)
             self.cellDictBySegmentId[cellName] = [self.mooseCell,{}]
             self.cellDictByCableId[cellName] = [self.mooseCell,{}]
             self.segDict = {}
@@ -654,7 +657,7 @@ class MorphML():
             if not moose.exists(compartment.path+'/'+mechName):
 
                 # if channel does not exist in library load it from xml file
-                if not moose.exists("/library/"+mechName):
+                if not moose.exists(self.libraryPath+"/"+mechName):
                     cmlR = ChannelML(self.nml_params)
                     model_filename = mechName+'.xml'
                     model_path = neuroml_utils.find_first_file(
@@ -671,11 +674,11 @@ class MorphML():
                                         )
                         raise IOError(msg)
 
-                neutralObj = moose.Neutral("/library/"+mechName)
+                neutralObj = moose.Neutral(self.libraryPath+"/"+mechName)
 
                 # Ion concentration pool
                 if 'CaConc' == neutralObj.className:
-                    libcaconc = moose.CaConc("/library/"+mechName)
+                    libcaconc = moose.CaConc(self.libraryPath+"/"+mechName)
 
                     # deep copies the library caconc under the compartment
                     caconc = moose.copy(libcaconc,compartment,mechName)
@@ -688,13 +691,13 @@ class MorphML():
                     channel = None
 
                 elif 'HHChannel2D' == neutralObj.className : ## HHChannel2D
-                    libchannel = moose.HHChannel2D("/library/"+mechName)
+                    libchannel = moose.HHChannel2D(self.libraryPath+"/"+mechName)
                     ## deep copies the library channel under the compartment
                     channel = moose.copy(libchannel,compartment,mechName)
                     channel = moose.HHChannel2D(channel)
                     moose.connect(channel,'channel',compartment,'channel')
                 elif 'HHChannel' == neutralObj.className : ## HHChannel
-                    libchannel = moose.HHChannel("/library/"+mechName)
+                    libchannel = moose.HHChannel(self.libraryPath+"/"+mechName)
 
                     # deep copies the library channel under the compartment
                     channel = moose.copy(libchannel,compartment,mechName)

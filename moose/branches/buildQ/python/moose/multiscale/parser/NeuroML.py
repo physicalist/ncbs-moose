@@ -62,6 +62,9 @@ class NeuroML:
         self.temperature_default = True
         self.nml_params = None
         self.channelUnits = "Physiological Units"
+        moose.Neutral('/neuroml')
+        self.libraryPath = '/neuroml/library'
+        moose.Neutral(self.libraryPath)
 
     def readNeuroMLFromFile(self, filename, params=dict()):
 
@@ -75,7 +78,6 @@ class NeuroML:
         debug.printDebug("STEP"
                 , "Loading neuroml file {0} ... ".format(filename))
         # creates /library in MOOSE tree; elif present, wraps
-        moose.Neutral('/library')
         tree = ET.parse(filename)
         root_element = tree.getroot()
         self.model_dir = path.dirname(path.abspath(filename))
