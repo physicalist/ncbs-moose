@@ -28,6 +28,7 @@ class ChannelML():
 
     def __init__(self, nml_params):
         self.cml='http://morphml.org/channelml/schema'
+        self.libraryPath = '/neuroml/library'
         self.nml_params = nml_params
         temp = nml_params['temperature'].strip()
         if temp is None or len(temp) == 0:
@@ -85,14 +86,14 @@ class ChannelML():
             sys.exit(1)
 
         # creates /library in MOOSE tree; elif present, wraps
-        moose.Neutral('/library')
+        moose.Neutral(self.libraryPath+'')
 
         if utils.neuroml_debug:
             synName = synapseElement.attrib['name']
-            msg = "Loading synapse : %s into /library ." % name
+            msg = "Loading synapse : %s into library ." % synName
             debug.printDebug("INFO", msg)
 
-        self.mooseSynp = moose.SynChan('/library/' \
+        self.mooseSynp = moose.SynChan(self.libraryPath+'/' \
                 + synapseElement.attrib['name'])
         doub_exp_syn = synapseElement.find('./{' + self.cml + '}doub_exp_syn')
         self.mooseSynp.Ek = float(doub_exp_syn.attrib['reversal_potential']) \
@@ -101,7 +102,7 @@ class ChannelML():
                  * Gfactor
         # seconds
         self.mooseSynp.tau1 = float(doub_exp_syn.attrib['rise_time']) * Tfactor 
-        # seconds
+        # second\s
         self.mooseSynp.tau2 = float(doub_exp_syn.attrib['decay_time'])*Tfactor 
 
         # The delay and weight can be set only after connecting a spike event
@@ -133,7 +134,7 @@ class ChannelML():
                     , frame = inspect.currentframe()
                     )
             sys.exit(1)
-        moose.Neutral('/library') 
+        moose.Neutral(self.libraryPath+'') 
         # creates /library in MOOSE tree; elif present, wraps
         channel_name = channelElement.attrib['name']
         if utils.neuroml_debug:
@@ -145,9 +146,9 @@ class ChannelML():
                 )
         concdep = IVrelation.find('./{'+self.cml+'}conc_dependence')
         if concdep is None:
-            channel = moose.HHChannel('/library/'+channel_name)
+            channel = moose.HHChannel(self.libraryPath+'/'+channel_name)
         else:
-            channel = moose.HHChannel2D('/library/'+channel_name)
+            channel = moose.HHChannel2D(self.libraryPath+'/'+channel_name)
 
         if IVrelation.attrib['cond_law']=="ohmic":
             channel.Gbar = float(IVrelation.attrib['default_gmax']) * Gfactor
@@ -417,7 +418,7 @@ class ChannelML():
             Lfactor = 1.0
             Ifactor = 1.0
         # creates /library in MOOSE tree; elif present, wraps
-        moose.Neutral('/library') 
+        moose.Neutral(self.libraryPath+'') 
         ionSpecies = ionConcElement.find('./{'+self.cml+'}ion_species')
         if ionSpecies is not None:
             if not 'ca' in ionSpecies.attrib['name']:
@@ -429,7 +430,7 @@ class ChannelML():
         debug.printDebug("INFO"
                 , "Loading Ca pool %s into /library" % capoolName
                 )
-        caPool = moose.CaConc('/library/'+capoolName)
+        caPool = moose.CaConc(self.libraryPath+'/'+capoolName)
         poolModel = ionConcElement.find('./{'+self.cml+'}decaying_pool_model')
         caPool.CaBasal = float(poolModel.attrib['resting_conc']) * concfactor
         caPool.Ca_base = float(poolModel.attrib['resting_conc']) * concfactor

@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Tue Dec 17, 2013  05:33PM
+Last modified: Thu Dec 19, 2013  12:22PM
 
 """
 
@@ -78,15 +78,23 @@ class Mumble(object):
                     , frame = inspect.currentframe()
                     )
 
-    def loadChemicalModel(modelNo, modelType):
+    def createMoosePathForModel(self, modelNo, modelType, species=None):
         """
         Create moose path for this chemical model.
         """
-        modelPath = "/models/{0}_{1}"
         if modelType == "chemical":
-            return modelPath.format("chemical", self.countChemModels)
+            modelPath = "/models/chemical/{0}_{1}"
+            if species:
+                return modelPath.format("chemical", self.countChemModels)
+            else:
+                return modelPath.format("chemical"
+                        , species
+                        , self.countChemModels
+                        )
+           
         elif modelType == "electrical":
-            return modelPath.format("electrical", self.countElecModels)
+            modelPath = "/models/electrical/{0}_{1}"
+            return modelPath.format("e", self.countElecModels)
         else:
             debug.printDebug("TODO"
                     , "Unsupported model type : {0}".format(modelType)
@@ -118,7 +126,6 @@ class Mumble(object):
 
         # Else load the model onto moose.
         self.countChemModels += 1
-        
         chemPath = self.createMoosePathForModel(self.countChemModels, "chemical")
         self.initPaths(chemPath)
 
@@ -142,3 +149,23 @@ class Mumble(object):
             neuroComp = moose.NeuroMesh( 
                     chemPath + '/neuro-mesh_%d' % self.countChemModels
                     )
+            # TODO: Dont know what this does.
+            moose.separeSpines = 1
+
+            # get compartments and add species to these compartments.
+            comps = modelXml.find('compartments')
+            [ self.addCompartment(c) for c in comps ]
+
+            # Geometry polity
+            moose.GeometryPolicy = comps.get('geometry')
+
+    def addCompartment(self, compartmentXml):
+        """Add compartment if not exists and inject species into add.
+
+        Ideally compartment must exist. The id of compartment in xmlElement
+        should be compatible with neuroml comparment ids.
+        """
+        print("Compartment %s " % compartmentXml)
+         
+
+

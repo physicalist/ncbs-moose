@@ -37,15 +37,20 @@
         TODO: For moose, we should not use an external script.
         if load_using_external_script is false then do not use 'loader_script'
         attribute.
+
+        Sub-element comapatments contains the compartment in which this model 
+        should be injected.
     -->
     <model id="2" 
         domain_type="chemical" 
-        already_loaded="false" 
+        species="Ca"
         model_type="miscellenous"
-        load_using_external_script="false"
-        loader_script="proto8.py"
-        diff_length="20e-6"
-        file_path="dumpreac.g" >
+        lad_using_external_script="false"
+        loader_script="proto8.py" diff_length="20e-6" file_path="dumpreac.g" >
+        <compartments geometry='cylinder'>
+            <compartment id="1" path="" />
+            <compartment id="100" path="" />
+        </compartments>
     </model>
 
     <!-- Here are mappings from compartment to compartment. -->
@@ -53,8 +58,11 @@
         is target than this compartment gets influenced by other compartments.
     -->
     <!-- id is moose like path, it can influence either a single compartment of
-         a group of compartments depending on the nature of paths.
-         TODO: It should be more generic than this.
+        a group of compartments depending on the nature of paths.
+        TODO: It should be more generic than this.
+
+        If electrical model was speficied in NeuroML then we can make use of 
+        paths
      -->
     <domain type="electrical" 
         sub_type="compartment" 
@@ -62,7 +70,7 @@
         adaptor_type="source"
         >
         <!-- These are currently moose-specific.
-             TODO: Make them generic.
+            TODO: Make them generic.
          -->
          <!-- if adaptor_type is source then the this list can only contain
             targets.
@@ -72,7 +80,6 @@
                 <!-- Describe the relation in MathML format. Or use python
                     MathDOM to parse the string into xml. 
                     NOTE: A standard notation for descrining variables is needed.
-
                     This is a list if adaptor/type is one_to_many.
                 -->
                 <relation lhs="ICa" rhs="0.3 * CCa - 0.9" type="=" />

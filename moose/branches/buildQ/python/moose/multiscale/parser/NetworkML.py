@@ -43,12 +43,15 @@ class NetworkML():
 
     def __init__(self, nml_params):
         self.populationDict = dict()
-        self.libraryPath = '/library'
+        moose.Neutral('/neuroml')
+        self.libraryPath = '/neuroml/library'
+        moose.Neutral(self.libraryPath)
+
         self.cellDictBySegmentId={}
         self.cellDictByCableId={}
         self.nml_params = nml_params
         self.model_dir = nml_params['model_dir']
-        self.elecPath = '/elec'
+        self.elecPath = '/neuroml/electrical'
         self.dt = 1e-3 # In seconds.
         self.simTime = 1000e-3
 
@@ -233,8 +236,8 @@ class NetworkML():
             Tfactor = factors['Tfactor']
             pulseinput = inElemXml.find(".//{"+nmu.nml_ns+"}pulse_input")
             if pulseinput is not None:
-                pulsegen = moose.PulseGen('/elec/pulsegen_'+inputName)
-                iclamp = moose.DiffAmp('/elec/iclamp_'+inputName)
+                pulsegen = moose.PulseGen(self.elecPath+'/pulsegen_'+inputName)
+                iclamp = moose.DiffAmp(self.elecPath+'/iclamp_'+inputName)
                 iclamp.saturation = 1e6
                 iclamp.gain = 1.0
 
@@ -299,7 +302,7 @@ class NetworkML():
             debug.printDebug("INFO", "Loading {0}".format(populationName))
 
             # if cell does not exist in library load it from xml file
-            if not moose.exists('/library/'+cellname):
+            if not moose.exists(self.libraryPath+'/'+cellname):
                 mmlR = MorphML.MorphML(self.nml_params)
                 model_filenames = (cellname+'.xml', cellname+'.morph.xml')
                 success = False
@@ -493,7 +496,7 @@ class NetworkML():
             for syn_props in synProps:
                 syn_name = syn_props.attrib['synapse_type']
                 ## if synapse does not exist in library load it from xml file
-                if not moose.exists("/library/"+syn_name):
+                if not moose.exists(self.libraryPath+'/'+syn_name):
                     cmlR = ChannelML.ChannelML(self.nml_params)
                     model_filename = syn_name+'.xml'
                     model_path = nmu.find_first_file(model_filename
@@ -683,7 +686,7 @@ class NetworkML():
 
     def make_new_synapse(self, syn_name, postcomp, syn_name_full):
         # if channel does not exist in library load it from xml file
-        if not moose.exists('/library/'+syn_name):
+        if not moose.exists(self.libraryPath+'/'+syn_name):
             cmlR = ChannelML.ChannelML(self.nml_params)
             cmlR.readChannelMLFromFile(syn_name+'.xml')
         # deep copies the library synapse to an instance under postcomp named as
