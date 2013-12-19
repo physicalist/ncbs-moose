@@ -48,8 +48,11 @@
         lad_using_external_script="false"
         loader_script="proto8.py" diff_length="20e-6" file_path="dumpreac.g" >
         <compartments geometry='cylinder'>
-            <compartment id="1" path="" />
-            <compartment id="100" path="" />
+            <compartment path="" >
+                <population name="CellGroupA" instance="0" />
+                <segment name="Soma" instance="0" />
+            </compartment>
+            <compartment path="" />
         </compartments>
     </model>
 

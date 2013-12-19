@@ -12,3 +12,8 @@ if os.path.exists(logFile):
 
 logging.basicConfig(filename=logFile, level=logging.DEBUG)
 mooseLogger = logging.getLogger()
+
+def logPathsToFille(pat):
+   moose_paths = [x.getPath() for x in moose.wildcardFind(pat)]
+   moose_paths = "\n".join(moose_paths)
+   mooseLogger.debug(moose_paths)
