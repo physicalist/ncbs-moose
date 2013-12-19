@@ -22,9 +22,12 @@ import sys
 import moose
 from moose import utils as moose_utils
 from moose.neuroml import utils as neuroml_utils
+import helper.moose_methods as moose_methods
+
 from ChannelML import ChannelML
 import debug.debug as debug
 import inspect
+import re
 
 class MorphML():
 
@@ -108,8 +111,9 @@ class MorphML():
 
             # just segmentname is NOT unique - eg: mitral bbmit exported from
             # NEURON.
-            mooseCompname = segmentname+'_'+segmentid
-            mooseComppath = self.mooseCell.path+'/'+mooseCompname
+            mooseCompname = moose_methods.moosePath(segmentname, segmentid)
+            mooseComppath = self.mooseCell.path + '/' + mooseCompname
+
             mooseComp = moose.Compartment(mooseComppath)
             self.cellDictBySegmentId[cellName][1][segmentid] = mooseComp
 
@@ -141,7 +145,7 @@ class MorphML():
                 # other's Ra/2, but axial and raxial just serve to distinguish
                 # ends.
 
-                moose.connect(parent,'axial',mooseComp,'raxial')
+                moose.connect(parent, 'axial', mooseComp, 'raxial')
             else:
                 parent = None
             proximal = segment.find('./{'+self.mml+'}proximal')
@@ -639,7 +643,7 @@ class MorphML():
            # I assume below that compartment name has _segid at its end
 
            # get segment id from compartment name
-           segid = compartment.name.split('_')[-1]
+           segid = moose_methods.getCompartmentId(compartment.name)
            self.segDict[segid][5].append(value)
 
         # spikegen being added to the compartment
@@ -674,6 +678,7 @@ class MorphML():
                                         )
                         raise IOError(msg)
 
+                assert("_" not in mechName)
                 neutralObj = moose.Neutral(self.libraryPath+"/"+mechName)
 
                 # Ion concentration pool

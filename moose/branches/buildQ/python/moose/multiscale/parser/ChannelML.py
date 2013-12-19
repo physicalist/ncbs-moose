@@ -138,7 +138,7 @@ class ChannelML():
         # creates /library in MOOSE tree; elif present, wraps
         channel_name = channelElement.attrib['name']
         if utils.neuroml_debug:
-            msg = "Loading channel %s into /library" % channel_name
+            msg = "Loading channel %s into %s " % channel_name, self.libraryPath
             debug.printDebug("INFO", msg)
 
         IVrelation = channelElement.find(
@@ -150,7 +150,7 @@ class ChannelML():
         else:
             channel = moose.HHChannel2D(self.libraryPath+'/'+channel_name)
 
-        if IVrelation.attrib['cond_law']=="ohmic":
+        if IVrelation.attrib['cond_law'] == "ohmic":
             channel.Gbar = float(IVrelation.attrib['default_gmax']) * Gfactor
             channel.Ek = float(IVrelation.attrib['default_erev']) * Vfactor
             channelIon = moose.Mstring(channel.path+'/ion')
@@ -174,7 +174,7 @@ class ChannelML():
         gates = IVrelation.findall('./{'+self.cml+'}gate')
         if len(gates) > 3:
             msg = "Sorry! Maximum x, y, and z (three) gates are possible in\
-                     MOOSE/Genesis"
+                      MOOSE/Genesis"
             debug.printDebug("ERR", msg, frame=inspect.currentframe())
             sys.exit()
            
@@ -206,7 +206,7 @@ class ChannelML():
         self.parameters = []
         for parameter in channelElement.findall('.//{'+self.cml+'}parameter'):
             self.parameters.append( 
-                    (parameter.attrib['name'],float(parameter.attrib['value'])) 
+                    (parameter.attrib['name'], float(parameter.attrib['value'])) 
                     )
 
         for num,gate in enumerate(gates):
@@ -404,12 +404,12 @@ class ChannelML():
     def readIonConcML(self, ionConcElement, units="SI units"):
         if units == 'Physiological Units': 
             # see pg 219 (sec 13.2) of Book of Genesis
-            Vfactor = 1e-3 # V from mV
-            Tfactor = 1e-3 # s from ms
-            Gfactor = 1e1 # S/m^2 from mS/cm^2
+            Vfactor = 1e-3   # V from mV
+            Tfactor = 1e-3   # s from ms
+            Gfactor = 1e1    # S/m^2 from mS/cm^2
             concfactor = 1e6 # mol/m^3 from mol/cm^3
-            Lfactor = 1e-2 # m from cm
-            Ifactor = 1e-6 # A from microA
+            Lfactor = 1e-2   # m from cm
+            Ifactor = 1e-6   # A from microA
         else:
             Vfactor = 1.0
             Tfactor = 1.0

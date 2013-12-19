@@ -34,7 +34,10 @@ import moose.utils as mu
 import debug.debug as debug
 import inspect
 import helper.xml_methods as xml_methods
+import helper.moose_methods as moose_methods
 import core.stimulus as stimulus
+from debug.logger import *
+import debug.bugs as bugs
 
 from math import cos, sin
 import utils
@@ -45,6 +48,8 @@ class NetworkML():
         self.populationDict = dict()
         moose.Neutral('/neuroml')
         self.libraryPath = '/neuroml/library'
+        self.cellPath = '/cells'
+        moose.Neutral(self.cellPath)
         moose.Neutral(self.libraryPath)
 
         self.cellDictBySegmentId={}
@@ -55,7 +60,7 @@ class NetworkML():
         self.dt = 1e-3 # In seconds.
         self.simTime = 1000e-3
 
-    def readNetworkMLFromFile(self,filename,cellSegmentDict,params={}):
+    def readNetworkMLFromFile(self, filename, cellSegmentDict, params={}):
 
         """ readNetworkML
 
@@ -83,7 +88,7 @@ class NetworkML():
 
         """
 
-        debug.printDebug("INFO", "reading file ... ", filename)
+        debug.printDebug("INFO", "reading file %s ... " % filename)
         tree = ET.parse(filename)
         root_element = tree.getroot()
         debug.printDebug("INFO", "Tweaking model ... ")
@@ -129,7 +134,7 @@ class NetworkML():
         self.createProjections() 
 
         # create connections
-        debug.printDebug("INFO", "Creating inputs in /elec ... ")
+        debug.printDebug("INFO", "Creating inputs in %s .. " % self.elecPath)
 
         # create inputs (only current pulse supported)
         self.createInputs() 
@@ -182,7 +187,7 @@ class NetworkML():
         if random_stim is not None:
             debug.printDebug("INFO", "Generating random stimulous")
             debug.printDebug("TODO", "Test this Poission spike train table")
-            stimTable = moose.StimulusTable("/elec/random_stimuls")
+            stimTable = moose.StimulusTable(self.elecPath+'/random_stimuls')
             # Get the frequency of stimulus
             frequency = float(random_stim.get('frequency')) / factors['Tfactor']
             synpMechanism = random_stim.get('synaptic_mechanism')
@@ -213,7 +218,7 @@ class NetworkML():
 
                     segId = '{0}'.format(segment_id)
                     segment_path = self.populationDict[population][1]\
-                            [int(cell_id)].path + '/' + \
+                           [int(cell_id)].path + '/' + \
                             self.cellSegmentDict[cell_name][segId][0]
                     compartment = moose.Compartment(segment_path)
                     synchan = moose.SynChan(
@@ -345,7 +350,7 @@ class NetworkML():
                 # sim elements are in /cells
                 cellid = moose.copy(libcell
                         , moose.Neutral('/cells')
-                        , populationName + "_"+instanceid
+                        , moose_methods.moosePath(populationName, instanceid)
                         )
                 if cellname == 'LIF':
                     cell = moose.LeakyIaF(cellid)
@@ -530,6 +535,9 @@ class NetworkML():
                     self.addConnection(connection, projection, options)
 
     def connect(self, syn_name, pre_path, post_path, weight, threshold, delay):
+
+        mooseLogger.debug(moose.wildcardFind('/##'))
+        logPathsToFille('/##')
         postcomp = moose.Compartment(post_path)
 
         # We usually try to reuse an existing SynChan - event based SynChans
@@ -546,23 +554,25 @@ class NetworkML():
 
         # create a new synapse
         if libsyn.className == 'KinSynChan' or gradedchild.value == 'True': 
-            syn_name_full = syn_name+'_'+mu.underscorize(pre_path)
+            syn_name_full = moose_methods.moosePath(syn_name
+                    , mu.underscorize(pre_path))
             self.make_new_synapse(syn_name, postcomp, syn_name_full)
         else:
-            # BUG BUG BUG in MOOSE:
-            # Subhasis said addSpike below always adds to the first element in
-            # syn.synapse So here, create a new SynChan everytime.
-            syn_name_full = syn_name+'_'+ mu.underscorize(pre_path)
-            self.make_new_synapse(syn_name, postcomp, syn_name_full)
+            # See debug/bugs for more details.
+            if bugs.BUG_NetworkML_500:
+                syn_name_full = moose_methods.moosePath(syn_name
+                        , mu.underscorize(pre_path))
+                self.make_new_synapse(syn_name, postcomp, syn_name_full)
 
-            # Once above bug is resolved in MOOSE, revert to below:
-            # if syn doesn't exist in this compartment, create it
-            #syn_name_full = syn_name
-            #if not moose.exists(post_path+'/'+syn_name_full):
-            #    self.make_new_synapse(syn_name, postcomp, syn_name_full)
+            else: # If the above bug is fixed.
+                syn_name_full = syn_name
+                if not moose.exists(post_path+'/'+syn_name_full):
+                    self.make_new_synapse(syn_name, postcomp, syn_name_full)
 
         # wrap the synapse in this compartment
-        syn = moose.SynChan(post_path+'/'+syn_name_full) 
+        synPath = moose_methods.moosePath(post_path, syn_name_full)
+        syn = moose.SynChan(synPath)
+
         gradedchild = mu.get_child_Mstring(syn, 'graded')
 
         # weights are set at the end according to whether the synapse is graded
@@ -596,7 +606,7 @@ class NetworkML():
                 if not moose.exists(pre_path+'/'+syn_name+'_spikegen'):
                     spikegen = moose.SpikeGen(pre_path+'/'+syn_name+'_spikegen')
                     # connect the compartment Vm to the spikegen
-                    moose.connect(precomp,"VmOut",spikegen,"Vm")
+                    moose.connect(precomp, "VmOut", spikegen, "Vm")
                     # spikegens for different synapse_types can have different
                     # thresholds
                     spikegen.threshold = threshold
@@ -630,12 +640,12 @@ class NetworkML():
                 ## pre_path is 'file[+<glomnum>]_<filenum1>[_<filenum2>...]' i.e. glomnum could be present
                 filesplit = pre_path.split('+')
                 if len(filesplit) == 2:
-                    glomsplit = filesplit[1].split('_',1)
+                    glomsplit = filesplit[1].split('_', 1)
                     glomstr = '_'+glomsplit[0]
                     filenums = glomsplit[1]
                 else:
                     glomstr = ''
-                    filenums = pre_path.split('_',1)[1]
+                    filenums = pre_path.split('_', 1)[1]
                 tt_path = postcomp.path+'/'+syn_name_full+glomstr+'_tt'
                 if not moose.exists(tt_path):
                     # if timetable for this synapse doesn't exist in this
@@ -662,8 +672,9 @@ class NetworkML():
                     tt = moose.TimeTable(tt_path)
                     # append filenumbers from
                     # 'file[+<glomnum>]_<filenumber1>[_<filenumber2>...]'
-                    filenums = tt.getField('fileNumbers') + '_' + filenums
-                    tt.setField('fileNumbers',filenums)
+                    filenums = moose_methods.moosePath(tt.getField('fileNumbers')
+                            , filenums)
+                    tt.setField('fileNumbers', filenums)
 
             # syn.Gbar remains the same, but we play with the weight which is a
             # factor to Gbar The delay and weight can be set only after
@@ -686,9 +697,10 @@ class NetworkML():
 
     def make_new_synapse(self, syn_name, postcomp, syn_name_full):
         # if channel does not exist in library load it from xml file
-        if not moose.exists(self.libraryPath+'/'+syn_name):
+        if not moose.exists(self.libraryPath + '/' + syn_name):
             cmlR = ChannelML.ChannelML(self.nml_params)
             cmlR.readChannelMLFromFile(syn_name+'.xml')
+
         # deep copies the library synapse to an instance under postcomp named as
         # <arg3>
         synid = moose.copy(moose.Neutral(self.libraryPath+'/'+syn_name)

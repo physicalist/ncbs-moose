@@ -11,19 +11,23 @@
 
 
 import logging
+import moose
+import logging
+import datetime
+import time
+import os
 
-logger = logging.getLogger('multiscale')
-logger.setLevel(logging.DEBUG)
-# create file handler which logs even debug messages
-fh = logging.FileHandler('multiscale.log')
-fh.setLevel(logging.DEBUG)
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('[%(levelname)s] %(filename)s:%(lineno)s - %(message)s')
-ch.setFormatter(formatter)
-fh.setFormatter(formatter)
-# add the handlers to logger
-logger.addHandler(ch)
-logger.addHandler(fh)
+st = time.time()
+st = datetime.datetime.fromtimestamp(st).strftime('%Y-%m-%d-%H%M')
+
+logFile = 'logs/moose.log'
+if os.path.exists(logFile):
+    os.rename(logFile, 'logs/{0}'.format(st))
+
+logging.basicConfig(filename=logFile, level=logging.DEBUG)
+mooseLogger = logging.getLogger()
+
+def logPathsToFille(pat):
+   moose_paths = [x.getPath() for x in moose.wildcardFind(pat)]
+   moose_paths = "\n".join(moose_paths)
+   mooseLogger.debug(moose_paths)

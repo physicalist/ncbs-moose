@@ -7,7 +7,7 @@ import parser.NeuroML as NeuroML
 import core.mumbl as mumbl
 import core.simulator as moose_config
 import moose
-from core.config import mooseLogger
+from debug.logger import *
 
 
 
@@ -64,9 +64,6 @@ if args:
         nml = etreeDict['nml'][0]
         nmlObj = NeuroML.NeuroML()
         populationDict, projectionDict = nmlObj.loadNML(nml)
-        moose_paths = [x.getPath() for x in moose.wildcardFind('/##')]
-        moose_paths = "\n".join(moose_paths)
-        mooseLogger.debug(moose_paths)
 
         # Start processing mumbl
         mumblObj = mumbl.Mumble(etreeDict['mumbl'][0])

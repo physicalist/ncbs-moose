@@ -102,15 +102,18 @@ class NeuroML:
                 , "Using default temperature of % C".format(self.temperature)
                 )
         self.nml_params = {
-                'temperature':self.temperature,
-                'model_dir':self.model_dir,
+                'temperature': self.temperature
+                , 'model_dir': self.model_dir
         }
 
-        # Loading channels and synapses into MOOSE /library ...
+        # Loading channels and synapses into MOOSE into neuroml library
         cmlR = ChannelML.ChannelML(self.nml_params)
         chnlList = root_element.findall('.//{'+mnu.neuroml_ns+'}channels')
-        if chnlList: [self.channelToMoose(cmlR, ch) for ch in chnlList]
-        else: pass
+
+        if chnlList: 
+            [self.channelToMoose(cmlR, ch) for ch in chnlList]
+        else:
+            pass
 
         #print "Loading cell definitions into MOOSE /library ..."
         mmlR = MorphML.MorphML(self.nml_params)
