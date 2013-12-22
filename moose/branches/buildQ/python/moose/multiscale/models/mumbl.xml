@@ -48,11 +48,22 @@
         lad_using_external_script="false"
         loader_script="proto8.py" diff_length="20e-6" file_path="dumpreac.g" >
         <compartments geometry='cylinder'>
+<<<<<<< HEAD
             <compartment path="" >
                 <population name="CellGroupA" instance="0" />
                 <segment name="Soma" instance="0" />
             </compartment>
             <compartment path="" />
+=======
+            <compartment id="1">
+                <pool species="Ca" conc="1e-3" />
+                <pool species="Na" conc="1e-10" />
+            </compartment>
+            <compartment id="2">
+                <pool species="K" conc="1e-10" />
+            </compartment>
+            <compartment path="" id="3" />
+>>>>>>> chemCompt are created and attached to pools
         </compartments>
     </model>
 

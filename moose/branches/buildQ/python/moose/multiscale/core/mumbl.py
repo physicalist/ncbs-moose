@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Thu Dec 19, 2013  12:22PM
+Last modified: Mon Dec 23, 2013  01:39AM
 
 """
 
@@ -21,6 +21,7 @@ import debug.debug as debug
 import inspect
 import os
 import moose
+import helper.moose_methods as moose_methods
 
 class Mumble(object):
     """ Mumble: Class for loading mumble onto moose.
@@ -33,6 +34,16 @@ class Mumble(object):
         self.global_ = self.rootElem.get('global')
         self.countElecModels = 0
         self.countChemModels = 0
+        self.mumblPath = '/mumbl'
+        self.chemPath = os.path.join(self.mumblPath, 'Chemical')
+        self.elecPath = os.path.join(self.mumblPath, 'Electrical')
+        self.poolPath = os.path.join(self.mumblPath, 'Pool')
+        moose.Neutral(self.mumblPath)
+        moose.Neutral(self.chemPath)
+        moose.Neutral(self.elecPath)
+        moose.Neutral(self.poolPath)
+
+
 
         # Insert each model to this list, if model is already added then raise a
         # warning and don't insert the model.
@@ -83,7 +94,7 @@ class Mumble(object):
         Create moose path for this chemical model.
         """
         if modelType == "chemical":
-            modelPath = "/models/chemical/{0}_{1}"
+            modelPath = os.path.join(self.chemPath, '{0}')
             if species:
                 return modelPath.format("chemical", self.countChemModels)
             else:
@@ -126,8 +137,6 @@ class Mumble(object):
 
         # Else load the model onto moose.
         self.countChemModels += 1
-        chemPath = self.createMoosePathForModel(self.countChemModels, "chemical")
-        self.initPaths(chemPath)
 
         if modelXml.get('load_using_external_script') == "yes":
             debug.printDebug("TODO"
@@ -145,27 +154,28 @@ class Mumble(object):
                         , frame = inspect.currentframe()
                         )
                 raise RuntimeError, "Failed to open a file"
-            # After model is loaded. Need to create neuro-mesh.
-            neuroComp = moose.NeuroMesh( 
-                    chemPath + '/neuro-mesh_%d' % self.countChemModels
-                    )
-            # TODO: Dont know what this does.
-            moose.separeSpines = 1
 
             # get compartments and add species to these compartments.
-            comps = modelXml.find('compartments')
-            [ self.addCompartment(c) for c in comps ]
+            compsXml = modelXml.find('compartments')
+            comps = compsXml.findall('compartment')
+            [ self.addCompartment(compsXml.attrib, c) for c in comps ]
 
-            # Geometry polity
-            moose.GeometryPolicy = comps.get('geometry')
-
-    def addCompartment(self, compartmentXml):
+    def addCompartment(self, compsAttribs, xmlElem):
         """Add compartment if not exists and inject species into add.
 
         Ideally compartment must exist. The id of compartment in xmlElement
         should be compatible with neuroml comparment ids.
         """
-        print("Compartment %s " % compartmentXml)
-         
+        compPath = os.path.join(self.chemPath
+                , moose_methods.moosePath("Compartment" , xmlElem.get('id'))
+                )
+        pools = xmlElem.findall('pool')
+        for p in pools:
+            pool = os.path.join(self.poolPath, p.get('species'))
+            poolComp = moose.ChemCompt(pool)
 
-
+            # Species path.
+            speciesPath = os.path.join(self.chemPath, p.get('species'))
+            speciesComp = moose.Pool(speciesPath)
+            speciesComp.speciesId = poolComp.getId().getValue()
+            speciesComp.concInit = moose_methods.stringToFloat(p.get('conc'))
