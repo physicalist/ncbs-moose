@@ -3,7 +3,7 @@
 """moose_methods.py:  Some helper function related with moose to do multiscale
 modelling.
 
-Last modified: Mon Dec 23, 2013  01:48AM
+Last modified: Wed Dec 25, 2013  04:23AM
 
 """
     
@@ -17,6 +17,7 @@ __email__            = "dilawars@iitb.ac.in"
 __status__           = "Development"
 
 import re
+import os
 
 nameSep = '()'
 
@@ -33,9 +34,9 @@ def moosePath(baseName, append):
         elif len(nameSep) == 2:
             return baseName + nameSep[0] + append + nameSep[1]
         else:
-            raise RuntimeError, "Stupid separator. {0}. I want at most 2 char"
+            raise UserWarning, "Not more than 2 characters are not supported"
     else:
-        return baseName + '/' + append
+        return os.path.join(baseName, append)
 
 
 def splitComparmentExpr(expr):
