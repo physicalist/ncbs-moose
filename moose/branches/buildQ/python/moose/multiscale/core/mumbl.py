@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Wed Dec 25, 2013  04:24AM
+Last modified: Wed Dec 25, 2013  07:59PM
 
 """
 
@@ -22,8 +22,9 @@ import inspect
 import os
 import moose
 import helper.moose_methods as moose_methods
+from debug.db import DebugDB
 
-class Mumble(object):
+class Mumble(DebugDB):
     """ Mumble: Class for loading mumble onto moose.
     """
     def __init__(self, mumbl):
@@ -42,6 +43,7 @@ class Mumble(object):
         moose.Neutral(self.chemPath)
         moose.Neutral(self.elecPath)
         moose.Neutral(self.poolPath)
+        self.db = DebugDB(':memory:')
 
 
 

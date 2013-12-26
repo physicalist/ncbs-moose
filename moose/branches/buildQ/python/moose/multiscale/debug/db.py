@@ -2,7 +2,7 @@
 
 """db.py: This module is only for debugging purpose.
 
-Last modified: Wed Dec 25, 2013  07:23PM
+Last modified: Wed Dec 25, 2013  08:00PM
 
 """
     
@@ -22,7 +22,6 @@ class DebugDB:
 
     def __init__(self, path):
         self.dbpath = path
-        self.initDB()
         self.db = sql.connect(self.dbpath)
         self.c = self.db.cursor()
 
