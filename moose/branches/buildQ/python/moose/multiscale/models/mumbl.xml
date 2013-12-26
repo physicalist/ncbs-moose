@@ -73,15 +73,11 @@
     <domain type="electrical" 
         sub_type="compartment" 
         sub_type_id="0"
-        adaptor_type="source"
         >
         <!-- These are currently moose-specific.
             TODO: Make them generic.
          -->
-         <!-- if adaptor_type is source then the this list can only contain
-            targets.
-            -->
-        <adaptor type="one_to_many">
+        <adaptor direction="out" type="one_to_many">
             <target type="chemical"  species="Ca" >
                 <!-- Describe the relation in MathML format. Or use python
                     MathDOM to parse the string into xml. 
@@ -90,10 +86,13 @@
                 -->
                 <relation lhs="ICa" rhs="0.3 * CCa - 0.9" type="=" />
             </target>
-        </adaptor>
-        <adaptor type="one_to_all">
             <target type="chemical" species="Ca"  >
                 <relation lhs="VCa" rhs="0.3 * ICa - 0.1" type="=" />
+            </target>
+        </adaptor>
+        <adaptor direction="out" type="one_to_all">
+            <target type="chemical" species="K" >
+                <relation lhs="Vm" rhs="0.001 * Ik" type="=" />
             </target>
         </adaptor>
     </domain>

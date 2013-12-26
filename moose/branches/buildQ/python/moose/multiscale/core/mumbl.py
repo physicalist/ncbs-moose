@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Mon Dec 23, 2013  01:39AM
+Last modified: Wed Dec 25, 2013  04:24AM
 
 """
 
@@ -127,8 +127,18 @@ class Mumble(object):
 
     def loadChemicalModel(self, modelXml):
         """
-        Load chemical model.
+        This function load a chemical model described in mumble. Mumble can
+        point to a model described in some file. Or the model may have been
+        already loaded and one can specify the simulation specific details. We
+        only spport Moose simulator.
+
+        @param modelXml: This is xml elements.
+        @type  param:  lxml.Elements
+
+        @return:  None
+        @rtype : None type.
         """
+
         if modelXml.get('already_loaded') == "true":
             debug.printDebug("DEBUG"
                     , "This model is alreay loaded. Doing nothing..."
@@ -144,29 +154,33 @@ class Mumble(object):
                     , frame = inspect.currentframe()
                     )
             raise UserWarning, "Unimplemented feature"
-        else:
-            # load here 
-            modelFilePath = modelXml.get('file_path')
-            modelFilePath = os.path.join(self.mumblRootPath, modelFilePath)
-            if not os.path.exists(modelFilePath):
-                debug.printDebug("ERR"
-                        , "File {0} not found.".format(modelFilePath)
-                        , frame = inspect.currentframe()
-                        )
-                raise RuntimeError, "Failed to open a file"
 
-            # get compartments and add species to these compartments.
-            compsXml = modelXml.find('compartments')
-            comps = compsXml.findall('compartment')
-            [ self.addCompartment(compsXml.attrib, c) for c in comps ]
+        # Otherwise load the model.
+        modelFilePath = modelXml.get('file_path')
+        modelFilePath = os.path.join(self.mumblRootPath, modelFilePath)
+        if not os.path.exists(modelFilePath):
+            debug.printDebug("ERR"
+                    , "File {0} not found.".format(modelFilePath)
+                    , frame = inspect.currentframe()
+                    )
+            raise IOError, "Failed to open a file"
 
-    def addCompartment(self, compsAttribs, xmlElem):
+        # get compartments and add species to these compartments.
+        compsXml = modelXml.find('compartments')
+        comps = compsXml.findall('compartment')
+        [ self.addCompartment(compsXml.attrib, c, "chemical") for c in comps ]
+
+    def addCompartment(self, compsAttribs, xmlElem, chemType):
         """Add compartment if not exists and inject species into add.
 
         Ideally compartment must exist. The id of compartment in xmlElement
         should be compatible with neuroml comparment ids.
         """
-        compPath = os.path.join(self.chemPath
+        if chemType != "chemical":
+            raise UserWarning, "Only chemical models are supported"
+
+        compPath = os.path.join(
+                self.chemPath
                 , moose_methods.moosePath("Compartment" , xmlElem.get('id'))
                 )
         pools = xmlElem.findall('pool')
