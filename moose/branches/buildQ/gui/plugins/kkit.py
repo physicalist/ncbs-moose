@@ -82,7 +82,6 @@ class KkitEditorView(MooseEditorView):
 
     def SaveModelDialogSlot(self):
         type_sbml = 'SBML'
-	print " here in saveModelDialog"
         filters = {'SBML(*.xml)': type_sbml}
         filename,filter_ = QtGui.QFileDialog.getSaveFileNameAndFilter(None,'Save File','',';;'.join(filters))
         extension = ""
@@ -93,7 +92,6 @@ class KkitEditorView(MooseEditorView):
         if filename:
             filename = filename+extension
             if filters[str(filter_)] == 'SBML':
-                print "here",filename," ",self.plugin.modelRoot
                 moose.writeSBML(str(filename),self.plugin.modelRoot)
     def getToolPanes(self):
         return super(KkitEditorView, self).getToolPanes()
@@ -123,7 +121,6 @@ class  KineticsWidget(EditorWidgetBase):
         self.sceneContainer = QtGui.QGraphicsScene(self)
         self.sceneContainer.setSceneRect(self.sceneContainer.itemsBoundingRect())
         self.sceneContainer.setBackgroundBrush(QtGui.QColor(230,220,219,120))
-
 	self.insertMenu = QtGui.QMenu('&Insert')
         self._menus.append(self.insertMenu)
         self.insertMapper = QtCore.QSignalMapper(self)
@@ -148,19 +145,23 @@ class  KineticsWidget(EditorWidgetBase):
         return QtCore.QSize(800,400)
 
     def updateModelView(self):
-        #print "update model view",self.modelRoot
         if self.modelRoot == '/':
             m = wildcardFind('/##[ISA=ChemCompt]')
         else:
             m = wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]')
-        #print "111",self.modelRoot,m
         if not m:
             # when we want an empty GraphicView while creating new model,
             # then remove all the view and add an empty view
             if hasattr(self, 'view') and isinstance(self.view, QtGui.QWidget):
                 self.layout().removeWidget(self.view)
-            self.view = GraphicalView(self.sceneContainer,self.border,self)
-            self.layout().addWidget(self.view)
+            createdItem = {}
+            self.sceneContainer.setSceneRect(-self.width()/2,-self.height()/2,self.width(),self.height())
+            self.view = GraphicalView(self, self.modelRoot,self.sceneContainer,self.border,self,createdItem)
+	    self.connect(self.view, QtCore.SIGNAL("dropped"), self.objectEditSlot)
+            hLayout = QtGui.QGridLayout(self)
+	    self.setLayout(hLayout)
+            hLayout.addWidget(self.view)
+
         else:
             # maxmium and minimum coordinates of the objects specified in kkit file. 
             self.xmin = 0.0
@@ -223,9 +224,10 @@ class  KineticsWidget(EditorWidgetBase):
             
             # All the moose Object are connected for visualization 
             self.drawLine_arrow(itemignoreZooming=False)
+            createdItem = {}
             if hasattr(self, 'view') and isinstance(self.view, QtGui.QWidget):
                 self.layout().removeWidget(self.view)
-            self.view = GraphicalView(self.sceneContainer,self.border,self)
+            self.view = GraphicalView(self,self.modelRoot,self.sceneContainer,self.border,self,createdItem)
             hLayout = QtGui.QGridLayout(self)
 	    self.setLayout(hLayout)
             hLayout.addWidget(self.view)
@@ -293,7 +295,6 @@ class  KineticsWidget(EditorWidgetBase):
 
     def setupDisplay(self,info,graphicalObj,objClass):
         xpos,ypos = self.positioninfo(info)
-        
         # For Reaction and Complex object I have skipped the process to get the facecolor and background color as \
         #    we are not using these colors for displaying the object so just passing dummy color white 
 

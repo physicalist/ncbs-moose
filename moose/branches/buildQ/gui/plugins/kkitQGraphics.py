@@ -92,7 +92,6 @@ class ReacItem(KineticsDisplayItem):
                   QtCore.QPointF(0, ReacItem.defaultHeight/4),
                   QtCore.QPointF(ReacItem.defaultWidth, ReacItem.defaultHeight/4),
                   QtCore.QPointF(3*ReacItem.defaultWidth/4, ReacItem.defaultHeight/2)]
-
         path = QtGui.QPainterPath()
         path.moveTo(points[0])
         for p in points[1:]:
@@ -176,7 +175,12 @@ class CplxItem(KineticsDisplayItem):
 class ComptItem(QtGui.QGraphicsRectItem):
     def __init__(self,parent,x,y,w,h,item):
         self.cmptEmitter = QtCore.QObject()
-        self.mooseObj_ = item[0].parent
+        iParent = item.parent
+        if hasattr(iParent, "__iter__"):
+            self.mooseObj_ = iParent[0]
+        else:
+            self.mooseObj_ = iParent
+
         self.layoutWidgetPt = parent
         QtGui.QGraphicsRectItem.__init__(self,x,y,w,h)
 
@@ -184,7 +188,7 @@ class ComptItem(QtGui.QGraphicsRectItem):
         self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable)
         if config.QT_MINOR_VERSION >= 6:
             self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges, 1) 
-
+    
     def pointerLayoutpt(self):
         return (self.layoutWidgetPt)
 

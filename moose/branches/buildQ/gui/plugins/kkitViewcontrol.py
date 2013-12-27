@@ -1,11 +1,14 @@
 from PyQt4 import QtCore, QtGui,Qt
+import sys
 import config
-from kkitQGraphics import *
+from modelBuild import *
 
 class GraphicalView(QtGui.QGraphicsView):
-    def __init__(self,parent,border,layoutPt):
+    def __init__(self,editorWidgetBase,modelRoot,parent,border,layoutPt,createdItem):
         QtGui.QGraphicsView.__init__(self,parent)
         self.setScene(parent)
+        self.editorWigetBaseref = editorWidgetBase
+        self.modelRoot = modelRoot
         self.sceneContainerPt = parent
         self.setDragMode(QtGui.QGraphicsView.RubberBandDrag)
         self.itemSelected = False
@@ -18,6 +21,7 @@ class GraphicalView(QtGui.QGraphicsView):
         self.setRenderHints(QtGui.QPainter.Antialiasing)
         self.layoutPt = layoutPt        
         self.setAcceptDrops(True)
+        self.createdItem = createdItem
         # All the object which are stacked on the scene are listed
         self.stackOrder = self.sceneContainerPt.items(Qt.Qt.DescendingOrder)
         #From stackOrder selecting only compartment
@@ -63,7 +67,9 @@ class GraphicalView(QtGui.QGraphicsView):
                          ((xp > xs+self.border/2) and (xp < xe-self.border/2) and (yp > ye-self.border/2) and (yp < ye+self.border/2) ) or 
                          ((xp > xs+self.border/2) and (xp < xe-self.border/2) and (yp > ys-self.border/2) and (yp < ys+self.border/2) ) or 
                          ((xp > xe-self.border/2) and (xp < xe+self.border/2) and (yp > ys-self.border/2) and (yp < ye+self.border/2) ) ):
-                        itemIndex = self.cmptStackorder.index(cmpt)
+                        if self.cmptStackorder:
+                            itemIndex = self.cmptStackorder.index(cmpt)
+                        
                         cmpt.setZValue(1)
                         selectedItem = cmpt
                         break
@@ -170,19 +176,21 @@ class GraphicalView(QtGui.QGraphicsView):
         if event.mimeData().hasFormat('text/plain'):
             event.acceptProposedAction()
 
+    def eventFilter(self, source, event):
+        if (event.type() == QtCore.QEvent.Drop):
+            print "dropEvent has happened"
+
     def dropEvent(self, event):
         """Insert an element of the specified class in drop location"""
         if not event.mimeData().hasFormat('text/plain'):
             return
         pos = event.pos()
-        item = self.itemAt(pos)
-        teststring = str(event.mimeData().text())
-        coordinates1 = self.mapToScene(event.pos())
-        if not self.sceneContainerPt.itemAt(self.mapToScene(event.pos())) == None:
-            print "^^^",self.sceneContainerPt.itemAt(self.mapToScene(event.pos())),self.sceneContainerPt.itemAt(self.mapToScene(event.pos())).mooseObj_.name
-            x = coordinates1.x()-20
-            y = coordinates1.y()-20
-            self.sceneContainerPt.addText(teststring).setPos(x,y)
-        else:
-            self.sceneContainerPt.addText(teststring).setPos(coordinates1)
-
+        viewItems = self.items(pos)
+        mapToscene = self.mapToScene(event.pos())
+        newString = str(event.mimeData().text())
+        Item = NewObject(self.editorWigetBaseref,self,self.modelRoot,newString,mapToscene,self.createdItem)
+        self.sceneContainerPt.addItem(Item)
+        Item.setFlag(QtGui.QGraphicsItem.ItemIgnoresTransformations,True)
+        self.setScene(self.sceneContainerPt)
+        event.accept()
+          
