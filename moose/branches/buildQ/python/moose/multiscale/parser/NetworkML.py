@@ -42,7 +42,7 @@ import debug.bugs as bugs
 from math import cos, sin
 import utils
 
-class NetworkML():
+class NetworkML:
 
     def __init__(self, nml_params):
         self.populationDict = dict()
@@ -51,7 +51,6 @@ class NetworkML():
         self.cellPath = '/cells'
         moose.Neutral(self.cellPath)
         moose.Neutral(self.libraryPath)
-
         self.cellDictBySegmentId={}
         self.cellDictByCableId={}
         self.nml_params = nml_params
@@ -59,6 +58,28 @@ class NetworkML():
         self.elecPath = '/neuroml/electrical'
         self.dt = 1e-3 # In seconds.
         self.simTime = 1000e-3
+
+    def connectWrapper(self
+            , src
+            , src_field
+            , dest
+            , dest_field
+            , message_type='Single'):
+        """
+        Wrapper around moose.connect 
+        """
+        debug.printDebug("DEBUG"
+                , "Connection {0}/{1} to {2}/{3} : message type {4}".format(
+                    src.path, src_field
+                    , dest.path, dest_field
+                    , message_type)
+                )
+        try:
+            res = moose.connect(src, src_field, dest, dest_field, message_type)
+            assert res, "Failed to connect"
+        except Exception as e:
+            printDebug("ERROR", "Failed to connect.")
+            raise e
 
     def readNetworkMLFromFile(self, filename, cellSegmentDict, params={}):
 
@@ -194,9 +215,9 @@ class NetworkML():
 
             # Create random stimulus
             vec = stimulus.generateSpikeTrainPoission(frequency
-                                                      , dt=self.dt
-                                                      , simTime=self.simTime
-                                                      )
+                    , dt=self.dt
+                    , simTime=self.simTime
+                    )
             # Stimulus table
             stim = moose.TimeTable(self.elecPath+'/stim_'+inputName)
             stim.vec = vec
@@ -207,15 +228,15 @@ class NetworkML():
                if 'segment_id' in site.attrib:
                    segment_id = site.attrib['segment_id']
                else:
-                   segment_id = 0 # default segment_id is specified to be 0
+                   # default segment_id is specified to be 0
+                   segment_id = 0 
 
                # To find the cell name fetch the first element of tuple.
                cell_name = self.populationDict[population][0]
                if cell_name == 'LIF':
                    LIF = self.populationDict[population][1][int(cell_id)]
-                   moose.connect(stim, "event", LIF, "addSpike")
+                   self.connectWrapper(stim, "event", LIF, addSpike)
                else:
-
                     segId = '{0}'.format(segment_id)
                     segment_path = self.populationDict[population][1]\
                            [int(cell_id)].path + '/' + \
@@ -228,9 +249,13 @@ class NetworkML():
                     )
                     synchan.Gbar = 1e-6
                     synchan.Ek = 0.0
-                    moose.connect(synchan, 'channel', compartment, 'channel')
+                    debug.printDebug("INFO"
+                            , "Connecting {0} -> {0}".format(synchan.path
+                                , compartment.path)
+                            )
+                    self.connectWrapper(synchan, 'channel', compartment, 'channel')
                     synchan.synapse.num = 1
-                    moose.connect(
+                    self.connectWrapper(
                         stim
                         , "event"
                         , moose.element(synchan.path+'/synapse')
@@ -261,7 +286,7 @@ class NetworkML():
                 # do not set count to 1, let it be at 2 by default else it will
                 # set secondDelay to 0.0 and repeat the first pulse!
                 #pulsegen.count = 1
-                moose.connect(pulsegen,'outputOut',iclamp,'plusIn')
+                self.connectWrapper(pulsegen,'outputOut',iclamp,'plusIn')
 
                 # Attach targets
                 target = inElemXml.find(".//{"+nmu.nml_ns+"}target")
@@ -278,13 +303,13 @@ class NetworkML():
                     cell_name = self.populationDict[population][0]
                     if cell_name == 'LIF':
                         LIF = self.populationDict[population][1][int(cell_id)]
-                        moose.connect(iclamp,'outputOut',LIF,'injectDest')
+                        self.connectWrapper(iclamp,'outputOut',LIF,'injectDest')
                     else:
                         segment_path = self.populationDict[population][1]\
                                 [int(cell_id)].path+'/'+\
                                  self.cellSegmentDict[cell_name][segment_id][0]
                         compartment = moose.Compartment(segment_path)
-                        moose.connect(iclamp
+                        self.connectWrapper(iclamp
                                 ,'outputOut'
                                 ,compartment
                                 ,'injectMsg'
@@ -333,7 +358,6 @@ class NetworkML():
                 libcell = moose.Neuron(self.libraryPath+'/'+cellname) 
 
             self.populationDict[populationName] = (cellname,{})
-            moose.Neutral('/cells')
 
             for instance in population.findall(".//{"+nmu.nml_ns+"}instance"):
                 instanceid = instance.attrib['id']
@@ -349,7 +373,7 @@ class NetworkML():
                 # named as <arg3> /cells is useful for scheduling clocks as all
                 # sim elements are in /cells
                 cellid = moose.copy(libcell
-                        , moose.Neutral('/cells')
+                        , moose.Neutral(self.cellPath)
                         , moose_methods.moosePath(populationName, instanceid)
                         )
                 if cellname == 'LIF':
@@ -515,7 +539,8 @@ class NetworkML():
                                 {2}.'.format(
                                 mechanismname, model_filename, self.model_dir
                             )
-                        raise IOError(msg)
+                        raise UserWarning(msg)
+
                 weight = float(syn_props.attrib['weight'])
                 threshold = float(syn_props.attrib['threshold'])*Efactor
                 if 'prop_delay' in syn_props.attrib:
@@ -536,8 +561,6 @@ class NetworkML():
 
     def connect(self, syn_name, pre_path, post_path, weight, threshold, delay):
 
-        mooseLogger.debug(moose.wildcardFind('/##'))
-        logPathsToFille('/##')
         postcomp = moose.Compartment(post_path)
 
         # We usually try to reuse an existing SynChan - event based SynChans
@@ -588,7 +611,7 @@ class NetworkML():
             # always connect source to input - else 'cannot create message'
             # error.
             precomp = moose.Compartment(pre_path)
-            moose.connect(precomp, "VmOut", table, "msgInput")
+            self.connectWrapper(precomp, "VmOut", table, "msgInput")
 
             # since there is no weight field for a graded synapse
             # (no 'synapse' message connected),
@@ -606,7 +629,7 @@ class NetworkML():
                 if not moose.exists(pre_path+'/'+syn_name+'_spikegen'):
                     spikegen = moose.SpikeGen(pre_path+'/'+syn_name+'_spikegen')
                     # connect the compartment Vm to the spikegen
-                    moose.connect(precomp, "VmOut", spikegen, "Vm")
+                    self.connectWrapper(precomp, "VmOut", spikegen, "Vm")
                     # spikegens for different synapse_types can have different
                     # thresholds
                     spikegen.threshold = threshold
@@ -632,7 +655,7 @@ class NetworkML():
                 # BUG BUG BUG in MOOSE:
                 # Subhasis said addSpike always adds to the first element in
                 # syn.synapse Create a new synapse above everytime
-                moose.connect(spikegen, "event", syn.synapse[-1], "addSpike")
+                self.connectWrapper(spikegen, "event", syn.synapse[-1], "addSpike")
             else:
                 # if connected to a file, create a timetable,
                 # put in a field specifying the connected filenumbers to this segment,
@@ -666,7 +689,7 @@ class NetworkML():
                     # BUG BUG BUG in MOOSE:
                     # Subhasis said addSpike always adds to the first element in
                     # syn.synapse Create a new synapse above everytime
-                    m = moose.connect(tt,"event", syn.synapse[-1], "addSpike")
+                    m = self.connectWrapper(tt,"event", syn.synapse[-1], "addSpike")
                 else:
                     # if it exists, append file number to the field 'fileNumbers'
                     tt = moose.TimeTable(tt_path)
@@ -714,7 +737,7 @@ class NetworkML():
         # If NMDA synapse based on mgblock, connect to mgblock
         if childmgblock.value=='True': 
             mgblock = moose.Mg_block(syn.path+'/mgblock')
-            moose.connect(postcomp,"channel", mgblock, "channel")
+            self.connectWrapper(postcomp,"channel", mgblock, "channel")
         # if SynChan or even NMDAChan, connect normally
         else: 
-            moose.connect(postcomp,"channel", syn, "channel")
+            self.connectWrapper(postcomp,"channel", syn, "channel")

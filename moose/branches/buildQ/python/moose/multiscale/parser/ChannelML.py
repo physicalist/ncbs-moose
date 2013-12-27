@@ -20,11 +20,12 @@ import os, sys
 import math
 import inspect
 
-sys.path.append('../../')
 import moose
 from moose.neuroml import utils
 
-class ChannelML():
+class ChannelML:
+    """Loads channelML file. Base class. Inherited by NeuroML
+    """
 
     def __init__(self, nml_params):
         self.cml='http://morphml.org/channelml/schema'
@@ -82,20 +83,23 @@ class ChannelML():
             Tfactor = 1.0
             Gfactor = 1.0
         else:
-            debug.printDebug("INFO", "Wrong units {0}".format(units))
-            sys.exit(1)
+            debug.printDebug("ERROR", "Wrong units {0}".format(units))
+            raise UserWarning, "Wrong value or parameter {0}".format(units)
 
         # creates /library in MOOSE tree; elif present, wraps
-        moose.Neutral(self.libraryPath+'')
+        # NOTE: This path is created by NeuroML now in __init__. Disabling,
+        # Dilawar Singh
+        #moose.Neutral(self.libraryPath+'')
 
         if utils.neuroml_debug:
             synName = synapseElement.attrib['name']
             msg = "Loading synapse : %s into library ." % synName
             debug.printDebug("INFO", msg)
 
-        self.mooseSynp = moose.SynChan(self.libraryPath+'/' \
-                + synapseElement.attrib['name'])
+        self.mooseSynp = moose.SynChan(os.path.join(self.libraryPath
+                , synapseElement.attrib['name']))
         doub_exp_syn = synapseElement.find('./{' + self.cml + '}doub_exp_syn')
+
         self.mooseSynp.Ek = float(doub_exp_syn.attrib['reversal_potential']) \
                 * Vfactor
         self.mooseSynp.Gbar = float(doub_exp_syn.attrib['max_conductance'])\
@@ -113,7 +117,9 @@ class ChannelML():
         self.mooseSynp_mgblock = moose.Mstring(self.mooseSynp.path+'/mgblock')
         self.mooseSynp_mgblock.value = 'False'
 
-    def readChannelML(self,channelElement,params={},units="SI units"):
+    def readChannelML(self, channelElement, params={}, units="SI units"):
+        """Loads a single channel
+        """
         # I first calculate all functions assuming a consistent system of units.
         # While filling in the A and B tables, I just convert to SI.  Also
         # convert gmax and Erev.
@@ -133,22 +139,24 @@ class ChannelML():
                     , "wrong units %s. Existing... " % units
                     , frame = inspect.currentframe()
                     )
-            sys.exit(1)
-        moose.Neutral(self.libraryPath+'') 
+            raise UserWarning, "Unknown units"
+
         # creates /library in MOOSE tree; elif present, wraps
         channel_name = channelElement.attrib['name']
         if utils.neuroml_debug:
-            msg = "Loading channel %s into %s " % channel_name, self.libraryPath
+            msg = "Loading channel {} into {} ".format (channel_name,
+                    self.libraryPath)
             debug.printDebug("INFO", msg)
 
         IVrelation = channelElement.find(
                 './{'+self.cml+'}current_voltage_relation'
                 )
         concdep = IVrelation.find('./{'+self.cml+'}conc_dependence')
+        cPath = os.path.join(self.libraryPath, channel_name)
         if concdep is None:
-            channel = moose.HHChannel(self.libraryPath+'/'+channel_name)
+            channel = moose.HHChannel(cPath)
         else:
-            channel = moose.HHChannel2D(self.libraryPath+'/'+channel_name)
+            channel = moose.HHChannel2D(cPath)
 
         if IVrelation.attrib['cond_law'] == "ohmic":
             channel.Gbar = float(IVrelation.attrib['default_gmax']) * Gfactor
@@ -176,7 +184,7 @@ class ChannelML():
             msg = "Sorry! Maximum x, y, and z (three) gates are possible in\
                       MOOSE/Genesis"
             debug.printDebug("ERR", msg, frame=inspect.currentframe())
-            sys.exit()
+            raise UserWarning, "Bad value or parameter"
            
         # These are the names that MOOSE uses to create gates.
         gate_full_name = [ 'gateX', 'gateY', 'gateZ' ] 
@@ -205,8 +213,8 @@ class ChannelML():
             vNegOffset = float(offset.attrib['value'])
         self.parameters = []
         for parameter in channelElement.findall('.//{'+self.cml+'}parameter'):
-            self.parameters.append( 
-                    (parameter.attrib['name'], float(parameter.attrib['value'])) 
+            self.parameters.append((parameter.attrib['name']
+                        , float(parameter.attrib['value'])) 
                     )
 
         for num,gate in enumerate(gates):
@@ -243,7 +251,7 @@ class ChannelML():
                 if concdep is not None: channel.Zindex = "VOLT_C1_INDEX"
 
             ## Getting handle to gate using the gate's path.
-            gate_path = channel.path + '/' + gate_full_name[ num ]
+            gate_path = os.path.join(channel.path, gate_full_name[ num ])
             if concdep is None:
                 moosegate = moose.HHGate( gate_path )
                 # set SI values inside MOOSE
@@ -266,7 +274,7 @@ class ChannelML():
                     self.make_cml_function(transition, fn_name, concdep)
                 else:
                     debug.printDebug("ERROR"
-                            , "Unsupported transition {0}".format(name)
+                            , "Unsupported transition {0}".format(fn_name)
                             )
                     sys.exit()
 
@@ -428,12 +436,14 @@ class ChannelML():
 
         capoolName = ionConcElement.attrib['name']
         debug.printDebug("INFO"
-                , "Loading Ca pool %s into /library" % capoolName
+                , "Loading Ca pool {} into {}".format(capoolName
+                    , self.libraryPath)
                 )
         caPool = moose.CaConc(self.libraryPath+'/'+capoolName)
         poolModel = ionConcElement.find('./{'+self.cml+'}decaying_pool_model')
         caPool.CaBasal = float(poolModel.attrib['resting_conc']) * concfactor
         caPool.Ca_base = float(poolModel.attrib['resting_conc']) * concfactor
+
         if 'decay_constant' in poolModel.attrib:
             caPool.tau = float(poolModel.attrib['decay_constant']) * Tfactor
         elif 'inv_decay_constant' in poolModel.attrib:
@@ -491,11 +501,11 @@ class ChannelML():
                     , 'self.beta(v'+ca_name+')'
                     )
             fn = self.make_function(
-                     fn_name
-                     , fn_type
-                     , expr_string=expr_string
-                     , concdep=concdep 
-                     )
+                    fn_name
+                    , fn_type
+                    , expr_string=expr_string
+                    , concdep=concdep 
+                    )
         else:
             debug.printDebug("ERR"
                     , "Unsupported function type %s " % fn_type
@@ -567,7 +577,7 @@ class ChannelML():
                                 , allowed_locals
                                 )
                 else:
-                    val = eval(expr_str,{"__builtins__":None},allowed_locals)
+                    val = eval(expr_str, {"__builtins__" : None}, allowed_locals)
                 if fn_name == 'tau': 
                     return val/self.q10factor
                 else: 

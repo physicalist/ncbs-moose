@@ -39,7 +39,7 @@ EREST_ACT = -70e-3
 # These three lines are used to break script for gdb to track.
 PID = os.getpid()
 def do_nothing( *args ):
-		pass
+    pass
 
 def loadElec( elecFile ):
 	library = moose.Neutral( '/library' )

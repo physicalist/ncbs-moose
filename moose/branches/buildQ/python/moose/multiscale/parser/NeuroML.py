@@ -29,7 +29,7 @@ CHANGE LOG:
  MOOSE Version 1.6 by Aditya Gilra, NCBS, Bangalore, India, 2012, further
  changes for parallel MOOSE.
 
- Dilawar Singh; Removed parsing errors when parsing some standard models.
+ Dilawar Singh; Fixed parsing errors when parsing some standard models.
 
 """
 
@@ -48,7 +48,7 @@ import debug.debug as debug
 from os import path
 
 
-class NeuroML:
+class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
 
     """
     This class parses neuroml models and build moose-data structures.
