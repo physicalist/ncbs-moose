@@ -10,7 +10,6 @@ import moose
 from debug.logger import *
 
 
-
 from lxml import etree
 
 def ifPathsAreValid(paths) :
@@ -64,17 +63,16 @@ if args:
         nml = etreeDict['nml'][0]
         nmlObj = NeuroML.NeuroML()
         populationDict, projectionDict = nmlObj.loadNML(nml)
+    
 
         # Start processing mumbl
         mumblObj = mumbl.Mumble(etreeDict['mumbl'][0])
-        mumblObj.load()
+        #mumblObj.load()
 
-        sys.exit()
- 
         debug.printDebug("STEP", "Updating moose for simulation")
         simObj = moose_config.Simulator(etreeDict['config'][0])
         simObj.updateMoose(populationDict, projectionDict)
-
+        logPathsToFille('/##')
         sys.exit()
     else:
         debug.printDebug("FATAL", "One or more model file does not exists.")

@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Thu Dec 12, 2013  07:00PM
+Last modified: Sat Dec 28, 2013  02:14AM
 
 """
 
@@ -22,16 +22,17 @@ import debug.debug as debug
 import inspect
 import numpy
 import pylab
+import os
 
-class Simulator(object):
+class Simulator:
 
     def __init__(self, arg):
-        super(Simulator, self).__init__()
         self.arg = arg
         self.simXml = arg[0]
         self.simXmlPath = arg[1]
         self.simElemString = "element"
         self.cellPath = '/cells'
+        self.libraryPath = '/neuroml/library'
         self.rootElem = self.simXml.getroot()
         self.elecPath = self.rootElem.get('elec_path')
         self.globalVar = self.rootElem.find('global')
@@ -49,13 +50,11 @@ class Simulator(object):
                     , "No run-time for simulation is given. Using default 10.0"
                     )
             self.runtime = 10.0
-
-        if self.elecPath is None:
-            debug.printDebug("WARN"
-                    , "elecPath is not specified. Using default /elec"
+        if self.elecPath is not None:
+            self.elecPath = '/neuroml/electrical'
+            debug.printDebug("INFO"
+                    , "Using default library path %s" % self.elecPath 
                     )
-        else:
-            pass
 
  
     def updateMoose(self, populationDict, projectionDict):
@@ -111,11 +110,12 @@ class Simulator(object):
         
         try:
             targetBasePath = self.popDict[populationType][1][instanceId].path
+            debug.printDebug("INFO", "Target path is %s " % targetBasePath)
         except KeyError as e:
             debug.printDebug("ERR", "Key {0} not found".format(populationType))
             print("\t|- Available population in this model are following. ")
             print("\t+ {0} -| ".format(self.popDict.keys()))
-            raise UserWarning, "Unknown population type"
+            raise UserWarning, "Unknown population type."
 
         variablesToPlot = list()
 
@@ -125,7 +125,7 @@ class Simulator(object):
             targetType = target.get('type')
             rootPath = target.get('path')
 
-            path = targetBasePath + '/' + rootPath
+            path = os.path.join(targetBasePath, rootPath)
 
             # If the path is not prefixed by element then take the absolute
             # path.
@@ -139,7 +139,8 @@ class Simulator(object):
                 path = path.strip()
                 targetPath = variableType + varName
                 debug.printDebug("DEBUG"
-                        , "Target path : {0} --> {1}".format(targetPath, path)
+                        , "Target path : {0} <= {1}".format(targetPath
+                            , path)
                         )
 
                 if targetType == "Compartment":
@@ -191,7 +192,9 @@ class Simulator(object):
         assert self.simDt > 0.0
         assert self.plotDt > 0.0 
 
-        print "Simulation :", self.simDt, self.plotDt
+        debug.printDebug("STEP", "Simulation : %s %s".format(self.simDt
+                , self.plotDt)
+                )
         moose.utils.resetSim([self.elecPath, self.cellPath]
                 , self.simDt
                 , self.plotDt

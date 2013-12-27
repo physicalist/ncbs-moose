@@ -107,9 +107,7 @@
     </populations>
     
     
-                       <!-- The projections between populations in the network-->
-    
-    
+   <!-- The projections between populations in the network-->
     <projections units="Physiological Units" xmlns="http://morphml.org/networkml/schema">
         <projection name="NetworkConnection" source="CellGroupA" target="CellGroupB">
             
@@ -125,7 +123,7 @@
         </projection>
     </projections>
     
-                       <!-- The electrical inputs to the cells in the network -->
+    <!-- The electrical inputs to the cells in the network -->
     
     <inputs units="SI Units" xmlns="http://morphml.org/networkml/schema">
         

@@ -5,7 +5,7 @@ import sys
 HEADER = '\033[95m'
 OKBLUE = '\033[94m'
 OKGREEN = '\033[92m'
-WARNING = '\033[93m'
+WARNING = '\033[90m'
 ERR = '\033[31m'
 ENDC = '\033[0m'
 RED = ERR

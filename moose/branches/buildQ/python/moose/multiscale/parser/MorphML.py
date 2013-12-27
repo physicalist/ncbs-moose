@@ -43,7 +43,7 @@ class MorphML():
         self.model_dir = nml_params['model_dir']
         self.temperature = nml_params['temperature']
         self.libraryPath = '/neuroml/library'
-        #moose.Neutral(self.libraryPath)
+        moose.Neutral(self.libraryPath)
 
     def stringToFloat(self, tempString):
         tempString = tempString.strip()
