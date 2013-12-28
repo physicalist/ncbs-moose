@@ -563,7 +563,7 @@ def setupTable(name, obj, qtyname, tables_path=None):
     ## in case tables_path does not exist, below wrapper will create it
     _moose.Neutral(tables_path)
     vmTable = _moose.Table(tables_path+'/'+name)
-    ## stepMode no longer supported, connect to 'input'/'spike' message dest to record Vm/spiktimes
+    ## stepMode no longer supported, connect to 'input'/'spike' message dest to record Vm/spiketimes
     # vmTable.stepMode = TAB_BUF 
     _moose.connect( vmTable, "requestData", obj, 'get_'+qtyname)
     return vmTable

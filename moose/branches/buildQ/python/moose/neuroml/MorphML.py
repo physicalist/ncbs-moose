@@ -68,9 +68,15 @@ class MorphML():
         moose.Neutral('/library') # creates /library in MOOSE tree; elif present, wraps
         print "loading cell :", cellname,"into /library ."
 
-        if cellname == 'LIF':
+        if 'IF' in cellname: # if integrate & fire -- hackjob -- rectify
             moosecell = moose.LeakyIaF('/library/'+cellname)
+            self.cellDictBySegmentId[cellname] = [moosecell,{}]
+            #self.cellDictBySegmentId[cellname][1][0] = moosecell
+            #self.cellDictByCableId[cellname] = [moosecell,{}]
             self.segDict = {}
+            ## (x0,y0,z0),(x1,y1,z1),dia,length are all 0 for integrate-fire neuron
+            ## last list if for possible synapses
+            self.segDict['0'] = [moosecell.name,(0,0,0),(0,0,0),0,0,[]]
         else:
             #~ moosecell = moose.Cell('/library/'+cellname)
             #using moose Neuron class - in previous version 'Cell' class Chaitanya
