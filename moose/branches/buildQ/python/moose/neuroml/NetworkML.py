@@ -18,7 +18,7 @@ from math import cos, sin
 from MorphML import MorphML
 from ChannelML import ChannelML
 import moose
-from moose.neuroml.utils import meta_ns, nml_ns, find_first_file
+from moose.neuroml.utils import meta_ns, nml_ns, find_first_file, tweak_model
 from moose import utils
 
 class NetworkML():
@@ -51,7 +51,7 @@ class NetworkML():
         tree = ET.parse(filename)
         root_element = tree.getroot()
         print "Tweaking model ... "
-        utils.tweak_model(root_element, params)
+        tweak_model(root_element, params)
         print "Loading model into MOOSE ... "
         return self.readNetworkML(root_element,cellSegmentDict,params,root_element.attrib['lengthUnits'])
 
@@ -118,7 +118,7 @@ class NetworkML():
                         else: segment_id = 0 # default segment_id is specified to be 0
                         ## population is populationname, self.populationDict[population][0] is cellname
                         cell_name = self.populationDict[population][0]
-                        if cell_name == 'LIF':
+                        if 'IF' in cell_name:
                             LIF = self.populationDict[population][1][int(cell_id)]
                             moose.connect(iclamp,'outputOut',LIF,'injectDest')
                         else:
@@ -151,7 +151,8 @@ class NetworkML():
                         )
                     )
                 self.cellSegmentDict.update(cellDict)
-            if cellname == 'LIF':
+            celltype = moose.Neutral('/library/'+cellname).className
+            if celltype == 'LeakyIaF':
                 libcell = moose.LeakyIaF('/library/'+cellname)
             else:
                 libcell = moose.Neuron('/library/'+cellname) #added cells as a Neuron class.
@@ -169,7 +170,7 @@ class NetworkML():
                 ## deep copies the library cell to an instance under '/cells' named as <arg3>
                 ## /cells is useful for scheduling clocks as all sim elements are in /cells
                 cellid = moose.copy(libcell,moose.Neutral('/cells'),populationname+"_"+instanceid)
-                if cellname == 'LIF':
+                if celltype == 'LeakyIaF':
                     cell = moose.LeakyIaF(cellid)
                     self.populationDict[populationname][1][int(instanceid)]=cell
                 else:
@@ -232,8 +233,8 @@ class NetworkML():
                         cmlR.readChannelMLFromFile(model_path)
                     else:
                         raise IOError(
-                            'For mechanism {0}: files {1} not found under {2}.'.format(
-                                mechanismname, model_filename, self.model_dir
+                            'For synapse {0}: files {1} not found under {2}.'.format(
+                                syn_name, model_filename, self.model_dir
                             )
                         )
                 weight = float(syn_props.attrib['weight'])
@@ -298,7 +299,7 @@ class NetworkML():
             syn_name_full = syn_name+'_'+utils.underscorize(pre_path)
             self.make_new_synapse(syn_name, postcomp, syn_name_full)
         else:
-            ##### BUG BUG BUG in MOOSE:
+            ##### BUG BUG BUG in MOOSE buildq:
             ##### Subhasis said addSpike below always adds to the first element in syn.synapse
             ##### So here, create a new SynChan everytime.
             syn_name_full = syn_name+'_'+utils.underscorize(pre_path)
@@ -363,12 +364,16 @@ class NetworkML():
                     filenums = pre_path.split('_',1)[1]
                 tt_path = postcomp.path+'/'+syn_name_full+glomstr+'_tt'
                 if not moose.exists(tt_path):
-                    # if timetable for this synapse doesn't exist in this compartment, create it,
-                    # and add the field 'fileNumbers'
+                    ## if timetable for this synapse doesn't exist in this compartment, create it,
+                    ## and add the field 'fileNumbers'
                     tt = moose.TimeTable(tt_path)
-                    tt.addField('fileNumbers')
-                    tt.setField('fileNumbers',filenums)
-                    # Be careful to connect the timetable only once while creating it as below:
+                    ## MOOSE 1.4 way of setting extra fields
+                    #tt.addField('fileNumbers')
+                    #tt.setField('fileNumbers',filenums)
+                    ## MOOSE buildq way of setting extra 'fields' by creating a new child element
+                    filenumbers = moose.Mstring(tt.path+'/fileNumbers')
+                    filenumbers.value = filenums
+                    ## Be careful to connect the timetable only once while creating it as below:
                     ## note that you need to use Synapse (auto-created) under SynChan
                     ## to get/set weights , addSpike-s etc.
                     ## can get the Synapse element by moose.Synapse(syn.path+'/synapse') or syn.synapse
@@ -379,11 +384,13 @@ class NetworkML():
                     ##### Create a new synapse above everytime
                     m = moose.connect(tt,"event",syn.synapse[-1],"addSpike")
                 else:
-                    # if it exists, append file number to the field 'fileNumbers'
+                    ## if it exists, append file number to the field 'fileNumbers'
                     tt = moose.TimeTable(tt_path)
-                    # append filenumbers from 'file[+<glomnum>]_<filenumber1>[_<filenumber2>...]'
-                    filenums = tt.getField('fileNumbers') + '_' + filenums
-                    tt.setField('fileNumbers',filenums)
+                    filenumbers = moose.Mstring(tt.path+'/fileNumbers')
+                    ## append filenumbers from 'file[+<glomnum>]_<filenumber1>[_<filenumber2>...]'
+                    filenumbers.value += '_' + filenums
+                    #filenums = tt.getField('fileNumbers') + '_' + filenums
+                    #tt.setField('fileNumbers',filenums)
             #### syn.Gbar remains the same, but we play with the weight which is a factor to Gbar
             #### The delay and weight can be set only after connecting a spike event generator.
             #### delay and weight are arrays: multiple event messages can be connected to a single synapse
