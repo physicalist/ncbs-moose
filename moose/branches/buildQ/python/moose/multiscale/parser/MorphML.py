@@ -678,7 +678,6 @@ class MorphML():
                                         )
                         raise IOError(msg)
 
-                assert("_" not in mechName)
                 neutralObj = moose.Neutral(self.libraryPath+"/"+mechName)
 
                 # Ion concentration pool
