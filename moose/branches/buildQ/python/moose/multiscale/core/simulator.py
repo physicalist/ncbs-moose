@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Sat Dec 28, 2013  02:14AM
+Last modified: Mon Dec 30, 2013  02:43AM
 
 """
 
@@ -70,6 +70,9 @@ class Simulator:
         [self.mapSimulationElement(x) for x in 
                 self.simXml.findall(self.simElemString) ]
 
+        # Setup clocks and then run the simulation.
+
+
     def mapSimulationElement(self, xmlElem):
         debug.printDebug("STEP", "Mapping simulation element")
         if xmlElem.get('type') == 'soma':
@@ -79,9 +82,8 @@ class Simulator:
                 [ self.setupRecored(x, xmlElem.attrib) for x in records ]
             else: 
                 debug.printDebug("WARN"
-                        , "No record elements found in config.xml file." 
-                        )
-
+                    , "No record elements found in config.xml file." 
+                    )
         else:
             debug.printDebug("TODO"
                     , "Not implemented {0}".format(simXml)
@@ -205,6 +207,7 @@ class Simulator:
             debug.printDebug("USER"
                     , "Simulating for {0} seconds.".format(self.runtime)
                     )
+
             moose.start(self.runtime)
 
             # After simulation, plot user-requested variables.
@@ -213,9 +216,8 @@ class Simulator:
     def addPlot(self, plotVar):
         """
         Draws given variables.
-
-
         """
+
         varType, variableName, plotXml = plotVar
         plotVarName = varType + variableName 
 
@@ -256,8 +258,7 @@ class Simulator:
             except Exception as e:
                 stop = self.runtime
                 debug.printDebug("WARN"
-                        , "No stop time is specified. Using default {0}".format(
-                            stop)
+                        , "No stop time is specified. Using default %s" % stop
                         )
             assert stop > 0.0
 

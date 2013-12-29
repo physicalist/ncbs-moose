@@ -29,13 +29,25 @@ prefix = dict(
 def colored(msg, label="INFO") :
     """
     Return a colored string. Formatting is optional.
+
+    At each ` we toggle the color.
+    
     """
     global prefix
     if label in prefix :
         color = prefix[label]
     else :
         color = ""
-    return "{0} {1}".format(color+msg, ENDC)
+    txt = ''
+    newMsg = msg.split('`')
+    i = 0
+    for m in newMsg:
+        if i % 2 == 0:
+            txt += color + m
+        else:
+            txt += ENDC + m
+        i += 1
+    return "{0} {1}".format(txt, ENDC)
 
 def printDebug(label, msg, frame=None, exception=None):
     if not frame :

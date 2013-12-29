@@ -69,10 +69,11 @@ class NetworkML:
         Wrapper around moose.connect 
         """
         debug.printDebug("DEBUG"
-                , "Connection {0}/{1} to {2}/{3} : message type {4}".format(
-                    src.path, src_field
-                    , dest.path, dest_field
-                    , message_type)
+                    , "Connecting ({4})` {0}/{1}` & `{2}/{3}".format(src.path
+                        , src_field
+                        , dest.path, dest_field
+                        , message_type
+                        )
                 )
         try:
             res = moose.connect(src, src_field, dest, dest_field, message_type)
@@ -147,15 +148,15 @@ class NetworkML:
         self.network = network
         self.cellSegmentDict = cellSegmentDict
         self.params = params
-        debug.printDebug("INFO", "Creating populations ... ")
+        debug.printDebug("STEP", "Creating populations ... ")
 
         # create cells
         self.createPopulations() 
-        debug.printDebug("INFO", "Creating connections ... ")
+        debug.printDebug("STEP", "Creating connections ... ")
         self.createProjections() 
 
         # create connections
-        debug.printDebug("INFO", "Creating inputs in %s .. " % self.elecPath)
+        debug.printDebug("STEP", "Creating inputs in %s .. " % self.elecPath)
 
         # create inputs (only current pulse supported)
         self.createInputs() 
@@ -329,10 +330,15 @@ class NetworkML:
         for population in populations:
             cellname = population.attrib["cell_type"]
             populationName = population.attrib["name"]
-            debug.printDebug("INFO", "Loading {0}".format(populationName))
-
+            debug.printDebug("INFO"
+                    , "Loading population {0}".format(populationName)
+                    )
             # if cell does not exist in library load it from xml file
             if not moose.exists(self.libraryPath+'/'+cellname):
+                debug.printDebug("DEBUG"
+                        , "Searching in subdirectories for cell types" + 
+                        " in `{0}.xml` and `{0}.morph.xml` ".format(cellname)
+                        )
                 mmlR = MorphML.MorphML(self.nml_params)
                 model_filenames = (cellname+'.xml', cellname+'.morph.xml')
                 success = False
@@ -560,6 +566,9 @@ class NetworkML:
                     self.addConnection(connection, projection, options)
 
     def connect(self, syn_name, pre_path, post_path, weight, threshold, delay):
+        """
+        NOTE: This connects two compartment. Not to be confused with moose.connect
+        """
 
         postcomp = moose.Compartment(post_path)
 
@@ -578,13 +587,16 @@ class NetworkML:
         # create a new synapse
         if libsyn.className == 'KinSynChan' or gradedchild.value == 'True': 
             syn_name_full = moose_methods.moosePath(syn_name
-                    , mu.underscorize(pre_path))
+                    , mu.underscorize(pre_path)
+                    )
             self.make_new_synapse(syn_name, postcomp, syn_name_full)
         else:
             # See debug/bugs for more details.
+            # NOTE: Change the debug/bugs to enable/disable this bug.
             if bugs.BUG_NetworkML_500:
                 syn_name_full = moose_methods.moosePath(syn_name
-                        , mu.underscorize(pre_path))
+                        , mu.underscorize(pre_path)
+                        )
                 self.make_new_synapse(syn_name, postcomp, syn_name_full)
 
             else: # If the above bug is fixed.
@@ -617,6 +629,7 @@ class NetworkML:
             # (no 'synapse' message connected),
             # I set the Gbar to weight*Gbar
             syn.Gbar = weight*syn.Gbar
+
         # Event based synapse
         else: 
             # synapse could be connected to spikegen at pre-compartment OR a

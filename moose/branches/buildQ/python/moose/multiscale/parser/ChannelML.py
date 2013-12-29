@@ -51,7 +51,6 @@ class ChannelML:
         tree = ET.parse(_filename)
         channelml_element = tree.getroot()
 
-
         cts = channelml_element.findall('.//{'+self.cml+'}channel_type')
         for channel in cts:
             # ideally I should read in extra params from within the

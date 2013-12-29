@@ -42,7 +42,6 @@ import ChannelML
 import moose
 import moose.utils
 import moose.neuroml.utils as mnu
-#from moose.neuroml.utils import *
 import debug.debug as debug
 
 from os import path
@@ -106,15 +105,6 @@ class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
                 , 'model_dir': self.model_dir
         }
 
-        # Loading channels and synapses into MOOSE into neuroml library
-        cmlR = ChannelML.ChannelML(self.nml_params)
-        chnlList = root_element.findall('.//{'+mnu.neuroml_ns+'}channels')
-
-        if chnlList: 
-            [self.channelToMoose(cmlR, ch) for ch in chnlList]
-        else:
-            pass
-
         #print "Loading cell definitions into MOOSE /library ..."
         mmlR = MorphML.MorphML(self.nml_params)
         self.cellsDict = {}
@@ -135,6 +125,9 @@ class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
                 , params=params
                 , lengthUnits=self.lengthUnits
                 )
+
+        # Loading channels and synapses into MOOSE into neuroml library
+        cmlR = ChannelML.ChannelML(self.nml_params)
 
     def channelToMoose(self, cmlR, channels):
         for channel in channels.findall('.//{'+mnu.cml_ns+'}channel_type'):
