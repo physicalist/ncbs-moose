@@ -70,9 +70,9 @@
         If electrical model was speficied in NeuroML then we can make use of 
         paths
      -->
-    <domain type="electrical" 
-        sub_type="compartment" 
-        sub_type_id="0"
+    <domain population="Granule_98" 
+        segment="Soma" 
+        instance_id="0"
         >
         <!-- These are currently moose-specific.
             TODO: Make them generic.
@@ -90,9 +90,10 @@
                 <relation lhs="VCa" rhs="0.3 * ICa - 0.1" type="=" />
             </target>
         </adaptor>
-        <adaptor direction="out" type="one_to_all">
-            <target type="chemical" species="K" >
-                <relation lhs="Vm" rhs="0.001 * Ik" type="=" />
+        <!-- tick is optional. Specific to moose -->
+        <adaptor direction="in" type="one_to_one" tick="0">
+            <target type="chemical" species="K" compartment_id = "1" >
+                <relation lhs="GBar" rhs="15 * KCa" type="=" />
             </target>
         </adaptor>
     </domain>
