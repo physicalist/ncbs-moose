@@ -284,6 +284,7 @@ void testInnerSet()
 	Element* ret = new Element( i2, ac, "test2", dims, 1, 1 );
 	assert( ret );
 	ProcInfo p;
+	Shell::adopt( Id(), i2 );
 
 	Eref e2 = i2.eref();
 
@@ -441,6 +442,8 @@ void testStrSet()
 	Element* ret = new Element( i2, ac, "test2", dims, 1, 1 );
 	assert( ret );
 	ProcInfo p;
+
+	Shell::adopt( Id(), i2 );
 
 	Eref e2 = i2.eref();
 

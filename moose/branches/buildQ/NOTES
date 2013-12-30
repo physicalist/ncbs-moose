@@ -23584,3 +23584,6 @@ I think the code is too much of a mess. Simplify.
 	mesh.
 
 ==========================================================================
+30 Dec 2013
+Minor fix to Neutral::setName to avoid moving an Element onto an already
+existing name. Cascading fixes to unit test.
