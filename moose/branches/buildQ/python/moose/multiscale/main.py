@@ -7,6 +7,7 @@ import parser.NeuroML as NeuroML
 import core.mumbl as mumbl
 import core.simulator as moose_config
 import moose
+from IPython import embed
 from debug.logger import *
 
 
@@ -67,12 +68,14 @@ if args:
 
         # Start processing mumbl
         mumblObj = mumbl.Mumble(etreeDict['mumbl'][0])
-        #mumblObj.load()
+        mumblObj.load()
 
         debug.printDebug("STEP", "Updating moose for simulation")
         simObj = moose_config.Simulator(etreeDict['config'][0])
         simObj.updateMoose(populationDict, projectionDict)
         logPathsToFille('/##')
+
+        # Some debugging
         sys.exit()
     else:
         debug.printDebug("FATAL", "One or more model file does not exists.")
