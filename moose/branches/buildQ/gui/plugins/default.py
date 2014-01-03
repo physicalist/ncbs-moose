@@ -368,14 +368,24 @@ class MooseRunner(QtCore.QObject):
     resetAndRun = QtCore.pyqtSignal(name='resetAndRun')
     update = QtCore.pyqtSignal(name='update')
     finished = QtCore.pyqtSignal(name='finished')
+    _instance = None # singleton
+    inited = False
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(MooseRunner, cls).__new__(cls, *args, **kwargs)
+        return cls._instance        
+        
     def __init__(self, *args, **kwargs):
         QtCore.QObject.__init__(self, *args, **kwargs)
+        if (MooseRunner.inited):
+            return
         self._updateInterval = 100e-3
         self._simtime = 0.0        
         self._clock = moose.Clock('/clock')
         self._pause = False
         self.dataRoot = moose.Neutral('/data').path
         self.modelRoot = moose.Neutral('/model').path
+        MooseRunner.inited = True
 
     def doResetAndRun(self, tickDtMap, tickTargetMap, simtime, updateInterval):
         self._pause = False
