@@ -59,7 +59,7 @@
     </model>
 
     <!-- Here are mappings from compartment to compartment. -->
-    <!-- if adaptor_type is source and this compartment influence others, if it
+    <!-- if mapping_type is source and this compartment influence others, if it
         is target than this compartment gets influenced by other compartments.
     -->
     <!-- id is moose like path, it can influence either a single compartment of
@@ -77,24 +77,24 @@
         <!-- These are currently moose-specific.
             TODO: Make them generic.
          -->
-        <adaptor direction="out" type="one_to_many">
+        <mapping direction="out" type="one_to_many">
             <target type="chemical"  compartment_id="0" species="Ca" >
                 <!-- Describe the relation in MathML format. Or use python
                     MathDOM to parse the string into xml. 
                     NOTE: A standard notation for descrining variables is needed.
-                    This is a list if adaptor/type is one_to_many.
+                    This is a list if mapping/type is one_to_many.
                 -->
                 <relation lhs="ICa" rhs="0.3 * CCa - 0.9" type="=" />
             </target>
             <target type="chemical" species="Ca"  >
                 <relation lhs="VCa" rhs="0.3 * ICa - 0.1" type="=" />
             </target>
-        </adaptor>
+        </mapping>
         <!-- tick is optional. Specific to moose -->
-        <adaptor direction="in" type="one_to_one" tick="0">
+        <mapping direction="in" type="one_to_one" tick="0">
             <target type="chemical" species="K" compartment_id = "1" >
                 <relation lhs="Gran_NaF98/ion" rhs="15 * KCa" type="=" />
             </target>
-        </adaptor>
+        </mapping>
     </domain>
 </mumbl>
