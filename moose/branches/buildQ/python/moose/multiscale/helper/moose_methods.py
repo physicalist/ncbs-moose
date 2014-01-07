@@ -3,7 +3,7 @@
 """moose_methods.py:  Some helper function related with moose to do multiscale
 modelling.
 
-Last modified: Wed Dec 25, 2013  04:23AM
+Last modified: Sun Jan 05, 2014  12:00PM
 
 """
     
@@ -18,6 +18,7 @@ __status__           = "Development"
 
 import re
 import os
+import moose
 
 nameSep = '()'
 
@@ -73,3 +74,19 @@ def stringToFloat(text):
         return val
     except Exception:
         raise UserWarning, "Failed to convert {0} to float".format(text)
+
+
+def dumpMoosePaths(pat, isRoot=True):
+    if not isRoot:
+        moose_paths = [x.getPath() for x in moose.wildcardFind(pat)]
+    else:
+        try:
+            moose_paths = [x.getPath() for x in moose.wildcardFind(pat+'/##')]
+        except TypeError as e:
+            moose_paths = [x.getPath() for x in 
+                    moose.wildcardFind(pat.path+'/##')]
+    moose_paths = "\n".join(moose_paths)
+    print("Moose paths: {0}".format(moose_paths))
+
+def dumpFieldName(path, whichInfo='valueF'):
+    print path.getFieldNames(whichInfo+'info')
