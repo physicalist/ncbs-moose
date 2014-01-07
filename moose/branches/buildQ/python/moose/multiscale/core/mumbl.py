@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Tue Jan 07, 2014  02:50PM
+Last modified: Tue Jan 07, 2014  04:54PM
 
 """
 
@@ -26,6 +26,7 @@ import helper.moose_methods as moose_methods
 import debug.logger as logger
 import core.types as types
 import logging
+import base64
 
 class Mumble():
     """ Mumble: Class for loading mumble onto moose.
@@ -41,6 +42,7 @@ class Mumble():
         self.countChemModels = 0
         self.compartmentName = 'Compartment'
         self.mumblPath = '/mumbl'
+        self.adaptorPath = os.path.join(self.mumblPath, 'Adaptor')
         self.cellPath = '/cells'
         self.nmlPath = '/neuroml/library'
         self.chemPath = os.path.join(self.mumblPath, 'Chemical')
@@ -48,6 +50,7 @@ class Mumble():
         moose.Neutral(self.mumblPath)
         moose.Neutral(self.chemPath)
         moose.Neutral(self.elecPath)
+        moose.Neutral(self.adaptorPath)
         self.dt = 1e-1
         moose.setClock(10, self.dt)
         # Insert each model to this list, if model is already added then raise a
@@ -233,10 +236,10 @@ class Mumble():
         if domain.get('postfix') is not None:
             fullpath = os.path.join(fullpath, domain.get('postfix'))
 
-        adaptors = domain.findall('adaptor')
-        [self.setAdaptor(a, fullpath) for a in adaptors]
+        mappings = domain.findall('mapping')
+        [self.mapping(a, fullpath) for a in mappings]
 
-    def setAdaptor(self, adaptor, moosePath):
+    def mapping(self, adaptor, moosePath):
         """
         Set up an adaptor for a given moose path
         """
@@ -263,6 +266,8 @@ class Mumble():
             self.logger.debug("Adding a target of chemtype")
             # in which compartment and which type of pool
             compId = tgt.get('compartment_id')
+            if compId is None:
+                raise UserWarning, "Missing parament or value"
             species = tgt.get('species')
             poolId = moose_methods.moosePath(self.compartmentName, compId)
             poolPath = os.path.join(self.chemPath, poolId, species)
@@ -273,38 +278,39 @@ class Mumble():
             debug.printDebug("TODO", "Unsupported compartment type")
             raise UserWarning("Unsupported compartment type %s" % compType)
        
-
-        # Now the the source and target of moose paths.
-        debug.printDebug("INFO"
-                , "Mapping `{0}` onto `{1}`".format(mooseSrc.path
-                    , mooseTgt.path
-                    )
-                )
-        # We need to send message now based on relation. 
+        # We need to send message now based on relation. This is done using
+        # moose.Adaptor class.
         relation = tgt.find('relation')
-        self.setMessage(mooseSrc, mooseTgt, relation)
+        self.setAdaptor(mooseSrc, mooseTgt, relation)
 
     def outTarget(self, tgt, moosePath):
         """Setup outgoing targets.
         """
         debug.printDebug("TODO", "Implement out-target")
+        return
 
 
-    def setMessage(self, fromMoose, toMoose, relationXml):
+    def setAdaptor(self, src, tgt, relationXml):
         '''
         Construct a message.
         '''
+        srcPath = src.path
+        tgtPath = tgt.path
+        adaptorPath = moose.Adaptor(
+                os.path.join(
+                    self.adaptorPath
+                    , base64.urlsafe_b64encode('('+srcPath+','+tgtPath+')')
+                    )
+                )
+        self.logger.debug(
+                "Adaptor: {} to {}, Encoded {}".format(
+                    srcPath
+                    , tgtPath
+                    , adaptorPath
+                    )
+                )
+        adaptor = moose.Adaptor(adaptorPath)
+
+        # Create a adaptor which reads from src and update tgt.
         lhs = relationXml.get('lhs')
         rhs = relationXml.get('rhs')
-
-        # lhs must be in fromMoose
-        moose_methods.dumpMoosePaths(toMoose)
-        try:
-            moose.connect(fromMoose, 'get_Gbar', toMoose, 'msgIn')
-        except NameError as e:
-            debug.printDebug("INFO", "Available fields are source :")
-            moose_methods.dumpFieldName(fromMoose, 'destF')
-            debug.printDebug("INFO", "Available fileds are target :")
-            moose_methods.dumpFieldName(toMoose, 'valueF')
-            sys.exit(-1)
-
