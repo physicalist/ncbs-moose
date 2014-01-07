@@ -49,6 +49,9 @@ def colored(msg, label="INFO") :
         i += 1
     return "{0} {1}".format(txt, ENDC)
 
+def cl(msg, label="INFO"):
+    return colored(msg, level)
+
 def printDebug(label, msg, frame=None, exception=None):
     if not frame :
         print("[{0}] {1}".format(label, colored(msg,label)), file=sys.stderr)
