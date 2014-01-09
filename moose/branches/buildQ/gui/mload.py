@@ -92,6 +92,7 @@ def loadFile(filename, target, merge=True):
             print 'Only kkit and prototype files can be loaded.'
     elif modeltype == 'cspace':
             model = moose.loadModel(filename, target)
+
     elif modeltype == 'xml':
         if subtype == 'neuroml':
             popdict, projdict = neuroml.loadNeuroML_L123(filename)
@@ -101,9 +102,8 @@ def loadFile(filename, target, merge=True):
                     model = cell.parent
                     break
                 break
-        elif subtype == "sbml":
+        elif subtype == 'sbml':
             model = moose.readSBML(filename,target)
-
     else:
         raise FileLoadError('Do not know how to handle this filetype: %s' % (filename))
     moose.setCwe(pwe) # The MOOSE loadModel changes the current working element to newly loaded model. We revert that behaviour
