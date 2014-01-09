@@ -49,10 +49,14 @@ class KkitPlugin(MoosePlugin):
             self.currentView = self.editorView
         return self.editorView
 
-    def getRunView(self):        
+    def getRunView(self):    
+        self._kkitWidget = KineticsWidget()
         view = MoosePlugin.getRunView(self)
         view.setDataRoot(self.modelRoot)
         view.getCentralWidget().setDataRoot(self.modelRoot)
+        schedulingDockWidget = view.getSchedulingDockWidget().widget()
+        schedulingDockWidget.runner.update.connect(self._kkitWidget.colorChange)
+        #schedulingDockWidget.runner.update.connect(KineticsWidget().colorChange)
         return view
 
 
@@ -114,16 +118,30 @@ class KkitEditorView(MooseEditorView):
         return self._centralWidget
 
 class  KineticsWidget(EditorWidgetBase):
+
+    _instance = None
+    inited = False
+    
+    def __new__(cls, *args):
+        if cls._instance is None:
+            cls._instance = super(KineticsWidget, cls).__new__(cls, *args)
+        return cls._instance        
+
     def __init__(self, *args): 
 	EditorWidgetBase.__init__(self, *args)
+        if (KineticsWidget.inited):
+            return
+        
         self.setAcceptDrops(True)
         self.border = 10        
         self.sceneContainer = QtGui.QGraphicsScene(self)
+
         self.sceneContainer.setSceneRect(self.sceneContainer.itemsBoundingRect())
         self.sceneContainer.setBackgroundBrush(QtGui.QColor(230,220,219,120))
 	self.insertMenu = QtGui.QMenu('&Insert')
         self._menus.append(self.insertMenu)
         self.insertMapper = QtCore.QSignalMapper(self)
+        KineticsWidget.inited = True
 
         classlist = ['CubeMesh','CylMesh','Pool','FuncPool','SumFunc','Reac','Enz','MMenz','StimulusTable','Table']
         insertMapper, actions = self.getInsertActions(classlist)
@@ -286,7 +304,7 @@ class  KineticsWidget(EditorWidgetBase):
             v.setPen(QtGui.QPen(Qt.QColor(66,66,66,100), 5, Qt.Qt.SolidLine, Qt.Qt.RoundCap, Qt.Qt.RoundJoin))
             v.cmptEmitter.connect(v.cmptEmitter,QtCore.SIGNAL("qgtextPositionChange(PyQt_PyObject)"),self.positionChange)
             v.cmptEmitter.connect(v.cmptEmitter,QtCore.SIGNAL("qgtextItemSelectedChange(PyQt_PyObject)"),self.objectEditSlot)
-    
+        
     def createCompt(self,key):
         self.new_Compt = ComptItem(self,0,0,0,0,key)
         self.qGraCompt[key] = self.new_Compt
@@ -304,7 +322,6 @@ class  KineticsWidget(EditorWidgetBase):
             textcolor,bgcolor = getColor(info,self.colorMap)
         else:
             textcolor,bgcolor = getColor(info,self.colorMap)
-
         graphicalObj.setDisplayProperties(xpos,ypos,textcolor,bgcolor)
     
     def positioninfo(self,iteminfo):
@@ -347,6 +364,31 @@ class  KineticsWidget(EditorWidgetBase):
                     #once the text is edited in editor, laydisplay gets updated in turn resize the length, positionChanged signal shd be emitted
                     self.positionChange(mooseObject)
 
+    def colorChange(self):
+        '''While simulation is running pool color are increased or decreased as per concentration level '''
+        for item in self.sceneContainer.items():
+
+            if isinstance(item,PoolItem):
+                bg = item.returnColor()
+                initialConc = moose.element(item.mobj[0]).concInit
+                presentConc = moose.element(item.mobj[0]).conc
+                if initialConc != 0:
+                    ratio = presentConc/initialConc
+                else:
+                    # multipying by 1000 b'cos moose concentration is in milli in moose
+                    ratio = presentConc*1000
+                #alpha between0-255
+                alpha = 128*ratio
+                # Limiting alpha values
+                if int(math.floor(alpha)) > 255:
+                    alpha = 255
+                elif int(math.floor(alpha))< 40:
+                    alpha = 40
+                #only alpha value is changed
+                bg =QtGui.QColor(bg.red(),bg.green(),bg.blue(),alpha)
+                item.updateColor(bg)
+                
+        
     def positionChange(self,mooseObject):
         #If the item position changes, the corresponding arrow's are calculated
         if isinstance(element(mooseObject),CubeMesh):

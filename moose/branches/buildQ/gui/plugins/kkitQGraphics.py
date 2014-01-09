@@ -46,6 +46,7 @@ class PoolItem(KineticsDisplayItem):
         self.bg = QtGui.QGraphicsRectItem(self)
         self.gobj = QtGui.QGraphicsSimpleTextItem(self.mobj[0].name, self.bg)        
         self.gobj.setFont(PoolItem.font)
+
         if not PoolItem.fontMetrics:
             PoolItem.fontMetrics = QtGui.QFontMetrics(self.gobj.font())
         self.bg.setRect(0, 
@@ -65,8 +66,9 @@ class PoolItem(KineticsDisplayItem):
         self.gobj.setBrush(QtGui.QBrush(textcolor))
 
 	if self.mobj.className != "StimulusTable":
-	        self.bg.setBrush(QtGui.QBrush(bgcolor))
-
+            #Setting alpha value to be between 0-255
+            self.bg.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor.red(),bgcolor.green(),bgcolor.blue(),128)))
+            #self.bg.setBrush(QtGui.QBrush(bgcolor))
     def refresh(self,scale):
         fontsize = PoolItem.defaultFontsize*scale
         font =QtGui.QFont("Helvetica")
@@ -80,7 +82,13 @@ class PoolItem(KineticsDisplayItem):
     def updateSlot(self):
         self.gobj.setText(self.mobj[0].name)
         self.bg.setRect(0, 0, self.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  '), self.gobj.boundingRect().height())
+    
+    def updateColor(self,bgcolor):
+        self.bg.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor)))
 
+    def returnColor(self):
+        return (self.bg.brush().color())
+    
 class ReacItem(KineticsDisplayItem):
     defaultWidth = 30
     defaultHeight = 30
