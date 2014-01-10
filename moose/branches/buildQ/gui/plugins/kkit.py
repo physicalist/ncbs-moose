@@ -50,13 +50,13 @@ class KkitPlugin(MoosePlugin):
         return self.editorView
 
     def getRunView(self):    
-        self._kkitWidget = KineticsWidget()
         view = MoosePlugin.getRunView(self)
         view.setDataRoot(self.modelRoot)
         view.getCentralWidget().setDataRoot(self.modelRoot)
         schedulingDockWidget = view.getSchedulingDockWidget().widget()
+        self._kkitWidget = view.plugin.getEditorView().getCentralWidget()
         schedulingDockWidget.runner.update.connect(self._kkitWidget.colorChange)
-        #schedulingDockWidget.runner.update.connect(KineticsWidget().colorChange)
+        schedulingDockWidget.runner.resetAndRun.connect(self._kkitWidget.resetColor)
         return view
 
 
@@ -113,35 +113,22 @@ class KkitEditorView(MooseEditorView):
         if self._centralWidget is None:
             #self._centralWidget = EditorWidgetBase()
             self._centralWidget = KineticsWidget()
-            #print "getCentrelWidget",self.plugin.modelRoot
             self._centralWidget.setModelRoot(self.plugin.modelRoot)
         return self._centralWidget
 
 class  KineticsWidget(EditorWidgetBase):
-
-    _instance = None
-    inited = False
-    
-    def __new__(cls, *args):
-        if cls._instance is None:
-            cls._instance = super(KineticsWidget, cls).__new__(cls, *args)
-        return cls._instance        
-
     def __init__(self, *args): 
 	EditorWidgetBase.__init__(self, *args)
-        if (KineticsWidget.inited):
-            return
         
         self.setAcceptDrops(True)
         self.border = 10        
         self.sceneContainer = QtGui.QGraphicsScene(self)
-
         self.sceneContainer.setSceneRect(self.sceneContainer.itemsBoundingRect())
         self.sceneContainer.setBackgroundBrush(QtGui.QColor(230,220,219,120))
 	self.insertMenu = QtGui.QMenu('&Insert')
         self._menus.append(self.insertMenu)
         self.insertMapper = QtCore.QSignalMapper(self)
-        KineticsWidget.inited = True
+
 
         classlist = ['CubeMesh','CylMesh','Pool','FuncPool','SumFunc','Reac','Enz','MMenz','StimulusTable','Table']
         insertMapper, actions = self.getInsertActions(classlist)
@@ -363,11 +350,16 @@ class  KineticsWidget(EditorWidgetBase):
                     item.updateSlot()
                     #once the text is edited in editor, laydisplay gets updated in turn resize the length, positionChanged signal shd be emitted
                     self.positionChange(mooseObject)
+    def resetColor(self):
+        for item in self.sceneContainer.items():
+            if isinstance(item,PoolItem):
+                pinfo = moose.element(item.mobj[0]).path+'/info'
+                color,bg = getColor(pinfo,self.colorMap)
+                item.updateColor(bg)
 
     def colorChange(self):
         '''While simulation is running pool color are increased or decreased as per concentration level '''
         for item in self.sceneContainer.items():
-
             if isinstance(item,PoolItem):
                 bg = item.returnColor()
                 initialConc = moose.element(item.mobj[0]).concInit
