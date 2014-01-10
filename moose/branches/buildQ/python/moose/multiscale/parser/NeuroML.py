@@ -43,6 +43,7 @@ import moose
 import moose.utils
 import moose.neuroml.utils as mnu
 import debug.debug as debug
+import core.config as config
 
 from os import path
 
@@ -62,8 +63,8 @@ class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
         self.nml_params = None
         self.channelUnits = "Physiological Units"
         moose.Neutral('/neuroml')
-        self.libraryPath = '/neuroml/library'
-        moose.Neutral(self.libraryPath)
+        self.libraryPath = config.libraryPath
+        self.cellPath = config.cellPath
 
     def readNeuroMLFromFile(self, filename, params=dict()):
 

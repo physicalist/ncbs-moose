@@ -1,5 +1,5 @@
 <!-- Write your simulation specific settings here. -->
-<moose elec_path='/neuroml/electrical' simulate='true' runtime="0.6">
+<moose elec_path='/cells' simulate='true' runtime="0.6">
     <global sim_dt="10e-6" plot_dt="10e-6" sim_method="hsolve" />
 
     <!-- This setup recording settings for soma. Each type of element should

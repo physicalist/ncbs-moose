@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Tue Jan 07, 2014  04:54PM
+Last modified: Fri Jan 10, 2014  06:02PM
 
 """
 
@@ -25,8 +25,9 @@ import moose
 import helper.moose_methods as moose_methods
 import debug.logger as logger
 import core.types as types
+import core.config as config
 import logging
-import base64
+import inspect
 
 class Mumble():
     """ Mumble: Class for loading mumble onto moose.
@@ -41,18 +42,22 @@ class Mumble():
         self.countElecModels = 0
         self.countChemModels = 0
         self.compartmentName = 'Compartment'
-        self.mumblPath = '/mumbl'
+        self.mumblPath = config.mumblePath
         self.adaptorPath = os.path.join(self.mumblPath, 'Adaptor')
-        self.cellPath = '/cells'
-        self.nmlPath = '/neuroml/library'
+        self.cellPath = config.cellPath
+        self.nmlPath = config.nmlPath
         self.chemPath = os.path.join(self.mumblPath, 'Chemical')
         self.elecPath = os.path.join(self.mumblPath, 'Electrical')
         moose.Neutral(self.mumblPath)
         moose.Neutral(self.chemPath)
         moose.Neutral(self.elecPath)
         moose.Neutral(self.adaptorPath)
-        self.dt = 1e-1
-        moose.setClock(10, self.dt)
+        self.adaptorCount = 0
+
+        # clock
+        self.mumbleClockId = 3
+        self.dt = 1e-03
+        moose.setClock(self.mumbleClockId, self.dt)
         # Insert each model to this list, if model is already added then raise a
         # warning and don't insert the model.
         self.modelList = list()
@@ -224,7 +229,7 @@ class Mumble():
         population = domain.get('population')
         segment = domain.get('segment')
         id = domain.get('instance_id')
-        path = os.path.join(self.nmlPath, population, segment)
+        path = os.path.join(self.cellPath, population, segment)
 
         if xmlType == "neuroml":
             fullpath = moose_methods.moosePath(path, id)
@@ -280,8 +285,11 @@ class Mumble():
        
         # We need to send message now based on relation. This is done using
         # moose.Adaptor class.
-        relation = tgt.find('relation')
-        self.setAdaptor(mooseSrc, mooseTgt, relation)
+        relationXml = tgt.find('relation')
+        # Here we modify the mooseSrc according to mooseTgt. MooseTgt is read
+        # therefore it is the first arguement in function.
+        self.setAdaptor(mooseTgt, mooseSrc, relationXml)
+        moose.reinit()
 
     def outTarget(self, tgt, moosePath):
         """Setup outgoing targets.
@@ -293,13 +301,18 @@ class Mumble():
     def setAdaptor(self, src, tgt, relationXml):
         '''
         Construct a message.
+
+        src: It is the moose compartment which is read by moose.
+        tgt: It is the moose compartment to which we write.
         '''
+
+        self.adaptorCount += 1
         srcPath = src.path
         tgtPath = tgt.path
         adaptorPath = moose.Adaptor(
                 os.path.join(
                     self.adaptorPath
-                    , base64.urlsafe_b64encode('('+srcPath+','+tgtPath+')')
+                    , 'adapt{}'.format(self.adaptorCount)
                     )
                 )
         self.logger.debug(
@@ -312,5 +325,49 @@ class Mumble():
         adaptor = moose.Adaptor(adaptorPath)
 
         # Create a adaptor which reads from src and update tgt.
-        lhs = relationXml.get('lhs')
-        rhs = relationXml.get('rhs')
+        lhsXml = relationXml.find('lhs')
+        rhsXml = relationXml.find('rhs')
+        lhsVar = lhsXml.text
+        rhsVar = rhsXml.text
+        adaptor.setField('scale', float(rhsXml.get('scale', 1.0)))
+        adaptor.setField('inputOffset', - float(rhsXml.get('offset', 0.0)))
+        self.logger.info(
+                'Setting adaptor between {}/{} and {}/{}'.format(
+                    src.path
+                    , lhsVar
+                    , tgt.path
+                    , rhsVar
+                    )
+                )
+        # Connect
+        try:
+            var = 'get_'+lhsVar
+            moose.connect(adaptor, 'requestField', src, var)
+        except Exception as e:
+            self.logger.error(
+                    'Failed to connect var {} of {} with adaptor input'.format(
+                        var, src.path
+                        )
+                    )
+            self.logger.info(
+                    "Avalilable fields are {}".format(
+                        moose.showfield(src)
+                        )
+                    )
+            sys.exit()
+        try:
+            var = 'set_'+rhsVar
+            moose.connect(adaptor, 'outputSrc', tgt, 'set_'+rhsVar, 'OneToOne')
+        except Exception as e:
+            self.logger.error(
+                    'Failed to connect var {} of {} with adaptor input'.format(
+                        var, tgt.path
+                        )
+                    )
+            self.logger.info(
+                    "Avalilable fields are {}".format(
+                        moose.showfield(tgt)
+                        )
+                    )
+            sys.exit()
+        moose.useClock(self.mumbleClockId, adaptor.path, 'process')
