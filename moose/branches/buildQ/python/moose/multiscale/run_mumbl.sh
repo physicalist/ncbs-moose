@@ -5,6 +5,8 @@ set +e
 # If first argument is not "d" then normal execution else run inside python
 # debugger.
 
+export PYTHONPATH=../../moose-github/python
+#export PYTHONPATH=../../moose_svn1.7/moose/branches/async13/python/
 function runCode 
 {
   $PYC main.py \
@@ -23,7 +25,7 @@ function testPythonCode
 
 PYC=python2.7
 if [ "$1" == "d" ]; then
-  PYC=pydb
+  PYC="gdb -ex r --args python2.7"
   runCode
 elif [ "$1" == "c" ]; then 
     FILES=$(find . -name "*.py" -type f)

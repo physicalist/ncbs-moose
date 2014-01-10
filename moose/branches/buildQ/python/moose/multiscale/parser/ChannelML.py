@@ -22,6 +22,7 @@ import inspect
 
 import moose
 from moose.neuroml import utils
+import core.config as config
 
 class ChannelML:
     """Loads channelML file. Base class. Inherited by NeuroML
@@ -29,7 +30,7 @@ class ChannelML:
 
     def __init__(self, nml_params):
         self.cml='http://morphml.org/channelml/schema'
-        self.libraryPath = '/neuroml/library'
+        self.libraryPath = config.libraryPath
         self.nml_params = nml_params
         temp = nml_params['temperature'].strip()
         if temp is None or len(temp) == 0:

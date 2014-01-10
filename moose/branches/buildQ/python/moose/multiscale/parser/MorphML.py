@@ -25,6 +25,7 @@ from moose.neuroml import utils as neuroml_utils
 import helper.moose_methods as moose_methods
 
 from ChannelML import ChannelML
+import core.config as config
 import debug.debug as debug
 import inspect
 import re
@@ -42,7 +43,8 @@ class MorphML():
         self.nml_params = nml_params
         self.model_dir = nml_params['model_dir']
         self.temperature = nml_params['temperature']
-        self.libraryPath = '/neuroml/library'
+        self.libraryPath = config.libraryPath
+        self.cellPath = config.cellPath
         moose.Neutral(self.libraryPath)
 
     def stringToFloat(self, tempString):
@@ -237,13 +239,13 @@ class MorphML():
         cellName = cell.attrib["name"]
 
         if cellName == 'LIF':
-            self.mooseCell = moose.LeakyIaF(self.libraryPath+'/'+cellName)
+            self.mooseCell = moose.LeakyIaF(self.cellPath+'/'+cellName)
             self.segDict = {}
         else:
             # using moose Neuron class - in previous version 'Cell' class
             # Chaitanya.
 
-            self.mooseCell = moose.Neuron(self.libraryPath+'/'+cellName)
+            self.mooseCell = moose.Neuron(self.cellPath+'/'+cellName)
             self.cellDictBySegmentId[cellName] = [self.mooseCell,{}]
             self.cellDictByCableId[cellName] = [self.mooseCell,{}]
             self.segDict = {}

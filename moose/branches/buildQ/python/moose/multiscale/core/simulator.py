@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Mon Dec 30, 2013  02:43AM
+Last modified: Fri Jan 10, 2014  05:43PM
 
 """
 
@@ -23,6 +23,9 @@ import inspect
 import numpy
 import pylab
 import os
+import logging 
+import core.config as config
+import numpy as np
 
 class Simulator:
 
@@ -31,8 +34,8 @@ class Simulator:
         self.simXml = arg[0]
         self.simXmlPath = arg[1]
         self.simElemString = "element"
-        self.cellPath = '/cells'
-        self.libraryPath = '/neuroml/library'
+        self.cellPath = config.cellPath
+        self.libraryPath = config.libraryPath
         self.rootElem = self.simXml.getroot()
         self.elecPath = self.rootElem.get('elec_path')
         self.globalVar = self.rootElem.find('global')
@@ -146,23 +149,23 @@ class Simulator:
                         )
 
                 if targetType == "Compartment":
-                    self.tableDict[targetPath] = moose.utils.setupTable(
+                    self.tableDict[targetPath] = (moose.utils.setupTable(
                             targetPath
                             , moose.Compartment(path)
                             , varName
-                            )
+                            ), path)
                 elif targetType == "CaConc":
-                    self.tableDict[targetPath] = moose.utils.setupTable(
+                    self.tableDict[targetPath] = (moose.utils.setupTable(
                             targetPath
                             , moose.CaConc(path)
                             , varName
-                            )
+                            ), path)
                 elif targetType == "HHChannel":
-                    self.tableDict[targetPath] = moose.utils.setupTable(
+                    self.tableDict[targetPath] = (moose.utils.setupTable(
                             targetPath
                             , moose.HHChannel(path)
                             , varName
-                            )
+                            ), path)
                 else:
                     debug.printDebug("WARN"
                             , "Unsupported type {0}".format(targetType)
@@ -213,21 +216,21 @@ class Simulator:
             # After simulation, plot user-requested variables.
             [ self.addPlot(pXml) for pXml in variablesToPlot ] 
 
-    def addPlot(self, plotVar):
+    def addPlot(self, varsToPlot):
         """
         Draws given variables.
         """
 
-        varType, variableName, plotXml = plotVar
-        plotVarName = varType + variableName 
+        varType, variableName, plotXml = varsToPlot
+        varsToPlotName = varType + variableName 
 
         # We must get a table object. If object is not available the program
         # must terminate here.
-        assert plotVarName in self.tableDict.keys()
-        tableObj = self.tableDict[plotVarName]
+        assert varsToPlotName in self.tableDict.keys()
+        tableObj, path = self.tableDict[varsToPlotName]
 
         debug.printDebug("INFO"
-                , "Adding plotXml for {0}".format(plotVarName)
+                , "Adding plotXml for {0}".format(varsToPlotName)
                 )
         if plotXml.get('type') is None or plot.get('type') == "2d":
             xXml = plotXml.find('x')
@@ -277,16 +280,22 @@ class Simulator:
                 plotArgs = ''
             else:
                 plotArgs = plotXml.get('plot_args')
-
             pylab.figure()
+
+            # If there is nothing to plot, quit
+            if len(tableObj.vec) == 0:
+                logging.warning("Empty vec. Nothing to plot.")
+                return
+
             debug.printDebug("DEBUG", "Plot args: {0}".format(plotArgs))
+            print(tableObj.vec)
             pylab.plot(xvec, tableObj.vec, plotArgs)
             
             label = plotXml.find('label')
             if label is not None:
                 pylab.xlabel(label.get('x'))
                 pylab.ylabel(label.get('y'))
-                pylab.title(label.get('title'))
+                pylab.title(path + ':' + label.get('title', ' '))
 
             outputFile = plotXml.get('output')
             if outputFile is not None and len(outputFile.strip()) > 0:

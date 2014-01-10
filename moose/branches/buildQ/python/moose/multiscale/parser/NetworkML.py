@@ -36,6 +36,7 @@ import inspect
 import helper.xml_methods as xml_methods
 import helper.moose_methods as moose_methods
 import core.stimulus as stimulus
+import core.config as config
 from debug.logger import *
 import debug.bugs as bugs
 
@@ -46,16 +47,16 @@ class NetworkML:
 
     def __init__(self, nml_params):
         self.populationDict = dict()
-        moose.Neutral('/neuroml')
-        self.libraryPath = '/neuroml/library'
-        self.cellPath = '/cells'
+        self.libraryPath = config.libraryPath
+        moose.Neutral(self.libraryPath)
+        self.cellPath = self.libraryPath
         moose.Neutral(self.cellPath)
         moose.Neutral(self.libraryPath)
         self.cellDictBySegmentId={}
         self.cellDictByCableId={}
         self.nml_params = nml_params
         self.model_dir = nml_params['model_dir']
-        self.elecPath = '/neuroml/electrical'
+        self.elecPath = config.elecPath
         self.dt = 1e-3 # In seconds.
         self.simTime = 1000e-3
 
@@ -358,10 +359,10 @@ class NetworkML:
                     )
                 self.cellSegmentDict.update(cellDict)
             if cellname == 'LIF':
-                libcell = moose.LeakyIaF(self.libraryPath+'/'+cellname)
+                cellid = moose.LeakyIaF(self.libraryPath+'/'+cellname)
             else:
                 # added cells as a Neuron class.
-                libcell = moose.Neuron(self.libraryPath+'/'+cellname) 
+                cellid = moose.Neuron(self.libraryPath+'/'+cellname) 
 
             self.populationDict[populationName] = (cellname,{})
 
@@ -374,14 +375,6 @@ class NetworkML:
                     zrotation = float(string.split(rotationnote.text,'=')[1])
                 else:
                     zrotation = 0
-
-                # deep copies the library cell to an instance under '/cells'
-                # named as <arg3> /cells is useful for scheduling clocks as all
-                # sim elements are in /cells
-                cellid = moose.copy(libcell
-                        , moose.Neutral(self.cellPath)
-                        , moose_methods.moosePath(populationName, instanceid)
-                        )
                 if cellname == 'LIF':
                     cell = moose.LeakyIaF(cellid)
                     self.populationDict[populationName][1][int(instanceid)] = cell

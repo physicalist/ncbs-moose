@@ -3,7 +3,7 @@
 """moose_methods.py:  Some helper function related with moose to do multiscale
 modelling.
 
-Last modified: Sun Jan 05, 2014  12:00PM
+Last modified: Fri Jan 10, 2014  05:23PM
 
 """
     
@@ -67,7 +67,7 @@ def getCompName(compExpr):
 
 def stringToFloat(text):
     text = text.strip()
-    if text:
+    if not text:
         return 0.0
     try:
         val = float(text)

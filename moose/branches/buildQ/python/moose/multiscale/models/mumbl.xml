@@ -49,7 +49,7 @@
         <compartments geometry='cylinder'>
             <compartment id="1">
                 <pool species="Ca" conc="1e-3" />
-                <pool species="Na" conc="1e-10" />
+                <pool species="Na" conc="1e-16" />
             </compartment>
             <compartment id="2">
                 <pool species="K" conc="1e-10" />
@@ -72,7 +72,6 @@
     <domain population="Granule_98" 
         segment="Soma" 
         instance_id="0"
-        postfix='Gran_KCa_98'
         >
         <!-- These are currently moose-specific.
             TODO: Make them generic.
@@ -84,16 +83,33 @@
                     NOTE: A standard notation for descrining variables is needed.
                     This is a list if mapping/type is one_to_many.
                 -->
-                <relation lhs="ICa" rhs="0.3 * CCa - 0.9" type="=" />
+                <relation>
+                    <lhs>ICa</lhs>
+                    <rhs scale="0.3" offset="-0.9">Gbar</rhs>
+                </relation>
             </target>
+
+            <!-- More than two rhs should be added together -->
             <target type="chemical" species="Ca"  >
-                <relation lhs="VCa" rhs="0.3 * ICa - 0.1" type="=" />
+                <relation>
+                    <lhs>VCa</lhs>
+                    <rhs scale="0.3" offset="0.1">ICa</rhs>
+                </relation>
             </target>
         </mapping>
+<<<<<<< HEAD
         <!-- tick is optional. Specific to moose -->
         <mapping direction="in" type="one_to_one" tick="0">
             <target type="chemical" species="K" compartment_id = "1" >
                 <relation lhs="Gran_NaF98/ion" rhs="15 * KCa" type="=" />
+=======
+        <mapping direction="in" type="one_to_one" >
+            <target type="chemical" species="Na" compartment_id = "1" >
+                <relation>
+                    <lhs>conc</lhs> 
+                    <rhs scale="1.5e16" offset="1e-16">Vm</rhs>
+                </relation>
+>>>>>>> Simple mumbling is working. Try to see the averaging of two inputs.
             </target>
         </mapping>
     </domain>
