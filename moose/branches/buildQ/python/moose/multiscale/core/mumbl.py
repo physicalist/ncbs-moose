@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Sat Jan 11, 2014  12:57PM
+Last modified: Sat Jan 11, 2014  08:49PM
 
 """
 
@@ -62,6 +62,20 @@ class Mumble():
         # warning and don't insert the model.
         self.modelList = list()
         self.speciesDict = types.DoubleDict()
+
+    def prefixWithSet(self, var):
+        '''
+        This function prefix the variable such that it can be used with moose to
+        set the value of variable
+        '''
+        return 'set_'+var
+
+    def prefixWithGet(self, var):
+        '''
+        This prefixes the variable such that so that it can be used to get the
+        value of a variable
+        '''
+        return 'get_'+var
 
     def initPaths(self, paths):
         """
@@ -225,33 +239,29 @@ class Mumble():
 
         """
         debug.printDebug("STEP", "Creating mapping..")
-        xmlType = domain.get('xml')
+        xmlType = domain.get('xml', 'neuroml')
         population = domain.get('population')
         segment = domain.get('segment')
         id = domain.get('instance_id')
         path = os.path.join(self.cellPath, population, segment)
 
-        if xmlType == "neuroml":
-            fullpath = moose_methods.moosePath(path, id)
-        else:
-            debug.printDebug("WARN"
-                    , "Unsupported XML type %s" % xmlType)
-            fullpath = moose_methods.moosePath(path, id)
-
-        if domain.get('postfix') is not None:
-            fullpath = os.path.join(fullpath, domain.get('postfix'))
+        fullpath = moose_methods.moosePath(path, id)
 
         mappings = domain.findall('mapping')
         [self.mapping(a, fullpath) for a in mappings]
 
     def mapping(self, adaptor, moosePath):
         """
-        Set up an adaptor for a given moose path
+        Set up adaptor for each mapping.
         """
+<<<<<<< HEAD
         direction = adaptor.get('direction')
         if direction is None:
             direction = 'out'
         else: pass
+=======
+        direction = adaptor.get('direction', 'out')
+>>>>>>> This fails with core dump
         if direction == "in":
             srcs = adaptor.findall('source')
             [self.inTarget(s, moosePath) for s in srcs]
@@ -261,20 +271,21 @@ class Mumble():
         else:
             raise UserWarning, "Unsupported type or parameter", direction
 
-    def inTarget(self, tgt, moosePath):
-        """Set up incoming targets.
+    def inTarget(self, src, moosePath):
+        """
+        Read from incomong sources and update the tgt using adaptor.
         """
         mooseSrc = moose.Neutral(moosePath)
 
         # Get the target.
-        compType = tgt.get('type')
+        compType = src.get('type')
         if compType == "chemical":
             self.logger.debug("Adding a target of chemtype")
             # in which compartment and which type of pool
-            compId = tgt.get('compartment_id')
+            compId = src.get('compartment_id')
             if compId is None:
                 raise UserWarning, "Missing parament or value"
-            species = tgt.get('species')
+            species = src.get('species')
             poolId = moose_methods.moosePath(self.compartmentName, compId)
             poolPath = os.path.join(self.chemPath, poolId, species)
             mooseTgt = moose.Pool(poolPath)
@@ -286,7 +297,7 @@ class Mumble():
        
         # We need to send message now based on relation. This is done using
         # moose.Adaptor class.
-        relationXml = tgt.find('relation')
+        relationXml = src.find('relation')
         # Here we modify the mooseSrc according to mooseTgt. MooseTgt is read
         # therefore it is the first arguement in function.
         self.setAdaptor(mooseTgt, mooseSrc, relationXml)
@@ -297,7 +308,6 @@ class Mumble():
         """
         debug.printDebug("TODO", "Implement out-target")
         return
-
 
     def setAdaptor(self, src, tgt, relationXml):
         '''
@@ -310,13 +320,11 @@ class Mumble():
         self.adaptorCount += 1
         srcPath = src.path
         tgtPath = tgt.path
-        adaptorPath = moose.Adaptor(
-                os.path.join(
-                    self.adaptorPath
-                    , 'adapt{}'.format(self.adaptorCount)
-                    )
+        adaptorPath = os.path.join(
+                self.adaptorPath
+                , 'adapt{}'.format(self.adaptorCount)
                 )
-        self.logger.debug(
+        self.logger.info(
                 "Adaptor: {} to {}, Encoded {}".format(
                     srcPath
                     , tgtPath
@@ -326,12 +334,20 @@ class Mumble():
         adaptor = moose.Adaptor(adaptorPath)
 
         # Create a adaptor which reads from src and update tgt.
-        lhsXml = relationXml.find('lhs')
-        rhsXml = relationXml.find('rhs')
-        lhsVar = lhsXml.text
-        rhsVar = rhsXml.text
-        adaptor.setField('scale', float(rhsXml.get('scale', 1.0)))
-        adaptor.setField('inputOffset', - float(rhsXml.get('offset', 0.0)))
+        if relationXml.get('type', 'linear') != 'linear':
+            debug.printDebug("TODO", "Support non-linear relations also")
+            raise UserWarning("Only linear relations are supported")
+
+        lhsVar = relationXml.get('read_variable')
+        rhsVar = relationXml.get('write_variable')
+        assert lhsVar, "read_variable not found"
+        assert rhsVar, "write_variable not found"
+
+        adaptor.setField('scale', float(relationXml.find('scale').text))
+        adaptor.setField('inputOffset'
+                , - float(relationXml.find('offset').text)
+                )
+
         self.logger.info(
                 'Setting adaptor between {}/{} and {}/{}'.format(
                     src.path
@@ -342,7 +358,7 @@ class Mumble():
                 )
         # Connect
         try:
-            var = 'get_'+lhsVar
+            var = self.prefixWithGet(lhsVar)
             moose.connect(adaptor, 'requestField', src, var)
         except Exception as e:
             self.logger.error(
@@ -350,15 +366,15 @@ class Mumble():
                         var, src.path
                         )
                     )
-            self.logger.info(
+            self.logger.debug(
                     "Avalilable fields are {}".format(
                         moose.showfield(src)
                         )
                     )
             sys.exit()
         try:
-            var = 'set_'+rhsVar
-            moose.connect(adaptor, 'outputSrc', tgt, 'set_'+rhsVar, 'OneToOne')
+            var = self.prefixWithGet(rhsVar)
+            moose.connect( adaptor , 'outputSrc' , tgt , var)
         except Exception as e:
             self.logger.error(
                     'Failed to connect var {} of {} with adaptor input'.format(
