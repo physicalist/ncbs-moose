@@ -83,26 +83,26 @@
                     NOTE: A standard notation for descrining variables is needed.
                     This is a list if mapping/type is one_to_many.
                 -->
-                <relation>
-                    <lhs>ICa</lhs>
-                    <rhs scale="0.3" offset="-0.9">Gbar</rhs>
+                <relation type='linear' read_variable='ICa' write_variable='Gbar'>
+                    <scale>0.3</scale>
+                    <offset>-0.9</offset>
                 </relation>
             </target>
 
             <!-- More than two rhs should be added together -->
-            <target type="chemical" species="Ca"  >
-                <relation>
-                    <lhs>VCa</lhs>
-                    <rhs scale="0.3" offset="0.1">ICa</rhs>
+            <target type="chemical" species="Ca" compartment_id="3" >
+                <relation type="linear" read_variable="VCa" write_variable="ICa">
+                    <scale>0.3</scale>
+                    <offset>0.1</offset>
                 </relation>
             </target>
         </mapping>
-        <!-- tick is optional. Specific to moose -->
+        <!-- If mapping direction is "in" then it can only contains sources. -->
         <mapping direction="in" type="one_to_one" >
             <source type="chemical" species="Na" compartment_id = "1" >
-                <relation>
-                    <lhs>conc</lhs> 
-                    <rhs scale="1.5e16" offset="1e-16">Vm</rhs>
+                <relation type='linear' read_variable="conc" write_variable="Vm">
+                    <scale>1.5e16</scale>
+                    <offset>1e-16</offset>
                 </relation>
             </source>
         </mapping>
