@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Fri Jan 10, 2014  06:02PM
+Last modified: Sat Jan 11, 2014  12:57PM
 
 """
 
@@ -252,10 +252,11 @@ class Mumble():
         if direction is None:
             direction = 'out'
         else: pass
-        tgts = adaptor.findall('target')
         if direction == "in":
-            [self.inTarget(t, moosePath) for t in tgts]
+            srcs = adaptor.findall('source')
+            [self.inTarget(s, moosePath) for s in srcs]
         elif direction == "out":
+            tgts = adaptor.findall('target')
             [self.outTarget(t, moosePath) for t in tgts]
         else:
             raise UserWarning, "Unsupported type or parameter", direction

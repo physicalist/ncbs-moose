@@ -97,20 +97,14 @@
                 </relation>
             </target>
         </mapping>
-<<<<<<< HEAD
         <!-- tick is optional. Specific to moose -->
-        <mapping direction="in" type="one_to_one" tick="0">
-            <target type="chemical" species="K" compartment_id = "1" >
-                <relation lhs="Gran_NaF98/ion" rhs="15 * KCa" type="=" />
-=======
         <mapping direction="in" type="one_to_one" >
-            <target type="chemical" species="Na" compartment_id = "1" >
+            <source type="chemical" species="Na" compartment_id = "1" >
                 <relation>
                     <lhs>conc</lhs> 
                     <rhs scale="1.5e16" offset="1e-16">Vm</rhs>
                 </relation>
->>>>>>> Simple mumbling is working. Try to see the averaging of two inputs.
-            </target>
+            </source>
         </mapping>
     </domain>
 </mumbl>
