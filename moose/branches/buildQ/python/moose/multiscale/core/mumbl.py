@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Sat Jan 11, 2014  08:49PM
+Last modified: Sat Jan 11, 2014  08:51PM
 
 """
 
@@ -254,14 +254,7 @@ class Mumble():
         """
         Set up adaptor for each mapping.
         """
-<<<<<<< HEAD
-        direction = adaptor.get('direction')
-        if direction is None:
-            direction = 'out'
-        else: pass
-=======
         direction = adaptor.get('direction', 'out')
->>>>>>> This fails with core dump
         if direction == "in":
             srcs = adaptor.findall('source')
             [self.inTarget(s, moosePath) for s in srcs]
