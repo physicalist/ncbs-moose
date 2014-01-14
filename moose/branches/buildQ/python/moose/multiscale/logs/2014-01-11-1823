@@ -1,0 +1,6 @@
+INFO:mumble:Creating pool with path /mumbl/Chemical/Compartment(1)/Ca
+INFO:mumble:Creating pool with path /mumbl/Chemical/Compartment(1)/Na
+INFO:mumble:Creating pool with path /mumbl/Chemical/Compartment(2)/K
+DEBUG:mumble:Adding a target of chemtype
+DEBUG:mumble:Adaptor: /mumbl/Chemical/Compartment(1)/Ca to /neuroml/cells/Granule_98/Soma(0), Encoded <moose.Adaptor: id=937, dataId=0, path=/mumbl/Adaptor/adapt1>
+INFO:mumble:Setting adaptor between /mumbl/Chemical/Compartment(1)/Ca/conc and /neuroml/cells/Granule_98/Soma(0)/Rm
