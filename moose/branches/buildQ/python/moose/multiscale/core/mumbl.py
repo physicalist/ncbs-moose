@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Sat Jan 11, 2014  08:53PM
+Last modified: Sat Jan 11, 2014  08:54PM
 
 """
 
@@ -327,20 +327,19 @@ class Mumble():
         adaptor = moose.Adaptor(adaptorPath)
 
         # Create a adaptor which reads from src and update tgt.
+        lhsVar = relationXml.get('input')
+        rhsVar = relationXml.get('output')
+
         if relationXml.get('type', 'linear') != 'linear':
-            debug.printDebug("TODO", "Support non-linear relations also")
-            raise UserWarning("Only linear relations are supported")
+            debug.printDebug("ERR", "Only linear relations are supported")
+            raise UserWarning("Non-linear relation.")
 
-        lhsVar = relationXml.get('read_variable')
-        rhsVar = relationXml.get('write_variable')
-        assert lhsVar, "read_variable not found"
-        assert rhsVar, "write_variable not found"
+        scale  = float(relationXml.find('scale').text)
+        offset = float(relationXml.find('offset').text)
+        assert scale > 0.0
 
-        adaptor.setField('scale', float(relationXml.find('scale').text))
-        adaptor.setField('inputOffset'
-                , - float(relationXml.find('offset').text)
-                )
-
+        adaptor.setField('scale', scale)
+        adaptor.setField('inputOffset', - offset)
         self.logger.info(
                 'Setting connection between {}/{} and {}/{}'.format(
                     src.path
