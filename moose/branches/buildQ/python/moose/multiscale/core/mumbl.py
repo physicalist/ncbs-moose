@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Sat Jan 11, 2014  08:51PM
+Last modified: Sat Jan 11, 2014  08:53PM
 
 """
 
@@ -342,7 +342,7 @@ class Mumble():
                 )
 
         self.logger.info(
-                'Setting adaptor between {}/{} and {}/{}'.format(
+                'Setting connection between {}/{} and {}/{}'.format(
                     src.path
                     , lhsVar
                     , tgt.path
@@ -381,3 +381,4 @@ class Mumble():
                     )
             sys.exit()
         moose.useClock(self.mumbleClockId, adaptor.path, 'process')
+        moose.reinit()
