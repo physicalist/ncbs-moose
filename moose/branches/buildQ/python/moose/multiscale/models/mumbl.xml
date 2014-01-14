@@ -97,11 +97,16 @@
                 </relation>
             </target>
         </mapping>
-        <!-- If mapping direction is "in" then it can only contains sources. -->
-        <mapping direction="in" type="one_to_one" >
+        <mapping direction="in" type="one_to_one">
             <source type="chemical" species="Na" compartment_id = "1" >
                 <relation type='linear' read_variable="conc" write_variable="Vm">
                     <scale>1.5e16</scale>
+                    <offset>1e-16</offset>
+                </relation>
+            </source>
+            <source type="chemical" species="Ca" compartment_id = "1" >
+                <relation input="conc" output="Rm" >
+                    <scale>1.5e10</scale>
                     <offset>1e-16</offset>
                 </relation>
             </source>
