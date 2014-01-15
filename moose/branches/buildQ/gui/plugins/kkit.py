@@ -55,7 +55,8 @@ class KkitPlugin(MoosePlugin):
         view.getCentralWidget().setDataRoot(self.modelRoot)
         schedulingDockWidget = view.getSchedulingDockWidget().widget()
         self._kkitWidget = view.plugin.getEditorView().getCentralWidget()
-        schedulingDockWidget.runner.update.connect(self._kkitWidget.colorChange)
+        #schedulingDockWidget.runner.update.connect(self._kkitWidget.colorChange)
+        schedulingDockWidget.runner.update.connect(self._kkitWidget.changeBgSize)
         schedulingDockWidget.runner.resetAndRun.connect(self._kkitWidget.resetColor)
         return view
 
@@ -356,7 +357,18 @@ class  KineticsWidget(EditorWidgetBase):
                 pinfo = moose.element(item.mobj[0]).path+'/info'
                 color,bg = getColor(pinfo,self.colorMap)
                 item.updateColor(bg)
-
+    def changeBgSize(self):
+        for item in self.sceneContainer.items():
+            if isinstance(item,PoolItem):
+                initialConc = moose.element(item.mobj[0]).concInit
+                presentConc = moose.element(item.mobj[0]).conc
+                if initialConc != 0:
+                    ratio = presentConc/initialConc
+                else:
+                    # multipying by 1000 b'cos moose concentration is in milli in moose
+                    ratio = presentConc*1000
+                item.updateRect(math.sqrt(ratio))
+        
     def colorChange(self):
         '''While simulation is running pool color are increased or decreased as per concentration level '''
         for item in self.sceneContainer.items():
@@ -379,7 +391,6 @@ class  KineticsWidget(EditorWidgetBase):
                 #only alpha value is changed
                 bg =QtGui.QColor(bg.red(),bg.green(),bg.blue(),alpha)
                 item.updateColor(bg)
-                
         
     def positionChange(self,mooseObject):
         #If the item position changes, the corresponding arrow's are calculated
