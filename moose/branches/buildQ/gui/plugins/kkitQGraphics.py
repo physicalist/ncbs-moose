@@ -46,7 +46,10 @@ class PoolItem(KineticsDisplayItem):
         self.bg = QtGui.QGraphicsRectItem(self)
         self.gobj = QtGui.QGraphicsSimpleTextItem(self.mobj[0].name, self.bg)        
         self.gobj.setFont(PoolItem.font)
-
+        self.bgColor = QtGui.QGraphicsEllipseItem(self)
+        self.bgColor.setFlag(QtGui.QGraphicsItem.ItemStacksBehindParent,True)
+        self.bgColor.setRect(((self.gobj.boundingRect().width()
+                        +PoolItem.fontMetrics.width('  '))/2)-5,self.gobj.boundingRect().height()/2-5,10,10)
         if not PoolItem.fontMetrics:
             PoolItem.fontMetrics = QtGui.QFontMetrics(self.gobj.font())
         self.bg.setRect(0, 
@@ -56,19 +59,22 @@ class PoolItem(KineticsDisplayItem):
                         self.gobj.boundingRect().height())
         self.bg.setPen(Qt.QColor(0,0,0,0))
         self.gobj.setPos(PoolItem.fontMetrics.width(' '), 0)
-        
     def setDisplayProperties(self,x,y,textcolor,bgcolor):
         """Set the display properties of this item."""
         self.setGeometry(x, y,self.gobj.boundingRect().width()
                         +PoolItem.fontMetrics.width('  '), 
                         self.gobj.boundingRect().height())
-        self.gobj.setPen(QtGui.QPen(QtGui.QBrush(textcolor)))
-        self.gobj.setBrush(QtGui.QBrush(textcolor))
+        
+        #self.gobj.setPen(QtGui.QPen(QtGui.QBrush(textcolor)))
+        #self.gobj.setBrush(QtGui.QBrush(textcolor))
 
 	if self.mobj.className != "StimulusTable":
+            ## Changing back ground ellipse color and not setting rectItem
+            self.bgColor.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor.red(),bgcolor.green(),bgcolor.blue(),255)))
             #Setting alpha value to be between 0-255
-            self.bg.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor.red(),bgcolor.green(),bgcolor.blue(),128)))
+            #self.bg.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor.red(),bgcolor.green(),bgcolor.blue(),128)))
             #self.bg.setBrush(QtGui.QBrush(bgcolor))
+            
     def refresh(self,scale):
         fontsize = PoolItem.defaultFontsize*scale
         font =QtGui.QFont("Helvetica")
@@ -84,7 +90,16 @@ class PoolItem(KineticsDisplayItem):
         self.bg.setRect(0, 0, self.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  '), self.gobj.boundingRect().height())
     
     def updateColor(self,bgcolor):
-        self.bg.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor)))
+        #self.bg.setBrush(QtGui.QBrush(QtGui.QColor(bgcolor)))
+        pass
+
+    def updateRect(self,ratio):
+        width = self.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  ')
+        height = self.gobj.boundingRect().height()
+        adjustw = width*ratio
+        adjusth = height*ratio
+        self.bgColor.setRect(width/2-abs(adjustw/2),height/2-abs(adjusth/2),adjustw, adjusth)
+        #self.bg.setRect(0,0,self.gobj.boundingRect().width()*ratio+PoolItem.fontMetrics.width('  '), self.gobj.boundingRect().height()*ratio)
 
     def returnColor(self):
         return (self.bg.brush().color())
