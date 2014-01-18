@@ -44,6 +44,7 @@ import moose.utils
 import moose.neuroml.utils as mnu
 import debug.debug as debug
 import core.config as config
+import logging
 
 from os import path
 
@@ -98,9 +99,9 @@ class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
                 self.temperature = float(mp.attrib['value'])
                 self.temperature_default = False
         if self.temperature_default:
-            debug.printDebug( "INFO"
-                , "Using default temperature of % C".format(self.temperature)
-                )
+            logging.debug(
+                    "Using default temperature of %s C".format(self.temperature)
+                    )
         self.nml_params = {
                 'temperature': self.temperature
                 , 'model_dir': self.model_dir

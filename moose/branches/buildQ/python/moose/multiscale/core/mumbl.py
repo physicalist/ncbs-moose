@@ -4,7 +4,7 @@
 """mumbl.py: This file reads the mumbl file and load it onto moose. 
 This class is entry point of multiscale modelling.
 
-Last modified: Sat Jan 11, 2014  08:54PM
+Last modified: Sat Jan 18, 2014  09:28AM
 
 """
 
@@ -63,20 +63,6 @@ class Mumble():
         self.modelList = list()
         self.speciesDict = types.DoubleDict()
 
-    def prefixWithSet(self, var):
-        '''
-        This function prefix the variable such that it can be used with moose to
-        set the value of variable
-        '''
-        return 'set_'+var
-
-    def prefixWithGet(self, var):
-        '''
-        This prefixes the variable such that so that it can be used to get the
-        value of a variable
-        '''
-        return 'get_'+var
-
     def initPaths(self, paths):
         """
         Initialize all parents.
@@ -87,6 +73,14 @@ class Mumble():
             p += ("/"+i)
             moose.Neutral(p)
         
+    def prefixWithSet(self, var):
+        assert len(var.strip()) > 0, "Empty variable name"
+        return 'set_'+var
+
+    def prefixWithGet(self, var):
+        assert len(var.strip()) > 0, "Empty variable name"
+        return 'get_'+var
+
     def load(self):
         """ Lead mumble element tree
         """
@@ -228,7 +222,12 @@ class Mumble():
             self.speciesDict.insertUniqueVal(speciesName)
             pool = os.path.join(compPath, speciesName)
             self.logger.info('Creating pool with path {}'.format(pool))
-            poolComp = moose.Pool(pool)
+            try:
+                poolComp = moose.Pool(pool)
+            except Excetion as e:
+                printDebug("WARN", "Perhaps the compartment_id is wrong!")
+                raise KeyError("Missing parent path %s" % poolPath)
+
             poolComp.conc = moose_methods.stringToFloat(p.get('conc'))
             poolComp.speciesId = self.speciesDict.get(speciesName)
         
@@ -247,14 +246,20 @@ class Mumble():
 
         fullpath = moose_methods.moosePath(path, id)
 
+        if domain.get('postfix') is not None:
+            fullpath = os.path.join(fullpath, domain.get('postfix'))
+
         mappings = domain.findall('mapping')
         [self.mapping(a, fullpath) for a in mappings]
 
     def mapping(self, adaptor, moosePath):
         """
-        Set up adaptor for each mapping.
+        Set up an adaptor for a given moose path
         """
-        direction = adaptor.get('direction', 'out')
+        direction = adaptor.get('direction')
+        if direction is None:
+            direction = 'out'
+        else: pass
         if direction == "in":
             srcs = adaptor.findall('source')
             [self.inTarget(s, moosePath) for s in srcs]
@@ -265,25 +270,29 @@ class Mumble():
             raise UserWarning, "Unsupported type or parameter", direction
 
     def inTarget(self, src, moosePath):
-        """
-        Read from incomong sources and update the tgt using adaptor.
+        """Set up incoming source and target.
         """
         mooseSrc = moose.Neutral(moosePath)
 
         # Get the target.
-        compType = src.get('type')
+        compType = src.get('type', 'chemical')
         if compType == "chemical":
-            self.logger.debug("Adding a target of chemtype")
+            self.logger.debug("Adding a source of chemtype")
             # in which compartment and which type of pool
             compId = src.get('compartment_id')
             if compId is None:
-                raise UserWarning, "Missing parament or value"
+                raise UserWarning, "Missing parameter or value: compartment_id"
             species = src.get('species')
+            assert species, "Must have species in source"
             poolId = moose_methods.moosePath(self.compartmentName, compId)
             poolPath = os.path.join(self.chemPath, poolId, species)
-            mooseTgt = moose.Pool(poolPath)
-        elif compType == "electrical":
-            mooseTgt = self.createElecCompartment(tgt)
+            try:
+                mooseTgt = moose.Pool(poolPath)
+            except Exception as e:
+                logging.critical(
+                        "Perhaps the compartment_id in mumbleML is wrong"
+                        )
+                raise KeyError("Missing parent path %s" % poolPath)
         else: 
             debug.printDebug("TODO", "Unsupported compartment type")
             raise UserWarning("Unsupported compartment type %s" % compType)
@@ -299,8 +308,42 @@ class Mumble():
     def outTarget(self, tgt, moosePath):
         """Setup outgoing targets.
         """
-        debug.printDebug("TODO", "Implement out-target")
-        return
+        mooseSrc = moose.Neutral(moosePath)
+        
+        # Get the source
+        compType = tgt.get('type', 'chemical')
+        if compType != 'chemical':
+            debug.printDebug("TODO"
+                    , "Unsupported compartment type %s" % compType
+                    )
+            raise UserWarning("Unsupported feature")
+        
+        self.logger.debug('Adding a target of chemtype')
+
+        compId = tgt.get('compartment_id')
+        if compId is None:
+            raise UserWarning, "Missing parameter or value: compartment_id"
+
+        assert int(compId) >= 0, "Not a valid compartment id: %s" % compId
+
+        species = tgt.get('species')
+        assert species, "Must have species in target"
+        
+        poolId = moose_methods.moosePath(self.compartmentName, compId)
+        poolPath = os.path.join(self.chemPath, poolId, species)
+        try:
+            mooseTgt = moose.Pool(poolPath)
+        except Exception as e:
+            logging.critical(
+                    "Perhaps the compartment_id in mumbleML is wrong"
+                    )
+            raise KeyError("Missing parent path %s" % poolPath)
+
+
+        relationXml = tgt.find('relation')
+        self.setAdaptor(mooseSrc, mooseTgt, relationXml)
+        moose.reinit()
+
 
     def setAdaptor(self, src, tgt, relationXml):
         '''
@@ -313,11 +356,13 @@ class Mumble():
         self.adaptorCount += 1
         srcPath = src.path
         tgtPath = tgt.path
-        adaptorPath = os.path.join(
-                self.adaptorPath
-                , 'adapt{}'.format(self.adaptorCount)
+        adaptorPath = moose.Adaptor(
+                os.path.join(
+                    self.adaptorPath
+                    , 'adapt{}'.format(self.adaptorCount)
+                    )
                 )
-        self.logger.info(
+        self.logger.debug(
                 "Adaptor: {} to {}, Encoded {}".format(
                     srcPath
                     , tgtPath
@@ -326,31 +371,33 @@ class Mumble():
                 )
         adaptor = moose.Adaptor(adaptorPath)
 
-        # Create a adaptor which reads from src and update tgt.
-        lhsVar = relationXml.get('input')
-        rhsVar = relationXml.get('output')
+        inputVar = relationXml.get('input')
+        outputVar = relationXml.get('output')
+        assert inputVar
+        assert outputVar
 
-        if relationXml.get('type', 'linear') != 'linear':
-            debug.printDebug("ERR", "Only linear relations are supported")
-            raise UserWarning("Non-linear relation.")
-
-        scale  = float(relationXml.find('scale').text)
-        offset = float(relationXml.find('offset').text)
-        assert scale > 0.0
+        scale = relationXml.find('scale').text
+        if not scale: scale = 1.0
+        else: scale = float(scale)
+        
+        
+        offset = relationXml.find('offset').text
+        if not offset: offset = 0.0
+        else: offset = float(offset)
 
         adaptor.setField('scale', scale)
         adaptor.setField('inputOffset', - offset)
         self.logger.info(
-                'Setting connection between {}/{} and {}/{}'.format(
+                'Setting adaptor between {}/{} and {}/{}'.format(
                     src.path
-                    , lhsVar
+                    , inputVar
                     , tgt.path
-                    , rhsVar
+                    , outputVar
                     )
                 )
         # Connect
         try:
-            var = self.prefixWithGet(lhsVar)
+            var = self.prefixWithGet(inputVar)
             moose.connect(adaptor, 'requestField', src, var)
         except Exception as e:
             self.logger.error(
@@ -358,15 +405,15 @@ class Mumble():
                         var, src.path
                         )
                     )
-            self.logger.debug(
+            self.logger.info(
                     "Avalilable fields are {}".format(
                         moose.showfield(src)
                         )
                     )
             sys.exit()
         try:
-            var = self.prefixWithGet(rhsVar)
-            moose.connect( adaptor , 'outputSrc' , tgt , var)
+            var = self.prefixWithSet(outputVar)
+            moose.connect(adaptor, 'outputSrc', tgt, var)
         except Exception as e:
             self.logger.error(
                     'Failed to connect var {} of {} with adaptor input'.format(
@@ -380,4 +427,3 @@ class Mumble():
                     )
             sys.exit()
         moose.useClock(self.mumbleClockId, adaptor.path, 'process')
-        moose.reinit()
