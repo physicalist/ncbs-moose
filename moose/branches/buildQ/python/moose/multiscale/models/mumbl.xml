@@ -76,37 +76,43 @@
         <!-- These are currently moose-specific.
             TODO: Make them generic.
          -->
-        <mapping direction="out" type="one_to_many">
-            <target type="chemical"  compartment_id="0" species="Ca" >
-                <!-- Describe the relation in MathML format. Or use python
-                    MathDOM to parse the string into xml. 
-                    NOTE: A standard notation for descrining variables is needed.
-                    This is a list if mapping/type is one_to_many.
-                -->
-                <relation type='linear' read_variable='ICa' write_variable='Gbar'>
-                    <scale>0.3</scale>
+
+         <!-- If direction is "out" then this mapping influences parameters in
+              other compartments. Attribute "input" reads a variable from this
+              compartment and  set a adaptor to update variable "output" in
+              target compartment
+          -->
+        <mapping direction="out">
+            <!-- This target modifies conc of Ca in comparment 2 based on value
+                 of Vm in current compartment
+            -->
+            <target type="chemical"  compartment_id="2" species="Ca" >
+                <relation input="Rm" output="conc">
+                    <scale>0.3e10</scale>
                     <offset>-0.9</offset>
                 </relation>
             </target>
 
-            <!-- More than two rhs should be added together -->
-            <target type="chemical" species="Ca" compartment_id="3" >
-                <relation type="linear" read_variable="VCa" write_variable="ICa">
+            <!-- This target modifies conc of Na in compartment id 2 based on
+                 value of Cm in current compartment
+            -->
+            <target type="chemical" species="Na" compartment_id="2" >
+                <relation input="Cm" output="conc">
                     <scale>0.3</scale>
                     <offset>0.1</offset>
                 </relation>
             </target>
         </mapping>
-        <mapping direction="in" type="one_to_one">
+        <mapping direction="in" type="one_to_one" >
             <source type="chemical" species="Na" compartment_id = "1" >
-                <relation type='linear' read_variable="conc" write_variable="Vm">
+                <relation input="conc" output="Rm">
                     <scale>1.5e16</scale>
                     <offset>1e-16</offset>
                 </relation>
             </source>
             <source type="chemical" species="Ca" compartment_id = "1" >
-                <relation input="conc" output="Rm" >
-                    <scale>1.5e10</scale>
+                <relation input="conc" output="Cm">
+                    <scale>1.5e1</scale>
                     <offset>1e-16</offset>
                 </relation>
             </source>

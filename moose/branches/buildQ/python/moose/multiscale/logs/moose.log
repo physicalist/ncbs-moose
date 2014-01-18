@@ -934,6 +934,12 @@
 /mumbl/Chemical/Compartment(2)
 /mumbl/Chemical/Compartment(2)/K
 /mumbl/Chemical/Compartment(3)
+/mumbl/Chemical/Compartment(2)/Ca
+/mumbl/Adaptor/adapt1
+/mumbl/Chemical/Compartment(2)/Na
+/mumbl/Adaptor/adapt2
+/mumbl/Adaptor/adapt3
+/mumbl/Adaptor/adapt4
 /neuroml/cells/Granule_98/Soma(0)/data
 /neuroml/cells/Granule_98/Soma(0)/data/somaVm
 /neuroml/cells/Granule_98/Soma(0)/data/somaVm/table[0]
