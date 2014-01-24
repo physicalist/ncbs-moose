@@ -10,8 +10,8 @@ ERR = '\033[31m'
 ENDC = '\033[0m'
 RED = ERR
 WARN = WARNING
-INFO = OKBLUE
-TODO = OKGREEN
+INFO = OKGREEN
+TODO = OKBLUE
 DEBUG = HEADER
 ERROR = ERR
 
@@ -53,6 +53,13 @@ def cl(msg, label="INFO"):
     return colored(msg, level)
 
 def printDebug(label, msg, frame=None, exception=None):
+    ''' If msg is a list then first msg in list is the main message. Rest are
+    sub message which should be printed prefixed by \n\t.
+    '''
+    if type(msg) == list:
+        if len(msg) > 1:
+            msg = [msg[0]] + ["`|- {0}`".format(x) for x in msg[1:]] 
+        msg = "\n\t".join(msg)
     if not frame :
         print("[{0}] {1}".format(label, colored(msg,label)), file=sys.stderr)
     else :

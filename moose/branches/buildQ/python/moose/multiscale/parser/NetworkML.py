@@ -129,7 +129,6 @@ class NetworkML:
 
         """
         This returns
-        j
          populationDict = {
            'populationName1':(cellname
            , {int(instanceid1):moosecell, ...F}) , ...
@@ -149,15 +148,14 @@ class NetworkML:
         self.network = network
         self.cellSegmentDict = cellSegmentDict
         self.params = params
-        debug.printDebug("STEP", "Creating populations ... ")
-
-        # create cells
+        debug.printDebug("INFO", "Creating populations ... ")
         self.createPopulations() 
-        debug.printDebug("STEP", "Creating connections ... ")
+
+        debug.printDebug("INFO", "Creating connections ... ")
         self.createProjections() 
 
         # create connections
-        debug.printDebug("STEP", "Creating inputs in %s .. " % self.elecPath)
+        debug.printDebug("INFO", "Creating inputs in %s .. " % self.elecPath)
 
         # create inputs (only current pulse supported)
         self.createInputs() 
@@ -328,11 +326,20 @@ class NetworkML:
         Create population dictionary.
         """
         populations =  self.network.findall(".//{"+nmu.nml_ns+"}population")
+        if not populations:
+            debug.printDebug("WARN"
+                    , [ 
+                        "No population find in model"
+                        , "Searching in namespace {}".format(nmu.nml_ns)
+                        ]
+                    , frame = inspect.currentframe()
+                    )
+
         for population in populations:
             cellname = population.attrib["cell_type"]
             populationName = population.attrib["name"]
             debug.printDebug("INFO"
-                    , "Loading population {0}".format(populationName)
+                    , "Loading population `{0}`".format(populationName)
                     )
             # if cell does not exist in library load it from xml file
             if not moose.exists(self.libraryPath+'/'+cellname):
