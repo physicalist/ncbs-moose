@@ -77,7 +77,8 @@ class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
         """
 
         debug.printDebug("STEP"
-                , "Loading neuroml file {0} ... ".format(filename))
+                , "Loading neuroml file `{0}` ... ".format(filename)
+                )
         # creates /library in MOOSE tree; elif present, wraps
         tree = ET.parse(filename)
         root_element = tree.getroot()
@@ -107,7 +108,6 @@ class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
                 , 'model_dir': self.model_dir
         }
 
-        #print "Loading cell definitions into MOOSE /library ..."
         mmlR = MorphML.MorphML(self.nml_params)
         self.cellsDict = {}
         for cells in root_element.findall('.//{'+mnu.neuroml_ns+'}cells'):
@@ -119,7 +119,11 @@ class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
                         )
                 self.cellsDict.update(cellDict)
 
-        #print "Loading individual cells into MOOSE root ... "
+        debug.printDebug("DEBUG"
+                , [ "Calling function to load networkML"
+                    , "{}".format(self.nml_params)
+                    ]
+                )
         nmlR = NetworkML.NetworkML(self.nml_params)
         return nmlR.readNetworkML(
                 root_element

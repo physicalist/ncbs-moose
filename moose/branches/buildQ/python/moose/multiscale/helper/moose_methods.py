@@ -3,7 +3,7 @@
 """moose_methods.py:  Some helper function related with moose to do multiscale
 modelling.
 
-Last modified: Fri Jan 10, 2014  05:23PM
+Last modified: Thu Jan 23, 2014  04:53PM
 
 """
     
@@ -21,6 +21,20 @@ import os
 import moose
 
 nameSep = '()'
+
+def commonPath(pathA, pathB):
+    ''' Find common path at the beginning of two paths. '''
+    a = pathA.split('/')
+    b = pathB.split('/')
+    common = []
+    for (i, p) in enumerate(a):
+        if a[i] == b[i]: 
+            common.append(p)
+        else: 
+            return '/'.join(common)
+    return '/'.join(common)
+            
+
 
 def moosePath(baseName, append):
     """ 
@@ -77,6 +91,7 @@ def stringToFloat(text):
 
 
 def dumpMoosePaths(pat, isRoot=True):
+    ''' Path is pattern '''
     if not isRoot:
         moose_paths = [x.getPath() for x in moose.wildcardFind(pat)]
     else:
@@ -87,6 +102,23 @@ def dumpMoosePaths(pat, isRoot=True):
                     moose.wildcardFind(pat.path+'/##')]
     moose_paths = "\n".join(moose_paths)
     print("Moose paths: {0}".format(moose_paths))
+
+def dumpMatchingPaths(path, pat='/##'):
+    ''' return the name of path which the closely matched with given path 
+    pattern pat is optional.
+    '''
+    a = path.split('/')
+    start = a.pop(0)
+    p = moose.wildcardFind(start+'/##')
+    common = []
+    while len(p) > 0:
+        common.append(p)
+        start = start+'/'+a.pop(0)
+        p = moose.wildcardFind(start+'/##')
+        
+    matchedPaths = [x.getPath() for x in common[-1]]
+    return '\n\t'+('\n\t'.join(matchedPaths))
+
 
 def dumpFieldName(path, whichInfo='valueF'):
     print path.getFieldNames(whichInfo+'info')

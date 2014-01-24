@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Sat Jan 18, 2014  01:49PM
+Last modified: Thu Jan 23, 2014  10:18PM
 
 """
 
@@ -115,10 +115,15 @@ class Simulator:
             targetBasePath = self.popDict[populationType][1][instanceId].path
             logging.info("Target path is %s " % targetBasePath)
         except KeyError as e:
-            logging.debug("Key {0} not found".format(populationType))
-            print("\t|- Available population in this model are following. ")
-            print("\t+ {0} -| ".format(self.popDict.keys()))
-            raise UserWarning, "Unknown population type."
+            debug.printDebug("ERROR"
+                    , [ "Population type `{0}` not found".format(populationType)
+                        , "Availale population in network are "
+                        , self.popDict.keys()
+                    ]
+                    )
+            raise LookupError("Missing population type")
+        except Exception as e:
+            raise e
 
         variablesToPlot = list()
 
