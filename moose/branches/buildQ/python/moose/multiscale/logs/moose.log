@@ -846,6 +846,9 @@
 /neuroml/cells/SimpleCell
 /neuroml/cells/SimpleCell/Soma(0)
 /neuroml/cells/SimpleCell/Dendrite(1)
+/neuroml/electrical
+/neuroml/electrical/pulsegen_Gran_10pA
+/neuroml/electrical/iclamp_Gran_10pA
 /mumbl
 /mumbl/Chemical
 /mumbl/Electrical
@@ -873,5 +876,4 @@
 /neuroml/cells/SimpleCell/Soma(0)/Gran_KCa_98/data
 /neuroml/cells/SimpleCell/Soma(0)/Gran_KCa_98/data/somaGk
 /neuroml/cells/SimpleCell/Soma(0)/Gran_KCa_98/data/somaGk/table[0]
-/neuroml/electrical
 /neuroml/cells/SimpleCell/solve
