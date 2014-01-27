@@ -48,9 +48,10 @@ class MorphML():
         moose.Neutral(self.libraryPath)
 
     def stringToFloat(self, tempString):
-        tempString = tempString.strip()
-        if len(tempString) == 0 or tempString is None:
-            return 0.0
+        if type(tempString) == str:
+            tempString = tempString.strip()
+            if len(tempString) == 0 or tempString is None:
+                return 0.0
         else:
             return float(tempString)
 
@@ -678,7 +679,11 @@ class MorphML():
                                         , model_filename
                                         , self.model_dir
                                         )
-                        raise IOError(msg)
+                        debug.printDebug("ERROR"
+                                , msg
+                                , frame = inspect.currentframe()
+                                )
+                        sys.exit(0)
 
                 neutralObj = moose.Neutral(self.libraryPath+"/"+mechName)
 

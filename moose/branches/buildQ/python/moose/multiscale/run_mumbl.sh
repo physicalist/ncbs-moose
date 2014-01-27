@@ -10,9 +10,15 @@ export PYTHONPATH=../../moose-github/python
 function runCode 
 {
   $PYC main.py \
+<<<<<<< HEAD
+    --nml ./models/two_cells/generatedNeuroML/Network.xml \
+    --mumbl ./models/two_cells/mumbl.xml \
+    --config ./models/two_cells/config.xml 
+=======
     --nml ./models/simple_cell/SimpleNeuroML.xml \
     --mumbl ./models/simple_cell/mumbl.xml \
     --config ./models/simple_cell/config.xml 
+>>>>>>> 159082b3dbaf6c38692379716a69e3b445edfbe5
   #twopi -Teps graphs/moose.dot > graphs/topology.eps
 }
 
