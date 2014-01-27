@@ -8,7 +8,11 @@
     -->
 
     <!-- If single_plot is true then plot all plots in one figure -->
+<<<<<<< HEAD
+    <element type="soma" population="SampleCellPop"  instance_id="0">
+=======
     <element type="soma" population="SimpleCellPop"  instance_id="0">
+>>>>>>> 159082b3dbaf6c38692379716a69e3b445edfbe5
         <record type="table" single_plot="true">
             <!--
                  We should be able to form the following from this XML.

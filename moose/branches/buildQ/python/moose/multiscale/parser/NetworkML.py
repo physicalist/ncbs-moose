@@ -156,6 +156,11 @@ class NetworkML:
 
         # create connections
         debug.printDebug("INFO", "Creating inputs in %s .. " % self.elecPath)
+<<<<<<< HEAD
+=======
+
+        # create inputs (only current pulse supported)
+>>>>>>> 159082b3dbaf6c38692379716a69e3b445edfbe5
         self.createInputs() 
         return (self.populationDict, self.projectionDict)
 

@@ -9,27 +9,44 @@
         <population name="SimpleCellPop" cell_type="SimpleCell">
             <meta:properties>
                 <meta:property tag="color" value="0.69921875 0.5703125 0.96484375"/>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 159082b3dbaf6c38692379716a69e3b445edfbe5
             </meta:properties>
             <instances size="1">
                 <instance id="0">
                     <location x="18.7105" y="50.0" z="0.0"/>
                 </instance>
+<<<<<<< HEAD
                 <instance id="1">
                     <location x="50.00" y="50.0" z="0.0" />
                 </instance>
+=======
+>>>>>>> 159082b3dbaf6c38692379716a69e3b445edfbe5
             </instances>
         </population>
     </populations>
 
     <!--There are no synaptic connections present in the network-->
+<<<<<<< HEAD
     <inputs xmlns="http://morphml.org/networkml/schema" units="Physiological Units">
+=======
+    <inputs units="Physiological Units">
+>>>>>>> 159082b3dbaf6c38692379716a69e3b445edfbe5
         <input name="Gran_10pA">
             <!--<pulse_input delay="100.0" duration="500.0" amplitude="1.0E-5"/>-->
             <!-- injecting directly into soma.inject in the cell's MorphML -->
             <pulse_input delay="100.0" duration="500.0" amplitude="0.0"/>
+<<<<<<< HEAD
             <target population="SimpleCellPop">
                 <sites size="1">
                     <site cell_id="1" segment_id="0" fraction_along="0.5"/>
+=======
+            <target population="Gran">
+                <sites size="1">
+                    <site cell_id="0" segment_id="0" fraction_along="0.5"/>
+>>>>>>> 159082b3dbaf6c38692379716a69e3b445edfbe5
                 </sites>
             </target>
         </input>

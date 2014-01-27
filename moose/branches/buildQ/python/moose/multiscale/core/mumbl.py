@@ -313,6 +313,11 @@ class Mumble():
                     , "Source compartment %s is not found" % moosePath
                     , frame = inspect.currentframe()
                     )
+<<<<<<< HEAD
+            print(moose_methods.dumpMatchingPaths(moosePath))
+            raise e
+=======
+>>>>>>> 159082b3dbaf6c38692379716a69e3b445edfbe5
 
         # Get the target.
         compType = src.get('type', 'chemical')
@@ -397,12 +402,14 @@ class Mumble():
 
     def setAdaptor(self, src, tgt, relationXml):
         '''
-        Construct a message.
+        Construct a adaptor which sends message from src to tgt
 
         src: It is the moose compartment which is read by moose.
         tgt: It is the moose compartment to which we write.
         '''
 
+        assert src, "Source compartment is none"
+        assert tgt, "Target compartment is none"
         self.adaptorCount += 1
         srcPath = src.path
         tgtPath = tgt.path
