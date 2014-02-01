@@ -31,6 +31,22 @@ import helper.moose_methods as moose_methods
 import collections
 import re
 
+class Variable:
+    '''Variable to plot. 
+    '''
+    def __init__(self):
+        self.name = None
+        self.plotPath = None
+        self.type = None
+        self.namespace = None
+        self.moosePath = None
+        self.xml = None
+    
+    def __init__(self, name, type):
+        self.name = name 
+        self.type = type 
+
+
 class Simulator:
     '''Responsible for all simulation related activity. 
     '''
@@ -103,9 +119,8 @@ class Simulator:
 
 
     def setupRecord(self, xmlElem):
-        debug.printDebug("STEP"
-                , "An element is found which is to be recorded"
-                )
+        '''Setup record.
+        '''
         elemType = xmlElem.get('type', 'soma')
         if elemType == 'soma':
             # Now get all records and setup moose for them.
@@ -122,7 +137,6 @@ class Simulator:
         Params is a dictionary having attributes to <element>
         """
         debug.printDebug("STEP", "Setting up records on soma")
-
         [self.setupRecordsInMoose(v, params, recordXml.attrib) for 
                 v in recordXml.findall('variable')]
 
@@ -161,6 +175,11 @@ class Simulator:
         target = variable.find("target_in_simulator")
         targetType = target.get('type')
         rootPath = target.get('path')
+        # If the path is not prefixed by element then take the absolute path.
+        if target.get('prefixed_by_element', 'true') == "false":
+            path = rootPath
+        else: 
+            path = os.path.join(targetBasePath, rootPath)
 
         # If outputFile inside the record element is None then use the global
         # name, if this is also none, then use the default gui to display the
@@ -168,17 +187,15 @@ class Simulator:
         outputFileName = variable.get('output'
                 , recordDict.get('file_name', None)
                 )
-        if outputFileName:
-            self.plotFiles[outputFileName].add((variableType, variable))
-        else:
-            self.plotFiles['matplotlib_gui'].add((variableType, variable))
 
-        # If the path is not prefixed by element then take the absolute
-        # path.
-        if target.get('prefixed_by_element', 'true') == "false":
-            path = rootPath
-        else: 
-            path = os.path.join(targetBasePath, rootPath)
+        var = Variable(varName, variableType)
+        var.moosePath = path
+        var.xml = variable 
+        if outputFileName:
+            self.plotFiles[outputFileName].add(var)
+        else:
+            self.plotFiles['matplotlib_gui'].add(var)
+
 
         # Path has been set, now attach it to moooooose.
         try:
@@ -236,7 +253,8 @@ class Simulator:
         assert self.simDt > 0.0
         assert self.plotDt > 0.0 
 
-        debug.printDebug("STEP", "Simulate with simDt({}), plotDt({})".format(
+        debug.printDebug("STEP"
+                , "Simulate with simDt({}), plotDt({})".format(
                     self.simDt
                     , self.plotDt
                     )
@@ -262,43 +280,47 @@ class Simulator:
         # Now we have a dictionary in which for each key there is set of plot
         # variables. Configure these plots.
         for filename in self.plotFiles:
-            self.plotThese(filename, self.plotFiles[filename])
+            self.plotVars(filename, self.plotFiles[filename])
             if filename != "matplotlib_gui":
+                debug.printDebug("INFO"
+                        , "Saving to file {}".format(filename)
+                        )
                 pylab.savefig(filename)
             else:
                 pylab.show()
         
-    def plotThese(self, filename, setOfVariables):
+    def plotVars(self, filename, setOfVariables):
         ''' Plot these records on one file '''
-        i = 0
-        for varType, variableXml in setOfVariables:
-            i += 1
-            self.totalPlots += 1
-            varName = variableXml.get('name')
+        self.totalPlots += len(setOfVariables)
+        for i, var in enumerate(setOfVariables):
+            variableXml = var.xml
             plotXml = variableXml.find('plot')
             configDict = self.configurePlot(plotXml)
-            yvec, xvec = self.getPlotData(varType+varName)
+            if not configDict.get('title'):
+                configDict['title'] = var.moosePath
+
+            yvec, xvec = self.getPlotData(var.type+var.name)
             pylab.subplot(self.totalPlots, 1, i)
             self.plotVar(xvec, yvec, configDict)
 
-    def plotAllOnOne(self, variables, recordXml):
-        """
-        Plot all plots on one file
-        """
-        figname = recordXml.get('file_name', None)
-        logging.info("Saving all plots to %s" % figname)
-
-        self.totalPlots += len(variables)
-
-        for i, var in enumerate(variables):
-            varType, varName, plotXml = var
-            varName = varType + varName
-            assert varName in self.tableDict.keys()
-            configDict = self.configurePlot(plotXml)
-            yvec, xvec = self.getPlotData(varName)
-            pylab.subplot(self.totalPlots, 1, i)
-            self.plotVar(xvec, yvec, configDict)
-
+#    def plotAllOnOne(self, variables, recordXml):
+#        """
+#        Plot all plots on one file
+#        """
+#        figname = recordXml.get('file_name', None)
+#        logging.info("Saving all plots to %s" % figname)
+#
+#        self.totalPlots += len(variables)
+#
+#        for i, var in enumerate(variables):
+#            varType, varName, plotXml = var
+#            varName = varType + varName
+#            assert varName in self.tableDict.keys()
+#            configDict = self.configurePlot(plotXml)
+#            yvec, xvec = self.getPlotData(varName)
+#            pylab.subplot(self.totalPlots, 1, i)
+#            self.plotVar(xvec, yvec, configDict)
+#
     def plotVar(self, xvec, yvec, plotParams):
         '''Plot a variable. '''
         plotArgs = plotParams.get('plot_args', '')
@@ -368,7 +390,7 @@ class Simulator:
         if labelXml is not None:
             plotParams['xlabel'] = labelXml.get('x')
             plotParams['ylabel'] = labelXml.get('y')
-            plotParams['title'] = "{}".format(labelXml.get('title', ''))
+            plotParams['title'] = labelXml.get('title', None)
         return plotParams
 
     def getPlotData(self, varName):
@@ -397,29 +419,29 @@ class Simulator:
         xvec = xvec[ : tableObj.vec.size ]
         return tableObj.vec, xvec
 
-    def addPlot(self, varsToPlot):
-        """
-        Draws given variables.
-        """
-
-        varType, varName, plotXml = varsToPlot
-        varName = varType + varName 
-
-        plotParams = self.configurePlot(plotXml)
-        yvec, xvec = self.getPlotData(varName)
-
-        if xvec is None or yvec is None:
-            return
-        if plotXml.get('plot', 'true') == "false":
-            return 
-
-        self.plotVar(xvec, yvec, plotParams)
-        outputFile = plotParams.get('output_file', None)
-        if outputFile:
-            debug.printDebug("USER"
-                    , "Saving figure to {0}".format(outputFile)
-                    )
-            pylab.savefig(outputFile.strip())
-        else:
-            pylab.show()
-
+#    def addPlot(self, varsToPlot):
+#        """
+#        Draws given variables.
+#        """
+#
+#        varType, varName, plotXml = varsToPlot
+#        varName = varType + varName 
+#
+#        plotParams = self.configurePlot(plotXml)
+#        yvec, xvec = self.getPlotData(varName)
+#
+#        if xvec is None or yvec is None:
+#            return
+#        if plotXml.get('plot', 'true') == "false":
+#            return 
+#
+#        self.plotVar(xvec, yvec, plotParams)
+#        outputFile = plotParams.get('output_file', None)
+#        if outputFile:
+#            debug.printDebug("USER"
+#                    , "Saving figure to {0}".format(outputFile)
+#                    )
+#            pylab.savefig(outputFile.strip())
+#        else:
+#            pylab.show()
+#
