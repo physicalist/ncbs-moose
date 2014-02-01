@@ -36,6 +36,9 @@ class Simulator:
     '''
 
     def __init__(self, arg):
+        '''
+        Simulator class
+        '''
         self.arg = arg
         self.simXml = arg[0]
         self.simXmlPath = arg[1]
@@ -365,11 +368,7 @@ class Simulator:
         if labelXml is not None:
             plotParams['xlabel'] = labelXml.get('x')
             plotParams['ylabel'] = labelXml.get('y')
-            plotParams['title'] = "{}:{}".format(
-                    self.currentCompartmentPath
-                    , ':' 
-                    , labelXml.get('title', '')
-                    )
+            plotParams['title'] = "{}".format(labelXml.get('title', ''))
         return plotParams
 
     def getPlotData(self, varName):
