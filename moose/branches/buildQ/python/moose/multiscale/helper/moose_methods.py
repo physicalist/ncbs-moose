@@ -3,7 +3,7 @@
 """moose_methods.py:  Some helper function related with moose to do multiscale
 modelling.
 
-Last modified: Thu Jan 23, 2014  04:53PM
+Last modified: Tue Jan 28, 2014  10:31PM
 
 """
     
@@ -19,8 +19,17 @@ __status__           = "Development"
 import re
 import os
 import moose
+import debug.debug as debug
 
 nameSep = '()'
+
+def toFloat(string):
+    if type(string) == float:
+        return string 
+    elif type(string) == str:
+        return stringToFloat(string)
+    else:
+        raise RuntimeError("Converting type %s to float" % type(str))
 
 def commonPath(pathA, pathB):
     ''' Find common path at the beginning of two paths. '''
@@ -33,8 +42,6 @@ def commonPath(pathA, pathB):
         else: 
             return '/'.join(common)
     return '/'.join(common)
-            
-
 
 def moosePath(baseName, append):
     """ 
@@ -92,6 +99,11 @@ def stringToFloat(text):
 
 def dumpMoosePaths(pat, isRoot=True):
     ''' Path is pattern '''
+    moose_paths = getMoosePaths(pat, isRoot)
+    return "\n\t{0}".format(moose_paths)
+
+def getMoosePaths(pat, isRoot=True):
+    ''' Return a list of paths for a given pattern. '''
     if not isRoot:
         moose_paths = [x.getPath() for x in moose.wildcardFind(pat)]
     else:
@@ -100,8 +112,7 @@ def dumpMoosePaths(pat, isRoot=True):
         except TypeError as e:
             moose_paths = [x.getPath() for x in 
                     moose.wildcardFind(pat.path+'/##')]
-    moose_paths = "\n".join(moose_paths)
-    print("Moose paths: {0}".format(moose_paths))
+    return moose_paths
 
 def dumpMatchingPaths(path, pat='/##'):
     ''' return the name of path which the closely matched with given path 
@@ -116,9 +127,45 @@ def dumpMatchingPaths(path, pat='/##'):
         start = start+'/'+a.pop(0)
         p = moose.wildcardFind(start+'/##')
         
-    matchedPaths = [x.getPath() for x in common[-1]]
+    if len(common) > 1:
+        matchedPaths = [x.getPath() for x in common[-1]]
+    else:
+        matchedPaths = []
     return '\n\t'+('\n\t'.join(matchedPaths))
 
 
 def dumpFieldName(path, whichInfo='valueF'):
     print path.getFieldNames(whichInfo+'info')
+
+def writeGraphviz(pat='/##', filename=None, filterList=[]):
+    '''This is  a generic function. It takes the the pattern, search for paths
+    and write a graphviz file.
+    '''
+    def ignore(line):
+        for f in filterList:
+            if f in line:
+                return True
+        return False
+
+    pathList = getMoosePaths(pat)
+    dot = []
+    dot.append("digraph G {")
+    dot.append("\tconcentrate=true")
+    for p in pathList:
+        if ignore(p):
+            continue
+        else:
+            p = p.translate(None, '[]()')
+            dot.append('\t'+' -> '.join(filter(None, p.split('/'))))
+    dot.append('}')
+    dot = '\n'.join(dot)
+    if not filename:
+        print(dot)
+    else:
+        with open(filename, 'w') as graphviz:
+            debug.printDebug("INFO"
+                    , "Writing topology to file {}".format(filename)
+                    )
+            graphviz.write(dot)
+    return 
+

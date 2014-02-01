@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
 <!--
     All comments by : Dilawar, dilawars@ncbs.res.in
-
-    This is the main top-level XML file to do multiscale modelling.
+This is the main top-level XML file to do multiscale modelling.
     We parse it after mapping neuroML to moose.
  -->
 <mumbl>
@@ -10,7 +9,7 @@
     <!-- 
         Locals can override them.
     -->
-    <global elec_dt="50e-6" chem_dt="50e-6"/>
+    <global elec_dt="50e-5" chem_dt="50e-5"/>
 
     <!-- This model is not loaded by moose. We have to run an external script to
         load it.
@@ -44,10 +43,12 @@
     -->
 
     <!-- Here is how a sbml model is integrated -->
+    <!--
     <model id="1"
         domain_type="chemical"
         model_type="sbml"
         file_path="chem_model_sbml.xml" />
+    -->
 
     <!-- Here are mappings from compartment to compartment. -->
     <!-- if mapping_type is source and this compartment influence others, if it
@@ -59,22 +60,18 @@
 
         If electrical model was speficied in NeuroML then we can make use of 
         paths
-     -->
-    <domain population="SampleCell" 
+    <domain population="cellB" 
         segment="Soma" 
         instance_id="0"
         >
-        <!-- These are currently moose-specific.
-            TODO: Make them generic.
-         -->
-
         <mapping direction="in" type="one_to_one" >
             <source type="chemical" species="Ca" compartment_id = "calcium" >
-                <relation input="conc" output="Vm">
-                    <scale>1.5e16</scale>
+                <relation input="conc" output="Cm">
+                    <scale>1.5e24</scale>
                     <offset>1e-16</offset>
                 </relation>
             </source>
         </mapping>
     </domain>
+     -->
 </mumbl>
