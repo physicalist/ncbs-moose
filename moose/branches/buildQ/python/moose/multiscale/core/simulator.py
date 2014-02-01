@@ -291,8 +291,11 @@ class Simulator:
         
     def plotVars(self, filename, setOfVariables):
         ''' Plot these records on one file '''
-        self.totalPlots += len(setOfVariables)
+        self.totalPlots = len(setOfVariables)
         for i, var in enumerate(setOfVariables):
+            debug.printDebug("DEBUG", "Plotting %s, %s " % (var.name
+                , var.moosePath)
+                )
             variableXml = var.xml
             plotXml = variableXml.find('plot')
             configDict = self.configurePlot(plotXml)
