@@ -1,5 +1,0 @@
-This loads and raise exceptions if some wrong element is specified in config.xml
-
---This line, and those below, will be ignored--
-
-M    multiscale/core/moose_config.py
