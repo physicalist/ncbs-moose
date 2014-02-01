@@ -49,14 +49,13 @@ import logging
 from os import path
 
 
-class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
+class NeuroML(object):
 
     """
     This class parses neuroml models and build moose-data structures.
 
     """
     def __init__(self):
-        self.model_dir = ""
         self.lengthUnits = ""
         self.temperature = 25
         self._CELSIUS_default = ""
@@ -82,7 +81,7 @@ class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
         # creates /library in MOOSE tree; elif present, wraps
         tree = ET.parse(filename)
         root_element = tree.getroot()
-        self.model_dir = path.dirname(path.abspath(filename))
+        self.modelDir = path.dirname(path.abspath(filename))
         try:
             self.lengthUnits = root_element.attrib['lengthUnits']
         except KeyError as e:
@@ -105,7 +104,7 @@ class NeuroML(ChannelML.ChannelML, NetworkML.NetworkML, MorphML.MorphML):
                     )
         self.nml_params = {
                 'temperature': self.temperature
-                , 'model_dir': self.model_dir
+                , 'model_dir': self.modelDir
         }
 
         mmlR = MorphML.MorphML(self.nml_params)

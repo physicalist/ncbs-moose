@@ -56,19 +56,24 @@ def printDebug(label, msg, frame=None, exception=None):
     ''' If msg is a list then first msg in list is the main message. Rest are
     sub message which should be printed prefixed by \n\t.
     '''
+    stackLength = len(inspect.stack()) - 1
+    if stackLength == 1:
+        prefix = '\n[{}] '.format(label)
+    else:
+        prefix = ' '.join(['' for x in range(stackLength)])
+
     if type(msg) == list:
         if len(msg) > 1:
             msg = [msg[0]] + ["`|- {0}`".format(x) for x in msg[1:]] 
-        msg = "\n\t".join(msg)
+        msg = (prefix+"\n\t").join(msg)
     if not frame :
-        print("[{0}] {1}".format(label, colored(msg,label)), file=sys.stderr)
+        print(prefix+"{0}".format(colored(msg,label)), file=sys.stderr)
     else :
         filename = frame.f_code.co_filename
         filename = "/".join(filename.split("/")[-2:])
-        print("[{3}] @...{0}:{1} {2}".format(filename
+        print(prefix+"@{0}:{1} {2}".format(filename
                                              , frame.f_lineno
                                              , colored(msg, label)
-                                             , label
                                              )
               , file=sys.stderr
               )

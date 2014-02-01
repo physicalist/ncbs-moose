@@ -137,6 +137,7 @@ def timetable_file(filename='timetable.txt', simtime=100):
     return tt, np.loadtxt(filename),
 
 def timetable_demo():
+
     tt_array, sp_array = timetable_nparray()
     print sp_array
     tt_file, sp_file = timetable_file()

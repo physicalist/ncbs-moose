@@ -3,7 +3,7 @@
 """simulator.py:  This class reads the variables needed for simulation and
 prepare moose for simulation.
 
-Last modified: Thu Jan 23, 2014  10:18PM
+Last modified: Sat Feb 01, 2014  04:01AM
 
 """
 
@@ -27,22 +27,42 @@ import logging
 import core.config as config
 import numpy as np
 import logging
+import helper.moose_methods as moose_methods
+import collections
+import re
 
 class Simulator:
+    '''Responsible for all simulation related activity. 
+    '''
 
     def __init__(self, arg):
         self.arg = arg
         self.simXml = arg[0]
         self.simXmlPath = arg[1]
-        self.simElemString = "element"
+        self.simElemName = "element"
         self.cellPath = config.cellPath
         self.libraryPath = config.libraryPath
         self.rootElem = self.simXml.getroot()
-        self.elecPath = self.rootElem.get('elec_path')
+        self.variablesToPlot = list()
+
+        # For each file, a list of plots.
+        self.plotFiles = collections.defaultdict(set)
+
+        self.elecPath = self.rootElem.get('elec_path', '/neuroml/electrical')
+        if not moose.exists(self.elecPath):
+            debug.printDebug("USER", 
+                    [ "Path {} does not exists in mooose.".format(self.elecPath)
+                        , "You sure this is a valid elec_path in config.xml"
+                        ]
+                    , frame = inspect.currentframe()
+                    )
+            debug.printDebug("USER", "Not simulating..")
+            raise UserWarning("Missing moose path {}".format(self.elecPath))
+
         self.globalVar = self.rootElem.find('global')
-        self.simDt = float(self.globalVar.get('sim_dt'))
-        self.plotDt = float(self.globalVar.get('plot_dt'))
-        self.simMethod = self.globalVar.get('sim_method')
+        self.simDt = float(self.globalVar.get('sim_dt', '1e-3'))
+        self.plotDt = float(self.globalVar.get('plot_dt', '1e-3'))
+        self.simMethod = self.globalVar.get('sim_method', 'hsolve')
         self.simulate = True
         self.totalPlots = 0
         self.currentCompartmentPath = ''
@@ -53,18 +73,12 @@ class Simulator:
 
         if self.rootElem.get('simulate') == "false":
             self.simulate = False
-        if self.rootElem.get('runtime'):
-            self.runtime = float(self.rootElem.get('runtime'))
-        else:
-            logging.info( "No run-time for simulation is given." +
-                    " Using default 10.0"
-                    )
-            self.runtime = 10.0
-        if self.elecPath is not None:
-            self.elecPath = '/neuroml/electrical'
-            logging.info("Using default library path %s" % self.elecPath)
+        self.runtime = float(self.rootElem.get('runtime', '10.0'))
 
- 
+        # this dictionary keeps the object created by function setupTable in a
+        # variable name. This object of setupTable can be accessed later 
+        self.tableDict = {}
+
     def updateMoose(self, populationDict, projectionDict):
         """Update the moose, as per the simulation specific settings.
         """
@@ -72,48 +86,47 @@ class Simulator:
         self.projDict = projectionDict
 
         # Add simulation element e
-        [self.mapSimulationElement(x) for x in 
-                self.simXml.findall(self.simElemString) ]
+        [self.setupRecord(x) for x in self.simXml.findall(self.simElemName)]
+        
+        ## Start simulation.
+        try:
+            self.simulateNetwork()
+        except Exception as e:
+            debug.printDebug("ERROR"
+                    , "Failed to simulate with error {}".format(e)
+                    , frame = inspect.currentframe()
+                    )
+        self.plot()
 
-        # Setup clocks and then run the simulation.
 
-
-    def mapSimulationElement(self, xmlElem):
-        debug.printDebug("STEP", "Mapping simulation element")
-        if xmlElem.get('type') == 'soma':
+    def setupRecord(self, xmlElem):
+        debug.printDebug("STEP"
+                , "An element is found which is to be recorded"
+                )
+        elemType = xmlElem.get('type', 'soma')
+        if elemType == 'soma':
             # Now get all records and setup moose for them.
-            records = xmlElem.findall('record')
-            if records:
-                [ self.setupRecord(x, xmlElem.attrib) for x in records ]
-            else: 
-                logging.warning("No record elements found in config.xml file.")
-                return 
+            recordXml = xmlElem.find('record')
+            self.setupSomaRecord(recordXml, xmlElem.attrib)
         else:
-            logging.warning("Not implemented {0}".format(xmlElem))
+            debug.printDebug("TODO"
+                    , "This type is not implemented yet %s" % elemType 
+                    )
+            return
 
-    def setupRecord(self, recordXml, params):
+    def setupSomaRecord(self, recordXml, params):
         """
         Params is a dictionary having attributes to <element>
         """
-        debug.printDebug("STEP"
-                , "Setting up records during simulation. "
-                )
+        debug.printDebug("STEP", "Setting up records on soma")
 
-        # this dictionary keeps the object created by function setupTable in a
-        # variable name. This object of setupTable can be accessed later 
-        self.tableDict = {}
+        [self.setupRecordsInMoose(v, params, recordXml.attrib) for 
+                v in recordXml.findall('variable')]
 
-        populationType = params['population']
-        variableType = params['type']
-
-        # NOTE: This is useless.
-        cellGroup = params.get('cell_group')
-
-        instanceId = int(params['instance_id'])
-        
+    def getPath(self, populationType, instanceId):
+        ''' Given a population type and instanceId, return its path '''
         try:
-            targetBasePath = self.popDict[populationType][1][instanceId].path
-            logging.info("Target path is %s " % targetBasePath)
+            path = self.popDict[populationType][1][instanceId].path
         except KeyError as e:
             debug.printDebug("ERROR"
                     , [ "Population type `{0}` not found".format(populationType)
@@ -121,87 +134,109 @@ class Simulator:
                         , self.popDict.keys()
                     ]
                     )
-            raise LookupError("Missing population type")
         except Exception as e:
             raise e
 
-        variablesToPlot = list()
+        if not re.match(r'(\/\w+)+', path):
+            raise UserWarning("{} is not a valid path".format(path))
+        return path 
 
-        for variable in recordXml:
-            varName = variable.get('name')
-            target = variable.find("target_in_simulator")
-            targetType = target.get('type')
-            rootPath = target.get('path')
 
+    def setupRecordsInMoose(self, variable, params, recordDict):
+        '''
+        Add a variable to plot.
+        '''
+        populationType = params['population']
+        variableType = params['type']
+        instanceId = int(params['instance_id'])
+        
+        # Not all types of exceptions are raised by python bindings. When c++
+        # failes, it should print more details messages.
+        targetBasePath = self.getPath(populationType, instanceId)
+
+        varName = variable.get('name')
+        target = variable.find("target_in_simulator")
+        targetType = target.get('type')
+        rootPath = target.get('path')
+
+        # If outputFile inside the record element is None then use the global
+        # name, if this is also none, then use the default gui to display the
+        # model.
+        outputFileName = variable.get('output'
+                , recordDict.get('file_name', None)
+                )
+        if outputFileName:
+            self.plotFiles[outputFileName].add((variableType, variable))
+        else:
+            self.plotFiles['matplotlib_gui'].add((variableType, variable))
+
+        # If the path is not prefixed by element then take the absolute
+        # path.
+        if target.get('prefixed_by_element', 'true') == "false":
+            path = rootPath
+        else: 
             path = os.path.join(targetBasePath, rootPath)
 
-            # If the path is not prefixed by element then take the absolute
-            # path.
-            if target.get('prefixed_by_element') == "false":
-                path = rootPath
-            else: 
-                pass
+        # Path has been set, now attach it to moooooose.
+        try:
+            path = path.strip()
+            targetVariable = variableType + varName
+            debug.printDebug("DEBUG"
+                    , "Target variable : {0} <= {1}".format(targetVariable
+                        , path)
+                    )
 
-            # Path has been set, now attach it to moooooose.
-            try:
-                path = path.strip()
-                targetPath = variableType + varName
-                debug.printDebug("DEBUG"
-                        , "Target path : {0} <= {1}".format(targetPath
-                            , path)
-                        )
-
-                if targetType == "Compartment":
-                    self.tableDict[targetPath] = (moose.utils.setupTable(
-                            targetPath
-                            , moose.Compartment(path)
-                            , varName
-                            ), path)
-                elif targetType == "CaConc":
-                    self.tableDict[targetPath] = (moose.utils.setupTable(
-                            targetPath
-                            , moose.CaConc(path)
-                            , varName
-                            ), path)
-                elif targetType == "HHChannel":
-                    self.tableDict[targetPath] = (moose.utils.setupTable(
-                            targetPath
-                            , moose.HHChannel(path)
-                            , varName
-                            ), path)
-                else:
-                    debug.printDebug("WARN"
-                            , "Unsupported type {0}".format(targetType)
-                            , frame = inspect.currentframe()
-                            )
-            except NameError as e:
+            if targetType == "Compartment":
+                self.tableDict[targetVariable] = (moose.utils.setupTable(
+                        targetVariable
+                        , moose.Compartment(path)
+                        , varName
+                        ), path)
+            elif targetType == "CaConc":
+                self.tableDict[targetVariable] = (moose.utils.setupTable(
+                        targetVariable
+                        , moose.CaConc(path)
+                        , varName
+                        ), path)
+            elif targetType == "HHChannel":
+                self.tableDict[targetVariable] = (moose.utils.setupTable(
+                        targetVariable
+                        , moose.HHChannel(path)
+                        , varName
+                        ), path)
+            else:
                 debug.printDebug("WARN"
-                        , "Can not find element you are trying to connect"
+                        , "Unsupported type {0}".format(targetVariable)
                         , frame = inspect.currentframe()
                         )
-                print("\t|- Which is {0}".format(path))
-                print("\t+ while available paths are ")
-                print(moose.le(targetPath))
-                print("\t list of available paths end. -| ")
-                continue
-            except Exception as e:
-                debug.printDebug("WARN"
-                        , "Failed with exception {0}".format(e)
-                        , frame = inspect.currentframe()
+        except NameError as e:
+            debug.printDebug("WARN"
+                    , "Can not find variable `{}` to connect".format(
+                        targetVariable
                         )
-                continue
+                    , frame = inspect.currentframe()
+                    )
+            print(moose.showfield(moose.Neutral(path)))
+            raise e
+        except Exception as e:
+            debug.printDebug("WARN"
+                    , "Failed with exception {0}".format(e)
+                    , frame = inspect.currentframe()
+                    )
+            print(moose_methods.dumpMoosePaths('/##'))
+            raise e
 
-            # If plot element is available then plot it.
-            if variable.find('plot') is not None:
-                variablesToPlot.append(
-                        (variableType, varName, variable.find('plot'))
-                        )
+    def simulateNetwork(self):
+        ''' Start simulation.
+        '''
         # Now reinitialize moose
         assert self.simDt > 0.0
         assert self.plotDt > 0.0 
 
-        debug.printDebug("STEP", "Simulation : %s %s".format(self.simDt
-                , self.plotDt)
+        debug.printDebug("STEP", "Simulate with simDt({}), plotDt({})".format(
+                    self.simDt
+                    , self.plotDt
+                    )
                 )
         moose.utils.resetSim([self.elecPath, self.cellPath]
                 , self.simDt
@@ -215,20 +250,39 @@ class Simulator:
                     )
 
             moose.start(self.runtime)
+        else:
+            raise UserWarning("Simulation is set to false")
 
-            # After simulation, plot user-requested variables.
-            if recordXml.get('single_plot', 'false') == 'true':
-                self.plotAllOnOne(variablesToPlot)
+    def plot(self):
+        # After simulation, plot user-requested variables.
+        
+        # Now we have a dictionary in which for each key there is set of plot
+        # variables. Configure these plots.
+        for filename in self.plotFiles:
+            self.plotThese(filename, self.plotFiles[filename])
+            if filename != "matplotlib_gui":
+                pylab.savefig(filename)
             else:
-                [self.addPlot(pXml) for pXml in variablesToPlot] 
+                pylab.show()
+        
+    def plotThese(self, filename, setOfVariables):
+        ''' Plot these records on one file '''
+        i = 0
+        for varType, variableXml in setOfVariables:
+            i += 1
+            self.totalPlots += 1
+            varName = variableXml.get('name')
+            plotXml = variableXml.find('plot')
+            configDict = self.configurePlot(plotXml)
+            yvec, xvec = self.getPlotData(varType+varName)
+            pylab.subplot(self.totalPlots, 1, i)
+            self.plotVar(xvec, yvec, configDict)
 
-    def plotAllOnOne(self, variables):
+    def plotAllOnOne(self, variables, recordXml):
         """
         Plot all plots on one file
         """
-        figname = os.path.join(self.figurePath
-                , ''.join([y for x, y, z in variables])
-                )+'.eps'
+        figname = recordXml.get('file_name', None)
         logging.info("Saving all plots to %s" % figname)
 
         self.totalPlots += len(variables)
@@ -241,15 +295,12 @@ class Simulator:
             yvec, xvec = self.getPlotData(varName)
             pylab.subplot(self.totalPlots, 1, i)
             self.plotVar(xvec, yvec, configDict)
-        if figname:
-            pylab.savefig(figname)
-        else:
-            pylab.show()
-    
-    def plotVar(self, xvec, yvec, plotParams):
 
+    def plotVar(self, xvec, yvec, plotParams):
+        '''Plot a variable. '''
         plotArgs = plotParams.get('plot_args', '')
         pylab.plot(xvec, yvec, plotArgs)
+        xlabel = plotParams.get('xlabel', None)
         pylab.xlabel(plotParams.get('xlabel', ''), fontsize=8)
         pylab.ylabel(plotParams.get('ylabel', ''), fontsize=8)
         pylab.title(plotParams.get('title', ''), fontsize=8)
@@ -264,7 +315,12 @@ class Simulator:
             return self.configure2DPlot(plotXml)
         else:
             logging.warning("Plot type %s is not supported yet." % plotType)
-            return dict()
+            debug.printDebug("TODO"
+                    , [ "Plot type %s is not supported yet " % plotType
+                        , "Existing without doing anything ... "
+                        ]
+                    )
+            return None
         
 
     def configure2DPlot(self, plotXml):
@@ -288,12 +344,11 @@ class Simulator:
                 self.step = self.simDt 
             except Exception as e:
                 self.step = 10e-6
-                logging.warning(
-                        "No step size specified. Using {0}".format(self.step)
+                debug.printDebug("WARN"
+                        , "No step size specified. Using {0}".format(self.step)
                         )
         if self.step <= 0.0:
-            logging.critical("Non-positive step size.  {0}".format(self.step))
-            raise RuntimeError, "Non-positive step size"
+            raise RuntimeError("Zero or negative step size")
             
         try:
             self.stop = float(xXml.attrib['stop'])
@@ -315,18 +370,20 @@ class Simulator:
                     , ':' 
                     , labelXml.get('title', '')
                     )
-
         return plotParams
 
     def getPlotData(self, varName):
         """Get the plot data from dictionary
         """
-        assert varName in self.tableDict.keys()
+        assert varName in self.tableDict.keys(), "{} not found in {}".format(
+                varName
+                , self.tableDict.keys()
+                )
         tableObj, self.currentCompartmentPath = self.tableDict[varName]
         
         # If there is nothing to plot, quit
         if len(tableObj.vec) == 0:
-            logging.warning("Empty vec. Nothing to plot.")
+            debug.printDebug("WARN", "Empty vec. Nothing to plot.")
             return None, None
 
         xvec = numpy.arange(self.start, self.stop*2, self.step)

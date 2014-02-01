@@ -39,11 +39,14 @@ import core.stimulus as stimulus
 import core.config as config
 from debug.logger import *
 import debug.bugs as bugs
+import debug.debug as debug
+import matplotlib.pyplot as plt
+import numpy as np
 
 from math import cos, sin
 import utils
 
-class NetworkML:
+class NetworkML(object):
 
     def __init__(self, nml_params):
         self.populationDict = dict()
@@ -55,10 +58,11 @@ class NetworkML:
         self.cellDictBySegmentId={}
         self.cellDictByCableId={}
         self.nml_params = nml_params
-        self.model_dir = nml_params['model_dir']
+        self.modelDir = nml_params['model_dir']
         self.elecPath = config.elecPath
         self.dt = 1e-3 # In seconds.
         self.simTime = 1000e-3
+        self.plotPaths = 'figs'
 
     def connectWrapper(self
             , src
@@ -75,15 +79,28 @@ class NetworkML:
                         , dest.path, dest_field
                         , message_type
                         )
+                    , frame = inspect.currentframe()
                 )
         try:
             res = moose.connect(src, src_field, dest, dest_field, message_type)
             assert res, "Failed to connect"
         except Exception as e:
-            printDebug("ERROR", "Failed to connect.")
+            debug.printDebug("ERROR", "Failed to connect.")
             raise e
 
+    def plotVector(self, vector, plotname):
+        ''' Saving input vector to a file '''
+        name = plotname.replace('/', '_')
+        fileName = os.path.join(self.plotPaths, name)+'.eps'
+        debug.printDebug("DEBUG"
+                , "Saving vector to a file {}".format(fileName)
+                )
+        plt.vlines(vector, 0, 1)
+        plt.savefig(fileName)
+
+
     def readNetworkMLFromFile(self, filename, cellSegmentDict, params={}):
+    
 
         """ readNetworkML
 
@@ -148,19 +165,16 @@ class NetworkML:
         self.network = network
         self.cellSegmentDict = cellSegmentDict
         self.params = params
-        debug.printDebug("INFO", "Creating populations ... ")
+        debug.printDebug("STEP", "Creating populations ... ")
         self.createPopulations() 
 
-        debug.printDebug("INFO", "Creating connections ... ")
+        debug.printDebug("STEP", "Creating connections ... ")
         self.createProjections() 
 
         # create connections
-        debug.printDebug("INFO", "Creating inputs in %s .. " % self.elecPath)
-<<<<<<< HEAD
-=======
+        debug.printDebug("STEP", "Creating inputs in %s .. " % self.elecPath)
 
         # create inputs (only current pulse supported)
->>>>>>> 159082b3dbaf6c38692379716a69e3b445edfbe5
         self.createInputs() 
         return (self.populationDict, self.projectionDict)
 
@@ -192,7 +206,7 @@ class NetworkML:
             for inputElem in inputs.findall(".//{"+nmu.nml_ns+"}input"):
                 self.attachInputToMoose(inputElem, factors)
 
-    def attachInputToMoose(self, inElemXml, factors):
+    def attachInputToMoose(self, inElemXml, factors, savePlot=True):
 
         """attachInputToMoose
         This function create StimulousTable in moose
@@ -211,9 +225,11 @@ class NetworkML:
         if random_stim is not None:
             debug.printDebug("INFO", "Generating random stimulous")
             debug.printDebug("TODO", "Test this Poission spike train table")
-            stimTable = moose.StimulusTable(self.elecPath+'/random_stimuls')
+    
             # Get the frequency of stimulus
-            frequency = float(random_stim.get('frequency')) / factors['Tfactor']
+            frequency = moose_methods.toFloat(random_stim.get('frequency'
+                    , '1.0')) / factors['Tfactor']
+            amplitude = random_stim.get('amplitude', 1.0)
             synpMechanism = random_stim.get('synaptic_mechanism')
 
             # Create random stimulus
@@ -222,8 +238,15 @@ class NetworkML:
                     , simTime=self.simTime
                     )
             # Stimulus table
-            stim = moose.TimeTable(self.elecPath+'/stim_'+inputName)
+            tablePath = os.path.join(self.elecPath, "Stimulus")
+            moose.Neutral(tablePath)
+            stimPath = os.path.join(tablePath, inputName)
+            stim = moose.TimeTable(stimPath)
             stim.vec = vec
+
+            if savePlot:
+                self.plotVector(vec, tablePath)
+
             target = inElemXml.find(".//{"+nmu.nml_ns+"}target")
             population = target.get('population')
             for site in target.findall(".//{"+nmu.nml_ns+"}site"):
@@ -237,8 +260,13 @@ class NetworkML:
                # To find the cell name fetch the first element of tuple.
                cell_name = self.populationDict[population][0]
                if cell_name == 'LIF':
+                   debug.printDebug("NOTE",
+                           "LIF cell_name. Partial implementation"
+                           , frame = inspect.currentframe()
+                           )
+
                    LIF = self.populationDict[population][1][int(cell_id)]
-                   self.connectWrapper(stim, "event", LIF, addSpike)
+                   self.connectWrapper(stim, "event", LIF, 'addSpike')
                else:
                     segId = '{0}'.format(segment_id)
                     segment_path = self.populationDict[population][1]\
@@ -269,8 +297,13 @@ class NetworkML:
             Tfactor = factors['Tfactor']
             pulseinput = inElemXml.find(".//{"+nmu.nml_ns+"}pulse_input")
             if pulseinput is not None:
-                pulsegen = moose.PulseGen(self.elecPath+'/pulsegen_'+inputName)
-                iclamp = moose.DiffAmp(self.elecPath+'/iclamp_'+inputName)
+                self.pulseGenPath = os.path.join(self.elecPath, 'PulseGen')
+                moose.Neutral(self.pulseGenPath)
+                pulseGenPath = os.path.join(self.pulseGenPath, inputName)
+                pulsegen = moose.PulseGen(pulseGenPath)
+                icClampPath = os.path.join(self.elecPath, 'iClamp')
+                moose.Neutral(icClampPath)
+                iclamp = moose.DiffAmp(os.path.join(icClampPath, inputName))
                 iclamp.saturation = 1e6
                 iclamp.gain = 1.0
 
@@ -289,7 +322,7 @@ class NetworkML:
                 # do not set count to 1, let it be at 2 by default else it will
                 # set secondDelay to 0.0 and repeat the first pulse!
                 #pulsegen.count = 1
-                self.connectWrapper(pulsegen,'outputOut',iclamp,'plusIn')
+                self.connectWrapper(pulsegen,'outputOut', iclamp, 'plusIn')
 
                 # Attach targets
                 target = inElemXml.find(".//{"+nmu.nml_ns+"}target")
@@ -312,17 +345,23 @@ class NetworkML:
                                 [int(cell_id)].path+'/'+\
                                  self.cellSegmentDict[cell_name][segment_id][0]
                         compartment = moose.Compartment(segment_path)
+                        debug.printDebug("DEBUG"
+                                , "Adding a pulse generator {} -> {}".format(
+                                    iclamp.path
+                                    , segment_path
+                                    )
+                                )
                         self.connectWrapper(iclamp
                                 ,'outputOut'
-                                ,compartment
+                                , compartment
                                 ,'injectMsg'
                                 )
             else:
                 debug.printDebug("WARN"
-                        , "This type of stimulous not stimulous is not supported."
+                        , "This type of stimulous is not supported."
+                        , frame = inspect.currentframe()
                         )
-                return
-
+                return 
 
     def createPopulations(self):
         """
@@ -353,9 +392,9 @@ class NetworkML:
                 mmlR = MorphML.MorphML(self.nml_params)
                 model_filenames = (cellname+'.xml', cellname+'.morph.xml')
                 success = False
-                for model_filename in model_filenames:
-                    model_path = nmu.find_first_file(model_filename
-                            , self.model_dir
+                for modelFile in model_filenames:
+                    model_path = nmu.find_first_file(modelFile
+                            , self.modelDir
                             )
                     if model_path is not None:
                         cellDict = mmlR.readMorphMLFromFile(model_path)
@@ -364,7 +403,7 @@ class NetworkML:
                 if not success:
                     raise IOError(
                         'For cell {0}: files {1} not found under {2}.'.format(
-                            cellname, model_filenames, self.model_dir
+                            cellname, model_filenames, self.modelDir
                         )
                     )
                 self.cellSegmentDict.update(cellDict)
@@ -436,17 +475,17 @@ class NetworkML:
         """
         This function adds connection
         """
-        syn_name = options['syn_name']
+        synName = options['syn_name']
         source = options['source']
         target = options['target']
         weight = options['weight']
         threshold = options['threshold']
-        prop_delay = options['prop_delay']
+        propDelay = options['prop_delay']
 
-        synapse_type = list()
+        self.synapseType = list()
         projectionName = projection.attrib['name']
         for syn in projection.findall('./{'+nmu.nml_ns+'}synapse_props'):
-            synapse_type.append(syn.get('synapse_type'))
+            self.synapseType.append(syn.get('synapse_type'))
 
         pre_cell_id = connection.attrib['pre_cell_id']
         post_cell_id = connection.attrib['post_cell_id']
@@ -483,7 +522,7 @@ class NetworkML:
 
         try:
             self.projectionDict[projectionName][2].append(
-                    (syn_name , pre_segment_path, post_segment_path)
+                    (synName , pre_segment_path, post_segment_path)
                     )
         except KeyError as e:
             debug.printDebug("ERR", "Failed find key {0}".format(e)
@@ -493,24 +532,38 @@ class NetworkML:
 
         properties = connection.findall('./{'+nmu.nml_ns+'}properties')
         if len(properties) == 0:
-            self.connect(syn_name, pre_segment_path, post_segment_path
-                    , weight, threshold, prop_delay)
+            self.connect(synName, pre_segment_path, post_segment_path
+                    , weight, threshold, propDelay)
         else:
             for props in properties:
                 synapse = props.attrib.get('synapse_type')
-                if not synapse: pass
+                if not synapse: 
+                    debug.printDebug("WARN"
+                            , "Synapse type {} not found.".format(synapse)
+                            , frame = inspect.currentframe()
+                            )
                 else:
-                    syn_name = synapse
-                    if syn_name in synapse_type:
-                        weight_override = float(props.attrib['weight'])
-                        if 'internal_delay' in props.attrib:
-                            delay_override = float(props.attrib['internal_delay'])
-                        else: delay_override = prop_delay
-                        if weight_override != 0.0:
-                            self.connect(syn_name, pre_segment_path
-                                    , post_segment_path, weight_override
-                                    , threshold, delay_override
-                                    )
+                    synName = synapse
+                    if synName not in self.synapseType:
+                        debug.printDebug("WARN"
+                                , [ "Unknown synapse type : {}".format(synName)
+                                    , "Doing nothing, returning from function ...."
+                                ]
+                                , frame = inspect.currentframe()
+                                )
+                        return 
+                    weight_override = float(props.attrib['weight'])
+                    if 'internal_delay' in props.attrib:
+                        delay_override = float(props.attrib['internal_delay'])
+                    else: delay_override = propDelay
+                    if weight_override != 0.0:
+                        self.connect(synName
+                                , pre_segment_path
+                                , post_segment_path
+                                , weight_override
+                                , threshold, delay_override
+                                )
+                    else: pass
 
 
     def createProjections(self):
@@ -519,56 +572,63 @@ class NetworkML:
         if projections is not None:
             if projections.attrib["units"] == 'Physiological Units':
                 # see pg 219 (sec 13.2) of Book of Genesis
-                Efactor = 1e-3 # V from mV
-                Tfactor = 1e-3 # s from ms
+                self.Efactor = 1e-3 # V from mV
+                self.Tfactor = 1e-3 # s from ms
             else:
-                Efactor = 1.0
-                Tfactor = 1.0
-        for projection in self.network.findall(".//{"+nmu.nml_ns+"}projection"):
-            projectionName = projection.attrib["name"]
-            debug.printDebug("INFO", "Projection {0}".format(projectionName))
-            source = projection.attrib["source"]
-            target = projection.attrib["target"]
-            self.projectionDict[projectionName] = (source,target,[])
-            synProps = projection.findall(".//{"+nmu.nml_ns+"}synapse_props")
-            for syn_props in synProps:
-                syn_name = syn_props.attrib['synapse_type']
-                ## if synapse does not exist in library load it from xml file
-                if not moose.exists(self.libraryPath+'/'+syn_name):
-                    cmlR = ChannelML.ChannelML(self.nml_params)
-                    model_filename = syn_name+'.xml'
-                    model_path = nmu.find_first_file(model_filename
-                            , self.model_dir
-                            )
+                self.Efactor = 1.0
+                self.Tfactor = 1.0
+        [self.createProjection(p) for p in
+                self.network.findall(".//{"+nmu.nml_ns+"}projection")]
 
-                    if model_path is not None:
-                        cmlR.readChannelMLFromFile(model_path)
-                    else:
-                        msg = 'For mechanism {0}: files {1} not found under \
-                                {2}.'.format(
-                                mechanismname, model_filename, self.model_dir
-                            )
-                        raise UserWarning(msg)
 
-                weight = float(syn_props.attrib['weight'])
-                threshold = float(syn_props.attrib['threshold'])*Efactor
-                if 'prop_delay' in syn_props.attrib:
-                    prop_delay = float(syn_props.attrib['prop_delay'])*Tfactor
-                elif 'internal_delay' in syn_props.attrib:
-                    prop_delay = float(syn_props.attrib['internal_delay'])*Tfactor
-                else:
-                    prop_delay = 0.0
+    def createProjection(self, projection):
+        ''' Create a single projection '''
+        projectionName = projection.attrib["name"]
+        debug.printDebug("INFO", "Projection {0}".format(projectionName))
+        source = projection.attrib["source"]
+        target = projection.attrib["target"]
+        self.projectionDict[projectionName] = (source,target,[])
 
-                options = { 'syn_name' : syn_name , 'weight' : weight
-                           , 'source' : source , 'target' : target
-                           , 'threshold' : threshold , 'prop_delay' : prop_delay 
-                           }
+        synProps = projection.findall(".//{"+nmu.nml_ns+"}synapse_props")
+        [self.addSyapseProperties(projection, p, source, target) for 
+                p in synProps]
 
-                connections = projection.findall(".//{"+nmu.nml_ns+"}connection")
-                for connection in connections:
-                    self.addConnection(connection, projection, options)
 
-    def connect(self, syn_name, pre_path, post_path, weight, threshold, delay):
+    def addSyapseProperties(self, projection,  syn_props, source, target):
+        '''Add Synapse properties'''
+        synName = syn_props.attrib['synapse_type']
+        ## if synapse does not exist in library load it from xml file
+        if not moose.exists(os.path.join(self.libraryPath, synName)):
+            cmlR = ChannelML.ChannelML(self.nml_params)
+            modelFileName = synName+'.xml'
+            model_path = nmu.find_first_file(modelFileName
+                    , self.modelDir
+                    )
+            if model_path is not None:
+                cmlR.readChannelMLFromFile(model_path)
+            else:
+                msg = 'For mechanism {0}: files {1} not found under {2}.'.format(
+                        synName, modelFileName, self.modelDir
+                    )
+                raise UserWarning(msg)
+
+        weight = float(syn_props.attrib['weight'])
+        threshold = float(syn_props.attrib['threshold']) * self.Efactor
+        if 'prop_delay' in syn_props.attrib:
+            propDelay = float(syn_props.attrib['prop_delay']) * self.Tfactor
+        elif 'internal_delay' in syn_props.attrib:
+            propDelay = float(syn_props.attrib['internal_delay']) * self.Tfactor
+        else:
+            propDelay = 0.0
+
+        options = { 'syn_name' : synName , 'weight' : weight
+                   , 'source' : source , 'target' : target
+                   , 'threshold' : threshold , 'prop_delay' : propDelay 
+                   }
+        connections = projection.findall(".//{"+nmu.nml_ns+"}connection")
+        [self.addConnection(c, projection, options) for c in connections]
+
+    def connect(self, synName, pre_path, post_path, weight, threshold, delay):
         """
         NOTE: This connects two compartment. Not to be confused with moose.connect
         """
@@ -584,28 +644,28 @@ class NetworkML:
         # make a new synapse everytime ALSO for a saturating synapse i.e.
         # KinSynChan, we always make a new synapse as KinSynChan is not meant to
         # represent multiple synapses
-        libsyn = moose.SynChan(self.libraryPath+'/'+syn_name)
+        libsyn = moose.SynChan(self.libraryPath+'/'+synName)
         gradedchild = mu.get_child_Mstring(libsyn, 'graded')
 
         # create a new synapse
         if libsyn.className == 'KinSynChan' or gradedchild.value == 'True': 
-            syn_name_full = moose_methods.moosePath(syn_name
+            syn_name_full = moose_methods.moosePath(synName
                     , mu.underscorize(pre_path)
                     )
-            self.make_new_synapse(syn_name, postcomp, syn_name_full)
+            self.make_new_synapse(synName, postcomp, syn_name_full)
         else:
             # See debug/bugs for more details.
             # NOTE: Change the debug/bugs to enable/disable this bug.
             if bugs.BUG_NetworkML_500:
-                syn_name_full = moose_methods.moosePath(syn_name
+                syn_name_full = moose_methods.moosePath(synName
                         , mu.underscorize(pre_path)
                         )
-                self.make_new_synapse(syn_name, postcomp, syn_name_full)
+                self.make_new_synapse(synName, postcomp, syn_name_full)
 
             else: # If the above bug is fixed.
-                syn_name_full = syn_name
+                syn_name_full = synName
                 if not moose.exists(post_path+'/'+syn_name_full):
-                    self.make_new_synapse(syn_name, postcomp, syn_name_full)
+                    self.make_new_synapse(synName, postcomp, syn_name_full)
 
         # wrap the synapse in this compartment
         synPath = moose_methods.moosePath(post_path, syn_name_full)
@@ -642,8 +702,8 @@ class NetworkML:
                 # if spikegen for this synapse doesn't exist in this
                 # compartment, create it spikegens for different synapse_types
                 # can have different thresholds
-                if not moose.exists(pre_path+'/'+syn_name+'_spikegen'):
-                    spikegen = moose.SpikeGen(pre_path+'/'+syn_name+'_spikegen')
+                if not moose.exists(pre_path+'/'+synName+'_spikegen'):
+                    spikegen = moose.SpikeGen(pre_path+'/'+synName+'_spikegen')
                     # connect the compartment Vm to the spikegen
                     self.connectWrapper(precomp, "VmOut", spikegen, "Vm")
                     # spikegens for different synapse_types can have different
@@ -658,7 +718,7 @@ class NetworkML:
                     #spikegen.refractT = 0.25e-3 
 
                 # wrap the spikegen in this compartment
-                spikegen = moose.SpikeGen(pre_path+'/'+syn_name+'_spikegen') 
+                spikegen = moose.SpikeGen(pre_path+'/'+synName+'_spikegen') 
 
                 # connect the spikegen to the synapse note that you need to use
                 # Synapse (auto-created) under SynChan to get/set weights ,
@@ -734,15 +794,15 @@ class NetworkML:
             #for i,syn_syn in enumerate(syn.synapse):
             #    print i,'th weight =',syn_syn.weight,'\n'
 
-    def make_new_synapse(self, syn_name, postcomp, syn_name_full):
+    def make_new_synapse(self, synName, postcomp, syn_name_full):
         # if channel does not exist in library load it from xml file
-        if not moose.exists(self.libraryPath + '/' + syn_name):
+        if not moose.exists(self.libraryPath + '/' + synName):
             cmlR = ChannelML.ChannelML(self.nml_params)
-            cmlR.readChannelMLFromFile(syn_name+'.xml')
+            cmlR.readChannelMLFromFile(synName+'.xml')
 
         # deep copies the library synapse to an instance under postcomp named as
         # <arg3>
-        synid = moose.copy(moose.Neutral(self.libraryPath+'/'+syn_name)
+        synid = moose.copy(moose.Neutral(self.libraryPath+'/'+synName)
                 , postcomp
                 , syn_name_full
                 )

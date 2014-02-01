@@ -313,11 +313,8 @@ class Mumble():
                     , "Source compartment %s is not found" % moosePath
                     , frame = inspect.currentframe()
                     )
-<<<<<<< HEAD
             print(moose_methods.dumpMatchingPaths(moosePath))
             raise e
-=======
->>>>>>> 159082b3dbaf6c38692379716a69e3b445edfbe5
 
         # Get the target.
         compType = src.get('type', 'chemical')

@@ -1,6 +1,6 @@
 <!-- Write your simulation specific settings here. -->
 <moose elec_path='/cells' simulate='true' runtime="0.6" save_path='./figs'>
-    <global sim_dt="10e-6" plot_dt="10e-6" sim_method="hsolve" />
+    <global sim_dt="10e-5" plot_dt="10e-5" sim_method="hsolve" />
 
     <!-- This setup recording settings for soma. Each type of element should
         be contained in <element> </element> tag. In nutshell, we write the group

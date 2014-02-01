@@ -5,7 +5,7 @@ set +e
 # If first argument is not "d" then normal execution else run inside python
 # debugger.
 
-export PYTHONPATH=../../moose-github/python
+#export PYTHONPATH=../../moose-github/python
 #export PYTHONPATH=../../moose_svn1.7/moose/branches/async13/python/
 function runCode 
 {
@@ -25,7 +25,7 @@ function runCode
 function testPythonCode 
 {
     pf=$1
-    echo "Checking .... $pf"
+    echo "== $0 Checking .... $pf"
     pylint -E $pf
 }
 
@@ -43,3 +43,9 @@ else
   runCode
 fi
 
+dotFile=./figs/topology.dot 
+if [ -f $dotFile ]; then
+    epsFile=${dotFile%.dot}.eps
+    echo "== $0" "Converting $dotFile -> $epsFile"
+    dot -Teps "$dotFile" > "$epsFile"
+fi

@@ -9,6 +9,7 @@ import core.simulator as moose_config
 import moose
 from IPython import embed
 from debug.logger import *
+import helper.moose_methods as mm
 
 
 from lxml import etree
@@ -73,8 +74,10 @@ if args:
         debug.printDebug("STEP", "Updating moose for simulation")
         simObj = moose_config.Simulator(etreeDict['config'][0])
         simObj.updateMoose(populationDict, projectionDict)
-        logPathsToFille('/##')
 
+        mm.writeGraphviz(filename="./figs/topology.dot"
+                , filterList = ["classes", "Msgs", "clock"]
+                )
         # Some debugging
         sys.exit()
     else:
