@@ -1803,11 +1803,4 @@ void testAsync( )
 	testCinfoElements();
 	testMsgSrcDestFields();
 	testHopFunc();
-	testOneDimHandler();
-	testFieldDataHandler();
-	testCopyFieldElementData();
-	testFinfoFields();
-	testCinfoFields();
-	testCinfoElements();
-	testMsgSrcDestFields();
 }

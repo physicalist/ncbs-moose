@@ -445,12 +445,6 @@ double Clock::getTickDt( unsigned int i ) const
 // Dest function definitions
 ///////////////////////////////////////////////////
 
-bool Clock::isRunning() const
-{
-	return isRunning_;
-}
-
-
 /**
  * Does a graceful stop of the simulation, leaving so it can continue
  * cleanly with another step or start command.

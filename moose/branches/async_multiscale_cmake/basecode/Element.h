@@ -30,10 +30,8 @@ class Element
 		 * numData is the number of data entries, defaults to a singleton.
 		 * The isGlobal flag specifies whether the created objects should
 		 * be replicated on all nodes, or partitioned without replication. 
-		 * This function is done for all the local data entries in order.
 		 */
 		Element( Id id, const Cinfo* c, const string& name );
-
 
 		/**
 		 * Destructor
@@ -331,8 +329,6 @@ class Element
 		 */
 		unsigned int getOutputs( vector< Id >& ret, const SrcFinfo* finfo )
 			const;
-
-		Id id_; /// Stores the unique identifier for Element.
 
 		/**
 		 * Fills in vector of Ids sending messeges to this DestFinfo on

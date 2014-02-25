@@ -57,10 +57,6 @@ template< class T > class EpFunc0: public OpFunc0Base
 			( reinterpret_cast< T* >( e.data() )->*func_ )( e );
 		}
 
-		string rttiType() const {
-			return "void";
-		}
-
 	private:
 		void ( T::*func_ )( const Eref& e ); 
 };
@@ -74,10 +70,6 @@ template< class T, class A > class EpFunc1: public OpFunc1Base< A >
 
 		void op( const Eref& e, A arg ) const {
 			( reinterpret_cast< T* >( e.data() )->*func_ )( e, arg );
-		}
-
-		string rttiType() const {
-			return Conv< A >::rttiType();
 		}
 
 	private:
@@ -96,10 +88,6 @@ template< class T, class A1, class A2 > class EpFunc2:
 			( reinterpret_cast< T* >( e.data() )->*func_ )( e, arg1, arg2 );
 		}
 
-		string rttiType() const {
-			return Conv< A1 >::rttiType() + "," + Conv< A2 >::rttiType(); 
-		}
-
 	private:
 		void ( T::*func_ )( const Eref& e, A1, A2 ); 
 };
@@ -115,11 +103,6 @@ template< class T, class A1, class A2, class A3 > class EpFunc3:
 		void op( const Eref& e, A1 arg1, A2 arg2, A3 arg3 ) const {
 			( reinterpret_cast< T* >( e.data() )->*func_ )( 
 							e, arg1, arg2, arg3 );
-		}
-
-		string rttiType() const {
-			return Conv< A1 >::rttiType() + "," + Conv< A2 >::rttiType() +
-				"," + Conv< A3 >::rttiType();
 		}
 
 	private:
@@ -156,11 +139,6 @@ template< class T, class A1, class A2, class A3, class A4, class A5 >
 			( reinterpret_cast< T* >( e.data() )->*func_ )( 
 							e, arg1, arg2, arg3, arg4, arg5 );
 		}
-		string rttiType() const {
-			return Conv< A1 >::rttiType() + "," + Conv< A2 >::rttiType() +
-				"," + Conv<A3>::rttiType() + "," + Conv<A4>::rttiType();
-		}
-
 	private:
 		void ( T::*func_ )( const Eref& e, A1, A2, A3, A4, A5 ); 
 };
@@ -179,12 +157,6 @@ template< class T,
 			   	const {
 			( reinterpret_cast< T* >( e.data() )->*func_ )( 
 							e, arg1, arg2, arg3, arg4, arg5, arg6 );
-		}
-
-		string rttiType() const {
-			return Conv< A1 >::rttiType() + "," + Conv< A2 >::rttiType() +
-				"," + Conv<A3>::rttiType() + "," + Conv<A4>::rttiType() +
-				"," + Conv<A5>::rttiType();
 		}
 
 	private:
@@ -221,12 +193,6 @@ template< class T, class A > class GetEpFunc: public GetOpFuncBase< A >
 
 		A returnOp( const Eref& e ) const {
 			return ( getEpFuncData< T >( e )->*func_ )( e );
-		}
-
-		string rttiType() const {
-			return Conv< A1 >::rttiType() + "," + Conv< A2 >::rttiType() +
-				"," + Conv<A3>::rttiType() + "," + Conv<A4>::rttiType() +
-				"," + Conv<A5>::rttiType() + "," + Conv<A6>::rttiType();
 		}
 
 	private:
@@ -269,68 +235,5 @@ template< class T, class L, class A > class GetEpFunc1:
 	private:
 		A ( T::*func_ )( const Eref& e, L ) const;
 };
-
-
-/**
- * This specialized EpFunc is for returning a single field value,
- * but the field lookup requires an index argument as well.
- * Unlike the regular GetOpFunc, this variant takes the Eref
- * and Qinfo.
- * It generates an opFunc that takes a single argument:
- * FuncId of the function on the object that requested the
- * value. The EpFunc then sends back a message with the info.
- */
-template< class T, class L, class A > class GetEpFunc1: public GetOpFuncBase< A >
-{
-	public:
-		GetEpFunc1( A ( T::*func )( const Eref& e, const Qinfo* q, L ) const )
-			: func_( func )
-			{;}
-
-		bool checkFinfo( const Finfo* s ) const {
-			return dynamic_cast< const SrcFinfo1< A >* >( s );
-		}
-
-		bool checkSet( const SetGet* s ) const {
-			return dynamic_cast< const LookupField< L, A >* >( s );
-		}
-
-		bool strSet( const Eref& tgt,
-			const string& field, const string& arg ) const {
-			return SetGet1< A >::innerStrSet( tgt.objId(), field, arg );
-		}
-
-		void op( const Eref& e, const char* buf ) const {
-			const Qinfo* q = reinterpret_cast< const Qinfo* >( buf );
-			buf += sizeof( Qinfo );
-			this->op( e, q, buf );
-		}
-
-		void op( const Eref& e, const Qinfo* q, const char* buf ) const {
-			if ( skipWorkerNodeGlobal( e ) )
-				return;
-			Conv< L > conv1( buf + sizeof( FuncId ) );
-
-			const A& ret = 
-				( getEpFuncData< T >( e )->*func_ )( e, q, *conv1 );
-
-			// const A& ret = (( reinterpret_cast< T* >( e.data() ) )->*func_)( e, q, *conv1 );
-			Conv<A> conv0( ret );
-			char* temp0 = new char[ conv0.size() ];
-			conv0.val2buf( temp0 );
-			fieldOp( e, q, buf, temp0, conv0.size() );
-			delete[] temp0;
-		}
-
-		/// ReduceOp not permissible.
-		A reduceOp( const Eref& e ) const {
-			static A ret;
-			return ret;
-		}
-
-	private:
-		A ( T::*func_ )( const Eref& e, const Qinfo* q, L ) const;
-};
-
 
 #endif //_EPFUNC_H

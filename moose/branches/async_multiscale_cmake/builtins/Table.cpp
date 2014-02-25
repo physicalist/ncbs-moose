@@ -48,17 +48,6 @@ const Cinfo* Table::initCinfo()
 			"Fills spike timings into the Table. Signal has to exceed thresh",
 			new OpFunc1< Table, double >( &Table::spike ) );
 
-		static DestFinfo compareVec( "compareVec",
-			"Compares contents of Table with a vector of doubles."
-			"Result is put in 'output' field of table."
-			"If the comparison fails (e.g., due to zero entries), the "
-			"return value is -1."
-			"Arguments: Other vector, comparison_operation"
-			"Operations: rmsd (for RMSDifference), rmsr (RMSratio ), "
-			"dotp (Dot product, not yet implemented).",
-			new OpFunc2< Table, vector< double >, string >(
-				&Table::compareVec ) );
-
 		static DestFinfo process( "process",
 			"Handles process call, updates internal time stamp.",
 			new ProcOpFunc< Table >( &Table::process ) );
@@ -153,25 +142,6 @@ void Table::spike( double v )
 {
 	if ( v > threshold_ )
 		vec().push_back( lastTime_ );
-}
-
-void Table::compareVec( vector< double > temp, string op )
-{
-	// Note that this line below is illegal: it causes a race condition
-	// vector< double > temp = Field< vector< double > >::get( other, "vec" );
-
-	string hop = headop( op );
-
-	if ( hop == "rmsd" ) { // RMSDifference
-		output_ = getRMSDiff( vec_, temp );
-	}
-
-	if ( hop == "rmsr" ) { // RMS ratio
-		output_ = getRMSRatio( vec_, temp );
-	}
-
-	if ( hop == "dotp" )
-		cout << "Table::compareVec: DotProduct not yet done\n";
 }
 
 //////////////////////////////////////////////////////////////

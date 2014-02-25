@@ -50,8 +50,6 @@ class SparseMsg: public Msg
 
 		void sources( vector< vector< Eref > >& v ) const;
 		void targets( vector< vector< Eref > >& v ) const;
-
-		Eref firstTgt( const Eref& src ) const;
 		
 		unsigned int randomConnect( double probability );
 
@@ -61,9 +59,6 @@ class SparseMsg: public Msg
 
 		Msg* copy( Id origSrc, Id newSrc, Id newTgt,
 			FuncId fid, unsigned int b, unsigned int n ) const;
-
-		unsigned int srcToDestPairs(
-			vector< DataId >& src, vector< DataId >& dest) const;
 
 		/**
 		 * Assigns the whole connection matrix

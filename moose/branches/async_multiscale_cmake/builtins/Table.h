@@ -33,7 +33,6 @@ class Table: public TableBase
 
 		void input( double v );
 		void spike( double v );
-		void compareVec( vector< double > other, string op );
 
 		//////////////////////////////////////////////////////////////////
 		// Lookup funcs for table

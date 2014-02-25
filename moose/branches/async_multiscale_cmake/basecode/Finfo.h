@@ -28,7 +28,6 @@ class Finfo
 		 * for name field
 		string getName() const;
 		 */
-		string getName() const;
 
 		/**
 		 * Assign function Ids, bindIndex and so on.
