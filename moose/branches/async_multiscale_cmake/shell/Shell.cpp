@@ -7,6 +7,7 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#include <stdexcept>
 #include "header.h"
 #include "SingleMsg.h"
 #include "DiagonalMsg.h"
@@ -17,6 +18,7 @@
 #include "Shell.h"
 #include "Dinfo.h"
 #include "Wildcard.h"
+#include "print_function.h"
 
 // Want to separate out this search path into the Makefile options
 #include "../scheduling/Clock.h"
@@ -165,15 +167,25 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 				unsigned int preferredNode )
 {
 	const Cinfo* c = Cinfo::find( type );
-	if ( name.find_first_of( "[] #?\"/\\" ) != string::npos ) {
+        string badChars = "[] #?\"/\\" ;
+	if ( name.find_first_of( badChars ) != string::npos ) 
+        {
 		stringstream ss;
-		ss << "Shell::doCreate: bad character in name'" << name << 
+		ss << "Shell::doCreate: bad character in name '" << name << 
 				"'. No Element created";
-		warning( ss.str() );
+		warning( colored(ss.str(), T_YELLOW) );
+
+#ifdef  STRICT_CHECK
+                ss << endl << "\t+ Bad characters are : " <<  badChars;
+                throw runtime_error(colored(ss.str(), T_RED));
+#else
 		return Id();
+#endif     /* -----  STRICT_CHECK  ----- */
+
 	}
 
-	if ( c ) {
+	if ( c ) 
+        {
 		Element* pa = parent.element();
 		if ( !pa ) {
 			stringstream ss;
