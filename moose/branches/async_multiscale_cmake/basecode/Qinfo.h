@@ -51,6 +51,8 @@ class Qinfo
 		/**
 		 * Returns true if the Qinfo is inserted just for padding, and
 		 * the data is not meant to be processed.
+		 * Deprecated
+		static Qinfo makeDummy( unsigned int size );
 		 */
 		bool isDummy() const {
 			return dataIndex_ == 0;
@@ -177,6 +179,17 @@ class Qinfo
 		/// Locks the ParserThread. Called when starting ProcessLoop.
 		static void lockParserThread();
 
+
+		/**
+		 * This assigns temporary storage in the Qinfo for thread
+		 * identifiers.
+		 */
+		void setProcInfo( const ProcInfo* p );
+
+		/**
+		 * This extracts the procinfo.
+		 */
+		const ProcInfo* getProcInfo() const;
 		//////////////////////////////////////////////////////////////
 		// From here, static funcs handling the Queues.
 		//////////////////////////////////////////////////////////////

@@ -14,6 +14,7 @@
 #include "Arith.h"
 #include "TableBase.h"
 #include "Table.h"
+#include "../biophysics/SynBase.h"
 #include <queue>
 
 #include "../shell/Shell.h"
@@ -160,6 +161,7 @@ void testMpiFibonacci()
 	*/
 
 	shell->doSetClock( 0, 1.0 );
+	shell->doUseClock( "/a1", "process", 0 );
 	shell->doUseClock( "/a1", "process", 0 );
 
 	shell->doStart( numFib );
@@ -319,6 +321,80 @@ void testGetMsg()
 	shell->doDelete( tabid );
 	cout << "." << flush;
 	
+}
+
+void testMpiStatsReduce()
+{
+	Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
+	unsigned int size = 100;
+	vector< unsigned int > dims( 1, size );
+	Id i2 = shell->doCreate( "IntFire", Id(), "test2", dims, 0 );
+	Id synId( i2.value() + 1 );
+	// bool ret = ic->create( i2, "test2", size );
+	Element* syn = synId();
+	assert ( syn != 0 );
+	assert ( syn->getName() == "synapse" );
+
+	assert( syn->dataHandler()->localEntries() == 0 );
+	assert( syn->dataHandler()->totalEntries() == 100 );
+	Eref syner( syn, 0 );
+
+	FieldDataHandlerBase* fd = dynamic_cast< FieldDataHandlerBase *>( 
+		syn->dataHandler() );
+	assert( fd );
+	assert( fd->localEntries() == 0 );
+
+	vector< unsigned int > numSyn( size, 0 );
+	for ( unsigned int i = 0; i < size; ++i )
+		numSyn[i] = i;
+	
+	Eref e2( i2(), 0 );
+	bool ret = Field< unsigned int >::setVec( i2, "numSynapses", numSyn );
+	assert( ret );
+
+	// This calculation only works for node 0, with the present (implicit)
+	// decomposition scheme.
+	// assert( fd->biggestFieldArraySize() == size/Shell::numNodes() - 1 );
+	Field< unsigned int >::set( synId, "fieldDimension", size );
+	assert ( fd->totalEntries() == size * size );
+	// Here we test setting a 2-D array with different dims on each axis.
+	vector< double > delay( size * size, 0.0 );
+	double sum = 0.0;
+	double sumsq = 0.0;
+	unsigned int num = 0;
+	for ( unsigned int i = 0; i < size; ++i ) {
+		unsigned int k = i * size;
+		for ( unsigned int j = 0; j < i; ++j ) {
+			double x = i * 1000 + j;
+			sum += x;
+			sumsq += x * x;
+			++num;
+			delay[k++] = x;
+		}
+	}
+
+	ret = Field< double >::setVec( synId, "delay", delay );
+
+	dims[0] = 1;
+	Id statsid = shell->doCreate( "Stats", Id(), "stats", dims );
+
+
+	MsgId mid = shell->doAddMsg( "Reduce", 
+		statsid.eref().objId(), "reduce",
+		syner.objId(), "get_delay" );
+	assert( mid != Msg::badMsg );
+	SetGet0::set( statsid, "trig" );
+	double x = Field< double >::get( statsid, "sum" );
+//	cout << Shell::myNode() << ": x = " << x << ", sum = " << sum << endl;
+	assert( doubleEq( x, sum ) );
+	unsigned int i = Field< unsigned int >::get( statsid, "num" );
+	assert( i == num );
+	x = Field< double >::get( statsid, "sdev" );
+	assert( doubleEq( x, sqrt( ( sum * sum - sumsq ) /num ) ) );
+
+	delete synId();
+	delete i2();
+	cout << "." << flush;
 }
 
 void testBuiltins()
