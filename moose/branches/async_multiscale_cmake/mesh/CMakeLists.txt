@@ -1,8 +1,13 @@
-file(GLOB files_SRC 
-    "*.h"
-    "*.cpp"
-)
 include_directories(../msg)
 include_directories(../basecode)
 include_directories(../utility)
-add_library(mesh ${files_SRC})
+add_library(mesh 
+    ChemCompt.cpp	
+    MeshCompt.cpp	
+    MeshEntry.cpp	
+    CubeMesh.cpp	
+    CylBase.cpp	
+    NeuroNode.cpp	
+    NeuroMesh.cpp	
+    testMesh.cpp	
+    )

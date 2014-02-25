@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 project(moose)
 
 # Compiler 
-set(CMAKE_CXX_COMPILER clang++)
+set(CMAKE_CXX_COMPILER g++)
 
 # Enable 2011 stupport.
 set(ENABLE_STD_2011 1)
