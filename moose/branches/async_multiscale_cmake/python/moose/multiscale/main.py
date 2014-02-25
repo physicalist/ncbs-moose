@@ -1,65 +1,86 @@
-#!/usr/bin/env python2.7
-
-# Filename       : main.py
-# Created on     : Fri 06 Sep 2013 08:20:50 PM IST
-# Author         : Dilawar Singh
-# Email          : dilawars@ncbs.res.in
-#
-# Description    : Entry point if this application is to be run in stand-alone
-#   mode.
-#
-# Logs           :
-
+# This is our main script.
 import os
 import sys
-import argparse
 import debug.debug as debug
-import logging
+import inspect
+import parser.NeuroML as NeuroML
+import core.mumbl as mumbl
+import core.simulator as moose_config
+import moose
+from IPython import embed
+from debug.logger import *
+import helper.moose_methods as mm
+
+
+from lxml import etree
+
+def ifPathsAreValid(paths) :
+    ''' Verify if path exists and are readable. '''
+    if paths :
+        paths = vars(paths)
+        for p in paths :
+            if not paths[p] : continue
+            for path in paths[p] :
+                if not path : continue
+                if os.path.isfile(path) : pass
+                else :
+                    debug.printDebug("ERROR"
+                        , "Filepath {0} does not exists".format(path))
+                    return False
+            # check if file is readable
+            if not os.access(path, os.R_OK) :
+              debug.printDebug("ERROR", "File {0} is not readable".format(path))
+              return False
+    return True
+
+# standard module for building a command line parser.
+import argparse
+
+# This section build the command line parser
+argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
+argParser.add_argument('--nml', metavar='nmlpath'
+    , required = True
+    , nargs = '+'
+    , help = 'nueroml model'
+    )
+argParser.add_argument('--mumbl', metavar='mumbl', required = True, nargs = '+'
+    , help = 'Lanaguge to do multi-scale modelling in moose'
+    )
+argParser.add_argument('--config', metavar='config', required = True
+    , nargs = '+'
+    , help = 'Simulation specific settings for moose in a xml file'
+    )
+args = argParser.parse_args()
+
 import parser.parser as parser
-import core.moose_builder as moose_builder
 
-def pathsAreOk(paths) :
-  ''' Verify if path exists and are valid. '''
-  if paths.nml :
-    if os.path.isfile(paths.nml) : pass
-    else :
-      debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.nml))
-      return False
-  if paths.sbml :
-    if os.path.isfile(paths.sbml) : pass 
-    else :
-      debug.printDebug("ERROR", "Filepath {0} is not valid".format(paths.sbml))
-      return False
-  return True
+if args:
+    if ifPathsAreValid(args):
+        debug.printDebug("INFO", "Started parsing XML models")
+        etreeDict = parser.parseXMLs(args, validate=False)
+        debug.printDebug("INFO", "Parsing of XMLs is done")
 
+        nml = etreeDict['nml'][0]
+        nmlObj = NeuroML.NeuroML()
+        populationDict, projectionDict = nmlObj.loadNML(nml)
+    
 
-logger = logging.getLogger('multiscale')
+        # Start processing mumbl
+        mumblObj = mumbl.Mumble(etreeDict['mumbl'][0])
+        mumblObj.load()
 
-if __name__ == "__main__" :
-  # This section build the command line parser
-  argParser = argparse.ArgumentParser(description= 'Mutiscale modelling of neurons')
-  argParser.add_argument('--nml', metavar='nmlpath'
-      , help = 'File having neuron described in neuroML'
-      )
-  argParser.add_argument('--sbml', metavar='sbmlpath'
-      , help = 'File having neuron described in SBML'
-      , required = False
-      )
-  args = argParser.parse_args()
+        debug.printDebug("STEP", "Updating moose for simulation")
+        simObj = moose_config.Simulator(etreeDict['config'][0])
+        simObj.updateMoose(populationDict, projectionDict)
 
-  # There must be at least one model present
-  if args.nml or args.sbml : 
-    if pathsAreOk(args) :
-      logger.info("Started parsing XML models")
-      debug.printDebug("INFO", "Started parsing XML models")
-      etreeList = parser.parseModels(args)
-
-      # Build the storehouse so that moose can simulate it.
-      moose_builder.buildMooseObjects(etreeList)
-    else :
-      debug.printDebug("FATAL", "One or more model file does not exists.")
-      sys.exit()
-  else :
-    parser.print_help()
+        mm.writeGraphviz(filename="./figs/topology.dot"
+                , filterList = ["classes", "Msgs", "clock"]
+                )
+    else:
+        debug.printDebug("FATAL", "One or more model file does not exists.")
+        sys.exit()
+else:
     debug.printDebug("FATAL", "Please provide at least one model. None given.")
     sys.exit()
+
+

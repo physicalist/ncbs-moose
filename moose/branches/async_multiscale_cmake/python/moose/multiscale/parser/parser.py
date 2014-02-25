@@ -1,66 +1,62 @@
-# This file contains functions to parse neuroML and sbml.
-
-import debug.debug as debug 
-import logging 
+# Basic imports
 import os
+import sys
+import logging
+import debug.debug as debug
+import inspect
 
 logger = logging.getLogger('multiscale')
-try:
-    from lxml import etree
-    debug.printDebug("DEBUG", "running with lxml.etree")
-except ImportError:
-    try:
-        # Python 2.5
-        import xml.etree.cElementTree as etree
-        debug.printDebug("DEBUG", "running with cElementTree")
-    except ImportError:
-        try:
-            # Python 2.5
-            import xml.etree.ElementTree as etree
-            debug.printDebug("DEBUG", "running with ElementTree")
-        except ImportError:
-            try:
-              # normal cElementTree install
-              import cElementTree as etree
-              debug.printDebug("DEBUG", "running with cElementTree")
-            except ImportError:
-                try:
-                    # normal ElementTree install
-                    import elementtree.ElementTree as etree
-                    debug.printDebug("DEBUG", "running with ElementTree")
-                except ImportError:
-                    debug.prefix("FATAL", "Failed to import ElementTree")
-                    os._exit(1)
+from lxml import etree
 
+import collections
+def parseAndValidateWithSchema(modelName, modelPath) :
 
-def parseModels(models) :
+    prefixPath = ''
+    if modelName == 'xml' :
+        schemaPath = os.path.join(prefixPath, 'schema/moose/moose.xsd')
+        if not os.path.isfile(schemaPath) :
+            debug.printDebug("WARN", "Schema {0} does not exists..".format(schemaPath))
 
-    """
-    Parses given xml models. We can pass either one or two models; one described in
-    neuroML and the other in sbml. 
-    
-    Notes: Document is properly. See 
+    try :
+        schemaH = open(schemaPath, "r")
+        schemaText = schemaH.read()
+        schemaH.close()
+    except Exception as e :
+        debug.printDebug("WARN", "Error reading schema for validation."+
+          " Falling back to validation-disabled parser."
+          + " Failed with error {0}".format(e))
+        return parseWithoutValidation(modelName, modelPath)
+        # Now we have the schema text
+    schema = etree.XMLSchema(etree.XML(schemaText))
+    xmlParser = etree.XMLParser(schema=schema, remove_comments=True)
+    with open(modelPath, "r") as xmlTextFile :
+        return etree.parse(xmlTextFile, xmlParser)
 
-      http://www.biomedcentral.com/1752-0509/7/88/abstract
+def parseWithoutValidation(modelName, modelPath) :
+    xmlParser = etree.XMLParser(remove_comments=True)
+    try :
+        xmlRootElem = etree.parse(modelPath, xmlParser)
+    except Exception as e :
+        debug.printDebug("ERROR", "Parsing of {0} failed.".format(modelPath))
+        debug.printDebug("DEBUG", "Error: {0}".format(e))
+        raise RuntimeError, "Failed to parse XML"
+    return xmlRootElem
 
-    sent by Aditya Girla. It a online composition tool for SBML. In its
-    references, some other tools are mentioned.
-
-    Args :
-
-    Raises :
-
-    Return 
-    return a list of elementTree of given models.
-
-    """
-    elemDict = dict()
-    if models.nml :
-        # Get the schema 
-        with open(models.nml, "r") as nmlFile :
-            elemDict['nml'] = models.nml
-        
-    if models.sbml :
-        elemDict['sbml'] = models.sbml
-    return elemDict
+def parseXMLs(commandLineArgs, validate=False) :
+    xmlRootElemDict = collections.defaultdict(list)
+    models = vars(commandLineArgs)
+    for model in models :
+        if models[model] :
+            for modelPath in models[model] :
+                debug.printDebug("INFO", "Parsing {0}".format(models[model]))
+                if validate :
+                    # parse model and valid it with schama
+                    modelXMLRootElem = parseAndValidateWithSchema(model, modelPath)
+                else :
+                    # Simple parse the model without validating it with schema.
+                    modelXMLRootElem = parseWithoutValidation(model, modelPath)
+                if modelXMLRootElem :
+                    xmlRootElemDict[model].append((modelXMLRootElem, modelPath))
+    assert len(xmlRootElemDict) > 0
+    return xmlRootElemDict
 
