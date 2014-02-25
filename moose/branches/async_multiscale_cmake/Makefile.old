@@ -385,20 +385,20 @@ pymoose: OBJLIBS := $(filter-out basecode/_basecode.o,$(OBJLIBS))
 pymoose: LDFLAGS += $(PYTHON_LDFLAGS)
 export CXXFLAGS
 python/moose/_moose.so: libs $(OBJLIBS) basecode/_basecode_pymoose.o
-	$(MAKE) -C pymoose
+	$(MAKE) -f Makefile.old -C pymoose
 	$(CXX) -shared $(LDFLAGS) $(CXXFLAGS) -o $@ $(OBJLIBS) $(LIBS)
 	@echo "pymoose module built."
 
 # This will generate an object file without main
 basecode/_basecode_pymoose.o: 	
-	$(MAKE) -C basecode pymoose 
+	$(MAKE) -f Makefile.old -C basecode pymoose 
 	@echo "_basecode_pymoose.o built"
 libs:
-	@(for i in $(SUBDIR) $(PARALLEL_DIR); do $(MAKE) -C $$i; done)
+	@(for i in $(SUBDIR) $(PARALLEL_DIR); do $(MAKE) -f Makefile.old -C $$i; done)
 	@echo "All Libs compiled"
 
 clean:
-	@(for i in $(CLEANSUBDIR) ; do $(MAKE) -C $$i clean;  done)
+	@(for i in $(CLEANSUBDIR) ; do $(MAKE) -f Makefile.old -C $$i clean;  done)
 	-rm -rf moose  core.* DOCS/html python/moose/*.so python/moose/*.pyc  
 
 ############ INSTALL (works for sudo make install and deb packaging using dpkg-buildpackage)
