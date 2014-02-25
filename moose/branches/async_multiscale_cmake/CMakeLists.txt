@@ -11,6 +11,12 @@ if(ENABLE_STD_2011)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 endif(ENABLE_STD_2011)
 
+# Strick checking 
+set(CHECK_STRICT 1)
+if(CHECK_STRICT)
+    add_definitions(-DSTRICT_CHECKING)
+endif(CHECK_STRICT)
+
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
