@@ -238,7 +238,9 @@ void mtseed(long seed = 0)
 			tv.tv_usec += *hostname * i * i * 16;
                     }
                 }
-		unsigned long init[2] = {tv.tv_sec, tv.tv_usec};
+		unsigned long init[2] = {static_cast<unsigned long>(tv.tv_sec)
+                    , static_cast<unsigned long>(tv.tv_usec)
+                };
 		unsigned long length = 2;
 		init_by_array(init, length);
 	} else {

@@ -106,7 +106,7 @@ class Cinfo
 			/**
 			 * Finds the Cinfo with the specified name.
 			 */
-			static const Cinfo* find( const std::string& name );
+			static Cinfo* find( const std::string& name );
 
 			/*
 			 * Returns base Cinfo class. The Neutral returns 0.
