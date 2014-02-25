@@ -60,6 +60,11 @@ extern void testBiophysicsProcess();
 // extern void testSimManager();
 // extern void testSigNeur();
 // extern void testSigNeurProcess();
+extern void testBiophysics();
+extern void testBiophysicsProcess();
+extern void testKineticsProcess();
+extern void testGeom();
+extern void testMesh();
 
 extern unsigned int initMsgManagers();
 extern void destroyMsgManagers();
@@ -220,14 +225,19 @@ Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests,
 	new GlobalDataElement( classMasterId, Neutral::initCinfo(), "classes", 1);
 	new GlobalDataElement( postMasterId, PostMaster::initCinfo(), "postmaster", 1 );
 
+	Id classMasterId( 3 );
+	new Element( classMasterId, Neutral::initCinfo(), "classes", dims, 1 );
+
 	assert ( shellId == Id() );
 	assert( clockId == Id( 1 ) );
 	assert( classMasterId == Id( 2 ) );
 	assert( postMasterId == Id( 3 ) );
+	assert( classMasterId == Id( 3 ) );
 
 
 
 	// s->connectMasterMsg();
+	Shell::adopt( shellId, classMasterId );
 
 	Shell::adopt( shellId, clockId, numMsg++ );
 	Shell::adopt( shellId, classMasterId, numMsg++ );

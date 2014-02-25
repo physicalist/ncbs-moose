@@ -132,6 +132,7 @@ static const Cinfo* shellCinfo = Shell::initCinfo();
 
 Shell::Shell()
 	: 
+		anotherCycleFlag_( 0 ),
 		gettingVector_( 0 ),
 		numGetVecReturns_( 0 ),
 		cwe_( ObjId() )
@@ -552,6 +553,64 @@ ObjId Shell::doFind( const string& path ) const
 	return curr;
 }
 
+/**
+ * Tell all attached pools and vols to update themselves: set their
+ * array sizes and set their new volumes.
+ * Dangerous function, if called elsewhere it will cause all sorts of
+ * structuralQ issues.
+ */
+void Shell::handleReMesh( Id baseMesh )
+{
+	static const Finfo* finfo = MeshEntry::initCinfo()->findFinfo( "get_size" );
+	static const DestFinfo* df = dynamic_cast< const DestFinfo* >( finfo );
+	assert( df );
+	vector< Id > tgts;
+	unsigned int numTgts = baseMesh()->getInputs( tgts, df );
+	assert( tgts.size() == numTgts );
+	vector< unsigned int > dims( 1, baseMesh()->dataHandler()->localEntries() );
+	for ( vector< Id >::iterator i = tgts.begin(); i != tgts.end(); ++i )
+	{
+		bool ret = i->operator()()->resize( dims );
+		assert( ret );
+		// Now we need to tell each tgt to scale its n, rates etc from vol.
+	}
+}
+
+/**
+ * This function builds a reac-diffusion mesh starting at the
+ * specified ChemCompt, which houses MeshEntry FieldElements.
+ * Assumes that the dimensions of the baseCompartment have just been
+ * redefined, and we now need to go through and update the child 
+ * reaction system.
+ */
+
+void Shell::doReacDiffMesh( Id baseCompartment )
+{
+	Eref sheller( shelle_, 0 );
+	assert( baseCompartment()->dataHandler()->isGlobal() );
+	assert( baseCompartment()->cinfo()->isA( "ChemMesh" ) );
+	Id baseMesh( baseCompartment.value() + 1 );
+	doSyncDataHandler( baseMesh );
+
+	initAck();
+		requestReMesh.send( sheller, &p_, baseMesh );
+	waitForAck();
+
+	// Traverse all child compts and do their meshes.
+	vector< Id > kids;
+	Neutral::children( baseCompartment.eref(), kids );
+	for ( vector< Id >::iterator i = kids.begin(); i != kids.end(); ++i)
+	{
+		if ( i->operator()()->cinfo()->isA( "ChemMesh" ) ) {
+			doReacDiffMesh( *i );
+		}
+	}
+
+	// Here we need to check on any non-matching Reacs and enzymes.
+	
+}
+
+
 ////////////////////////////////////////////////////////////////
 // DestFuncs
 ////////////////////////////////////////////////////////////////
@@ -647,6 +706,8 @@ void Shell::innerCreate( string type, ObjId parent, Id newElm, string name,
 	const NodeBalance& nb, unsigned int msgIndex )
 	// unsigned int numData, bool isGlobal
 {
+	assert( dimensions.size() >= 1 );
+	// cout << "in Shell::innerCreate for " << parent.path() << "/" << name << endl << flush;
 	const Cinfo* c = Cinfo::find( type );
 	if ( c ) {
 		Element* ret;

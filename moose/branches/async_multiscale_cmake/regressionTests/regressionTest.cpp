@@ -20,6 +20,7 @@ void rtTable();
 void rtReacDiff();
 void rtHHnetwork( unsigned int numCopies );
 void rtHHnetwork( unsigned int numCopies );
+void rtHHnetwork( unsigned int numCopies );
 
 extern void testGsolver( string modelName, string plotName,
 	double plotDt, double simtime, double volume );
@@ -52,6 +53,7 @@ void regressionTests()
 	rtTestMultiCompartmentReacDiff();
 
 	rtReacDiff();
+	rtHHnetwork( 10 );
 	rtHHnetwork( 10 );
 	cout << endl;
 }

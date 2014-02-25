@@ -406,6 +406,8 @@ void rtRunKkit()
 	double n;
 	n = Field< double >::get( Id( "/rkktest/kinetics/MAPK/MKK" ), "n" );
 	assert( !doubleEq( n, 0.3 / NA_RATIO ) );
+	/*
+	*/
 
 	Id plotId( "/rkktest/graphs/conc1/MAPK_dash_PP.Co" );
 	vector< Id > ret = LookupField< string, vector< Id > >::get( 

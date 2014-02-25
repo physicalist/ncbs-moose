@@ -1380,6 +1380,36 @@ not succeed in getting it to quit.
 Also fails on 5 nodes now. in testShell.cpp:925
 This is due to my trying to do a direct access to a data entry on the
 master 0 node. The data is not on this node.
+	- All targets must scan through all potential sources
+- Input Q on Msg, synapse-local Q on objects
+	- Initial op: Get data from axon to Msg.
+	- Option 1: push onto Msg Q, accumulate on Msg.
+		- Thread locking needed.
+		- Msg subsequently called on tick to clean input Q.
+		- This could be a rare call if syn delay is large.
+		- Now it shuffles data into synapse-specific Q.
+			- Depending on update rate and convergence onto syn,
+				this could be a single entry Q.
+			- Multi-thread op here too, but very local.
+		- This synapse-specific Q could also be the sorted event Q
+		- Object scans base of event Q each timestep.
+		- Note that we cannot do event queueing on the incoming
+			APs, because of different delays to target.
+	- Option 2: Immediately sort onto target synapse Qs.
+		- Thread locking needed.
+		- This op has to immediately do the shuffling into 
+			synapse-specific Q, since otherwise full scan needed.
+		- This synapse-specific Q could also be the sorted event Q
+		- Object scans base of event Q each timestep.
+	- When object pops event Q, it has to locate syn wt, prob, history, etc.
+		- Option 1: Msg carries this info.
+			+ These are features of projection pattern
+			- Need to template whole Syn Msg structure
+			+ Projection could compute on fly.
+		- Option 2: Target obj carries this info
+			+ Local calculations easier. Postsyn compt history too.
+			+ No templating needed.
+			- Need index in msg for target obj to look up info.
 
 Fixed this little bug. 
 Now it fails again in testShellAddMsg. That is turning out to be

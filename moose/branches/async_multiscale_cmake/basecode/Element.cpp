@@ -433,6 +433,13 @@ void Element::digestMessages()
 			}
 		}
 	}
+	cout << "Dest and Src: \n";
+	for ( unsigned int i = 0; i < m_.size(); ++i ) {
+		const Msg* m = Msg::getMsg( m_[i] );
+		cout << i << ": MsgId= " << m_[i] << 
+			", e1= " << m->e1()->name_ <<
+			", e2= " << m->e2()->name_ << endl;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////

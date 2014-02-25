@@ -124,6 +124,10 @@ template < class T, class F > class ReadOnlyValueFinfo: public ValueFinfoBase
 			return Conv<F>::rttiType();
 		}
 
+		string rttiType() const {
+			return Conv<F>::rttiType();
+		}
+
 	private:
 };
 

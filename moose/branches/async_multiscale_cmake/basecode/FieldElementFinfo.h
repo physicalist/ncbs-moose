@@ -109,7 +109,8 @@ template < class T, class F > class FieldElementFinfo: public FieldElementFinfoB
 			: FieldElementFinfoBase( name, doc, fieldCinfo, deferCreate ),
 				lookupField_( lookupField ),
 				setNumField_( setNumField ),
-				getNumField_( getNumField )
+				getNumField_( getNumField ),
+				deferCreate_( deferCreate )
 		{
 				string setname = "setNum" + name;
 				setname[6] = toupper( setname[6] );
@@ -165,6 +166,10 @@ template < class T, class F > class FieldElementFinfo: public FieldElementFinfoB
 
 
 		/// Virtual function to look up type of FieldElementFinfo
+		string rttiType() const {
+			return Conv<F>::rttiType();
+		}
+
 		string rttiType() const {
 			return Conv<F>::rttiType();
 		}
