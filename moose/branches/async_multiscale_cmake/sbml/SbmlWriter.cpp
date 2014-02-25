@@ -14,7 +14,6 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 #include "header.h"
-#include <sbml/SBMLTypes.h>
 #include "SbmlWriter.h"
 #include "../shell/Wildcard.h"
 #include "../shell/Neutral.h"
@@ -79,7 +78,7 @@ int SbmlWriter::write( string filepath,string target )
   
   SBMLDocument sbmlDoc;
   bool SBMLok = false;
-  createModel( filename,sbmlDoc,target ); 
+  createModel(filename, sbmlDoc, target); 
   SBMLok  = validateModel( &sbmlDoc );
   if ( SBMLok ) 
     writeModel( &sbmlDoc, filepath );

@@ -193,7 +193,7 @@ void Cinfo::makeCinfoElements( Id parent )
 // Look up operations.
 //////////////////////////////////////////////////////////////////////
 
-const Cinfo* Cinfo::find( const string& name )
+Cinfo* Cinfo::find( const string& name )
 {
 	map<string, Cinfo*>::iterator i = cinfoMap().find(name);
 	if ( i != cinfoMap().end() )
