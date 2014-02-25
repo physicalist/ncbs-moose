@@ -19,7 +19,6 @@ class OneToAllMsg: public Msg
 {
 	friend unsigned int Msg::initMsgManagers(); // for initializing Id.
 	friend void testGetMsgs(); // test func
-	friend void testGetMsgs(); // test func
 	public:
 		OneToAllMsg( Eref e1, Element* e2, unsigned int msgIndex );
 		~OneToAllMsg();
@@ -35,9 +34,6 @@ class OneToAllMsg: public Msg
 
 		Msg* copy( Id origSrc, Id newSrc, Id newTgt,
 			FuncId fid, unsigned int b, unsigned int n ) const;
-
-		unsigned int srcToDestPairs(
-			vector< DataId >& src, vector< DataId >& dest) const;
 
 		/// Return the first DataId
 		DataId getI1() const;

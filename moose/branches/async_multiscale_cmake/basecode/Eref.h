@@ -75,7 +75,7 @@ class Eref
 		unsigned int getNode() const;
 	private:
 		Element* e_;
-		DataId i_;
+		unsigned int i_;
 		unsigned int f_;
 };
 

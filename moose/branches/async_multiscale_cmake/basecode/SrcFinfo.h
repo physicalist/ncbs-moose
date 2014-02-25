@@ -81,9 +81,6 @@ class SrcFinfo0: public SrcFinfo
 			return "void";
 		}
 
-		string rttiType() const {
-			return Conv<T>::rttiType();
-		}
 	private:
 };
 
@@ -135,10 +132,6 @@ template < class T > class SrcFinfo1: public SrcFinfo
 		string rttiType() const {
 			return Conv<T>::rttiType();
 		}
-		string rttiType() const {
-			return Conv< int >::rttiType();
-		}
-
 	private:
 };
 
@@ -186,10 +179,6 @@ template < class T1, class T2 > class SrcFinfo2: public SrcFinfo
 
 		string rttiType() const {
 			return Conv<T1>::rttiType() + "," + Conv< T2 >::rttiType();
-		}
-
-		string rttiType() const {
-			return Conv< double >::rttiType() + "," + Conv<  double  >::rttiType();
 		}
 
 	private:

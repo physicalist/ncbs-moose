@@ -16,13 +16,6 @@ Id Shell::doCopy( Id orig, ObjId newParent, string newName,
 	unsigned int n, bool toGlobal, bool copyExtMsg )
 {
 
-	if ( n > 1 && numNodes() > 1 && 
-		( !orig()->dataHandler()->isGlobal() ) ) {
-		cout << "Error: Shell::doCopy( " << orig.path() << " to " <<
-			newParent.path() << 
-			":\nCannot array copy local object across nodes (yet)\n";
-		return Id();
-	}
 	if ( Neutral::isDescendant( newParent, orig ) ) {
 		cout << "Error: Shell::doCopy: Cannot copy object to descendant in tree\n";
 		return Id();

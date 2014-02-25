@@ -1,8 +1,25 @@
-file(GLOB files_SRC 
-    "*.h"
-    "*.cpp"
-)
 include_directories(../msg)
 include_directories(../basecode ../utility)
-add_library(kinetics ${files_SRC})
-target_link_libraries(kinetics basecode)
+add_library(kinetics
+	PoolBase.cpp	
+	Pool.cpp	
+	BufPool.cpp	
+	FuncPool.cpp	
+	ReacBase.cpp	
+	Reac.cpp	
+	EnzBase.cpp	
+	CplxEnzBase.cpp	
+	Enz.cpp	
+	MMenz.cpp	
+	Species.cpp	
+	ReadKkit.cpp	
+	WriteKkit.cpp	
+	ReadCspace.cpp	
+	SumTotalTerm.cpp	
+	MathFuncTerm.cpp	
+	FuncBase.cpp	
+	MathFunc.cpp	
+	SumFunc.cpp	
+	lookupVolumeFromMesh.cpp	
+	testKinetics.cpp	
+        )

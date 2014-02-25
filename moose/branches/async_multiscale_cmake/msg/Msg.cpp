@@ -158,83 +158,6 @@ ObjId Msg::getAdjacent(ObjId obj) const
     return findOtherEnd(obj);
 }
 
-vector< string > Msg::getSrcFieldsOnE1() const
-{
-	vector< pair< BindIndex, FuncId > > ids;
-	vector< string > ret;
-
-	e1_->getFieldsOfOutgoingMsg( mid_, ids );
-
-	for ( unsigned int i = 0; i < ids.size(); ++i ) {
-		string name = e1_->cinfo()->srcFinfoName( ids[i].first );
-		if ( name == "" ) {
-			cout << "Error: Msg::getSrcFieldsOnE1: Failed to find field on msg " <<
-			e1_->getName() << "-->" << e2_->getName() << endl;
-		} else {
-			ret.push_back( name );
-		}
-	}
-	return ret;
-}
-
-vector< string > Msg::getDestFieldsOnE2() const
-{
-	vector< pair< BindIndex, FuncId > > ids;
-	vector< string > ret;
-
-	e1_->getFieldsOfOutgoingMsg( mid_, ids );
-
-	for ( unsigned int i = 0; i < ids.size(); ++i ) {
-		string name = e2_->cinfo()->destFinfoName( ids[i].second );
-		if ( name == "" ) {
-			cout << "Error: Msg::getDestFieldsOnE2: Failed to find field on msg " <<
-			e1_->getName() << "-->" << e2_->getName() << endl;
-		} else {
-			ret.push_back( name );
-		}
-	}
-	return ret;
-}
-
-vector< string > Msg::getSrcFieldsOnE2() const
-{
-	vector< pair< BindIndex, FuncId > > ids;
-	vector< string > ret;
-
-	e2_->getFieldsOfOutgoingMsg( mid_, ids );
-
-	for ( unsigned int i = 0; i < ids.size(); ++i ) {
-		string name = e2_->cinfo()->srcFinfoName( ids[i].first );
-		if ( name == "" ) {
-			cout << "Error: Msg::getSrcFieldsOnE2: Failed to find field on msg " <<
-			e1_->getName() << "-->" << e2_->getName() << endl;
-		} else {
-			ret.push_back( name );
-		}
-	}
-	return ret;
-}
-
-vector< string > Msg::getDestFieldsOnE1() const
-{
-	vector< pair< BindIndex, FuncId > > ids;
-	vector< string > ret;
-
-	e2_->getFieldsOfOutgoingMsg( mid_, ids );
-
-	for ( unsigned int i = 0; i < ids.size(); ++i ) {
-		string name = e1_->cinfo()->destFinfoName( ids[i].second );
-		if ( name == "" ) {
-			cout << "Error: Msg::getDestFieldsOnE1: Failed to find field on msg " <<
-			e1_->getName() << "-->" << e2_->getName() << endl;
-		} else {
-			ret.push_back( name );
-		}
-	}
-	return ret;
-}
-
-
 ///////////////////////////////////////////////////////////////////////////
 // Here we set up the Element related stuff for Msgs.
 ///////////////////////////////////////////////////////////////////////////
@@ -326,19 +249,14 @@ unsigned int Msg::initMsgManagers()
 	OneToOneMsg::managerId_ = Id::nextId();
 	new MsgElement( OneToOneMsg::managerId_, OneToOneMsg::initCinfo(),
 		"oneToOneMsg", &OneToOneMsg::numMsg, &OneToOneMsg::lookupMsg );
-	msgMgrs.push_back( OneToOneMsg::managerId_ );
 
 	OneToAllMsg::managerId_ = Id::nextId();
 	new MsgElement( OneToAllMsg::managerId_, OneToAllMsg::initCinfo(),
 		"oneToAllMsg", &OneToAllMsg::numMsg, &OneToAllMsg::lookupMsg );
 
-	msgMgrs.push_back( OneToAllMsg::managerId_ );
-
 	DiagonalMsg::managerId_ = Id::nextId();
 	new MsgElement( DiagonalMsg::managerId_, DiagonalMsg::initCinfo(), 
 		"diagonalMsg", &DiagonalMsg::numMsg, &DiagonalMsg::lookupMsg );
-
-	msgMgrs.push_back( DiagonalMsg::managerId_ );
 
 	SparseMsg::managerId_ = Id::nextId();
 	new MsgElement( SparseMsg::managerId_, SparseMsg::initCinfo(), 
@@ -363,9 +281,6 @@ unsigned int Msg::initMsgManagers()
 	Shell::adopt( msgManagerId_, SparseMsg::managerId_, n++ );
 
 	return n;
-	msgMgrs.push_back( ReduceMsg::managerId_ );
-
-	msgMgrs.push_back( msgManagerId_ );
 }
 
 void Msg::clearAllMsgs()

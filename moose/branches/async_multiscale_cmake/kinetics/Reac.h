@@ -51,8 +51,6 @@ class Reac: public ReacBase
 		double kb_;	// Used for EE method, but secondary to the ConcKf
 		double sub_;	// State variable
 		double prd_;	// State variable
-		double sub_;
-		double prd_;
 };
 
 #endif // REAC_H
