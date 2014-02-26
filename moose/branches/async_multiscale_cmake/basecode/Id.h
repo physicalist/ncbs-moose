@@ -10,6 +10,16 @@
 #ifndef _ID_H
 #define _ID_H
 
+#ifdef  CYTHON
+using namespace std;
+#include <map>
+#include <vector>
+#include <string>
+class ObjId;
+class Element;
+class Eref;
+#endif     /* -----  CYTHON  ----- */
+
 /**
  * This class manages id lookups for elements. Ids provide a uniform
  * handle for every object, independent of which node they are located on.

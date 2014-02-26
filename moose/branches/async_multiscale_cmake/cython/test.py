@@ -2,5 +2,5 @@
 import sys
 sys.path.append(".")
 import moose_cython
-moose_cython.main()
+moose_cython._main()
 
