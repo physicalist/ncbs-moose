@@ -193,7 +193,7 @@ void Cinfo::makeCinfoElements( Id parent )
 // Look up operations.
 //////////////////////////////////////////////////////////////////////
 
-Cinfo* Cinfo::find( const string& name )
+const Cinfo* Cinfo::find( const string& name )
 {
 	map<string, Cinfo*>::iterator i = cinfoMap().find(name);
 	if ( i != cinfoMap().end() )
@@ -457,7 +457,12 @@ unsigned int Cinfo::getNumValueFinfo() const
 
 
 ////////////////////////////////////////////////////////////////////
-Finfo* Cinfo::getLookupFinfo( unsigned int i )
+
+/*-----------------------------------------------------------------------------
+ *  NOTE: This function is made const
+ *  Wed 26 Feb 2014 02:18:03 PM IST
+ *-----------------------------------------------------------------------------*/
+Finfo* Cinfo::getLookupFinfo( unsigned int i ) const
 {
 	if ( i >= getNumLookupFinfo() )
 		return &dummy;
@@ -465,7 +470,7 @@ Finfo* Cinfo::getLookupFinfo( unsigned int i )
 		if ( i >= baseCinfo_->getNumLookupFinfo() )
 			return lookupFinfos_[ i - baseCinfo_->getNumLookupFinfo() ];
 		else
-			return const_cast< Cinfo* >(baseCinfo_)->getLookupFinfo( i );
+                        return baseCinfo_->getLookupFinfo(i);
 	}
 
 	return lookupFinfos_[i];
@@ -503,7 +508,7 @@ unsigned int Cinfo::getNumSharedFinfo() const
 }
 
 ////////////////////////////////////////////////////////////////////
-Finfo* Cinfo::getFieldElementFinfo( unsigned int i )
+Finfo* Cinfo::getFieldElementFinfo( unsigned int i ) const
 {
 	if ( i >= getNumFieldElementFinfo() )
 		return &dummy;
@@ -511,7 +516,7 @@ Finfo* Cinfo::getFieldElementFinfo( unsigned int i )
 		if ( i >= baseCinfo_->getNumFieldElementFinfo() )
 			return fieldElementFinfos_[ i - baseCinfo_->getNumFieldElementFinfo() ];
 		else
-			return const_cast< Cinfo* >( baseCinfo_ )->getFieldElementFinfo( i );
+			return baseCinfo_->getFieldElementFinfo( i );
 	}
 
 	return fieldElementFinfos_[i];
