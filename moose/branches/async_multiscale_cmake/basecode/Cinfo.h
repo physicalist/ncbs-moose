@@ -10,7 +10,17 @@
 #ifndef _CINFO_H
 #define _CINFO_H
 
+#ifdef CYTHON
+#include "basecode_header.hpp"
+
+class Finfo;
 class DinfoBase;
+class OpFunc;
+class FuncId;
+class Id;
+class Element;
+
+#endif
 
 /**
  * Class to manage class information for all the other classes.
