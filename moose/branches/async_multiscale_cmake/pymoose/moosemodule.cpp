@@ -971,7 +971,7 @@ extern "C" {
     vector<string> getFieldNames(string className, string finfoType)
     {
         vector <string> ret;
-        Cinfo * cinfo = Cinfo::find(className);
+        const Cinfo * cinfo = Cinfo::find(className);
         if (cinfo == NULL){
             cerr << "Invalid class name." << endl;
             return ret;
@@ -1021,7 +1021,7 @@ extern "C" {
     int getFieldDict(string className, string finfoType,
                      vector<string>& fieldNames, vector<string>&fieldTypes)
     {
-        Cinfo * cinfo = Cinfo::find(className);
+        const Cinfo * cinfo = Cinfo::find(className);
         if (cinfo == NULL){
             cerr << "Invalid class." << endl;
             return 0;
