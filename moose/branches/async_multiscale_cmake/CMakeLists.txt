@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 project(moose)
 
 # Compiler 
@@ -17,7 +17,7 @@ if(CHECK_STRICT)
     add_definitions(-DSTRICT_CHECKING)
 endif(CHECK_STRICT)
 
-set(CMAKE_VERBOSE_MAKEFILE OFF)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
 set(INSTALL_LIB_DIR lib CACHE PATH "/usr/local/lib")
@@ -37,6 +37,20 @@ if(STRICT_CHECK)
     add_definitions(-DSTRICT_CHECK)
 endif(STRICT_CHECK)
 
+## Here we add an executable
+include_directories(basecode msg)
+add_executable(moose basecode/main.cpp)
+
+# Build
+set(USE_GSL 1)
+if(USE_GSL)
+    find_package(GSL REQUIRED)
+    add_definitions(-DUSE_GSL)
+    include_directories(${GSL_INCLUDE_DIRS} ${GSLCBLAS_INCLUDE_DIRS})
+    target_link_libraries(moose ${GSL_LIBRARIES})
+endif(USE_GSL)
+
+# Add subdirectroeis
 add_subdirectory(basecode)
 add_subdirectory(biophysics)
 add_subdirectory(msg)
@@ -53,39 +67,6 @@ add_subdirectory(device)
 add_subdirectory(benchmarks)
 add_subdirectory(kinetics)
 
-include_directories(basecode msg)
-add_executable(moose basecode/main.cpp)
-
-# Build
-set(USE_GSL 1)
-if(USE_GSL)
-    find_package(GSL REQUIRED)
-    add_definitions(-DUSE_GSL)
-    include_directories(${GSL_INCLUDE_DIRS} ${GSLCBLAS_INCLUDE_DIRS})
-    target_link_libraries(moose ${GSL_LIBRARIES})
-endif(USE_GSL)
-set(USE_HDF5 1)
-if(USE_HDF5)
-    add_definitions(-DUSE_HDF5)
-    #find_package(HDF5 REQUIRED)
-    #include_directories(${HDF5_INCLUDE_DIR})
-    #target_link_libraries(moose ${HDF5_LIBRARIES})
-    target_link_libraries(moose hdf5)
-endif(USE_HDF5)
-
-set(USE_SBML 1)
-if(USE_SBML)
-    add_definitions(-DUSE_SBML)
-    add_subdirectory(sbml)
-    target_link_libraries(moose moose_sbml sbml)
-endif(USE_SBML)
-
-set(USE_READLINE 1)
-if(USE_READLINE)
-    add_definitions(-DUSE_READLINE)
-    target_link_libraries(moose readline)
-endif(USE_READLINE)
-
 # Links our libraries 
 target_link_libraries(moose 
     scheduling
@@ -99,10 +80,48 @@ target_link_libraries(moose
     benchmarks
     )
 
+
+## Setup hdf5
+find_package(HDF5)
+if(HDF5_FOUND)
+    add_definitions(-DUSE_HDF5)
+    find_package(HDF5 REQUIRED)
+    include_directories(${HDF5_INCLUDE_DIR})
+    target_link_libraries(moose ${HDF5_LIBRARY})
+else()
+    add_definitions(-UHDF5)
+endif(HDF5_FOUND)
+
+find_package(LIBSBML)
+if(LIBSBML_FOUND)
+    add_definitions(-DUSE_SBML)
+    add_subdirectory(sbml)
+    include_directories(${LIBSBML_INCLUDE_DIR})
+    target_link_libraries(moose moose_sbml)
+    find_package(BZip2)
+    if(BZIP2_FOUND)
+        target_link_libraries(moose ${BZIP2_LIBRARIES})
+    endif()
+elseif()
+    message("SMBL is not found")
+    add_definitions(-UUSE_SBML)
+endif(LIBSBML_FOUND)
+
+set(USE_READLINE 1)
+if(USE_READLINE)
+    add_definitions(-DUSE_READLINE)
+    target_link_libraries(moose readline)
+endif(USE_READLINE)
 ## Build pymoose 
 set(BUILD_PYMOOSE 1)
 if(BUILD_PYMOOSE)
+    find_package(NumpyHeaders REQUIRED)
+    include_directories(${NUMPY_PATH})
+
+    # Openmpi
     find_package(MPI REQUIRED)
+    set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+
     find_package(PythonLibs 2.7 EXACT REQUIRED)
     include_directories(${PYTHON_INCLUDE_DIRS})
     add_subdirectory(pymoose)
@@ -112,7 +131,6 @@ if(BUILD_PYMOOSE)
         LIBRARY_OUTPUT_DIRECTORY "./python/moose"
         PREFIX ""
         )
-
     target_link_libraries(_moose 
         "-Wl,--whole-archive"
         moosepython
@@ -133,7 +151,6 @@ if(BUILD_PYMOOSE)
         pthread
         colored_print
         ${PYTHON_LIBRARY}
-        ${MPI_LIBRARY}
         ${GSL_LIBRARIES}
         "-Wl,--no-whole-archive"
         )
