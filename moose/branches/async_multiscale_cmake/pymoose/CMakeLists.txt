@@ -1,3 +1,4 @@
+# Find Numpy 
 add_definitions(-DPYMOOSE)
 add_library(moosepython 
     vec.cpp
