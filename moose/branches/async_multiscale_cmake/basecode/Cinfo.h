@@ -9,14 +9,13 @@
 **********************************************************************/
 #ifndef _CINFO_H
 #define _CINFO_H
+class DinfoBase;
 
 #ifdef CYTHON
 #include "basecode_header.hpp"
 
 class Finfo;
-class DinfoBase;
 class OpFunc;
-class FuncId;
 class Id;
 class Element;
 
