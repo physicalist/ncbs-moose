@@ -41,6 +41,7 @@ endif(STRICT_CHECK)
 include_directories(basecode msg)
 add_executable(moose basecode/main.cpp)
 
+
 # Build
 set(USE_GSL 1)
 if(USE_GSL)
@@ -152,6 +153,32 @@ if(BUILD_PYMOOSE)
         colored_print
         ${PYTHON_LIBRARY}
         ${GSL_LIBRARIES}
+        "-Wl,--no-whole-archive"
+        )
+    
+    # For cython
+    add_library(mooselib SHARED pymoose/moosemodule.cpp)
+    set_target_properties(mooselib PROPERTIES 
+        LIBRARY_OUTPUT_DIRECTORY "./cython"
+        )
+    target_link_libraries(mooselib
+        "-Wl,--whole-archive"
+        basecode
+        msg
+        shell
+        scheduling
+        randnum
+        moose_mpi
+        builtins
+        utility
+        muparser
+        biophysics
+        kinetics
+        mesh
+        device
+        benchmarks
+        pthread
+        colored_print
         "-Wl,--no-whole-archive"
         )
 endif(BUILD_PYMOOSE)
