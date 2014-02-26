@@ -44,7 +44,7 @@ setup(
                     "../basecode" 
                     , "../msg"
                     ]
-                , sources = ["_pymoose.pyx", "../basecode/main.cpp"
+                , sources = ["_pymoose.pyx"
                     ]
                 , extra_compile_args = [ "-fopenmp", "-g"
                     , "-DCYTHON"
@@ -60,17 +60,25 @@ setup(
                     , "-L../randnum"
                     , "-L../scheduling"
                     , "-L../mpi"
+                    , "-L../benchmarks"
+                    , "-L../kinetics"
+                    , "-L../utility"
+                    , "-L../biophysics"
                     ]
                 , libraries = [
                     "mpi"
                     , "stdc++"
-                    , "shell"
                     , "msg"
-                    , "colored_print"
                     , "scheduling"
                     , "moose_mpi"
                     , "randnum"
+                    , "benchmarks"
+                    , "shell"
+                    , "kinetics"
+                    , "biophysics"
                     , "basecode"
+                    , "utility"
+                    , "colored_print"
                     ]
                 )
             ]

@@ -2,4 +2,5 @@
 import sys
 sys.path.append(".")
 import moose_cython
-print dir(moose_cython)
+moose_cython.main()
+

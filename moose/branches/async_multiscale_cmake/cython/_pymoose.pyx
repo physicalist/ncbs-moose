@@ -1,6 +1,13 @@
 ## This is entry of cmake 
 
+import os
+import sys
 
-if __name__ == "__main__":
-    print("This is main function")
+cdef extern from "main_cython.hpp":
+    unsigned int getNumCores()
 
+def PyGetNumCores():
+    return getNumCores()
+
+def main():
+    print(PyGetNumCores())
