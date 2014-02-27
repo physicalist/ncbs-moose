@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # This is topmose file of this excercise.
 import sys
-sys.path.append(".")
-import libmooselib
+import os
+os.environ['LD_LIBRARY_PATH'] = '.'
+sys.path.append("./")
+
 import cymoose
 
 if __name__ == "__main__":

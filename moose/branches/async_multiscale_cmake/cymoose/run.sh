@@ -10,4 +10,5 @@ if [ $# -lt 1 ]; then
 else
     echo "Just testing"
 fi
-./test.py
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
+python test.py
