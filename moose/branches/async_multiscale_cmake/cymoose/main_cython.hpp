@@ -19,8 +19,6 @@
 
 #ifndef  MAIN_CYTHON_INC
 #define  MAIN_CYTHON_INC
-
-#include "header.h"
 #ifndef WIN32
 	#include <sys/time.h>
 #else
@@ -45,55 +43,6 @@
 #ifdef MACOSX
 #include <sys/sysctl.h>
 #endif // MACOSX
-
-#ifdef DO_UNIT_TESTS
-extern void testSync();
-extern void testAsync();
-extern void testSyncArray( unsigned int size, unsigned int method );
-extern void testShell();
-extern void testScheduling();
-extern void testSchedulingProcess();
-extern void testBuiltins();
-extern void testBuiltinsProcess();
-
-extern void testMpiScheduling();
-extern void testMpiBuiltins();
-extern void testMpiShell();
-extern void testMsg();
-extern void testMpiMsg();
-// extern void testKinetics();
-// extern void testKineticSolvers();
-// extern void	testKineticSolversProcess();
-extern void testBiophysics();
-extern void testBiophysicsProcess();
-// extern void testHSolve();
-// extern void testKineticsProcess();
-// extern void testGeom();
-// extern void testMesh();
-// extern void testSimManager();
-// extern void testSigNeur();
-// extern void testSigNeurProcess();
-
-extern unsigned int initMsgManagers();
-extern void destroyMsgManagers();
-// void regressionTests();
-#endif
-extern void speedTestMultiNodeIntFireNetwork( 
-	unsigned int size, unsigned int runsteps );
-
-#ifdef USE_SMOLDYN
-	extern void testSmoldyn();
-#endif
-// bool benchmarkTests( int argc, char** argv );
-
-extern void mooseBenchmarks( unsigned int option );
-
-// Forward declaration
-class Id;
-
-//////////////////////////////////////////////////////////////////
-// System-dependent function here
-//////////////////////////////////////////////////////////////////
 
 unsigned int getNumCores()
 {
@@ -269,74 +218,6 @@ Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests,
 	return shellId;
 }
 
-/**
- * These tests are meant to run on individual nodes, and should
- * not invoke MPI calls. They should not be run when MPI is running.
- * These tests do not use the threaded/MPI event loop and are the most
- * basic of the set.
- */
-void nonMpiTests( Shell* s )
-{
-#ifdef DO_UNIT_TESTS
-	if ( Shell::myNode() == 0 ) {
-		unsigned int numNodes = s->numNodes();
-		unsigned int numCores = s->numCores();
-		if ( numCores > 0 )
-		s->setHardware( 1, 1, 0 );
-		testAsync();
-		testMsg();
-		testShell();
-		testScheduling();
-		testBuiltins();
-		// testKinetics();
-		// testKineticSolvers();
-		testBiophysics();
-		// testHSolve();
-		// testGeom();
-		// testMesh();
-		// testSigNeur();
-#ifdef USE_SMOLDYN
-		// testSmoldyn();
-#endif
-		s->setHardware( numCores, numNodes, 0 );
-	}
-#endif
-}
-
-/**
- * These tests involve the threaded/MPI process loop and are the next
- * level of tests.
- */
-void processTests( Shell* s )
-{
-#ifdef DO_UNIT_TESTS
-	testSchedulingProcess();
-	testBuiltinsProcess();
-	// testKineticsProcess();
-	testBiophysicsProcess();
-	// testKineticSolversProcess();
-	// testSimManager();
-	// testSigNeurProcess();
-#endif
-}
-
-/**
- * These are tests that are MPI safe. They should also run
- * properly on single nodes.
- */
-void mpiTests()
-{
-#ifdef DO_UNIT_TESTS
-		testMpiMsg();
-		cout << "." << flush;
-		testMpiShell();
-		cout << "." << flush;
-		testMpiBuiltins();
-		cout << "." << flush;
-		testMpiScheduling();
-		cout << "." << flush;
-#endif
-}
 
 int initMoose( int argc, char** argv )
 {

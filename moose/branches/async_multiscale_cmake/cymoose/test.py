@@ -2,6 +2,7 @@
 # This is topmose file of this excercise.
 import sys
 sys.path.append(".")
+import libmooselib
 import cymoose
 
 if __name__ == "__main__":

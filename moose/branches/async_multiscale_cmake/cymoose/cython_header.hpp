@@ -62,6 +62,7 @@ class ProcInfo;
 class Cinfo;
 class DestFinfo;
 class Msg;
+class Eref;
 
 template<typename T>
 class SrcFinfo1;

@@ -157,9 +157,10 @@ if(BUILD_PYMOOSE)
         )
     
     # For cython
-    add_library(mooselib SHARED pymoose/moosemodule.cpp)
+    add_library(mooselib SHARED cymoose/cymoose_methods.cxx
+        )
     set_target_properties(mooselib PROPERTIES 
-        LIBRARY_OUTPUT_DIRECTORY "./cython"
+        LIBRARY_OUTPUT_DIRECTORY "./cymoose"
         )
     target_link_libraries(mooselib
         "-Wl,--whole-archive"

@@ -10,6 +10,11 @@
 #ifndef _NEUTRAL_H
 #define _NEUTRAL_H
 
+#ifdef  CYTHON
+#include "../cymoose/cython_header.hpp"
+class ObjId;
+class Id;
+#endif     /* -----  CYTHON  ----- */
 class Neutral
 {
 	public:
