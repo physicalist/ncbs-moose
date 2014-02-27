@@ -3,7 +3,8 @@ CXX=g++
 CC=g++
 LDFLAGS=-L/usr/lib -L/usr/local/lib -L/usr/lib/mpi/gcc/openmpi/lib
 export LDFLAGS
-OBJS = ./pymoose.pyx ./basecode_Id.pxd  \
+OBJS = ./cymoose.pyx \
+       ./basecode_Id.pxd  \
        ./biophysics_Compartment.pxd \
        ./cython_header.hpp
 

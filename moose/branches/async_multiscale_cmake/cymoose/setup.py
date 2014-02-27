@@ -28,7 +28,7 @@ os.environ['CXX'] = "g++"
 
 
 # Clean up
-moduleName = "moose_cython"
+moduleName = "cymoose"
 for root, dirs, files in os.walk(".", topdown=False):
     for name in files:
         if (name.startswith(moduleName) and not(name.endswith(".pyx") or
@@ -48,7 +48,7 @@ setup(
                     , "../msg"
                     , "."
                     ]
-                , sources = ["pymoose.pyx"
+                , sources = ["cymoose.pyx"
                     ]
                 , extra_compile_args = [ "-fopenmp", "-g"
                     , "-DCYTHON"

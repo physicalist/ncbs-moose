@@ -12,7 +12,7 @@
 #define _COMPARTMENT_H
 
 #ifdef  CYTHON
-#include "../cython/cython_header.hpp"
+#include "cython_header.hpp"
 #endif     /* -----  CYTHON  ----- */
 /**
  * The Compartment class sets up an asymmetric compartment for

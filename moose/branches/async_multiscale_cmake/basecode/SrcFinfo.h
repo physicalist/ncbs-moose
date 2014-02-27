@@ -10,7 +10,7 @@
 #define _SRC_FINFO_H
 
 #ifdef  CYTHON
-#include "../cython/cython_header.hpp"
+#include "cython_header.hpp"
 #endif     /* -----  CYTHON  ----- */
 /**
  * This set of classes define Message Sources. Their main job is to supply 

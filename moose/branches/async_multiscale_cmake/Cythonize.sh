@@ -1,2 +1,2 @@
 #!/bin/bash
-cd cython && make
+cd cymoose && make

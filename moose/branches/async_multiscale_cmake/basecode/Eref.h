@@ -10,6 +10,11 @@
 #ifndef _EREF_H
 #define _EREF_H
 
+#ifdef  CYTHON
+class MsgDigest;
+
+#endif     /* -----  CYTHON  ----- */
+
 class Eref
 {
 	public:
