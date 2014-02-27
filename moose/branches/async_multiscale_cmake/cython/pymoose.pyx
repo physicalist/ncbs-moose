@@ -8,6 +8,20 @@ cimport basecode_Id
 cimport shell_Shell
 cimport biophysics_Compartment as comp
 
+cdef class Compartment:
+    cdef comp.Compartment* thisptr
+    def __cinit__(self):
+        print "Initializing a compartment"
+        self.thisptr = new comp.Compartment()
+    def __deinit__(self):
+        del self.thisptr
+
+    def setVm(self, double Vm): self.thisptr.setVm(Vm)
+    def getVm(self): return self.thisptr.getVm()
+    def setEm(self, double Em): self.thisptr.setEm(Em)
+    def getEm(self): return self.thisptr.getEm()
+    
+
 def PyGetNumCores():
     return getNumCores()
 
