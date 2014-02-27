@@ -7,10 +7,6 @@
 import os
 import sys
 
-cdef extern from "./main_cython.hpp":
-    cdef unsigned int getNumCores()
-
-
 include "Compartment.pyx"
 include "Neutral.pyx"
 
