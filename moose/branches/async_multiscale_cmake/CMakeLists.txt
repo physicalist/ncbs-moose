@@ -182,3 +182,4 @@ if(BUILD_PYMOOSE)
         "-Wl,--no-whole-archive"
         )
 endif(BUILD_PYMOOSE)
+

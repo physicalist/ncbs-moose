@@ -338,4 +338,55 @@ void mpiTests()
 #endif
 }
 
+int initMoose( int argc, char** argv )
+{
+	bool doUnitTests = 0;
+	bool doRegressionTests = 0;
+	unsigned int benchmark = 0;
+	// This reorders the OpFunc to Fid mapping to ensure it is node and
+	// compiler independent.
+	Id shellId = init( argc, argv, doUnitTests, doRegressionTests, benchmark );
+	// Note that the main loop remains the parser loop, though it may
+	// spawn a lot of other stuff.
+	Element* shelle = shellId.element();
+	Shell* s = reinterpret_cast< Shell* >( shelle->data( 0 ) );
+	if ( doUnitTests )
+		nonMpiTests( s ); // These tests do not need the process loop.
+
+	if ( Shell::myNode() == 0 ) {
+		if ( Shell::numNodes() > 1 ) {
+			// Use the last clock for the postmaster, so that it is called
+			// after everything else has been processed and all messages
+			// are ready to send out.
+			s->doUseClock( "/postmaster", "process", 9 );
+			s->doSetClock( 9, 1.0 ); // Use a sensible default.
+		}
+#ifdef DO_UNIT_TESTS
+		if ( doUnitTests ) {
+			mpiTests();
+			processTests( s );
+		}
+		// if ( doRegressionTests ) regressionTests();
+#endif
+		// These are outside unit tests because they happen in optimized
+		// mode, using a command-line argument. As soon as they are done
+		// the system quits, in order to estimate timing.
+		if ( benchmark != 0 ) {
+			mooseBenchmarks( benchmark );
+			s->doQuit();
+		} 
+	} else {
+		PostMaster* p = reinterpret_cast< PostMaster* >( ObjId( 3 ).data());
+		while ( Shell::keepLooping() ) {
+			p->clearPending();
+		}
+	}
+	Msg::clearAllMsgs();
+	Id::clearAllElements();
+#ifdef USE_MPI
+	MPI_Finalize();
+#endif
+	return 0;
+}
+
 #endif   /* ----- #ifndef MAIN_CYTHON_INC  ----- */

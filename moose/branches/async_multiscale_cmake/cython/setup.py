@@ -23,6 +23,9 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
+os.environ['CC'] = "g++"
+os.environ['CXX'] = "g++"
+
 
 # Clean up
 moduleName = "moose_cython"
@@ -43,8 +46,9 @@ setup(
                 , include_dirs = [ 
                     "../basecode" 
                     , "../msg"
+                    , "."
                     ]
-                , sources = ["_pymoose.pyx"
+                , sources = ["pymoose.pyx"
                     ]
                 , extra_compile_args = [ "-fopenmp", "-g"
                     , "-DCYTHON"

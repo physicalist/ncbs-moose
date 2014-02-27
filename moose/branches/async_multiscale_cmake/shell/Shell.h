@@ -10,6 +10,11 @@
 #ifndef _SHELL_H
 #define _SHELL_H
 
+#ifdef  CYTHON
+#include "cython_header.hpp"
+#include "../basecode/ObjId.h"
+#endif     /* -----  CYTHON  ----- */
+
 enum AssignmentType { SINGLE, VECTOR, REPEAT };
 
 // These Finfo objects are exposed to other classes for convenience in test cases and other functions.
