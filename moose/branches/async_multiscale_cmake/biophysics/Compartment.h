@@ -11,6 +11,9 @@
 #ifndef _COMPARTMENT_H
 #define _COMPARTMENT_H
 
+#ifdef  CYTHON
+#include "../cython/cython_header.hpp"
+#endif     /* -----  CYTHON  ----- */
 /**
  * The Compartment class sets up an asymmetric compartment for
  * branched nerve calculations. Handles electronic structure and
