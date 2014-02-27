@@ -55,37 +55,12 @@ setup(
                     , "-DLINUX"
                     , "-DPYMOOSE"
                     ]
-                , extra_link_args = ["-L."
-                    , "-L/usr/lib" 
-                    , "-L../basecode"
-                    , "-L../shell"
-                    , "-L../msg"
-                    , "-L../external/colored_print"
-                    , "-L../randnum"
-                    , "-L../scheduling"
-                    , "-L../mpi"
-                    , "-L../benchmarks"
-                    , "-L../kinetics"
-                    , "-L../utility"
-                    , "-L../biophysics"
-                    ]
+                , extra_link_args = ["-L."]
                 , libraries = [
                     "mpi"
+                    , "mooselib"
                     , "stdc++"
-                    , "msg"
-                    , "scheduling"
-                    , "moose_mpi"
-                    , "randnum"
-                    , "benchmarks"
-                    , "shell"
-                    , "kinetics"
-                    , "biophysics"
-                    , "basecode"
-                    , "utility"
-                    , "colored_print"
                     ]
                 )
             ]
     )
-
-
