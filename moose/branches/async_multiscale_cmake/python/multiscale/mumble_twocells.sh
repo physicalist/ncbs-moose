@@ -6,18 +6,7 @@ set +e
 # debugger.
 
 version=1
-if [[ $version -eq 1 ]]; then
-    if [[ `uname -a` != *Ubuntu* ]];then
-        echo "Using async branch"
-        export PYTHONPATH=../../moose_svn1.7/moose/branches/async_multiscale_cmake/python/
-    else
-        echo "Using buildq branch"
-        export PYTHONPATH=../../moose-github/python
-    fi
-else
-    echo "Using buildq branch"
-    export PYTHONPATH=../../moose_svn1.7/moose/branches/async13/python/
-fi
+export PYTHONPATH=..
 
 function runCode 
 {
