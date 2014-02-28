@@ -9,5 +9,4 @@ import cymoose
 
 if __name__ == "__main__":
     c = cymoose.Compartment()
-    c.Vm = 1.2
-    print(c.Vm)
+    print dir(cymoose)
