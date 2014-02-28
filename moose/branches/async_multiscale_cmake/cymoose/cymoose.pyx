@@ -10,6 +10,3 @@ import sys
 include "Compartment.pyx"
 include "Neutral.pyx"
 include "Shell.pyx"
-
-if __name__ == "__main__":
-    print("testing")

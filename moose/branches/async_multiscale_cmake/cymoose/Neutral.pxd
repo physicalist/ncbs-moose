@@ -2,7 +2,9 @@
 # distutils: include_dirs = ., cymoose
 # distutils: extra_compiler_args = -DCYTHON
 
+from libcpp.string cimport string
+cimport Eref as _eref
 cdef extern from "../shell/Neutral.h":
     cdef cppclass Neutral:
-        pass
+        void setName(const _eref.Eref&, string)
 

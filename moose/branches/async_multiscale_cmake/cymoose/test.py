@@ -10,3 +10,4 @@ import cymoose
 if __name__ == "__main__":
     c = cymoose.Compartment()
     print dir(cymoose)
+    n = cymoose.Neutral()
