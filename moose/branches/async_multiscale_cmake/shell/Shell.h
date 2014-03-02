@@ -12,7 +12,7 @@
 
 #ifdef  CYTHON
 #include "cython_header.hpp"
-#include "../basecode/ObjId.h"
+class ObjId;
 #endif     /* -----  CYTHON  ----- */
 
 enum AssignmentType { SINGLE, VECTOR, REPEAT };

@@ -21,7 +21,7 @@ import os
 import moose
 import debug.debug as debug
 
-nameSep = '[]'
+nameSep = '()'
 
 def toFloat(string):
     if type(string) == float:

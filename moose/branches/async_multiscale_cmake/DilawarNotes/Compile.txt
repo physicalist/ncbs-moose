@@ -1,0 +1,16 @@
+Sun 02 Mar 2014 05:49:53 PM EST
+
+- Added cmake based build system.
+- Added a macro STRICK_CHECK. This macro raise exception instead of printing
+  warning onto console.
+
+- Added a ticket on sfn. The paths should be like /a[1]/b[2]/c[0] etc.  but they
+  are /a[1]/b[2]/c[1]. I am not sure if this is wrong but in parser/Network.py
+  file, I try to connect using /c[1] format rather than /c format. Let's wait
+  for clarification.
+
+- Using cython to create python bindings would take a lot of time and lot of
+  effort. Not worth it. Left the code in repo as an excercise. This does some
+  small bindings. I am done with cymoose for now.
+
+

@@ -12,10 +12,10 @@ if(ENABLE_STD_2011)
 endif(ENABLE_STD_2011)
 
 # Strick checking 
-set(CHECK_STRICT 1)
-if(CHECK_STRICT)
-    add_definitions(-DSTRICT_CHECKING)
-endif(CHECK_STRICT)
+set(STRICT_CHECK 1)
+if(STRICT_CHECK)
+    add_definitions(-DSTRICT_CHECK)
+endif()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -27,6 +27,7 @@ set(INSTALL_INCLUDE_DIR include CACHE PATH "/usr/local/include/")
 # Default macros
 add_definitions(-DUSE_GENESIS_PARSER -DDO_UNIT_TESTS)
 
+set(debug 1)
 if(debug)
     set(CMAKE_BUILD_TYPE Debug)
 endif(debug)
@@ -86,7 +87,6 @@ target_link_libraries(moose
 find_package(HDF5)
 if(HDF5_FOUND)
     add_definitions(-DUSE_HDF5)
-    find_package(HDF5 REQUIRED)
     include_directories(${HDF5_INCLUDE_DIR})
     target_link_libraries(moose ${HDF5_LIBRARY})
 else()
@@ -153,6 +153,7 @@ if(BUILD_PYMOOSE)
         colored_print
         ${PYTHON_LIBRARY}
         ${GSL_LIBRARIES}
+        ${HDF5_LIBRARY}
         "-Wl,--no-whole-archive"
         )
     
@@ -183,4 +184,3 @@ if(BUILD_PYMOOSE)
         "-Wl,--no-whole-archive"
         )
 endif(BUILD_PYMOOSE)
-

@@ -1,4 +1,0 @@
-Sun 23 Feb 2014 06:53:20 PM IST
-
-Macro STRICT_CHECK is added. If enabled, the c++ core throws exception instead
-of print warning and returning.
