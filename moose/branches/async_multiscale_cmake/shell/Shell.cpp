@@ -174,7 +174,6 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 		ss << "Shell::doCreate: bad character in name '" << name << 
 				"'. No Element created";
 		warning( colored(ss.str(), T_YELLOW) );
-
 #ifdef  STRICT_CHECK
                 ss << endl << "\t+ Bad characters are : " <<  badChars;
                 throw runtime_error(colored(ss.str(), T_RED));

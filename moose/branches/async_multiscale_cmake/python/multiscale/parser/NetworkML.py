@@ -70,7 +70,7 @@ class NetworkML(object):
         Wrapper around moose.connect 
         """
         debug.printDebug("INFO"
-                , "Connecting ({4})` {0}/{1}` & `{2}/{3}".format(
+                , "Connecting ({4})`\n\t{0},{1}`\n\t`{2},{3}".format(
                     src.path
                     , srcF
                     , dest.path

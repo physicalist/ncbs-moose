@@ -12,7 +12,10 @@
 
 #ifdef  CYTHON
 class MsgDigest;
-
+#include "../cymoose/cython_header.hpp"
+class Element;
+class Id;
+class ObjId;
 #endif     /* -----  CYTHON  ----- */
 
 class Eref
