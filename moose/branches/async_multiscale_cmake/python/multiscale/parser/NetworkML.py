@@ -265,7 +265,7 @@ class NetworkML(object):
                            )
 
                    LIF = self.populationDict[population][1][int(cell_id)]
-                   self.connectWrapper(stim, "event", LIF, 'addSpike')
+                   m = self.connectSynapse(stim, LIF)
                else:
                     segId = '{0}'.format(segment_id)
                     segment_path = self.populationDict[population][1]\
@@ -278,13 +278,8 @@ class NetworkML(object):
                     synchan.Gbar = 1e-6
                     synchan.Ek = 0.0
                     self.connectWrapper(synchan, 'channel', compartment, 'channel')
-                    synchan.synapse.num = 1
-                    self.connectWrapper(
-                        stim
-                        , "event"
-                        , moose.element(synchan.path+'/synapse')
-                        , "addSpike"
-                    )
+                    synchan.numSynapses = 1
+                    m = self.connectSynapse(stim, moose.element(synchan.path+'/synapse'))
         elif pulse_stim is not None:
 
             Ifactor = factors['Ifactor']
@@ -654,6 +649,16 @@ class NetworkML(object):
                    }
         return options
 
+    def connectSynapse(self, spikegen, synapseObj):
+        ''' Add synapse. '''
+        # This does not work 
+        debug.printDebug("INFO", "Connection {} to {}".format(spikegen.path
+            , synapseObj.path)
+            )
+        m = moose.connect(spikegen, "event", synapseObj.vec, "Sparse")
+        m.setRandomConnectivity(1.0, 1)
+        return m
+
     def connect(self, synName, prePath, post_path, weight, threshold, delay):
         """
         NOTE: This connects two compartment. Not to be confused with moose.connect
@@ -725,26 +730,29 @@ class NetworkML(object):
             # file!
             if 'file' not in prePath:
                 precomp = moose.Compartment(prePath)
-                # if spikegen for this synapse doesn't exist in this
-                # compartment, create it spikegens for different synapse_types
-                # can have different thresholds
-                if not moose.exists(prePath+'/'+synName+'_spikegen'):
-                    spikegen = moose.SpikeGen(prePath+'/'+synName+'_spikegen')
-                    # connect the compartment Vm to the spikegen
-                    self.connectWrapper(precomp, "VmOut", spikegen, "Vm")
-                    # spikegens for different synapse_types can have different
-                    # thresholds
-                    spikegen.threshold = threshold
-                    # This ensures that spike is generated only on leading edge.
-                    spikegen.edgeTriggered = 1 
+                if not moose.exists(prePath+'/IaF_spikegen'):
+                    # if spikegen for this synapse doesn't exist in this
+                    # compartment, create it spikegens for different synapse_types
+                    # can have different thresholds
+                    if not moose.exists(prePath+'/'+synName+'_spikegen'):
+                        spikegen = moose.SpikeGen(prePath+'/'+synName+'_spikegen')
+                        # connect the compartment Vm to the spikegen
+                        self.connectWrapper(precomp, "VmOut", spikegen, "Vm")
+                        # spikegens for different synapse_types can have different
+                        # thresholds
+                        spikegen.threshold = threshold
+                        # This ensures that spike is generated only on leading edge.
+                        spikegen.edgeTriggered = 1 
 
-                    # usually events are raised at every time step that Vm >
-                    # Threshold, can set either edgeTriggered as above or
-                    # refractT
-                    #spikegen.refractT = 0.25e-3 
+                        # usually events are raised at every time step that Vm >
+                        # Threshold, can set either edgeTriggered as above or
+                        # refractT
+                        #spikegen.refractT = 0.25e-3 
 
-                # wrap the spikegen in this compartment
-                spikegen = moose.SpikeGen(prePath+'/'+synName+'_spikegen') 
+                    # wrap the spikegen in this compartment
+                    spikegen = moose.SpikeGen(prePath+'/'+synName+'_spikegen') 
+                else:
+                    spikegen = moose.SpikeGen(prePath+'/IaF_spikegen')
 
                 # connect the spikegen to the synapse note that you need to use
                 # Synapse (auto-created) under SynChan to get/set weights ,
@@ -752,12 +760,10 @@ class NetworkML(object):
                 # moose.Synapse(syn.path+'/synapse') or syn.synapse Synpase is
                 # an array element, first add to it, to addSpike-s, get/set
                 # weights, etc.
-                syn.synapse.num += 1
 
-                # BUG BUG BUG in MOOSE:
-                # Subhasis said addSpike always adds to the first element in
-                # syn.synapse Create a new synapse above everytime
-                self.connectWrapper(spikegen, "event", syn.synapse[-1], "addSpike")
+                syn.numSynapses += 1
+                m = self.connectSynapse(spikegen, syn.synapse)
+
             else:
                 # if connected to a file, create a timetable,
                 # put in a field specifying the connected filenumbers to this segment,
@@ -786,12 +792,8 @@ class NetworkML(object):
                     # moose.Synapse(syn.path+'/synapse') or syn.synapse Synpase
                     # is an array element, first add to it, to addSpike-s,
                     # get/set weights, etc.
-                    syn.synapse.num += 1
-
-                    # BUG BUG BUG in MOOSE:
-                    # Subhasis said addSpike always adds to the first element in
-                    # syn.synapse Create a new synapse above everytime
-                    m = self.connectWrapper(tt,"event", syn.synapse[-1], "addSpike")
+                    syn.numSynapses += 1
+                    m = self.connectSynapse(spikegen, syn.synapse)
                 else:
                     # if it exists, append file number to the field 'fileNumbers'
                     tt = moose.TimeTable(tt_path)
