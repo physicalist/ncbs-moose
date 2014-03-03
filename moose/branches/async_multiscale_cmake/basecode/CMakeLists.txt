@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-include_directories(../msg)
+include_directories(../msg ../external/debug)
 add_library(basecode 
     Cinfo.cpp
     consts.cpp

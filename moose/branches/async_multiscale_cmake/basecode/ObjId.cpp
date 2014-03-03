@@ -117,5 +117,10 @@ string ObjId::path() const
 
 Element* ObjId::element() const
 {
+
+#ifdef  STRICT_CHECK
+    Element* i = id.element();
+    assert(i != NULL);
+#endif     /* -----  STRICT_CHECK  ----- */
 	return id.element();
 }
