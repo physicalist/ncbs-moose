@@ -124,7 +124,7 @@ class NeuroML(object):
                     ]
                 )
         nmlR = NetworkML.NetworkML(self.nml_params)
-        return nmlR.readNetworkML(
+        populationDict, projectionDict = nmlR.readNetworkML(
                 root_element
                 , self.cellsDict
                 , params=params
@@ -133,6 +133,7 @@ class NeuroML(object):
 
         # Loading channels and synapses into MOOSE into neuroml library
         cmlR = ChannelML.ChannelML(self.nml_params)
+        return populationDict, projectionDict
 
     def channelToMoose(self, cmlR, channels):
         for channel in channels.findall('.//{'+mnu.cml_ns+'}channel_type'):
@@ -149,5 +150,4 @@ class NeuroML(object):
     def loadNML(self, nml):
         neuromlR = NeuroML()
         xml, filename = nml
-        neuromlR.readNeuroMLFromFile(filename)
-        return 
+        return neuromlR.readNeuroMLFromFile(filename)

@@ -62,7 +62,7 @@ if args:
 
         nml = etreeDict['nml'][0]
         nmlObj = NeuroML.NeuroML()
-        nmlObj.loadNML(nml)
+        populationDict, projectionDict = nmlObj.loadNML(nml)
 
         # Start processing mumbl
         mumblObj = mumbl.Mumble(etreeDict['mumbl'][0])
@@ -81,5 +81,3 @@ if args:
 else:
     debug.printDebug("FATAL", "Please provide at least one model. None given.")
     sys.exit()
-
-
