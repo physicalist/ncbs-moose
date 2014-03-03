@@ -277,10 +277,6 @@ class NetworkML(object):
                         )
                     synchan.Gbar = 1e-6
                     synchan.Ek = 0.0
-                    debug.printDebug("INFO"
-                            , "Connecting {0} -> {0}".format(synchan.path
-                                , compartment.path)
-                            )
                     self.connectWrapper(synchan, 'channel', compartment, 'channel')
                     synchan.synapse.num = 1
                     self.connectWrapper(
@@ -336,7 +332,8 @@ class NetworkML(object):
                 if 'segment_id' in site.attrib: 
                     segment_id = site.attrib['segment_id']
                 else: 
-                    segment_id = 0 # default segment_id is specified to be 0
+                    # default segment_id is specified to be 0
+                    segment_id = 0 
 
                 # population is populationName,
                 # self.populationDict[population][0] is cellname

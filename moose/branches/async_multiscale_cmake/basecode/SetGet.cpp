@@ -11,6 +11,7 @@
 #include "SetGet.h"
 #include "../shell/Shell.h"
 #include "../shell/Neutral.h"
+#include "print_function.h"
 
 #ifdef  STRICT_CHECK
 #include <sstream>
@@ -28,10 +29,19 @@ const OpFunc* SetGet::checkSet(const string& field, ObjId& tgt, FuncId& fid)
         if ( child == Id() ) 
         {
             stringstream ss;
-            ss << "Error: SetGet:checkSet:: No field or child named '" <<
-                field << "' was found on\n" << tgt.id.path() << endl;
+            ss << "In file: " << __FILE__ << ":" << __LINE__ << endl
+                << colored("Error: SetGet:checkSet:: No field or child named '") 
+                << field << "' was found on " << tgt.id.path() 
+                << endl;
+            ss << colored("|- Children : ", T_YELLOW);
+            vector< Id > children;
+            Neutral::children(tgt.eref(), children);
+            for(int i = 0; i < children.size(); ++i)
+                ss << "\n\t+ " << children[i].path();
+            cerr << ss.str() << endl;
+
 #ifdef  STRICT_CHECK
-            throw runtime_error(ss.str());
+            throw runtime_error(colored("Field or child is not found"));
 #else
             cerr << ss.str();
 #endif     /* -----  STRICT_CHECK  ----- */

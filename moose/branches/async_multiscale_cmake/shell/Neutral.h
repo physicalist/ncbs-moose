@@ -98,6 +98,7 @@ class Neutral
 		/**
 		 * Looks up all the Element children of the current Element
 		 */
+
 		vector< Id > getChildren( const Eref& e ) const;
 
 		/**

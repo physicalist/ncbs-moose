@@ -62,7 +62,7 @@ add_subdirectory(scheduling)
 add_subdirectory(builtins)
 add_subdirectory(utility)
 add_subdirectory(external/muparser)
-add_subdirectory(external/colored_print/)
+add_subdirectory(external/debug/)
 add_subdirectory(mesh)
 add_subdirectory(mpi)
 add_subdirectory(device)
@@ -78,7 +78,7 @@ target_link_libraries(moose
     device
     moose_mpi
     msg 
-    colored_print
+    debug
     benchmarks
     )
 
@@ -150,7 +150,7 @@ if(BUILD_PYMOOSE)
         device
         benchmarks
         pthread
-        colored_print
+        debug
         ${PYTHON_LIBRARY}
         ${GSL_LIBRARIES}
         ${HDF5_LIBRARY}
@@ -180,7 +180,7 @@ if(BUILD_PYMOOSE)
         device
         benchmarks
         pthread
-        colored_print
+        debug
         "-Wl,--no-whole-archive"
         )
 endif(BUILD_PYMOOSE)
