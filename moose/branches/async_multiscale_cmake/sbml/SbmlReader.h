@@ -22,6 +22,8 @@
 
 #include "../basecode/Id.h"
 //class Id;
+using namespace libsbml;
+
 typedef struct
 {
   string enzyme;
