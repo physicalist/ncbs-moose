@@ -280,6 +280,7 @@ class NetworkML(object):
                     self.connectWrapper(synchan, 'channel', compartment, 'channel')
                     synchan.numSynapses = 1
                     m = self.connectSynapse(stim, moose.element(synchan.path+'/synapse'))
+
         elif pulse_stim is not None:
 
             Ifactor = factors['Ifactor']
@@ -652,10 +653,13 @@ class NetworkML(object):
     def connectSynapse(self, spikegen, synapseObj):
         ''' Add synapse. '''
         # This does not work 
-        debug.printDebug("INFO", "Connection {} to {}".format(spikegen.path
-            , synapseObj.path)
-            )
-        m = moose.connect(spikegen, "event", synapseObj.vec, "Sparse")
+        debug.printDebug("INFO"
+                , "Connecting \n\t`{} -> {}`".format(spikegen.path
+                        , synapseObj.vec.path
+                        )
+                , frame = inspect.currentframe()
+                )
+        m = moose.connect(spikegen, "event", synapseObj.vec, "addSpike", "Sparse")
         m.setRandomConnectivity(1.0, 1)
         return m
 
