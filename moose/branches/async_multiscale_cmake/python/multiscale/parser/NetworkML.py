@@ -202,8 +202,7 @@ class NetworkML(object):
                 factors['Ifactor'] = 1.0
 
             for inputElem in inputs.findall(".//{"+nmu.nml_ns+"}input"):
-                self.attachInputToMoose(inputElem, factors)
-
+                self.attachInputToMoose(inputElem, factors) 
     def attachInputToMoose(self, inElemXml, factors, savePlot=True):
 
         """attachInputToMoose
@@ -293,13 +292,13 @@ class NetworkML(object):
                         )
                 return 
 
-            self.pulseGenPath = os.path.join(self.elecPath, 'PulseGen')
+            self.pulseGenPath = self.elecPath + '/PulseGen'
             moose.Neutral(self.pulseGenPath)
-            pulseGenPath = os.path.join(self.pulseGenPath, inputName)
+            pulseGenPath = '{}/{}'.format(self.pulseGenPath, inputName)
             pulsegen = moose.PulseGen(pulseGenPath)
-            icClampPath = os.path.join(self.elecPath, 'iClamp')
+            icClampPath = '{}/{}'.format(self.elecPath, 'iClamp')
             moose.Neutral(icClampPath)
-            iclamp = moose.DiffAmp(os.path.join(icClampPath, inputName))
+            iclamp = moose.DiffAmp('{}/{}'.format(icClampPath, inputName))
             iclamp.saturation = 1e6
             iclamp.gain = 1.0
 
@@ -318,7 +317,7 @@ class NetworkML(object):
             # do not set count to 1, let it be at 2 by default else it will
             # set secondDelay to 0.0 and repeat the first pulse!
             #pulsegen.count = 1
-            self.connectWrapper(pulsegen,'outputOut', iclamp, 'plusIn')
+            self.connectWrapper(pulsegen,'output', iclamp, 'plusIn')
 
             # Attach targets
             target = inElemXml.find(".//{"+nmu.nml_ns+"}target")
@@ -335,8 +334,13 @@ class NetworkML(object):
                 # self.populationDict[population][0] is cellname
                 cell_name = self.populationDict[population][0]
                 if cell_name == 'LIF':
+                    debug.printDebut("TODO"
+                            , "Rewrite this section"
+                            , frame = inspect.currentframe()
+                            )
+                    continue
                     LIF = self.populationDict[population][1][int(cell_id)]
-                    self.connectWrapper(iclamp,'outputOut',LIF,'injectDest')
+                    self.connectWrapper(iclamp,'output',LIF,'injectMsg')
                 else:
                     segment_path = self.populationDict[population][1]\
                             [int(cell_id)].path+'/'+\
@@ -344,7 +348,7 @@ class NetworkML(object):
                     compartment = moose.Compartment(segment_path)
 
                     self.connectWrapper(iclamp
-                            ,'outputOut'
+                            ,'output'
                             , compartment
                             ,'injectMsg'
                             )
@@ -654,13 +658,14 @@ class NetworkML(object):
         ''' Add synapse. '''
         # This does not work 
         debug.printDebug("INFO"
-                , "Connecting \n\t`{} -> {}`".format(spikegen.path
+                , "Connecting ({})\n\t`{}`\n\t`{}`".format(
+                        "Sparse"
+                        , spikegen.path
                         , synapseObj.vec.path
                         )
                 , frame = inspect.currentframe()
                 )
-        m = moose.connect(spikegen, "event", synapseObj.vec, "addSpike", "Sparse")
-        m.setRandomConnectivity(1.0, 1)
+        m = moose.connect(spikegen, "spikeOut", synapseObj.vec, "addSpike", "Sparse")
         return m
 
     def connect(self, synName, prePath, post_path, weight, threshold, delay):
