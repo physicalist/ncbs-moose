@@ -60,6 +60,7 @@ if args:
         etreeDict = parser.parseXMLs(args, validate=False)
         debug.printDebug("INFO", "Parsing of XMLs is done")
 
+        print etreeDict
         nml = etreeDict['nml'][0]
         nmlObj = NeuroML.NeuroML()
         populationDict, projectionDict = nmlObj.loadNML(nml)

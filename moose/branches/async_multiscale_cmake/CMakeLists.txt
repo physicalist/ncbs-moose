@@ -52,6 +52,33 @@ if(USE_GSL)
     target_link_libraries(moose ${GSL_LIBRARIES})
 endif(USE_GSL)
 
+
+## Setup hdf5
+find_package(HDF5)
+if(HDF5_FOUND)
+    add_definitions(-DUSE_HDF5)
+    include_directories(${HDF5_INCLUDE_DIR})
+    target_link_libraries(moose ${HDF5_LIBRARY})
+endif(HDF5_FOUND)
+
+find_package(LIBSBML REQUIRED)
+if(LIBSBML_FOUND)
+    MESSAGE("-- Found libsbml")
+    add_definitions(-DUSE_SBML)
+    add_subdirectory(sbml)
+    include_directories(${LIBSBML_INCLUDE_DIR})
+    find_package(BZip2)
+elseif()
+    message("- SMBL is not found")
+    add_definitions(-UUSE_SBML)
+endif(LIBSBML_FOUND)
+
+set(USE_READLINE 1)
+if(USE_READLINE)
+    add_definitions(-DUSE_READLINE)
+    target_link_libraries(moose readline)
+endif(USE_READLINE)
+
 # Add subdirectroeis
 add_subdirectory(basecode)
 add_subdirectory(biophysics)
@@ -80,39 +107,16 @@ target_link_libraries(moose
     msg 
     debug
     benchmarks
+    shell
     )
 
-
-## Setup hdf5
-find_package(HDF5)
-if(HDF5_FOUND)
-    add_definitions(-DUSE_HDF5)
-    include_directories(${HDF5_INCLUDE_DIR})
-    target_link_libraries(moose ${HDF5_LIBRARY})
-else()
-    add_definitions(-UHDF5)
-endif(HDF5_FOUND)
-
-find_package(LIBSBML)
 if(LIBSBML_FOUND)
-    add_definitions(-DUSE_SBML)
-    add_subdirectory(sbml)
-    include_directories(${LIBSBML_INCLUDE_DIR})
-    target_link_libraries(moose moose_sbml)
-    find_package(BZip2)
     if(BZIP2_FOUND)
         target_link_libraries(moose ${BZIP2_LIBRARIES})
     endif()
-elseif()
-    message("SMBL is not found")
-    add_definitions(-UUSE_SBML)
-endif(LIBSBML_FOUND)
+    target_link_libraries(moose moose_sbml ${LIBSBML_LIBRARY})
+endif()
 
-set(USE_READLINE 1)
-if(USE_READLINE)
-    add_definitions(-DUSE_READLINE)
-    target_link_libraries(moose readline)
-endif(USE_READLINE)
 ## Build pymoose 
 set(BUILD_PYMOOSE 1)
 if(BUILD_PYMOOSE)
@@ -151,9 +155,11 @@ if(BUILD_PYMOOSE)
         benchmarks
         pthread
         debug
+        moose_sbml
         ${PYTHON_LIBRARY}
         ${GSL_LIBRARIES}
         ${HDF5_LIBRARY}
+        ${LIBSBML_LIBRARY}
         "-Wl,--no-whole-archive"
         )
     
