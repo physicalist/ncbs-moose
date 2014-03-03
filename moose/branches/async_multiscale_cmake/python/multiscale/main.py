@@ -62,8 +62,7 @@ if args:
 
         nml = etreeDict['nml'][0]
         nmlObj = NeuroML.NeuroML()
-        populationDict, projectionDict = nmlObj.loadNML(nml)
-    
+        nmlObj.loadNML(nml)
 
         # Start processing mumbl
         mumblObj = mumbl.Mumble(etreeDict['mumbl'][0])

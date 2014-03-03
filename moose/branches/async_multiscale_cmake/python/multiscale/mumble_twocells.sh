@@ -7,6 +7,13 @@ set +e
 
 version=1
 export PYTHONPATH=..
+projDir=./models/NeuroConstruct/two_cells
+projName=two_cells.nml
+nmlFile=$projDir/$projName
+if [ ! -f $nmlFile ]; then
+    echo "File $nmlFile is not found"
+    exit
+fi
 
 function runCode 
 {
@@ -25,9 +32,6 @@ function testPythonCode
 
 }
 
-projDir=./models/NeuroConstruct/two_cells
-projName=two_cells.nml
-nmlFile=$projDir/$projName
 PYC=python2.7
 if [ "$1" == "d" ]; then
   PYC="gdb -ex r --args python2.7"
