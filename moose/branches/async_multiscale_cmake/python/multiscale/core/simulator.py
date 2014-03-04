@@ -118,6 +118,7 @@ class Simulator:
                     , "Failed to simulate with error {}".format(e)
                     , frame = inspect.currentframe()
                     )
+            sys.exit()
         self.plot()
 
 
@@ -290,11 +291,10 @@ class Simulator:
         assert self.plotDt > 0.0 
 
         debug.printDebug("STEP"
-                , "Simulate with simDt({}), plotDt({})".format(
-
-
+                , "Simulate with simDt({}), plotDt({}), simMethod({})".format(
                     self.simDt
                     , self.plotDt
+                    , self.simMethod
                     )
                 )
         moose.utils.resetSim([self.elecPath, self.cellPath]
@@ -304,8 +304,11 @@ class Simulator:
                 )
 
         if self.simulate:
-            debug.printDebug("USER"
-                    , "Simulating for {0} seconds.".format(self.runtime)
+            debug.printDebug("DEBUG"
+                    , "Simulating for {0} seconds, Using methods {}".format(
+                            self.runtime
+                            , self.simMethod
+                            )
                     )
 
             moose.reinit()
