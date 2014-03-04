@@ -142,9 +142,16 @@ def apply_to_tree(moose_wildcard, python_filter=None, value=None):
     if isinstance(python_filter, types.LambdaType):
         id_list = [moose_id for moose_id in id_list if python_filter(moose_id)]
     elif isinstance(python_filter, str):
-        id_list = [moose_id for moose_id in id_list if hasattr(eval('_moose.%s(moose_id)' % (_moose.Neutral(moose_id).className)), python_filter)]
+        id_list = [moose_id for moose_id in id_list 
+                if hasattr(
+                    eval('_moose.{}(moose_id)'.format(
+                        _moose.Neutral(moose_id).className)
+                        )
+                    , python_filter)
+                ]
     else:
         pass
+
     if isinstance(value, types.LambdaType):
         if isinstance(python_filter, str):
             for moose_id in id_list:
@@ -296,7 +303,9 @@ def autoposition(root):
             comp.x, comp.y, comp.z, = comp.x0, comp.y0, comp.z0 + comp.diameter/2.0 
         # We take z == 0 as an indicator that this compartment has not
         # been processed before - saves against inadvertent loops.
-        stack.extend([childcomp for childcomp in map(_moose.element, comp.neighbours['raxial']) if childcomp.z == 0])    
+        stack.extend([childcomp for childcomp in 
+            map(_moose.element, comp.neighbours['raxial']) if childcomp.z == 0]
+            )
     return ret
 
 
@@ -520,7 +529,6 @@ def stepRun(simtime, steptime, verbose=True, logger=None):
 def resetSim(simpaths, simdt, plotdt, simmethod='hsolve'):
     """ For each of the MOOSE paths in simpaths, this sets the clocks and finally resets MOOSE.
     If simmethod=='hsolve', it sets up hsolve-s for each Neuron under simpaths, and clocks for hsolve-s too. """
-    print 'Solver:', simmethod
     _moose.setClock(INITCLOCK, simdt)
     _moose.setClock(ELECCLOCK, simdt) # The hsolve and ee methods use clock 1
     _moose.setClock(CHANCLOCK, simdt) # hsolve uses clock 2 for mg_block, nmdachan and others.
@@ -552,14 +560,14 @@ def resetSim(simpaths, simdt, plotdt, simmethod='hsolve'):
         ## else just put a clock on the hsolve:
         ## hsolve takes care of the clocks for the biophysics
         if 'hsolve' not in simmethod.lower():
-            print 'Using exp euler'
+            print('+ Using exp euler')
             _moose.useClock(INITCLOCK, simpath+'/##[TYPE=Compartment]', 'init')
             _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=Compartment]', 'process')
             _moose.useClock(CHANCLOCK, simpath+'/##[TYPE=HHChannel]', 'process')
             _moose.useClock(POOLCLOCK, simpath+'/##[TYPE=CaConc]', 'process')
             _moose.useClock(POOLCLOCK, simpath+'/##[TYPE=Func]', 'process')
         else: # use hsolve, one hsolve for each Neuron
-            print 'Using hsolve'
+            print('+ Using hsolve')
             element = _moose.Neutral(simpath)
             for childid in element.children: 
                 childobj = _moose.Neutral(childid)
@@ -960,8 +968,6 @@ cell1
             self.assertAlmostEqual(comp.z, soma.diameter/2.0 + (ii + 1) * 100e-6, sigfig)
         
             
-            
-        
         
 
 if __name__ == "__main__": # test printtree
