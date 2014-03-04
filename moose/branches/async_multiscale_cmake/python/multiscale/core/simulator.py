@@ -84,7 +84,7 @@ class Simulator:
         self.globalVar = self.rootElem.find('global')
         self.simDt = float(self.globalVar.get('sim_dt', '1e-3'))
         self.plotDt = float(self.globalVar.get('plot_dt', '1e-3'))
-        self.simMethod = self.globalVar.get('sim_method', 'hsolve')
+        self.simMethod = self.globalVar.get('sim_method', 'ee')
         self.simulate = True
         self.totalPlots = 0
         self.currentCompartmentPath = ''
