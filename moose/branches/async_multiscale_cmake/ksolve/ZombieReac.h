@@ -7,33 +7,46 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#ifndef _BUF_POOL_H
-#define _BUF_POOL_H
+#ifndef _ZOMBIE_REAC_H
+#define _ZOMBIE_REAC_H
 
-class BufPool: public Pool
+class ZombieReac: public ReacBase
 {
 	public: 
-		BufPool();
-		~BufPool();
+		ZombieReac();
+		~ZombieReac();
 
 		//////////////////////////////////////////////////////////////////
 		// Field assignment stuff
 		//////////////////////////////////////////////////////////////////
-		/// The 'get' functions are simply inherited from Pool
-		void vSetN( const Eref& e, double v );
-		void vSetNinit( const Eref& e, double v );
-		void vSetConc( const Eref& e, double v );
-		void vSetConcInit( const Eref& e, double v );
+
+		void vSetNumKf( const Eref& e, double v );
+		double vGetNumKf( const Eref& e ) const;
+		void vSetNumKb( const Eref& e, double v );
+		double vGetNumKb( const Eref& e ) const;
+
+		void vSetConcKf( const Eref& e, double v );
+		double vGetConcKf( const Eref& e ) const;
+		void vSetConcKb( const Eref& e, double v );
+		double vGetConcKb( const Eref& e ) const;
 
 		//////////////////////////////////////////////////////////////////
 		// Dest funcs
 		//////////////////////////////////////////////////////////////////
 
-		void process( const Eref& e, ProcPtr p );
-		void reinit( const Eref& e, ProcPtr p );
+		//////////////////////////////////////////////////////////////////
+		// utility funcs
+		//////////////////////////////////////////////////////////////////
+		/*
+		ZeroOrder* makeHalfReaction( 
+			Element* orig, double rate, const SrcFinfo* finfo ) const;
+			*/
+
+		void setSolver( Id solver, Id orig );
 
 		static const Cinfo* initCinfo();
 	private:
+		Stoich* stoich_;
 };
 
-#endif	// _BUF_POOL_H
+#endif	// _ZOMBIE_REAC_H

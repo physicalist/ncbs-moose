@@ -6,14 +6,12 @@
 ** GNU Lesser General Public License version 2.1
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
-#include "StoichHeaders.h"
-#include "ElementValueFinfo.h"
-#include "DataHandlerWrapper.h"
-
-#include "Pool.h"
-#include "BufPool.h"
+#include "header.h"
+#include "PoolBase.h"
+#include "ZombiePoolInterface.h"
 #include "ZombiePool.h"
 #include "ZombieBufPool.h"
+#include "lookupVolumeFromMesh.h"
 
 // Entirely derived from ZombiePool. Only the zombification routines differ.
 const Cinfo* ZombieBufPool::initCinfo()
@@ -22,12 +20,13 @@ const Cinfo* ZombieBufPool::initCinfo()
 		// Field Definitions: use virtual functions to deal with, the
 		// moose definitions are inherited.
 		//////////////////////////////////////////////////////////////
+	static Dinfo< ZombieBufPool > dinfo( true );
 	static Cinfo zombieBufPoolCinfo (
 		"ZombieBufPool",
 		ZombiePool::initCinfo(),
 		0,
 		0,
-		new Dinfo< ZombieBufPool >()
+		&dinfo
 	);
 
 	return &zombieBufPoolCinfo;
@@ -37,11 +36,6 @@ const Cinfo* ZombieBufPool::initCinfo()
 // Class definitions
 //////////////////////////////////////////////////////////////
 static const Cinfo* zombieBufPoolCinfo = ZombieBufPool::initCinfo();
-
-static const SrcFinfo1< double >* requestVolume =
-	dynamic_cast< const SrcFinfo1< double >* >(
-	zombieBufPoolCinfo->findFinfo( "requestVolume" ) );
-
 
 ZombieBufPool::ZombieBufPool()
 {;}
@@ -53,25 +47,25 @@ ZombieBufPool::~ZombieBufPool()
 // Field functions
 //////////////////////////////////////////////////////////////
 
-void ZombieBufPool::vSetN( const Eref& e, const Qinfo* q, double v )
+void ZombieBufPool::vSetN( const Eref& e, double v )
 {
-	stoich_->innerSetN( e.index().value(), e.id(), v );
-	stoich_->innerSetNinit( e.index().value(), e.id(), v );
+	ZombiePool::vSetN( e, v );
+	ZombiePool::vSetNinit( e, v );
 }
 
-void ZombieBufPool::vSetNinit( const Eref& e, const Qinfo* q, double v )
+void ZombieBufPool::vSetNinit( const Eref& e, double v )
 {
-	vSetN( e, q, v );
+	vSetN( e, v );
 }
 
-void ZombieBufPool::vSetConc( const Eref& e, const Qinfo* q, double conc )
+void ZombieBufPool::vSetConc( const Eref& e, double conc )
 {
-	double n = NA * conc * lookupVolumeFromMesh( e, requestVolume );
-	vSetN( e, q, n );
+	double n = NA * conc * lookupVolumeFromMesh( e );
+	vSetN( e, n );
 }
 
-void ZombieBufPool::vSetConcInit( const Eref& e, const Qinfo* q, double conc )
+void ZombieBufPool::vSetConcInit( const Eref& e, double conc )
 {
-	vSetConc( e, q, conc );
+	vSetConc( e, conc );
 }
 

@@ -12,47 +12,23 @@
 
 class OdeSystem {
 	public:
-		OdeSystem();
+		OdeSystem()
+				: method( "rk5" ),
+					initStepSize( 1.0 ),
+					epsAbs( 1e-6 ),
+					epsRel( 1e-6 )
+		{;}
 
-		/**
-		 * Creates a derived ODE system designed for a 
-		 * junction with the specified compartment signature.
-		 */
-		OdeSystem( const StoichCore* master, 
-						const vector< Id >& compartmentSignature );
-		~OdeSystem();
-		void reallyFreeOdeSystem();
-		string setMethod( const string& method );
-
-		void reinit( 
-			void* gslStoich,
-			int func (double t, const double *y, double *f, void *params),
-			unsigned int nVarPools, double absAccuracy, double relAccuracy
-		);
-
-		/////////////////////////////////////////
-		StoichCore* stoich_;
-
-		/**
-		 * This is the signature of OdeSystem in terms of which compartments
-		 * it has cross-reactions with. If there are no entries, then it
-		 * is completely self-contained. If there is one entry then this
-		 * system is used only in cases abutting one other compartment
-		 * with which there are cross-reactions. 
-		 * Typically a given voxel will abut only a couple of compartments,
-		 * but we may have to deal with the case of a single voxel which
-		 * talks to a multitude of other compartments. So there is no
-		 * limit to the length of this vector.
-		 * In order to make the signature easily tested, it is sorted by
-		 * numerical value of compartment Id.
-		 */
-		vector< Id > compartmentSignature_;
+		string method;
 		// GSL stuff
-		const gsl_odeiv_step_type* gslStepType_;
-		gsl_odeiv_step* gslStep_;
-		gsl_odeiv_control* gslControl_;
-		gsl_odeiv_evolve* gslEvolve_;
-		gsl_odeiv_system gslSys_;
+#ifdef USE_GSL
+		gsl_odeiv2_system gslSys;
+		const gsl_odeiv2_step_type* gslStep;
+#endif
+		double initStepSize;
+
+		double epsAbs; // Absolute error
+		double epsRel; // Relative error
 };
 
 #endif // _ODE_SYSTEM_H

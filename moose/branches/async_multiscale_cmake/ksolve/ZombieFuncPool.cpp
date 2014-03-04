@@ -6,22 +6,18 @@
 ** GNU Lesser General Public License version 2.1
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
-#include "StoichHeaders.h"
-#include "ElementValueFinfo.h"
-#include "DataHandlerWrapper.h"
-
-#include "Pool.h"
-#include "FuncPool.h"
+#include "header.h"
+#include "PoolBase.h"
+#include "ZombiePoolInterface.h"
 #include "ZombiePool.h"
 #include "ZombieFuncPool.h"
-#include "ZombieSumFunc.h"
 
 // Derived from ZombiePool.
 const Cinfo* ZombieFuncPool::initCinfo()
 {
 	static DestFinfo input( "input",
 		"Handles input to control value of n_",
-		new OpFunc1< ZombieFuncPool, double >( &ZombieFuncPool::input ) );
+		new EpFunc1< ZombieFuncPool, double >( &ZombieFuncPool::input ) );
 	
 	static Finfo* zombieFuncPoolFinfos[] = {
 		&input,             // DestFinfo
@@ -46,6 +42,9 @@ static const Cinfo* zombieFuncPoolCinfo = ZombieFuncPool::initCinfo();
 ZombieFuncPool::ZombieFuncPool()
 {;}
 
-void ZombieFuncPool::input( double v )
-{;}
+void ZombieFuncPool::input( const Eref& e, double v )
+{
+	ZombiePool::vSetN( e, v );
+	ZombiePool::vSetNinit( e, v );
+}
 

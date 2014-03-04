@@ -16,7 +16,7 @@
 //#include "../utility/utility.h" // isnan is undefined in VC++ and BC5, utility.h contains a workaround macro
 using namespace std;
 #include "SparseMatrix.h"
-#include "../utility/numutil.h"
+#include "numutil.h"
 #include "KinSparseMatrix.h"
 
 
@@ -58,7 +58,7 @@ double KinSparseMatrix::computeRowRate(
 
 	// assert ( !( ret !<>= 0.0 ) );
 	*/
-	assert ( !( isnan( ret ) ) );
+	assert ( !( std::isnan( ret ) ) );
 	return ret;
 }
 
