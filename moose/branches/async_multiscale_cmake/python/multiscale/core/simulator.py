@@ -115,10 +115,10 @@ class Simulator:
             self.simulateNetwork()
         except Exception as e:
             debug.printDebug("ERROR"
-                    , "Failed to simulate with error {}".format(e)
+                    , "Failed to simulate with error {0}".format(e)
                     , frame = inspect.currentframe()
                     )
-            sys.exit()
+            sys.exit(0)
         self.plot()
 
 
@@ -130,7 +130,14 @@ class Simulator:
         if elemType == 'soma':
             # Now get all records and setup moose for them.
             recordXml = xmlElem.find('record')
-            self.setupSomaRecord(recordXml, xmlElem.attrib)
+            try:
+                self.setupSomaRecord(recordXml, xmlElem.attrib)
+            except Exception as e:
+                debug.printDebug("WARN"
+                        , "Failed to setup record on soma"
+                        , frame = inspect.currentframe()
+                        )
+                continue
         else:
             debug.printDebug("TODO"
                     , "This type is not implemented yet %s" % elemType 
@@ -291,28 +298,48 @@ class Simulator:
         assert self.plotDt > 0.0 
 
         debug.printDebug("STEP"
-                , "Simulate with simDt({}), plotDt({}), simMethod({})".format(
+                , "Simulate with simDt({0}), plotDt({g1}), simMethod({12})".format(
                     self.simDt
                     , self.plotDt
                     , self.simMethod
                     )
                 )
-        moose.utils.resetSim([self.elecPath, self.cellPath]
-                , self.simDt
-                , self.plotDt
-                , simmethod = self.simMethod 
-                )
+        try:
+            moose.utils.resetSim([self.elecPath, self.cellPath]
+                    , self.simDt
+                    , self.plotDt
+                    , simmethod = self.simMethod 
+                    )
 
+        except Exception as e:
+            debug.printDebug("ERROR"
+                    , "Failed to reset simulator. Error was `{}`".format(e)
+                    , frame = inspect.currentframe()
+                    )
+            sys.exit(0)
         if self.simulate:
             debug.printDebug("DEBUG"
-                    , "Simulating for {0} seconds, Using methods {}".format(
+                    , "Simulating for {0} seconds, Using methods {1}".format(
                             self.runtime
                             , self.simMethod
                             )
                     )
-
-            moose.reinit()
-            moose.start(self.runtime)
+            try:
+                moose.reinit()
+            except Exception as e:
+                debug.printDebug("ERROR"
+                        , "Failed to reinit moose with error {}".format(e)
+                        , frame = inspect.currentframe()
+                        )
+                sys.exit(0)
+            try:
+                moose.start(self.runtime)
+            except Exception as e:
+                debug.printDebug("ERROR"
+                        , "Failed to start simulation with error {}".format(e)
+                        , frame = inspect.currentframe()
+                        )
+                sys.exit(0)
         else:
             raise UserWarning("Simulation is set to false")
 
