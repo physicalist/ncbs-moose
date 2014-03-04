@@ -807,6 +807,37 @@ void Shell::handleMove( const Eref& e, Id orig, ObjId newParent )
 		*/
 }
 
+// Static function
+void Shell::dropClockMsgs(
+	const vector< ObjId >& list, const string& field )
+{
+	vector< ObjId > msgs; // These are the messages to delete.
+	for ( vector< ObjId >::const_iterator
+					i = list.begin(); i != list.end(); ++i ) {
+		// Sanity check: shouldn't try to operate on already deleted objects
+		if ( i->element() ) {
+			const Finfo* f = i->element()->cinfo()->findFinfo( field );
+			const DestFinfo* df = dynamic_cast< const DestFinfo *>( f );
+			if ( df ) {
+				FuncId fid = df->getFid();
+
+				// These are the messages to be zapped
+				vector< ObjId > caller; 
+				if ( i->element()->getInputMsgs( caller, fid ) > 0 ) {
+					msgs.insert( msgs.end(), caller.begin(), caller.end() );
+				}
+			}
+		}
+	}
+	// Do the unique/erase bit. My favourite example of C++ hideousity.
+	sort( msgs.begin(), msgs.end() );
+	msgs.erase( unique( msgs.begin(), msgs.end() ), msgs.end() );
+	// Delete them.
+	for( vector< ObjId >::iterator i = msgs.begin(); i != msgs.end(); ++i )
+		Msg::deleteMsg( *i );
+}
+
+// Non-static function. The innerAddMsg needs the shell.
 void Shell::addClockMsgs( 
 	const vector< ObjId >& list, const string& field, unsigned int tick,
    	unsigned int msgIndex	)
@@ -814,6 +845,7 @@ void Shell::addClockMsgs(
 	if ( !Id( 1 ).element() )
 		return;
 	ObjId clockId( 1 );
+	dropClockMsgs( list, field ); // Forbid duplicate PROCESS actions.
 	for ( vector< ObjId >::const_iterator i = list.begin(); 
 		i != list.end(); ++i ) {
 		if ( i->element() ) {

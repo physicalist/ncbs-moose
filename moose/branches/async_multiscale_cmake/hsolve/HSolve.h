@@ -9,6 +9,8 @@
 
 #ifndef _HSOLVE_H
 #define _HSOLVE_H
+
+#include "Qinfo.h"
 #include <set>
 /**
  * HSolve adapts the integrator HSolveActive into a MOOSE class.

@@ -12,7 +12,6 @@
 #include "ZombiePoolInterface.h"
 #include "ZombiePool.h"
 #include "lookupVolumeFromMesh.h"
-#include "ElementValueFinfo.h"
 
 #define EPSILON 1e-15
 
@@ -164,6 +163,24 @@ double ZombiePool::vGetVolume( const Eref& e ) const
 //////////////////////////////////////////////////////////////
 // Zombie conversion functions.
 //////////////////////////////////////////////////////////////
+
+void ZombiePool::setSolver( Id s )
+{
+	// Nasty unsafe typecast. I would have preferred to pass in a 
+	// safely typed pointer but that would have exposed a low-level
+	// class for the ZombiePoolInterface.
+	assert( s.element()->cinfo()->isA( "Ksolve" ) ||
+					s.element()->cinfo()->isA( "Dsolve" ) );
+	ZombiePoolInterface* zpi = reinterpret_cast< ZombiePoolInterface *>(
+					ObjId( s, 0 ).data() );
+
+	if ( dsolve_ == 0 )
+		dsolve_ = zpi;
+	else
+		ksolve_ = zpi;
+}
+
+/*
 void ZombiePool::setKineticSolver( ZombiePoolInterface* k )
 {
 	assert( k != 0 );
@@ -175,4 +192,4 @@ void ZombiePool::setDiffSolver( ZombiePoolInterface* d )
 	assert( d != 0 );
 	dsolve_ = d;
 }
-
+*/

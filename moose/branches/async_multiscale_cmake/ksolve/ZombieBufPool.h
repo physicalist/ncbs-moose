@@ -17,10 +17,10 @@ class ZombieBufPool: public ZombiePool
 		~ZombieBufPool();
 
 		/// The 'get' functions are simply inherited from ZombiePool
-		void vSetN( const Eref& e, const Qinfo* q, double v );
-		void vSetNinit( const Eref& e, const Qinfo* q, double v );
-		void vSetConc( const Eref& e, const Qinfo* q, double v );
-		void vSetConcInit( const Eref& e, const Qinfo* q, double v );
+		void vSetN( const Eref& e, double v );
+		void vSetNinit( const Eref& e, double v );
+		void vSetConc( const Eref& e, double v );
+		void vSetConcInit( const Eref& e, double v );
 
 		static const Cinfo* initCinfo();
 	private:

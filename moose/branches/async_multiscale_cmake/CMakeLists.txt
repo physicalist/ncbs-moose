@@ -25,7 +25,7 @@ set(INSTALL_BIN_DIR bin CACHE PATH "/usr/local/bin")
 set(INSTALL_INCLUDE_DIR include CACHE PATH "/usr/local/include/")
 
 # Default macros
-add_definitions(-DUSE_GENESIS_PARSER -DDO_UNIT_TESTS)
+add_definitions(-DUSE_GENESIS_PARSER)
 
 set(debug 1)
 if(debug)
@@ -92,6 +92,7 @@ add_subdirectory(external/muparser)
 add_subdirectory(external/debug/)
 add_subdirectory(mesh)
 add_subdirectory(mpi)
+add_subdirectory(ksolve)
 add_subdirectory(device)
 add_subdirectory(benchmarks)
 add_subdirectory(kinetics)
@@ -139,6 +140,7 @@ if(BUILD_PYMOOSE)
     target_link_libraries(_moose 
         "-Wl,--whole-archive"
         moosepython
+        ksolve
         basecode
         msg
         shell
@@ -180,6 +182,7 @@ if(BUILD_PYMOOSE)
         builtins
         utility
         muparser
+        ksolve
         biophysics
         kinetics
         mesh
