@@ -44,9 +44,12 @@ add_executable(moose basecode/main.cpp)
 
 
 # Build
-set(USE_GSL 1)
+find_package(GSL REQUIRED)
+if(GSL_FOUND)
+    set(USE_GSL)
+endif()
+
 if(USE_GSL)
-    find_package(GSL REQUIRED)
     add_definitions(-DUSE_GSL)
     include_directories(${GSL_INCLUDE_DIRS} ${GSLCBLAS_INCLUDE_DIRS})
     target_link_libraries(moose ${GSL_LIBRARIES})

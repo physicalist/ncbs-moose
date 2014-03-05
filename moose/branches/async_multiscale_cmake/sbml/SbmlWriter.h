@@ -17,7 +17,7 @@
 #ifndef _SBMLWRITER_H
 #define _SBMLWRITER_H
 #include <sbml/SBMLTypes.h>
-using namespace libsbml;
+//using namespace libsbml;
 
 class SbmlWriter
 {

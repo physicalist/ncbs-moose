@@ -526,9 +526,15 @@ def stepRun(simtime, steptime, verbose=True, logger=None):
 
 ############# added by Aditya Gilra -- begin ################
 
-def resetSim(simpaths, simdt, plotdt, simmethod='ee'):
-    """ For each of the MOOSE paths in simpaths, this sets the clocks and finally resets MOOSE.
-    If simmethod=='hsolve', it sets up hsolve-s for each Neuron under simpaths, and clocks for hsolve-s too. """
+def resetSim(simpaths, simdt, plotdt, simmethod='hsolve'):
+
+    """ 
+    For each of the MOOSE paths in simpaths, this sets the clocks and
+    finally resets MOOSE.
+    If simmethod=='hsolve', it sets up hsolve-s for each Neuron under simpaths, 
+    and clocks for hsolve-s too. 
+    """
+    print("here")
     _moose.setClock(INITCLOCK, simdt)
     _moose.setClock(ELECCLOCK, simdt) # The hsolve and ee methods use clock 1
     _moose.setClock(CHANCLOCK, simdt) # hsolve uses clock 2 for mg_block, nmdachan and others.
