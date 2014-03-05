@@ -22,7 +22,7 @@
 
 #include "../basecode/Id.h"
 //class Id;
-using namespace libsbml;
+//using namespace libsbml;
 
 typedef struct
 {

@@ -114,14 +114,15 @@ class Simulator:
         try:
             self.simulateNetwork()
         except Exception as e:
+            raise e
+        try:
+            self.plot()
+        except Exception as e:
             debug.printDebug("ERROR"
-                    , "Failed to simulate with error {0}".format(e)
+                    , "Failed to plot the graphs with error {}".format(e)
                     , frame = inspect.currentframe()
                     )
             sys.exit(0)
-        self.plot()
-
-
 
     def setupRecord(self, xmlElem):
         '''Setup record.
@@ -137,7 +138,6 @@ class Simulator:
                         , "Failed to setup record on soma"
                         , frame = inspect.currentframe()
                         )
-                continue
         else:
             debug.printDebug("TODO"
                     , "This type is not implemented yet %s" % elemType 
@@ -291,14 +291,15 @@ class Simulator:
         
 
     def simulateNetwork(self):
-        ''' Start simulation.
+        ''' 
+        Start simulation.
         '''
         # Now reinitialize moose
         assert self.simDt > 0.0
         assert self.plotDt > 0.0 
 
         debug.printDebug("STEP"
-                , "Simulate with simDt({0}), plotDt({g1}), simMethod({12})".format(
+                , "Simulate with simDt({0}), plotDt({1}), simMethod({2})".format(
                     self.simDt
                     , self.plotDt
                     , self.simMethod
@@ -312,11 +313,7 @@ class Simulator:
                     )
 
         except Exception as e:
-            debug.printDebug("ERROR"
-                    , "Failed to reset simulator. Error was `{}`".format(e)
-                    , frame = inspect.currentframe()
-                    )
-            sys.exit(0)
+            raise e
         if self.simulate:
             debug.printDebug("DEBUG"
                     , "Simulating for {0} seconds, Using methods {1}".format(
@@ -327,21 +324,17 @@ class Simulator:
             try:
                 moose.reinit()
             except Exception as e:
-                debug.printDebug("ERROR"
-                        , "Failed to reinit moose with error {}".format(e)
-                        , frame = inspect.currentframe()
-                        )
-                sys.exit(0)
+                raise e
             try:
                 moose.start(self.runtime)
             except Exception as e:
-                debug.printDebug("ERROR"
-                        , "Failed to start simulation with error {}".format(e)
-                        , frame = inspect.currentframe()
-                        )
-                sys.exit(0)
+                raise e
         else:
-            raise UserWarning("Simulation is set to false")
+            debug.printDebug("WARN"
+                    , "Simulation is set to false. Nothing to do"
+                    )
+            sys.exit()
+
 
     def plot(self):
         # After simulation, plot user-requested variables.
@@ -384,8 +377,8 @@ class Simulator:
         except Exception as e:
             debug.printDebug("WARN"
                     , "Failed to plot with error")
-            print len(xvec), len(yvec)
             raise e
+
         xlabel = plotParams.get('xlabel', None)
         pylab.xlabel(plotParams.get('xlabel', ''), fontsize=8)
         pylab.ylabel(plotParams.get('ylabel', ''), fontsize=8)
@@ -464,11 +457,12 @@ class Simulator:
                 varName
                 , self.tableDict.keys()
                 )
+        
         tableObj, self.currentCompartmentPath = self.tableDict[varName]
         
         # If there is nothing to plot, quit
-        if len(tableObj.vec) == 0:
-            debug.printDebug("WARN", "Empty vec. Nothing to plot.")
+        if len(tableObj.vec) < 1:
+            debug.printDebug("WARN", "Empty data-set. Nothing to plot.")
             return None, None
 
         xvec = numpy.arange(self.start, self.stop*10, self.step)
