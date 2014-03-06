@@ -119,7 +119,7 @@ class Simulator:
             self.plot()
         except Exception as e:
             debug.printDebug("ERROR"
-                    , "Failed to plot the graphs with error {}".format(e)
+                    , "Failed to plot graphs. Error {}".format(e)
                     , frame = inspect.currentframe()
                     )
             sys.exit(0)
@@ -233,7 +233,7 @@ class Simulator:
             path = path.strip()
             targetVariable = variableType + varName
             debug.printDebug("DEBUG"
-                    , "Target variable : {0} <= {1}".format(targetVariable
+                    , "Record table: target variable : {0} <= {1}".format(targetVariable
                         , path)
                     )
 
@@ -369,8 +369,11 @@ class Simulator:
             self.plotVar(xvec, yvec, configDict)
 
 
-    def plotVar(self, xvec, yvec, plotParams):
+    def plotVar(self, xvec, yvec, plotParams, ascii=True):
         '''Plot a variable. '''
+        if ascii:
+            self.plotInTerminal(xvec, yvec, plotParams)
+            return 
         plotArgs = plotParams.get('plot_args', '')
         try:
             pylab.plot(xvec, yvec, plotArgs)
@@ -385,6 +388,20 @@ class Simulator:
         pylab.title(plotParams.get('title', ''), fontsize=8)
         pylab.tick_params(labelsize='6')
         
+
+    def plotInTerminal(self, xvec, yvec, plotParams):
+        '''
+        Plot given vectors in terminal
+        '''
+        g = subprocess.Popen(["gnuplot"], stdin=subprocess.PIPE)
+        g.stdin.write("set term dumb 79 25\n")
+        g.stdin.write("plot '-' using 1:2 title 'Line1' with linespoints \n")
+        for i,j in zip(xvec, yvec):
+            g.stdin.write("%f %f\n" % (i, j))
+        g.stdin.write("e\n")
+        g.stdin.flush()
+
+
     def configurePlot(self, plotXml):
         '''
         Configure plot according to plotXml
@@ -447,7 +464,6 @@ class Simulator:
             plotParams['ylabel'] = labelXml.get('y')
             plotParams['title'] = labelXml.get('title', None)
 
-
         return plotParams
 
     def getPlotData(self, varName):
@@ -475,5 +491,6 @@ class Simulator:
                     )
                 )
         xvec = xvec[ : tableObj.vec.size ]
+        assert type(tableObj.vec) == type(xvec)
         return tableObj.vec, xvec
 
