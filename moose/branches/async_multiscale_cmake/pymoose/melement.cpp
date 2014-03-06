@@ -60,12 +60,15 @@
 #include <mpi.h>
 #endif
 
+#include <sstream>
+
 #include "../basecode/header.h"
 #include "../basecode/Id.h"
 #include "../basecode/ObjId.h"
 #include "../utility/utility.h"
 #include "../randnum/randnum.h"
 #include "../shell/Shell.h"
+#include "../external/debug/print_function.h"
 
 #include "moosemodule.h"
 
@@ -1267,6 +1270,7 @@ extern "C" {
         if (!Id::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL, "moose_ObjId_setDestField");
         }
+
         PyObject * arglist[10] = {NULL, NULL, NULL, NULL, NULL,
                                   NULL, NULL, NULL, NULL, NULL};
         ostringstream error;
@@ -1294,8 +1298,32 @@ extern "C" {
         
         // Try to parse the arguments.
         vector< string > argType;
+
+#ifdef  STRICT_CHECK
+        int res = parseFinfoType(Field<string>::get(oid, "className")
+                , "destFinfo"
+                , string(fieldName)
+                , argType);
+        if(res < 0)
+        {
+            error << "In file " << __FILE__  << ":" << __LINE__ << endl
+                << colored("ERROR: ") << "Argument of type " << fieldName 
+                << " with values ";
+            for(int ii = 0; ii < argType.size(); ii++)
+                error << argType[ii] << ", ";
+            error << endl;
+            error << " is not handled.";
+            PyErr_SetString(PyExc_RuntimeError
+                    , colored("See the message above").c_str()
+                    );
+        }
+
+#else
         if (parseFinfoType(Field<string>::get(oid, "className"),
-                             "destFinfo", string(fieldName), argType) < 0){
+                             "destFinfo", string(fieldName), argType) < 0)
+        {
+
+            
             error << "Arguments not handled: " << fieldName << "(";
             for (unsigned int ii = 0; ii < argType.size(); ++ii){
                 error << argType[ii] << ",";
@@ -1304,6 +1332,8 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, error.str().c_str());
             return NULL;
         }
+#endif     /* -----  STRICT_CHECK  ----- */
+
         if (argType.size() == 1){
             if ( arglist[1] == NULL && argType[0] == "void"){
                 bool ret = SetGet0::set(oid, string(fieldName));
@@ -1324,6 +1354,7 @@ extern "C" {
 
     PyObject * setDestFinfo(ObjId obj, string fieldName, PyObject *arg, string argType)
     {
+
         char typecode = shortType(argType);
         bool ret;
         ostringstream error;
@@ -1462,6 +1493,9 @@ extern "C" {
         }
         default: {
             error << "Cannot handle argument type: " << argType;
+#ifdef  DEBUG2
+            error << colored(" in function ") << __func__;
+#endif     /* -----  DEBUG2  ----- */
             PyErr_SetString(PyExc_TypeError, error.str().c_str());
             return NULL;
         }

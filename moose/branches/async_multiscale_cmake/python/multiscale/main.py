@@ -70,6 +70,7 @@ if args:
 
         debug.printDebug("STEP", "Updating moose for simulation")
         simObj = moose_config.Simulator(etreeDict['config'][0])
+
         simObj.updateMoose(populationDict, projectionDict)
 
         mm.writeGraphviz(filename="./figs/topology.dot"

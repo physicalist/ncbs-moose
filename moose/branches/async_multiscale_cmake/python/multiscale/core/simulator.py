@@ -36,12 +36,18 @@ class Variable:
     '''Variable to plot. 
     '''
     def __init__(self):
+        ''' Default constructor '''
         self.name = None
         self.plotPath = None
         self.type = None
         self.namespace = None
         self.moosePath = None
         self.xml = None
+
+    def __init__(self, name, type):
+        '''Another constructor '''
+        self.name = name
+        self.type = type
     
 
 class Simulator:
@@ -112,14 +118,7 @@ class Simulator:
             self.simulateNetwork()
         except Exception as e:
             raise e
-        try:
-            self.plot()
-        except Exception as e:
-            debug.printDebug("ERROR"
-                    , "Failed to plot graphs. Error {}".format(e)
-                    , frame = inspect.currentframe()
-                    )
-            sys.exit(0)
+        self.plot(ascii=True)
 
     def setupRecord(self, xmlElem):
         '''Setup record.
@@ -135,6 +134,7 @@ class Simulator:
                         , "Failed to setup record on soma"
                         , frame = inspect.currentframe()
                         )
+                raise e
         else:
             debug.printDebug("TODO"
                     , "This type is not implemented yet %s" % elemType 
@@ -217,6 +217,7 @@ class Simulator:
                 , recordDict.get('file_name', None)
                 )
 
+        print "here"
         var = Variable(varName, variableType)
         var.moosePath = path
         var.xml = variable 
@@ -226,67 +227,39 @@ class Simulator:
             self.plotFiles['matplotlib_gui'].add(var)
 
         # Path has been set, now attach it to moooooose.
-        try:
-            path = path.strip()
-            targetVariable = variableType + varName
-            debug.printDebug("DEBUG"
-                    , "Record table: target variable : {0} <= {1}".format(targetVariable
-                        , path)
-                    )
+        path = path.strip()
+        targetVariable = variableType + varName
+        debug.printDebug("DEBUG"
+                , "Record table: {0} <= {1}".format(targetVariable, path)
+                )
 
-            if targetType == "Compartment":
-                self.tableDict[targetVariable] = (moose.utils.setupTable(
-                        targetVariable
-                        , moose.Compartment(path)
-                        , varName
-                        , self.tablePath
-                        ), path)
-            elif targetType == "CaConc":
-                self.tableDict[targetVariable] = (moose.utils.setupTable(
-                        targetVariable
-                        , moose.CaConc(path)
-                        , varName
-                        , self.tablePath
-                        ), path)
-            elif targetType == "HHChannel":
-                self.tableDict[targetVariable] = (moose.utils.setupTable(
-                        targetVariable
-                        , moose.HHChannel(path)
-                        , varName
-                        , self.tablePath
-                        ), path)
-            else:
-                debug.printDebug("WARN"
-                        , "Unsupported type {0}".format(targetVariable)
-                        , frame = inspect.currentframe()
-                        )
-        except NameError as e:
+        if targetType == "Compartment":
+            self.tableDict[targetVariable] = (moose_methods.setupTable(
+                    targetVariable
+                    , moose.Compartment(path)
+                    , varName
+                    , self.tablePath
+                    ), path)
+        elif targetType == "CaConc":
+            self.tableDict[targetVariable] = (moose_methods.setupTable(
+                    targetVariable
+                    , moose.CaConc(path)
+                    , varName
+                    , self.tablePath
+                    ), path)
+        elif targetType == "HHChannel":
+            self.tableDict[targetVariable] = (moose_methods.setupTable(
+                    targetVariable
+                    , moose.HHChannel(path)
+                    , varName
+                    , self.tablePath
+                    ), path)
+        else:
             debug.printDebug("WARN"
-                    , "Can not find variable `{}` to connect".format(
-                        targetVariable
-                        )
+                    , "Unsupported type {0}".format(targetVariable)
                     , frame = inspect.currentframe()
                     )
-            print(moose.showfield(moose.Neutral(path)))
-        except ValueError as e:
-            debug.printDebug("WARN"
-                    , [ "Problem connection to `{}` connect".format(path)
-                        , "Most likely one of its parent does not exists."
-                        , "Did you mean one of the following : "
-                        , moose_methods.dumpMatchingPaths(path)
-                    ]
-                    , frame = inspect.currentframe()
-                    )
-            sys.exit(0)
-        except Exception as e:
-            debug.printDebug("WARN"
-                    , "Failed with exception {0}".format(e)
-                    , frame = inspect.currentframe()
-                    )
-            print(moose_methods.dumpMoosePaths('/##'))
-            raise e
         
-
     def simulateNetwork(self):
         ''' 
         Start simulation.
@@ -333,28 +306,29 @@ class Simulator:
             sys.exit()
 
 
-    def plot(self):
+    def plot(self, ascii=False):
         # After simulation, plot user-requested variables.
         
         # Now we have a dictionary in which for each key there is set of plot
         # variables. Configure these plots.
         for filename in self.plotFiles:
-            self.plotVars(filename, self.plotFiles[filename])
-            if filename != "matplotlib_gui":
-                debug.printDebug("INFO"
-                        , "Saving to file {}".format(filename)
-                        )
-                pylab.savefig(filename)
-            else:
-                pylab.show()
+            self.plotVars(filename, self.plotFiles[filename], ascii)
+            if not ascii:
+                if filename != "matplotlib_gui":
+                    debug.printDebug("INFO"
+                            , "Saving to file {}".format(filename)
+                            )
+                    pylab.savefig(filename)
+                else:
+                    pylab.show()
         
-    def plotVars(self, filename, setOfVariables):
+    def plotVars(self, filename, setOfVariables, ascii):
         ''' Plot these records on one file '''
         self.totalPlots = len(setOfVariables)
         for i, var in enumerate(setOfVariables):
-            debug.printDebug("DEBUG", "Plotting %s, %s " % (var.name
-                , var.moosePath)
-                )
+            debug.printDebug("DEBUG"
+                    , "Plotting %s, %s " % (var.name, var.moosePath)
+                    )
             variableXml = var.xml
             plotXml = variableXml.find('plot')
 
@@ -363,28 +337,29 @@ class Simulator:
                 configDict['title'] = var.moosePath
             yvec, xvec = self.getPlotData(var.type+var.name)
             pylab.subplot(self.totalPlots, 1, i)
-            self.plotVar(xvec, yvec, configDict)
+            self.plotVar(xvec, yvec, configDict, ascii)
 
 
-    def plotVar(self, xvec, yvec, plotParams, ascii=True):
+    def plotVar(self, xvec, yvec, plotParams, ascii=False):
         '''Plot a variable. '''
         if ascii:
             self.plotInTerminal(xvec, yvec, plotParams)
-            return 
-        plotArgs = plotParams.get('plot_args', '')
-        try:
-            pylab.plot(xvec, yvec, plotArgs)
-        except Exception as e:
-            debug.printDebug("WARN"
-                    , "Failed to plot with error")
-            raise e
+        else:
+            plotArgs = plotParams.get('plot_args', '')
+            try:
+                pylab.plot(xvec, yvec, plotArgs)
+            except Exception as e:
+                debug.printDebug("WARN"
+                        , "Failed to plot with error")
+                raise e
 
-        xlabel = plotParams.get('xlabel', None)
-        pylab.xlabel(plotParams.get('xlabel', ''), fontsize=8)
-        pylab.ylabel(plotParams.get('ylabel', ''), fontsize=8)
-        pylab.title(plotParams.get('title', ''), fontsize=8)
-        pylab.tick_params(labelsize='6')
-        
+            xlabel = plotParams.get('xlabel', None)
+            pylab.xlabel(plotParams.get('xlabel', ''), fontsize=8)
+            pylab.ylabel(plotParams.get('ylabel', ''), fontsize=8)
+            pylab.title(plotParams.get('title', ''), fontsize=8)
+            pylab.tick_params(labelsize='6')
+            
+        return None
 
     def plotInTerminal(self, xvec, yvec, plotParams):
         '''
@@ -489,6 +464,7 @@ class Simulator:
                     )
                 )
         xvec = xvec[ : tableObj.vec.size ]
+        print tableObj.vec, tableObj.vec.getValue()
         assert type(tableObj.vec) == type(xvec)
         return tableObj.vec, xvec
 
