@@ -53,7 +53,6 @@
 #include <typeinfo>
 #include <cstring>
 #include <map>
-#include <stdexcept>
 #include <ctime>
 
 #include "../basecode/header.h"
@@ -62,7 +61,6 @@
 #include "../utility/utility.h"
 #include "../randnum/randnum.h"
 #include "../shell/Shell.h"
-#include "../external/debug/print_function.h"
 
 #include "moosemodule.h"
 
@@ -490,16 +488,6 @@ extern "C" {
             RAISE_INVALID_ID(NULL, "moose_ElementField_getNum");
         }
         unsigned int num = Field<unsigned int>::get(self->owner, "num_" + string(self->name));
-
-#ifdef  CHECK_STRICT
-        if(num <= 0)
-        {
-            stringstream ss;
-            ss << "In file : " << __FILE__ << ":" << __LINE__ << endl;
-            ss << colored("In function moose_ElementField_getNum") ;
-            throw runtime_error(ss.str());
-        }
-#endif     /* -----  CHECK_STRICT  ----- */
         return Py_BuildValue("I", num);
     }
 
