@@ -104,14 +104,10 @@ def dumpMoosePaths(pat, isRoot=True):
 
 def getMoosePaths(pat, isRoot=True):
     ''' Return a list of paths for a given pattern. '''
-    if not isRoot:
-        moose_paths = [x.getPath() for x in moose.wildcardFind(pat)]
-    else:
-        try:
-            moose_paths = [x.getPath() for x in moose.wildcardFind(pat+'/##')]
-        except TypeError as e:
-            moose_paths = [x.getPath() for x in 
-                    moose.wildcardFind(pat.path+'/##')]
+    if type(pat) != str:
+        pat = pat.path
+        assert type(pat) == str
+    moose_paths = [x.getPath() for x in moose.wildcardFind(pat)]
     return moose_paths
 
 def dumpMatchingPaths(path, pat='/##'):

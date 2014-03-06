@@ -43,9 +43,6 @@ class Variable:
         self.moosePath = None
         self.xml = None
     
-    def __init__(self, name, type):
-        self.name = name 
-        self.type = type 
 
 class Simulator:
     '''Responsible for all simulation related activity. 
@@ -393,6 +390,7 @@ class Simulator:
         '''
         Plot given vectors in terminal
         '''
+        import subprocess
         g = subprocess.Popen(["gnuplot"], stdin=subprocess.PIPE)
         g.stdin.write("set term dumb 79 25\n")
         g.stdin.write("plot '-' using 1:2 title 'Line1' with linespoints \n")
