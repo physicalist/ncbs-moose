@@ -426,7 +426,15 @@ class Mumble():
                     , adaptorPath
                     )
                 )
-        adaptor = moose.Adaptor(adaptorPath)
+        try:
+            adaptor = moose.Adaptor(adaptorPath)
+        except Exception as e:
+            debug.printDebug("ERROR"
+                    , "Failed to set adaptor from `{}` to `{}`".format(
+                        srcPath, tgtPath
+                        )
+                    , frame = inspect.currentframe()
+                    )
 
         inputVar = relationXml.get('input')
         outputVar = relationXml.get('output')
@@ -453,8 +461,8 @@ class Mumble():
                     )
                 )
         # Connect
+        var = self.prefixWithGet(inputVar)
         try:
-            var = self.prefixWithGet(inputVar)
             moose.connect(adaptor, 'requestField', src, var)
         except Exception as e:
             self.logger.error(
