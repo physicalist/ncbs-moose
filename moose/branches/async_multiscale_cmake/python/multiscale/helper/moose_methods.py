@@ -165,3 +165,30 @@ def writeGraphviz(pat='/##', filename=None, filterList=[]):
             graphviz.write(dot)
     return 
 
+def setupTable(name, obj, qtyname, tablePath=None, threshold=None):
+    '''This is replacement function for moose.utils.setupTable
+
+    It stores qtyname from obj.
+    '''
+    debug.printDebug("DEBUG"
+            , "Setting up table for: {} -> {}".format(obj.path, qtyname)
+            )
+    if tablePath is None:
+        tablePath = '{}/{}'.format(obj.path, 'data')
+        debug.printDebug("WARN"
+                , "Using default table path: {}".format(tablePath)
+                , frame = inspect.currentframe()
+                )
+    if not moose.exists(obj.path):
+        raise RuntimeError("Unknown path {}".format(obj.path))
+
+    moose.Neutral(tablePath)
+    table = moose.Table('{}/{}'.format(tablePath, name))
+    if threshold is None:
+        moose.connect(table, "requestOut", obj, "get{}".format(qtyname))
+    else:
+        raise UserWarning("TODO: Table with threshold is not implemented yet")
+    return table
+
+    
+
