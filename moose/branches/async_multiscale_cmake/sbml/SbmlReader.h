@@ -21,8 +21,7 @@
 #include <sbml/SBMLTypes.h>
 
 #include "../basecode/Id.h"
-//class Id;
-//using namespace libsbml;
+LIBSBML_CPP_NAMESPACE_USE
 
 typedef struct
 {
