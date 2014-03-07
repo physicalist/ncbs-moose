@@ -1299,7 +1299,7 @@ extern "C" {
         // Try to parse the arguments.
         vector< string > argType;
 
-#ifdef  STRICT_CHECK
+#ifdef  DEVELOPER
         int res = parseFinfoType(Field<string>::get(oid, "className")
                 , "destFinfo"
                 , string(fieldName)
@@ -1332,7 +1332,7 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, error.str().c_str());
             return NULL;
         }
-#endif     /* -----  STRICT_CHECK  ----- */
+#endif     /* -----  DEVELOPER  ----- */
 
         if (argType.size() == 1){
             if ( arglist[1] == NULL && argType[0] == "void"){

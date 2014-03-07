@@ -19,11 +19,10 @@
 # Commentary: 
 # 
 # 
-# 
-# 
 
 # Change log:
-# 
+# Thu Mar  6 18:43:34 2014
+# I made changes to run it on async branch.
 # 
 # 
 # 
@@ -62,7 +61,7 @@ def multilevel_pulsegen():
         pg.width[ii] = 0.1
         pg.delay[ii] = 0.5 * (ii+1)
     tab = moose.Table('tab')
-    moose.connect(tab, 'requestOut', pg, 'getOutput')
+    moose.connect(tab, 'Vm', pg, 'output')
     moose.setClock(0, 0.01)
     moose.useClock(0, '%s,%s' % (pg.path, tab.path), 'process')
     moose.reinit()

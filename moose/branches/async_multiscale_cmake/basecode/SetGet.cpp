@@ -13,10 +13,10 @@
 #include "../shell/Neutral.h"
 #include "print_function.h"
 
-#ifdef  STRICT_CHECK
+#ifdef  DEVELOPER
 #include <sstream>
 #include <stdexcept>
-#endif     /* -----  STRICT_CHECK  ----- */
+#endif     /* -----  DEVELOPER  ----- */
 
 const OpFunc* SetGet::checkSet(const string& field, ObjId& tgt, FuncId& fid)
 {
@@ -40,11 +40,11 @@ const OpFunc* SetGet::checkSet(const string& field, ObjId& tgt, FuncId& fid)
                 ss << "\n\t+ " << children[i].path();
             cerr << ss.str() << endl;
 
-#ifdef  STRICT_CHECK
+#ifdef  DEVELOPER
             throw runtime_error(colored("Field or child is not found"));
 #else
             cerr << ss.str();
-#endif     /* -----  STRICT_CHECK  ----- */
+#endif     /* -----  DEVELOPER  ----- */
         } 
         else 
         {

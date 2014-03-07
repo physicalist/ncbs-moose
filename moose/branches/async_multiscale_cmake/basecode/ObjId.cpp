@@ -118,9 +118,9 @@ string ObjId::path() const
 Element* ObjId::element() const
 {
 
-#ifdef  STRICT_CHECK
+#ifdef  DEVELOPER
     Element* i = id.element();
     assert(i != NULL);
-#endif     /* -----  STRICT_CHECK  ----- */
+#endif     /* -----  DEVELOPER  ----- */
 	return id.element();
 }
