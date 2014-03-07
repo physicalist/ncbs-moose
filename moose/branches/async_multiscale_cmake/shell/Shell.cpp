@@ -259,8 +259,19 @@ ObjId Shell::doAddMsg( const string& msgType,
     const Finfo* f1 = src.id.element()->cinfo()->findFinfo( srcField );
     if ( !f1 )
     {
-        cout << myNode_ << ": Shell::doAddMsg: Error: Failed to find field " << srcField <<
-             " on src: " << src.id.element()->getName() << endl;
+#ifdef  DEVELOPER
+        
+        stringstream ss;
+        ss << "In file `" << __FILE__ << "`:" << __LINE__;
+        ss << "Message type: `" << msgType << "`" << endl;
+        ss << "Failed to find field `" << srcField << "`" << endl;
+        ss << dumpElements(src);
+        dump(ss.str(), "WARNING");
+        throw runtime_error("Failed to find something");
+#endif     /* -----  DEVELOPER  ----- */
+
+        cout << myNode_ << ": Shell::doAddMsg: Error: Failed to find field " 
+            << srcField << " on src: " << src.id.element()->getName() << endl;
         return ObjId(0, BADINDEX );
     }
     const Finfo* f2 = dest.id.element()->cinfo()->findFinfo( destField );
@@ -1012,7 +1023,7 @@ void Shell::cleanSimulation()
 /*
  *--------------------------------------------------------------------------------------
  *       Class:  Shell
- *      Method:  Shell :: dumpNameOfElements
+ *      Method:  Shell :: dumpElements
  * Description:  Return a string containing all elements information.
  *
  *--------------------------------------------------------------------------------------

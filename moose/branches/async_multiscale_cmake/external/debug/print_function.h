@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <string>
 #include <iomanip>
 
@@ -57,4 +58,13 @@ string colored(string msg);
 
 string colored(string msg, string colorName);
 
+/*  pretty print onto console using colors. */
+void dump(string msg, string type="WARNING", bool autoFormat=true);
+
+/*  log to a file and also write to console. */
+void log(string msg, string type, bool redirectToConsole=true
+        , bool removeTicks=true);
+
+/* Check if a given character is a backtick ` */
+bool isBackTick(char a);
 #endif   /* ----- #ifndef print_function_INC  ----- */
