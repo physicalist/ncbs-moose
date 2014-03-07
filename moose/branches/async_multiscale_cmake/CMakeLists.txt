@@ -12,9 +12,9 @@ if(ENABLE_STD_2011)
 endif(ENABLE_STD_2011)
 
 # Strick checking 
-set(STRICT_CHECK 1)
-if(STRICT_CHECK)
-    add_definitions(-DSTRICT_CHECK)
+set(DEVELOPER 1)
+if(DEVELOPER)
+    add_definitions(-DDEVELOPER)
 endif()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -33,10 +33,10 @@ if(debug)
 endif(debug)
 
 # Enable strict check. Raise exception instead of warning.
-set(STRICT_CHECK 1)
-if(STRICT_CHECK)
-    add_definitions(-DSTRICT_CHECK)
-endif(STRICT_CHECK)
+set(DEVELOPER 1)
+if(DEVELOPER)
+    add_definitions(-DDEVELOPER)
+endif(DEVELOPER)
 
 ## Here we add an executable
 include_directories(basecode msg)
