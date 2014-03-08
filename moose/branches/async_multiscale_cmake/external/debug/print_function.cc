@@ -126,5 +126,6 @@ void log(string msg, string type, bool redirectToConsole, bool removeTicks)
     logF << asctime(timeinfo) << ": " << msg;
 
     logF.close();
-
 }
+
+

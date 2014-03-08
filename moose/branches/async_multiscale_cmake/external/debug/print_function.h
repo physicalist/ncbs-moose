@@ -26,8 +26,11 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <vector>
 #include <string>
+#include <map>
 #include <iomanip>
+#include <sys/ioctl.h>
 
 #define T_RESET       "\033[0m"
 #define T_BLACK       "\033[30m"      /* Black */
@@ -68,3 +71,55 @@ void log(string msg, string type, bool redirectToConsole=true
 /* Check if a given character is a backtick ` */
 bool isBackTick(char a);
 #endif   /* ----- #ifndef print_function_INC  ----- */
+
+/* 
+ * ===  FUNCTION  ==============================================================
+ *         Name:  mapToString
+ *  Description:  GIven a map, return a string representation of it.
+ *
+ *  If the second argument is true then print the value with key. But default it
+ *  is true.
+ * ==============================================================================
+ */
+template<typename A, typename B>
+string mapToString(const map<A, B>& m, bool value)
+{
+    unsigned int width = 80;
+    unsigned int mapSize = m.size();
+    unsigned int size = 0;
+
+    vector<string> row;
+
+    /* Get the maximum size of any entry in map */
+
+    stringstream ss;
+    for(auto &k : m)
+    {
+        ss.str("");
+        ss << k.first;
+        if(value)
+            ss << ": `" << k.second << '`';
+        row.push_back(ss.str());
+        if(ss.str().size() > size)
+            size = ss.str().size()+1;
+    }
+
+    unsigned int colums = width / size;
+    ss.str("");
+    
+    int i = 0;
+    for(auto v: row)
+    {
+        if(i < colums)
+        {
+            ss << setw(size) << v;
+            i++;
+        }
+        else
+        {
+            ss << endl;
+            i = 0;
+        }
+    }
+    return ss.str();
+}

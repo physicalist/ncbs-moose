@@ -61,7 +61,10 @@ def multilevel_pulsegen():
         pg.width[ii] = 0.1
         pg.delay[ii] = 0.5 * (ii+1)
     tab = moose.Table('tab')
-    moose.connect(tab, 'spikeGen', pg, 'output')
+    try:
+        m = moose.connect(tab, 'spikeGen', pg, 'output')
+    except Exception as e:
+        print moose.wildcardFind("/##")
     moose.setClock(0, 0.01)
     moose.useClock(0, '%s,%s' % (pg.path, tab.path), 'process')
     moose.reinit()

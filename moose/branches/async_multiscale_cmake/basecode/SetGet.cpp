@@ -28,6 +28,7 @@ const OpFunc* SetGet::checkSet(const string& field, ObjId& tgt, FuncId& fid)
         Id child = Neutral::child( tgt.eref(), f2 );
         if ( child == Id() ) 
         {
+#ifdef DEVELOPER
             stringstream ss;
             ss << "In file: " << __FILE__ << ":" << __LINE__ << endl
                 << colored("Error: SetGet:checkSet:: No field or child named '") 
@@ -40,10 +41,10 @@ const OpFunc* SetGet::checkSet(const string& field, ObjId& tgt, FuncId& fid)
                 ss << "\n\t+ " << children[i].path();
             cerr << ss.str() << endl;
 
-#ifdef  DEVELOPER
-            throw runtime_error(colored("Field or child is not found"));
+//            throw runtime_error(colored("Field or child is not found"));
 #else
-            cerr << ss.str();
+            cerr << "Error: SetGet:checkSet:: No field or child named "
+                << field << " was found on " << tgt.id.path() << endl;
 #endif     /* -----  DEVELOPER  ----- */
         } 
         else 
