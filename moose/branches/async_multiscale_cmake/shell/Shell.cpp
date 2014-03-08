@@ -260,7 +260,6 @@ ObjId Shell::doAddMsg( const string& msgType,
     if ( !f1 )
     {
 #ifdef  DEVELOPER
-        
         stringstream ss;
         ss << "In file `" << __FILE__ << "`:" << __LINE__;
         ss << "Message type: `" << msgType << "`" << endl;
@@ -277,8 +276,8 @@ ObjId Shell::doAddMsg( const string& msgType,
     const Finfo* f2 = dest.id.element()->cinfo()->findFinfo( destField );
     if ( !f2 )
     {
-        cout << myNode_ << ": Shell::doAddMsg: Error: Failed to find field " << destField <<
-             " on dest: " << dest.id.element()->getName() << endl;
+        cout << myNode_ << ": Shell::doAddMsg: Error: Failed to find field " 
+            << destField << " on dest: " << dest.id.element()->getName() << endl;
         return ObjId( 0, BADINDEX );
     }
     if ( ! f1->checkTarget( f2 ) )

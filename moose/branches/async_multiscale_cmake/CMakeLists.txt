@@ -1,8 +1,19 @@
 cmake_minimum_required(VERSION 2.8)
 project(moose)
 
+enable_testing()
 # Compiler 
-set(CMAKE_CXX_COMPILER g++)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
+        message(FALTAL_ERROR "GCC version must be at least 4.6")
+    endif()
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.0)
+        message(FATAL_ERROR "Clang version must be at least 3.0")
+    endif()
+else()
+    message(WARNING "Continuing with unsupported compiler")
+endif()
 
 # Enable 2011 stupport.
 set(ENABLE_STD_2011 1)
@@ -14,7 +25,7 @@ endif(ENABLE_STD_2011)
 # Strick checking 
 set(DEVELOPER 1)
 if(DEVELOPER)
-    add_definitions(-DDEVELOPER)
+    add_definitions(-DDEVELOPER -fPIC)
 endif()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)

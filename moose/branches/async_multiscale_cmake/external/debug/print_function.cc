@@ -86,7 +86,7 @@ void dump(string msg, string type, bool autoFormat)
             }
         }
         else if('\n' == msg[i])
-            ss << "\n\t+ ";
+            ss << "\n + ";
         else
             ss << msg[i];
     }
