@@ -526,7 +526,7 @@ public:
      * details. 
      * NOTE: This function is for development purpose only.
      */
-    static string dumpElements(const ObjId& obj);
+    string availableFields(const Cinfo* obj);
 
 private:
     Element* shelle_; // It is useful for the Shell to have this.
@@ -617,6 +617,7 @@ private:
 
     /// Current working Element
     ObjId cwe_;
+
 };
 
 /*

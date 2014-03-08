@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(moose)
+include(CheckIncludeFiles)
 
 enable_testing()
 # Compiler 
@@ -38,10 +39,10 @@ set(INSTALL_INCLUDE_DIR include CACHE PATH "/usr/local/include/")
 # Default macros
 add_definitions(-DUSE_GENESIS_PARSER)
 
-set(debug 1)
-if(debug)
+set(DEBUG 1)
+if(DEBUG)
     set(CMAKE_BUILD_TYPE Debug)
-endif(debug)
+endif()
 
 # Enable strict check. Raise exception instead of warning.
 set(DEVELOPER 1)
@@ -55,8 +56,17 @@ add_executable(moose basecode/main.cpp)
 
 
 # Build
-find_package(GSL REQUIRED)
+find_package(GSL)
 if(GSL_FOUND)
+    # Check if header file exists 
+    find_path(GSL_HAVE_ODE_SOLVER gsl/gsl_odeiv2.h ${GSL_INCLUDE_DIRS}
+        /usr/include 
+        /usr/local/include
+        /usr/share/include 
+        )
+    if(NOT GSL_HAVE_ODE_SOLVER)
+        message(FATAL_ERROR "Outdated version of libgsl")
+    endif()
     set(USE_GSL)
 endif()
 
@@ -120,7 +130,7 @@ target_link_libraries(moose
     device
     moose_mpi
     msg 
-    debug
+    debug_print
     benchmarks
     shell
     )
@@ -167,10 +177,10 @@ if(BUILD_PYMOOSE)
         biophysics
         kinetics
         mesh
+        debug_print
         device
         benchmarks
         pthread
-        debug
         moose_sbml
         ${PYTHON_LIBRARY}
         ${GSL_LIBRARIES}
@@ -203,7 +213,7 @@ if(BUILD_PYMOOSE)
         device
         benchmarks
         pthread
-        debug
+        debug_print
         "-Wl,--no-whole-archive"
         )
 endif(BUILD_PYMOOSE)

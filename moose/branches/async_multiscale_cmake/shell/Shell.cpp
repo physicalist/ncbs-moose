@@ -260,24 +260,25 @@ ObjId Shell::doAddMsg( const string& msgType,
     if ( !f1 )
     {
 #ifdef  DEVELOPER
-        stringstream ss;
-        ss << "In file `" << __FILE__ << "`:" << __LINE__;
-        ss << "Message type: `" << msgType << "`" << endl;
-        ss << "Failed to find field `" << srcField << "`" << endl;
-        ss << dumpElements(src);
-        dump(ss.str(), "WARNING");
+        stringstream shellSS;
+        shellSS.str("");
+        shellSS << "In file `" << __FILE__ << "`:" << __LINE__ << endl;
+        shellSS << "Message type: `" << msgType << "`" << endl;
+        shellSS << "Failed to find field `" << srcField << "`" << endl;
+        shellSS << availableFields(src.id.element()->cinfo());
+        dump(shellSS.str(), "WARNING");
         throw runtime_error("Failed to find something");
 #endif     /* -----  DEVELOPER  ----- */
 
-        cout << myNode_ << ": Shell::doAddMsg: Error: Failed to find field " 
-            << srcField << " on src: " << src.id.element()->getName() << endl;
+        cout << myNode_ << ": Shell::doAddMsg: Error: Failed to find field "
+             << srcField << " on src: " << src.id.element()->getName() << endl;
         return ObjId(0, BADINDEX );
     }
     const Finfo* f2 = dest.id.element()->cinfo()->findFinfo( destField );
     if ( !f2 )
     {
-        cout << myNode_ << ": Shell::doAddMsg: Error: Failed to find field " 
-            << destField << " on dest: " << dest.id.element()->getName() << endl;
+        cout << myNode_ << ": Shell::doAddMsg: Error: Failed to find field "
+             << destField << " on dest: " << dest.id.element()->getName() << endl;
         return ObjId( 0, BADINDEX );
     }
     if ( ! f1->checkTarget( f2 ) )
@@ -1027,9 +1028,10 @@ void Shell::cleanSimulation()
  *
  *--------------------------------------------------------------------------------------
  */
-string Shell::dumpElements(const ObjId& obj)
+string Shell::availableFields(const Cinfo* obj)
 {
     stringstream ss;
-    ss << obj.path();
+    ss << "Avaiable fields: " << endl;
+    ss << mapToString<string, Finfo*>(obj->finfoMap(), true);
     return ss.str();
 }
