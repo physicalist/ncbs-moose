@@ -3,6 +3,7 @@ project(moose)
 include(CheckIncludeFiles)
 
 enable_testing()
+
 # Compiler 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
@@ -30,7 +31,6 @@ if(DEVELOPER)
 endif()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
 set(INSTALL_LIB_DIR lib CACHE PATH "/usr/local/lib")
 set(INSTALL_BIN_DIR bin CACHE PATH "/usr/local/bin")
@@ -53,7 +53,6 @@ endif(DEVELOPER)
 ## Here we add an executable
 include_directories(basecode msg)
 add_executable(moose basecode/main.cpp)
-
 
 # Build
 find_package(GSL)
@@ -85,23 +84,22 @@ if(HDF5_FOUND)
     target_link_libraries(moose ${HDF5_LIBRARY})
 endif(HDF5_FOUND)
 
-find_package(LIBSBML REQUIRED)
+find_package(LIBSBML)
 if(LIBSBML_FOUND)
-    MESSAGE("-- Found libsbml")
     add_definitions(-DUSE_SBML)
     add_subdirectory(sbml)
     include_directories(${LIBSBML_INCLUDE_DIR})
     find_package(BZip2)
 elseif()
-    message("- SMBL is not found")
     add_definitions(-UUSE_SBML)
 endif(LIBSBML_FOUND)
 
-set(USE_READLINE 1)
-if(USE_READLINE)
+find_package(Readline)
+if(READLINE_FOUND)
     add_definitions(-DUSE_READLINE)
-    target_link_libraries(moose readline)
-endif(USE_READLINE)
+    include_directories(${Readline_INCLUDE_DIR})
+    target_link_libraries(moose ${Readline_LIBRARY})
+endif()
 
 # Add subdirectroeis
 add_subdirectory(basecode)
@@ -146,13 +144,16 @@ endif()
 set(BUILD_PYMOOSE 1)
 if(BUILD_PYMOOSE)
     find_package(NumpyHeaders REQUIRED)
-    include_directories(${NUMPY_PATH})
-
+    if(PYTHON_NUMPY_FOUND)
+        include_directories(${PYTHON_NUMPY_INCLUDE_DIR})
+    else()
+        message(FATAL_ERROR "Could not find numpy/arrayobject.h in usual places")
+    endif()
     # Openmpi
     find_package(MPI REQUIRED)
     set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
 
-    find_package(PythonLibs 2.7 EXACT REQUIRED)
+    find_package(PythonLibs REQUIRED)
     include_directories(${PYTHON_INCLUDE_DIRS})
     add_subdirectory(pymoose)
     add_library(_moose SHARED pymoose/moosemodule.cpp)
@@ -161,6 +162,18 @@ if(BUILD_PYMOOSE)
         LIBRARY_OUTPUT_DIRECTORY "./python/moose"
         PREFIX ""
         )
+
+    set(LIBRARIES ${PYTHON_LIBRARY})
+    if(HDF5_FOUND)
+        list(APPEND LIBRARIES ${HDF5_LIBRARY})
+    endif()
+    if(LIBSBML_FOUND)
+        list(APPEND LIBRARIES moose_sbml ${LIBSBML_LIBRARY})
+    endif()
+    if(GSL_FOUND)
+        list(APPEND LIBSBML_LIBRARY ${GSL_LIBRARIES})
+    endif()
+
     target_link_libraries(_moose 
         "-Wl,--whole-archive"
         moosepython
@@ -181,39 +194,7 @@ if(BUILD_PYMOOSE)
         device
         benchmarks
         pthread
-        moose_sbml
-        ${PYTHON_LIBRARY}
-        ${GSL_LIBRARIES}
-        ${HDF5_LIBRARY}
-        ${LIBSBML_LIBRARY}
-        "-Wl,--no-whole-archive"
-        )
-    
-    # For cython
-    add_library(mooselib SHARED cymoose/cymoose_methods.cxx
-        )
-    set_target_properties(mooselib PROPERTIES 
-        LIBRARY_OUTPUT_DIRECTORY "./cymoose"
-        )
-    target_link_libraries(mooselib
-        "-Wl,--whole-archive"
-        basecode
-        msg
-        shell
-        scheduling
-        randnum
-        moose_mpi
-        builtins
-        utility
-        muparser
-        ksolve
-        biophysics
-        kinetics
-        mesh
-        device
-        benchmarks
-        pthread
-        debug_print
+        ${LIBRARIES}
         "-Wl,--no-whole-archive"
         )
 endif(BUILD_PYMOOSE)
