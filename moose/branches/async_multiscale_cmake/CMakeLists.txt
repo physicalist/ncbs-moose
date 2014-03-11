@@ -98,7 +98,7 @@ find_package(Readline)
 if(READLINE_FOUND)
     add_definitions(-DUSE_READLINE)
     include_directories(${Readline_INCLUDE_DIR})
-    target_link_libraries(moose ${Readline_LIBRARY})
+    target_link_libraries(moose ${Readline_LIBRARY} termcap)
 endif()
 
 # Add subdirectroeis

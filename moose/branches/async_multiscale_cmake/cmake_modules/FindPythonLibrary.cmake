@@ -35,7 +35,7 @@ else(EXISTS PYTHON_LIBRARY)
 
   if(PYTHONINTERP_FOUND)
 
-    FIND_FILE(_find_lib_python_py FindLibPython.py PATHS ${CMAKE_MODULE_PATH})
+    #FIND_FILE(_find_lib_python_py FindLibPython.py PATHS ${CMAKE_MODULE_PATH})
 
     EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE}  ${_find_lib_python_py} OUTPUT_VARIABLE python_config)
     if(python_config)
