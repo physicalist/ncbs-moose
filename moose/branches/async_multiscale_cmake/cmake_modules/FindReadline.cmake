@@ -17,6 +17,7 @@
 #  Readline_INCLUDE_DIR      The readline include directories. 
 #  Readline_LIBRARY          The readline library.
 
+find_package(Curses)
 find_path(Readline_ROOT_DIR
     NAMES include/readline/readline.h
 )
@@ -34,7 +35,7 @@ find_library(Readline_LIBRARY
 if(Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
   set(READLINE_FOUND TRUE)
 else(Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
-  FIND_LIBRARY(Readline_LIBRARY NAMES readline)
+    FIND_LIBRARY(Readline_LIBRARY NAMES readline termcap)
   include(FindPackageHandleStandardArgs)
   FIND_PACKAGE_HANDLE_STANDARD_ARGS(Readline DEFAULT_MSG Readline_INCLUDE_DIR Readline_LIBRARY )
   MARK_AS_ADVANCED(Readline_INCLUDE_DIR Readline_LIBRARY)

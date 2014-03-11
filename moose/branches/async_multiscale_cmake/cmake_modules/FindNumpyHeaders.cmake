@@ -33,6 +33,8 @@
 # PYTHON_NUMPY_INCLUDE_DIR  - directory where the arrayobject.h header file can be found
 #
 #
+find_package(NumPy REQUIRED)
+
 if(PYTHON_EXECUTABLE)
     file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/determineNumpyPath.py "try: import numpy; print numpy.get_include()\nexcept: pass\n")
     exec_program("${PYTHON_EXECUTABLE}"
@@ -41,9 +43,11 @@ if(PYTHON_EXECUTABLE)
                  )
 endif(PYTHON_EXECUTABLE)
 
-find_path(PYTHON_NUMPY_INCLUDE_DIR arrayobject.h
+find_path(PYTHON_NUMPY_INCLUDE_DIR numpy/arrayobject.h
           "${NUMPY_PATH}/numpy/"
+          "${NUMPY_PATH}/numpy/core/include/"
           "${PYTHON_INCLUDE_PATH}/numpy/"
+          "${PYTHON_INCLUDE_PATH}/numpy/core/include/"
           /usr/include/python3.3/numpy/
           /usr/include/python3.2/numpy/
           /usr/include/python3.1/numpy/
@@ -52,6 +56,7 @@ find_path(PYTHON_NUMPY_INCLUDE_DIR arrayobject.h
           /usr/include/python2.5/numpy/
           /usr/include/python2.4/numpy/
           /usr/include/python2.3/numpy/
+          "${NUMPY_INCLUDE_DIRS}"
           DOC "Directory where the arrayobject.h header file can be found. This file is part of the numpy package"
     )
 
