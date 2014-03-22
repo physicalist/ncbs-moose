@@ -170,6 +170,9 @@ extern "C" {
     // Methods for Id class
     //////////////////////////////////////////
     int moose_Id_init(_Id * self, PyObject * args, PyObject * kwargs);
+
+    // NOTE: This fucntion returns Id which is not compatible with C. It raises
+    // a warning but safe to ignore I guess.
     Id create_Id_from_path(string path, unsigned int numData, unsigned int isGlobal, string type); // inner function
     long moose_Id_hash(_Id * self);
     

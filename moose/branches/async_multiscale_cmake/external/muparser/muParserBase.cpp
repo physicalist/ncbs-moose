@@ -860,7 +860,13 @@ namespace mu
 
           m_vRPN.AddFun(funTok.GetFuncAddr(), (funTok.GetArgCount()==-1) ? -iArgNumerical : iArgNumerical);
           break;
+    default:
+          std::cerr << "This case is not implemented. Using default" << std::endl;
+          std::cerr << "|- Doing nothing." << std::endl;
+          break;
     }
+
+
 
     // Push dummy value representing the function result to the stack
     token_type token;

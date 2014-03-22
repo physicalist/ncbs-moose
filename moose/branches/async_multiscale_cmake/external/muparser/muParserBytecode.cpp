@@ -304,6 +304,11 @@ namespace mu
                 bOptimized = true;
               }
               break;
+
+        default:
+              std::cerr << "Unknown case. Using default." << std::endl;
+              std::cerr << "|- Doing nothing" << std::endl;
+              break;
               
         } // switch a_Oprt
       }
