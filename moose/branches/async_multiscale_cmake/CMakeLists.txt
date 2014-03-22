@@ -18,7 +18,7 @@ else()
 endif()
 
 # Use clang++ as default compiler for time being
-set(CMAKE_CXX_COMPILER "clang++")
+#set(CMAKE_CXX_COMPILER "clang++")
 
 # Turn warning to error
 add_definitions(-Werror 

@@ -46,8 +46,11 @@ class Ksolve: public ZombiePoolInterface
 		double getN( const Eref& e ) const;
 		void setNinit( const Eref& e, double v );
 		double getNinit( const Eref& e ) const;
-		void setDiffConst( double v );
-		double getDiffConst() const;
+		void setDiffConst( const Eref& e, double v );
+		double getDiffConst( const Eref& e ) const;
+
+                void setNumPools(unsigned int);
+                unsigned int getNumPools() const;
 
 		static const Cinfo* initCinfo();
 	private:
