@@ -17,6 +17,14 @@ else()
     message(WARNING "Continuing with unsupported compiler")
 endif()
 
+# Use clang++ as default compiler for time being
+set(CMAKE_CXX_COMPILER "clang++")
+
+# Turn warning to error
+add_definitions(-Werror 
+    -Wno-return-type-c-linkage
+    )
+
 # Enable 2011 stupport.
 set(ENABLE_STD_2011 1)
 if(ENABLE_STD_2011)
@@ -145,6 +153,7 @@ set(BUILD_PYMOOSE 1)
 if(BUILD_PYMOOSE)
     find_package(NumpyHeaders REQUIRED)
     if(PYTHON_NUMPY_FOUND)
+        add_definitions(-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
         include_directories(${PYTHON_NUMPY_INCLUDE_DIR})
     else()
         message(FATAL_ERROR "Could not find numpy/arrayobject.h in usual places")

@@ -2154,7 +2154,8 @@ extern "C" {
     
     int defineDestFinfos(const Cinfo * cinfo)
     {
-        static char * doc = "Destination field";
+        string docString = "Destination field";
+        static char * doc = (char *)docString.c_str();
         const string& className = cinfo->name();
 #ifndef NDEBUG
         if (verbosity > 1){
@@ -2269,7 +2270,8 @@ extern "C" {
     
     int defineLookupFinfos(const Cinfo * cinfo)
     {
-        static char * doc = "Lookup field";
+        string docString = "Lookup field";
+        static char * doc = (char *) docString.c_str();
         const string & className = cinfo->name();
 #ifndef NDEBUG
         if (verbosity > 1){

@@ -316,7 +316,7 @@ extern "C" {
         if (!Id::isValid(self->oid_.id)){
             RAISE_INVALID_ID(-1, "moose_ObjId_hash");
         }
-        long id = (long)(self->oid_.id.value());
+        long long id = (long long)(self->oid_.id.value());
         long dataIndex = self->oid_.dataIndex;
         long fieldIndex = self->oid_.fieldIndex;
         return id << 48 | dataIndex << 16 | fieldIndex;

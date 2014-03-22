@@ -377,6 +377,7 @@ extern "C" {
     static char id[] = "vec";
     static char owner[] = "owner";
     static char dataIndex[] = "dataIndex";
+    char emptyString[] = "";
     static PyGetSetDef ElementFieldGetSetters[] = {
         {numfield,
          (getter)moose_ElementField_getNum,
@@ -396,12 +397,12 @@ extern "C" {
         {name,
          (getter)moose_ElementField_getName,
          NULL,
-         "",
+         emptyString,
          NULL},
         {owner,
          (getter)moose_ElementField_getOwner,
          NULL,
-         "",
+         emptyString,
          NULL},
         {dataIndex,
          (getter)moose_ElementField_getDataId,
