@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(moose)
 include(CheckIncludeFiles)
+include(ExternalProject)
 
 enable_testing()
 
@@ -58,31 +59,21 @@ if(DEVELOPER)
     add_definitions(-DDEVELOPER)
 endif(DEVELOPER)
 
+# Use local gsl
+ExternalProject_Add(gsl_local
+    URL ${CMAKE_CURRENT_SOURCE_DIR}/external/gsl/gsl-1.16.tar.gz
+    PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/gsl
+    CONFIGURE_COMMAND ./../gsl/configure --prefix=${CMAKE_CURRENT_SOURCE_DIR}/gsl
+    BUILD_COMMAND make
+    )
+add_definitions(-DUSE_GSL)
+ExternalProject_Get_Property(gsl_local install_dir)
+include_directories(${install_dir}/include)
+link_directories(${install_dir}/lib)
+
 ## Here we add an executable
 include_directories(basecode msg)
 add_executable(moose basecode/main.cpp)
-
-# Build
-find_package(GSL)
-if(GSL_FOUND)
-    # Check if header file exists 
-    find_path(GSL_HAVE_ODE_SOLVER gsl/gsl_odeiv2.h ${GSL_INCLUDE_DIRS}
-        /usr/include 
-        /usr/local/include
-        /usr/share/include 
-        )
-    if(NOT GSL_HAVE_ODE_SOLVER)
-        message(FATAL_ERROR "Outdated version of libgsl")
-    endif()
-    set(USE_GSL)
-endif()
-
-if(USE_GSL)
-    add_definitions(-DUSE_GSL)
-    include_directories(${GSL_INCLUDE_DIRS} ${GSLCBLAS_INCLUDE_DIRS})
-    target_link_libraries(moose ${GSL_LIBRARIES})
-endif(USE_GSL)
-
 
 ## Setup hdf5
 find_package(HDF5)
@@ -148,6 +139,9 @@ if(LIBSBML_FOUND)
     target_link_libraries(moose moose_sbml ${LIBSBML_LIBRARY})
 endif()
 
+# Link gsl 
+target_link_libraries(moose gslcblas gsl)
+
 ## Build pymoose 
 set(BUILD_PYMOOSE 1)
 if(BUILD_PYMOOSE)
@@ -178,9 +172,6 @@ if(BUILD_PYMOOSE)
     endif()
     if(LIBSBML_FOUND)
         list(APPEND LIBRARIES moose_sbml ${LIBSBML_LIBRARY})
-    endif()
-    if(GSL_FOUND)
-        list(APPEND LIBSBML_LIBRARY ${GSL_LIBRARIES})
     endif()
 
     target_link_libraries(_moose 
