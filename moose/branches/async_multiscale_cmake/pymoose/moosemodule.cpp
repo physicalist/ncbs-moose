@@ -852,10 +852,9 @@ extern "C" {
         }
         finalized = true;
         Id shellId = getShell(0, NULL);
-        for (map<string, PyObject *>::iterator it =
-                     get_inited_lookupfields().begin();
-             it != get_inited_lookupfields().end();
-             ++it){
+        for (map<string, PyObject *>::iterator it = get_inited_lookupfields().begin();
+             it != get_inited_lookupfields().end(); ++it)
+        {
             Py_XDECREF(it->second);
         }
         // Clear the memory for PyGetSetDefs. The key
@@ -868,7 +867,7 @@ extern "C" {
             vector <PyGetSetDef> &getsets = it->second;
             for (unsigned int ii = 0; ii < getsets.size()-1; ++ii){ // the -1 is for the empty sentinel entry
                 free(getsets[ii].name);
-                Py_XDECREF(getsets[ii].closure);
+                Py_XDECREF((PyObject*) getsets[ii].closure);
             }
         }
         get_getsetdefs().clear();

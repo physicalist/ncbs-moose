@@ -21,13 +21,13 @@ endif()
 # Use clang++ as default compiler for time being
 #set(CMAKE_CXX_COMPILER "clang++")
 
-# Turn warning to error
-add_definitions(-Werror 
-    -Wno-return-type-c-linkage
-    )
-
-# Enable 2011 stupport.
-set(ENABLE_STD_2011 1)
+## Turn warning to error
+#add_definitions(-Werror 
+#    -Wno-return-type-c-linkage
+#    )
+#
+## Enable 2011 stupport.
+set(ENABLE_STD_2011 0)
 if(ENABLE_STD_2011)
     add_definitions(-DENABLE_STD_2011 -DDEBUG2)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")

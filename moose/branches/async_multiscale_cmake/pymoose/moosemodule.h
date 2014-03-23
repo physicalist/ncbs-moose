@@ -54,6 +54,17 @@ extern "C" {
 
     const union { unsigned char bytes[4]; uint32_t value; } o32_host_order =  { { 0, 1, 2, 3 } };
 
+    // Python 2.5 or older support.
+/* If Py_TYPE is not defined on Python2.5 or older then define it */
+#ifndef Py_TYPE
+#define Py_TYPE(o) ((o)->ob_type)
+#endif
+
+/* Define PyVarObject_HEAD_INIT for python 2.5 */
+#ifndef PyVarObject_HEAD_INIT
+# define PyVarObject_HEAD_INIT(type, size) PyObject_HEAD_INIT(type) size,
+#endif
+
 #define O32_HOST_ORDER (o32_host_order.value)
 
 
