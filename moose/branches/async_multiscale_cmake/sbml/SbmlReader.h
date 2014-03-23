@@ -21,7 +21,7 @@
 #include <sbml/SBMLTypes.h>
 
 #include "../basecode/Id.h"
-LIBSBML_CPP_NAMESPACE_USE
+//LIBSBML_CPP_NAMESPACE_USE
 
 typedef struct
 {

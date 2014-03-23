@@ -91,14 +91,14 @@ string mapToString(const map<A, B>& m, bool value)
     vector<string> row;
 
     /* Get the maximum size of any entry in map */
-
     stringstream ss;
-    for(auto &k : m)
+    typename map<A, B>::const_iterator it;
+    for(it = m.begin(); it != m.end(); it++)
     {
         ss.str("");
-        ss << k.first;
+        ss << it->first;
         if(value)
-            ss << ": `" << k.second << '`';
+            ss << ": `" << it->second << '`';
         row.push_back(ss.str());
         if(ss.str().size() > size)
             size = ss.str().size()+1;
@@ -108,11 +108,11 @@ string mapToString(const map<A, B>& m, bool value)
     ss.str("");
     
     int i = 0;
-    for(auto v: row)
+    for(int ii = 0; ii < row.size(); ii++)
     {
         if(i < colums)
         {
-            ss << setw(size) << v;
+            ss << setw(size) << row[ii];
             i++;
         }
         else
