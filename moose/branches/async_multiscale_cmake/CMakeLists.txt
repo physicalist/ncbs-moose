@@ -7,13 +7,9 @@ enable_testing()
 
 # Compiler 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
-        message(FALTAL_ERROR "GCC version must be at least 4.6")
-    endif()
+    set(CMAKE_CXX_COMPILER "g++")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.0)
-        message(FATAL_ERROR "Clang version must be at least 3.0")
-    endif()
+    set(CMAKE_CXX_COMPILER "clang++")
 else()
     message(WARNING "Continuing with unsupported compiler")
 endif()
@@ -63,7 +59,7 @@ endif(DEVELOPER)
 ExternalProject_Add(gsl_local
     URL ${CMAKE_CURRENT_SOURCE_DIR}/external/gsl/gsl-1.16.tar.gz
     PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/gsl
-    CONFIGURE_COMMAND ./../gsl/configure --prefix=${CMAKE_CURRENT_SOURCE_DIR}/gsl
+    CONFIGURE_COMMAND ./../gsl_local/configure --prefix=${CMAKE_CURRENT_SOURCE_DIR}/gsl
     BUILD_COMMAND make
     )
 add_definitions(-DUSE_GSL)
@@ -93,11 +89,13 @@ elseif()
     add_definitions(-UUSE_SBML)
 endif(LIBSBML_FOUND)
 
+find_package(Termcap)
 find_package(Readline)
-if(READLINE_FOUND)
+if(READLINE_FOUND AND TERMCAP_FOUND)
     add_definitions(-DUSE_READLINE)
     include_directories(${Readline_INCLUDE_DIR})
-    target_link_libraries(moose ${Readline_LIBRARY} termcap)
+    target_link_libraries(moose ${Readline_LIBRARY})
+    target_link_libraries(moose ${TERMCAP_LIBRARY})
 endif()
 
 # Add subdirectroeis
@@ -160,6 +158,7 @@ if(BUILD_PYMOOSE)
     include_directories(${PYTHON_INCLUDE_DIRS})
     add_subdirectory(pymoose)
     add_library(_moose SHARED pymoose/moosemodule.cpp)
+    #add_library(_moose SHARED pymoose/moosemodule.cpp)
     set_target_properties(_moose PROPERTIES COMPILE_DEFINITIONS "PYMOOSE")
     set_target_properties(_moose PROPERTIES 
         LIBRARY_OUTPUT_DIRECTORY "./python/moose"

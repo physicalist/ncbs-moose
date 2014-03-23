@@ -32,7 +32,7 @@ function testPythonCode
 
 }
 
-PYC=python2.7
+PYC=python
 if [ "$1" == "d" ]; then
   PYC="gdb -ex r --args python2.7"
   runCode
@@ -42,7 +42,7 @@ elif [ "$1" == "c" ]; then
         testPythonCode $pf
     done
 else
-  PYC=python2.7
+  PYC=python
   runCode
 fi
 

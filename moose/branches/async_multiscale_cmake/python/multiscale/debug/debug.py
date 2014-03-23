@@ -1,4 +1,3 @@
-from __future__ import print_function
 import inspect
 import sys
 
@@ -74,16 +73,11 @@ def printDebug(label, msg, frame=None, exception=None):
 
 
     if not frame :
-        print(prefix+"{0}".format(colored(msg,label)), file=sys.stderr)
+        print(prefix+"{0}".format(colored(msg,label)))
     else :
         filename = frame.f_code.co_filename
         filename = "/".join(filename.split("/")[-2:])
-        print(prefix+"@{0}:{1} {2}".format(filename
-                                             , frame.f_lineno
-                                             , colored(msg, label)
-                                             )
-              , file=sys.stderr
-              )
+        print(prefix+"@{0}:{1} {2}".format(filename, frame.f_lineno, colored(msg, label)))
     if exception:
         print(" [Expcetion] {0}".format(exception))
 

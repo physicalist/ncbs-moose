@@ -33,7 +33,6 @@ CHANGE LOG:
 
 """
 
-
 from xml.etree import cElementTree as ET
 import sys
 import MorphML
@@ -45,9 +44,13 @@ import moose.neuroml.utils as mnu
 import debug.debug as debug
 import core.config as config
 import logging
-
 from os import path
 
+current_version = sys.version_info
+if current_version < (2, 6):
+    pythonLessThan26 = True
+else:
+    pythonLessThan26 = False
 
 class NeuroML(object):
 
@@ -84,11 +87,14 @@ class NeuroML(object):
         self.modelDir = path.dirname(path.abspath(filename))
         try:
             self.lengthUnits = root_element.attrib['lengthUnits']
-        except KeyError as e:
-            # This is preferred in NeuroML v2
+        except KeyError:
             self.lengthUnits = root_element.attrib['length_units']
-        except Exception as e:
-            debug.printDebug("WARN", "Failed to get length_unit", e)
+        except:
+            debug.printDebug("WARN"
+                    , "Failed to get length_unit"
+                    , sys.exec_info()[0]
+                    )
+            raise
 
         # gets replaced below if tag for temperature is present
         self.temperature = self._CELSIUS_default
