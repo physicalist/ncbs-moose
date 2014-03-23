@@ -39,8 +39,16 @@ _py3k = False
 if int(platform.python_version_tuple()[0]) >= 3:
     _py3k = True
 from collections import defaultdict
-from . import _moose
-from ._moose import *
+import sys
+try:
+    from . import _moose
+except SyntaxError:
+    pass
+try:
+    from ._moose import *
+except SyntaxError:
+    pass
+
 import __main__ as main
 
 sequence_types = [ 'vector<double>',
