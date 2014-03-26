@@ -53,8 +53,6 @@ class Dsolve: public ZombiePoolInterface
 		void process( const Eref& e, ProcPtr p );
 		void reinit( const Eref& e, ProcPtr p );
 
-		void setNumPools( unsigned int num );
-
 		//////////////////////////////////////////////////////////////////
 		// Inherited virtual funcs from ZombiePoolInterface
 		//////////////////////////////////////////////////////////////////
@@ -93,10 +91,6 @@ class Dsolve: public ZombiePoolInterface
 		unsigned int poolStartIndex_;
 		unsigned int numVoxels_;
 
-		unsigned int numTotPools_;
-		unsigned int numLocalPools_;
-		unsigned int poolStartIndex_;
-		unsigned int numVoxels_;
 		vector< DiffPoolVec > pools_;
 
 		/// smallest Id value for pools managed by Dsolve. Used for lookup.

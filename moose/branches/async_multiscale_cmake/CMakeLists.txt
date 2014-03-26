@@ -112,6 +112,7 @@ add_subdirectory(external/debug/)
 add_subdirectory(mesh)
 add_subdirectory(mpi)
 add_subdirectory(ksolve)
+add_subdirectory(diffusion)
 add_subdirectory(device)
 add_subdirectory(benchmarks)
 add_subdirectory(kinetics)
@@ -127,6 +128,7 @@ target_link_libraries(moose
     msg 
     debug_print
     benchmarks
+    diffusion
     shell
     )
 
@@ -188,6 +190,7 @@ if(BUILD_PYMOOSE)
         muparser
         biophysics
         kinetics
+        diffusion
         mesh
         debug_print
         device
