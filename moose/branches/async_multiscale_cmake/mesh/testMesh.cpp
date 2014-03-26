@@ -27,6 +27,71 @@
 #include "SpineMesh.h"
 #include "PsdMesh.h"
 
+/**
+ * This tests how volume changes in a mesh propagate to all
+ * child pools, reacs, and enzymes.
+ */
+void testVolScaling()
+{
+	extern Id makeReacTest();
+	Shell* s = reinterpret_cast< Shell* >( Id().eref().data() );
+
+	Id kin = makeReacTest();
+	Id subCompt =  s->doCreate( "CubeMesh", kin, "subCompt", 1 );
+	Field< double >::set( subCompt, "volume", 1e-16 );
+	Id SP = s->doCreate( "Pool", subCompt, "SP", 1 );
+	Field< double >::set( SP, "concInit", 2 );
+
+	vector< double > n;
+	n.push_back( Field< double >::get( ObjId( "/kinetics/A" ), "nInit" ) );
+	n.push_back( Field< double >::get( ObjId( "/kinetics/e1Pool" ), "nInit" ) );
+	n.push_back( Field< double >::get( ObjId( "/kinetics/r1" ), "numKf" ));
+	n.push_back( Field< double >::get( ObjId( "/kinetics/r1" ), "numKb" ));
+	n.push_back( Field< double >::get( ObjId( "/kinetics/r2" ), "numKf" ));
+	n.push_back( Field< double >::get( ObjId( "/kinetics/r2" ), "numKb" ));
+	n.push_back( Field< double >::get( ObjId( "/kinetics/e1Pool/e1" ), "k1" ) );
+	n.push_back( Field< double >::get( ObjId( "/kinetics/e1Pool/e1" ), "k2" ) );
+	n.push_back( Field< double >::get( ObjId( "/kinetics/e1Pool/e1" ), "k3" ) );
+	n.push_back( Field< double >::get( ObjId( "/kinetics/e2Pool/e2" ), "Km" ) );
+	n.push_back( Field< double >::get( ObjId( "/kinetics/e2Pool/e2" ), "kcat" ) );
+	n.push_back( Field< double >::get( SP, "nInit" ) );
+
+	double vol = Field< double >::get( kin, "volume" );
+
+	vol *= 10;
+	Field< double >::set( kin, "volume", vol );
+
+	vector< double > m;
+	m.push_back( Field< double >::get( ObjId( "/kinetics/A" ), "nInit" ) );
+	m.push_back( Field< double >::get( ObjId( "/kinetics/e1Pool" ), "nInit" ) );
+	m.push_back( Field< double >::get( ObjId( "/kinetics/r1" ), "numKf" ));
+	m.push_back( Field< double >::get( ObjId( "/kinetics/r1" ), "numKb" ));
+	m.push_back( Field< double >::get( ObjId( "/kinetics/r2" ), "numKf" ));
+	m.push_back( Field< double >::get( ObjId( "/kinetics/r2" ), "numKb" ));
+	m.push_back( Field< double >::get( ObjId( "/kinetics/e1Pool/e1" ), "k1" ) );
+	m.push_back( Field< double >::get( ObjId( "/kinetics/e1Pool/e1" ), "k2" ) );
+	m.push_back( Field< double >::get( ObjId( "/kinetics/e1Pool/e1" ), "k3" ) );
+	m.push_back( Field< double >::get( ObjId( "/kinetics/e2Pool/e2" ), "Km" ) );
+	m.push_back( Field< double >::get( ObjId( "/kinetics/e2Pool/e2" ), "kcat" ) );
+	m.push_back( Field< double >::get( SP, "nInit" ) );
+
+	assert( doubleEq( n[0] * 10, m[0] ) );	// A nInit
+	assert( doubleEq( n[1] * 10, m[1] ) ); 	// e1Pool
+	assert( doubleEq( n[2] / 10, m[2] ) );	// r1 numKf
+	assert( doubleEq( n[3], m[3] ) );	// r1 numKb
+	assert( doubleEq( n[4] / 10, m[4] ) );	// r2 numKf
+	assert( doubleEq( n[5], m[5] ) );	// r2 numKb
+	assert( doubleEq( n[6] / 10, m[6] ) );	// e1 k1
+	assert( doubleEq( n[7], m[7] ) );	// e1 k2
+	assert( doubleEq( n[8], m[8] ) );	// e1 k3
+	assert( doubleEq( n[9], m[9] ) );	// e2 Km
+	assert( doubleEq( n[10], m[10] ) );	// e2 kcat
+	assert( doubleEq( n[11], m[11] ) );	// SP nInit
+
+	s->doDelete( kin );
+	cout << "." << flush;
+}
+
 #if 0
 /**
  * Low-level test for Cylbase, no MOOSE calls
@@ -687,13 +752,13 @@ void testCubeMeshExtendStencil()
 
 	const double* entry;
 	const unsigned int* colIndex;
-	unsigned int num = cm0.getStencil( 0, &entry, &colIndex );
+	unsigned int num = cm0.getStencilRow( 0, &entry, &colIndex );
 	assert( num == 3 );
 	assert( colIndex[0] == 1 );
 	assert( colIndex[1] == 2 );
 	assert( colIndex[2] == 8 );
 
-	num = cm0.getStencil( 56, &entry, &colIndex );
+	num = cm0.getStencilRow( 56, &entry, &colIndex );
 	assert( num == 3 );
 	assert( colIndex[0] == 48 );
 	assert( colIndex[1] == 57 );
@@ -705,7 +770,7 @@ void testCubeMeshExtendStencil()
 	}
 	cm0.extendStencil( &cm1, vj );
 
-	num = cm0.getStencil( 56, &entry, &colIndex );
+	num = cm0.getStencilRow( 56, &entry, &colIndex );
 	assert( num == 4 );
 	assert( colIndex[0] == 48 );
 	assert( colIndex[1] == 57 );
@@ -713,7 +778,7 @@ void testCubeMeshExtendStencil()
 	assert( colIndex[3] == 64 );
 
 	for ( unsigned int i = 0; i < 8; ++i ) {
-		num = cm0.getStencil( 64 + i, &entry, &colIndex );
+		num = cm0.getStencilRow( 64 + i, &entry, &colIndex );
 		assert( num == 1 );
 		assert( colIndex[0] == 56 + i );
 	}
@@ -729,21 +794,20 @@ void testReMesh()
 	Shell* s = reinterpret_cast< Shell* >( Id().eref().data() );
 	Id base = s->doCreate( "Neutral", Id(), "base", 1 );
 
-	Id pool = s->doCreate( "Pool", base, "pool", 1 );
 	Id cube = s->doCreate( "CubeMesh", base, "cube", 1 );
 	bool ret = SetGet2< double, unsigned int >::set( 
 		cube, "buildDefaultMesh", 1.0, 1 );
 	assert( ret );
+	unsigned int vol = Field< double >::get( cube, "volume" );
+	assert( doubleEq( vol, 1.0 ) );
+	Id pool = s->doCreate( "Pool", cube, "pool", 1 );
 	Id mesh( "/base/cube/mesh" );
 	assert( mesh != Id() );
 
-	ObjId mid = s->doAddMsg( "OneToOne", pool, "mesh", mesh, "mesh" );
-	assert( !mid.bad() );
-
 /////////////////////////////////////////////////////////////////
 	// 1 millimolar in 1 m^3 is 1 mole per liter.
-	unsigned int linsize = Field< unsigned int >::get( pool, "linearSize" );
-	assert( linsize == 1 );
+	double linsize = Field< double >::get( pool, "volume" );
+	assert( doubleEq( linsize, 1.0 ) );
 
 	ret = Field< double >::set( pool, "conc", 1 );
 	assert( ret );
@@ -763,8 +827,8 @@ void testReMesh()
 	ret = SetGet2< double, unsigned int >::set( 
 		cube, "buildDefaultMesh", 1, 8 );
 	// This is nasty, needs the change to propagate through messages.
-	linsize = Field< unsigned int >::get( pool, "linearSize" );
-	assert( linsize == 8 );
+	linsize = Field< double >::get( pool, "volume" );
+	assert( doubleEq( linsize, 0.125 ) );
 
 	n = Field< double >::get( ObjId( pool, 0 ), "concInit" );
 	assert( doubleEq( n, x ) );
@@ -978,7 +1042,7 @@ void testNeuroMeshLinear()
 	for ( unsigned int i = 0; i < numCompts; ++i ) {
 		const double* entry; 
 		const unsigned int* colIndex; 
-		unsigned int numAbut =  mc->getStencil( i, &entry, &colIndex );
+		unsigned int numAbut =  mc->getStencilRow( i, &entry, &colIndex );
 		if ( i == 0 ) {
 			assert( numAbut == 1 );
 			assert( doubleEq( entry[0], adx ) );
@@ -1103,7 +1167,7 @@ void testNeuroMeshBranching()
 			const double* entry;
 			const unsigned int* colIndex;
 			unsigned int numEntries = 
-					neuro->getStencil( i, &entry, &colIndex);
+					neuro->getStencilRow( i, &entry, &colIndex);
 			for ( unsigned int j = 0; j < numEntries; ++j ) {
 				unsigned int k = colIndex[j];
 				double delta = ( S[k]/vol[k] - S[i]/vol[i] ) * entry[j];
@@ -2074,6 +2138,7 @@ void testCellPortion()
 void testMesh()
 {
 	testVec();
+	testVolScaling();
 	// testCylBase();
 	// testNeuroNode();
 	// testNeuroNodeTree();
@@ -2081,7 +2146,7 @@ void testMesh()
 	// testMidLevelCylMesh();
 	testCubeMesh();
 	testCubeMeshExtendStencil();
-	testReMesh();
+	// testReMesh(); // Waiting to have pool subdivision propagate.
 	// testNeuroMeshLinear();
 	// testNeuroMeshBranching();
 	// testIntersectVoxel();

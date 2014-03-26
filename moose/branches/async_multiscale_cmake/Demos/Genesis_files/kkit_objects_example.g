@@ -1,7 +1,7 @@
 //genesis
 // kkit Version 11 flat dumpfile
  
-// Saved on Mon Mar  3 02:18:31 2014
+// Saved on Wed Mar 19 11:08:42 2014
  
 include kkit {argv 1}
  
@@ -61,13 +61,13 @@ simundump kpool /kinetics/B 0 0 0 0.22541 0.22541 0 0 0 1 0 \
 simundump text /kinetics/B/notes 0 ""
 call /kinetics/B/notes LOAD \
 ""
-simundump kpool /kinetics/A 0 0 1 0.23181 0.23181 1 0 0 1 0 \
-  /kinetics/geometry blue black -3 1 0
+simundump kpool /kinetics/A 0 0 2 2 2 2 0 0 1 0 /kinetics/geometry blue black \
+  -3 1 0
 simundump text /kinetics/A/notes 0 ""
 call /kinetics/A/notes LOAD \
 ""
-simundump kpool /kinetics/tot1 0 0 0 0.45722 0.45722 0 0 0 1 0 \
-  /kinetics/geometry 47 black -1 -2 0
+simundump kpool /kinetics/tot1 0 0 0 2 2 0 0 0 1 0 /kinetics/geometry 47 \
+  black -1 -2 0
 simundump text /kinetics/tot1/notes 0 ""
 call /kinetics/tot1/notes LOAD \
 ""
@@ -110,13 +110,13 @@ simundump kpool /kinetics/E 0 0 0 0.035077 0.035077 0 0 0 1 0 \
 simundump text /kinetics/E/notes 0 ""
 call /kinetics/E/notes LOAD \
 ""
-simundump kpool /kinetics/MassActionEnz 0 0 1 0.96319 0.96319 1 0 0 1 0 \
+simundump kpool /kinetics/MassActionEnz 0 0 1 1 1 1 0 0 1 0 \
   /kinetics/geometry 28 black 7 5 0
 simundump text /kinetics/MassActionEnz/notes 0 ""
 call /kinetics/MassActionEnz/notes LOAD \
 ""
-simundump kenz /kinetics/MassActionEnz/e1 0 0 0.036721 0 0.036721 1 0.1 0.4 \
-  0.1 0 0 "" red 28 "" 7 3 0
+simundump kenz /kinetics/MassActionEnz/e1 0 0 0 0 0 1 1 4 1 0 0 "" red 28 "" \
+  7 3 0
 simundump text /kinetics/MassActionEnz/e1/notes 0 ""
 call /kinetics/MassActionEnz/e1/notes LOAD \
 ""
@@ -125,8 +125,7 @@ simundump kpool /kinetics/MM_Enz 0 0 1 1 1 1 0 0 1 0 /kinetics/geometry 22 \
 simundump text /kinetics/MM_Enz/notes 0 ""
 call /kinetics/MM_Enz/notes LOAD \
 ""
-simundump kenz /kinetics/MM_Enz/e2 0 0 0.0069606 0 0.0069606 1 0.1 0.4 0.1 0 \
-  1 "" red 22 "" 7 -1 0
+simundump kenz /kinetics/MM_Enz/e2 0 0 0 0 0 1 1 4 1 0 1 "" red 22 "" 7 -1 0
 simundump text /kinetics/MM_Enz/e2/notes 0 ""
 call /kinetics/MM_Enz/e2/notes LOAD \
 ""
@@ -135,8 +134,8 @@ simundump kpool /kinetics/F 0 0 0 0.0046597 0.0046597 0 0 0 1 0 \
 simundump text /kinetics/F/notes 0 ""
 call /kinetics/F/notes LOAD \
 ""
-simundump xgraph /graphs/conc1 0 0 20 0 1.2 0
-simundump xgraph /graphs/conc2 0 0 20 0 1.9507 0
+simundump xgraph /graphs/conc1 0 0 20 0 2 0
+simundump xgraph /graphs/conc2 0 0 20 0 2 0
 simundump xplot /graphs/conc1/A.Co 3 524288 \
   "delete_plot.w <s> <d>; edit_plot.D <w>" blue 0 0 1
 simundump xplot /graphs/conc1/B.Co 3 524288 \
