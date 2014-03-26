@@ -81,12 +81,6 @@ void DiffPoolVec::setMotorConst( double v )
 	motorConst_ = v;
 }
 
-void DiffPoolVec::setNumVoxels( unsigned int num ) 
-{
-	nInit_.resize( num, 0.0 );
-	n_.resize( num, 0.0 );
-}
-
 unsigned int DiffPoolVec::getNumVoxels() const
 {
 	return n_.size();
