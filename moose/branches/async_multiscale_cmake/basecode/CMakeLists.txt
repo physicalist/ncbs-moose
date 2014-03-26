@@ -25,4 +25,4 @@ add_library(basecode
     testAsync.cpp
     ValueFinfo.cpp
     )
-target_link_libraries(basecode biophysics)
+target_link_libraries(basecode debug_print biophysics)

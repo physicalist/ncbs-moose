@@ -24,10 +24,6 @@
 #include "../shell/Shell.h"
 #include "../shell/Wildcard.h"
 
-#ifdef USE_GSL
-#include <gsl/gsl_errno.h>
-#endif
-
 #define EPSILON 1e-15
 
 const Cinfo* Stoich::initCinfo()
@@ -46,7 +42,7 @@ const Cinfo* Stoich::initCinfo()
 			"poolInterface",
 			"Accessory class that provides interface for accessing all "
 		    " the pools that are present in this reaction system."
-		    " Must be of class Ksolve or Dsolve (at present) "
+		    " Must be of class Ksolve, Gsolve, or Dsolve (at present) "
 			" Must be assigned before the path is set.",
 			&Stoich::setPoolInterface,
 			&Stoich::getPoolInterface
@@ -77,12 +73,41 @@ const Cinfo* Stoich::initCinfo()
 			"Total number of rate terms in the reaction system.",
 			&Stoich::getNumRates
 		);
+
 		// Stuff here for getting Stoichiometry matrix to manipulate in
 		// Python.
+		static ReadOnlyValueFinfo< Stoich, vector< int > >
+				matrixEntry(
+			"matrixEntry",
+			"The non-zero matrix entries in the sparse matrix. Their"
+			"column indices are in a separate vector and the row"
+			"informatino in a third",
+			&Stoich::getMatrixEntry
+		);
+		// Stuff here for getting Stoichiometry matrix to manipulate in
+		// Python.
+		static ReadOnlyValueFinfo< Stoich, vector< unsigned int > >
+				columnIndex(
+			"columnIndex",
+			"Column Index of each matrix entry",
+			&Stoich::getColIndex
+		);
+		// Stuff here for getting Stoichiometry matrix to manipulate in
+		// Python.
+		static ReadOnlyValueFinfo< Stoich, vector< unsigned int > >
+				rowStart(
+			"rowStart",
+			"Row start for each block of entries and column indices",
+			&Stoich::getRowStart
+		);
 
 		//////////////////////////////////////////////////////////////
 		// MsgDest Definitions
 		//////////////////////////////////////////////////////////////
+		static DestFinfo unzombify( "unzombify",
+			"Restore all zombies to their native state",
+			new OpFunc0< Stoich >( &Stoich::unZombifyModel )
+		);
 
 		//////////////////////////////////////////////////////////////
 		// SrcFinfo Definitions
@@ -99,6 +124,10 @@ const Cinfo* Stoich::initCinfo()
 		&numVarPools,		// ReadOnlyValue
 		&numAllPools,		// ReadOnlyValue
 		&numRates,			// ReadOnlyValue
+		&matrixEntry,		// ReadOnlyValue
+		&columnIndex,		// ReadOnlyValue
+		&rowStart,			// ReadOnlyValue
+		&unzombify,			// DestFinfo
 	};
 
 	static Dinfo< Stoich > dinfo;
@@ -135,7 +164,10 @@ Stoich::Stoich()
 
 Stoich::~Stoich()
 {
-	unZombifyModel();
+	// unZombifyModel();
+	// Note that we cannot do the unZombify here, because it is too
+	// prone to problems with the ordering of the delete operations
+	// relative to the zombies.
 	for ( vector< RateTerm* >::iterator i = rates_.begin();
 		i != rates_.end(); ++i )
 		delete *i;
@@ -168,6 +200,11 @@ void Stoich::setPath( const Eref& e, string v )
 	if ( path_ != "" && path_ != v ) {
 		// unzombify( path_ );
 		cout << "Stoich::setPath: need to clear old path.\n";
+		return;
+	}
+	if ( poolInterface_ == Id() )
+	{
+		cout << "Stoich::setPath: need to first set poolInterface.\n";
 		return;
 	}
 	vector< ObjId > elist;
@@ -218,11 +255,12 @@ string Stoich::getPath( const Eref& e ) const
 void Stoich::setPoolInterface( Id zpi ) {
 	if ( ! ( 
 			zpi.element()->cinfo()->isA( "Ksolve" )  ||
+			zpi.element()->cinfo()->isA( "Gsolve" )  ||
 			zpi.element()->cinfo()->isA( "Dsolve" ) 
 		   )
 	   ) {
 		cout << "Error: Stoich::setPoolInterface: invalid class assigned,"
-				" should be either Ksolve or Dsolve\n";
+				" should be either Ksolve, Gsolve, or Dsolve\n";
 		return;
 	}
 	poolInterface_ = zpi;
@@ -241,6 +279,11 @@ double Stoich::getEstimatedDt() const
 unsigned int Stoich::getNumVarPools() const
 {
 	return numVarPools_;
+}
+
+unsigned int Stoich::getNumBufPools() const
+{
+	return numBufPools_;
 }
 
 unsigned int Stoich::getNumAllPools() const
@@ -264,8 +307,34 @@ const RateTerm* Stoich::rates( unsigned int i ) const
 	return rates_[i];
 }
 
+unsigned int Stoich::getNumFuncs() const
+{
+	return funcs_.size();
+}
+
+const FuncTerm* Stoich::funcs( unsigned int i ) const
+{
+	assert( i < funcs_.size() );
+	return funcs_[i];
+}
+
+vector< int > Stoich::getMatrixEntry() const
+{
+	return N_.matrixEntry();
+}
+
+vector< unsigned int > Stoich::getColIndex() const
+{
+	return N_.colIndex();
+}
+
+vector< unsigned int > Stoich::getRowStart() const
+{
+	return N_.rowStart();
+}
+
 //////////////////////////////////////////////////////////////
-// Model zombification functions
+// Model setup functions
 //////////////////////////////////////////////////////////////
 
 /**
@@ -314,7 +383,7 @@ pair< Id, Id > extractCompts( const vector< Id >& compts )
 			if ( ret.second == Id() )
 				ret.second = *i;
 			else {
-				cout << "Error: extractCompts: more than 2 compartments\n";
+				cout << "Error: Stoich::extractCompts: more than 2 compartments\n";
 				assert( 0 );
 			}
 		}
@@ -465,12 +534,17 @@ void Stoich::resizeArrays()
 {
 	assert( idMap_.size() == numVarPools_ + numBufPools_ + numFuncPools_ +
 					offSolverPools_.size() );
+	unsigned int totNumPools = numVarPools_ + numBufPools_ + numFuncPools_;
 
-	species_.resize( numVarPools_ + numBufPools_ + numFuncPools_, 0 );
+	species_.resize( totNumPools, 0 );
 	rates_.resize( numReac_ );
 	// v_.resize( numReac_, 0.0 ); // v is now allocated dynamically
 	funcs_.resize( numFuncPools_ );
 	N_.setSize( idMap_.size(), numReac_ );
+	if ( poolInterface_ != Id() ) { 
+		Field< unsigned int >::set( poolInterface_, "numPools", 
+						totNumPools );
+	}
 }
 
 /// Calculate sizes of all arrays, and allocate them.
@@ -546,6 +620,35 @@ void Stoich::installAndUnschedFunc( Id func, Id Pool )
 	funcs_[ funcIndex ] = ft;
 	// Somewhere I have to tie the output of the FuncTerm to the funcPool.
 }
+
+void Stoich::convertRatesToStochasticForm()
+{
+	for ( unsigned int i = 0; i < rates_.size(); ++i ) {
+		vector< unsigned int > molIndex;
+		if ( rates_[i]->getReactants( molIndex ) > 1 ) {
+			if ( molIndex.size() == 2 && molIndex[0] == molIndex[1] ) {
+				RateTerm* oldRate = rates_[i];
+				rates_[ i ] = new StochSecondOrderSingleSubstrate(
+					oldRate->getR1(), molIndex[ 0 ]
+				);
+				delete oldRate;
+			} else if ( molIndex.size() > 2 ) {
+				RateTerm* oldRate = rates_[ i ];
+				rates_[ i ] = new StochNOrder( oldRate->getR1(), molIndex);
+				delete oldRate;
+			}
+		}
+	}
+}
+
+const KinSparseMatrix& Stoich::getStoichiometryMatrix() const
+{
+	return N_;
+}
+
+//////////////////////////////////////////////////////////////
+// Model zombification functions
+//////////////////////////////////////////////////////////////
 
 // e is the stoich Eref, elist is list of all Ids to zombify.
 void Stoich::zombifyModel( const Eref& e, const vector< Id >& elist )
@@ -733,7 +836,7 @@ ZeroOrder* makeHalfReaction(
 			temp.push_back( sc->convertIdToPoolIndex( reactants[i] ) );
 		rateTerm = new NOrder( rate, temp );
 	} else {
-		cout << "Error: GslStoichZombies::makeHalfReaction: no reactants\n";
+		cout << "Error: Stoich::makeHalfReaction: no reactants\n";
 	}
 	return rateTerm;
 }
@@ -818,7 +921,7 @@ void Stoich::installMMenz( Id enzId, Id enzMolId,
 		ZeroOrder* rateTerm = new NOrder( 1.0, v );
 		meb = new MMEnzyme( 1, 1, enzIndex, rateTerm );
 	} else {
-		cout << "Error: GslStoich::installEnzyme: No substrates for "  <<
+		cout << "Error: Stoich::installMMenz: No substrates for "  <<
 			enzId.path() << endl;
 		return;
 	}
@@ -1164,31 +1267,58 @@ const vector< Id >& Stoich::offSolverPoolMap( Id compt ) const
  * uses this to compute the rate of change, *yprime*, for each pool
  */
 
-void Stoich::updateRates( const double* s, double* yprime )
+void Stoich::updateRates( const double* s, double* yprime ) const
+{
+	vector< double > v( numReac_, 0.0 );
+	vector< double >::iterator j = v.begin();
+	assert( numReac_ == rates_.size() );
+
+	for ( vector< RateTerm* >::const_iterator
+		i = rates_.begin(); i != rates_.end(); i++) {
+		*j++ = (**i)( s );
+		assert( !isnan( *( j-1 ) ) );
+	}
+
+	for (unsigned int i = 0; i < numVarPools_ + offSolverPools_.size(); ++i)
+		*yprime++ = N_.computeRowRate( i , v );
+	for (unsigned int i = 0; i < numBufPools_ + numFuncPools_; ++i)
+		*yprime++ = 0.0;
+}
+
+/**
+ * updateVels computes the velocity *v* of each reaction.
+ * This is a utility function for programs like SteadyState that need
+ * to analyze velocity.
+ */
+void Stoich::updateReacVelocities( const double* s, vector< double >& v )
+		const
 {
 	vector< RateTerm* >::const_iterator i;
-	vector< double > v( numReac_, 0.0 );
+	v.clear();
+	v.resize( numReac_, 0.0 );
 	vector< double >::iterator j = v.begin();
 	assert( numReac_ == rates_.size() );
 
 	for ( i = rates_.begin(); i != rates_.end(); i++) {
 		*j++ = (**i)( s );
-		assert( !std::isnan( *( j-1 ) ) );
+		assert( !isnan( *( j-1 ) ) );
 	}
+}
 
-	for (unsigned int i = 0; i < numVarPools_ + offSolverPools_.size(); ++i)
-		*yprime++ = N_.computeRowRate( i , v );
+double Stoich::getReacVelocity( unsigned int r, const double* s ) const
+{
+	return rates_[r]->operator()( s );
 }
 
 // s is the array of pools, S_[meshIndex][0]
-void Stoich::updateFuncs( double* s, double t )
+void Stoich::updateFuncs( double* s, double t ) const
 {
 	double* j = s + numVarPools_ + numBufPools_;
 
-	for ( vector< FuncTerm* >::iterator i = funcs_.begin();
+	for ( vector< FuncTerm* >::const_iterator i = funcs_.begin();
 					i != funcs_.end(); ++i ) {
 		*j++ = (**i)( s, t );
-		assert( !std::isnan( *(j-1) ) );
+		assert( !isnan( *(j-1) ) );
 	}
 }
 

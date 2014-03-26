@@ -8,6 +8,11 @@
 **********************************************************************/
 #include "header.h"
 #include "../shell/Shell.h"
+#include "RateTerm.h"
+#include "FuncTerm.h"
+#include "SparseMatrix.h"
+#include "KinSparseMatrix.h"
+#include "Stoich.h"
 
 /**
  * Tab controlled by table
@@ -74,7 +79,7 @@ Id makeReacTest()
 	s->doAddMsg( "Single", e2, "prd", E, "reac" );
 
 	// Set parameters.
-	Field< double >::set( A, "concInit", 1 );
+	Field< double >::set( A, "concInit", 2 );
 	Field< double >::set( e1Pool, "concInit", 1 );
 	Field< double >::set( e2Pool, "concInit", 1 );
 	Field< double >::set( r1, "Kf", 0.2 );
@@ -82,10 +87,10 @@ Id makeReacTest()
 	Field< double >::set( r2, "Kf", 0.1 );
 	Field< double >::set( r2, "Kb", 0.0 );
 	Field< double >::set( e1, "Km", 5 );
-	Field< double >::set( e1, "kcat", 0.1 );
+	Field< double >::set( e1, "kcat", 1 );
 	Field< double >::set( e1, "ratio", 4 );
 	Field< double >::set( e2, "Km", 5 );
-	Field< double >::set( e2, "kcat", 0.1 );
+	Field< double >::set( e2, "kcat", 1 );
 	vector< double > stim( 100, 0.0 );
 	double vol = Field< double >::get( kin, "volume" );
 	for ( unsigned int i = 0; i< 100; ++i ) {
@@ -135,11 +140,57 @@ void testSetupReac()
 
 void testBuildStoich()
 {
+		// Matrix looks like:
+		// Reac Name	R1	R2	e1a	e1b	e2
+		// MolName	
+		// D			-1	0	0	0	0
+		// A			-1	0	0	0	0
+		// B			+1	-2	0	0	0
+		// C			0	+1	-1	0	0
+		// enz1			0	0	-1	+1	0
+		// e1cplx		0	0	+1	-1	0
+		// E			0	0	0	+1	-1
+		// F			0	0	0	0	+1
+		// enz2			0	0	0	0	0
+		// tot1			0	0	0	0	0
+		//
+		// This has been shuffled to:
+		// A			-1	0	0	0	0
+		// B			+1	-2	0	0	0
+		// C			0	+1	-1	0	0
+		// E			0	0	0	+1	-1
+		// F			0	0	0	0	+1
+		// enz1			0	0	-1	+1	0
+		// enz2			0	0	0	0	0
+		// e1cplx		0	0	+1	-1	0
+		// D			-1	0	0	0	0
+		// tot1			0	0	0	0	0
+		//
+		// But the reacs have also been reordered:
+		// 	Reac Name	e1a     e1b     e2     R1       R2
+		// 	A			0       0       0       -1      0
+		// 	B			0       0       0       1       -2
+		// 	C			-1      0       0       0       1
+		// 	E			0       1       -1      0       0
+		// 	F			0       0       1       0       0
+		// 	enz1		-1      1       0       0       0
+		// 	enz2		0       0       0       0       0
+		// 	e1cplx		1       -1      0       0       0
+		// 	D			0       0       0       -1      0
+		// 	tot1		0       0       0       0       0
+		//
+		// (This is the output of the print command on the sparse matrix.)
+		//
 	Shell* s = reinterpret_cast< Shell* >( Id().eref().data() );
 	Id kin = makeReacTest();
 	Id ksolve = s->doCreate( "Ksolve", kin, "ksolve", 1 );
 	Id stoich = s->doCreate( "Stoich", ksolve, "stoich", 1 );
+	Field< unsigned int >::set( ksolve, "numAllVoxels", 1 );
 	Field< Id >::set( stoich, "poolInterface", ksolve );
+	Field< Id >::set( ksolve, "stoich", stoich );
+
+	// Used to get at the stoich matrix from gdb.
+	// Stoich* stoichPtr = reinterpret_cast< Stoich* >( stoich.eref().data() );
 	
 	Field< string >::set( stoich, "path", "/kinetics/##" );
 
@@ -148,11 +199,35 @@ void testBuildStoich()
 	unsigned int r = Field< unsigned int >::get( stoich, "numRates" );
 	assert( r == 5 ); // One each for reacs and MMenz, two for Enz.
 
+	vector< int > entries = Field< vector< int > >::get( stoich,
+					"matrixEntry" );
+	vector< unsigned int > colIndex = Field< vector< unsigned int > >::get(
+					stoich, "columnIndex" );
+	vector< unsigned int > rowStart = Field< vector< unsigned int > >::get(
+					stoich, "rowStart" );
+
+	assert( rowStart.size() == n + 1 );
+	assert( entries.size() == colIndex.size() );
+	assert( entries.size() == 13 );
+	assert( entries[0] == -1 );
+	assert( entries[1] == 1 );
+	assert( entries[2] == -2 );
+	assert( entries[3] == -1 );
+	assert( entries[4] == 1 );
+	assert( entries[5] == 1 );
+	assert( entries[6] == -1 );
+	assert( entries[7] == 1 );
+	assert( entries[8] == -1 );
+	assert( entries[9] == 1 );
+	assert( entries[10] == 1 );
+	assert( entries[11] == -1 );
+	assert( entries[12] == -1 );
+
 	s->doDelete( kin );
 	cout << "." << flush;
 }
 
-void testRunStoich()
+void testRunKsolve()
 {
 	double simDt = 0.1;
 	// double plotDt = 0.1;
@@ -160,7 +235,9 @@ void testRunStoich()
 	Id kin = makeReacTest();
 	Id ksolve = s->doCreate( "Ksolve", kin, "ksolve", 1 );
 	Id stoich = s->doCreate( "Stoich", ksolve, "stoich", 1 );
+	Field< unsigned int >::set( ksolve, "numAllVoxels", 1 );
 	Field< Id >::set( stoich, "poolInterface", ksolve );
+	Field< Id >::set( ksolve, "stoich", stoich );
 	
 	Field< string >::set( stoich, "path", "/kinetics/##" );
 	s->doUseClock( "/kinetics/ksolve", "process", 4 ); 
@@ -179,11 +256,56 @@ void testRunStoich()
 	cout << "." << flush;
 }
 
+void testRunGsolve()
+{
+	double simDt = 0.1;
+	// double plotDt = 0.1;
+	Shell* s = reinterpret_cast< Shell* >( Id().eref().data() );
+	Id kin = makeReacTest();
+	double volume = 1e-21;
+	Field< double >::set( kin, "volume", volume );
+	Field< double >::set( ObjId( "/kinetics/A" ), "concInit", 2 );
+	Field< double >::set( ObjId( "/kinetics/e1Pool" ), "concInit", 1 );
+	Field< double >::set( ObjId( "/kinetics/e2Pool" ), "concInit", 1 );
+	Id e1( "/kinetics/e1Pool/e1" );
+	Field< double >::set( e1, "Km", 5 );
+	Field< double >::set( e1, "kcat", 1 );
+	vector< double > stim( 100, 0.0 );
+	for ( unsigned int i = 0; i< 100; ++i ) {
+		stim[i] = volume * NA * (1.0 + sin( i * 2.0 * PI / 100.0 ) );
+	}
+	Field< vector< double > >::set( ObjId( "/kinetics/tab" ), "vector", stim );
+
+
+	Id gsolve = s->doCreate( "Gsolve", kin, "gsolve", 1 );
+	Id stoich = s->doCreate( "Stoich", gsolve, "stoich", 1 );
+	Field< unsigned int >::set( gsolve, "numAllVoxels", 1 );
+	Field< Id >::set( stoich, "poolInterface", gsolve );
+	Field< Id >::set( gsolve, "stoich", stoich );
+	
+	Field< string >::set( stoich, "path", "/kinetics/##" );
+	s->doUseClock( "/kinetics/gsolve", "process", 4 ); 
+	s->doSetClock( 4, simDt );
+
+	s->doReinit();
+	s->doStart( 20.0 );
+	Id plots( "/kinetics/plots" );
+	for ( unsigned int i = 0; i < 7; ++i ) {
+		stringstream ss;
+		ss << "plot." << i;
+		SetGet2< string, string >::set( ObjId( plots, i ), "xplot", 
+						"tsr3.plot", ss.str() );
+	}
+	s->doDelete( kin );
+	cout << "." << flush;
+}
+
 void testKsolve()
 {
 	testSetupReac();
 	testBuildStoich();
-	testRunStoich();
+	testRunKsolve();
+	testRunGsolve();
 }
 
 void testKsolveProcess()

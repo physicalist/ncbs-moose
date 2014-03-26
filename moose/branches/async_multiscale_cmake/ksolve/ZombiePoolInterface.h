@@ -15,8 +15,6 @@
  * the zombie pool. 
  * The Eref specifies both the pool identity and the voxel number within
  * the pool.
- * The Eref specifies both the pool identity and the voxel number within
- * the pool.
  */
 class ZombiePoolInterface
 {
