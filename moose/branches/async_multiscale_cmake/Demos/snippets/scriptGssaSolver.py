@@ -24,7 +24,7 @@ def makeModel():
 		# create container for model
 		model = moose.Neutral( 'model' )
 		compartment = moose.CubeMesh( '/model/compartment' )
-		compartment.volume = 1e-15
+		compartment.volume = 1e-20
 		# the mesh is created automatically by the compartment
 		mesh = moose.element( '/model/compartment/mesh' ) 
 
@@ -92,17 +92,17 @@ def displayPlots():
 
 def main():
 		makeModel()
-		ksolve = moose.Ksolve( '/model/compartment/ksolve' )
+		gsolve = moose.Gsolve( '/model/compartment/gsolve' )
 		stoich = moose.Stoich( '/model/compartment/stoich' )
-		ksolve.numAllVoxels = 1
-		stoich.poolInterface = ksolve
-		ksolve.stoich = stoich
+		gsolve.numAllVoxels = 1
+		stoich.poolInterface = gsolve
+		gsolve.stoich = stoich
 		stoich.path = "/model/compartment/##"
 		#solver.method = "rk5"
 		#mesh = moose.element( "/model/compartment/mesh" )
 		#moose.connect( mesh, "remesh", solver, "remesh" )
 		moose.setClock( 5, 1.0 ) # clock for the solver
-		moose.useClock( 5, '/model/compartment/ksolve', 'process' )
+		moose.useClock( 5, '/model/compartment/gsolve', 'process' )
 
 		moose.reinit()
 		moose.start( 100.0 ) # Run the model for 100 seconds.

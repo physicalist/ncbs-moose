@@ -13,8 +13,13 @@
 # would like to modify the model through the script.
 # This example creates a bistable model having two enzymes and a reaction.
 # One of the enzymes is autocatalytic.
-# The model is set up to run using Exponential Euler integration.
+# The model is set up to run using default Exponential Euler integration.
+# The snippet scriptKineticSolver.py uses the much better GSL 
+# Runge-Kutta-Fehlberg integration scheme on this same model.
 
+import math
+import pylab
+import numpy
 import moose
 
 def makeModel():
@@ -51,8 +56,8 @@ def makeModel():
 		moose.connect( reac, 'prd', b, 'reac' )
 
 		# connect them up to the compartment for volumes
-		for x in ( a, b, c, cplx1, cplx2 ):
-					moose.connect( x, 'mesh', mesh, 'mesh' )
+		#for x in ( a, b, c, cplx1, cplx2 ):
+		#			moose.connect( x, 'mesh', mesh, 'mesh' )
 
 		# Assign parameters
 		a.concInit = 1
@@ -103,7 +108,11 @@ def main():
 
 		# Iterate through all plots, dump their contents to data.plot.
 		for x in moose.wildcardFind( '/model/graphs/conc#' ):
-				moose.element( x[0] ).xplot( 'scriptKineticModel.plot', x[0].name )
+				#x.xplot( 'scriptKineticModel.plot', x.name )
+				t = numpy.arange( 0, x.vector.size, 1 ) # sec
+				pylab.plot( t, x.vector, label=x.name )
+		pylab.legend()
+		pylab.show()
 
 		quit()
 

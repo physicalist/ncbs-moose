@@ -360,14 +360,23 @@ public:
                      vector< ObjId > args, string newName, unsigned int n,
                      bool toGlobal, bool copyExtMsgs );
 
-    /**
-     * Sets up scheduling for elements on the path.
-     */
-    bool innerUseClock( string path, string field,
-                        unsigned int tick, unsigned int msgIndex);
-    void handleUseClock( const Eref& e,
-                         string path, string field, unsigned int tick,
-                         unsigned int msgIndex );
+		/**
+		 * Utility function to unschedule the specified elist operating
+		 * on the specified field, typically 'process'
+		 */
+		static void dropClockMsgs(
+			const vector< ObjId >& list, const string& field );
+		////////////////////////////////////////////////////////////////
+		// Thread and MPI handling functions
+		////////////////////////////////////////////////////////////////
+		
+		/**
+		 * Assigns the hardware availability. Assumes that each node will
+		 * have the same number of cores available.
+		 */
+		static void setHardware( 
+			unsigned int numCores, unsigned int numNodes, 
+			unsigned int myNode );
 
     /**
      * Utility function to set up messages to schedule a list of Ids
