@@ -208,16 +208,16 @@ class ZeroOrder: public RateTerm
 		ZeroOrder( double k )
 			: k_( k )
 		{
-			assert( !std::isnan( k_ ) );
+			assert( !isnan( k_ ) );
 		}
 
 		double operator() ( const double* S ) const {
-			assert( !std::isnan( k_ ) );
+			assert( !isnan( k_ ) );
 			return k_;
 		}
 
 		void setK( double k ) {
-			assert( !std::isnan( k ) );
+			assert( !isnan( k ) );
 			if ( k >= 0.0 )
 				k_ = k;
 		}
@@ -270,7 +270,7 @@ class Flux: public ZeroOrder
 		{;}
 
 		double operator() ( const double* S ) const {
-			assert( !std::isnan( S[ y_ ] ) );
+			assert( !isnan( S[ y_ ] ) );
 			return k_ * S[ y_ ];
 		}
 
@@ -297,7 +297,7 @@ class FirstOrder: public ZeroOrder
 		{;}
 
 		double operator() ( const double* S ) const {
-			assert( !std::isnan( S[ y_ ] ) );
+			assert( !isnan( S[ y_ ] ) );
 			return k_ * S[ y_ ];
 		}
 
@@ -325,8 +325,8 @@ class SecondOrder: public ZeroOrder
 		{;}
 
 		double operator() ( const double* S ) const {
-			assert( !std::isnan( S[ y1_ ] ) );
-			assert( !std::isnan( S[ y2_ ] ) );
+			assert( !isnan( S[ y1_ ] ) );
+			assert( !isnan( S[ y2_ ] ) );
 			return k_ * S[ y1_ ] * S[ y2_ ];
 		}
 
@@ -366,7 +366,7 @@ class StochSecondOrderSingleSubstrate: public ZeroOrder
 
 		double operator() ( const double* S ) const {
 			double y = S[ y_ ];
-			assert( !std::isnan( y ) );
+			assert( !isnan( y ) );
 			return k_ * ( y - 1 ) * y;
 		}
 
@@ -399,7 +399,7 @@ class NOrder: public ZeroOrder
 			double ret = k_;
 			vector< unsigned int >::const_iterator i;
 			for ( i = v_.begin(); i != v_.end(); i++) {
-				assert( !std::isnan( S[ *i ] ) );
+				assert( !isnan( S[ *i ] ) );
 				ret *= S[ *i ];
 			}
 			return ret;

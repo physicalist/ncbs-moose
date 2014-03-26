@@ -26,6 +26,9 @@ class Stoich
 		/// Returns number of local pools that are updated by solver
 		unsigned int getNumVarPools() const;
 
+		/// Returns number of local buffered pools.
+		unsigned int getNumBufPools() const;
+
 		/**
 		 *  Returns total number of local pools. Leaves out the pools whose
 		 *  actual calculations happen on another solver, but are given a
@@ -70,6 +73,13 @@ class Stoich
 		/// Utility function to return a rates_ entry
 		const RateTerm* rates( unsigned int i ) const;
 
+		unsigned int getNumFuncs() const;
+		const FuncTerm* funcs( unsigned int i ) const;
+
+		vector< int > getMatrixEntry() const;
+		vector< unsigned int > getColIndex() const;
+		vector< unsigned int > getRowStart() const;
+
 		//////////////////////////////////////////////////////////////////
 		// Model traversal and building functions
 		//////////////////////////////////////////////////////////////////
@@ -102,6 +112,20 @@ class Stoich
 				Id id, vector< Id >& bufPools, vector< Id >& funcPools );
 		/// Calculate sizes of all arrays, and allocate them.
 		void allocateModel( const vector< Id >& elist );
+
+		/**
+		 * This function is used when the stoich class is employed by a 
+		 * Gsolver for doing stochastic calculations.
+		 * Here we fix the issue of having a single substrate at
+		 * more than first order. As the first molecule of the substrate is
+		 * consumed, the number is depleted by one and so its forward rate 
+		 * is reduced. And so on. This also protects against going negative
+		 * in mol number or concentration.
+		 */
+		void convertRatesToStochasticForm();
+		//////////////////////////////////////////////////////////////////
+		// Zombification functions.
+		//////////////////////////////////////////////////////////////////
 
 		/**
 		 * zombifyModel marches through the specified id list and 
@@ -286,14 +310,26 @@ class Stoich
 		//////////////////////////////////////////////////////////////////
 
 		/// Updates the yprime array, rate of change of each molecule
-		void updateRates( const double* s, double* yprime );
+		void updateRates( const double* s, double* yprime ) const;
+		
+		/// Computes the velocity of each reaction, vel.
+		void updateReacVelocities( const double* s, vector< double >& vel ) const;
 
 		/// Updates the function values, within s.
-		void updateFuncs( double* s, double t );
+		void updateFuncs( double* s, double t ) const;
 
 		/// Updates the rates for cross-compartment reactions.
 		void updateJunctionRates( const double* s,
 			   const vector< unsigned int >& reacTerms, double* yprime );
+
+		/** 
+		 * Get the rate for a single reaction specified by r, as per all 
+		 * the mol numbers in s.
+		 */
+		double getReacVelocity( unsigned int r, const double* s ) const;
+
+		/// Returns the stoich matrix. Used by gsolve.
+		const KinSparseMatrix& getStoichiometryMatrix() const;
 		//////////////////////////////////////////////////////////////////
 		// Access functions for cross-node reactions.
 		//////////////////////////////////////////////////////////////////
