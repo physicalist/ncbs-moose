@@ -165,16 +165,20 @@ void HSolveActive::readHHChannels() {
 			current_.resize( current_.size() + 1 );
 			CurrentStruct& current = current_.back();
 			
-			Gbar    = HSolveUtils::get< ChanBase, double >( *ichan, "Gbar" );
-			Ek      = HSolveUtils::get< ChanBase, double >( *ichan, "Ek" );
-			X       = HSolveUtils::get< HHChannel, double >( *ichan, "X" );
-			Y       = HSolveUtils::get< HHChannel, double >( *ichan, "Y" );
-			Z       = HSolveUtils::get< HHChannel, double >( *ichan, "Z" );
-			Xpower  = HSolveUtils::get< HHChannel, double >( *ichan, "Xpower" );
-			Ypower  = HSolveUtils::get< HHChannel, double >( *ichan, "Ypower" );
-			Zpower  = HSolveUtils::get< HHChannel, double >( *ichan, "Zpower" );
-			instant = HSolveUtils::get< HHChannel, int >( *ichan, "instant" );
-			
+#ifdef  OLD_API
+                        Gbar    = HSolveUtils::get< ChanBase, double >( *ichan, "Gbar" );
+                        Ek      = HSolveUtils::get< ChanBase, double >( *ichan, "Ek" );
+                        X       = HSolveUtils::get< HHChannel, double >( *ichan, "X" );
+                        Y       = HSolveUtils::get< HHChannel, double >( *ichan, "Y" );
+                        Z       = HSolveUtils::get< HHChannel, double >( *ichan, "Z" );
+                        Xpower  = HSolveUtils::get< HHChannel, double >( *ichan, "Xpower" );
+                        Ypower  = HSolveUtils::get< HHChannel, double >( *ichan, "Ypower" );
+                        Zpower  = HSolveUtils::get< HHChannel, double >( *ichan, "Zpower" );
+                        instant = HSolveUtils::get< HHChannel, int >( *ichan, "instant" );
+
+#else      /* -----  not OLD_API  ----- */
+                        
+#endif     /* -----  not OLD_API  ----- */
 			current.Ek = Ek;
 			
 			channel.Gbar_ = Gbar;
@@ -218,8 +222,12 @@ void HSolveActive::readGates() {
 	for ( ichan = channelId_.begin(); ichan != channelId_.end(); ++ichan ) {
 		nGates = HSolveUtils::gates( *ichan, gateId_ );
 		gCaDepend_.insert( gCaDepend_.end(), nGates, 0 );
-		useConcentration =
-			HSolveUtils::get< HHChannel, int >( *ichan, "useConcentration" );
+#ifdef  OLD_API
+                useConcentration =
+                    HSolveUtils::get< HHChannel, int >( *ichan, "useConcentration" );
+#else      /* -----  not OLD_API  ----- */
+                
+#endif     /* -----  not OLD_API  ----- */
 		if ( useConcentration )
 			gCaDepend_.back() = 1;
 	}
@@ -257,19 +265,23 @@ void HSolveActive::readCalcium() {
 					caConcIndex[ *iconc ] = caCount_[ ic ];
 					++caCount_[ ic ];
 					
-					Ca =
-						HSolveUtils::get< CaConc, double >( *iconc, "Ca" );
-					CaBasal =
-						HSolveUtils::get< CaConc, double >( *iconc, "CaBasal" );
-					tau =
-						HSolveUtils::get< CaConc, double >( *iconc, "tau" );
-					B =
-						HSolveUtils::get< CaConc, double >( *iconc, "B" );
-					ceiling =
-						HSolveUtils::get< CaConc, double >( *iconc, "ceiling" );
-					floor =
-						HSolveUtils::get< CaConc, double >( *iconc, "floor" );
-					
+#ifdef  OLD_API
+                                        Ca =
+                                            HSolveUtils::get< CaConc, double >( *iconc, "Ca" );
+                                        CaBasal =
+                                            HSolveUtils::get< CaConc, double >( *iconc, "CaBasal" );
+                                        tau =
+                                            HSolveUtils::get< CaConc, double >( *iconc, "tau" );
+                                        B =
+                                            HSolveUtils::get< CaConc, double >( *iconc, "B" );
+                                        ceiling =
+                                            HSolveUtils::get< CaConc, double >( *iconc, "ceiling" );
+                                        floor =
+                                            HSolveUtils::get< CaConc, double >( *iconc, "floor" );
+
+#else      /* -----  not OLD_API  ----- */
+                                        
+#endif     /* -----  not OLD_API  ----- */
 					caConc_.push_back(
 						CaConcStruct(
 							Ca, CaBasal,
@@ -340,10 +352,11 @@ void HSolveActive::createLookupTables() {
 	double dx;
 	
 	for ( unsigned int ig = 0; ig < caGate.size(); ++ig ) {
-		min = HSolveUtils::get< HHGate, double >( caGate[ ig ], "min" );
-		max = HSolveUtils::get< HHGate, double >( caGate[ ig ], "max" );
-		divs = HSolveUtils::get< HHGate, unsigned int >(
-			caGate[ ig ], "divs" );
+#ifdef  OLD_API
+            min = HSolveUtils::get< HHGate, double >( caGate[ ig ], "min" );
+            max = HSolveUtils::get< HHGate, double >( caGate[ ig ], "max" );
+            divs = HSolveUtils::get< HHGate, unsigned int >(
+                    caGate[ ig ], "divs" );
 		
 		dx = ( max - min ) / divs;
 		
@@ -353,24 +366,30 @@ void HSolveActive::createLookupTables() {
 			caMax_ = max;
 		if ( dx < caDx )
 			caDx = dx;
+#else      /* -----  not OLD_API  ----- */
+#endif     /* -----  not OLD_API  ----- */
 	}
 	double caDiv = ( caMax_ - caMin_ ) / caDx;
 	caDiv_ = static_cast< int >( caDiv + 0.5 ); // Round-off to nearest int.
 	
 	for ( unsigned int ig = 0; ig < vGate.size(); ++ig ) {
-		min = HSolveUtils::get< HHGate, double >( vGate[ ig ], "min" );
-		max = HSolveUtils::get< HHGate, double >( vGate[ ig ], "max" );
-		divs = HSolveUtils::get< HHGate, unsigned int >(
-			vGate[ ig ], "divs" );
-		
-		dx = ( max - min ) / divs;
-		
-		if ( min < vMin_ )
-			vMin_ = min;
-		if ( max > vMax_ )
-			vMax_ = max;
-		if ( dx < vDx )
-			vDx = dx;
+#ifdef  OLD_API
+            min = HSolveUtils::get< HHGate, double >( vGate[ ig ], "min" );
+            max = HSolveUtils::get< HHGate, double >( vGate[ ig ], "max" );
+            divs = HSolveUtils::get< HHGate, unsigned int >(
+                    vGate[ ig ], "divs" );
+
+            dx = ( max - min ) / divs;
+
+            if ( min < vMin_ )
+                vMin_ = min;
+            if ( max > vMax_ )
+                vMax_ = max;
+            if ( dx < vDx )
+                vDx = dx;
+#else      /* -----  not OLD_API  ----- */
+            
+#endif     /* -----  not OLD_API  ----- */
 	}
 	double vDiv = ( vMax_ - vMin_ ) / vDx;
 	vDiv_ = static_cast< int >( vDiv + 0.5 ); // Round-off to nearest int.
@@ -518,9 +537,13 @@ void HSolveActive::readSynapses() {
 				SpikeGenStruct( &V_[ ic ], spike->eref() )
 			);
 			
-			MsgId mid = spike->element()->findCaller( df->getFid() );
-			if ( mid != Msg::bad )
-				Msg::deleteMsg( mid );
+#ifdef  OLD_API
+                        MsgId mid = spike->element()->findCaller( df->getFid() );
+                        if ( mid != Msg::bad )
+                            Msg::deleteMsg( mid );
+#else      /* -----  not OLD_API  ----- */
+                        
+#endif     /* -----  not OLD_API  ----- */
 		}
 	}
 }

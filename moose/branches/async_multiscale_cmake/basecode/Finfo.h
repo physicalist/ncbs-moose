@@ -9,6 +9,17 @@
 #ifndef _FINFO_H
 #define _FINFO_H
 
+#include <string>
+#include <vector>
+
+class Cinfo;
+class Eref;
+class Id;
+class Element;
+class ObjId;
+
+using namespace std;
+
 class Finfo
 {
 	public:

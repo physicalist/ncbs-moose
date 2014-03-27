@@ -39,19 +39,23 @@ class ZombieCaConc
 		///////////////////////////////////////////////////////////////
 		// Field handling functions
 		///////////////////////////////////////////////////////////////
-		void setCa( const Eref& e, const Qinfo* q, double val );
-		double getCa( const Eref& e, const Qinfo* q ) const;
-		void setCaBasal( const Eref& e, const Qinfo* q, double val );
-		double getCaBasal( const Eref& e, const Qinfo* q ) const;
-		void setTau( const Eref& e, const Qinfo* q, double val );
-		double getTau( const Eref& e, const Qinfo* q ) const;
-		void setB( const Eref& e, const Qinfo* q, double val );
-		double getB( const Eref& e, const Qinfo* q ) const;
-		void setCeiling( const Eref& e, const Qinfo* q, double val );
-		double getCeiling( const Eref& e, const Qinfo* q ) const;
-		void setFloor( const Eref& e, const Qinfo* q, double val );
-		double getFloor( const Eref& e, const Qinfo* q ) const;
-		
+#ifdef  OLD_API
+                void setCa( const Eref& e, const Qinfo*  double val );
+                double getCa( const Eref& e, const Qinfo* q ) const;
+                void setCaBasal( const Eref& e, const Qinfo* q, double val );
+                double getCaBasal( const Eref& e, const Qinfo* q ) const;
+                void setTau( const Eref& e, const Qinfo* q, double val );
+                double getTau( const Eref& e, const Qinfo* q ) const;
+                void setB( const Eref& e, const Qinfo* q, double val );
+                double getB( const Eref& e, const Qinfo* q ) const;
+                void setCeiling( const Eref& e, const Qinfo* q, double val );
+                double getCeiling( const Eref& e, const Qinfo* q ) const;
+                void setFloor( const Eref& e, const Qinfo* q, double val );
+                double getFloor( const Eref& e, const Qinfo* q ) const;
+
+#else      /* -----  not OLD_API  ----- */
+                
+#endif     /* -----  not OLD_API  ----- */
 		// Locally stored fields.
 		void setThickness( double val );
 		double getThickness() const;

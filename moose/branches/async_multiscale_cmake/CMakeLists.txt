@@ -15,7 +15,7 @@ else()
 endif()
 
 # Use clang++ as default compiler for time being
-#set(CMAKE_CXX_COMPILER "clang++")
+set(CMAKE_CXX_COMPILER "clang++")
 
 ## Turn warning to error
 #add_definitions(-Werror 
@@ -112,6 +112,7 @@ add_subdirectory(external/debug/)
 add_subdirectory(mesh)
 add_subdirectory(mpi)
 add_subdirectory(ksolve)
+add_subdirectory(hsolve)
 add_subdirectory(diffusion)
 add_subdirectory(device)
 add_subdirectory(benchmarks)

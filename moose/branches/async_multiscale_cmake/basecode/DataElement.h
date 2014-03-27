@@ -11,6 +11,8 @@
 
 class SrcFinfo;
 class FuncOrder;
+class Element;
+class Eref;
 
 /**
  * This is the base class for managing the data in the MOOSE interface.
