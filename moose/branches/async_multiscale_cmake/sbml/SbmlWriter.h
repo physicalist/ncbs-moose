@@ -17,7 +17,7 @@
 #ifndef _SBMLWRITER_H
 #define _SBMLWRITER_H
 #include <sbml/SBMLTypes.h>
-//LIBSBML_CPP_NAMESPACE_USE
+LIBSBML_CPP_NAMESPACE_USE;
 
 class SbmlWriter
 {

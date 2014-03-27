@@ -8,10 +8,15 @@ add_library(ksolve
 	ZombieReac.cpp 
 	ZombieEnz.cpp 
 	ZombieMMenz.cpp 
+        VoxelPoolsBase.cpp
 	VoxelPools.cpp 
+        GssaVoxelPools.cpp
 	RateTerm.cpp 
 	Stoich.cpp 
 	Ksolve.cpp 
+        SteadyState.cpp
+        Gsolve.cpp
+        testKsolve.cpp
     )
 
 target_link_libraries(ksolve basecode)

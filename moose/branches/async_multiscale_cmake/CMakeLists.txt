@@ -140,7 +140,8 @@ if(LIBSBML_FOUND)
 endif()
 
 # Link gsl 
-target_link_libraries(moose gslcblas gsl)
+set(LOCAL_GSL_LIBRARIES  gsl gslcblas m)
+target_link_libraries(moose ${LOCAL_GSL_LIBRARIES})
 
 ## Build pymoose 
 set(BUILD_PYMOOSE 1)
@@ -167,7 +168,7 @@ if(BUILD_PYMOOSE)
         PREFIX ""
         )
 
-    set(LIBRARIES ${PYTHON_LIBRARY})
+    set(LIBRARIES ${PYTHON_LIBRARY} ${LOCAL_GSL_LIBRARIES})
     if(HDF5_FOUND)
         list(APPEND LIBRARIES ${HDF5_LIBRARY})
     endif()
@@ -187,10 +188,10 @@ if(BUILD_PYMOOSE)
         moose_mpi
         builtins
         utility
+        diffusion
         muparser
         biophysics
         kinetics
-        diffusion
         mesh
         debug_print
         device

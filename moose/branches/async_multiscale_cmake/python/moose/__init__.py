@@ -237,8 +237,8 @@ __version__ = '$Revision: 4454$'
 # $Source$
 import ctypes
 try:
-    ctypes.CDLL('libmpi.so', ctypes.RTLD_GLOBAL)
-except OSError:
-    ctypes.CDLL('libmpi.so.0', ctypes.RTLD_LOCAL)
-except:
-    raise
+    ctypes.CDLL('libmpi.so.0', ctypes.RTLD_GLOBAL)
+except OSError as e:
+    ctypes.CDLL('libmpi.so.1', ctypes.RTLD_GLOBAL)
+
+from .moose import *
