@@ -45,6 +45,8 @@
  * on each node.
  */
 
+#include "../hsolveCuda/cudaLibrary/Connections.hpp"
+
 typedef double ( *PFDD )( double, double );
 
 class HHChannel: public ChanBase

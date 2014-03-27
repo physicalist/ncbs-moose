@@ -24,25 +24,29 @@ class ZombieCompartment
 			/*
 			 * Value Field access function definitions.
 			 */
-			
-			// Fields handled by solver.
-			void setVm( const Eref& e, const Qinfo* q, double Vm );
-			double getVm( const Eref& e, const Qinfo* q ) const;
-			void setEm( const Eref& e, const Qinfo* q, double Em );
-			double getEm( const Eref& e, const Qinfo* q ) const;
-			void setCm( const Eref& e, const Qinfo* q, double Cm );
-			double getCm( const Eref& e, const Qinfo* q ) const;
-			void setRm( const Eref& e, const Qinfo* q, double Rm );
-			double getRm( const Eref& e, const Qinfo* q ) const;
-			void setRa( const Eref& e, const Qinfo* q, double Ra );
-			double getRa( const Eref& e, const Qinfo* q ) const;
-			void setIm( const Eref& e, const Qinfo* q, double Im );
-			double getIm( const Eref& e, const Qinfo* q ) const;
-			void setInject( const Eref& e, const Qinfo* q, double Inject );
-			double getInject( const Eref& e, const Qinfo* q ) const;
-			void setInitVm( const Eref& e, const Qinfo* q, double initVm );
-			double getInitVm( const Eref& e, const Qinfo* q ) const;
-			
+#ifdef  OLD_API
+                        
+                            // Fields handled by solver.
+                            void setVm( const Eref& e, const Qinfo* q, double Vm );
+                        double getVm( const Eref& e, const Qinfo* q ) const;
+                        void setEm( const Eref& e, const Qinfo* q, double Em );
+                        double getEm( const Eref& e, const Qinfo* q ) const;
+                        void setCm( const Eref& e, const Qinfo* q, double Cm );
+                        double getCm( const Eref& e, const Qinfo* q ) const;
+                        void setRm( const Eref& e, const Qinfo* q, double Rm );
+                        double getRm( const Eref& e, const Qinfo* q ) const;
+                        void setRa( const Eref& e, const Qinfo* q, double Ra );
+                        double getRa( const Eref& e, const Qinfo* q ) const;
+                        void setIm( const Eref& e, const Qinfo* q, double Im );
+                        double getIm( const Eref& e, const Qinfo* q ) const;
+                        void setInject( const Eref& e, const Qinfo* q, double Inject );
+                        double getInject( const Eref& e, const Qinfo* q ) const;
+                        void setInitVm( const Eref& e, const Qinfo* q, double initVm );
+                        double getInitVm( const Eref& e, const Qinfo* q ) const;
+
+#else      /* -----  not OLD_API  ----- */
+                        
+#endif     /* -----  not OLD_API  ----- */
 			// Locally stored fields.
 			void setDiameter( double diameter );
 			double getDiameter() const;
@@ -94,7 +98,11 @@ class ZombieCompartment
 			 * handleChannel handles information coming from the channel
 			 * to the compartment
 			 */
+#ifdef  OLD_API
 			void handleChannel( const Eref& e, const Qinfo* q, double Gk, double Ek);
+#else      /* -----  not OLD_API  ----- */
+                            
+#endif     /* -----  not OLD_API  ----- */
 
 			/**
 			 * handleRaxial handles incoming raxial message data.
@@ -113,7 +121,12 @@ class ZombieCompartment
 			 * be used as the destination of a message rather than as a
 			 * one-time assignment.
 			 */
+#ifdef  OLD_API
 			void injectMsg( const Eref& e, const Qinfo* q, double current);
+                        
+#else      /* -----  not OLD_API  ----- */
+                            
+#endif     /* -----  not OLD_API  ----- */
 
 			/**
 			 * Injects a constantly updated current into the
@@ -121,7 +134,13 @@ class ZombieCompartment
 			 * the current amplitude that is random, it is the presence
 			 * or absence of the current that is probabilistic.
 			 */
+
+#ifdef  OLD_API
 			void randInject( const Eref& e, const Qinfo* q, double prob, double current);
+                        
+#else      /* -----  not OLD_API  ----- */
+                            
+#endif     /* -----  not OLD_API  ----- */
 
 			/**
 			 * Dummy function to act as recipient of 'cable' message,

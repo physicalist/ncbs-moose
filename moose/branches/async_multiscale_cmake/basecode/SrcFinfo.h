@@ -90,7 +90,8 @@ class SrcFinfo0: public SrcFinfo
 template< class A > class OpFunc1Base;
 // Should specialize for major cases like doubles.
 
-template < class T > class SrcFinfo1: public SrcFinfo
+template < class T > 
+class SrcFinfo1: public SrcFinfo
 {
 	public:
 		~SrcFinfo1() {;}

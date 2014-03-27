@@ -70,7 +70,6 @@ void log(string msg, string type, bool redirectToConsole=true
 
 /* Check if a given character is a backtick ` */
 bool isBackTick(char a);
-#endif   /* ----- #ifndef print_function_INC  ----- */
 
 /* 
  * ===  FUNCTION  ==============================================================
@@ -123,3 +122,5 @@ string mapToString(const map<A, B>& m, bool value)
     }
     return ss.str();
 }
+
+#endif   /* ----- #ifndef print_function_INC  ----- */

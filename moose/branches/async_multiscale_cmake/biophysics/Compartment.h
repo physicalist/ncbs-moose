@@ -11,6 +11,8 @@
 #ifndef _COMPARTMENT_H
 #define _COMPARTMENT_H
 
+#include "header.h"
+
 #ifdef  CYTHON
 #include "cython_header.hpp"
 #endif     /* -----  CYTHON  ----- */

@@ -9,8 +9,6 @@
 
 #ifndef _HSOLVE_H
 #define _HSOLVE_H
-
-#include "Qinfo.h"
 #include <set>
 /**
  * HSolve adapts the integrator HSolveActive into a MOOSE class.
@@ -27,8 +25,8 @@ public:
 	Id getSeed() const; 		/**< For searching for compartments:
 								 *   seed is the starting compt.     */
 	
-	void setPath( const Eref& e, const Qinfo* q, string path );
-	string getPath( const Eref& e, const Qinfo* q ) const;
+	void setPath( const Eref& e, string path );
+	string getPath( const Eref& e ) const;
 								/**< Path to the compartments */
 	
 	void setDt( double dt );

@@ -299,21 +299,25 @@ void HSolveActive::sendSpikes( ProcPtr info ) {
  * objects which have been taken over.
  */
 void HSolveActive::sendValues( ProcPtr info ) {
-	vector< unsigned int >::iterator i;
-	
-	for ( i = outVm_.begin(); i != outVm_.end(); ++i )
-		moose::Compartment::VmOut()->send(
-		//~ ZombieCompartment::VmOut()->send(
-			compartmentId_[ *i ].eref(),
-			info->threadIndexInGroup,
-			V_[ *i ]
-		);
-	
-	for ( i = outCa_.begin(); i != outCa_.end(); ++i )
-		//~ CaConc::concOut()->send(
-		ZombieCaConc::concOut()->send(
-			caConcId_[ *i ].eref(),
-			info->threadIndexInGroup,
-			ca_[ *i ]
-		);
+#ifdef  OLD_API
+    vector< unsigned int >::iterator i;
+
+    for ( i = outVm_.begin(); i != outVm_.end(); ++i )
+        moose::Compartment::VmOut()->send(
+                //~ ZombieCompartment::VmOut()->send(
+            compartmentId_[ *i ].eref(),
+            info->threadIndexInGroup,
+            V_[ *i ]
+                );
+
+                for ( i = outCa_.begin(); i != outCa_.end(); ++i )
+                //~ CaConc::concOut()->send(
+            ZombieCaConc::concOut()->send(
+                    caConcId_[ *i ].eref(),
+                    info->threadIndexInGroup,
+                    ca_[ *i ]
+                    );
+#else      /* -----  not OLD_API  ----- */
+    
+#endif     /* -----  not OLD_API  ----- */
 }

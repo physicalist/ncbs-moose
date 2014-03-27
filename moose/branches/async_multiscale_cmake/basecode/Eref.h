@@ -18,6 +18,12 @@ class Id;
 class ObjId;
 #endif     /* -----  CYTHON  ----- */
 
+
+#include <iostream>
+#include "Element.h"
+
+using namespace std;
+
 class Eref
 {
 	public:

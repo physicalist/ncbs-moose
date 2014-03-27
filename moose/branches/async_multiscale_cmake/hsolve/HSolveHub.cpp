@@ -7,18 +7,18 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#include "moose.h"
-#include "element/Neutral.h"
-#include "biophysics/Compartment.h"
-#include "biophysics/HHChannel.h"
-#include "biophysics/CaConc.h"
+//#include "moose.h"
+#include "../basecode/Ftype.h"
+#include "../biophysics/Compartment.h"
+#include "../biophysics/HHChannel.h"
+#include "../biophysics/CaConc.h"
 #include "HSolveStruct.h"
 #include "HinesMatrix.h"
 #include "HSolvePassive.h"
 #include "RateLookup.h"
 #include "HSolveActive.h"
-#include "ThisFinfo.h"
-#include "SolveFinfo.h"
+//#include "ThisFinfo.h"
+//#include "SolveFinfo.h"
 #include "HSolveHub.h"
 
 // Defined below.

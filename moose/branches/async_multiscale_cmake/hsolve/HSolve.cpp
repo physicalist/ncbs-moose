@@ -230,13 +230,17 @@ void HSolve::setup( Eref hsolve )
 
 void HSolve::setSeed( Id seed )
 {
-	if ( !seed()->cinfo()->isA( "Compartment" ) ) {
-		cerr << "Error: HSolve::setSeed(): Seed object '" << seed.path()
-		     << "' is not derived from type 'Compartment'." << endl;
-		return;
-	}
-	
-	seed_ = seed;
+#ifdef  OLD_API
+    if ( !seed()->cinfo()->isA( "Compartment" ) ) {
+            cerr << "Error: HSolve::setSeed(): Seed object '" << seed.path()
+                << "' is not derived from type 'Compartment'." << endl;
+            return;
+        }
+
+    seed_ = seed;
+#else      /* -----  not OLD_API  ----- */
+    
+#endif     /* -----  not OLD_API  ----- */
 }
 
 Id HSolve::getSeed() const
@@ -244,7 +248,7 @@ Id HSolve::getSeed() const
 	return seed_;
 }
 
-void HSolve::setPath( const Eref& hsolve, const Qinfo* q, string path )
+void HSolve::setPath( const Eref& hsolve, string path )
 {
 	if ( dt_ == 0.0 ) {
 		cerr << "Error: HSolve::setPath(): Must set 'dt' first.\n";
@@ -263,7 +267,7 @@ void HSolve::setPath( const Eref& hsolve, const Qinfo* q, string path )
 	}
 }
 
-string HSolve::getPath( const Eref& e, const Qinfo* q ) const
+string HSolve::getPath( const Eref& e) const
 {
 	return path_;
 }
@@ -310,11 +314,15 @@ Id HSolve::deepSearchForCompartment( Id base )
 			current = cstack.back().back();
 			
 			// if ( current()->cinfo() == moose::Compartment::initCinfo() )
-			// Compartment is base class for SymCompartment.
-			if ( current()->cinfo()->isA( "Compartment" ) ) {
-				result = current;
-				break;
-			}
+#ifdef  OLD_API
+                        // Compartment is base class for SymCompartment.
+                            if ( current()->cinfo()->isA( "Compartment" ) ) {
+                                result = current;
+                                break;
+                            }
+#else      /* -----  not OLD_API  ----- */
+                        
+#endif     /* -----  not OLD_API  ----- */
 			
 			cstack.push_back( children( current ) );
 		}
@@ -444,10 +452,16 @@ const set<string>& HSolve::handledClasses()
 */
 void HSolve::deleteIncomingMessages( Element * orig, const string finfo)
 {
-	const DestFinfo * concenDest = dynamic_cast<const DestFinfo*>(orig->cinfo()->findFinfo(finfo));
+    const DestFinfo * concenDest = dynamic_cast<const DestFinfo*>(orig->cinfo()->findFinfo(finfo));
     assert(concenDest);
+
+#ifdef  OLD_API
     MsgId mid = orig->findCaller(concenDest->getFid());
     while (mid != Msg::bad){
+#else      /* -----  not OLD_API  ----- */
+    ObjId mid = orig->findCaller(concenDest->getFid());
+    while (! mid.bad()){
+#endif     /* -----  not OLD_API  ----- */
         const Msg * msg = Msg::getMsg(mid);
         assert(msg);
         ObjId other = msg->findOtherEnd(orig->id());
@@ -455,8 +469,8 @@ void HSolve::deleteIncomingMessages( Element * orig, const string finfo)
         if (otherEl &&  HSolve::handledClasses().find(otherEl->cinfo()->name()) != HSolve::handledClasses().end()){
             Msg::deleteMsg(mid);
         } else { 
-			break; // Have to do this otherwise it is an infinite loop
-		}
+            break; // Have to do this otherwise it is an infinite loop
+        }
         mid = orig->findCaller(concenDest->getFid());
     }
 }

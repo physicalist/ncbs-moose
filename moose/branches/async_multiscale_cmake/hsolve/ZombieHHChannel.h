@@ -36,29 +36,33 @@ class ZombieHHChannel
 		/////////////////////////////////////////////////////////////
 		// Value field access function definitions
 		/////////////////////////////////////////////////////////////
-		
-		void setGbar( const Eref& e, const Qinfo* q, double Gbar );
-		double getGbar( const Eref& e, const Qinfo* q ) const;
-		void setGk( const Eref& e, const Qinfo* q, double Gk );
-		double getGk( const Eref& e, const Qinfo* q ) const;
-		void setEk( const Eref& e, const Qinfo* q, double Ek );
-		double getEk( const Eref& e, const Qinfo* q ) const;
-		/// Ik is read-only
-		double getIk( const Eref& e, const Qinfo* q ) const;
-		void setXpower( const Eref& e, const Qinfo* q, double Xpower );
-		double getXpower( const Eref& e, const Qinfo* q ) const;
-		void setYpower( const Eref& e, const Qinfo* q, double Ypower );
-		double getYpower( const Eref& e, const Qinfo* q ) const;
-		void setZpower( const Eref& e, const Qinfo* q, double Zpower );
-		double getZpower( const Eref& e, const Qinfo* q ) const;
-		void setInstant( const Eref& e, const Qinfo* q, int instant );
-		int getInstant( const Eref& e, const Qinfo* q ) const;
-		void setX( const Eref& e, const Qinfo* q, double X );
-		double getX( const Eref& e, const Qinfo* q ) const;
-		void setY( const Eref& e, const Qinfo* q, double Y );
-		double getY( const Eref& e, const Qinfo* q ) const;
-		void setZ( const Eref& e, const Qinfo* q, double Z );
-		double getZ( const Eref& e, const Qinfo* q ) const;
+#ifdef  OLD_API
+                
+                    void setGbar( const Eref& e, const Qinfo* q, double Gbar );
+                double getGbar( const Eref& e, const Qinfo* q ) const;
+                void setGk( const Eref& e, const Qinfo* q, double Gk );
+                double getGk( const Eref& e, const Qinfo* q ) const;
+                void setEk( const Eref& e, const Qinfo* q, double Ek );
+                double getEk( const Eref& e, const Qinfo* q ) const;
+                /// Ik is read-only
+                double getIk( const Eref& e, const Qinfo* q ) const;
+                void setXpower( const Eref& e, const Qinfo* q, double Xpower );
+                double getXpower( const Eref& e, const Qinfo* q ) const;
+                void setYpower( const Eref& e, const Qinfo* q, double Ypower );
+                double getYpower( const Eref& e, const Qinfo* q ) const;
+                void setZpower( const Eref& e, const Qinfo* q, double Zpower );
+                double getZpower( const Eref& e, const Qinfo* q ) const;
+                void setInstant( const Eref& e, const Qinfo* q, int instant );
+                int getInstant( const Eref& e, const Qinfo* q ) const;
+                void setX( const Eref& e, const Qinfo* q, double X );
+                double getX( const Eref& e, const Qinfo* q ) const;
+                void setY( const Eref& e, const Qinfo* q, double Y );
+                double getY( const Eref& e, const Qinfo* q ) const;
+                void setZ( const Eref& e, const Qinfo* q, double Z );
+                double getZ( const Eref& e, const Qinfo* q ) const;
+#else      /* -----  not OLD_API  ----- */
+                
+#endif     /* -----  not OLD_API  ----- */
 		/**
 		 * Not trivial to change Ca-dependence once HSolve has been set up, and
 		 * unlikely that one would want to change this field after setup, so
@@ -74,8 +78,12 @@ class ZombieHHChannel
 		void process( const Eref& e, ProcPtr p );
 		void reinit( const Eref& e, ProcPtr p );
         void handleConc( double value);
-    void createGate(const Eref& e, const Qinfo* q, string name);
-    // Not sure if the Zombie should hold these. Keeping them out for now.
+#ifdef  OLD_API
+        void createGate(const Eref& e, const Qinfo* q, string name);
+#else      /* -----  not OLD_API  ----- */
+            
+#endif     /* -----  not OLD_API  ----- */
+        // Not sure if the Zombie should hold these. Keeping them out for now.
 		 /////////////////////////////////////////////////////////////
 		 // Gate handling functions
 		 /////////////////////////////////////////////////////////////

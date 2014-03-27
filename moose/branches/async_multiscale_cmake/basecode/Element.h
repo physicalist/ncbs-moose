@@ -9,8 +9,21 @@
 #ifndef _ELEMENT_H
 #define _ELEMENT_H
 
-class SrcFinfo;
+#include <vector>
+#include "../basecode/declarations.h"
+
 class FuncOrder;
+class Id;
+class Cinfo;
+class Finfo;
+class SrcFinfo;
+class DestFinfo;
+class ObjId;
+class MsgFuncBinding;
+class MsgDigest;
+class HHGate;
+
+using namespace std;
 
 /**
  * Base class for all object lookups.

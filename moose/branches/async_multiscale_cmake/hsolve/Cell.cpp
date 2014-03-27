@@ -264,13 +264,18 @@ Id Cell::findCompt( Id cell )
 			if ( !cstack.empty() )
 				cstack.back().pop_back();
 		} else {
+                        dump("TODO", "TODO: Commented out code. ");
 			Id curr = child.back();
+
+#if  0     /* ----- #if 0 : If0Label_1 ----- */
 			
 			//~ string className = Field< string >::get( curr, "class" );
 			if ( curr()->cinfo() == compartmentCinfo ) {
 				seed = curr;
 				break;
 			}
+#endif     /* ----- #if 0 : If0Label_1 ----- */
+
 			
 			cstack.push_back( children( curr ) );
 		}
@@ -282,14 +287,25 @@ Id Cell::findCompt( Id cell )
 void Cell::setupSolver( Id cell, Id seed ) const
 {
 	Id solver = Id::nextId();
-	vector< int > dims( 1, 1 );
-	dims.push_back( 0 ); // isGlobal
-	shell_->innerCreate( "HSolve", cell, solver, solverName_, dims );
-	
-	//~ Id solver = shell_->doCreate( "HSolve", cell, solverName_ );
-	HSolve* data = reinterpret_cast< HSolve* >( solver.eref().data() );
-	data->setSeed( seed );
-	//~ shell_->doUseClock( solver.path(), "proc", solverClock_ );
+#ifdef  OLD_API
+        vector< int > dims( 1, 1 );
+        dims.push_back( 0 ); // isGlobal
+
+        shell_->innerCreate( "HSolve", cell, solver, solverName_, dims, 0 );
+
+        //~ Id solver = shell_->doCreate( "HSolve", cell, solverName_ );
+        HSolve* data = reinterpret_cast< HSolve* >( solver.eref().data() );
+        data->setSeed( seed );
+        //~ shell_->doUseClock( solver.path(), "proc", solverClock_ );
+#else      /* -----  not OLD_API  ----- */
+        dump("WARNING"
+                , "Using 0 for parentMsgIndex in function call Shell::innerCreate"
+                "0 in first and third argument to NodeBalance"
+            );
+        NodeBalance nb(0, MooseBlockBalance, 0);
+        shell_->innerCreate("HSolve", cell, solver, solverName_, nb, 0);
+
+#endif     /* -----  not OLD_API  ----- */
 }
 
 ///////////////////////////////////////////////////
