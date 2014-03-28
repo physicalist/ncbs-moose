@@ -106,58 +106,62 @@ void HSolvePassive::initialize() {
 	vector< Id > leakage;
 	vector< Id >::iterator ileakage;
 	
-	for ( unsigned int ic = 0; ic < compartmentId_.size(); ++ic ) {
-		Id cc = compartmentId_[ ic ];
-		
-		Vm = HSolveUtils::get< Compartment, double >( cc, "Vm" );
-		Cm = HSolveUtils::get< Compartment, double >( cc, "Cm" );
-		Em = HSolveUtils::get< Compartment, double >( cc, "Em" );
-		Rm = HSolveUtils::get< Compartment, double >( cc, "Rm" );
-		inject = HSolveUtils::get< Compartment, double >( cc, "inject" );
-		
-		V_.push_back( Vm );
-		
-		/*
-		 *  If there are 'n' leakage channels with reversal potentials:
-		 *       E[ 1 ] ... E[ n ]
-		 *  and resistances:
-		 *       R[ 1 ] ... R[ n ]
-		 *  respectively, then the membrane circuit can be represented by the
-		 *  Thevenin equivalent circuit with:
-		 *  
-		 *  R_thevenin = 1 / sum( 1 / R[ i ] )
-		 *             = 1 / sum( G[ i ] )
-		 *  E_thevenin = sum( E[ i ] / R[ i ] ) * R_thevenin
-		 *             = sum( E[ i ] * G[ i ] ) * R_thevenin
-		 *  
-		 *  Here we have to add original membrane potential Em as E[ 0 ] and
-		 *  resistance Rm as R[ 0 ].
-		 */
-		GmThev   = 1.0 / Rm;
-		EmGmThev = Em / Rm;
-		
-		HSolveUtils::leakageChannels( compartmentId_[ ic ], leakage );
-		for ( ileakage = leakage.begin();
-		      ileakage != leakage.end();
-		      ileakage++ )
-		{
-			EmLeak = HSolveUtils::get< Compartment, double >( *ileakage, "Ek" );
-			GmLeak = HSolveUtils::get< Compartment, double >( *ileakage, "Gk" );
-			GmThev   += GmLeak;
-			EmGmThev += EmLeak * GmLeak;
-		}
-		RmThev = 1.0 / GmThev;
-		
-		CompartmentStruct compartment;
-		compartment.CmByDt = 2.0 * Cm / dt_;
-		compartment.EmByRm = EmGmThev;
-		compartment_.push_back( compartment );
-		
-		if ( inject != 0.0 ) {
-			inject_[ ic ].injectVarying = 0.0;
-			inject_[ ic ].injectBasal = inject;
-		}
-	}
+#ifdef  OLD_API
+        for ( unsigned int ic = 0; ic < compartmentId_.size(); ++ic ) {
+                Id cc = compartmentId_[ ic ];
+
+                Vm = HSolveUtils::get< Compartment, double >( cc, "Vm" );
+                Cm = HSolveUtils::get< Compartment, double >( cc, "Cm" );
+                Em = HSolveUtils::get< Compartment, double >( cc, "Em" );
+                Rm = HSolveUtils::get< Compartment, double >( cc, "Rm" );
+                inject = HSolveUtils::get< Compartment, double >( cc, "inject" );
+
+                V_.push_back( Vm );
+
+                /*
+                 *  If there are 'n' leakage channels with reversal potentials:
+                 *       E[ 1 ] ... E[ n ]
+                 *  and resistances:
+                 *       R[ 1 ] ... R[ n ]
+                 *  respectively, then the membrane circuit can be represented by the
+                 *  Thevenin equivalent circuit with:
+                 *  
+                 *  R_thevenin = 1 / sum( 1 / R[ i ] )
+                 *             = 1 / sum( G[ i ] )
+                 *  E_thevenin = sum( E[ i ] / R[ i ] ) * R_thevenin
+                 *             = sum( E[ i ] * G[ i ] ) * R_thevenin
+                 *  
+                 *  Here we have to add original membrane potential Em as E[ 0 ] and
+                 *  resistance Rm as R[ 0 ].
+                 */
+                GmThev   = 1.0 / Rm;
+                EmGmThev = Em / Rm;
+
+                HSolveUtils::leakageChannels( compartmentId_[ ic ], leakage );
+                for ( ileakage = leakage.begin();
+                        ileakage != leakage.end();
+                        ileakage++ )
+                {
+                    EmLeak = HSolveUtils::get< Compartment, double >( *ileakage, "Ek" );
+                    GmLeak = HSolveUtils::get< Compartment, double >( *ileakage, "Gk" );
+                    GmThev   += GmLeak;
+                    EmGmThev += EmLeak * GmLeak;
+                }
+                RmThev = 1.0 / GmThev;
+
+                CompartmentStruct compartment;
+                compartment.CmByDt = 2.0 * Cm / dt_;
+                compartment.EmByRm = EmGmThev;
+                compartment_.push_back( compartment );
+
+                if ( inject != 0.0 ) {
+                    inject_[ ic ].injectVarying = 0.0;
+                    inject_[ ic ].injectBasal = inject;
+                }
+            }
+#else      /* -----  not OLD_API  ----- */
+        
+#endif     /* -----  not OLD_API  ----- */
 }
 
 void HSolvePassive::storeTree() {
@@ -172,29 +176,34 @@ void HSolvePassive::storeTree() {
 	vector< Id >::iterator child;
 	
 	vector< Id >::iterator ic;
-	for ( ic = compartmentId_.begin(); ic != compartmentId_.end(); ++ic ) {
-		childId.clear();
-		
-		HSolveUtils::children( *ic, childId );
-		Ra = HSolveUtils::get< Compartment, double >( *ic, "Ra" );
-		Cm = HSolveUtils::get< Compartment, double >( *ic, "Cm" );
-		Rm = HSolveUtils::get< Compartment, double >( *ic, "Rm" );
-		Em = HSolveUtils::get< Compartment, double >( *ic, "Em" );
-		initVm = HSolveUtils::get< Compartment, double >( *ic, "initVm" );
-		
-		TreeNodeStruct node;
-		// Push hines' indices of children
-		for ( child = childId.begin(); child != childId.end(); ++child )
-			node.children.push_back( hinesIndex[ *child ] );
-		
-		node.Ra = Ra;
-		node.Rm = Rm;
-		node.Cm = Cm;
-		node.Em = Em;
-		node.initVm = initVm;
-		
-		tree_.push_back( node );
-	}
+
+#ifdef  OLD_API
+        for ( ic = compartmentId_.begin(); ic != compartmentId_.end(); ++ic ) {
+                childId.clear();
+
+                HSolveUtils::children( *ic, childId );
+                Ra = HSolveUtils::get< Compartment, double >( *ic, "Ra" );
+                Cm = HSolveUtils::get< Compartment, double >( *ic, "Cm" );
+                Rm = HSolveUtils::get< Compartment, double >( *ic, "Rm" );
+                Em = HSolveUtils::get< Compartment, double >( *ic, "Em" );
+                initVm = HSolveUtils::get< Compartment, double >( *ic, "initVm" );
+
+                TreeNodeStruct node;
+                // Push hines' indices of children
+                for ( child = childId.begin(); child != childId.end(); ++child )
+                    node.children.push_back( hinesIndex[ *child ] );
+
+                node.Ra = Ra;
+                node.Rm = Rm;
+                node.Cm = Cm;
+                node.Em = Em;
+                node.initVm = initVm;
+
+                tree_.push_back( node );
+            }
+#else      /* -----  not OLD_API  ----- */
+        
+#endif     /* -----  not OLD_API  ----- */
 }
 
 //////////////////////////////////////////////////////////////////////

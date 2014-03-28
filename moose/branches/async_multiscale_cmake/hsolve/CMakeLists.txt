@@ -8,7 +8,7 @@ add_library(hsolve
     HSolve.cpp
     HSolveHub.cpp
     HSolveInterface.cpp
-    #HSolvePassive.cpp
+    HSolvePassive.cpp
     HSolveStruct.cpp
     #HSolveUtils.cpp
     RateLookup.cpp
