@@ -10,6 +10,19 @@
 #ifndef _HSOLVE_HUB_H
 #define _HSOLVE_HUB_H
 
+class ProcInfo;
+
+#include "../biophysics/Compartment.h"
+#include "../biophysics/HHChannel.h"
+#include "../biophysics/CaConc.h"
+#include "../basecode/Ftype.h"
+#include "HSolveStruct.h"
+#include "HinesMatrix.h"
+#include "HSolvePassive.h"
+#include "RateLookup.h"
+#include "HSolveActive.h"
+
+
 /**
  * Biophysical elements in a neuronal model hand over control (computation,
  * fields, messages) to the solver. The integrator (HSolve) takes care of the
