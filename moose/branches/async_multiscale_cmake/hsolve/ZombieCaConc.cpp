@@ -7,15 +7,6 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#include "header.h"
-#include "ElementValueFinfo.h"
-#include "../biophysics/CaConc.h"
-#include "HinesMatrix.h"
-#include "HSolveStruct.h"
-#include "HSolvePassive.h"
-#include "RateLookup.h"
-#include "HSolveActive.h"
-#include "HSolve.h"
 #include "ZombieCaConc.h"
 
 
@@ -56,14 +47,16 @@ const Cinfo* ZombieCaConc::initCinfo()
 		"Shared message to receive Process message from scheduler",
 		processShared, sizeof( processShared ) / sizeof( Finfo* ) );
 		
-///////////////////////////////////////////////////////
-// Field definitions
-///////////////////////////////////////////////////////
-	static ElementValueFinfo< ZombieCaConc, double > Ca( "Ca",
-		"Calcium concentration.",
-		&ZombieCaConc::setCa,
-		&ZombieCaConc::getCa
-	);
+#ifdef  OLD_API
+        ///////////////////////////////////////////////////////
+            // Field definitions
+            ///////////////////////////////////////////////////////
+            static ElementValueFinfo< ZombieCaConc, double > Ca( "Ca",
+                    "Calcium concentration.",
+                    &ZombieCaConc::setCa,
+                    &ZombieCaConc::getCa
+                    );
+
 	static ElementValueFinfo< ZombieCaConc, double > CaBasal( "CaBasal",
 		"Basal Calcium concentration.",
 		&ZombieCaConc::setCaBasal,
@@ -101,6 +94,8 @@ const Cinfo* ZombieCaConc::initCinfo()
 		&ZombieCaConc::getFloor
 	);
 	
+#else      /* -----  not OLD_API  ----- */
+#endif     /* -----  not OLD_API  ----- */
 ///////////////////////////////////////////////////////
 // MsgDest definitions
 ///////////////////////////////////////////////////////
@@ -124,11 +119,12 @@ const Cinfo* ZombieCaConc::initCinfo()
 		"Any input current that decreases the concentration.",
 		new OpFunc1< ZombieCaConc, double >( &ZombieCaConc::decrease )
 	);
-	
-	static DestFinfo basal( "basal", 
-		"Synonym for assignment of basal conc.",
-		new EpFunc1< ZombieCaConc, double >( &ZombieCaConc::setCaBasal )
-	);
+#ifdef  OLD_API
+        
+            static DestFinfo basal( "basal", 
+                    "Synonym for assignment of basal conc.",
+                    new EpFunc1< ZombieCaConc, double >( &ZombieCaConc::setCaBasal )
+                    );
 	
 	static Finfo* caConcFinfos[] =
 	{
@@ -166,6 +162,8 @@ const Cinfo* ZombieCaConc::initCinfo()
 	);
 	
 	return &zombieCaConcCinfo;
+#else      /* -----  not OLD_API  ----- */
+#endif     /* -----  not OLD_API  ----- */
 }
 ///////////////////////////////////////////////////
 
@@ -182,64 +180,64 @@ void ZombieCaConc::copyFields( CaConc* c )
 // Field function definitions
 ///////////////////////////////////////////////////
 
-void ZombieCaConc::setCa( const Eref& e, const Qinfo* q, double Ca )
+void ZombieCaConc::setCa( const Eref& e, double Ca )
 {
 	hsolve_->setCa( e.id(), Ca );
 }
 
-double ZombieCaConc::getCa( const Eref& e, const Qinfo* q ) const
+double ZombieCaConc::getCa( const Eref& e ) const
 {
 	return hsolve_->getCa( e.id() );
 }
 
-void ZombieCaConc::setCaBasal( const Eref& e, const Qinfo* q, double CaBasal )
+void ZombieCaConc::setCaBasal( const Eref& e , double CaBasal )
 {
 	hsolve_->setCa( e.id(), CaBasal );
 }
 
-double ZombieCaConc::getCaBasal( const Eref& e, const Qinfo* q ) const
+double ZombieCaConc::getCaBasal( const Eref& e ) const
 {
 	return hsolve_->getCaBasal( e.id() );
 }
 
-void ZombieCaConc::setTau( const Eref& e, const Qinfo* q, double tau )
+void ZombieCaConc::setTau( const Eref& e , double tau )
 {
 	tau_ = tau;
 	hsolve_->setTauB( e.id(), tau_, B_ );
 }
 
-double ZombieCaConc::getTau( const Eref& e, const Qinfo* q ) const
+double ZombieCaConc::getTau( const Eref& e ) const
 {
 	return tau_;
 }
 
-void ZombieCaConc::setB( const Eref& e, const Qinfo* q, double B )
+void ZombieCaConc::setB( const Eref& e , double B )
 {
 	B_ = B;
 	hsolve_->setTauB( e.id(), tau_, B_ );
 }
 
-double ZombieCaConc::getB( const Eref& e, const Qinfo* q ) const
+double ZombieCaConc::getB( const Eref& e ) const
 {
 	return B_;
 }
 
-void ZombieCaConc::setCeiling( const Eref& e, const Qinfo* q, double ceiling )
+void ZombieCaConc::setCeiling( const Eref& e , double ceiling )
 {
 	hsolve_->setCaCeiling( e.id(), ceiling );
 }
 
-double ZombieCaConc::getCeiling( const Eref& e, const Qinfo* q ) const
+double ZombieCaConc::getCeiling( const Eref& e ) const
 {
 	return hsolve_->getCaCeiling( e.id() );
 }
 
-void ZombieCaConc::setFloor( const Eref& e, const Qinfo* q, double floor )
+void ZombieCaConc::setFloor( const Eref& e , double floor )
 {
 	hsolve_->setCaFloor( e.id(), floor );
 }
 
-double ZombieCaConc::getFloor( const Eref& e, const Qinfo* q ) const
+double ZombieCaConc::getFloor( const Eref& e ) const
 {
 	return hsolve_->getCaFloor( e.id() );
 }
@@ -301,42 +299,55 @@ void ZombieCaConc::zombify( Element* solver, Element* orig )
 	
 	const DestFinfo* df = dynamic_cast< const DestFinfo* >( procDest );
 	assert( df );
+#ifdef  OLD_API
 	MsgId mid = orig->findCaller( df->getFid() );
 	if ( mid != Msg::bad )
+#else      /* -----  not OLD_API  ----- */
+	ObjId mid = orig->findCaller( df->getFid() );
+        if ( ! mid.bad() )
+#endif     /* -----  not OLD_API  ----- */
 		Msg::deleteMsg( mid );
 
     // NOTE: the following line can be uncommented to remove messages
     // lying within the realm of HSolve. But HSolve will need to
     // maintain a datastructure for putting back the messages at
     // unzombify.
-    
-    HSolve::deleteIncomingMessages(orig, "current");
+#ifdef  OLD_API
+        
+            HSolve::deleteIncomingMessages(orig, "current");
 
-	// Create zombie.
-	DataHandler* dh = orig->dataHandler()->copyUsingNewDinfo(
-		ZombieCaConc::initCinfo()->dinfo() );
-	Eref oer( orig, 0 );
-	Eref ser( solver, 0 );
-	ZombieCaConc* zd = reinterpret_cast< ZombieCaConc* >( dh->data( 0 ) );
-	CaConc* od = reinterpret_cast< CaConc* >( oer.data() );
-	HSolve* sd = reinterpret_cast< HSolve* >( ser.data() );
-	zd->hsolve_ = sd;
-	zd->copyFields( od );
-	
-	orig->zombieSwap( zombieCaConcCinfo, dh );
+        // Create zombie.
+        DataHandler* dh = orig->dataHandler()->copyUsingNewDinfo(
+                ZombieCaConc::initCinfo()->dinfo() );
+        Eref oer( orig, 0 );
+        Eref ser( solver, 0 );
+        ZombieCaConc* zd = reinterpret_cast< ZombieCaConc* >( dh->data( 0 ) );
+        CaConc* od = reinterpret_cast< CaConc* >( oer.data() );
+        HSolve* sd = reinterpret_cast< HSolve* >( ser.data() );
+        zd->hsolve_ = sd;
+        zd->copyFields( od );
+
+        orig->zombieSwap( zombieCaConcCinfo, dh );
+#else      /* -----  not OLD_API  ----- */
+        
+#endif     /* -----  not OLD_API  ----- */
 }
 
 // static func
 void ZombieCaConc::unzombify( Element* zombie )
 {
-	Element temp( zombie->id(), zombie->cinfo(), zombie->dataHandler() );
-	Eref zer( &temp, 0 );
-	Eref oer( zombie, 0 );
-	
-	//~ ZombieCaConc* z = reinterpret_cast< ZombieCaConc* >( zer.data() );
-	
-	// Creating data handler for original left for later.
-	DataHandler* dh = 0;
-	
-	zombie->zombieSwap( CaConc::initCinfo(), dh );
+#ifdef  OLD_API
+    Element temp( zombie->id(), zombie->cinfo(), zombie->dataHandler() );
+    Eref zer( &temp, 0 );
+    Eref oer( zombie, 0 );
+
+    //~ ZombieCaConc* z = reinterpret_cast< ZombieCaConc* >( zer.data() );
+
+    // Creating data handler for original left for later.
+    DataHandler* dh = 0;
+
+    zombie->zombieSwap( CaConc::initCinfo(), dh );
+#else      /* -----  not OLD_API  ----- */
+    
+#endif     /* -----  not OLD_API  ----- */
 }

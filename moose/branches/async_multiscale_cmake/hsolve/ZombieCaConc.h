@@ -10,6 +10,17 @@
 
 #ifndef _ZOMBIE_CACONC_H
 #define _ZOMBIE_CACONC_H
+#include "header.h"
+#include "ElementValueFinfo.h"
+#include "../biophysics/CaConc.h"
+#include "HinesMatrix.h"
+#include "HSolveStruct.h"
+#include "HSolvePassive.h"
+#include "RateLookup.h"
+#include "HSolveActive.h"
+#include "HSolve.h"
+
+class DataHandler;
 
 /**
  * Zombie object that lets HSolve do its calculations, while letting the user
@@ -39,23 +50,19 @@ class ZombieCaConc
 		///////////////////////////////////////////////////////////////
 		// Field handling functions
 		///////////////////////////////////////////////////////////////
-#ifdef  OLD_API
-                void setCa( const Eref& e, const Qinfo*  double val );
-                double getCa( const Eref& e, const Qinfo* q ) const;
-                void setCaBasal( const Eref& e, const Qinfo* q, double val );
-                double getCaBasal( const Eref& e, const Qinfo* q ) const;
-                void setTau( const Eref& e, const Qinfo* q, double val );
-                double getTau( const Eref& e, const Qinfo* q ) const;
-                void setB( const Eref& e, const Qinfo* q, double val );
-                double getB( const Eref& e, const Qinfo* q ) const;
-                void setCeiling( const Eref& e, const Qinfo* q, double val );
-                double getCeiling( const Eref& e, const Qinfo* q ) const;
-                void setFloor( const Eref& e, const Qinfo* q, double val );
-                double getFloor( const Eref& e, const Qinfo* q ) const;
+                void setCa( const Eref& e,   double val );
+                double getCa( const Eref& e ) const;
+                void setCaBasal( const Eref& e , double val );
+                double getCaBasal( const Eref& e ) const;
+                void setTau( const Eref& e , double val );
+                double getTau( const Eref& e ) const;
+                void setB( const Eref& e , double val );
+                double getB( const Eref& e ) const;
+                void setCeiling( const Eref& e , double val );
+                double getCeiling( const Eref& e ) const;
+                void setFloor( const Eref& e , double val );
+                double getFloor( const Eref& e ) const;
 
-#else      /* -----  not OLD_API  ----- */
-                
-#endif     /* -----  not OLD_API  ----- */
 		// Locally stored fields.
 		void setThickness( double val );
 		double getThickness() const;

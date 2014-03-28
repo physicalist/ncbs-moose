@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-include_directories(../basecode ../utility ../kinetics)
+include_directories(../basecode ../utility ../kinetics ../external/debug)
 add_library(hsolve
     Cell.cpp
     HinesMatrix.cpp
@@ -10,12 +10,12 @@ add_library(hsolve
     HSolveInterface.cpp
     HSolvePassive.cpp
     HSolveStruct.cpp
-    #HSolveUtils.cpp
+    HSolveUtils.cpp
     RateLookup.cpp
     testHSolve.cpp
-    #ZombieCaConc.cpp
-    #ZombieCompartment.cpp
-    #ZombieHHChannel.cpp
+    ZombieCaConc.cpp
+    ZombieCompartment.cpp
+    ZombieHHChannel.cpp
     )
 
 target_link_libraries(hsolve basecode)

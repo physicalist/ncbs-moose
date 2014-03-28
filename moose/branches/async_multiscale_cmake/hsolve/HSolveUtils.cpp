@@ -8,6 +8,8 @@
 **********************************************************************/
 
 #include "header.h"
+#include "../external/debug/print_function.h"
+
 #include "HSolveUtils.h"
 #include "../biophysics/HHGate.h"
 #include "../biophysics/ChanBase.h"
@@ -96,27 +98,32 @@ int HSolveUtils::gates(
 	};
 	
 	unsigned int nGates = 3; // Number of possible gates
-	
-	for ( unsigned int i = 0; i < nGates; i++ ) {
-		double power  = HSolveUtils::get< HHChannel, double >(
-			channel, powerField[ i ] );
-		
-		if ( power > 0.0 ) {
-			string gatePath = channel.path() + "/" + gateName[ i ];
-			
-			Id gate( gatePath );
-			assert( gate.path() == gatePath );
-			
-			if ( getOriginals ) {
-				HHGate* g = reinterpret_cast< HHGate* >( gate.eref().data() );
-				gate = g->originalGateId();
-			}
-			
-			ret.push_back( gate );
-		}
-	}
-	
-	return ret.size() - oldSize;
+#ifdef  OLD_API
+        
+            for ( unsigned int i = 0; i < nGates; i++ ) {
+                double power  = HSolveUtils::get< HHChannel, double >(
+                        channel, powerField[ i ] );
+
+                if ( power > 0.0 ) {
+                    string gatePath = channel.path() + "/" + gateName[ i ];
+
+                    Id gate( gatePath );
+                    assert( gate.path() == gatePath );
+
+                    if ( getOriginals ) {
+                        HHGate* g = reinterpret_cast< HHGate* >( gate.eref().data() );
+                        gate = g->originalGateId();
+                    }
+
+                    ret.push_back( gate );
+                }
+            }
+
+        return ret.size() - oldSize;
+#else      /* -----  not OLD_API  ----- */
+        dump("TODO", "This function is incomplete");
+        return 0;
+#endif     /* -----  not OLD_API  ----- */
 }
 
 int HSolveUtils::spikegens( Id compartment, vector< Id >& ret )
@@ -208,51 +215,55 @@ void HSolveUtils::rates(
 	vector< double >& A,
 	vector< double >& B )
 {
-	double min = HSolveUtils::get< HHGate, double >( gateId, "min" );
-	double max = HSolveUtils::get< HHGate, double >( gateId, "max" );
-	unsigned int divs = HSolveUtils::get< HHGate, unsigned int >(
-		gateId, "divs" );
-	
-	if ( grid == Grid( min, max, divs ) ) {
-		A = HSolveUtils::get< HHGate, vector< double > >( gateId, "tableA" );
-		B = HSolveUtils::get< HHGate, vector< double > >( gateId, "tableB" );
-		
-		return;
-	}
-	
-	A.resize( grid.size() );
-	B.resize( grid.size() );
-	
-	/*
-	 * Getting Id of original (prototype) gate, so that we can set fields on
-	 * it. Copied gates are read-only.
-	 */
-	HHGate* gate = reinterpret_cast< HHGate* >( gateId.eref().data() );
-	gateId = gate->originalGateId();
-	
-	/*
-	 * Setting interpolation flag on. Will set back to its original value once
-	 * we're done.
-	 */
-	bool useInterpolation = HSolveUtils::get< HHGate, bool >
-		( gateId, "useInterpolation" );
-	//~ HSolveUtils::set< HHGate, bool >( gateId, "useInterpolation", true );
-	Qinfo* qDummy = NULL;
-	gate->setUseInterpolation( gateId.eref(), qDummy, true );
-	
-	unsigned int igrid;
-	double* ia = &A[ 0 ];
-	double* ib = &B[ 0 ];
-	for ( igrid = 0; igrid < grid.size(); ++igrid ) {
-		gate->lookupBoth( grid.entry( igrid ), ia, ib );
-		
-		++ia, ++ib;
-	}
-	
-	// Setting interpolation flag back to its original value.
-	//~ HSolveUtils::set< HHGate, bool >
-		//~ ( gateId, "useInterpolation", useInterpolation );
-	gate->setUseInterpolation( gateId.eref(), qDummy, useInterpolation );
+#ifdef  OLD_API
+    double min = HSolveUtils::get< HHGate, double >( gateId, "min" );
+    double max = HSolveUtils::get< HHGate, double >( gateId, "max" );
+    unsigned int divs = HSolveUtils::get< HHGate, unsigned int >(
+            gateId, "divs" );
+
+    if ( grid == Grid( min, max, divs ) ) {
+        A = HSolveUtils::get< HHGate, vector< double > >( gateId, "tableA" );
+        B = HSolveUtils::get< HHGate, vector< double > >( gateId, "tableB" );
+
+        return;
+    }
+
+    A.resize( grid.size() );
+    B.resize( grid.size() );
+
+    /*
+     * Getting Id of original (prototype) gate, so that we can set fields on
+     * it. Copied gates are read-only.
+     */
+    HHGate* gate = reinterpret_cast< HHGate* >( gateId.eref().data() );
+    gateId = gate->originalGateId();
+
+    /*
+     * Setting interpolation flag on. Will set back to its original value once
+     * we're done.
+     */
+    bool useInterpolation = HSolveUtils::get< HHGate, bool >
+        ( gateId, "useInterpolation" );
+    //~ HSolveUtils::set< HHGate, bool >( gateId, "useInterpolation", true );
+    Qinfo* qDummy = NULL;
+    gate->setUseInterpolation( gateId.eref(), qDummy, true );
+
+    unsigned int igrid;
+    double* ia = &A[ 0 ];
+    double* ib = &B[ 0 ];
+    for ( igrid = 0; igrid < grid.size(); ++igrid ) {
+        gate->lookupBoth( grid.entry( igrid ), ia, ib );
+
+        ++ia, ++ib;
+    }
+
+    // Setting interpolation flag back to its original value.
+    //~ HSolveUtils::set< HHGate, bool >
+    //~ ( gateId, "useInterpolation", useInterpolation );
+    gate->setUseInterpolation( gateId.eref(), qDummy, useInterpolation );
+#else      /* -----  not OLD_API  ----- */
+    dump("TODO", "Function HSolveUtils::rates is not implemented for new API");
+#endif     /* -----  not OLD_API  ----- */
 }
 
 //~ int HSolveUtils::modes( Id gate, int& AMode, int& BMode )
@@ -328,8 +339,11 @@ int HSolveUtils::targets(
 		target.insert( target.end(), all.begin(), all.end() );
 	else
 		for ( ia = all.begin(); ia != all.end(); ++ia ) {
+#ifdef  OLD_API
 			string className = (*ia)()->cinfo()->name();
-			
+#else      /* -----  not OLD_API  ----- */
+			string className = (*ia).element()->cinfo()->name();
+#endif     /* -----  not OLD_API  ----- */
 			bool hit =
 				find(
 					filter.begin(),
