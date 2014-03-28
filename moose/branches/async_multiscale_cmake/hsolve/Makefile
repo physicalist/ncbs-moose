@@ -269,6 +269,30 @@ HSolveInterface.cpp.s:
 	cd /home/dilawar/Work/NCBS/moose_svn1.7/moose/branches/async_multiscale_cmake && $(MAKE) -f hsolve/CMakeFiles/hsolve.dir/build.make hsolve/CMakeFiles/hsolve.dir/HSolveInterface.cpp.s
 .PHONY : HSolveInterface.cpp.s
 
+HSolvePassive.o: HSolvePassive.cpp.o
+.PHONY : HSolvePassive.o
+
+# target to build an object file
+HSolvePassive.cpp.o:
+	cd /home/dilawar/Work/NCBS/moose_svn1.7/moose/branches/async_multiscale_cmake && $(MAKE) -f hsolve/CMakeFiles/hsolve.dir/build.make hsolve/CMakeFiles/hsolve.dir/HSolvePassive.cpp.o
+.PHONY : HSolvePassive.cpp.o
+
+HSolvePassive.i: HSolvePassive.cpp.i
+.PHONY : HSolvePassive.i
+
+# target to preprocess a source file
+HSolvePassive.cpp.i:
+	cd /home/dilawar/Work/NCBS/moose_svn1.7/moose/branches/async_multiscale_cmake && $(MAKE) -f hsolve/CMakeFiles/hsolve.dir/build.make hsolve/CMakeFiles/hsolve.dir/HSolvePassive.cpp.i
+.PHONY : HSolvePassive.cpp.i
+
+HSolvePassive.s: HSolvePassive.cpp.s
+.PHONY : HSolvePassive.s
+
+# target to generate assembly for a file
+HSolvePassive.cpp.s:
+	cd /home/dilawar/Work/NCBS/moose_svn1.7/moose/branches/async_multiscale_cmake && $(MAKE) -f hsolve/CMakeFiles/hsolve.dir/build.make hsolve/CMakeFiles/hsolve.dir/HSolvePassive.cpp.s
+.PHONY : HSolvePassive.cpp.s
+
 HSolveStruct.o: HSolveStruct.cpp.o
 .PHONY : HSolveStruct.o
 
@@ -393,6 +417,9 @@ help:
 	@echo "... HSolveInterface.o"
 	@echo "... HSolveInterface.i"
 	@echo "... HSolveInterface.s"
+	@echo "... HSolvePassive.o"
+	@echo "... HSolvePassive.i"
+	@echo "... HSolvePassive.s"
 	@echo "... HSolveStruct.o"
 	@echo "... HSolveStruct.i"
 	@echo "... HSolveStruct.s"
