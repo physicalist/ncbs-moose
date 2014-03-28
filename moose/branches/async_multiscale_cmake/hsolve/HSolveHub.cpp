@@ -8,15 +8,6 @@
 **********************************************************************/
 
 //#include "moose.h"
-#include "../basecode/Ftype.h"
-#include "../biophysics/Compartment.h"
-#include "../biophysics/HHChannel.h"
-#include "../biophysics/CaConc.h"
-#include "HSolveStruct.h"
-#include "HinesMatrix.h"
-#include "HSolvePassive.h"
-#include "RateLookup.h"
-#include "HSolveActive.h"
 //#include "ThisFinfo.h"
 //#include "SolveFinfo.h"
 #include "HSolveHub.h"
@@ -53,64 +44,76 @@ const Cinfo* initHSolveHubCinfoInner()
 {
 	static Finfo* zombieShared[] =
 	{
-		new SrcFinfo( "process", Ftype1< ProcInfo >::global() ),
-		new SrcFinfo( "reinit", Ftype1< ProcInfo >::global() ),
+#ifdef  OLD_API
+            new SrcFinfo( "process", Ftype1< ProcInfo >::global() ),
+            new SrcFinfo( "reinit", Ftype1< ProcInfo >::global() ),
+#else      /* -----  not OLD_API  ----- */
+            
+#endif     /* -----  not OLD_API  ----- */
 	};
 	
 	static Finfo* compartmentChannelShared[] =
 	{
-		new DestFinfo(
-			"channel",
-			Ftype2< double, double >::global(),
-			RFCAST( &HSolveHub::compartmentChannelFunc ) ),
-		new SrcFinfo(
-			"Vm",
-			Ftype1< double >::global() ),
+#ifdef  OLD_API
+            new DestFinfo(
+                        "channel",
+                        Ftype2< double, double >::global(),
+                        RFCAST( &HSolveHub::compartmentChannelFunc ) ),
+            new SrcFinfo(
+                    "Vm",
+                    Ftype1< double >::global() ),
+#else      /* -----  not OLD_API  ----- */
+            
+#endif     /* -----  not OLD_API  ----- */
 	};
-	
-	static Finfo* HSolveHubFinfos[] =
-	{
-	///////////////////////////////////////////////////////
-	// Field definitions
-	///////////////////////////////////////////////////////
-	
-	///////////////////////////////////////////////////////
-	// MsgSrc definitions
-	///////////////////////////////////////////////////////
-	
-	///////////////////////////////////////////////////////
-	// MsgDest definitions
-	///////////////////////////////////////////////////////
-		new DestFinfo( "integ-hub",
-			Ftype1< HSolveActive* >::global(),
-			RFCAST( &HSolveHub::hubFunc ),
-			"In this message, the hub receives a handle (a pointer) to the "
-			"solver. This is used by the hub to access the fields of the solver." ),
-		new DestFinfo( "destroy", Ftype0::global(),
-			&HSolveHub::destroy ),
-		new DestFinfo( "child", Ftype1< int >::global(),
-			RFCAST( &HSolveHub::childFunc ),
-			"override the Neutral::childFunc here, so that when this is deleted "
-			"all the zombies are reanimated." ),
-		new DestFinfo( "compartmentInjectMsg", Ftype1< double >::global(),
-			RFCAST( &HSolveHub::compartmentInjectMsgFunc ) ),
-		new SharedFinfo( "compartmentChannel", compartmentChannelShared,
-			sizeof( compartmentChannelShared ) / sizeof( Finfo* ),
-			"This message allows communication between external channels and "
-			"the Hines' solver." ),
-	///////////////////////////////////////////////////////
-	// Shared definitions
-	///////////////////////////////////////////////////////
-		new SharedFinfo( "compartmentSolve", zombieShared, 
-			sizeof( zombieShared ) / sizeof( Finfo* ),
-			"This is identical to the message sent from clock Ticks to objects. "
-			"Here it is used to take over the Process message, usually only as "
-			"a handle from the solver to the object." ),
-		new SharedFinfo( "hhchannelSolve", zombieShared, 
-			sizeof( zombieShared ) / sizeof( Finfo* ) ),
-		new SharedFinfo( "caconcSolve", zombieShared, 
-			sizeof( zombieShared ) / sizeof( Finfo* ) ),
-	};
+
+#ifdef  OLD_API
+            static Finfo* HSolveHubFinfos[] =
+            {
+                ///////////////////////////////////////////////////////
+                // Field definitions
+                ///////////////////////////////////////////////////////
+
+                ///////////////////////////////////////////////////////
+                // MsgSrc definitions
+                ///////////////////////////////////////////////////////
+
+                ///////////////////////////////////////////////////////
+                // MsgDest definitions
+                ///////////////////////////////////////////////////////
+                new DestFinfo( "integ-hub",
+                        Ftype1< HSolveActive* >::global(),
+                        RFCAST( &HSolveHub::hubFunc ),
+                        "In this message, the hub receives a handle (a pointer) to the "
+                        "solver. This is used by the hub to access the fields of the solver." ),
+                new DestFinfo( "destroy", Ftype0::global(),
+                        &HSolveHub::destroy ),
+                new DestFinfo( "child", Ftype1< int >::global(),
+                        RFCAST( &HSolveHub::childFunc ),
+                        "override the Neutral::childFunc here, so that when this is deleted "
+                        "all the zombies are reanimated." ),
+                new DestFinfo( "compartmentInjectMsg", Ftype1< double >::global(),
+                        RFCAST( &HSolveHub::compartmentInjectMsgFunc ) ),
+                new SharedFinfo( "compartmentChannel", compartmentChannelShared,
+                        sizeof( compartmentChannelShared ) / sizeof( Finfo* ),
+                        "This message allows communication between external channels and "
+                        "the Hines' solver." ),
+                ///////////////////////////////////////////////////////
+                // Shared definitions
+                ///////////////////////////////////////////////////////
+                new SharedFinfo( "compartmentSolve", zombieShared, 
+                        sizeof( zombieShared ) / sizeof( Finfo* ),
+                        "This is identical to the message sent from clock Ticks to objects. "
+                        "Here it is used to take over the Process message, usually only as "
+                        "a handle from the solver to the object." ),
+                new SharedFinfo( "hhchannelSolve", zombieShared, 
+                        sizeof( zombieShared ) / sizeof( Finfo* ) ),
+                new SharedFinfo( "caconcSolve", zombieShared, 
+                        sizeof( zombieShared ) / sizeof( Finfo* ) ),
+            };
+#else      /* -----  not OLD_API  ----- */
+        
+#endif     /* -----  not OLD_API  ----- */
 	
 	static string doc[] =
 	{
@@ -125,6 +128,7 @@ const Cinfo* initHSolveHubCinfoInner()
 		"are cleanly redirected to their respective HSolve object.",
 	};
 	
+#ifdef  OLD_API
 	static Cinfo HSolveHubCinfo(
 		doc,
 		sizeof( doc ) / sizeof( string ),
@@ -133,8 +137,11 @@ const Cinfo* initHSolveHubCinfoInner()
 		sizeof( HSolveHubFinfos ) / sizeof( Finfo* ),
 		ValueFtype1< HSolveHub >::global()
 	);
-	
 	return &HSolveHubCinfo;
+#else      /* -----  not OLD_API  ----- */
+                
+#endif     /* -----  not OLD_API  ----- */
+	
 }
 
 static const Cinfo* HSolveHubCinfo = initHSolveHubCinfo();
@@ -150,145 +157,162 @@ static const Finfo* hubCompartmentInjectFinfo =
 static const Finfo* hubCompartmentChannelFinfo =
 	initHSolveHubCinfo()->findFinfo( "compartmentChannel" );
 
-/*
- * Finfos from biophysical objects. Needed so that 'set' operations are done
- * on the solver as well as the objects. Also needed for redirecting any dest
- * messages on these finfos to the solver (e.g.: to the inject field).
- */
-static const Finfo* compartmentInjectFinfo =
-	initCompartmentCinfo()->findFinfo( "injectMsg" );
-static const Finfo* compartmentChannelFinfo =
-	initCompartmentCinfo()->findFinfo( "channel" );
-static const Finfo* compartmentVmFinfo =
-	initCompartmentCinfo()->findFinfo( "Vm" );
-static const Finfo* channelGbarFinfo =
-	initHHChannelCinfo()->findFinfo( "Gbar" );
-static const Finfo* channelEkFinfo =
-	initHHChannelCinfo()->findFinfo( "Ek" );
-static const Finfo* channelGkFinfo =
-	initHHChannelCinfo()->findFinfo( "Gk" );
-static const Finfo* channelXFinfo =
-	initHHChannelCinfo()->findFinfo( "X" );
-static const Finfo* channelYFinfo =
-	initHHChannelCinfo()->findFinfo( "Y" );
-static const Finfo* channelZFinfo =
-	initHHChannelCinfo()->findFinfo( "Z" );
-static const Finfo* caConcCaFinfo =
-	initCaConcCinfo()->findFinfo( "Ca" );
+#ifdef  OLD_API
+        /*
+         * Finfos from biophysical objects. Needed so that 'set' operations are done
+         * on the solver as well as the objects. Also needed for redirecting any dest
+         * messages on these finfos to the solver (e.g.: to the inject field).
+         */
+        static const Finfo* compartmentInjectFinfo =
+        initCompartmentCinfo()->findFinfo( "injectMsg" );
+        static const Finfo* compartmentChannelFinfo =
+        initCompartmentCinfo()->findFinfo( "channel" );
+        static const Finfo* compartmentVmFinfo =
+        initCompartmentCinfo()->findFinfo( "Vm" );
+        static const Finfo* channelGbarFinfo =
+        initHHChannelCinfo()->findFinfo( "Gbar" );
+        static const Finfo* channelEkFinfo =
+        initHHChannelCinfo()->findFinfo( "Ek" );
+        static const Finfo* channelGkFinfo =
+        initHHChannelCinfo()->findFinfo( "Gk" );
+        static const Finfo* channelXFinfo =
+        initHHChannelCinfo()->findFinfo( "X" );
+        static const Finfo* channelYFinfo =
+        initHHChannelCinfo()->findFinfo( "Y" );
+        static const Finfo* channelZFinfo =
+        initHHChannelCinfo()->findFinfo( "Z" );
+        static const Finfo* caConcCaFinfo =
+        initCaConcCinfo()->findFinfo( "Ca" );
+#else      /* -----  not OLD_API  ----- */
+
+#endif     /* -----  not OLD_API  ----- */
+
 /////////////////////////////////////////////////////////////////////////
 // Replacement fields for aspiring zombies
 /////////////////////////////////////////////////////////////////////////
-
+#ifdef  OLD_API
+        
 Finfo* initCompartmentZombieFinfo()
 {
-	static Finfo* compartmentFields[] =
-	{
-		new ValueFinfo( "Vm",
-			ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getVm ),
-			RFCAST( &HSolveHub::setVm )
-		),
-		new ValueFinfo( "Im",
-			ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getIm ),
-			&dummyFunc
-		),
-		new ValueFinfo( "inject",
-			ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getInject ),
-			RFCAST( &HSolveHub::setInject )
-		),
-	};
+    static Finfo* compartmentFields[] =
+    {
+        new ValueFinfo( "Vm",
+                ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getVm ),
+                RFCAST( &HSolveHub::setVm )
+                ),
+        new ValueFinfo( "Im",
+                ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getIm ),
+                &dummyFunc
+                ),
+        new ValueFinfo( "inject",
+                ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getInject ),
+                RFCAST( &HSolveHub::setInject )
+                ),
+    };
 
-	static const ThisFinfo* tf = dynamic_cast< const ThisFinfo* >( 
-		initCompartmentCinfo()->getThisFinfo() );
-	assert( tf != 0 );
+    static const ThisFinfo* tf = dynamic_cast< const ThisFinfo* >( 
+            initCompartmentCinfo()->getThisFinfo() );
+    assert( tf != 0 );
 
-	static SolveFinfo compartmentZombieFinfo( 
-		compartmentFields, 
-		sizeof( compartmentFields ) / sizeof( Finfo* ),
-		tf,
-		"These fields will replace the original compartment fields so that the lookups refer to the solver rather "
-		"than the compartment."
-	);
+    static SolveFinfo compartmentZombieFinfo( 
+            compartmentFields, 
+            sizeof( compartmentFields ) / sizeof( Finfo* ),
+            tf,
+            "These fields will replace the original compartment fields so that the lookups refer to the solver rather "
+            "than the compartment."
+            );
 
-	return &compartmentZombieFinfo;
+    return &compartmentZombieFinfo;
 }
+#else      /* -----  not OLD_API  ----- */
+
+#endif     /* -----  not OLD_API  ----- */
+#ifdef  OLD_API
 
 Finfo* initHHChannelZombieFinfo()
 {
-	static Finfo* hhchannelFields[] =
-	{
-		new ValueFinfo( "Gbar", ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getHHChannelGbar ), 
-			RFCAST( &HSolveHub::setHHChannelGbar )
-		),
-		new ValueFinfo( "Ek", ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getEk ), 
-			RFCAST( &HSolveHub::setEk )
-		),
-		new ValueFinfo( "Gk", ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getGk ), 
-			RFCAST( &HSolveHub::setGk )
-		),
-		new ValueFinfo( "Ik", ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getIk ), 
-			&dummyFunc
-		),
-		new ValueFinfo( "X", ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getX ), 
-			RFCAST( &HSolveHub::setX )
-		),
-		new ValueFinfo( "Y", ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getY ), 
-			RFCAST( &HSolveHub::setY )
-		),
-		new ValueFinfo( "Z", ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getZ ), 
-			RFCAST( &HSolveHub::setZ )
-		),
-	};
+    static Finfo* hhchannelFields[] =
+    {
+        new ValueFinfo( "Gbar", ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getHHChannelGbar ), 
+                RFCAST( &HSolveHub::setHHChannelGbar )
+                ),
+        new ValueFinfo( "Ek", ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getEk ), 
+                RFCAST( &HSolveHub::setEk )
+                ),
+        new ValueFinfo( "Gk", ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getGk ), 
+                RFCAST( &HSolveHub::setGk )
+                ),
+        new ValueFinfo( "Ik", ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getIk ), 
+                &dummyFunc
+                ),
+        new ValueFinfo( "X", ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getX ), 
+                RFCAST( &HSolveHub::setX )
+                ),
+        new ValueFinfo( "Y", ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getY ), 
+                RFCAST( &HSolveHub::setY )
+                ),
+        new ValueFinfo( "Z", ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getZ ), 
+                RFCAST( &HSolveHub::setZ )
+                ),
+    };
 
-	static const ThisFinfo* tf = dynamic_cast< const ThisFinfo* >( 
-		initHHChannelCinfo()->getThisFinfo() );
-	assert( tf != 0 );
+    static const ThisFinfo* tf = dynamic_cast< const ThisFinfo* >( 
+            initHHChannelCinfo()->getThisFinfo() );
+    assert( tf != 0 );
 
-	static SolveFinfo hhchannelZombieFinfo( 
-		hhchannelFields, 
-		sizeof( hhchannelFields ) / sizeof( Finfo* ),
-		tf
-	);
+    static SolveFinfo hhchannelZombieFinfo( 
+            hhchannelFields, 
+            sizeof( hhchannelFields ) / sizeof( Finfo* ),
+            tf
+            );
 
-	return &hhchannelZombieFinfo;
+    return &hhchannelZombieFinfo;
 }
+#else      /* -----  not OLD_API  ----- */
+
+#endif     /* -----  not OLD_API  ----- */
+#ifdef  OLD_API
 
 Finfo* initCaConcZombieFinfo()
 {
-	static Finfo* caconcFields[] =
-	{
-		new ValueFinfo( "Ca", ValueFtype1< double >::global(),
-			GFCAST( &HSolveHub::getCa ), 
-			RFCAST( &HSolveHub::setCa )
-		),
-	};
+    static Finfo* caconcFields[] =
+    {
+        new ValueFinfo( "Ca", ValueFtype1< double >::global(),
+                GFCAST( &HSolveHub::getCa ), 
+                RFCAST( &HSolveHub::setCa )
+                ),
+    };
 
-	static const ThisFinfo* tf = dynamic_cast< const ThisFinfo* >( 
-		initCaConcCinfo()->getThisFinfo() );
-	assert( tf != 0 );
+    static const ThisFinfo* tf = dynamic_cast< const ThisFinfo* >( 
+            initCaConcCinfo()->getThisFinfo() );
+    assert( tf != 0 );
 
-	static SolveFinfo caconcZombieFinfo( 
-		caconcFields, 
-		sizeof( caconcFields ) / sizeof( Finfo* ),
-		tf
-	);
+    static SolveFinfo caconcZombieFinfo( 
+            caconcFields, 
+            sizeof( caconcFields ) / sizeof( Finfo* ),
+            tf
+            );
 
-	return &caconcZombieFinfo;
+    return &caconcZombieFinfo;
 }
 
 static Finfo* compartmentZombieFinfo = initCompartmentZombieFinfo();
 static Finfo* hhchannelZombieFinfo = initHHChannelZombieFinfo();
 static Finfo* caconcZombieFinfo = initCaConcZombieFinfo();
 
+#else      /* -----  not OLD_API  ----- */
+
+#endif     /* -----  not OLD_API  ----- */
 /////////////////////////////////////////////////////////////////////////
 // End of static initializers.
 /////////////////////////////////////////////////////////////////////////
@@ -304,15 +328,18 @@ HSolveHub::HSolveHub()
 // Field access functions (for Hub)
 /////////////////////////////////////////////////////////////////////////
 
+#ifdef  OLD_API
 /////////////////////////////////////////////////////////////////////////
 // Dest functions (for Hub)
 /////////////////////////////////////////////////////////////////////////
-
 void HSolveHub::hubFunc( const Conn* c, HSolveActive* integ )
 {
-	static_cast< HSolveHub* >( c->data() )->
-		innerHubFunc( c->target(), integ );
+    static_cast< HSolveHub* >( c->data() )->
+        innerHubFunc( c->target(), integ );
 }
+#else      /* -----  not OLD_API  ----- */
+
+#endif     /* -----  not OLD_API  ----- */
 
 void HSolveHub::innerHubFunc( Eref hub, HSolveActive* integ )
 {
@@ -324,6 +351,7 @@ void HSolveHub::innerHubFunc( Eref hub, HSolveActive* integ )
 	manageCaConcs();
 }
 
+#ifdef  OLD_API
 /**
  * In this destructor we need to put messages back to process,
  * and we need to replace the SolveFinfos on zombies with the
@@ -331,128 +359,152 @@ void HSolveHub::innerHubFunc( Eref hub, HSolveActive* integ )
  */
 void HSolveHub::destroy( const Conn* c )
 {
-	static Finfo* origCompartmentFinfo =
-		const_cast< Finfo* >(
-			initCompartmentCinfo()->getThisFinfo() );
-	static Finfo* origHHChannelFinfo =
-		const_cast< Finfo* >(
-			initHHChannelCinfo()->getThisFinfo() );
-	
-	Element* hub = c->target().e;
-	unsigned int eIndex = c->target().i;
+    static Finfo* origCompartmentFinfo =
+        const_cast< Finfo* >(
+                initCompartmentCinfo()->getThisFinfo() );
+    static Finfo* origHHChannelFinfo =
+        const_cast< Finfo* >(
+                initHHChannelCinfo()->getThisFinfo() );
 
-	Conn* i = hub->targets( compartmentSolveFinfo->msg(), eIndex );
-	while ( i->good() ) {
-		i->target().e->setThisFinfo( origCompartmentFinfo );
-		i->increment();
-	}
-	delete i;
+    Element* hub = c->target().e;
+    unsigned int eIndex = c->target().i;
 
-	i = hub->targets( hhchannelSolveFinfo->msg(), eIndex );
-	while ( i->good() ) {
-		i->target().e->setThisFinfo( origHHChannelFinfo );
-		i->increment();
-	}
-	delete i;
+    Conn* i = hub->targets( compartmentSolveFinfo->msg(), eIndex );
+    while ( i->good() ) {
+        i->target().e->setThisFinfo( origCompartmentFinfo );
+        i->increment();
+    }
+    delete i;
 
-	Neutral::destroy( c );
+    i = hub->targets( hhchannelSolveFinfo->msg(), eIndex );
+    while ( i->good() ) {
+        i->target().e->setThisFinfo( origHHChannelFinfo );
+        i->increment();
+    }
+    delete i;
+
+    Neutral::destroy( c );
 }
 
+#else      /* -----  not OLD_API  ----- */
+
+#endif     /* -----  not OLD_API  ----- */
+
+#ifdef  OLD_API
 void HSolveHub::childFunc( const Conn* c, int stage )
 {
-	// clear messages: first clean out zombies before the messages are
-	// all deleted.
-	if ( stage == 1 )
-		clearFunc( c->target() );
-	
-	// Then fall back into what the Neutral version does
-	Neutral::childFunc( c, stage );
+    // clear messages: first clean out zombies before the messages are
+    // all deleted.
+    if ( stage == 1 )
+        clearFunc( c->target() );
+
+    // Then fall back into what the Neutral version does
+    Neutral::childFunc( c, stage );
 }
+
+#else      /* -----  not OLD_API  ----- */
+
+#endif     /* -----  not OLD_API  ----- */
+
+#ifdef  OLD_API
 
 /////////////////////////////////////////////////////////////////////////
 // Class functions
 /////////////////////////////////////////////////////////////////////////
 
 void HSolveHub::idlist2elist(
-	const vector< Id >& idlist,
-	vector< Element* >& elist )
+        const vector< Id >& idlist,
+        vector< Element* >& elist )
 {
-	vector< Id >::const_iterator id;
-	for ( id = idlist.begin(); id != idlist.end(); id++ )
-		elist.push_back( ( *id )() );
+    vector< Id >::const_iterator id;
+    for ( id = idlist.begin(); id != idlist.end(); id++ )
+        elist.push_back( ( *id )() );
 }	
+#else      /* -----  not OLD_API  ----- */
 
+#endif     /* -----  not OLD_API  ----- */
+
+#ifdef  OLD_API
 void HSolveHub::manageCompartments()
 {
-	const vector< Id >& idlist = integ_->getCompartments();
-	vector< Element* > elist;
-	idlist2elist( idlist, elist );
-	
-	const vector< vector< Id > >& externalChannelIds =
-		integ_->getExternalChannels();
-	vector< Element* > extChanList;
-	
-	const Finfo* initFinfo = initCompartmentCinfo()->findFinfo( "init" );
-	vector< Element* >::const_iterator i;
-	for ( i = elist.begin(); i != elist.end(); i++ ) {
-		zombify( hub_, *i, compartmentSolveFinfo, compartmentZombieFinfo );
-		
-		// Compartment receives 2 shared messages from Tick's "process"
-		Eref( *i ).dropAll( initFinfo->msg() );
-		
-		redirectDynamicMessages( *i );
-	}
-	
-	/*
-	 * Redirecting dest/shared messages
-	 */
-	for ( unsigned int ic = 0; ic < elist.size(); ic++ ) {
-		// The 'retain' flag at the end is 1: we do not delete the original
-		// message to the compartment.
-		redirectDestMessages(
-			hub_, elist[ ic ],
-			hubCompartmentInjectFinfo, compartmentInjectFinfo, 
-			ic, compartmentInjectMap_,
-			&elist, 0,
-			1 );
-		
-		extChanList.clear();
-		idlist2elist( externalChannelIds[ ic ], extChanList );
-		redirectDestMessages(
-			hub_, elist[ ic ],
-			hubCompartmentChannelFinfo, compartmentChannelFinfo, 
-			ic, compartmentChannelMap_,
-			&elist, &extChanList,
-			1 );
-	}
+    const vector< Id >& idlist = integ_->getCompartments();
+    vector< Element* > elist;
+    idlist2elist( idlist, elist );
+
+    const vector< vector< Id > >& externalChannelIds =
+        integ_->getExternalChannels();
+    vector< Element* > extChanList;
+
+    const Finfo* initFinfo = initCompartmentCinfo()->findFinfo( "init" );
+    vector< Element* >::const_iterator i;
+    for ( i = elist.begin(); i != elist.end(); i++ ) {
+        zombify( hub_, *i, compartmentSolveFinfo, compartmentZombieFinfo );
+
+        // Compartment receives 2 shared messages from Tick's "process"
+        Eref( *i ).dropAll( initFinfo->msg() );
+
+        redirectDynamicMessages( *i );
+    }
+
+    /*
+     * Redirecting dest/shared messages
+     */
+    for ( unsigned int ic = 0; ic < elist.size(); ic++ ) {
+        // The 'retain' flag at the end is 1: we do not delete the original
+        // message to the compartment.
+        redirectDestMessages(
+                hub_, elist[ ic ],
+                hubCompartmentInjectFinfo, compartmentInjectFinfo, 
+                ic, compartmentInjectMap_,
+                &elist, 0,
+                1 );
+
+        extChanList.clear();
+        idlist2elist( externalChannelIds[ ic ], extChanList );
+        redirectDestMessages(
+                hub_, elist[ ic ],
+                hubCompartmentChannelFinfo, compartmentChannelFinfo, 
+                ic, compartmentChannelMap_,
+                &elist, &extChanList,
+                1 );
+    }
 }
+#else      /* -----  not OLD_API  ----- */
+
+#endif     /* -----  not OLD_API  ----- */
+#ifdef  OLD_API
 
 void HSolveHub::manageHHChannels()
 {
-	const vector< Id >& idlist = integ_->getHHChannels();
-	vector< Element* > elist;
-	idlist2elist( idlist, elist );
-	
-	vector< Element* >::const_iterator i;
-	for ( i = elist.begin(); i != elist.end(); i++ ) {
-		zombify( hub_, *i, hhchannelSolveFinfo, hhchannelZombieFinfo );
-		
-		redirectDynamicMessages( *i );
-	}
+    const vector< Id >& idlist = integ_->getHHChannels();
+    vector< Element* > elist;
+    idlist2elist( idlist, elist );
+
+    vector< Element* >::const_iterator i;
+    for ( i = elist.begin(); i != elist.end(); i++ ) {
+        zombify( hub_, *i, hhchannelSolveFinfo, hhchannelZombieFinfo );
+
+        redirectDynamicMessages( *i );
+    }
 }
 
+#else      /* -----  not OLD_API  ----- */
+
+#endif     /* -----  not OLD_API  ----- */
+
+#ifdef  OLD_API
 void HSolveHub::manageCaConcs()
 {
-	const vector< Id >& idlist = integ_->getCaConcs();
-	vector< Element* > elist;
-	idlist2elist( idlist, elist );
-	
-	vector< Element* >::const_iterator i;
-	for ( i = elist.begin(); i != elist.end(); i++ ) {
-		zombify( hub_, *i, caconcSolveFinfo, caconcZombieFinfo );
-		
-		redirectDynamicMessages( *i );
-	}
+    const vector< Id >& idlist = integ_->getCaConcs();
+    vector< Element* > elist;
+    idlist2elist( idlist, elist );
+
+    vector< Element* >::const_iterator i;
+    for ( i = elist.begin(); i != elist.end(); i++ ) {
+        zombify( hub_, *i, caconcSolveFinfo, caconcZombieFinfo );
+
+        redirectDynamicMessages( *i );
+    }
 }
 
 /**
@@ -460,10 +512,10 @@ void HSolveHub::manageCaConcs()
  */
 void HSolveHub::clearFunc( Eref hub )
 {
-	clearMsgsFromFinfo( hub, compartmentSolveFinfo );
-	clearMsgsFromFinfo( hub, hhchannelSolveFinfo );
+    clearMsgsFromFinfo( hub, compartmentSolveFinfo );
+    clearMsgsFromFinfo( hub, hhchannelSolveFinfo );
 
-	hub.dropAll( compartmentInjectFinfo->msg() );
+    hub.dropAll( compartmentInjectFinfo->msg() );
 }
 
 void HSolveHub::clearMsgsFromFinfo( Eref hub, const Finfo * f )
@@ -907,3 +959,5 @@ void HSolveHub::compartmentChannelFunc( const Conn* c, double v1, double v2 )
 		nh->compartmentChannelMap_[ index ],
 		v1, v2 );
 }
+#else      /* -----  not OLD_API  ----- */
+#endif     /* -----  not OLD_API  ----- */

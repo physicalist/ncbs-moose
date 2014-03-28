@@ -221,6 +221,30 @@ HSolveActiveSetup.cpp.s:
 	cd /home/dilawar/Work/NCBS/moose_svn1.7/moose/branches/async_multiscale_cmake && $(MAKE) -f hsolve/CMakeFiles/hsolve.dir/build.make hsolve/CMakeFiles/hsolve.dir/HSolveActiveSetup.cpp.s
 .PHONY : HSolveActiveSetup.cpp.s
 
+HSolveHub.o: HSolveHub.cpp.o
+.PHONY : HSolveHub.o
+
+# target to build an object file
+HSolveHub.cpp.o:
+	cd /home/dilawar/Work/NCBS/moose_svn1.7/moose/branches/async_multiscale_cmake && $(MAKE) -f hsolve/CMakeFiles/hsolve.dir/build.make hsolve/CMakeFiles/hsolve.dir/HSolveHub.cpp.o
+.PHONY : HSolveHub.cpp.o
+
+HSolveHub.i: HSolveHub.cpp.i
+.PHONY : HSolveHub.i
+
+# target to preprocess a source file
+HSolveHub.cpp.i:
+	cd /home/dilawar/Work/NCBS/moose_svn1.7/moose/branches/async_multiscale_cmake && $(MAKE) -f hsolve/CMakeFiles/hsolve.dir/build.make hsolve/CMakeFiles/hsolve.dir/HSolveHub.cpp.i
+.PHONY : HSolveHub.cpp.i
+
+HSolveHub.s: HSolveHub.cpp.s
+.PHONY : HSolveHub.s
+
+# target to generate assembly for a file
+HSolveHub.cpp.s:
+	cd /home/dilawar/Work/NCBS/moose_svn1.7/moose/branches/async_multiscale_cmake && $(MAKE) -f hsolve/CMakeFiles/hsolve.dir/build.make hsolve/CMakeFiles/hsolve.dir/HSolveHub.cpp.s
+.PHONY : HSolveHub.cpp.s
+
 HSolveInterface.o: HSolveInterface.cpp.o
 .PHONY : HSolveInterface.o
 
@@ -363,6 +387,9 @@ help:
 	@echo "... HSolveActiveSetup.o"
 	@echo "... HSolveActiveSetup.i"
 	@echo "... HSolveActiveSetup.s"
+	@echo "... HSolveHub.o"
+	@echo "... HSolveHub.i"
+	@echo "... HSolveHub.s"
 	@echo "... HSolveInterface.o"
 	@echo "... HSolveInterface.i"
 	@echo "... HSolveInterface.s"
