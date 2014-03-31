@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 project(moose)
-include(CheckIncludeFiles)
-include(ExternalProject)
 
 enable_testing()
 
@@ -55,20 +53,10 @@ if(DEVELOPER)
     add_definitions(-DDEVELOPER)
 endif(DEVELOPER)
 
-# Use local gsl
-ExternalProject_Add(gsl_local
-    URL ${CMAKE_CURRENT_SOURCE_DIR}/external/gsl/gsl-1.16.tar.gz
-    PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/gsl
-    CONFIGURE_COMMAND ./../gsl_local/configure --prefix=${CMAKE_CURRENT_SOURCE_DIR}/gsl
-    BUILD_COMMAND make
-    )
-add_definitions(-DUSE_GSL)
-ExternalProject_Get_Property(gsl_local install_dir)
-include_directories(${install_dir}/include)
-link_directories(${install_dir}/lib)
 
 ## Here we add an executable
 include_directories(basecode msg)
+link_directories(gsl)
 add_executable(moose basecode/main.cpp)
 
 ## Setup hdf5
@@ -97,6 +85,10 @@ if(READLINE_FOUND AND TERMCAP_FOUND)
     target_link_libraries(moose ${Readline_LIBRARY})
     target_link_libraries(moose ${TERMCAP_LIBRARY})
 endif()
+
+# Local gsl
+add_definitions(-DUSE_GSL)
+include_directories(gsl)
 
 # Add subdirectroeis
 add_subdirectory(basecode)
