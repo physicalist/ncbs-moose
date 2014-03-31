@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(moose)
 
-enable_testing()
+# Do the gsl first
+add_subdirectory(gsl)
 
 # Compiler 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -47,17 +48,12 @@ if(DEBUG)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-# Enable strict check. Raise exception instead of warning.
-set(DEVELOPER 1)
-if(DEVELOPER)
-    add_definitions(-DDEVELOPER)
-endif(DEVELOPER)
-
+## Here we add an executable
+add_executable(moose basecode/main.cpp)
 
 ## Here we add an executable
 include_directories(basecode msg)
-link_directories(gsl)
-add_executable(moose basecode/main.cpp)
+include_directories(gsl)
 
 ## Setup hdf5
 find_package(HDF5)
@@ -88,7 +84,7 @@ endif()
 
 # Local gsl
 add_definitions(-DUSE_GSL)
-include_directories(gsl)
+
 
 # Add subdirectroeis
 add_subdirectory(basecode)
