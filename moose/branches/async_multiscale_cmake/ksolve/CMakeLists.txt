@@ -18,5 +18,4 @@ add_library(ksolve
         Gsolve.cpp
         testKsolve.cpp
     )
-
 target_link_libraries(ksolve basecode)

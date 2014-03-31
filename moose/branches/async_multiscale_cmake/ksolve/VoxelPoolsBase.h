@@ -10,6 +10,9 @@
 #ifndef _VOXEL_POOLS_BASE_H
 #define _VOXEL_POOLS_BASE_H
 
+#include "header.h"
+#include <vector>
+
 class VoxelPoolsBase
 {
 	public: 

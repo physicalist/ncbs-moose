@@ -6,21 +6,7 @@
 ** GNU Lesser General Public License version 2.1
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
-#include "header.h"
-#ifdef USE_GSL
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_odeiv2.h>
-#endif
-
-#include "OdeSystem.h"
-#include "VoxelPoolsBase.h"
 #include "VoxelPools.h"
-#include "RateTerm.h"
-#include "FuncTerm.h"
-#include "SparseMatrix.h"
-#include "KinSparseMatrix.h"
-#include "Stoich.h"
 
 //////////////////////////////////////////////////////////////
 // Class definitions

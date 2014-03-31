@@ -10,6 +10,22 @@
 #ifndef _VOXEL_POOLS_H
 #define _VOXEL_POOLS_H
 
+#include "header.h"
+#ifdef USE_GSL
+#include "gsl/gsl_errno.h"
+#include "gsl/gsl_matrix.h"
+#include "gsl/gsl_odeiv2.h"
+#endif
+
+#include "OdeSystem.h"
+#include "VoxelPoolsBase.h"
+#include "RateTerm.h"
+#include "FuncTerm.h"
+#include "SparseMatrix.h"
+#include "KinSparseMatrix.h"
+#include "Stoich.h"
+
+
 class Stoich;
 class VoxelPools: public VoxelPoolsBase
 {
