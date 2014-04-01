@@ -1,8 +1,23 @@
 cmake_minimum_required(VERSION 2.8)
+enable_testing()
+
 project(moose)
 
+# These are CMAKE macros. Must be on the top.
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
+set(INSTALL_LIB_DIR lib CACHE PATH "/usr/local/lib")
+set(INSTALL_BIN_DIR bin CACHE PATH "/usr/local/bin")
+set(INSTALL_INCLUDE_DIR include CACHE PATH "/usr/local/include/")
+
 # Do the gsl first
-add_subdirectory(gsl)
+set(LOCAL_GSL 0)
+if(LOCAL_GSL)
+    add_subdirectory(gsl)
+    include_directories(gsl)
+else()
+    find_package(GSL REQUIRED)
+endif()
 
 # Compiler 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -14,7 +29,7 @@ else()
 endif()
 
 # Use clang++ as default compiler for time being
-set(CMAKE_CXX_COMPILER "clang++")
+#set(CMAKE_CXX_COMPILER "clang++")
 
 ## Turn warning to error
 #add_definitions(-Werror 
@@ -34,12 +49,6 @@ if(DEVELOPER)
     add_definitions(-DDEVELOPER -fPIC)
 endif()
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
-set(INSTALL_LIB_DIR lib CACHE PATH "/usr/local/lib")
-set(INSTALL_BIN_DIR bin CACHE PATH "/usr/local/bin")
-set(INSTALL_INCLUDE_DIR include CACHE PATH "/usr/local/include/")
-
 # Default macros
 add_definitions(-DUSE_GENESIS_PARSER)
 
@@ -49,11 +58,18 @@ if(DEBUG)
 endif()
 
 ## Here we add an executable
+## These two directories must be included for main.cpp 
+include_directories(msg basecode)
 add_executable(moose basecode/main.cpp)
 
-## Here we add an executable
-include_directories(basecode msg)
-include_directories(gsl)
+## GSL
+add_definitions(-DUSE_GSL)
+if(LOCAL_GSL)
+    include_directories(gsl)
+else()
+    include_directories(${GSL_INCLUDE_DIR})
+    target_link_libraries(moose ${GSL_LIBRARIES})
+endif()
 
 
 ## Setup hdf5
@@ -82,9 +98,6 @@ if(READLINE_FOUND AND TERMCAP_FOUND)
     target_link_libraries(moose ${Readline_LIBRARY})
     target_link_libraries(moose ${TERMCAP_LIBRARY})
 endif()
-
-# Local gsl
-add_definitions(-DUSE_GSL)
 
 
 # Add subdirectroeis
@@ -116,6 +129,8 @@ target_link_libraries(moose
     device
     moose_mpi
     msg 
+    ksolve
+    hsolve
     debug_print
     benchmarks
     diffusion
@@ -189,6 +204,7 @@ if(BUILD_PYMOOSE)
         builtins
         utility
         diffusion
+        hsolve
         muparser
         biophysics
         kinetics
@@ -201,3 +217,9 @@ if(BUILD_PYMOOSE)
         "-Wl,--no-whole-archive"
         )
 endif(BUILD_PYMOOSE)
+
+## Keep tests here
+find_package(PythonInterp REQUIRED)
+add_test(NAME load_moose_into_python
+    COMMAND ${PYTHON_EXECUTABLE} "python/moose/test.py"
+    )
