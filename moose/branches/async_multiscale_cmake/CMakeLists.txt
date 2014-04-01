@@ -55,6 +55,7 @@ add_executable(moose basecode/main.cpp)
 include_directories(basecode msg)
 include_directories(gsl)
 
+
 ## Setup hdf5
 find_package(HDF5)
 if(HDF5_FOUND)
@@ -63,12 +64,12 @@ if(HDF5_FOUND)
     target_link_libraries(moose ${HDF5_LIBRARY})
 endif(HDF5_FOUND)
 
+find_package(BZip2)
 find_package(LIBSBML)
 if(LIBSBML_FOUND)
     add_definitions(-DUSE_SBML)
     add_subdirectory(sbml)
     include_directories(${LIBSBML_INCLUDE_DIR})
-    find_package(BZip2)
 elseif()
     add_definitions(-UUSE_SBML)
 endif(LIBSBML_FOUND)
@@ -122,15 +123,22 @@ target_link_libraries(moose
     )
 
 if(LIBSBML_FOUND)
+    target_link_libraries(moose moose_sbml ${LIBSBML_LIBRARY})
     if(BZIP2_FOUND)
         target_link_libraries(moose ${BZIP2_LIBRARIES})
+    else()
+        target_link_libraries(moose bz2)
     endif()
-    target_link_libraries(moose moose_sbml ${LIBSBML_LIBRARY})
 endif()
 
 # Link gsl 
 set(LOCAL_GSL_LIBRARIES  gsl gslcblas m)
 target_link_libraries(moose ${LOCAL_GSL_LIBRARIES})
+
+# Libxml2 is required.
+find_package(LibXML2 REQUIRED)
+target_link_libraries(moose ${LibXML2_LIBRARIES})
+
 
 ## Build pymoose 
 set(BUILD_PYMOOSE 1)
@@ -157,7 +165,10 @@ if(BUILD_PYMOOSE)
         PREFIX ""
         )
 
-    set(LIBRARIES ${PYTHON_LIBRARY} ${LOCAL_GSL_LIBRARIES})
+    set(LIBRARIES ${PYTHON_LIBRARY} ${LibBZip2_LIBRARIES} 
+        ${LOCAL_GSL_LIBRARIES}
+        ${LibXML2_LIBRARIES}
+        )
     if(HDF5_FOUND)
         list(APPEND LIBRARIES ${HDF5_LIBRARY})
     endif()
