@@ -47,85 +47,83 @@ const Cinfo* ZombieCaConc::initCinfo()
 		"Shared message to receive Process message from scheduler",
 		processShared, sizeof( processShared ) / sizeof( Finfo* ) );
 		
-#ifdef  OLD_API
-        ///////////////////////////////////////////////////////
-            // Field definitions
-            ///////////////////////////////////////////////////////
-            static ElementValueFinfo< ZombieCaConc, double > Ca( "Ca",
-                    "Calcium concentration.",
-                    &ZombieCaConc::setCa,
-                    &ZombieCaConc::getCa
-                    );
+        // Field definitions
+        static ElementValueFinfo< ZombieCaConc, double > Ca( "Ca",
+                "Calcium concentration.",
+                &ZombieCaConc::setCa,
+                &ZombieCaConc::getCa
+                );
 
 	static ElementValueFinfo< ZombieCaConc, double > CaBasal( "CaBasal",
 		"Basal Calcium concentration.",
 		&ZombieCaConc::setCaBasal,
 		&ZombieCaConc::getCaBasal
-	);
+                );
+
 	static ElementValueFinfo< ZombieCaConc, double > Ca_base( "Ca_base",
 		"Basal Calcium concentration, synonym for CaBasal",
 		&ZombieCaConc::setCaBasal,
 		&ZombieCaConc::getCaBasal
-	);
+                );
+
 	static ElementValueFinfo< ZombieCaConc, double > tau( "tau",
 		"Settling time for Ca concentration",
 		&ZombieCaConc::setTau,
 		&ZombieCaConc::getTau
-	);
+                );
+
 	static ElementValueFinfo< ZombieCaConc, double > B( "B",
 		"Volume scaling factor",
 		&ZombieCaConc::setB,
 		&ZombieCaConc::getB
-	);
+                );
+
 	// Local field, hence 'ElementValueFinfo' not needed.
 	static ValueFinfo< ZombieCaConc, double > thick( "thick",
 		"Thickness of Ca shell.",
 		&ZombieCaConc::setThickness,
 		&ZombieCaConc::getThickness
-	);
+                );
+
 	static ElementValueFinfo< ZombieCaConc, double > ceiling( "ceiling",
-		"Ceiling value for Ca concentration. If Ca > ceiling, Ca = ceiling. If ceiling <= 0.0, there is no upper limit on Ca concentration value.",
+		"Ceiling value for Ca concentration. If Ca > ceiling, Ca = ceiling." 
+                " If ceiling <= 0.0, there is no upper limit on Ca concentration value.",
 		&ZombieCaConc::setCeiling,
 		&ZombieCaConc::getCeiling
-	);
+                );
+
 	static ElementValueFinfo< ZombieCaConc, double > floor( "floor",
 		"Floor value for Ca concentration. If Ca < floor, Ca = floor",
 		&ZombieCaConc::setFloor,
 		&ZombieCaConc::getFloor
-	);
+                );
 	
-#else      /* -----  not OLD_API  ----- */
-#endif     /* -----  not OLD_API  ----- */
-///////////////////////////////////////////////////////
-// MsgDest definitions
-///////////////////////////////////////////////////////
-	
+        // MsgDest definitions
 	static DestFinfo current( "current", 
 		"Calcium Ion current, due to be converted to conc.",
 		new OpFunc1< ZombieCaConc, double >( &ZombieCaConc::current )
-	);
+                );
 	
 	static DestFinfo currentFraction( "currentFraction", 
 		"Fraction of total Ion current, that is carried by Ca2+.",
 		new OpFunc2< ZombieCaConc, double, double >( &ZombieCaConc::currentFraction )
-	);
+                );
 	
 	static DestFinfo increase( "increase", 
 		"Any input current that increases the concentration.",
 		new OpFunc1< ZombieCaConc, double >( &ZombieCaConc::increase )
-	);
+                );
 	
 	static DestFinfo decrease( "decrease", 
 		"Any input current that decreases the concentration.",
 		new OpFunc1< ZombieCaConc, double >( &ZombieCaConc::decrease )
-	);
-#ifdef  OLD_API
-        
-            static DestFinfo basal( "basal", 
-                    "Synonym for assignment of basal conc.",
-                    new EpFunc1< ZombieCaConc, double >( &ZombieCaConc::setCaBasal )
-                    );
-	
+                );
+
+        static DestFinfo basal( "basal", 
+                "Synonym for assignment of basal conc.",
+                new EpFunc1< ZombieCaConc, double >( &ZombieCaConc::setCaBasal )
+                );
+
 	static Finfo* caConcFinfos[] =
 	{
 		&proc,		// Shared 
@@ -162,8 +160,6 @@ const Cinfo* ZombieCaConc::initCinfo()
 	);
 	
 	return &zombieCaConcCinfo;
-#else      /* -----  not OLD_API  ----- */
-#endif     /* -----  not OLD_API  ----- */
 }
 ///////////////////////////////////////////////////
 

@@ -34,19 +34,11 @@ class Ftype1: public Ftype
         Ftype1( void ( T::*func )( A ) )
             : func_( func )
         {;}
-#ifdef  OLD_API
-        
-            bool checkFinfo( const Finfo* s ) const {
-                return dynamic_cast< const Finfo1< A >* >( s );
-            }
-#else      /* -----  not OLD_API  ----- */
             bool checkFinfo(const Finfo* s ) const 
             {
                 return dynamic_cast< const Finfo* > ( s );
             }
         
-#endif     /* -----  not OLD_API  ----- */
-
         void op( Eref e, const char* buf ) const {
             (static_cast< T* >( e.data() )->*func_)( 
                     *reinterpret_cast< const A* >( buf )
@@ -65,15 +57,9 @@ class Ftype2: public Ftype
             : func_( func )
         {;}
 
-#ifdef  OLD_API
-            bool checkFinfo( const Finfo* s ) const {
-                return dynamic_cast< const Finfo2< A1, A2 >* >( s );
-            }
-#else      /* -----  not OLD_API  ----- */
-            bool checkFinfo( const Finfo* s ) const {
-                return dynamic_cast< const Finfo* >( s );
-            }
-#endif     /* -----  not OLD_API  ----- */
+        bool checkFinfo( const Finfo* s ) const {
+            return dynamic_cast< const Finfo* >( s );
+        }
 
         void op( Eref e, const char* buf ) const {
             const char* buf2 = buf + sizeof( A1 );
@@ -94,16 +80,10 @@ template< class T, class A1, class A2, class A3 > class Ftype3:
         Ftype3( void ( T::*func )( A1, A2, A3 ) )
             : func_( func )
         {;}
-#ifdef  OLD_API
-            bool checkFinfo( const Finfo* s ) const {
-                return dynamic_cast< const Finfo3< A1, A2, A3 >* >( s );
-            }
-#else      /* -----  not OLD_API  ----- */
             bool checkFinfo( const Finfo* s ) const {
                 return dynamic_cast< const Finfo* >( s );
             }
         
-#endif     /* -----  not OLD_API  ----- */
 
         void op( Eref e, const char* buf ) const {
             const char* buf2 = buf + sizeof( A1 );
@@ -134,41 +114,25 @@ class GetFtype: public Ftype
             : func_( func )
         {;}
 
-#ifdef  OLD_API
-        bool checkFinfo( const Finfo* s ) const {
-                return dynamic_cast< const Finfo1< A >* >( s );
-            }
-#else      /* -----  not OLD_API  ----- */
-        
-#endif     /* -----  not OLD_API  ----- */
+        bool checkFinfo( const Finfo* s ) const 
+        {
+            return dynamic_cast< const Finfo1< A >* >( s );
+        }
 
-        void op( Eref e, const char* buf ) const {
+        void op( Eref e, const char* buf ) const 
+        {
             A ret = static_cast< T* >( e.data() )->func_();
-#ifdef  OLD_API
-            Id src = *reinterpret_cast< Id* >( buf );
-#else      /* -----  not OLD_API  ----- */
             Id src = *reinterpret_cast< Id* > (
-                     const_cast< char* > ( buf ) 
+                    const_cast< char* > ( buf ) 
                     );
-#endif     /* -----  not OLD_API  ----- */
             buf += sizeof( Id );
-#ifdef  OLD_API
-            MsgId srcMsg = *reinterpret_cast< MsgId* >( buf );
-#else      /* -----  not OLD_API  ----- */
             MsgId srcMsg = *reinterpret_cast< MsgId* >( 
                     const_cast < char* > ( buf ) 
                     );
-#endif     /* -----  not OLD_API  ----- */
             buf += sizeof( MsgId );
-#ifdef  OLD_API
-            FuncId srcFunc = *reinterpret_cast< FuncId* >( buf );
-            Finfo2< MsgId, A > s( MsgId, srcFunc );
-            s.sendTo( e, Id, ret );
-#else      /* -----  not OLD_API  ----- */
             FuncId srcFunc = *reinterpret_cast< FuncId* >( 
                     const_cast< char* > ( buf )
                     );
-#endif     /* -----  not OLD_API  ----- */
         }
 
     private:
