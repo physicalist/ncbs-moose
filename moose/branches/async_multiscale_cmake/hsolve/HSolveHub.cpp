@@ -48,6 +48,7 @@ const Cinfo* initHSolveHubCinfoInner()
             new SrcFinfo( "process", Ftype1< ProcInfo >::global() ),
             new SrcFinfo( "reinit", Ftype1< ProcInfo >::global() ),
 #else      /* -----  not OLD_API  ----- */
+            new SrcFinfo( "process", Ftype1<ProcInfo, string>::global());
             
 #endif     /* -----  not OLD_API  ----- */
 	};
