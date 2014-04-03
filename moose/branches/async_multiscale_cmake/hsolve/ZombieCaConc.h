@@ -28,67 +28,69 @@ class DataHandler;
  */
 class ZombieCaConc
 {
-	public:
-		ZombieCaConc()
-			:
-			hsolve_( NULL ),
-			tau_( 0.0 ),
-			B_( 0.0 ),
-			thickness_( 0.0 )
-		{ ; }
-		
-		///////////////////////////////////////////////////////////////
-		// Message handling functions
-		///////////////////////////////////////////////////////////////
-		void reinit( const Eref&, ProcPtr info );
-		void process( const Eref&, ProcPtr info );
-		
-		void current( double I );
-		void currentFraction( double I, double fraction );
-		void increase( double I );
-		void decrease( double I );
-		///////////////////////////////////////////////////////////////
-		// Field handling functions
-		///////////////////////////////////////////////////////////////
-                void setCa( const Eref& e,   double val );
-                double getCa( const Eref& e ) const;
-                void setCaBasal( const Eref& e , double val );
-                double getCaBasal( const Eref& e ) const;
-                void setTau( const Eref& e , double val );
-                double getTau( const Eref& e ) const;
-                void setB( const Eref& e , double val );
-                double getB( const Eref& e ) const;
-                void setCeiling( const Eref& e , double val );
-                double getCeiling( const Eref& e ) const;
-                void setFloor( const Eref& e , double val );
-                double getFloor( const Eref& e ) const;
+public:
+    ZombieCaConc()
+        :
+        hsolve_( NULL ),
+        tau_( 0.0 ),
+        B_( 0.0 ),
+        thickness_( 0.0 )
+    {
+        ;
+    }
 
-		// Locally stored fields.
-		void setThickness( double val );
-		double getThickness() const;
-		
-		static const Cinfo* initCinfo();
-		
-		//////////////////////////////////////////////////////////////////
-		// utility funcs
-		//////////////////////////////////////////////////////////////////
-		static void zombify( Element* solver, Element* orig );
-		static void unzombify( Element* zombie );
-		
-		/*
-		 * This Finfo is used to send out CaConc to channels.
-		 * The original CaConc sends this itself, whereas the HSolve
-		 * sends on behalf of the Zombie.
-		 */
-		static SrcFinfo1< double >* concOut();
-	private:
-		HSolve* hsolve_;
-		
-		double tau_;
-		double B_;
-		double thickness_;
-		
-		void copyFields( CaConc* c );
+    ///////////////////////////////////////////////////////////////
+    // Message handling functions
+    ///////////////////////////////////////////////////////////////
+    void reinit( const Eref&, ProcPtr info );
+    void process( const Eref&, ProcPtr info );
+
+    void current( double I );
+    void currentFraction( double I, double fraction );
+    void increase( double I );
+    void decrease( double I );
+    ///////////////////////////////////////////////////////////////
+    // Field handling functions
+    ///////////////////////////////////////////////////////////////
+    void setCa( const Eref& e,   double val );
+    double getCa( const Eref& e ) const;
+    void setCaBasal( const Eref& e , double val );
+    double getCaBasal( const Eref& e ) const;
+    void setTau( const Eref& e , double val );
+    double getTau( const Eref& e ) const;
+    void setB( const Eref& e , double val );
+    double getB( const Eref& e ) const;
+    void setCeiling( const Eref& e , double val );
+    double getCeiling( const Eref& e ) const;
+    void setFloor( const Eref& e , double val );
+    double getFloor( const Eref& e ) const;
+
+    // Locally stored fields.
+    void setThickness( double val );
+    double getThickness() const;
+
+    static const Cinfo* initCinfo();
+
+    //////////////////////////////////////////////////////////////////
+    // utility funcs
+    //////////////////////////////////////////////////////////////////
+    static void zombify( Element* solver, Element* orig );
+    static void unzombify( Element* zombie );
+
+    /*
+     * This Finfo is used to send out CaConc to channels.
+     * The original CaConc sends this itself, whereas the HSolve
+     * sends on behalf of the Zombie.
+     */
+    static SrcFinfo1< double >* concOut();
+private:
+    HSolve* hsolve_;
+
+    double tau_;
+    double B_;
+    double thickness_;
+
+    void copyFields( CaConc* c );
 };
 
 

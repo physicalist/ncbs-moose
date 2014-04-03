@@ -10,6 +10,20 @@
 #ifndef _HSOLVE_ACTIVE_H
 #define _HSOLVE_ACTIVE_H
 
+#include "header.h"
+#include <set>
+#include <limits> // Max and min 'double' values needed for lookup table init.
+#include "../biophysics/CaConc.h"
+#include "../biophysics/HHGate.h"
+#include "../biophysics/ChanBase.h"
+#include "../biophysics/HHChannel.h"
+#include "../biophysics/SpikeGen.h"
+#include "HSolveUtils.h"
+#include "HSolveStruct.h"
+#include "HinesMatrix.h"
+#include "HSolvePassive.h"
+#include "RateLookup.h"
+
 class HSolveActive: public HSolvePassive
 {
     typedef vector< CurrentStruct >::iterator currentVecIter;

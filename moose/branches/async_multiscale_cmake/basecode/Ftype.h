@@ -40,6 +40,10 @@ class Ftype1: public Ftype
                 return dynamic_cast< const Finfo1< A >* >( s );
             }
 #else      /* -----  not OLD_API  ----- */
+            bool checkFinfo(const Finfo* s ) const 
+            {
+                return dynamic_cast< const Finfo* > ( s );
+            }
         
 #endif     /* -----  not OLD_API  ----- */
 
@@ -66,7 +70,9 @@ class Ftype2: public Ftype
                 return dynamic_cast< const Finfo2< A1, A2 >* >( s );
             }
 #else      /* -----  not OLD_API  ----- */
-        
+            bool checkFinfo( const Finfo* s ) const {
+                return dynamic_cast< const Finfo* >( s );
+            }
 #endif     /* -----  not OLD_API  ----- */
 
         void op( Eref e, const char* buf ) const {
@@ -89,11 +95,13 @@ template< class T, class A1, class A2, class A3 > class Ftype3:
             : func_( func )
         {;}
 #ifdef  OLD_API
-        
             bool checkFinfo( const Finfo* s ) const {
                 return dynamic_cast< const Finfo3< A1, A2, A3 >* >( s );
             }
 #else      /* -----  not OLD_API  ----- */
+            bool checkFinfo( const Finfo* s ) const {
+                return dynamic_cast< const Finfo* >( s );
+            }
         
 #endif     /* -----  not OLD_API  ----- */
 

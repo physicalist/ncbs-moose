@@ -6,7 +6,7 @@ add_library(hsolve
     HSolveActive.cpp
     HSolveActiveSetup.cpp
     HSolve.cpp
-    HSolveHub.cpp
+    #HSolveHub.cpp
     HSolveInterface.cpp
     HSolvePassive.cpp
     HSolveStruct.cpp
