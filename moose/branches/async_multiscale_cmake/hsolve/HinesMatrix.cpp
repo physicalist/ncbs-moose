@@ -11,6 +11,7 @@
 #include "HinesMatrix.h"
 #include <sstream>
 #include <iomanip>
+#include <stdexcept>
 
 HinesMatrix::HinesMatrix()
     :
@@ -26,6 +27,17 @@ void HinesMatrix::setup( const vector< TreeNodeStruct >& tree, double dt )
     clear();
 
     nCompt_ = tree.size();
+
+
+    stringstream ss;
+    if(nCompt_ <= 0)
+    {
+        ss << "Horror, horror! Trying to create a matrix with size " << nCompt_ 
+            << endl;
+        dump(ss.str(), "ERROR");
+        throw range_error("Expected greater than 0.");
+    }
+
     dt_ = dt;
     tree_ = &tree;
 

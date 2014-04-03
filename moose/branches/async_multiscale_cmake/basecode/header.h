@@ -74,5 +74,6 @@ class Neutral;
 #include "FieldElementFinfo.h"
 #include "FieldElement.h"
 #include "../shell/Neutral.h"
+#include "../external/debug/print_function.h"
 
 #endif // _HEADER_H

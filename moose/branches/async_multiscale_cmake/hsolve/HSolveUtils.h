@@ -40,6 +40,12 @@ public:
         const double* vp = reinterpret_cast< const double* >( &value );
 
         /* NOTE: This is modified by Dilawar */
+        dump("WARNING"
+                , "Check the next line."
+                " Developer is not sure about casting."
+                " OpFunc class has no member function op() therefore it is casted"
+                " to OpFunc0 class."
+            );
         static_cast<OpFunc0<T>*>(op)->op( id.eref(), vp );
     }
 
