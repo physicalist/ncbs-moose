@@ -7,13 +7,7 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#include "header.h"
-#include "../external/debug/print_function.h"
-
 #include "HSolveUtils.h"
-#include "../biophysics/HHGate.h"
-#include "../biophysics/ChanBase.h"
-#include "../biophysics/HHChannel.h"
 
 void HSolveUtils::initialize( Id object )
 {
