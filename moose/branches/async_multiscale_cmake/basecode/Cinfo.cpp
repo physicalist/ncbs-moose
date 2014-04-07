@@ -214,6 +214,14 @@ const Finfo* Cinfo::findFinfo( const string& name ) const
 	map< string, Finfo*>::const_iterator i = finfoMap_.find( name );
 	if ( i != finfoMap_.end() )
 		return i->second;
+
+		void op( const Eref& e, const Qinfo* q, const double* buf ) const {
+#ifdef  RESULT_CHECK
+                        
+#endif     /* -----  not RESULT_CHECK  ----- */
+			(reinterpret_cast< T* >( e.data() )->*func_)();
+		}
+
 	return 0;
 }
 
