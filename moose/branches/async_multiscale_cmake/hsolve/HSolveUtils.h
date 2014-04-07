@@ -16,7 +16,6 @@
 #include "../biophysics/HHGate.h"
 #include "../biophysics/ChanBase.h"
 #include "../biophysics/HHChannel.h"
-
 #include "../basecode/OpFunc.h"
 
 
@@ -68,9 +67,9 @@ public:
         assert( gop || gep );
 
         if ( gop )
-            return gop->reduceOp( id.eref() );
+            return gop->returnOp( id.eref() );
         else // gep
-            return gep->reduceOp( id.eref() );
+            return gep->returnOp( id.eref() );
     }
 
     static int adjacent( Id compartment, vector< Id >& ret );
