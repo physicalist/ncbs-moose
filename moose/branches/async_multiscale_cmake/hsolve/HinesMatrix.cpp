@@ -28,15 +28,16 @@ void HinesMatrix::setup( const vector< TreeNodeStruct >& tree, double dt )
 
     nCompt_ = tree.size();
 
-
+#if  SANITY_CHECK
     stringstream ss;
     if(nCompt_ <= 0)
     {
-        ss << "Horror, horror! Trying to create a matrix with size " << nCompt_ 
-            << endl;
+        ss << "Horror, horror! Trying to create a matrix with size " << nCompt_
+           << endl;
         dump(ss.str(), "ERROR");
         throw range_error("Expected greater than 0.");
     }
+#endif     /* -----  not STRICT_CHECK  ----- */
 
     dt_ = dt;
     tree_ = &tree;

@@ -27,7 +27,9 @@ public:
     template< class T, class A >
     static void set( Id id, string field, A value )
     {
-        const Finfo* finfo = id.element()->cinfo()->findFinfo( "set_" + field );
+        /*  Capitalize the first character of the given field */
+        field[0] = toupper(field[0]);
+        const Finfo* finfo = id.element()->cinfo()->findFinfo( "set" + field );
         assert( finfo );
 
         const DestFinfo* dest = dynamic_cast< const DestFinfo* >( finfo );
@@ -51,7 +53,9 @@ public:
     template< class T, class A >
     static A get( Id id, string field )
     {
-        const Finfo* finfo = id.element()->cinfo()->findFinfo( "get_" + field );
+        /*  Capitalize the first character of the given field */
+        field[0] = toupper(field[0]);
+        const Finfo* finfo = id.element()->cinfo()->findFinfo( "get" + field );
         assert( finfo );
 
         const DestFinfo* dest = dynamic_cast< const DestFinfo* >( finfo );

@@ -115,8 +115,8 @@ int HSolveUtils::gates(
 
         return ret.size() - oldSize;
 #else      /* -----  not OLD_API  ----- */
-        dump("TODO", "This function is incomplete");
-        return 0;
+        dump("This function is incomplete", "TODO");
+        throw logic_error("TODO: Incomplete API");
 #endif     /* -----  not OLD_API  ----- */
 }
 

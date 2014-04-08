@@ -7,12 +7,6 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
-#include "header.h"
-#include "../biophysics/Compartment.h"
-using namespace moose; // For moose::Compartment from 'Compartment.h'
-#include "HSolveUtils.h"
-#include "HSolveStruct.h"
-#include "HinesMatrix.h"
 #include "HSolvePassive.h"
 
 extern ostream& operator <<( ostream& s, const HinesMatrix& m );

@@ -46,8 +46,12 @@ endif(ENABLE_STD_2011)
 # Strick checking 
 set(DEVELOPER 1)
 if(DEVELOPER)
-    add_definitions(-DDEVELOPER -fPIC)
+    add_definitions(-DDEBUG -DDEVELOPER -fPIC)
 endif()
+set(VERIFY 1)
+if(VERIFY)
+    add_definitions(-DSANITY_CHECK -DARGS_CHECK -DRESULT_CHECK -DVALUE_CHECK)
+endif(VERIFY)
 
 # Default macros
 add_definitions(-DUSE_GENESIS_PARSER)
