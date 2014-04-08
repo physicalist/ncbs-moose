@@ -289,44 +289,38 @@ void ZombieCaConc::decrease( double I )
 // static func
 void ZombieCaConc::zombify( Element* solver, Element* orig )
 {
-	// Delete "process" msg.
-	static const Finfo* procDest = CaConc::initCinfo()->findFinfo( "process");
-	assert( procDest );
-	
-	const DestFinfo* df = dynamic_cast< const DestFinfo* >( procDest );
-	assert( df );
-#ifdef  OLD_API
-	MsgId mid = orig->findCaller( df->getFid() );
-	if ( mid != Msg::bad )
-#else      /* -----  not OLD_API  ----- */
-	ObjId mid = orig->findCaller( df->getFid() );
-        if ( ! mid.bad() )
-#endif     /* -----  not OLD_API  ----- */
-		Msg::deleteMsg( mid );
+    // Delete "process" msg.
+    static const Finfo* procDest = CaConc::initCinfo()->findFinfo( "process");
+    assert( procDest );
+
+    const DestFinfo* df = dynamic_cast< const DestFinfo* >( procDest );
+    assert( df );
+
+    /*  mid is not ObjId type. In previous version, it was MsgId type */
+    ObjId mid = orig->findCaller( df->getFid() );
+    if ( ! mid.bad() )
+        Msg::deleteMsg( mid );
 
     // NOTE: the following line can be uncommented to remove messages
     // lying within the realm of HSolve. But HSolve will need to
     // maintain a datastructure for putting back the messages at
     // unzombify.
-#ifdef  OLD_API
-        
-            HSolve::deleteIncomingMessages(orig, "current");
 
-        // Create zombie.
-        DataHandler* dh = orig->dataHandler()->copyUsingNewDinfo(
-                ZombieCaConc::initCinfo()->dinfo() );
-        Eref oer( orig, 0 );
-        Eref ser( solver, 0 );
-        ZombieCaConc* zd = reinterpret_cast< ZombieCaConc* >( dh->data( 0 ) );
-        CaConc* od = reinterpret_cast< CaConc* >( oer.data() );
-        HSolve* sd = reinterpret_cast< HSolve* >( ser.data() );
-        zd->hsolve_ = sd;
-        zd->copyFields( od );
+    HSolve::deleteIncomingMessages(orig, "current");
 
-        orig->zombieSwap( zombieCaConcCinfo, dh );
-#else      /* -----  not OLD_API  ----- */
-        
-#endif     /* -----  not OLD_API  ----- */
+    // Create zombie.
+//
+//    DataHandler* dh = orig->dataHandler()->copyUsingNewDinfo(
+//            ZombieCaConc::initCinfo()->dinfo() );
+    Eref oer( orig, 0 );
+    Eref ser( solver, 0 );
+//    ZombieCaConc* zd = reinterpret_cast< ZombieCaConc* >( dh->data( 0 ) );
+    CaConc* od = reinterpret_cast< CaConc* >( oer.data() );
+    HSolve* sd = reinterpret_cast< HSolve* >( ser.data() );
+//    zd->hsolve_ = sd;
+//    zd->copyFields( od );
+//
+//    orig->zombieSwap( zombieCaConcCinfo, dh );
 }
 
 // static func

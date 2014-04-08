@@ -14,6 +14,7 @@
 #include <math.h>
 #include <algorithm>
 #include <vector>
+#include <stdexcept>
 #include <string>
 #include <map>
 #include <iostream>

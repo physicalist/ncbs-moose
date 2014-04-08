@@ -9,6 +9,7 @@
 **********************************************************************/
 #include "header.h"
 #include "../shell/Shell.h"
+#include "../external/debug/print_function.h"
 #include "Dinfo.h"
 
 // Static declaration.
@@ -215,12 +216,14 @@ const Finfo* Cinfo::findFinfo( const string& name ) const
 	if ( i != finfoMap_.end() )
 		return i->second;
 
-		void op( const Eref& e, const Qinfo* q, const double* buf ) const {
 #ifdef  RESULT_CHECK
-                        
+        stringstream ss;
+        ss << "Can't find " << name;
+        ss << ". Followings are available : " << endl;
+        // Print the map with keys and values
+        ss << mapToString<string, Finfo*>(finfoMap_, true);
+        dump(ss.str(), "DEBUG");
 #endif     /* -----  not RESULT_CHECK  ----- */
-			(reinterpret_cast< T* >( e.data() )->*func_)();
-		}
 
 	return 0;
 }

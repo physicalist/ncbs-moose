@@ -773,14 +773,13 @@ void ZombieCompartment::zombify( Element* solver, Element* orig )
     if ( ! mid.bad() )
 #endif     /* -----  not OLD_API  ----- */
         Msg::deleteMsg( mid );
-#ifdef  OLD_API
-    
-        // Create zombie.
-        //~ Element ze( orig->id(), zombieCompartmentCinfo, solver->dataHandler() );
-        //~ Eref zer( &ze, 0 );
-        DataHandler* dh = orig->dataHandler()->copyUsingNewDinfo(
-                ZombieCompartment::initCinfo()->dinfo() 
-                );
+
+    // Create zombie.
+    //~ Element ze( orig->id(), zombieCompartmentCinfo, solver->dataHandler() );
+    //~ Eref zer( &ze, 0 );
+    DataHandler* dh = orig->dataHandler()->copyUsingNewDinfo(
+            ZombieCompartment::initCinfo()->dinfo() 
+            );
 
     Eref oer( orig, 0 );
     Eref ser( solver, 0 );
@@ -801,9 +800,6 @@ void ZombieCompartment::zombify( Element* solver, Element* orig )
 
     //~ orig->zombieSwap( zombieCompartmentCinfo, zh );
     orig->zombieSwap( zombieCompartmentCinfo, dh );
-#else      /* -----  not OLD_API  ----- */
-    dump("TODO", "Not impemented : ZombieCompartment::zombify");
-#endif     /* -----  not OLD_API  ----- */
 }
 
 // static func
@@ -821,6 +817,6 @@ void ZombieCompartment::unzombify( Element* zombie )
 
     zombie->zombieSwap( Compartment::initCinfo(), dh );
 #else      /* -----  not OLD_API  ----- */
-    dump("TODO", "Not impemented : ZombieCompartment::unzombify");
+    dump("Not impemented : ZombieCompartment::unzombify", "TODO");
 #endif     /* -----  not OLD_API  ----- */
 }
