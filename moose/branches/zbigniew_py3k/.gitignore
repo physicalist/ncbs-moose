@@ -1,0 +1,7 @@
+*~
+*.o
+*.a
+*.so
+moose
+/TAGS
+__pycache__/
