@@ -36,9 +36,6 @@ import io
 import warnings
 import platform
 import pydoc
-_py3k = False
-if int(platform.python_version_tuple()[0]) >= 3:
-    _py3k = True
 from collections import defaultdict
 from . import _moose
 from ._moose import *
