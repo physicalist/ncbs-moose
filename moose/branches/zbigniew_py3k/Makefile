@@ -352,32 +352,19 @@ libmoose.so: libs
 	$(CXX) -G $(LIBS) -o libmoose.so
 	@echo "Created dynamic library"
 
+PYTHON_DEBUG_CFLAGS = -fno-strict-aliasing -fwrapv -Wstrict-prototypes -fstack-protector --param=ssp-buffer-size=4 -Wformat -Wformat-security -Werror=format-security
+PYTHON_DEBUG_LDFLAGS = -Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions
+
 # Get the python version
 ifneq ($(OSTYPE),win32)
-ifeq ($(PYTHON),3)
-PYTHON_VERSION := $(subst ., ,$(lastword $(shell python3 --version 2>&1)))
-PYTHON_CFLAGS := $(shell pkg-config --cflags python3)
-PYTHON_LDFLAGS := $(shell pkg-config --libs python3)
-else # Python 2.x
-PYTHON_VERSION := $(subst ., ,$(lastword $(shell python --version 2>&1)))
-ifneq ($(BUILD),debug)
-PYTHON_CFLAGS := $(shell pkg-config --cflags python3)
-PYTHON_LDFLAGS := $(shell pkg-config --libs python3)
-else 
-PYTHON_CFLAGS := $(shell pkg-config --includes python) -fno-strict-aliasing -fwrapv -Wstrict-prototypes -fstack-protector --param=ssp-buffer-size=4 -Wformat -Wformat-security -Werror=format-security
-PYTHON_LDFLAGS := $(shell pkg-config --libs python) -Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions
-endif # ifneq ($(BUILD),debug)
-endif # ifeq ($(PYTHON),3)
-PYTHON_VERSION_MAJOR := $(word 1,${PYTHON_VERSION})
-PYTHON_VERSION_MINOR := $(word 2,${PYTHON_VERSION})
-INSTALLED_PYTHON := python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
+PYTHON_CFLAGS := $(shell pkg-config --cflags python$(PYTHON))
+PYTHON_LDFLAGS := $(shell pkg-config --libs python$(PYTHON))
+ifeq ($(BUILD),debug)
+PYTHON_CFLAGS += $(PYTHON_DEBUG_CFLAGS)
+PYTHON_LDFLAGS += $(PYTHON_DEBUG_LDFLAGS)
+endif # debug
 endif
 
-ifndef PYTHON_CFLAGS
-PYTHON_CFLAGS := -I/usr/include/$(INSTALLED_PYTHON) -fno-strict-aliasing -fwrapv -Wstrict-prototypes -fstack-protector --param=ssp-buffer-size=4 -Wformat -Wformat-security -Werror=format-security
-PYTHON_LDFLAGS := -L/usr/lib/$(INSTALLED_PYTHON)  -Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions
-endif
-# There are some unix/gcc specific paths here. Should be cleaned up in future.
 pymoose: python/moose/_moose.so
 pymoose: CXXFLAGS += -DPYMOOSE $(PYTHON_CFLAGS)
 pymoose: OBJLIBS += pymoose/_pymoose.o basecode/_basecode_pymoose.o
