@@ -115,7 +115,7 @@ class NetworkML():
                     population = target.attrib['population']
                     for site in target.findall(".//{"+nml_ns+"}site"):
                         cell_id = site.attrib['cell_id']
-                        if site.attrib.has_key('segment_id'): segment_id = site.attrib['segment_id']
+                        if 'segment_id' in site.attrib: segment_id = site.attrib['segment_id']
                         else: segment_id = 0 # default segment_id is specified to be 0
                         ## population is populationname, self.populationDict[population][0] is cellname
                         cell_name = self.populationDict[population][0]
