@@ -57,9 +57,9 @@ from future_builtins import zip, map
 import sys, os
 import numpy as np
 import moose
-import generated_neuroml as nml
-from units import SI
-import hhfit
+from . import generated_neuroml as nml
+from .units import SI
+from . import hhfit
 import logging
 from moose._compat import from basestring
 

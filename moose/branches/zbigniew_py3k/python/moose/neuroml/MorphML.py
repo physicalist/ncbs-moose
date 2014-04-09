@@ -22,7 +22,7 @@ from os import path
 import moose
 from moose import utils as moose_utils
 from moose.neuroml import utils as neuroml_utils
-from ChannelML import ChannelML
+from .ChannelML import ChannelML
 
 class MorphML():
 
