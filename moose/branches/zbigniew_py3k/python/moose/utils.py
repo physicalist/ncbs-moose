@@ -861,7 +861,7 @@ def connect_CaConc(compartment_list, temperature=None):
 import uuid
 import unittest
 import sys
-from cStringIO import StringIO as _sio
+from io import StringIO as _sio
 
 class _TestMooseUtils(unittest.TestCase):
     def test_printtree(self):

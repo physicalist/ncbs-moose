@@ -32,7 +32,7 @@
 # Code:
 
 from __future__ import print_function
-import cStringIO
+import io
 import warnings
 import platform
 import pydoc
@@ -304,7 +304,7 @@ def getmoosedoc(tokens):
     
     """
     indent = '    '
-    docstring = cStringIO.StringIO()
+    docstring = io.StringIO()
     if not tokens:
         return ""
     class_path = '/classes/%s' % (tokens[0])
