@@ -198,7 +198,7 @@ class MorphML():
             cablegroups = cable.findall(".//{"+self.meta+"}group")
             for cablegroup in cablegroups:
                 cablegroupname = cablegroup.text
-                if cablegroupname in self.cablegroupsDict.keys():
+                if cablegroupname in self.cablegroupsDict:
                     self.cablegroupsDict[cablegroupname].append(cableid)
                 else:
                     self.cablegroupsDict[cablegroupname] = [cableid]
@@ -303,7 +303,7 @@ class MorphML():
         connectivity = cell.find(".//{"+self.neuroml+"}connectivity")
         if connectivity is not None:
             for potential_syn_loc in cell.findall(".//{"+self.nml+"}potential_syn_loc"):
-                if 'synapse_direction' in potential_syn_loc.attrib.keys():
+                if 'synapse_direction' in potential_syn_loc.attrib:
                     if potential_syn_loc.attrib['synapse_direction'] in ['post']:
                         self.set_group_compartment_param(cell, cellname, potential_syn_loc,\
                          'synapse_type', potential_syn_loc.attrib['synapse_type'], self.nml, mechanismname='synapse')
