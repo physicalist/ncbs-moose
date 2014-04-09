@@ -16,8 +16,8 @@ from xml.etree import cElementTree as ET
 import string
 import os
 from math import cos, sin
-from MorphML import MorphML
-from ChannelML import ChannelML
+from .MorphML import MorphML
+from .ChannelML import ChannelML
 import moose
 from moose.neuroml.utils import meta_ns, nml_ns, find_first_file, tweak_model
 from moose import utils

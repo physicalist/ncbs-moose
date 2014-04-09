@@ -86,7 +86,7 @@
 
 from __future__ import print_function
 from future_builtins import zip
-import moose as moose__
+from . import moose as moose__
 import numpy as np
 import h5py as h5
 import time

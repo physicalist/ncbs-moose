@@ -284,9 +284,9 @@ from __future__ import print_function
 from functools import partial
 import warnings
 from collections import defaultdict
-import _moose
-from _moose import __version__, VERSION, SVN_REVISION, useClock, setClock, start, reinit, stop, isRunning, loadModel, getFieldDict, getField, Id, ObjId, exists, seed
-from _moose import wildcardFind as _wildcardFind # We override the original
+from . import _moose
+from ._moose import __version__, VERSION, SVN_REVISION, useClock, setClock, start, reinit, stop, isRunning, loadModel, getFieldDict, getField, Id, ObjId, exists, seed
+from ._moose import wildcardFind as _wildcardFind # We override the original
 import __main__ as main
 
 sequence_types = [ 'vector<double>',

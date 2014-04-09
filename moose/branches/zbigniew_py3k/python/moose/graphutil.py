@@ -32,7 +32,7 @@ from collections import defaultdict
 import re
 import networkx as nx
 import numpy as np
-import moose 
+from . import moose
 
 def moosegraph(element, ies=['childMsg'], ied=['parentMsg'], iv=[], keep_solitary=False):
     """Create a graph out of all objects under teh element

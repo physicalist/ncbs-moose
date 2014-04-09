@@ -25,9 +25,9 @@ from __future__ import print_function
 import moose
 from moose.utils import *
 from xml.etree import cElementTree as ET
-from ChannelML import ChannelML
-from MorphML import MorphML
-from NetworkML import NetworkML
+from .ChannelML import ChannelML
+from .MorphML import MorphML
+from .NetworkML import NetworkML
 import string
 from moose.neuroml.utils import *
 import sys
