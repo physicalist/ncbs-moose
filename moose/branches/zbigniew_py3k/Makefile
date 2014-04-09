@@ -356,16 +356,16 @@ libmoose.so: libs
 ifneq ($(OSTYPE),win32)
 ifeq ($(PYTHON),3)
 PYTHON_VERSION := $(subst ., ,$(lastword $(shell python3 --version 2>&1)))
-PYTHON_CFLAGS := $(shell python3-config --cflags)
-PYTHON_LDFLAGS := $(shell python3-config --ldflags)
+PYTHON_CFLAGS := $(shell pkg-config --cflags python3)
+PYTHON_LDFLAGS := $(shell pkg-config --libs python3)
 else # Python 2.x
 PYTHON_VERSION := $(subst ., ,$(lastword $(shell python --version 2>&1)))
 ifneq ($(BUILD),debug)
-PYTHON_CFLAGS := $(shell python-config --cflags)
-PYTHON_LDFLAGS := $(shell python-config --ldflags)
+PYTHON_CFLAGS := $(shell pkg-config --cflags python3)
+PYTHON_LDFLAGS := $(shell pkg-config --libs python3)
 else 
-PYTHON_CFLAGS := $(shell python-config --includes) -fno-strict-aliasing -fwrapv -Wstrict-prototypes -fstack-protector --param=ssp-buffer-size=4 -Wformat -Wformat-security -Werror=format-security
-PYTHON_LDFLAGS := -L/usr/lib/$(INSTALLED_PYTHON)  -Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions
+PYTHON_CFLAGS := $(shell pkg-config --includes python) -fno-strict-aliasing -fwrapv -Wstrict-prototypes -fstack-protector --param=ssp-buffer-size=4 -Wformat -Wformat-security -Werror=format-security
+PYTHON_LDFLAGS := $(shell pkg-config --libs python) -Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions
 endif # ifneq ($(BUILD),debug)
 endif # ifeq ($(PYTHON),3)
 PYTHON_VERSION_MAJOR := $(word 1,${PYTHON_VERSION})
