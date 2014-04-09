@@ -123,13 +123,13 @@ extern "C" {
         0, //sq_concat
         0, //sq_repeat
         (ssizeargfunc)moose_Id_getItem, //sq_item
-#ifndef PY3K
+#ifdef PY3K
+        0, // was_sq_slice
+#else
         (ssizessizeargfunc)moose_Id_getSlice, // getslice
 #endif
-        0, //sq_ass_item
-#ifndef PY3K
-        0, // setslice
-#endif
+        0, // sq_ass_item
+        0, // sq_ass_slice / was_sq_ass_slice
         (objobjproc)moose_Id_contains, // sq_contains
         0, // sq_inplace_concat
         0 // sq_inplace_repeat
@@ -612,6 +612,7 @@ extern "C" {
         return oid_to_element(oid);
     }
     
+#ifndef PY3K
     PyObject * moose_Id_getSlice(_Id * self, Py_ssize_t start, Py_ssize_t end)
     {
         if (!Id::isValid(self->id_)){
@@ -657,6 +658,7 @@ extern "C" {
         }
         return ret;
     }
+#endif
 
     ///////////////////////////////////////////////////
     // Mapping protocol
