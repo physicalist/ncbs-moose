@@ -1,3 +1,4 @@
+from __future__ import print_function
 import moose as _moose
 
 _tick = 8
@@ -218,7 +219,7 @@ def show(
 	try:
 		from matplotlib import pyplot as plt
 	except ImportError:
-		print "Warning: recording.show(): Cannot find 'matplotlib'. Not showing plots."
+		print("Warning: recording.show(): Cannot find 'matplotlib'. Not showing plots.")
 		return
 	
 	plots = _selectedPlots( selected )
@@ -230,7 +231,7 @@ def show(
 		if not combine:
 			plt.figure()
 		
-		print _label( plot )
+		print(_label( plot ))
 		plt.plot( plot.time, plot.values, label = _label( plot ) )
 	
 	plt.legend()

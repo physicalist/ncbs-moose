@@ -24,6 +24,7 @@
 
 # Code:
 
+from __future__ import print_function
 import sys
 sys.path.append('../../python')
 import os
@@ -60,14 +61,14 @@ def addPlot( objpath, field, plot ):
 		tab = moose.Table( '/graphs/' + plot )
 		obj = moose.element( objpath )
 		if obj.className == 'Neutral':
-			print "addPlot failed: object is a Neutral: ", objpath
+			print("addPlot failed: object is a Neutral: ", objpath)
 			return moose.element( '/' )
 		else:
 			#print "object was found: ", objpath, obj.className
 			moose.connect( tab, 'requestOut', obj, field )
 			return tab
 	else:
-		print "addPlot failed: object not found: ", objpath
+		print("addPlot failed: object not found: ", objpath)
 		return moose.element( '/' )
 
 def dumpPlots( fname ):
@@ -96,7 +97,7 @@ def loadChem( neuroCompt, spineCompt, psdCompt ):
 	assert( spineCompt.volume == 1.0 )
 	assert( psdCompt.volume == 1.0 )
 	assert( neuroCompt.mesh.num == 1 )
-	print 'volume = ', neuroCompt.mesh[0].volume
+	print('volume = ', neuroCompt.mesh[0].volume)
 	#assert( neuroCompt.mesh[0].volume == 1.0 ) 
 	#an unfortunate mismatch
 	# So we'll have to resize the volumes of the current compartments to the
@@ -108,24 +109,24 @@ def loadChem( neuroCompt, spineCompt, psdCompt ):
 	oldN = moose.element( '/model/chem/kinetics' )
 	oldS = moose.element( '/model/chem/compartment_1' )
 	oldP = moose.element( '/model/chem/compartment_2' )
-	print 'old NSP vols = ', oldN.volume, oldS.volume, oldP.volume
+	print('old NSP vols = ', oldN.volume, oldS.volume, oldP.volume)
 	for i in moose.wildcardFind( '/model/chem/#/#/#/transloc#' ):
-		print i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb
+		print(i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb)
 	tr0 = moose.element( '/model/chem/kinetics/SPINE/CaMKII_BULK/tr0[6]' )
-	print "tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb
+	print("tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb)
 	oldN.volume = neuroCompt.mesh[0].volume
 	oldS.volume = spineCompt.mesh[0].volume
 	oldP.volume = psdCompt.mesh[0].volume
-	print 'new NSP vols = ', neuroCompt.volume, spineCompt.volume, psdCompt.volume 
-	print "tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb
+	print('new NSP vols = ', neuroCompt.volume, spineCompt.volume, psdCompt.volume)
+	print("tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb)
 	for i in moose.wildcardFind( '/model/chem/#/#/#/transloc#' ):
-		print i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb
+		print(i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb)
 	moveCompt( '/model/chem/kinetics/PSD', oldP, psdCompt )
 	moveCompt( '/model/chem/kinetics/SPINE', oldS, spineCompt )
 	moveCompt( '/model/chem/kinetics/DEND', oldN, neuroCompt )
-	print "aftermove tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb
+	print("aftermove tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb)
 	for i in moose.wildcardFind( '/model/chem/#/#/#/transloc#' ):
-		print i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb
+		print(i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb)
 
 def makeNeuroMeshModel():
 	diffLength = 20e-6 # But we only want diffusion over part of the model.
@@ -328,9 +329,9 @@ def makeChemPlots():
 	addPlot( '/model/chem/spineMesh/SPINE/CaMKII_BULK/foo[6]', 'getConc', 'spine_foo' )
 	bar = moose.element( '/model/chem/psdMesh/PSD/CaMKII_PSD/bar[6]' )
 	foo = moose.element( '/model/chem/spineMesh/SPINE/CaMKII_BULK/foo[6]' )
-	print "bar,foo vols = ", bar.volume, foo.volume, bar.concInit, foo.concInit
+	print("bar,foo vols = ", bar.volume, foo.volume, bar.concInit, foo.concInit)
 	tr0 = moose.element( '/model/chem/spineMesh/SPINE/CaMKII_BULK/tr0[6]' )
-	print "tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb
+	print("tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb)
 
 def testNeuroMeshMultiscale():
 	elecDt = 50e-6
@@ -339,9 +340,9 @@ def testNeuroMeshMultiscale():
 	plotName = 'nm.plot'
 
 	makeNeuroMeshModel()
-	print "after model is completely done"
+	print("after model is completely done")
 	for i in moose.wildcardFind( '/model/chem/#/#/#/transloc#' ):
-		print i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb
+		print(i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb)
 
 	"""
 	for i in moose.wildcardFind( '/model/chem/##[ISA=PoolBase]' ):
@@ -405,7 +406,7 @@ def testNeuroMeshMultiscale():
 
 	moose.start( 0.5 )
 	dumpPlots( plotName )
-	print 'All done'
+	print('All done')
 
 
 def main():

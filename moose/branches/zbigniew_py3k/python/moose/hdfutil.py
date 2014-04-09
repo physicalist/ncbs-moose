@@ -84,6 +84,7 @@
 
 # Code:
 
+from __future__ import print_function
 import moose as moose__
 import numpy as np
 import h5py as h5
@@ -118,9 +119,9 @@ def get_rec_dtype(em):
     if em.className in dtype_table:
         dtype = dtype_table[em.className]
     else:
-        print 'Creating entries for class:', obj.className
+        print('Creating entries for class:', obj.className)
         fielddict = moose__.getFieldDict(obj.className, 'valueFinfo')
-        print fielddict
+        print(fielddict)
         keys = sorted(list(fielddict.keys()))
         fields = [] # [('path', 'S1024')]
         for fieldname in keys:
@@ -244,7 +245,7 @@ def savestate(filename=None):
         for obj in moose__.wildcardFind("/##"):
             if obj.path.startswith('/Msg') or obj.path.startswith('/class') or obj.className == 'Table' or obj.className == 'TableEntry':
                 continue
-            print 'Processing:', obj.path, obj.className
+            print('Processing:', obj.path, obj.className)
             typeinfo.append((obj.path, obj.className, str(obj.shape), obj[0].parent.path))
             objcount += 1
             if len(typeinfo) == size_step:
@@ -253,9 +254,9 @@ def savestate(filename=None):
                 typeinfo = []
             # If we do not yet have dataset for this class, create one and keep it in dict
             if obj.className not in class_dataset_dict:
-                print 'Creating entries for class:', obj.className
+                print('Creating entries for class:', obj.className)
                 fielddict = moose__.getFieldDict(obj.className, 'valueFinfo')
-                print fielddict
+                print(fielddict)
                 keys = sorted(list(fielddict.keys()))
                 fields = [] # [('path', 'S1024')]
                 for fieldname in keys:
@@ -273,9 +274,9 @@ def savestate(filename=None):
             ds = class_dataset_dict[obj.className]
             for entry in obj:
                 fields = []
-                print entry.path,
+                print(entry.path, end=' ')
                 for f in ds.dtype.names:
-                    print 'getting field:', f
+                    print('getting field:', f)
                     entry.getField(f)
                 fields = [f.path if isinstance(f, moose__.vec) or isinstance(f, moose__.element) else f for f in fields]
                 class_array_dict[obj.className].append(fields)

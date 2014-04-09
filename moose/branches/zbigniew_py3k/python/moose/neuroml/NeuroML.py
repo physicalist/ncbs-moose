@@ -21,6 +21,7 @@ use the separate Channel, Morph and NetworkML loaders in moose.neuroml.<...> .
 For testing, you can also call this from the command line with a neuroML file as argument.
 """
 
+from __future__ import print_function
 import moose
 from moose.utils import *
 from xml.etree import cElementTree as ET
@@ -44,7 +45,7 @@ class NeuroML():
         Returns (populationDict,projectionDict),
          see doc string of NetworkML.readNetworkML() for details.
         """
-        print "Loading neuroml file ... ", filename
+        print("Loading neuroml file ... ", filename)
         moose.Neutral('/library') # creates /library in MOOSE tree; elif present, wraps
         tree = ET.parse(filename)
         root_element = tree.getroot()
@@ -58,7 +59,7 @@ class NeuroML():
                 self.temperature = float(meta_property.attrib['value'])
                 self.temperature_default = False
         if self.temperature_default:
-            print "Using default temperature of", self.temperature,"degrees Celsius."
+            print("Using default temperature of", self.temperature,"degrees Celsius.")
         self.nml_params = {
                 'temperature':self.temperature,
                 'model_dir':self.model_dir,
@@ -96,7 +97,7 @@ def loadNeuroML_L123(filename):
 
 if __name__ == "__main__":
     if len(sys.argv)<2:
-        print "You need to specify the neuroml filename."
+        print("You need to specify the neuroml filename.")
         sys.exit(1)
     loadNeuroML_L123(sys.argv[1])
     

@@ -280,6 +280,7 @@ le(obj) -- list element under object, if no parameter specified, list
 elements under current working element
 
 """
+from __future__ import print_function
 from functools import partial
 import warnings
 from collections import defaultdict
@@ -825,7 +826,7 @@ def getCwe():
 def pwe():
     """Print present working element. Convenience function for GENESIS
     users."""
-    print _moose.getCwe().getPath()
+    print(_moose.getCwe().getPath())
     
 def connect(src, srcMsg, dest, destMsg, msgType='Single'):
     """Connect src object's source field specified by srcMsg to
@@ -842,9 +843,9 @@ def le(element=None):
         element = getCwe()[0]
     elif isinstance(element, str):
         element = Neutral(element)
-    print 'Elements under', element.path
+    print('Elements under', element.path)
     for ch in element.children:
-        print ch
+        print(ch)
 
 ce = setCwe
 
@@ -886,18 +887,18 @@ def showfield(element, field='*', showtype=False):
         value_field_dict = getFieldDict(element.className, 'valueFinfo')
         max_type_len = max([len(dtype) for dtype in value_field_dict.values()])
         max_field_len = max([len(dtype) for dtype in value_field_dict.keys()])
-        print 
-        print '[', element.path, ']'
+        print()
+        print('[', element.path, ']')
         for key, dtype in value_field_dict.items():
             if dtype == 'bad' or key == 'this' or key == 'dummy' or key == 'me' or dtype.startswith('vector') or 'ObjId' in dtype:
                 continue
             value = element.oid_.getField(key)
             if showtype:
-                print dtype.ljust(max_type_len + 4),
-            print key.ljust(max_field_len + 4), '=', value
+                print(dtype.ljust(max_type_len + 4), end=' ')
+            print(key.ljust(max_field_len + 4), '=', value)
     else:
         try:
-            print field, '=', element.getField(field)
+            print(field, '=', element.getField(field))
         except AttributeError:
             pass # Genesis silently ignores non existent fields
 

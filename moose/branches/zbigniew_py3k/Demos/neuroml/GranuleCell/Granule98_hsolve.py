@@ -7,6 +7,7 @@ python testNeuroML_Gran98.py
 The soma name below is hard coded for gran98, else any other file can be used by modifying this script.
 """
 
+from __future__ import print_function
 import os
 os.environ['NUMPTHREADS'] = '1'
 import sys
@@ -34,10 +35,10 @@ def loadGran98NeuroML_L123(filename):
     ## Am not able to plot KDr gating variable X when running under hsolve
     #KDrX = setupTable('ChanX',moose.HHChannel(soma_path+'/Gran_KDr_98'),'X')
 
-    print "Reinit MOOSE ... "
+    print("Reinit MOOSE ... ")
     resetSim(['/elec',cells_path], simdt, plotdt, simmethod='hsolve')
 
-    print "Running ... "
+    print("Running ... ")
     moose.start(runtime)
     tvec = arange(0.0,runtime*2.0,plotdt)
     tvec = tvec[ : somaVm.vector.size ]
@@ -55,7 +56,7 @@ def loadGran98NeuroML_L123(filename):
     title('soma KCa current')
     xlabel('time (s)')
     ylabel('KCa current (A)')
-    print "Showing plots ..."
+    print("Showing plots ...")
     show()
 
 filename = "GranuleCell.net.xml"
