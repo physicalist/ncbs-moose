@@ -31,6 +31,7 @@
 
 # Code:
 
+from __future__ import print_function
 import sys
 sys.path.append('../../python')
 import os
@@ -362,7 +363,7 @@ def testNeuroMeshMultiscale():
 
 	moose.start( 0.5 )
 	dumpPlots( plotName )
-	print 'All done'
+	print('All done')
 
 
 def main():

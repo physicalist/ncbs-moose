@@ -17,7 +17,7 @@
 # http://obswww.unige.ch/~revaz/git/old.glups-4.0/glups/shell.py -
 # Subhasis Ray
 
-__doc__="""
+"""
 This module implements a QT4 python interpreter widget.
 It is inspired bu PyCute : http://gerard.vermeulen.free.fr
 """

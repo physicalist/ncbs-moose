@@ -11,6 +11,7 @@ readNetworkMLFromFile(...) to load a standalone NetworkML file, OR
 readNetworkML(...) to load from an xml.etree xml element (could be part of a larger NeuroML file).
 """
 
+from __future__ import print_function
 from xml.etree import cElementTree as ET
 import string
 import os
@@ -47,12 +48,12 @@ class NetworkML():
             these synapses receive file based pre-synaptic events,
             not presynaptically connected to a cell.
         """
-        print "reading file ... ", filename
+        print("reading file ... ", filename)
         tree = ET.parse(filename)
         root_element = tree.getroot()
-        print "Tweaking model ... "
+        print("Tweaking model ... ")
         tweak_model(root_element, params)
-        print "Loading model into MOOSE ... "
+        print("Loading model into MOOSE ... ")
         return self.readNetworkML(root_element,cellSegmentDict,params,root_element.attrib['lengthUnits'])
 
     def readNetworkML(self,network,cellSegmentDict,params={},lengthUnits="micrometer"):
@@ -67,11 +68,11 @@ class NetworkML():
         self.network = network
         self.cellSegmentDict = cellSegmentDict
         self.params = params
-        print "creating populations ... "
+        print("creating populations ... ")
         self.createPopulations() # create cells
-        print "creating connections ... "
+        print("creating connections ... ")
         self.createProjections() # create connections
-        print "creating inputs in /elec ... "
+        print("creating inputs in /elec ... ")
         self.createInputs() # create inputs (only current pulse supported)
         return (self.populationDict,self.projectionDict)
 
@@ -128,7 +129,7 @@ class NetworkML():
         for population in self.network.findall(".//{"+nml_ns+"}population"):
             cellname = population.attrib["cell_type"]
             populationname = population.attrib["name"]
-            print "loading", populationname
+            print("loading", populationname)
             ## if cell does not exist in library load it from xml file
             if not moose.exists('/library/'+cellname):
                 mmlR = MorphML(self.nml_params)
@@ -206,7 +207,7 @@ class NetworkML():
                 Tfactor = 1.0
         for projection in self.network.findall(".//{"+nml_ns+"}projection"):
             projectionname = projection.attrib["name"]
-            print "setting",projectionname
+            print("setting",projectionname)
             source = projection.attrib["source"]
             target = projection.attrib["target"]
             self.projectionDict[projectionname] = (source,target,[])

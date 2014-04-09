@@ -6,6 +6,7 @@ python testNeuroML_Gran98.py
 (other channels and morph xml files are already present in this same directory).
 The soma name below is hard coded for gran98, else any other file can be used by modifying this script.
 """
+from __future__ import print_function
 import os
 os.environ['NUMPTHREADS'] = '1'
 import sys
@@ -31,9 +32,9 @@ def loadGran98NeuroML_L123(filename):
     somaIKCa = setupTable('somaIKCa',moose.HHChannel(soma_path+'/Gran_KCa_98'),'Gk')
     #KDrX = setupTable('ChanX',moose.HHChannel(soma_path+'/Gran_KDr_98'),'X')
     soma = moose.Compartment(soma_path)
-    print "Reinit MOOSE ... "
+    print("Reinit MOOSE ... ")
     resetSim(['/elec','/cells'],simdt,plotdt,simmethod='ee') # from moose.utils
-    print "Running ... "
+    print("Running ... ")
     moose.start(runtime)
     tvec = arange(0.0,runtime,plotdt)
     plot(tvec,somaVm.vector[1:])
@@ -50,7 +51,7 @@ def loadGran98NeuroML_L123(filename):
     title('KCa current (A)')
     xlabel('time (s)')
     ylabel('')
-    print "Showing plots ..."
+    print("Showing plots ...")
     show()
 
 filename = "GranuleCell.net.xml"

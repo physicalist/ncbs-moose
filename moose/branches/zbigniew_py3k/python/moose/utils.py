@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """Utility functions for MOOSE
 """
+from __future__ import print_function
+
 __author__ = 'Subhasis Ray and Aditya Gilra, NCBS'
 __date__ = '21 November 2012'
 
@@ -61,7 +63,7 @@ def readtable(table, filename, separator=None):
         elif len(token) == 2:
             table[int(token[0])] = float(token[1])
         else:
-            print "pymoose.readTable(", table, ",", filename, ",", separator, ") - line#", line_no, " does not fit." 
+            print("pymoose.readTable(", table, ",", filename, ",", separator, ") - line#", line_no, " does not fit.")
 
 def getfields(moose_object):
     """Returns a dictionary of the fields and values in this object."""
@@ -225,10 +227,10 @@ def printtree(root, vchar='|', hchar='__', vcount=1, depth=0, prefix='', is_last
         root = _moose.Neutral(root)
 
     for i in range(vcount):
-        print prefix
+        print(prefix)
 
     if depth != 0:
-        print prefix + hchar,
+        print(prefix + hchar, end=' ')
         if is_last:
             index = prefix.rfind(vchar)
             prefix = prefix[:index] + ' ' * (len(hchar) + len(vchar)) + vchar
@@ -237,7 +239,7 @@ def printtree(root, vchar='|', hchar='__', vcount=1, depth=0, prefix='', is_last
     else:
         prefix = prefix + vchar
 
-    print root.name
+    print(root.name)
     
     children = [ _moose.Neutral(child) for child in root.children ]
     for i in range(0, len(children) - 1):
@@ -320,7 +322,7 @@ def readcell_scrambled(filename, target):
             error = "Handling C style comments not implemented."
             break
         node, parent, rest, = tmpline.split(None, 2)
-        print node, parent
+        print(node, parent)
         if (parent == "none"):
             if (root is None):
                 root = node
@@ -330,7 +332,7 @@ def readcell_scrambled(filename, target):
         graph[parent].append(node)
         data[node] = line
     if error is not None:
-        print error
+        print(error)
         return None
 
     tmpfile = open(tmpfilename, "w")
@@ -375,7 +377,7 @@ def assignTicks(tickTargetMap):
     tickTargetMap: 
     Map from tick no. to target path and method. The path can be wildcard expression also.
     """
-    print 'assignTicks', tickTargetMap
+    print('assignTicks', tickTargetMap)
     if len(tickTargetMap) == 0:
         assignDefaultTicks()
     for tickNo, target in tickTargetMap.items():
@@ -426,7 +428,7 @@ def setDefaultDt(elecdt=1e-5, chemdt=0.01, tabdt=1e-5, plotdt1=1.0, plotdt2=0.25
     _moose.setClock(9, plotdt2) # electrical sim
 
 def assignDefaultTicks(modelRoot='/model', dataRoot='/data', solver='hsolve'):
-    print 'assignDefaultTicks'
+    print('assignDefaultTicks')
     if isinstance(modelRoot, _moose.melement) or isinstance(modelRoot, _moose.vec):
         modelRoot = modelRoot.path
     if isinstance(dataRoot, _moose.melement) or isinstance(dataRoot, _moose.vec):
@@ -478,7 +480,7 @@ def stepRun(simtime, steptime, verbose=True, logger=None):
     if verbose:
         msg = 'Starting simulation for %g' % (simtime)
         if logger is None:
-            print msg
+            print(msg)
         else:
             logger.info(msg)
     ts = datetime.now()
@@ -490,7 +492,7 @@ def stepRun(simtime, steptime, verbose=True, logger=None):
         if verbose:
             msg = 'Simulated till %g. Left: %g. %g of simulation took: %g s' % (clock.currentTime, simtime - clock.currentTime, steptime, td.days * 86400 + td.seconds + 1e-6 * td.microseconds)
             if logger is None:
-                print msg
+                print(msg)
             else:
                 logger.info(msg)
             
@@ -499,7 +501,7 @@ def stepRun(simtime, steptime, verbose=True, logger=None):
         if verbose:
             msg = 'Running the remaining %g.' % (remaining)
             if logger is None:
-                print msg
+                print(msg)
             else:
                 logger.info(msg)
         _moose.start(remaining)
@@ -509,7 +511,7 @@ def stepRun(simtime, steptime, verbose=True, logger=None):
     if verbose:
         msg = 'Finished simulation of %g with minimum dt=%g in %g s' % (simtime, dt, td.days * 86400 + td.seconds + 1e-6 * td.microseconds)
         if logger is None:
-            print msg
+            print(msg)
         else:
             logger.info(msg)
 
@@ -520,7 +522,7 @@ def stepRun(simtime, steptime, verbose=True, logger=None):
 def resetSim(simpaths, simdt, plotdt, simmethod='hsolve'):
     """ For each of the MOOSE paths in simpaths, this sets the clocks and finally resets MOOSE.
     If simmethod=='hsolve', it sets up hsolve-s for each Neuron under simpaths, and clocks for hsolve-s too. """
-    print 'Solver:', simmethod
+    print('Solver:', simmethod)
     _moose.setClock(INITCLOCK, simdt)
     _moose.setClock(ELECCLOCK, simdt) # The hsolve and ee methods use clock 1
     _moose.setClock(CHANCLOCK, simdt) # hsolve uses clock 2 for mg_block, nmdachan and others.
@@ -552,14 +554,14 @@ def resetSim(simpaths, simdt, plotdt, simmethod='hsolve'):
         ## else just put a clock on the hsolve:
         ## hsolve takes care of the clocks for the biophysics
         if 'hsolve' not in simmethod.lower():
-            print 'Using exp euler'
+            print('Using exp euler')
             _moose.useClock(INITCLOCK, simpath+'/##[TYPE=Compartment]', 'init')
             _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=Compartment]', 'process')
             _moose.useClock(CHANCLOCK, simpath+'/##[TYPE=HHChannel]', 'process')
             _moose.useClock(POOLCLOCK, simpath+'/##[TYPE=CaConc]', 'process')
             _moose.useClock(POOLCLOCK, simpath+'/##[TYPE=Func]', 'process')
         else: # use hsolve, one hsolve for each Neuron
-            print 'Using hsolve'
+            print('Using hsolve')
             element = _moose.Neutral(simpath)
             for childid in element.children: 
                 childobj = _moose.Neutral(childid)
@@ -622,7 +624,7 @@ def printNetTree():
     for id in root.children: # all subelements of 'root'
         if _moose.Neutral(id).className == 'Cell':
             cell = _moose.Cell(id)
-            print "-------------------- CELL : ",cell.name," ---------------------------"
+            print("-------------------- CELL : ",cell.name," ---------------------------")
             printCellTree(cell)
 
 def printCellTree(cell):
@@ -636,7 +638,7 @@ def printCellTree(cell):
     """
     for compartmentid in cell.children: # compartments
         comp = _moose.Compartment(compartmentid)
-        print "  |-",comp.path, 'l=',comp.length, 'd=',comp.diameter, 'Rm=',comp.Rm, 'Ra=',comp.Ra, 'Cm=',comp.Cm, 'EM=',comp.Em
+        print("  |-",comp.path, 'l=',comp.length, 'd=',comp.diameter, 'Rm=',comp.Rm, 'Ra=',comp.Ra, 'Cm=',comp.Cm, 'EM=',comp.Em)
         #for inmsg in comp.inMessages():
         #    print "    |---", inmsg
         #for outmsg in comp.outMessages():
@@ -654,23 +656,23 @@ def printRecursiveTree(elementid, level):
         classname = childobj.className
         if classname in ['SynChan','KinSynChan']:
             childobj = _moose.SynChan(childid)
-            print spacefill+"|--", childobj.name, childobj.className, 'Gbar=',childobj.Gbar, 'numSynapses=', childobj.numSynapses
+            print(spacefill+"|--", childobj.name, childobj.className, 'Gbar=',childobj.Gbar, 'numSynapses=', childobj.numSynapses)
             return # Have yet to figure out the children of SynChan, currently not going deeper
         elif classname in ['HHChannel', 'HHChannel2D']:
             childobj = _moose.HHChannel(childid)
-            print spacefill+"|--", childobj.name, childobj.className, 'Gbar=',childobj.Gbar, 'Ek=',childobj.Ek
+            print(spacefill+"|--", childobj.name, childobj.className, 'Gbar=',childobj.Gbar, 'Ek=',childobj.Ek)
         elif classname in ['CaConc']:
             childobj = _moose.CaConc(childid)
-            print spacefill+"|--", childobj.name, childobj.className, 'thick=',childobj.thick, 'B=',childobj.B
+            print(spacefill+"|--", childobj.name, childobj.className, 'thick=',childobj.thick, 'B=',childobj.B)
         elif classname in ['Mg_block']:
             childobj = _moose.Mg_block(childid)
-            print spacefill+"|--", childobj.name, childobj.className, 'CMg',childobj.CMg, 'KMg_A',childobj.KMg_A, 'KMg_B',childobj.KMg_B
+            print(spacefill+"|--", childobj.name, childobj.className, 'CMg',childobj.CMg, 'KMg_A',childobj.KMg_A, 'KMg_B',childobj.KMg_B)
         elif classname in ['SpikeGen']:
             childobj = _moose.SpikeGen(childid)
-            print spacefill+"|--", childobj.name, childobj.className, 'threshold',childobj.threshold
+            print(spacefill+"|--", childobj.name, childobj.className, 'threshold',childobj.threshold)
         elif classname in ['Func']:
             childobj = _moose.Func(childid)
-            print spacefill+"|--", childobj.name, childobj.className, 'expr',childobj.expr
+            print(spacefill+"|--", childobj.name, childobj.className, 'expr',childobj.expr)
         elif classname in ['Table']: # Table gives segfault if printRecursiveTree is called on it
             return # so go no deeper
         #for inmsg in childobj.inMessages():
@@ -830,7 +832,7 @@ def connect_CaConc(compartment_list, temperature=None):
                             if child.name=='ion':
                                 if child.value in ['Ca','ca']:
                                     _moose.connect(channel,'IkOut',caconc,'current')
-                                    print 'Connected IkOut of',channel.path,'to current of',caconc.path
+                                    print('Connected IkOut of',channel.path,'to current of',caconc.path)
                             ## temperature is used only by Nernst part here...
                             if child.name=='nernst_str':
                                 nernst = _moose.Nernst(channel.path+'/nernst')
@@ -840,7 +842,7 @@ def connect_CaConc(compartment_list, temperature=None):
                                 nernst.Temperature = temperature
                                 _moose.connect(nernst,'Eout',channel,'set_Ek')
                                 _moose.connect(caconc,'concOut',nernst,'ci')
-                                print 'Connected Nernst',nernst.path
+                                print('Connected Nernst',nernst.path)
                             
                 if neutralwrap.className == 'HHChannel2D':
                     channel = _moose.HHChannel2D(child)
@@ -851,7 +853,7 @@ def connect_CaConc(compartment_list, temperature=None):
                             child = _moose.Mstring(child)
                             if child.value in ['Ca','ca']:
                                 _moose.connect(caconc,'concOut',channel,'concen')
-                                print 'Connected concOut of',caconc.path,'to concen of',channel.path
+                                print('Connected concOut of',caconc.path,'to concen of',channel.path)
 
 ############# added by Aditya Gilra -- end ################
 import uuid
@@ -951,7 +953,7 @@ cell1
         self.assertAlmostEqual(soma.y, 0.0, sigfig)
         self.assertAlmostEqual(soma.z, soma.diameter/2.0, sigfig)
         for ii, comp in enumerate(comps):
-            print comp.path, ii
+            print(comp.path, ii)
             self.assertAlmostEqual(comp.x0, 0, sigfig)
             self.assertAlmostEqual(comp.y0, 0.0, sigfig)
             self.assertAlmostEqual(comp.z0, soma.diameter/2.0 + ii * 100e-6, sigfig)
