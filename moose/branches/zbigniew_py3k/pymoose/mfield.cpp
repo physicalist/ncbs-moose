@@ -45,6 +45,8 @@
 
 // Code:
 
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
 #include <Python.h>
 #include <structmember.h> // This defines the type id macros like T_STRING
 #include "numpy/arrayobject.h"
