@@ -50,6 +50,7 @@
 
 #!!!!! TODO: unit conversion !!!!
 
+from future_builtins import map
 import traceback
 import warnings
 from collections import deque
@@ -111,7 +112,7 @@ def convert_morphology(root, positions='auto'):
                                          y=compartment.y,
                                          z=compartment.z, 
                                          diameter=compartment.diameter)
-        plist = map(moose.element, compartment.neighbours['axial'])
+        plist = list(map(moose.element, compartment.neighbours['axial']))
         try:            
             parent = neuroml.SegmentParent(segments=comp_seg[moose.element(plist[0])].id)
         except (KeyError, IndexError) as e:

@@ -196,7 +196,7 @@ def keepOnlyInclude(network, onlyInclude):
     populations = network.find(".//{"+nml_ns+"}populations")
     for population in network.findall(".//{"+nml_ns+"}population"):
         popname = population.attrib["name"]
-        if popname in includeCellsDict.keys():
+        if popname in includeCellsDict:
             includecellids = includeCellsDict[popname]
             instances = population.find(".//{"+nml_ns+"}instances")
             for instance in instances.findall(".//{"+nml_ns+"}instance"):
