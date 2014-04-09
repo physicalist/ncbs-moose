@@ -121,7 +121,7 @@ class MorphML():
                 running_comp = moosecomp
                 running_diameter = 0.0
                 running_dia_nums = 0
-                if segment.attrib.has_key('parent'):
+                if 'parent' in segment.attrib:
                     parentid = segment.attrib['parent'] # I assume the parent is created before the child so that I can immediately connect the child.
                     parent = self.cellDictBySegmentId[cellname][1][parentid]
                     ## It is always assumed that axial of parent is connected to raxial of moosesegment
@@ -242,10 +242,7 @@ class MorphML():
                  'initVm', float(parameter.attrib["value"])*Efactor, self.bio)
             for mechanism in cell.findall(".//{"+self.bio+"}mechanism"):
                 mechanismname = mechanism.attrib["name"]
-                passive = False
-                if mechanism.attrib.has_key("passive_conductance"):
-                    if mechanism.attrib['passive_conductance'] in ["true",'True','TRUE']:
-                        passive = True
+                passive = mechanism.attrib.get('passive_conductance', None) in {"true",'True','TRUE'}
                 print("Loading mechanism ", mechanismname)
                 ## ONLY creates channel if at least one parameter (like gmax) is specified in the xml
                 ## Neuroml does not allow you to specify all default values.

@@ -405,7 +405,7 @@ class ChannelML():
                 allowed_locals['temp_adj_'+self.gate_name] = self.q10factor
                 for i,parameter in enumerate(self.parameters):
                     allowed_locals[parameter[0]] = self.parameters[i][1]
-                if kwargs.has_key('concdep'):
+                if 'concdep' in kwargs:
                     concdep = kwargs['concdep']
                     ## ca should appear as neuroML defined 'variable_name' to eval()
                     if concdep is not None:
