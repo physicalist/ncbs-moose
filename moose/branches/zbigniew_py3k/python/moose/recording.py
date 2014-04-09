@@ -2,6 +2,8 @@ from __future__ import print_function
 from future_builtins import zip
 import moose as _moose
 
+from _compat import basestr
+
 _tick = 8
 _base = '/_utils'
 _path = _base + '/y{0}'

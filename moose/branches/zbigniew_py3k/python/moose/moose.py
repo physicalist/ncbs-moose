@@ -273,7 +273,7 @@ def getfielddoc(tokens, indent=''):
         for ii in range(numfinfo):
             oid = melement(finfo.getId(), 0, ii, 0)
             if oid.name == tokens[1]:
-                return '%s%s.%s: %s - %s\n\t%s\n' % \
+                return u'%s%s.%s: %s - %s\n\t%s\n' % \
                     (indent, tokens[0], tokens[1], 
                      oid.type, rtype, oid.docs)    
     raise NameError('`%s` has no field called `%s`' 
@@ -310,7 +310,7 @@ def getmoosedoc(tokens):
     class_path = '/classes/%s' % (tokens[0])
     if exists(class_path):
         if len(tokens) == 1:
-            docstring.write('%s\n' % (Cinfo(class_path).docs))
+            docstring.write(u'%s\n' % (Cinfo(class_path).docs))
     else:
         raise NameError('name \'%s\' not defined.' % (tokens[0]))
     class_id = vec('/classes/%s' % (tokens[0]))
@@ -318,12 +318,12 @@ def getmoosedoc(tokens):
         docstring.write(getfielddoc(tokens))
     else:
         for ftype, rname in finfotypes:
-            docstring.write('\n*%s*\n' % (rname.capitalize()))
+            docstring.write(u'\n*%s*\n' % (rname.capitalize()))
             numfinfo = getField(class_id[0], 'num_'+ftype, 'unsigned')
             finfo = vec('/classes/%s/%s' % (tokens[0], ftype))
             for ii in range(numfinfo):
                 oid = melement(finfo, 0, ii, 0)
-                docstring.write('%s%s: %s\n' % 
+                docstring.write(u'%s%s: %s\n' %
                                 (indent, oid.name, oid.type))
     ret = docstring.getvalue()
     docstring.close()

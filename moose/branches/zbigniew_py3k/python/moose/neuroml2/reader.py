@@ -55,13 +55,13 @@ prototype includes.
 from __future__ import print_function
 from future_builtins import zip, map
 import sys, os
-from urllib2 import urlopen
 import numpy as np
 import moose
 import generated_neuroml as nml
 from units import SI
 import hhfit
 import logging
+from moose._compat import from basestring
 
 loglevel = logging.DEBUG
 logstream = logging.StreamHandler()
