@@ -12,6 +12,8 @@ import re as re_
 import base64
 import datetime as datetime_
 
+from moose._compat import basestring, unicode
+
 etree_ = None
 Verbose_import_ = False
 XMLParser_import_none, XMLParser_import_lxml, XMLParser_import_elementtree = 0, 1, 2

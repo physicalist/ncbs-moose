@@ -10,6 +10,8 @@ import types, parser, token, symbol, string, os, math
 from datetime import datetime
 import _moose
 
+from _compat import basestring
+
 ## for Ca Pool
 #FARADAY = 96154.0 # Coulombs # from cadecay.mod : 1/(2*96154.0) = 5.2e-6 which is the Book of Genesis / readcell value
 FARADAY = 96485.3415 # Coulombs/mol # from Wikipedia
