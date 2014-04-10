@@ -26,7 +26,7 @@
  * Zombie object that lets HSolve do its calculations, while letting the user
  * interact with this object as if it were the original object.
  */
-class DataHandler;
+//class DataHandler;
 
 class ZombieCompartment
 {
