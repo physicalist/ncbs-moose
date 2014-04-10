@@ -777,14 +777,21 @@ void ZombieCompartment::zombify( Element* solver, Element* orig )
     // Create zombie.
     //~ Element ze( orig->id(), zombieCompartmentCinfo, solver->dataHandler() );
     //~ Eref zer( &ze, 0 );
+#ifdef  OLD_API
     DataHandler* dh = orig->dataHandler()->copyUsingNewDinfo(
-            ZombieCompartment::initCinfo()->dinfo() 
-            );
+                ZombieCompartment::initCinfo()->dinfo() 
+                );
+#else      /* -----  not OLD_API  ----- */
+    /* NOTE: DataHandler is gone.  */
+    
+#endif     /* -----  not OLD_API  ----- */
 
     Eref oer( orig, 0 );
     Eref ser( solver, 0 );
     //~ ZombieCompartment* zd = reinterpret_cast< ZombieCompartment* >( zer.data() );
-    ZombieCompartment* zd = reinterpret_cast< ZombieCompartment* >( dh->data( 0 ) );
+//    ZombieCompartment* zd = reinterpret_cast< ZombieCompartment* >( dh->data( 0 ) );
+    ZombieCompartment* zd = new ZombieCompartment();
+
     Compartment* od = reinterpret_cast< Compartment* >( oer.data() );
     HSolve* sd = reinterpret_cast< HSolve* >( ser.data() );
     zd->hsolve_ = sd;
@@ -799,24 +806,27 @@ void ZombieCompartment::zombify( Element* solver, Element* orig )
     //~ numEntries );
 
     //~ orig->zombieSwap( zombieCompartmentCinfo, zh );
-    orig->zombieSwap( zombieCompartmentCinfo, dh );
+    orig->zombieSwap( zombieCompartmentCinfo);
+    stringstream ss;
+    ss << __FUNCTION__ << " is not tested yet ";
+    dump(ss.str(), "WARN");
 }
 
 // static func
 void ZombieCompartment::unzombify( Element* zombie )
 {
 #ifdef  OLD_API
-    Element temp( zombie->id(), zombie->cinfo(), zombie->dataHandler() );
+    Element temp( zombie->id(), zombie->cinfo());
     Eref zer( &temp, 0 );
     Eref oer( zombie, 0 );
 
     //~ ZombieCompartment* z = reinterpret_cast< ZombieCompartment* >( zer.data() );
 
     // Creating data handler for original left for later.
-    DataHandler* dh = 0;
-
-    zombie->zombieSwap( Compartment::initCinfo(), dh );
+    zombie->zombieSwap( Compartment::initCinfo());
 #else      /* -----  not OLD_API  ----- */
-    dump("Not impemented : ZombieCompartment::unzombify", "TODO");
+    stringstream ss;
+    ss << "Not implemented " << __FUNCTION__;
+    dump(ss.str(), "ERROR");
 #endif     /* -----  not OLD_API  ----- */
 }
