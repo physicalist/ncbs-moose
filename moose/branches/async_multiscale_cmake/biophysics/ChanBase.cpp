@@ -232,5 +232,6 @@ void ChanBase::updateIk()
 
 double ChanBase::getVm() const
 {
-	return Vm_;
+    assert(this);
+    return Vm_;
 }
