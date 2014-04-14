@@ -23,7 +23,8 @@ using namespace std;
  * work on in single-compartment models.
  */
 DiffPoolVec::DiffPoolVec()
-	: n_( 1, 0.0 ), nInit_( 1, 0.0 ), diffConst_( 1.0e-12 )
+	: n_( 1, 0.0 ), nInit_( 1, 0.0 ), 
+		diffConst_( 1.0e-12 ), motorConst_( 0.0 )
 {;}
 
 double DiffPoolVec::getNinit( unsigned int voxel ) const
@@ -61,6 +62,15 @@ void DiffPoolVec::setNvec( const vector< double >& vec )
 	n_ = vec;
 }
 
+void DiffPoolVec::setNvec( unsigned int start, unsigned int num,
+				vector< double >::const_iterator q )
+{
+	assert( start + num <= n_.size() );
+	vector< double >::iterator p = n_.begin() + start;
+	for ( unsigned int i = 0; i < num; ++i )
+		*p++ = *q++;
+}
+
 double DiffPoolVec::getDiffConst() const
 {
 	return diffConst_;
@@ -81,21 +91,21 @@ void DiffPoolVec::setMotorConst( double v )
 	motorConst_ = v;
 }
 
-unsigned int DiffPoolVec::getNumVoxels() const
-{
-	return n_.size();
-}
-
 void DiffPoolVec::setNumVoxels( unsigned int num ) 
 {
 	nInit_.resize( num, 0.0 );
 	n_.resize( num, 0.0 );
 }
 
+unsigned int DiffPoolVec::getNumVoxels() const
+{
+	return n_.size();
+}
+
 void DiffPoolVec::setOps(const vector< Triplet< double > >& ops,
 	const vector< double >& diagVal )
 {
-	assert( diagVal_.size() == n_.size() );
+	assert( diagVal.size() == n_.size() );
 	ops_ = ops;
 	diagVal_ = diagVal;
 }
@@ -104,7 +114,7 @@ void DiffPoolVec::advance( double dt )
 {
 	for ( vector< Triplet< double > >::const_iterator
 				i = ops_.begin(); i != ops_.end(); ++i )
-		n_[i->c_] -= n_[i->b_] * i->a_ * dt;
+		n_[i->c_] -= n_[i->b_] * i->a_;
 
 	assert( n_.size() == diagVal_.size() );
 	vector< double >::iterator iy = n_.begin();

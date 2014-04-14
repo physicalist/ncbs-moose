@@ -11,6 +11,7 @@ class FastMatrixElim: public SparseMatrix< double >
 {
 	public:
 		FastMatrixElim();
+		FastMatrixElim( unsigned int nrows, unsigned int ncolumns );
 		FastMatrixElim( const SparseMatrix< double >& orig );
 
 		void makeTestMatrix( const double* test, unsigned int numCompts );
@@ -51,7 +52,17 @@ class FastMatrixElim: public SparseMatrix< double >
 		 * Returns true if it succeeded in doing this; many matrices will
 		 * not reorder correctly.
 		 */
-		bool hinesReorder( const vector< unsigned int >& parentVoxel );
+		bool hinesReorder( const vector< unsigned int >& parentVoxel,
+					   vector< unsigned int >& lookupOldRowsFromNew	);
+
+		/**
+ 		 * static function. Reorders the ops and diagVal vectors so as to
+ 		 * restore the original indexing of the input vectors.
+ 		 */
+		static void opsReorder( 
+				const vector< unsigned int >& lookupOldRowsFromNew,
+				vector< Triplet< double > >& ops,
+				vector< double >& diagVal );
 
 		/**
 		 * Reorders rows of the matrix according to the vector 
@@ -68,13 +79,27 @@ class FastMatrixElim: public SparseMatrix< double >
 		 */
 		bool checkSymmetricShape() const;
 
+		bool operator==( const FastMatrixElim& other ) const;
+		bool isSymmetric() const;
+
 		/**
 		 * This function incorporates molecule-specific diffusion and
 		 * motor transport terms into the matrix.
 		 */
 		void setDiffusionAndTransport( 
 			const vector< unsigned int >& parentVoxel,
-			double diffConst, double motorConst );
+			double diffConst, double motorConst, double dt );
+
+		/**
+		 * This function makes the matrix for computing diffusion and
+		 * transport equations.
+		 */
+		void buildForDiffusion( 
+			const vector< unsigned int >& parentVoxel,
+			const vector< double >& volume,
+			const vector< double >& area,
+			const vector< double >& length,
+			double diffConst, double motorConst, double dt );
 
 		/**
 		 * Does the actual computation of the matrix inversion, which is

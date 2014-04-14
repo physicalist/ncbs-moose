@@ -114,6 +114,10 @@ static const Cinfo* ksolveCinfo = Dsolve::initCinfo();
 // Class definitions
 //////////////////////////////////////////////////////////////
 Dsolve::Dsolve()
+	: numTotPools_( 0 ),
+		numLocalPools_( 0 ),
+		poolStartIndex_( 0 ),
+		numVoxels_( 0 )
 {;}
 
 Dsolve::~Dsolve()
@@ -157,6 +161,7 @@ void Dsolve::process( const Eref& e, ProcPtr p )
 
 void Dsolve::reinit( const Eref& e, ProcPtr p )
 {
+	build( p->dt );
 	for ( vector< DiffPoolVec >::iterator 
 					i = pools_.begin(); i != pools_.end(); ++i ) {
 		i->reinit();
@@ -204,20 +209,48 @@ Id Dsolve::getCompartment() const
 // Happens at reinit, long after all pools are built.
 // By this point the diffusion consts etc will be assigned to the
 // poolVecs.
-void Dsolve::build()
+// This requires
+// - Stoich should be assigned
+// - compartment should be assigned so we know how many voxels.
+// - Stoich should have had the path set so we know numPools. It needs
+// 		to know the numVoxels from the compartment. AT the time of
+// 		path setting the zombification is done, which takes the Id of
+// 		the solver.
+// - After this build can be done. Just reinit doesn't make sense since
+// 		the build does a lot of things which should not be repeated for
+// 		each reinit.
+void Dsolve::build( double dt )
 {
 	const MeshCompt* m = reinterpret_cast< const MeshCompt* >( 
 						compartment_.eref().data() );
 	// For now start with local pools only.
-	numLocalPools_ = Field< unsigned int >::get( stoich_, "numAllPools" );
+	if ( stoich_ != Id() )
+		numLocalPools_ = Field< unsigned int >::get( stoich_, "numAllPools" );
+	else
+		numLocalPools_ = 1;
 	pools_.resize( numLocalPools_ );
+	unsigned int numVoxels = m->getNumEntries();
 
 	for ( unsigned int i = 0; i < numLocalPools_; ++i ) {
-		FastMatrixElim elim( m->getStencil() );
+		bool debugFlag = false;
+		FastMatrixElim elim( numVoxels, numVoxels );
+		elim.buildForDiffusion( m->getParentVoxel(), m->getVoxelVolume(), 
+			m->getVoxelArea(), m->getVoxelLength(), 
+		   pools_[i].getDiffConst(), pools_[i].getMotorConst(), dt );
 		vector< unsigned int > parentVoxel = m->getParentVoxel();
+		assert( elim.checkSymmetricShape() );
+		/*
 		elim.setDiffusionAndTransport( parentVoxel,
-			pools_[i].getDiffConst(), pools_[i].getMotorConst() );
-		elim.hinesReorder( parentVoxel );
+			pools_[i].getDiffConst(), pools_[i].getMotorConst(), dt );
+			*/
+		vector< unsigned int > lookupOldRowsFromNew;
+		elim.hinesReorder( parentVoxel, lookupOldRowsFromNew );
+		assert( elim.checkSymmetricShape() );
+		// True only if motorConst == 0:
+		/*
+		if ( pools_[i].getMotorConst() == 0 )
+			assert( elim.isSymmetric() );
+			*/
 		vector< unsigned int > diagIndex;
 		vector< double > diagVal;
 		vector< Triplet< double > > fops;
@@ -225,7 +258,10 @@ void Dsolve::build()
 		pools_[i].setNumVoxels( numVoxels_ );
 		elim.buildForwardElim( diagIndex, fops );
 		elim.buildBackwardSub( diagIndex, fops, diagVal );
+		elim.opsReorder( lookupOldRowsFromNew, fops, diagVal );
 		pools_[i].setOps( fops, diagVal );
+		if (debugFlag )
+			elim.print();
 	}
 }
 
@@ -319,4 +355,49 @@ void Dsolve::setNumPools( unsigned int numPoolSpecies )
 unsigned int Dsolve::getNumPools() const
 {
 	return numTotPools_;
+}
+
+void Dsolve::getBlock( vector< double >& values ) const
+{
+	unsigned int startVoxel = values[0];
+	unsigned int numVoxels = values[1];
+	unsigned int startPool = values[2];
+	unsigned int numPools = values[3];
+
+	assert( startVoxel + numVoxels <= numVoxels_ );
+	assert( startPool >= poolStartIndex_ );
+	assert( numPools + startPool <= numLocalPools_ );
+	values.resize( 4 );
+
+	for ( unsigned int i = 0; i < numPools; ++i ) {
+		unsigned int j = i + startPool;
+		if ( j >= poolStartIndex_ && j < poolStartIndex_ + numLocalPools_ ){
+			vector< double >::const_iterator q =
+				pools_[ j - poolStartIndex_ ].getNvec().begin();
+				
+			values.insert( values.end(),
+				q + startVoxel, q + startVoxel + numVoxels );
+		}
+	}
+}
+
+void Dsolve::setBlock( const vector< double >& values )
+{
+	unsigned int startVoxel = values[0];
+	unsigned int numVoxels = values[1];
+	unsigned int startPool = values[2];
+	unsigned int numPools = values[3];
+
+	assert( startVoxel + numVoxels <= numVoxels_ );
+	assert( startPool >= poolStartIndex_ );
+	assert( numPools + startPool <= numLocalPools_ );
+
+	for ( unsigned int i = 0; i < numPools; ++i ) {
+		unsigned int j = i + startPool;
+		if ( j >= poolStartIndex_ && j < poolStartIndex_ + numLocalPools_ ){
+			vector< double >::const_iterator 
+				q = values.begin() + 4 + i * numVoxels;
+			pools_[ j - poolStartIndex_ ].setNvec( startVoxel, numVoxels, q );
+		}
+	}
 }

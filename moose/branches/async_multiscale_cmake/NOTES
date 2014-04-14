@@ -3013,3 +3013,182 @@ Starting on code in testDiffusion: testCellDiffn
 pools, reacs and enzs.
 
 ============================================================================
+28 Mar. This turned out to be really silly. I had not scanned through base
+classes for Pools, Reacs and Enz. So the objects were invisible when zombified.
+
+Now on to diffusion.
+
+Working through setup. There is a problem in how the mesh sets up the
+stencil sparse matrix for the diffusion connectivity: It has an empty diagonal.
+
+nC(t) = nC(t+1) - dt*[(D - M)*(n+1)C(t+1)*adx(+) + (D + M)*(n-1)C(t+1)*adx(-) -
+ nC(t+1)*D*(adx(+)+adx(-)]
+
+So the terms are:
+n-1:    dt*(D+M)*adx(-)
+n:   1 -dt*[ D*adx(-) +D*adx(+) + M*adx(+) ]
+n+1:    dt*D*adx(+)
+
+Implemented this, now the matrices are made but yet to test.
+Checkin 5205.
+
+The matrices cruise happily through the solution, and it isn't exploding,
+but very little diffusion seems to be taking place.
+
+============================================================================
+29 Mar.
+Re-derived the diffusion and motor calculations.
+
+Taking the compartments in order as -, 0, + from proximal to distal, we have
+
+dn0.dt|t+1 =
+	D*n-/(h-*a-)*(a0+a-)/(h0+h-) + M+*2*n-/(h0+h-)		// n- terms
+	-D*n0/(h0a0)*[(a0+a-)/(h0+h-) + (a0+a+)/(h0+h+)]	// n0 diff terms
+	-M+*n0*2*[1/(h0+h+) + 1/(h0+h-)]			// n0 motor
+	+D*n+/(h+*a+)*(a0+a+)/(h0+h+) + M-*2*n+/(h0+h+)		// n+ terms
+
+And n0(t) = n0(t+1) - delta_t*dn0/dt|t+1
+In this calculation, M+ is motor speed in the + direction, away from soma, and
+M- is motor speed toward soma.
+a is measured at the middle of each compartment.
+h is the length of each compartment.
+n-, n0, n+ are the numbers of molecules in the respective compartments.
+
+So the stencil is not enough. Will need a and h terms for all compartments. 
+Simplest is to generate vectors of them and discard the whole stencil
+business. Will have to rethink how we handle cube mesh, but this will be
+OK for NeuroMesh and for CylMesh.
+
+There is a slightly more accurate version for tapering cylinders, which uses
+the internal calculation for voxel volume as a section of a cone.
+
+dn0.dt|t+1 =
+	D*n-/(V-)*(a0+a-)/(h0+h-) + M+*2*n-/(h0+h-)		// n- terms
+	-D*n0/(V0)*[(a0+a-)/(h0+h-) + (a0+a+)/(h0+h+)]	// n0 diff terms
+	-M+*n0*2*[1/(h0+h+) + 1/(h0+h-)]			// n0 motor
+	+D*n+/(V+)*(a0+a+)/(h0+h+) + M-*2*n+/(h0+h+)		// n+ terms
+
+Since we already have these volumes pre-calculated, we can use them too.
+
+
+Implemented most of this. Now going through the compilation.
+============================================================================
+30 Mar.
+Testing proceeds, not yet working. Incorporated testCylMesh to try to 
+track down the problems in a simpler system.
+============================================================================
+31 March.
+
+Got diffusion calculations to work for CylMesh, confirmed against 
+analytical solution. Only issue now is how accurate to make it.
+This has taken a while, not least because my earlier math was off.
+Next steps:
+* Assign either NeuroMesh or CylMesh to solver, using a SparseMatrix interface.
+x Parse Sparse Matrix.
+	- Handle regular diffusion with per-molecule diffusion consts
+	- Handle motor transport overlay.
+* Redid with correct mathematical expressions.
+- Fix ordering after Hines reordering. Take cylMesh vectors and shuffle, figure
+	out how to reorder back to original voxel indices.
++ Build test cases
+	* Simple diffusion
+	- Reac-diff with propagating waves
+	- Motor transport alone, in either direction.
+- Connect to Stoich. Generate Pool arrays.
+- Build inter-compartment reactions
+- Set up adaptors and other multiscale effects
+- Set up RDesigneur
+- Set up interface to Mumbl
+
+============================================================================
+1 April. 
+Thinking about reordering issue. We start with
+
+M.[A] = [a]
+  [B]   [b]
+  [C]   [c]
+  [D]   [d]
+  [E]   [e]
+
+Following the reordering with lookupOldRowFromNew = [3,2,1,0,4]
+we would have
+
+M'.[D] = [d]
+   [C]   [c]
+   [B]   [b]
+   [A]   [a]
+   [E]   [e]
+
+Rather than redo the vectors, I can munge the indices of all the entries in the
+opvec. The matrix remains as M' but due to the redoing of the indices in the
+opvec, every referece to the vectors now is back to the original ordering.
+
+So what I need to do to the opvec is to apply lookupOldRowFromNew to its 
+indices. I'll also need to redo the DiagVal.
+
+============================================================================
+2 April.
+Working on the reordering. Implemented something, seems reasonable.
+A bit more testing shows a problem with the branching neuron diffusion.
+Did a simple test on mass conservation, it fails. It gets worse at longer
+times, presumably molecules are reaching a junction where there is an error.
+The reordering changes this error, but it is wrong either way. I won't
+revisit the reordering yet because I don't know where the error is from.
+
+Implementing test for symmetry because I suspect this may be an issue.
+Implemented. This symmetry test catches a discrepancy.
+Next: Narrow down with a small test cell.
+
+============================================================================
+5 April.
+Looked at code. On reflection it doesn't seem like we need the matrix to
+be symmetric, since we can have diffusion between compartments with different
+volumes. But we do need the terms on either side of the compartments to match
+to ensure mass conservation.
+
+I need to expand out the test small cell by hand to figure out where the
+calc is going wrong.
+
+============================================================================
+13 April.
+Fixed some indexing issues, to my surprise this fixes the error in mass 
+conservation that was causing current unit tests to fail. Still would like to 
+have an analytic expression to test for a branching cell. Possibly a 
+symmetrically branching cell would behave like an equivalent cylinder.
+
+============================================================================
+14 April.
+To coordinate Dsolve and Ksolve. There needs to be a 'transfer' function
+that if needed uses direct MPI calls to do a bidirectional transfer of
+values between them, organized by node and the data resident on each. I think
+there is a high-level MPI operation to do this. 
+If possible map through the ZombiePoolInterface.
+In each case, we construct a vector destined for a specified target node.
+Aim to consolidate all entries due to go to the specified node.
+
+During operation we call the transfer with a special clock tick. For example,
+we might have
+Hsolve process: Tick 0, dt 50 us
+Dsolve process: tick 2, dt 10 ms
+Dsolve transfer to Ksolve: tick 3, dt 100 ms
+Ksolve process: tick 4, dt 100 ms
+Ksolve transfer to Dsolve: tick 5, dt 100 ms
+Hsolve adaptor to pools, e.g. Ca: Tick 6, dt 100 ms
+Spikegen adaptor to pools, e.g. Glu for mGluRs: Tick 6, dt 100 ms
+Ksolve adaptor to Hsolve: Tick 7, dt 100 ms
+
+For now, just deal with Ksolve to and from Dsolve.
+
+Set up a couple of functions in ZombiePoolInterface, getBlock and setBlock.
+These do just that - get and set blocks of pool #s. Meant to be used by
+a handler that knows which pools and voxels on each node, and that deals
+with internode transfer as per need.
+
+Next: 
+Figure out how Ksolve knows # of voxels. It has a numAllVoxels field.
+We already know how Dsolve knows # of pools: gets it from the Stoich.
+Set up a toy reac-diff model using stoich to set up reac system.
+Figure out how to call the transfer functions. Possibly a ZombiePool Proces?
+
+============================================================================
+
