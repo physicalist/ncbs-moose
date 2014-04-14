@@ -7,6 +7,7 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#include <math.h>
 #include <vector>
 #include <algorithm>
 #include <cassert>
@@ -17,6 +18,7 @@
 //#include "/usr/include/gsl/gsl_linalg.h"
 using namespace std;
 #include "../basecode/SparseMatrix.h"
+#include "../basecode/doubleEq.h"
 #include "FastMatrixElim.h"
 
 /*
@@ -27,6 +29,10 @@ const unsigned int SM_RESERVE = 8;
 
 FastMatrixElim::FastMatrixElim()
 	: SparseMatrix< double >()
+{;}
+
+FastMatrixElim::FastMatrixElim( unsigned int nrows, unsigned int ncolumns )
+	: SparseMatrix< double >( nrows, ncolumns )
 {;}
 
 FastMatrixElim::FastMatrixElim( const SparseMatrix< double >& orig )
@@ -45,7 +51,38 @@ static const unsigned int EMPTY_VOXEL(-1);
 
 bool FastMatrixElim::checkSymmetricShape() const
 {
-	return true; // dummy for now
+	FastMatrixElim temp = *this;
+	temp.transpose();
+	return (
+		nrows_ == temp.nrows_ && 
+		ncolumns_ == temp.ncolumns_ &&
+		N_.size() == temp.N_.size() &&
+		rowStart_ == temp.rowStart_ &&
+		colIndex_ == temp.colIndex_ 
+	);
+}
+
+bool FastMatrixElim::operator==( const FastMatrixElim& other ) const
+{
+	if ( 
+		nrows_ == other.nrows_ && 
+		ncolumns_ == other.ncolumns_ &&
+		N_.size() == other.N_.size() &&
+		rowStart_ == other.rowStart_ &&
+		colIndex_ == other.colIndex_ ) {
+		for ( unsigned int i = 0; i < N_.size(); ++i )
+			if ( !doubleEq( N_[i], other.N_[i] ) )
+				return false;
+		return true;
+	}
+	return false;
+}
+
+bool FastMatrixElim::isSymmetric() const 
+{
+	FastMatrixElim temp = *this;
+	temp.transpose();
+	return ( temp == *this );
 }
 
 /**
@@ -100,13 +137,16 @@ bool FastMatrixElim::buildTree( unsigned int parentRow,
  * rapid single-pass inversion. Returns 0 on failure, but at this
  * point I don't have a proper test for this.
  */
-bool FastMatrixElim::hinesReorder( const vector< unsigned int >& parentVoxel )
+bool FastMatrixElim::hinesReorder( 
+		const vector< unsigned int >& parentVoxel,
+		vector< unsigned int >& lookupOldRowFromNew
+   	)
 {
 	// First we fill in the vector that specifies the old row number 
 	// assigned to each row of the reordered matrix.
 	assert( parentVoxel.size() == nrows_ );
+	lookupOldRowFromNew.clear();
 	vector< unsigned int > numKids( nrows_, 0 );
-	vector< unsigned int > lookupOldRowFromNew;
 	vector< bool > rowPending( nrows_, true );
 	unsigned int numDone = 0;
 	for ( unsigned int i = 0; i < nrows_; ++i ) {
@@ -250,6 +290,7 @@ void FastMatrixElim::buildForwardElim( vector< unsigned int >& diag,
 			}
 		}
 	}
+	assert( diag.size() == nrows_ );
 	for ( unsigned int i = 0; i < nrows_; ++i ) {
 		double d = N_[diag[i]];
 		unsigned int diagend = rowStart_[ i + 1 ];
@@ -353,25 +394,73 @@ void FastMatrixElim::buildBackwardSub( vector< unsigned int >& diag,
 	*/
 }
 
+/**
+ * Put in diff and transport terms and also fill in the diagonal
+ * The terms are:
+ * n-1:    dt*(D+M)*adx(-)
+ * n:   1 -dt*[ D*adx(-) +D*adx(+) + M*adx(+) ]
+ * n+1:    dt*D*adx(+)
+ * Note that there will be only one parent term but possibly many
+ * distal terms.
+ */
 void FastMatrixElim::setDiffusionAndTransport( 
 			const vector< unsigned int >& parentVoxel,
-			double diffConst, double motorConst )
+			double diffConst, double motorConst,
+		   	double dt )
 {
+	FastMatrixElim m; 
+	m.nrows_ = m.ncolumns_ = nrows_;
+	m.rowStart_.resize( nrows_ + 1 );
+	m.rowStart_[0] = 0;
+	for ( unsigned int i = 1; i <= nrows_; ++i ) {
+		// Insert an entry for diagonal in each.
+		m.rowStart_[i] = rowStart_[i] + i; 
+	}
 	for ( unsigned int i = 0; i < nrows_; ++i ) {
+		double proximalTerms = 0.0;
+		double distalTerms = 0.0;
+		double term = 0.0;
+		bool pendingDiagonal = true;
+		unsigned int diagonalIndex = EMPTY_VOXEL;
 		for ( unsigned int j = rowStart_[i]; j < rowStart_[i+1]; ++j ) {
-			if ( colIndex_[j] != i ) {
-				double scale = 1.0;
-				// Treat transport as something either to or from soma.
-				// The motor direction is based on this.
-				// Assume no transport between sibling compartments.
-				if ( parentVoxel[colIndex_[j]] == i )
-					scale = diffConst + motorConst;
-				else if ( parentVoxel[i] == colIndex_[j] )
-					scale = diffConst - motorConst;
-				N_[j] *= scale;
+			// Treat transport as something either to or from soma.
+			// The motor direction is based on this.
+			// Assume no transport between sibling compartments.
+			if ( parentVoxel[colIndex_[j]] == i ) {
+				term = N_[j] * dt * ( diffConst + motorConst );
+				proximalTerms += N_[j];
+			} else {
+				term = N_[j] * dt * diffConst;
+				distalTerms += N_[j];
+			}
+			if ( colIndex_[j] < i ) {
+				m.colIndex_.push_back( colIndex_[j] );
+				m.N_.push_back( term );
+			} else if ( colIndex_[j] == i ) {
+				assert( 0 );
+			} else {
+				if ( pendingDiagonal ) {
+					pendingDiagonal = false;
+					diagonalIndex = m.N_.size();
+					m.colIndex_.push_back( i ); // diagonal
+					m.N_.push_back( 0 ); // placeholder
+				}
+				m.colIndex_.push_back( colIndex_[j] );
+				m.N_.push_back( term );
 			}
 		}
+		if ( pendingDiagonal ) {
+			diagonalIndex = m.N_.size();
+			m.colIndex_.push_back( i ); // diagonal
+			m.N_.push_back( 0 ); // placeholder
+		}
+		assert( diagonalIndex != EMPTY_VOXEL );
+		m.N_[diagonalIndex] = 1.0 - dt * ( 
+				diffConst * ( proximalTerms + distalTerms ) +
+				motorConst * distalTerms 
+			);
 	}
+	*this = m;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -396,3 +485,137 @@ void FastMatrixElim::advance( vector< double >& y,
 		*iy++ *= *i;
 }
 
+/**
+ * static function. Reorders the ops and diagVal vectors so as to restore
+ * the original indexing of the input vectors.
+ */
+void FastMatrixElim::opsReorder( 
+		const vector< unsigned int >& lookupOldRowsFromNew,
+		vector< Triplet< double > >& ops,
+		vector< double >& diagVal )
+{
+	vector< double > oldDiag = diagVal;
+
+	for ( unsigned int i = 0; i < ops.size(); ++i ) {
+		ops[i].b_ = lookupOldRowsFromNew[ ops[i].b_ ];
+		ops[i].c_ = lookupOldRowsFromNew[ ops[i].c_ ];
+	}
+
+	for ( unsigned int i = 0; i < diagVal.size(); ++i ) {
+		diagVal[ lookupOldRowsFromNew[i] ] = oldDiag[i];
+	}
+}
+
+
+// Build up colIndices for each row.
+void buildColIndex( unsigned int nrows,
+			const vector< unsigned int >& parentVoxel,
+			vector< vector< unsigned int > >& colIndex
+	)
+{
+	colIndex.clear();
+	colIndex.resize( nrows );
+	for ( unsigned int i = 0; i < nrows; ++i ) {
+		if ( parentVoxel[i] != EMPTY_VOXEL ) {
+			colIndex[i].push_back( parentVoxel[i] ); // parent
+			colIndex[ parentVoxel[i] ].push_back( i ); // children
+		}
+		colIndex[i].push_back( i ); // diagonal: self
+	}
+	for ( unsigned int i = 0; i < nrows; ++i ) {
+		vector< unsigned int >& c = colIndex[i];
+		sort( c.begin(), c.end() );
+		// Should check that there are no duplicates.
+		for ( unsigned int j = 1; j < c.size(); ++j ) {
+			assert( c[j -1 ] != c[j] );
+		}
+	}
+}
+
+double calcTransport( double motorConst, double lenSum,
+				unsigned int parentVoxel, unsigned int row )
+{
+	if ( row == parentVoxel && motorConst < 0 ) {
+		// Handle transport toward soma
+		return motorConst * 2.0 / lenSum ;
+	}
+	if ( row != parentVoxel && motorConst > 0 ) {
+		// Handle transport away from soma, to children
+		return -motorConst * 2.0 / lenSum;
+	}
+	return 0.0;
+}
+
+void FastMatrixElim::buildForDiffusion( 
+			const vector< unsigned int >& parentVoxel,
+			const vector< double >& volume,
+			const vector< double >& area,
+			const vector< double >& length,
+			double diffConst, double motorConst, double dt )
+{
+	// Too slow to matter.
+	if ( diffConst < 1e-18 && fabs( motorConst ) < 1e-12 ) 
+		return;
+	assert( nrows_ == parentVoxel.size() );
+	assert( nrows_ == volume.size() );
+	assert( nrows_ == area.size() );
+	assert( nrows_ == length.size() );
+	vector< vector< unsigned int > > colIndex;
+
+	buildColIndex( nrows_, parentVoxel, colIndex );
+
+	// Fill in the matrix entries for each colIndex
+	for ( unsigned int i = 0; i < nrows_; ++i ) {
+		vector< unsigned int >& c = colIndex[i];
+		vector< double > e( c.size(), 0.0 );
+		/*
+		// Find diagonal term
+		unsigned int diagIndex = EMPTY_VOXEL;
+		for ( unsigned int j = 0; j < c.size(); ++j ) {
+			if ( c[j] == i )
+				diagIndex = j;
+		}
+		assert( diagIndex != EMPTY_VOXEL );
+		double vol = volume[i];
+		double a = area[i];
+		double len = length[i];
+		*/
+
+		for ( unsigned int j = 0; j < c.size(); ++j ) {
+			unsigned int k = c[j]; // This is the colIndex, in order.
+			double vol = volume[k];
+			double a = area[k];
+			double len = length[k];
+			if ( k == i ) { // Diagonal term
+				e[j] = 0.0 ;
+				// Fill in diffusion from all connected voxels.
+				for ( unsigned int p = 0; p < c.size(); ++p ) {
+					unsigned int q = c[p];
+					if ( q != i ) { // Skip self
+						e[j] -= (area[q] + a)/(length[q] + len )/vol;
+					}
+				}
+				e[j] *= diffConst;
+				// Fill in motor transport
+				for ( unsigned int p = 0; p < c.size(); ++p ) {
+					unsigned int q = c[p];
+					if ( q != i ) { // Skip self
+						e[j] += calcTransport( motorConst, 
+							length[q] + len, parentVoxel[i], q );
+					}
+				}
+				e[j] *= -dt; // The previous lot is the rate, so scale by dt
+				e[j] += 1.0; // term for self.
+			} else { // Not diagonal.
+				// Fill in diffusion from this entry to i.
+				e[j] = diffConst * 
+						(area[i] + a)/(length[i] + len )/vol;
+				e[j] += calcTransport( motorConst, 
+					length[k] + len, parentVoxel[i], k );
+				e[j] *= -dt; // Scale the whole thing by dt.
+			}
+		}
+		// Now put it all in the sparase matrix.
+		addRow( i, e, c );
+	}
+}

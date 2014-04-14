@@ -32,9 +32,11 @@ SrcFinfo1< double >* ZombieCompartment::VmOut()
 
 static SrcFinfo1< double >* axialOut()
 {
-    static SrcFinfo1< double > axialOut( "axialOut",
-                                         "Sends out Vm value of compartment to adjacent compartments,"
-                                         "on each timestep" );
+    static SrcFinfo1< double > axialOut( 
+            "axialOut",
+            "Sends out Vm value of compartment to adjacent compartments,"
+            "on each timestep" 
+            );
     return &axialOut;
 }
 
@@ -147,41 +149,46 @@ const Cinfo* ZombieCompartment::initCinfo()
     {
         axialOut(), &handleRaxial
     };
-    static SharedFinfo axial( "axial",
-                              "This is a shared message between asymmetric compartments. "
-                              "axial messages (this kind) connect up to raxial "
-                              "messages (defined below). The soma should use raxial "
-                              "messages to connect to the axial message of all the "
-                              "immediately adjacent dendritic compartments.This puts "
-                              "the (low) somatic resistance in series with these "
-                              "dendrites. Dendrites should then use raxial messages to"
-                              "connect on to more distal dendrites. In other words, "
-                              "raxial messages should face outward from the soma. "
-                              "The first entry is a MsgSrc sending Vm to the axialFunc"
-                              "of the target compartment. The second entry is a MsgDest "
-                              "for the info coming from the other compt. It expects "
-                              "Ra and Vm from the other compt as args. Note that the "
-                              "message is named after the source type. ",
-                              axialShared, sizeof( axialShared ) / sizeof( Finfo* )
-                            );
+    static SharedFinfo axial( 
+            "axial",
+            "This is a shared message between asymmetric compartments. "
+            "axial messages (this kind) connect up to raxial "
+            "messages (defined below). The soma should use raxial "
+            "messages to connect to the axial message of all the "
+            "immediately adjacent dendritic compartments.This puts "
+            "the (low) somatic resistance in series with these "
+            "dendrites. Dendrites should then use raxial messages to"
+            "connect on to more distal dendrites. In other words, "
+            "raxial messages should face outward from the soma. "
+            "The first entry is a MsgSrc sending Vm to the axialFunc"
+            "of the target compartment. The second entry is a MsgDest "
+            "for the info coming from the other compt. It expects "
+            "Ra and Vm from the other compt as args. Note that the "
+            "message is named after the source type. ",
+            axialShared, sizeof( axialShared ) / sizeof( Finfo* )
+            );
 
     ///////////////////////////////////////////////////////////////////
-    static DestFinfo handleAxial( "handleAxial",
-                                  "Handles Axial information. Argument is just Vm.",
-                                  new OpFunc1< ZombieCompartment, double >( &ZombieCompartment::handleAxial ) );
+    static DestFinfo handleAxial( 
+            "handleAxial",
+            "Handles Axial information. Argument is just Vm.",
+            new OpFunc1< ZombieCompartment, double >( &ZombieCompartment::handleAxial ) );
     // rxialOut declared above as it is needed in file scope
     static Finfo* raxialShared[] =
     {
         &handleAxial, raxialOut()
     };
-    static SharedFinfo raxial( "raxial",
-                               "This is a raxial shared message between asymmetric "
-                               "compartments. The first entry is a MsgDest for the info "
-                               "coming from the other compt. It expects Vm from the "
-                               "other compt as an arg. The second is a MsgSrc sending "
-                               "Ra and Vm to the raxialFunc of the target compartment. ",
-                               raxialShared, sizeof( raxialShared ) / sizeof( Finfo* )
-                             );
+
+    static SharedFinfo raxial(
+            "raxial",
+            "This is a raxial shared message between asymmetric "
+            "compartments. The first entry is a MsgDest for the info "
+            "coming from the other compt. It expects Vm from the "
+            "other compt as an arg. The second is a MsgSrc sending "
+            "Ra and Vm to the raxialFunc of the target compartment. ",
+            raxialShared, sizeof( raxialShared ) / sizeof( Finfo* )
+            );
+
     ///////////////////////////////////////////////////////////////////
     // Value Finfos.
     ///////////////////////////////////////////////////////////////////
@@ -269,30 +276,30 @@ const Cinfo* ZombieCompartment::initCinfo()
     //////////////////////////////////////////////////////////////////
     // DestFinfo definitions
     //////////////////////////////////////////////////////////////////
-    static DestFinfo injectMsg( 
-            "injectMsg",
-            "The injectMsg corresponds to the INJECT message in the "
-            "GENESIS compartment. Unlike the 'inject' field, any value "
-            "assigned by handleInject applies only for a single timestep."
-            "So it needs to be updated every dt for a steady (or varying)"
-            "injection current",
-            new EpFunc1< ZombieCompartment, double >( &ZombieCompartment::injectMsg )
-            );
+    static DestFinfo injectMsg(
+        "injectMsg",
+        "The injectMsg corresponds to the INJECT message in the "
+        "GENESIS compartment. Unlike the 'inject' field, any value "
+        "assigned by handleInject applies only for a single timestep."
+        "So it needs to be updated every dt for a steady (or varying)"
+        "injection current",
+        new EpFunc1< ZombieCompartment, double >( &ZombieCompartment::injectMsg )
+    );
 
-    static DestFinfo randInject( 
-            "randInject",
-            "Sends a random injection current to the compartment. Must be"
-            "updated each timestep."
-            "Arguments to randInject are probability and current.",
-            new EpFunc2< ZombieCompartment, double, double > (
-                &ZombieCompartment::randInject ) );
+    static DestFinfo randInject(
+        "randInject",
+        "Sends a random injection current to the compartment. Must be"
+        "updated each timestep."
+        "Arguments to randInject are probability and current.",
+        new EpFunc2< ZombieCompartment, double, double > (
+            &ZombieCompartment::randInject ) );
 
-    static DestFinfo cable( 
-            "cable",
-            "Message for organizing compartments into groups, called"
-            "cables. Doesn't do anything.",
-            new OpFunc0< ZombieCompartment >( &ZombieCompartment::cable )
-            );
+    static DestFinfo cable(
+        "cable",
+        "Message for organizing compartments into groups, called"
+        "cables. Doesn't do anything.",
+        new OpFunc0< ZombieCompartment >( &ZombieCompartment::cable )
+    );
 
     ///////////////////////////////////////////////////////////////////
     static Finfo* compartmentFinfos[] =
@@ -351,7 +358,6 @@ static const Cinfo* zombieCompartmentCinfo = ZombieCompartment::initCinfo();
 ZombieCompartment::ZombieCompartment()
 {
     hsolve_   = NULL;
-
     diameter_ = 0.0;
     length_   = 0.0;
     x_        = 0.0;
@@ -395,11 +401,13 @@ bool ZombieCompartment::rangeWarning( const string& field, double value )
 // Value Field access function definitions.
 void ZombieCompartment::setVm( const Eref& e , double Vm )
 {
+    assert(hsolve_);
     hsolve_->setVm( e.id(), Vm );
 }
 
 double ZombieCompartment::getVm( const Eref& e  ) const
 {
+    assert(hsolve_);
     return hsolve_->getVm( e.id() );
 }
 
@@ -779,21 +787,23 @@ void ZombieCompartment::zombify( Element* solver, Element* orig )
     //~ Eref zer( &ze, 0 );
 #ifdef  OLD_API
     DataHandler* dh = orig->dataHandler()->copyUsingNewDinfo(
-                ZombieCompartment::initCinfo()->dinfo() 
-                );
+                          ZombieCompartment::initCinfo()->dinfo()
+                      );
 #else      /* -----  not OLD_API  ----- */
     /* NOTE: DataHandler is gone.  */
-    
+
 #endif     /* -----  not OLD_API  ----- */
 
     Eref oer( orig, 0 );
     Eref ser( solver, 0 );
+
     //~ ZombieCompartment* zd = reinterpret_cast< ZombieCompartment* >( zer.data() );
 //    ZombieCompartment* zd = reinterpret_cast< ZombieCompartment* >( dh->data( 0 ) );
-    ZombieCompartment* zd = new ZombieCompartment();
+    static ZombieCompartment* zd = new ZombieCompartment();
 
     Compartment* od = reinterpret_cast< Compartment* >( oer.data() );
     HSolve* sd = reinterpret_cast< HSolve* >( ser.data() );
+
     zd->hsolve_ = sd;
     zd->copyFields( od );
 
@@ -807,8 +817,11 @@ void ZombieCompartment::zombify( Element* solver, Element* orig )
 
     //~ orig->zombieSwap( zombieCompartmentCinfo, zh );
     orig->zombieSwap( zombieCompartmentCinfo);
+
+    assert(zd->hsolve_);
+
     stringstream ss;
-    ss << __FUNCTION__ << " is not tested yet ";
+    ss << "ZombieCompartment::zombify is not tested yet ";
     dump(ss.str(), "WARN");
 }
 

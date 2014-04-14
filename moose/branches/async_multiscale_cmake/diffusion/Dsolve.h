@@ -66,6 +66,9 @@ class Dsolve: public ZombiePoolInterface
 		void setNumPools( unsigned int num );
 		unsigned int getNumPools() const;
 
+		void getBlock( vector< double >& values ) const;
+		void setBlock( const vector< double >& values );
+
 		//////////////////////////////////////////////////////////////////
 		// Model traversal and building functions
 		//////////////////////////////////////////////////////////////////
@@ -73,7 +76,7 @@ class Dsolve: public ZombiePoolInterface
 
 		// This key function does the work. Should be called after 
 		// all the stoich and compartment stuff is assigned.
-		void build();
+		void build( double dt );
 
 		/**
 		 * Utility func for debugging: Prints N_ matrix
@@ -90,7 +93,6 @@ class Dsolve: public ZombiePoolInterface
 		unsigned int numLocalPools_;
 		unsigned int poolStartIndex_;
 		unsigned int numVoxels_;
-
 		vector< DiffPoolVec > pools_;
 
 		/// smallest Id value for pools managed by Dsolve. Used for lookup.
