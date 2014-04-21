@@ -1,5 +1,5 @@
 #!/bin/bash
-set +e
+set -e
 
 # Set pythonpath
 # If first argument is not "d" then normal execution else run inside python
