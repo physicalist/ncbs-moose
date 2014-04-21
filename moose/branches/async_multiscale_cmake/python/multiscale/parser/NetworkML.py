@@ -656,7 +656,6 @@ class NetworkML(object):
 
     def connectSynapse(self, spikegen, synapseObj):
         ''' Add synapse. '''
-        # This does not work 
         debug.printDebug("INFO"
                 , "Connecting ({})\n\t`{}`\n\t`{}`".format(
                         "Sparse"
@@ -665,7 +664,17 @@ class NetworkML(object):
                         )
                 , frame = inspect.currentframe()
                 )
-        m = moose.connect(spikegen, "spikeOut", synapseObj.vec, "addSpike", "Sparse")
+        # Sanity check.
+        if not synapseObj.synapse.delay:
+            synapseObj.synapse.delay = 1.0
+        if not synapseObj.synapse.weight:
+            synapseObj.synapse.weight = 1.0
+
+        m = moose.connect(spikegen, "spikeOut"
+                , synapseObj.syn.vec, "addSpike"
+                , "Sparse"
+                )
+        m.setRandomConnectivity(1.0, 1)
         return m
 
     def connect(self, synName, prePath, post_path, weight, threshold, delay):
@@ -697,6 +706,10 @@ class NetworkML(object):
             # See debug/bugs for more details.
             # NOTE: Change the debug/bugs to enable/disable this bug.
             if bugs.BUG_NetworkML_500:
+                debug.printDebug("INFO"
+                        , "See the code. There might be a bug here"
+                        , frame = inspect.currentframe()
+                        )
                 synNameFull = moose_methods.moosePath(synName
                         , mu.underscorize(prePath)
                         )
@@ -833,6 +846,7 @@ class NetworkML(object):
 
     def makeNewSynapse(self, synName, postcomp, synNameFull):
         '''This function creates a new synapses.
+
         '''
         # if channel does not exist in library load it from xml file
         synPath = os.path.join(self.libraryPath, synName)
@@ -847,8 +861,6 @@ class NetworkML(object):
 
         # deep copies the library synapse to an instance under postcomp named as
         # <arg3>
-        
-
         if config.disbleCopyingOfObject:
             synid = moose.copy(moose.Neutral(synPath), postcomp, synNameFull)
         else:
