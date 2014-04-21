@@ -1,8 +1,7 @@
 try:
     import _moose
 except Exception as e:
-    print("Failed to import _moose module with error {}".format(e))
-    raise e
+    raise Exception("Failed to import _moose module with error {}".format(e))
 
 def main():
     pass
