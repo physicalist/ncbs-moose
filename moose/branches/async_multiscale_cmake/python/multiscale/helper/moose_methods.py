@@ -170,6 +170,7 @@ def setupTable(name, obj, qtyname, tablePath=None, threshold=None):
 
     It stores qtyname from obj.
     '''
+    assert qtyname[0].isupper(), "First character must be uppercase character"
     debug.printDebug("DEBUG"
             , "Setting up table for: {} -> {}".format(obj.path, qtyname)
             )
