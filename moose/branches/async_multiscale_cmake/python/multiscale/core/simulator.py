@@ -450,7 +450,7 @@ class Simulator:
         tableObj, self.currentCompartmentPath = self.tableDict[varName]
         
         # If there is nothing to plot, quit
-        if len(tableObj.vec) < 1:
+        if len(tableObj.vector) < 1:
             debug.printDebug("WARN", "Empty data-set. Nothing to plot.")
             return None, None
 
@@ -463,8 +463,7 @@ class Simulator:
                     , tableObj.vec.size
                     )
                 )
-        xvec = xvec[ : tableObj.vec.size ]
-        print tableObj.vec, tableObj.vec.getValue()
-        assert type(tableObj.vec) == type(xvec)
-        return tableObj.vec, xvec
+        xvec = xvec[ : tableObj.vector.size ]
+        assert type(tableObj.vector) == type(xvec)
+        return tableObj.vector, xvec
 
