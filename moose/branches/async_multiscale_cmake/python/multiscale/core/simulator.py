@@ -118,7 +118,7 @@ class Simulator:
             self.simulateNetwork()
         except Exception as e:
             raise e
-        self.plot(ascii=True)
+        self.plot(plotInASCII=True)
 
     def setupRecord(self, xmlElem):
         '''Setup record.
@@ -306,14 +306,14 @@ class Simulator:
             sys.exit()
 
 
-    def plot(self, ascii=False):
+    def plot(self, plotInASCII=False):
         # After simulation, plot user-requested variables.
         
         # Now we have a dictionary in which for each key there is set of plot
         # variables. Configure these plots.
         for filename in self.plotFiles:
-            self.plotVars(filename, self.plotFiles[filename], ascii)
-            if not ascii:
+            self.plotVars(filename, self.plotFiles[filename], plotInASCII)
+            if not plotInASCII:
                 if filename != "matplotlib_gui":
                     debug.printDebug("INFO"
                             , "Saving to file {}".format(filename)
@@ -322,12 +322,12 @@ class Simulator:
                 else:
                     pylab.show()
         
-    def plotVars(self, filename, setOfVariables, ascii):
+    def plotVars(self, filename, setOfVariables, plotInASCII):
         ''' Plot these records on one file '''
         self.totalPlots = len(setOfVariables)
         for i, var in enumerate(setOfVariables):
             debug.printDebug("DEBUG"
-                    , "Plotting %s, %s " % (var.name, var.moosePath)
+                    , "Ploting %s, %s " % (var.name, var.moosePath)
                     )
             variableXml = var.xml
             plotXml = variableXml.find('plot')
@@ -337,12 +337,12 @@ class Simulator:
                 configDict['title'] = var.moosePath
             yvec, xvec = self.getPlotData(var.type+var.name)
             pylab.subplot(self.totalPlots, 1, i)
-            self.plotVar(xvec, yvec, configDict, ascii)
+            self.plotVar(xvec, yvec, configDict, plotInASCII)
 
 
-    def plotVar(self, xvec, yvec, plotParams, ascii=False):
+    def plotVar(self, xvec, yvec, plotParams, plotInASCII=False):
         '''Plot a variable. '''
-        if ascii:
+        if plotInASCII:
             self.plotInTerminal(xvec, yvec, plotParams)
         else:
             plotArgs = plotParams.get('plot_args', '')
@@ -464,6 +464,5 @@ class Simulator:
                     )
                 )
         xvec = xvec[ : tableObj.vector.size ]
-        assert type(tableObj.vector) == type(xvec)
         return tableObj.vector, xvec
 

@@ -216,14 +216,14 @@ const Finfo* Cinfo::findFinfo( const string& name ) const
 	if ( i != finfoMap_.end() )
 		return i->second;
 
-#ifdef  RESULT_CHECK
+#ifdef  CINFO_CHECK
         stringstream ss;
         ss << "Can't find " << name;
         ss << ". Followings are available : " << endl;
         // Print the map with keys and values
         ss << mapToString<string, Finfo*>(finfoMap_, true);
         dump(ss.str(), "DEBUG");
-#endif     /* -----  not RESULT_CHECK  ----- */
+#endif     /* -----  not CINFO_CHECK  ----- */
 
 	return 0;
 }

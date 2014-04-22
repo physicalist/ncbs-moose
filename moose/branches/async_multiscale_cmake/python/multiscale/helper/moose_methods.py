@@ -107,7 +107,7 @@ def getMoosePaths(pat, isRoot=True):
     if type(pat) != str:
         pat = pat.path
         assert type(pat) == str
-    moose_paths = [x.getPath() for x in moose.wildcardFind(pat)]
+    moose_paths = [x.path for x in moose.wildcardFind(pat)]
     return moose_paths
 
 def dumpMatchingPaths(path, pat='/##'):
