@@ -551,7 +551,7 @@ class NetworkML(object):
 
         properties = connection.findall('./{'+nmu.nml_ns+'}properties')
         if len(properties) == 0:
-            self.connect(synName, pre_segment_path, post_segment_path
+            self.connectUsingSynChan(synName, pre_segment_path, post_segment_path
                     , weight, threshold, propDelay
                     )
         else:
@@ -575,20 +575,20 @@ class NetworkML(object):
                     , frame = inspect.currentframe()
                     )
             raise UserWarning("Missing parameter synapse_type")
-        else:
-            synName = synapse
-            weight_override = float(props.attrib['weight'])
-            if 'internal_delay' in props.attrib:
-                delay_override = float(props.attrib['internal_delay'])
-            else: delay_override = propDelay
-            if weight_override != 0.0:
-                self.connect(synName
-                        , pre_segment_path
-                        , post_segment_path
-                        , weight_override
-                        , threshold, delay_override
-                        )
-            else: pass
+
+        synName = synapse
+        weight_override = float(props.attrib['weight'])
+        if 'internal_delay' in props.attrib:
+            delay_override = float(props.attrib['internal_delay'])
+        else: delay_override = propDelay
+        if weight_override != 0.0:
+            self.connectUsingSynChan(synName
+                    , pre_segment_path
+                    , post_segment_path
+                    , weight_override
+                    , threshold, delay_override
+                    )
+        else: pass
 
 
     def createProjections(self):
@@ -654,27 +654,40 @@ class NetworkML(object):
                    }
         return options
 
-    def connectSynapse(self, spikegen, synapseObj):
+    def connectSynapse(self, spikegen, synapse):
         ''' Add synapse. '''
-        assert isinstance(synapseObj, moose.SynChan), type(synapseObj)
-        debug.printDebug("INFO"
-                , "Connecting ({})\n\t`{}`\n\t`{}`".format(
-                        "Sparse"
-                        , spikegen.path
-                        , synapseObj.vec.path
-                        )
-                , frame = inspect.currentframe()
-                )
+
+        assert isinstance(synapse, moose.SynChan), type(synapse)
+
+        #debug.printDebug("INFO"
+        #        , "Connecting ({})\n\t`{}`\n\t`{}`".format(
+        #                "Sparse"
+        #                , spikegen.path
+        #                , synapse.vec.path
+        #                )
+        #        , frame = inspect.currentframe()
+        #        )
+
+        # Following 6 lines are from snippet Izhikevich_with_synapse.py file. I
+        # am not sure whether this is the right way to make a synpase. However,
+        # let's try this till we get a non-zero result after simulation.
+        spikeStim = moose.PulseGen('%s/spike_stim' % (synapse.parent.path))
+        spikeStim.delay[0] = 50.0
+        spikeStim.level[0] = 1.0
+        spikeStim.width[0] = 100.0
+        moose.connect(spikeStim, 'output', spikegen, 'Vm')
         m = moose.connect(spikegen, "spikeOut"
-                , synapseObj.synapse.vec, "addSpike"
+                , synapse.synapse.vec, "addSpike"
                 , "Sparse"
                 )
         m.setRandomConnectivity(1.0, 1)
         return m
 
-    def connect(self, synName, prePath, post_path, weight, threshold, delay):
+    def connectUsingSynChan(self, synName, prePath, post_path
+            , weight, threshold, delay
+            ):
         """
-        NOTE: This connects two compartment. Not to be confused with moose.connect
+        Connect two compartments using SynChan
         """
 
         postcomp = moose.Compartment(post_path)
@@ -696,7 +709,7 @@ class NetworkML(object):
             synNameFull = moose_methods.moosePath(synName
                     , mu.underscorize(prePath)
                     )
-            self.makeNewSynapse(synName, postcomp, synNameFull)
+            synObj = self.makeNewSynapse(synName, postcomp, synNameFull)
         else:
             # See debug/bugs for more details.
             # NOTE: Change the debug/bugs to enable/disable this bug.
@@ -708,12 +721,12 @@ class NetworkML(object):
                 synNameFull = moose_methods.moosePath(synName
                         , mu.underscorize(prePath)
                         )
-                self.makeNewSynapse(synName, postcomp, synNameFull)
+                synObj = self.makeNewSynapse(synName, postcomp, synNameFull)
 
             else: # If the above bug is fixed.
                 synNameFull = synName
                 if not moose.exists(post_path+'/'+synNameFull):
-                    self.makeNewSynapse(synName, postcomp, synNameFull)
+                    synObj = self.makeNewSynapse(synName, postcomp, synNameFull)
 
         # wrap the synapse in this compartment
         synPath = moose_methods.moosePath(post_path, synNameFull)
@@ -739,7 +752,7 @@ class NetworkML(object):
             # since there is no weight field for a graded synapse
             # (no 'synapse' message connected),
             # I set the Gbar to weight*Gbar
-            syn.Gbar = weight*syn.Gbar
+            syn.Gbar = weight * syn.Gbar
 
         # Event based synapse
         else: 
@@ -753,8 +766,6 @@ class NetworkML(object):
                     # can have different thresholds
                     if not moose.exists(prePath+'/'+synName+'_spikegen'):
                         spikegen = moose.SpikeGen(prePath+'/'+synName+'_spikegen')
-                        # connect the compartment Vm to the spikegen
-                        self.connectWrapper(precomp, "VmOut", spikegen, "Vm")
                         # spikegens for different synapse_types can have different
                         # thresholds
                         spikegen.threshold = threshold
@@ -765,6 +776,7 @@ class NetworkML(object):
                         # Threshold, can set either edgeTriggered as above or
                         # refractT
                         #spikegen.refractT = 0.25e-3 
+
 
                     # wrap the spikegen in this compartment
                     spikegen = moose.SpikeGen(prePath+'/'+synName+'_spikegen') 
@@ -777,6 +789,7 @@ class NetworkML(object):
                 # moose.Synapse(syn.path+'/synapse') or syn.synapse Synpase is
                 # an array element, first add to it, to addSpike-s, get/set
                 # weights, etc.
+
 
                 syn.numSynapses += 1
                 m = self.connectSynapse(spikegen, syn)
@@ -879,17 +892,14 @@ class NetworkML(object):
             synid = synPath
         
         syn = moose.SynChan(synid)
-        assert(syn)
-
         syn = self.configureSynChan(syn, synParams={})
-
         childmgblock = mu.get_child_Mstring(syn,'mgblock')
 
         # connect the post compartment to the synapse
         # If NMDA synapse based on mgblock, connect to mgblock
         if childmgblock.value == 'True': 
             mgblock = moose.Mg_block(syn.path+'/mgblock')
-            self.connectWrapper(postcomp,"channel", mgblock, "channel")
+            self.connectWrapper(postcomp, "channel", mgblock, "channel")
         # if SynChan or even NMDAChan, connect normally
         else: 
             self.connectWrapper(postcomp,"channel", syn, "channel")
