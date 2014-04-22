@@ -656,6 +656,7 @@ class NetworkML(object):
 
     def connectSynapse(self, spikegen, synapseObj):
         ''' Add synapse. '''
+        assert isinstance(synapseObj, moose.SynChan), type(synapseObj)
         debug.printDebug("INFO"
                 , "Connecting ({})\n\t`{}`\n\t`{}`".format(
                         "Sparse"
@@ -664,14 +665,8 @@ class NetworkML(object):
                         )
                 , frame = inspect.currentframe()
                 )
-        # Sanity check.
-        if not synapseObj.synapse.delay:
-            synapseObj.synapse.delay = 1.0
-        if not synapseObj.synapse.weight:
-            synapseObj.synapse.weight = 1.0
-
         m = moose.connect(spikegen, "spikeOut"
-                , synapseObj.syn.vec, "addSpike"
+                , synapseObj.synapse.vec, "addSpike"
                 , "Sparse"
                 )
         m.setRandomConnectivity(1.0, 1)
@@ -784,7 +779,7 @@ class NetworkML(object):
                 # weights, etc.
 
                 syn.numSynapses += 1
-                m = self.connectSynapse(spikegen, syn.synapse)
+                m = self.connectSynapse(spikegen, syn)
 
             else:
                 # if connected to a file, create a timetable,
@@ -845,14 +840,25 @@ class NetworkML(object):
             #    print i,'th weight =',syn_syn.weight,'\n'
 
     def makeNewSynapse(self, synName, postcomp, synNameFull):
-        '''This function creates a new synapses.
+        '''This function creates a new synapses onto postcomp.
 
+        SpikeGen is spikeGenerator (presynaptic). SpikeGen connects to SynChan,
+        a synaptic channel which connects to post-synaptic compartment.
+
+        SpikeGen models the pre-synaptic events.
         '''
-        # if channel does not exist in library load it from xml file
         synPath = os.path.join(self.libraryPath, synName)
+        debug.printDebug("SYNAPSE"
+                , "Creating {} with path {} onto compartment {}".format(
+                    synName
+                    , synPath
+                    , postcomp.path
+                    )
+                )
+        # if channel does not exist in library load it from xml file
         if not moose.exists(synPath):
-            debug.printDebug("DEBUG"
-                    , "Channel {} does not exists moose {}".format(
+            debug.printDebug("SYNAPSE"
+                    , "Synaptic Channel {} does not exists. {}".format(
                         synPath, "Loading is from XML file"
                         )
                     )
@@ -862,11 +868,21 @@ class NetworkML(object):
         # deep copies the library synapse to an instance under postcomp named as
         # <arg3>
         if config.disbleCopyingOfObject:
+            debug.printDebug("WARN"
+                    , "Copying existing SynChan ({}) to {}".format(
+                        synPath
+                        , postcomp
+                        )
+                    )
             synid = moose.copy(moose.Neutral(synPath), postcomp, synNameFull)
         else:
             synid = synPath
         
         syn = moose.SynChan(synid)
+        assert(syn)
+
+        syn = self.configureSynChan(syn, synParams={})
+
         childmgblock = mu.get_child_Mstring(syn,'mgblock')
 
         # connect the post compartment to the synapse
@@ -877,3 +893,21 @@ class NetworkML(object):
         # if SynChan or even NMDAChan, connect normally
         else: 
             self.connectWrapper(postcomp,"channel", syn, "channel")
+
+    def configureSynChan(self, synObj, synParams={}):
+        '''Configure synapse. If no parameters are given then use the default
+        values. 
+
+        '''
+        assert(isinstance(synObj, moose.SynChan))
+        debug.printDebug("SYNAPSE"
+                , "Configuring SynChan"
+                )
+        synObj.tau1 = synParams.get('tau1', 5.0)
+        synObj.tau2 = synParams.get('tau2', 1.0)
+        synObj.Gk = synParams.get('Gk', 1.0)
+        synObj.Ek = synParams.get('Ek', 0.0)
+        synObj.synapse.num = synParams.get('synapse_num', 1)
+        synObj.synapse.delay = synParams.get('delay', 1.0)
+        synObj.synapse.weight = synParams.get('weight', 1.0)
+        return synObj
