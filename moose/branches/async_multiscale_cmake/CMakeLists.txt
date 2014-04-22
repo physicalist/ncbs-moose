@@ -4,7 +4,7 @@ enable_testing()
 project(moose)
 
 # These are CMAKE macros. Must be on the top.
-set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
 set(INSTALL_LIB_DIR lib CACHE PATH "/usr/local/lib")
 set(INSTALL_BIN_DIR bin CACHE PATH "/usr/local/bin")
@@ -29,7 +29,7 @@ else()
 endif()
 
 # Use clang++ as default compiler for time being
-#set(CMAKE_CXX_COMPILER "clang++")
+set(CMAKE_CXX_COMPILER "clang++")
 
 ## Turn warning to error
 #add_definitions(-Werror 
