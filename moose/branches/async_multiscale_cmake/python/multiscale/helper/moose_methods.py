@@ -172,7 +172,7 @@ def setupTable(name, obj, qtyname, tablePath=None, threshold=None):
     '''
     assert qtyname[0].isupper(), "First character must be uppercase character"
     debug.printDebug("DEBUG"
-            , "Setting up table for: {} -> {}".format(obj.path, qtyname)
+            , "Setting up table for: {} -> get{}".format(obj.path, qtyname)
             )
     if tablePath is None:
         tablePath = '{}/{}'.format(obj.path, 'data')
