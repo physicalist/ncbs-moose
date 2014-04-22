@@ -73,9 +73,14 @@ if args:
 
         simObj.updateMoose(populationDict, projectionDict)
 
-        mm.writeGraphviz(filename="./figs/topology.dot"
-                , filterList = ["classes", "Msgs", "clock"]
-                )
+        try:
+            mm.writeGraphviz(filename="./figs/topology.dot"
+                    , filterList = ["classes", "Msgs", "clock"]
+                    )
+        except Exception as e:
+            debug.printDebug("ERROR"
+                    , "Failed to write a graphviz file: %s " % e
+                    )
     else:
         debug.printDebug("FATAL", "One or more model file does not exists.")
         sys.exit()
