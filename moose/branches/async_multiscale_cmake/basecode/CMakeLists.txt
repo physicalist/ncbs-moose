@@ -21,6 +21,7 @@ add_library(basecode
     SetGet.cpp
     SharedFinfo.cpp
     SparseMatrix.cpp
+    PrepackedBuffer.cpp
     SrcFinfo.cpp
     testAsync.cpp
     ValueFinfo.cpp
