@@ -465,7 +465,7 @@ class Mumble():
         # Connect
         var = self.prefixWithGet(inputVar)
         try:
-            moose.connect(adaptor, 'requestOut', src, var)
+            moose.connect(adaptor, 'requestInput', src, var)
         except Exception as e:
             debug.printDebug("ERROR"
                     , 'Failed to connect var {} of {} with adaptor input'.format(
