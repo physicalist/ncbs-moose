@@ -36,6 +36,7 @@ add_definitions(-Wall -Werror
     -Wno-return-type-c-linkage
     -Wno-unused-variable
     -Wno-unused-function
+    -Wno-unused-private-field
     )
 
 ## Enable 2011 stupport.
