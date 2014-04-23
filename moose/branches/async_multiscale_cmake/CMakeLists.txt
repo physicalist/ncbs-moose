@@ -117,6 +117,7 @@ add_subdirectory(external/muparser)
 add_subdirectory(external/debug/)
 add_subdirectory(mesh)
 add_subdirectory(mpi)
+add_subdirectory(signeur)
 add_subdirectory(ksolve)
 add_subdirectory(hsolve)
 add_subdirectory(diffusion)
@@ -133,6 +134,7 @@ target_link_libraries(moose
     device
     moose_mpi
     msg 
+    signeur
     ksolve
     hsolve
     debug_print
@@ -211,6 +213,7 @@ if(BUILD_PYMOOSE)
         hsolve
         muparser
         biophysics
+        signeur
         kinetics
         mesh
         debug_print
