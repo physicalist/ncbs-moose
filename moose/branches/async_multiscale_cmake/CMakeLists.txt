@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 enable_testing()
-
 project(moose)
 
 # These are CMAKE macros. Must be on the top.
@@ -9,6 +8,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
 set(INSTALL_LIB_DIR lib CACHE PATH "/usr/local/lib")
 set(INSTALL_BIN_DIR bin CACHE PATH "/usr/local/bin")
 set(INSTALL_INCLUDE_DIR include CACHE PATH "/usr/local/include/")
+
+set(CMAKE_BUILD_TYPE Debug)
 
 # Do the gsl first
 set(LOCAL_GSL 0)
@@ -32,11 +33,12 @@ endif()
 set(CMAKE_CXX_COMPILER "clang++")
 
 ## Turn warning to error
-add_definitions(-Wall -Werror 
+add_definitions(-Wall
     -Wno-return-type-c-linkage
     -Wno-unused-variable
     -Wno-unused-function
     -Wno-unused-private-field
+    -Werror
     )
 
 ## Enable 2011 stupport.

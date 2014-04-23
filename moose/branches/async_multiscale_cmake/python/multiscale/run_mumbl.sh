@@ -25,7 +25,7 @@ function testPythonCode
 
 PYC=python
 if [ "$1" == "d" ]; then
-  PYC="gdb -ex r --args python2.7"
+  PYC="gdb -ex r --args python2.7 -m pdb"
   runCode
 elif [ "$1" == "c" ]; then 
     FILES=$(find . -name "*.py" -type f)
@@ -33,7 +33,7 @@ elif [ "$1" == "c" ]; then
         testPythonCode $pf
     done
 else
-  PYC=python2.7
+  PYC="python2.7 -m pdb"
   runCode
 fi
 
