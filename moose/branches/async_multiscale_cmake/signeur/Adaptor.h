@@ -10,6 +10,7 @@
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
 
+#include "../basecode/PrepackedBuffer.h"
 class Adaptor
 {
 	public:
