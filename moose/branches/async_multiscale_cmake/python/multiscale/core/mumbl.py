@@ -88,7 +88,8 @@ class Mumble():
         
     def prefixWithSet(self, var):
         assert len(var.strip()) > 0, "Empty variable name"
-        return 'set_'+var
+        var = var[0].upper() + var[1:]
+        return 'set'+var
 
     def prefixWithGet(self, var):
         assert len(var.strip()) > 0, "Empty variable name"
@@ -464,7 +465,7 @@ class Mumble():
         # Connect
         var = self.prefixWithGet(inputVar)
         try:
-            moose.connect(adaptor, 'requestField', src, var)
+            moose.connect(adaptor, 'requestOut', src, var)
         except Exception as e:
             debug.printDebug("ERROR"
                     , 'Failed to connect var {} of {} with adaptor input'.format(
