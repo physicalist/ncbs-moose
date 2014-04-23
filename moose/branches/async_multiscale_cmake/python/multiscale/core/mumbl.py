@@ -92,7 +92,8 @@ class Mumble():
 
     def prefixWithGet(self, var):
         assert len(var.strip()) > 0, "Empty variable name"
-        return 'get_'+var
+        var = var[0].upper() + var[1:]
+        return 'get'+var
 
     def load(self):
         """ Lead mumble element tree
@@ -452,8 +453,8 @@ class Mumble():
 
         adaptor.setField('scale', scale)
         adaptor.setField('inputOffset', - offset)
-        self.logger.info(
-                'Setting adaptor between {}/{} and {}/{}'.format(
+        debug.printDebug("MUMBLE"
+                , 'Setting adaptor between {}/{} and {}/{}'.format(
                     src.path
                     , inputVar
                     , tgt.path
@@ -465,30 +466,26 @@ class Mumble():
         try:
             moose.connect(adaptor, 'requestField', src, var)
         except Exception as e:
-            self.logger.error(
-                    'Failed to connect var {} of {} with adaptor input'.format(
+            debug.printDebug("ERROR"
+                    , 'Failed to connect var {} of {} with adaptor input'.format(
                         var, src.path
                         )
                     )
-            self.logger.info(
-                    "Avalilable fields are {}".format(
-                        moose.showfield(src)
-                        )
+            debug.printDebug("INFO"
+                    , "Avalilable fields are {}".format(moose.showfield(src))
                     )
             sys.exit()
         try:
             var = self.prefixWithSet(outputVar)
             moose.connect(adaptor, 'outputSrc', tgt, var)
         except Exception as e:
-            self.logger.error(
-                    'Failed to connect var {} of {} with adaptor input'.format(
+            debug.printDebug("ERROR"
+                    , 'Failed to connect var {} of {} with adaptor input'.format(
                         var, tgt.path
                         )
                     )
-            self.logger.info(
-                    "Avalilable fields are {}".format(
-                        moose.showfield(tgt)
-                        )
+            debug.printDebug("INFO"
+                    , "Avalilable fields are {}".format(moose.showfield(tgt))
                     )
             sys.exit()
         moose.useClock(self.mumbleClockId, adaptor.path, 'process')
