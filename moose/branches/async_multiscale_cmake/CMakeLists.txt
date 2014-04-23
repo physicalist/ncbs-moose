@@ -32,10 +32,12 @@ endif()
 set(CMAKE_CXX_COMPILER "clang++")
 
 ## Turn warning to error
-#add_definitions(-Werror 
-#    -Wno-return-type-c-linkage
-#    )
-#
+add_definitions(-Wall -Werror 
+    -Wno-return-type-c-linkage
+    -Wno-unused-variable
+    -Wno-unused-function
+    )
+
 ## Enable 2011 stupport.
 set(ENABLE_STD_2011 0)
 if(ENABLE_STD_2011)
