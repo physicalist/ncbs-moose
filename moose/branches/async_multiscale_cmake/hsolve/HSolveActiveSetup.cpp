@@ -149,11 +149,11 @@ void HSolveActive::readHHChannels()
 {
     vector< Id >::iterator icompt;
     vector< Id >::iterator ichan;
-    int nChannel;
-    double Gbar, Ek;
-    double X, Y, Z;
-    double Xpower, Ypower, Zpower;
-    int instant;
+    int nChannel = 0;
+    double Gbar = 0.0, Ek = 0.0;
+    double X = 0.0, Y = 0.0, Z = 0.0;
+    double Xpower = 0.0, Ypower = 0.0, Zpower = 0.0;
+    int instant = 0;
 
     for ( icompt = compartmentId_.begin(); icompt != compartmentId_.end(); ++icompt )
     {
@@ -225,8 +225,8 @@ void HSolveActive::readHHChannels()
 void HSolveActive::readGates()
 {
     vector< Id >::iterator ichan;
-    unsigned int nGates;
-    int useConcentration;
+    unsigned int nGates = 0;
+    int useConcentration = 0;
     for ( ichan = channelId_.begin(); ichan != channelId_.end(); ++ichan )
     {
         nGates = HSolveUtils::gates( *ichan, gateId_ );
@@ -278,7 +278,6 @@ void HSolveActive::readCalcium()
                     caConcIndex[ *iconc ] = caCount_[ ic ];
                     ++caCount_[ ic ];
 
-#ifdef  OLD_API
                     Ca =
                         HSolveUtils::get< CaConc, double >( *iconc, "Ca" );
                     CaBasal =
@@ -292,9 +291,6 @@ void HSolveActive::readCalcium()
                     floor =
                         HSolveUtils::get< CaConc, double >( *iconc, "floor" );
 
-#else      /* -----  not OLD_API  ----- */
-
-#endif     /* -----  not OLD_API  ----- */
                     caConc_.push_back(
                         CaConcStruct(
                             Ca, CaBasal,
