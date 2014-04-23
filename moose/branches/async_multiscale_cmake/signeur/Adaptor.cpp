@@ -274,10 +274,10 @@ void Adaptor::innerProcess()
 void Adaptor::process( const Eref& e, ProcPtr p )
 {
 	static FuncId fid = handleInput()->getFid(); 
-	requestInput()->send( e, p->threadIndexInGroup );
-	requestField()->send( e, p->threadIndexInGroup, fid );
+	requestInput()->send( e );
+	requestField()->send( e, fid );
 	innerProcess();
-	outputSrc()->send( e, p->threadIndexInGroup, output_ );
+	outputSrc()->send( e, output_ );
 }
 
 void Adaptor::reinit( const Eref& e, ProcPtr p )
