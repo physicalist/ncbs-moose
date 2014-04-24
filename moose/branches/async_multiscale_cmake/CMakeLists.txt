@@ -9,8 +9,6 @@ set(INSTALL_LIB_DIR lib CACHE PATH "/usr/local/lib")
 set(INSTALL_BIN_DIR bin CACHE PATH "/usr/local/bin")
 set(INSTALL_INCLUDE_DIR include CACHE PATH "/usr/local/include/")
 
-set(CMAKE_BUILD_TYPE Debug)
-
 # Do the gsl first
 set(LOCAL_GSL 0)
 if(LOCAL_GSL)
@@ -32,6 +30,7 @@ endif()
 # Use clang++ as default compiler for time being
 set(CMAKE_CXX_COMPILER "clang++")
 
+
 ## Turn warning to error
 add_definitions(-Wall
     -Wno-return-type-c-linkage
@@ -51,8 +50,11 @@ endif(ENABLE_STD_2011)
 # Strick checking 
 set(DEVELOPER 1)
 if(DEVELOPER)
+    MESSAGE("++ Enabled unit tests")
+    add_definitions(-DDO_UNIT_TESTS)
     add_definitions(-DDEBUG -DDEVELOPER -fPIC)
 endif()
+
 set(VERIFY 1)
 if(VERIFY)
     add_definitions(-DSANITY_CHECK -DARGS_CHECK -DRESULT_CHECK -DVALUE_CHECK)

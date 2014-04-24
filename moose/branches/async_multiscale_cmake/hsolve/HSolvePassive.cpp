@@ -732,14 +732,14 @@ void testHSolvePassive()
         //////////////////////////////////////////
         // Create cell inside moose; setup solver.
         //////////////////////////////////////////
-        Id n = shell->doCreate( "Neutral", Id(), "n" );
+        Id n = shell->doCreate( "Neutral", Id(), "n", 1 );
 
         vector< Id > c( nCompt );
         for ( i = 0; i < nCompt; i++ )
         {
             ostringstream name;
             name << "c" << i;
-            c[ i ] = shell->doCreate( "Compartment", n, name.str() );
+            c[ i ] = shell->doCreate( "Compartment", n, name.str() , 1);
 
             Field< double >::set( c[ i ], "Ra", tree[ i ].Ra );
             Field< double >::set( c[ i ], "Rm", tree[ i ].Rm );
@@ -754,9 +754,9 @@ void testHSolvePassive()
             vector< unsigned int >& child = tree[ i ].children;
             for ( j = 0; j < ( int )( child.size() ); j++ )
             {
-                MsgId mid = shell->doAddMsg(
+                ObjId mid = shell->doAddMsg(
                                 "Single", c[ i ], "axial", c[ child[ j ] ], "raxial" );
-                ASSERT( mid != Msg::bad, "Creating test model" );
+                ASSERT( ! mid.bad(), "Creating test model" );
             }
         }
 

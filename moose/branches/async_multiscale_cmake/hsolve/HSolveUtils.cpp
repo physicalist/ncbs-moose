@@ -363,7 +363,7 @@ void testHSolveUtils( )
 	Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
 	bool success;
 	
-	Id n = shell->doCreate( "Neutral", Id(), "n" );
+	Id n = shell->doCreate( "Neutral", Id(), "n", 1 );
 	
 	/**
 	 *  First we test the functions which return the compartments linked to a
@@ -381,24 +381,24 @@ void testHSolveUtils( )
 	 *  (c0 is the parent of c1. c1 is the parent of c2, c3, c4, c5.)
 	 */
 	Id c[ 6 ];
-	c[ 0 ] = shell->doCreate( "Compartment", n, "c0" );
-	c[ 1 ] = shell->doCreate( "Compartment", n, "c1" );
-	c[ 2 ] = shell->doCreate( "Compartment", n, "c2" );
-	c[ 3 ] = shell->doCreate( "Compartment", n, "c3" );
-	c[ 4 ] = shell->doCreate( "Compartment", n, "c4" );
-	c[ 5 ] = shell->doCreate( "Compartment", n, "c5" );
+	c[ 0 ] = shell->doCreate( "Compartment", n, "c0", 1 );
+	c[ 1 ] = shell->doCreate( "Compartment", n, "c1", 1 );
+	c[ 2 ] = shell->doCreate( "Compartment", n, "c2", 1 );
+	c[ 3 ] = shell->doCreate( "Compartment", n, "c3", 1 );
+	c[ 4 ] = shell->doCreate( "Compartment", n, "c4", 1 );
+	c[ 5 ] = shell->doCreate( "Compartment", n, "c5", 1 );
 	
-	MsgId mid;
+	ObjId mid;
 	mid = shell->doAddMsg( "Single", c[ 0 ], "axial", c[ 1 ], "raxial" );
-	ASSERT( mid != Msg::bad, "Linking compartments" );
+	ASSERT( ! mid.bad(), "Linking compartments" );
 	mid = shell->doAddMsg( "Single", c[ 1 ], "axial", c[ 2 ], "raxial" );
-	ASSERT( mid != Msg::bad, "Linking compartments" );
+	ASSERT( ! mid.bad(), "Linking compartments" );
 	mid = shell->doAddMsg( "Single", c[ 1 ], "axial", c[ 3 ], "raxial" );
-	ASSERT( mid != Msg::bad, "Linking compartments" );
+	ASSERT( ! mid.bad(), "Linking compartments" );
 	mid = shell->doAddMsg( "Single", c[ 1 ], "axial", c[ 4 ], "raxial" );
-	ASSERT( mid != Msg::bad, "Linking compartments" );
+	ASSERT( ! mid.bad(), "Linking compartments" );
 	mid = shell->doAddMsg( "Single", c[ 1 ], "axial", c[ 5 ], "raxial" );
-	ASSERT( mid != Msg::bad, "Linking compartments" );
+	ASSERT( ! mid.bad(), "Linking compartments" );
 	
 	vector< Id > found;
 	unsigned int nFound;
