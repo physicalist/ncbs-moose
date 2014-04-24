@@ -4,6 +4,6 @@ add_library(diffusion
 	FastMatrixElim.cpp
 	DiffPoolVec.cpp
 	Dsolve.cpp
-	testDiffusion.cpp
+	#testDiffusion.cpp
     )
 target_link_libraries(diffusion ksolve basecode)

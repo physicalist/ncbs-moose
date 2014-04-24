@@ -9,5 +9,5 @@ add_library(mesh
     CylBase.cpp	
     NeuroNode.cpp	
     NeuroMesh.cpp	
-    testMesh.cpp	
+    #testMesh.cpp	
     )

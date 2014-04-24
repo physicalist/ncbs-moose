@@ -1,5 +1,4 @@
 include_directories(../basecode)
-
 add_library(biophysics 
     CaConc.cpp
     ChanBase.cpp
