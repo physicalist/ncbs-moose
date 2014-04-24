@@ -50,9 +50,11 @@ endif(ENABLE_STD_2011)
 # Strick checking 
 set(DEVELOPER 1)
 if(DEVELOPER)
-    MESSAGE("++ Enabled unit tests")
-    add_definitions(-DDO_UNIT_TESTS)
+    #MESSAGE("++ Enabled unit tests")
+    #add_definitions(-DDO_UNIT_TESTS)
     add_definitions(-DDEBUG -DDEVELOPER -fPIC)
+else()
+    add_definitions(-UDO_UNIT_TESTS)
 endif()
 
 set(VERIFY 1)
@@ -137,11 +139,11 @@ target_link_libraries(moose
     scheduling
     builtins
     muparser
-    mesh
     device
     moose_mpi
     msg 
     signeur
+    mesh
     ksolve
     hsolve
     debug_print
@@ -210,8 +212,9 @@ if(BUILD_PYMOOSE)
         ksolve
         basecode
         msg
-        shell
         scheduling
+        signeur
+        shell
         randnum
         moose_mpi
         builtins
@@ -220,7 +223,6 @@ if(BUILD_PYMOOSE)
         hsolve
         muparser
         biophysics
-        signeur
         kinetics
         mesh
         debug_print
