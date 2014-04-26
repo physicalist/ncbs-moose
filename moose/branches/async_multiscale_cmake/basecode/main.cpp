@@ -349,6 +349,11 @@ int main( int argc, char** argv )
 			s->doSetClock( 9, 1.0 ); // Use a sensible default.
 		}
 #ifdef DO_UNIT_TESTS
+
+#ifdef  ENABLE_TESTS
+                doUnitTests = 1;
+#endif     /* -----  ENABLE_TESTS  ----- */
+
 		if ( doUnitTests ) {
 			mpiTests();
 			processTests( s );
