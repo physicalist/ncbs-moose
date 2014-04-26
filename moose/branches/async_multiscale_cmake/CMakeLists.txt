@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 2.8)
-enable_testing()
 project(moose)
 
 # These are CMAKE macros. Must be on the top.
@@ -51,7 +50,7 @@ endif(ENABLE_STD_2011)
 set(DEVELOPER 1)
 if(DEVELOPER)
     MESSAGE("++ Enabled unit tests")
-    add_definitions(-DDO_UNIT_TESTS)
+    add_definitions(-DDO_UNIT_TESTS -DENABLE_TESTS)
     add_definitions(-DDEBUG -DDEVELOPER -fPIC)
 else()
     add_definitions(-UDO_UNIT_TESTS)
@@ -235,7 +234,11 @@ if(BUILD_PYMOOSE)
 endif(BUILD_PYMOOSE)
 
 ## Keep tests here
+include(CTest)
 find_package(PythonInterp REQUIRED)
+add_test(NAME run_moose_with_enable_test
+    COMMAND ./moose 
+    )
 add_test(NAME load_moose_into_python
     COMMAND ${PYTHON_EXECUTABLE} "python/moose/test.py"
     )
