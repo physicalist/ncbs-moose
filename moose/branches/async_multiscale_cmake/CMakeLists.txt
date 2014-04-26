@@ -50,8 +50,8 @@ endif(ENABLE_STD_2011)
 # Strick checking 
 set(DEVELOPER 1)
 if(DEVELOPER)
-    #MESSAGE("++ Enabled unit tests")
-    #add_definitions(-DDO_UNIT_TESTS)
+    MESSAGE("++ Enabled unit tests")
+    add_definitions(-DDO_UNIT_TESTS)
     add_definitions(-DDEBUG -DDEVELOPER -fPIC)
 else()
     add_definitions(-UDO_UNIT_TESTS)
@@ -142,13 +142,13 @@ target_link_libraries(moose
     device
     moose_mpi
     msg 
+    diffusion
     signeur
     mesh
     ksolve
     hsolve
     debug_print
     benchmarks
-    diffusion
     shell
     )
 
