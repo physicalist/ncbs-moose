@@ -1829,24 +1829,24 @@ extern void testWildcard();
 
 void testMpiShell( )
 {
-    testFilterOffNodeTargets();
-    testShellParserCreateDelete();
-    testTreeTraversal();
-    testChildren();
-    testDescendant();
-    testMove();
-    testCopy();
-    testCopyFieldElement();
+	testFilterOffNodeTargets();
+	testShellParserCreateDelete();
+	testTreeTraversal();
+	testChildren();
+	testDescendant();
+	testMove();
+	testCopy();
+	testCopyFieldElement();
 
-    testObjIdToAndFromPath();
-    // testMultiLevelCopyAndPath(); // Uses HH channels.
+	testObjIdToAndFromPath();
+	// testMultiLevelCopyAndPath(); // Uses HH channels.
 
-    testShellSetGet();
-    testInterNodeOps();
-    testShellAddMsg();
-    testCopyMsgOps();
-    testWildcard();
-    testSyncSynapseSize();
-    // Stuff for doLoadModel
-    testFindModelParent();
+	testShellSetGet();
+	testInterNodeOps();
+	testShellAddMsg();
+	testCopyMsgOps();
+	testWildcard();
+	testSyncSynapseSize();
+	// Stuff for doLoadModel
+	testFindModelParent();
 }

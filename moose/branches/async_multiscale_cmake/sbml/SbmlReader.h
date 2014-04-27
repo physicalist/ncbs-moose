@@ -21,8 +21,7 @@
 #include <sbml/SBMLTypes.h>
 
 #include "../basecode/Id.h"
-LIBSBML_CPP_NAMESPACE_USE;
-
+//class Id;
 typedef struct
 {
   string enzyme;

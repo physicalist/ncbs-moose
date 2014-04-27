@@ -10,11 +10,6 @@
 #ifndef _NEUTRAL_H
 #define _NEUTRAL_H
 
-#ifdef  CYTHON
-#include "../cymoose/cython_header.hpp"
-class ObjId;
-class Id;
-#endif     /* -----  CYTHON  ----- */
 class Neutral
 {
 	public:
@@ -98,7 +93,6 @@ class Neutral
 		/**
 		 * Looks up all the Element children of the current Element
 		 */
-
 		vector< Id > getChildren( const Eref& e ) const;
 
 		/**

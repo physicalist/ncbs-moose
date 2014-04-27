@@ -11,9 +11,11 @@ import os
 os.environ['NUMPTHREADS'] = '1'
 import sys
 sys.path.append('../../../python')
+
 import moose
 from moose.utils import *
 from moose.neuroml.NeuroML import NeuroML
+
 from pylab import *
 
 simdt = 25e-6 # s

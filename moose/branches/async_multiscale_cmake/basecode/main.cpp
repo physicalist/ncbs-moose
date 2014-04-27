@@ -329,7 +329,7 @@ int main( int argc, char** argv )
 {
 	bool doUnitTests = 1;
 	bool doRegressionTests = 1;
-	unsigned int benchmark = 0;
+	unsigned int benchmark = 1;
 	// This reorders the OpFunc to Fid mapping to ensure it is node and
 	// compiler independent.
 	Id shellId = init( argc, argv, doUnitTests, doRegressionTests, benchmark );
@@ -349,12 +349,6 @@ int main( int argc, char** argv )
 			s->doSetClock( 9, 1.0 ); // Use a sensible default.
 		}
 #ifdef DO_UNIT_TESTS
-
-#ifdef  ENABLE_TESTS
-                doUnitTests = 1;
-                benchmark = 1;
-#endif     /* -----  ENABLE_TESTS  ----- */
-
 		if ( doUnitTests ) {
 			mpiTests();
 			processTests( s );

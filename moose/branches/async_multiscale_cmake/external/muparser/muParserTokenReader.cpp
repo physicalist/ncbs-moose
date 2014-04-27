@@ -145,11 +145,7 @@ namespace mu
   */
   ParserTokenReader* ParserTokenReader::Clone(ParserBase *a_pParent) const
   {
-#if GCC_VERSION > 40600
-    std::unique_ptr<ParserTokenReader> ptr(new ParserTokenReader(*this));
-#else
     std::auto_ptr<ParserTokenReader> ptr(new ParserTokenReader(*this));
-#endif
     ptr->SetParent(a_pParent);
     return ptr.release();
   }

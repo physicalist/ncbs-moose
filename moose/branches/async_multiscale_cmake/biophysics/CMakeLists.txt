@@ -17,3 +17,5 @@ add_library(biophysics
     SynHandler.cpp
     testBiophysics.cpp
     )
+
+target_link_libraries(biophysics debug_print)

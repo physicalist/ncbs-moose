@@ -11,84 +11,59 @@
 #include "SetGet.h"
 #include "../shell/Shell.h"
 #include "../shell/Neutral.h"
-#include "print_function.h"
 
-#ifdef  DEVELOPER
-#include <sstream>
-#include <stdexcept>
-#endif     /* -----  DEVELOPER  ----- */
-
-const OpFunc* SetGet::checkSet(
-        const string& field, ObjId& tgt, FuncId& fid )
+const OpFunc* SetGet::checkSet( 
+	const string& field, ObjId& tgt, FuncId& fid )
 {
-    // string field = "set_" + destField;
-    const Finfo* f = tgt.element()->cinfo()->findFinfo( field );
-    if ( !f ) { // Could be a child element? Note that field name will 
-        // change from set_<name> to just <name>
-        string f2 = field.substr( 3 );
-        Id child = Neutral::child( tgt.eref(), f2 );
-        if ( child == Id() ) 
-        {
-#ifdef DEVELOPER
-            stringstream ss;
-            ss << "In file: " << __FILE__ << ":" << __LINE__ << endl
-                << colored("Error: SetGet:checkSet:: No field or child named '") 
-                << field << "' was found on " << tgt.id.path() 
-                << endl;
-            ss << colored("|- Children : ", T_YELLOW);
-            vector< Id > children;
-            Neutral::children(tgt.eref(), children);
-            for(int i = 0; i < children.size(); ++i)
-                ss << "\n\t+ " << children[i].path();
-            cerr << ss.str() << endl;
+	// string field = "set_" + destField;
+	const Finfo* f = tgt.element()->cinfo()->findFinfo( field );
+	if ( !f ) { // Could be a child element? Note that field name will 
+		// change from set_<name> to just <name>
+		string f2 = field.substr( 3 );
+		Id child = Neutral::child( tgt.eref(), f2 );
+		if ( child == Id() ) {
+			cout << "Error: SetGet:checkSet:: No field or child named '" <<
+				field << "' was found on\n" << tgt.id.path() << endl;
+		} else {
+			if ( field.substr( 0, 3 ) == "set" )
+				f = child.element()->cinfo()->findFinfo( "setThis" );
+			else if ( field.substr( 0, 3 ) == "get" )
+				f = child.element()->cinfo()->findFinfo( "getThis" );
+			assert( f ); // should always work as Neutral has the field.
+			if ( child.element()->numData() == tgt.element()->numData() ) {
+				tgt = ObjId( child, tgt.dataIndex, tgt.fieldIndex );
+				if ( !tgt.isDataHere() )
+					return 0;
+			} else if ( child.element()->numData() <= 1 ) {
+				tgt = ObjId( child, 0 );
+				if ( !tgt.isDataHere() )
+					return 0;
+			} else {
+				cout << "SetGet::checkSet: child index mismatch\n";
+				return 0;
+			}
+		}
+	}
 
-//            throw runtime_error(colored("Field or child is not found"));
-#else
-            cerr << "Error: SetGet:checkSet:: No field or child named "
-                << field << " was found on " << tgt.id.path() << endl;
-#endif     /* -----  DEVELOPER  ----- */
-        } 
-        else 
-        {
-            if ( field.substr( 0, 3 ) == "set" )
-                f = child.element()->cinfo()->findFinfo( "setThis" );
-            else if ( field.substr( 0, 3 ) == "get" )
-                f = child.element()->cinfo()->findFinfo( "getThis" );
-            assert( f ); // should always work as Neutral has the field.
-            if ( child.element()->numData() == tgt.element()->numData() ) {
-                tgt = ObjId( child, tgt.dataIndex, tgt.fieldIndex );
-                if ( !tgt.isDataHere() )
-                    return 0;
-            } else if ( child.element()->numData() <= 1 ) {
-                tgt = ObjId( child, 0 );
-                if ( !tgt.isDataHere() )
-                    return 0;
-            } else {
-                cout << "SetGet::checkSet: child index mismatch\n";
-                return 0;
-            }
-        }
-    }
+	const DestFinfo* df = dynamic_cast< const DestFinfo* >( f );
+	if ( !df )
+		return 0;
+	
+	fid = df->getFid();
+	const OpFunc* func = df->getOpFunc();
+	assert( func );
+	return func;
 
-    const DestFinfo* df = dynamic_cast< const DestFinfo* >( f );
-    if ( !df )
-        return 0;
-
-    fid = df->getFid();
-    const OpFunc* func = df->getOpFunc();
-    assert( func );
-    return func;
-
-    /*
-    // This is the crux of the function: typecheck for the field.
-    // if ( func->checkSet( this ) )
-    if ( checkOpClass( func ) ) {
-    return func;
-    } else {
-    cout << "set::Type mismatch" << oid_ << "." << field << endl;
-    return 0;
-    }
-    */
+	/*
+	// This is the crux of the function: typecheck for the field.
+	// if ( func->checkSet( this ) )
+	if ( checkOpClass( func ) ) {
+		return func;
+	} else {
+		cout << "set::Type mismatch" << oid_ << "." << field << endl;
+		return 0;
+	}
+	*/
 }
 
 /////////////////////////////////////////////////////////////////////////
