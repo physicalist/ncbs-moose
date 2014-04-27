@@ -9,7 +9,6 @@
 **********************************************************************/
 #include "header.h"
 #include "../shell/Shell.h"
-#include "../external/debug/print_function.h"
 #include "Dinfo.h"
 
 // Static declaration.
@@ -215,16 +214,6 @@ const Finfo* Cinfo::findFinfo( const string& name ) const
 	map< string, Finfo*>::const_iterator i = finfoMap_.find( name );
 	if ( i != finfoMap_.end() )
 		return i->second;
-
-#ifdef  CINFO_CHECK
-        stringstream ss;
-        ss << "Can't find " << name;
-        ss << ". Followings are available : " << endl;
-        // Print the map with keys and values
-        ss << mapToString<string, Finfo*>(finfoMap_, true);
-        dump(ss.str(), "DEBUG");
-#endif     /* -----  not CINFO_CHECK  ----- */
-
 	return 0;
 }
 
@@ -468,11 +457,6 @@ unsigned int Cinfo::getNumValueFinfo() const
 
 
 ////////////////////////////////////////////////////////////////////
-
-/*-----------------------------------------------------------------------------
- *  NOTE: This function is made const
- *  Wed 26 Feb 2014 02:18:03 PM IST
- *-----------------------------------------------------------------------------*/
 Finfo* Cinfo::getLookupFinfo( unsigned int i ) const
 {
 	if ( i >= getNumLookupFinfo() )
@@ -481,7 +465,7 @@ Finfo* Cinfo::getLookupFinfo( unsigned int i ) const
 		if ( i >= baseCinfo_->getNumLookupFinfo() )
 			return lookupFinfos_[ i - baseCinfo_->getNumLookupFinfo() ];
 		else
-                        return baseCinfo_->getLookupFinfo(i);
+			return const_cast< Cinfo* >(baseCinfo_)->getLookupFinfo( i );
 	}
 
 	return lookupFinfos_[i];
@@ -527,7 +511,7 @@ Finfo* Cinfo::getFieldElementFinfo( unsigned int i ) const
 		if ( i >= baseCinfo_->getNumFieldElementFinfo() )
 			return fieldElementFinfos_[ i - baseCinfo_->getNumFieldElementFinfo() ];
 		else
-			return baseCinfo_->getFieldElementFinfo( i );
+			return const_cast< Cinfo* >( baseCinfo_ )->getFieldElementFinfo( i );
 	}
 
 	return fieldElementFinfos_[i];

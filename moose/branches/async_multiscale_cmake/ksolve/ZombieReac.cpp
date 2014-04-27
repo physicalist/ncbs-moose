@@ -17,6 +17,10 @@
 #include "Stoich.h"
 #include "ZombieReac.h"
 
+// #include "Reac.h"
+// #include "ElementValueFinfo.h"
+// #include "DataHandlerWrapper.h"
+
 const Cinfo* ZombieReac::initCinfo()
 {
 		//////////////////////////////////////////////////////////////

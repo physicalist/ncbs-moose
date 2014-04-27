@@ -58,37 +58,35 @@ bool SrcFinfo::addMsg( const Finfo* target, ObjId mid, Element* src ) const
 	}
 	return 0;
 }
-
-
 /////////////////////////////////////////////////////////////////////
 /**
  * SrcFinfo0 sets up calls without any arguments.
  */
-    SrcFinfo0::SrcFinfo0( const string& name, const string& doc )
-: SrcFinfo( name, doc )
+SrcFinfo0::SrcFinfo0( const string& name, const string& doc )
+	: SrcFinfo( name, doc )
 { ; }
 
 class OpFunc0Base;
 void SrcFinfo0::send( const Eref& e ) const {
-    const vector< MsgDigest >& md = e.msgDigest( getBindIndex() );
-    for ( vector< MsgDigest >::const_iterator
-            i = md.begin(); i != md.end(); ++i ) {
-        const OpFunc0Base* f = 
-            dynamic_cast< const OpFunc0Base* >( i->func );
-        assert( f );
-        for ( vector< Eref >::const_iterator
-                j = i->targets.begin(); j != i->targets.end(); ++j ) {
-            if ( j->dataIndex() == ALLDATA ) {
-                Element* e = j->element();
-                unsigned int start = e->localDataStart();
-                unsigned int end = start + e->numData();
-                for ( unsigned int k = start; k < end; ++k )
-                    f->op( Eref( e, k ) );
-            } else  {
-                f->op( *j );
-            }
-        }
-    }
+	const vector< MsgDigest >& md = e.msgDigest( getBindIndex() );
+	for ( vector< MsgDigest >::const_iterator
+		i = md.begin(); i != md.end(); ++i ) {
+		const OpFunc0Base* f = 
+			dynamic_cast< const OpFunc0Base* >( i->func );
+		assert( f );
+		for ( vector< Eref >::const_iterator
+			j = i->targets.begin(); j != i->targets.end(); ++j ) {
+			if ( j->dataIndex() == ALLDATA ) {
+				Element* e = j->element();
+				unsigned int start = e->localDataStart();
+				unsigned int end = start + e->numData();
+				for ( unsigned int k = start; k < end; ++k )
+					f->op( Eref( e, k ) );
+			} else  {
+				f->op( *j );
+			}
+		}
+	}
 }
 
 void SrcFinfo0::sendBuffer( const Eref& e, double* buf ) const

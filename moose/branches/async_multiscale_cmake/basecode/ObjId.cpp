@@ -117,10 +117,5 @@ string ObjId::path() const
 
 Element* ObjId::element() const
 {
-
-#ifdef  DEVELOPER
-    Element* i = id.element();
-    assert(i != NULL);
-#endif     /* -----  DEVELOPER  ----- */
 	return id.element();
 }
