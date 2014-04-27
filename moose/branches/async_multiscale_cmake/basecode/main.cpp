@@ -352,6 +352,7 @@ int main( int argc, char** argv )
 
 #ifdef  ENABLE_TESTS
                 doUnitTests = 1;
+                benchmark = 1;
 #endif     /* -----  ENABLE_TESTS  ----- */
 
 		if ( doUnitTests ) {
