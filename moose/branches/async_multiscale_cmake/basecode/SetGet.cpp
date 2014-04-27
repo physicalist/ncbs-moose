@@ -18,7 +18,8 @@
 #include <stdexcept>
 #endif     /* -----  DEVELOPER  ----- */
 
-const OpFunc* SetGet::checkSet(const string& field, ObjId& tgt, FuncId& fid)
+const OpFunc* SetGet::checkSet(
+        const string& field, ObjId& tgt, FuncId& fid )
 {
     // string field = "set_" + destField;
     const Finfo* f = tgt.element()->cinfo()->findFinfo( field );

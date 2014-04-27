@@ -241,11 +241,16 @@ ObjId Shell::doAddMsg( const string& msgType,
 			" on src: " << src.id.element()->getName() << endl;
             
 #ifdef  DEBUG
+                /* When running ./moose with ENABLE_TESTS, I don't want to see
+                 * available fields on the src or tgt. Mute it.
+                 */
+#ifndef ENABLE_TESTS
                 const map<string, Finfo*> finfoMap = src.id.element()->cinfo()->finfoMap();
                 stringstream ss;
                 ss << "Available fields on src are : " << endl;
                 ss << mapToString<string, Finfo*>(finfoMap, true);
                 dump(ss.str(), "DEBUG");
+#endif
 #endif     /* -----  DEBUG  ----- */
 		return ObjId(0, BADINDEX );
 	}
