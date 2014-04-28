@@ -54,7 +54,7 @@ extern void testKsolveProcess();
 extern void testBiophysics();
 extern void testBiophysicsProcess();
 extern void testDiffusion();
-// extern void testHSolve();
+extern void testHSolve();
 // extern void testKineticsProcess();
 // extern void testGeom();
 extern void testMesh();
@@ -268,17 +268,17 @@ void nonMpiTests( Shell* s )
 		unsigned int numCores = s->numCores();
 		if ( numCores > 0 )
 		s->setHardware( 1, 1, 0 );
-		testAsync();
-		testMsg();
-		testShell();
-		testScheduling();
-		testBuiltins();
-		// testKinetics();
-		testKsolve();
-		testKsolveProcess();
-		testBiophysics();
-		testDiffusion();
-		// testHSolve();
+		//testAsync();
+		//testMsg();
+		//testShell();
+		//testScheduling();
+		//testBuiltins();
+		//// testKinetics();
+		//testKsolve();
+		//testKsolveProcess();
+		//testBiophysics();
+		//testDiffusion();
+		testHSolve();
 		// testGeom();
 		testMesh();
 		// testSigNeur();
@@ -328,8 +328,8 @@ void mpiTests()
 int main( int argc, char** argv )
 {
 	bool doUnitTests = 1;
-	bool doRegressionTests = 1;
-	unsigned int benchmark = 1;
+	bool doRegressionTests = 0;
+	unsigned int benchmark = 0;
 	// This reorders the OpFunc to Fid mapping to ensure it is node and
 	// compiler independent.
 	Id shellId = init( argc, argv, doUnitTests, doRegressionTests, benchmark );
@@ -350,8 +350,8 @@ int main( int argc, char** argv )
 		}
 #ifdef DO_UNIT_TESTS
 		if ( doUnitTests ) {
-			mpiTests();
-			processTests( s );
+//			mpiTests();
+//			processTests( s );
 		}
 		// if ( doRegressionTests ) regressionTests();
 #endif
