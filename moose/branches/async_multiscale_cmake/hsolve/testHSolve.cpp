@@ -9,8 +9,12 @@
 **********************************************************************/
 #ifdef DO_UNIT_TESTS
 
+#include "../external/debug/print_function.h"
+#include <iostream>
+#include <cstdlib>
 #include <vector>
 #include <map>
+
 using namespace std;
 
 #include "HinesMatrix.h"
@@ -21,9 +25,13 @@ extern void testHSolveUtils(); // Defined in HSolveUtils.cpp
 
 void testHSolve()
 {
+        stringstream ss;
+        ss << "testHSolve ... ";
 	testHSolveUtils();
 	testHinesMatrix();
 	testHSolvePassive();
+        ss << setw(80) << "testHSolve SUCCESS" << endl;
+        dump(ss.str());
 }
 
 //////////////////////////////////////////////////////////////////////////////
