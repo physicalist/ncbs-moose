@@ -352,14 +352,13 @@ int HSolveUtils::targets(
 	return target.size() - oldSize;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 
 #ifdef DO_UNIT_TESTS
-
 #include "HinesMatrix.h"
 #include "../shell/Shell.h"
 void testHSolveUtils( )
 {
+        tbegin;
 	Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
 	bool success;
 	
@@ -510,7 +509,7 @@ void testHSolveUtils( )
 	
 	// Clean up
 	shell->doDelete( n );
-	cout << "." << flush;
+        tend;
 }
 
 #endif // DO_UNIT_TESTS

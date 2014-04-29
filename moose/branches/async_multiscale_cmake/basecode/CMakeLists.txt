@@ -26,5 +26,6 @@ add_library(basecode
     SrcFinfo.cpp
     testAsync.cpp
     ValueFinfo.cpp
+    global.cpp
     )
 target_link_libraries(basecode debug_print biophysics)
