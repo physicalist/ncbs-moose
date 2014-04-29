@@ -324,6 +324,8 @@ void mpiTests()
 		cout << "." << flush;
 #endif
 }
+
+unsigned int totalTests = 0;
 #ifndef PYMOOSE
 int main( int argc, char** argv )
 {
