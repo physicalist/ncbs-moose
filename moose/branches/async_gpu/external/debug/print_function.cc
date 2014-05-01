@@ -57,7 +57,7 @@ void dump(string msg, string type, bool autoFormat)
     bool set = false;
     bool reset = true;
     string color = T_GREEN;
-    if(type == "WARNING")
+    if(type == "WARNING" || type == "WARN" || type == "FIXME")
         color = T_YELLOW;
     else if(type == "DEBUG")
         color = T_CYAN;
@@ -68,7 +68,7 @@ void dump(string msg, string type, bool autoFormat)
     else if(type == "LOG")
        color = T_MAGENTA;
 
-    for(int i = 0; i < msg.size(); ++i)
+    for(unsigned int i = 0; i < msg.size(); ++i)
     {
         if('`' == msg[i])
         {

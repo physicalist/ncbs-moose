@@ -8,8 +8,14 @@
 #** See the file COPYING.LIB for the full notice.
 #**********************************************************************/
 
-TARGET = _hsolve.o
+ifndef CXXFLAGS 
+	CXXFLAGS = -g -fpermissive -fno-strict-aliasing -fPIC -fno-inline-functions \
+	-Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER -DSVN_REVISION=\"5340M\" \
+	-DLINUX -DUSE_GSL -DUSE_HDF5  -DH5_NO_DEPRECATED_SYMBOLS -I/usr/local/hdf5/include 
+endif
 
+TARGET = _hsolve.o
+CLIB = HSC/_hsc.o
 OBJ = \
 	HSolveStruct.o \
 	HinesMatrix.o \
@@ -24,15 +30,19 @@ OBJ = \
 	ZombieCompartment.o \
 	ZombieCaConc.o \
 	ZombieHHChannel.o \
+	HSC_Proxy.o
 
 HEADERS = \
 	../basecode/header.h
+
+SUBDIR = \
+	HSC
 
 default: $(TARGET)
 
 $(OBJ)	: $(HEADERS)
 HSolveStruct.o:	HSolveStruct.h
-HinesMatrix.o:	HinesMatrix.h TestHSolve.h
+HinesMatrix.o:	HinesMatrix.h TestHSolve.h HinesMatrix.cpp
 HSolvePassive.o:	HSolvePassive.h HinesMatrix.h HSolveStruct.h HSolveUtils.h TestHSolve.h ../biophysics/Compartment.h
 RateLookup.o:	RateLookup.h
 HSolveActive.o:	HSolveActive.h RateLookup.h HSolvePassive.h HinesMatrix.h HSolveStruct.h
@@ -42,12 +52,15 @@ HSolve.o:	../biophysics/Compartment.h ZombieCompartment.h ../biophysics/CaConc.h
 ZombieCompartment.o:	ZombieCompartment.h ../randnum/randnum.h ../biophysics/Compartment.h HSolve.h HSolveActive.h RateLookup.h HSolvePassive.h HinesMatrix.h HSolveStruct.h ../basecode/ElementValueFinfo.h
 ZombieCaConc.o:	ZombieCaConc.h ../biophysics/CaConc.h HSolve.h HSolveActive.h RateLookup.h HSolvePassive.h HinesMatrix.h HSolveStruct.h ../basecode/ElementValueFinfo.h
 ZombieHHChannel.o:	ZombieHHChannel.h ../biophysics/HHChannel.h ../biophysics/ChanBase.h ../biophysics/HHGate.h HSolve.h HSolveActive.h RateLookup.h HSolvePassive.h HinesMatrix.h HSolveStruct.h ../basecode/ElementValueFinfo.h
+HSC_Proxy.o:	HSC_Proxy.cpp	HSC_Proxy.h
 
 .cpp.o:
-	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I. -I../basecode -I../msg $< -c
+	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I. -I../basecode -I../msg $< -c -I/usr/local/cuda/include
 
 $(TARGET): $(OBJ) $(SMOLDYN_OBJ) $(HEADERS)
-	$(LD) -r -o $(TARGET) $(OBJ) $(SMOLDYN_OBJ) $(SMOLDYN_LIB_PATH) $(SMOLDYN_LIBS) $(GSL_LIBS)
+	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i; done)
+	$(LD) -r -o $(TARGET) $(OBJ) $(SMOLDYN_OBJ) $(SMOLDYN_LIB_PATH) $(SMOLDYN_LIBS) $(GSL_LIBS) $(CLIB) 
 
 clean:
+	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i clean;  done)
 	rm -f *.o $(TARGET) core core.*

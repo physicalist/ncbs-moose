@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # testHsolve.py --- 
 # Upi Bhalla, NCBS Bangalore, 9 June 2013.
 #
@@ -36,9 +37,11 @@ import sys
 sys.path.append('../../python')
 import os
 os.environ['NUMPTHREADS'] = '1'
+import pylab
+import numpy
 import math
-
 import moose
+import moose.utils
 
 EREST_ACT = -70e-3
 
@@ -214,14 +217,18 @@ def dump_plots( fname ):
     if ( os.path.exists( fname ) ):
         os.remove( fname )
     for x in moose.wildcardFind( '/graphs/##[ISA=Table]' ):
-        moose.element( x[0] ).xplot( fname, x[0].name )
+        t = numpy.arange( 0, x.vector.size, 1 )
+        pylab.plot( t, x.vector, label=x.name )
+    pylab.legend()
+    pylab.show()
+    #moose.utils.plotAscii(x.vector, file=fname)
 
 def make_spiny_compt():
     comptLength = 100e-6
     comptDia = 4e-6
     numSpines = 5
     compt = create_squid()
-    compt.inject = 0
+    compt.inject = 1e-7
     compt.x0 = 0
     compt.y0 = 0
     compt.z0 = 0
@@ -240,7 +247,7 @@ def make_spiny_compt():
         r = create_spine_with_receptor( compt, cell, i, i/float(numSpines) )
         r.synapse.num = 1
         syn = moose.element( r.path + '/synapse' )
-        moose.connect( synInput, 'event', syn, 'addSpike', 'Single' )
+        moose.connect( synInput, 'spikeOut', syn, 'addSpike', 'Single' )
         syn.weight = 0.2
         syn.delay = i * 1.0e-4
         """
@@ -261,6 +268,7 @@ def create_pool( compt, name, concInit ):
 def test_elec_alone():
     eeDt = 2e-6
     hSolveDt = 2e-5
+    runTime = 0.02
 
     make_spiny_compt()
     make_elec_plots()
@@ -272,9 +280,9 @@ def test_elec_alone():
     moose.useClock( 0, '/n/##[ISA=Compartment]', 'init' )
     moose.useClock( 1, '/n/##[ISA=Compartment]', 'process' )
     moose.useClock( 2, '/n/##[ISA=ChanBase],/n/##[ISA=SynBase],/n/##[ISA=CaConc],/n/##[ISA=SpikeGen]','process')
-    # moose.useClock( 8, '/graphs/elec/#', 'process' )
+    moose.useClock( 8, '/graphs/elec/#', 'process' )
     moose.reinit()
-    moose.start( 0.1 )
+    moose.start( runTime )
     dump_plots( 'instab.plot' )
     # make Hsolver and rerun
     hsolve = moose.HSolve( '/n/hsolve' )
@@ -286,8 +294,8 @@ def test_elec_alone():
         moose.setClock( 2, dt )
         hsolve.dt = dt
         hsolve.target = '/n/compt'
-        moose.re0init()
-        moose.start( 0.1 )
+        moose.reinit()
+        moose.start( runTime )
         dump_plots( 'h_instab' + str( dt ) + '.plot' )
 
 def main():

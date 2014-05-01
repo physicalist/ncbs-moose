@@ -11,6 +11,7 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
+#include <stdexcept>
 using namespace std;
 #include "SpikeRingBuffer.h"
 
@@ -48,6 +49,7 @@ void SpikeRingBuffer::reinit( double dt, double bufferTime )
 void SpikeRingBuffer::addSpike( double t, double w )
 {
 	unsigned int bin = round( ( t - currTime_ ) / dt_ );
+
 	if ( bin > weightSum_.size() ) {
 	// Should do catch-throw here
 		if ( t < currTime_ ) {
