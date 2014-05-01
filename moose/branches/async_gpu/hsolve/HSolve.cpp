@@ -194,7 +194,7 @@ HSolve::HSolve()
 
 void HSolve::process( const Eref& hsolve, ProcPtr p )
 {
-    this->HSolveActive::step( p );
+//    this->HSolveActive::step( p );
 }
 
 void HSolve::reinit( const Eref& hsolve, ProcPtr p )

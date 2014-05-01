@@ -239,11 +239,11 @@ endif
 
 #Saeed
 # To use CUDA, pass USE_CUDA=1 in make command line
-ifeq ($(USE_CUDA),1)
-LIBS+= -L/usr/local/cuda/lib64 -LhsolveCuda/cudaLibrary  -lcuda -lcudart -lm -lmooseCudaLibrary
-HCUDA_DIR = hsolveCuda
-HCUDA_LIB = hsolveCuda/_hsolveCuda.o 
-endif
+# ifeq ($(USE_CUDA),1)
+LIBS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lm
+HCUDA_DIR = hsolve
+HCUDA_LIB = hsolve/_hsolve.o 
+# endif
 
 # To compile examples, pass EXAMPLES=true ( anything on the right will do) in make command line
 ifdef EXAMPLES
@@ -310,7 +310,6 @@ SUBDIR = \
 	kinetics \
 	ksolve \
 	mesh \
-	hsolve \
 	diffusion \
 	device \
 	benchmarks \
@@ -336,7 +335,6 @@ OBJLIBS =	\
 	biophysics/_biophysics.o \
 	kinetics/_kinetics.o \
 	ksolve/_ksolve.o \
-	hsolve/_hsolve.o \
 	mesh/_mesh.o \
 	diffusion/_diffusion.o \
 	device/_device.o \

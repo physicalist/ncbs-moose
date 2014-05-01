@@ -526,6 +526,10 @@ ObjId Shell::doFind( const string& path ) const
 	vector< string > names;
 	vector< unsigned int > indices;
 	bool isAbsolute = chopPath( path, names, indices );
+//	for(int i =0; i< names.size();i++)
+//	{
+//		cout << indices[i]<<":"<< names[i] <<endl<<flush;
+//	}
 	assert( names.size() == indices.size() );
 
 	if ( !isAbsolute )
