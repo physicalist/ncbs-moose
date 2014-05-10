@@ -19,12 +19,15 @@ class PN2S_Proxy
 {
 
 public:
-	static void InsertCompartmentModel(Id seed,double dt);
+	static void Setup(double dt);
+	static void InsertCompartmentModel(Eref hsolve, Id seed);
 	static void Reinit();
-	static void Process(int id);
+	static void Process();
 private:
 	static void walkTree( Id seed, vector<Id> &compartmentIds );
 	static void storeTree(vector<Id> &compartmentIds, vector< TreeNodeStruct >& tree);
+
+	static void zombify( Element* solver, Element* orig);
 
 };
 #endif // !defined(EA_27150678_5056_4754_82F6_A77DCEB1BC1C__INCLUDED_)

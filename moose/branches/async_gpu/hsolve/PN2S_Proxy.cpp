@@ -17,7 +17,12 @@
  * the Shell and send it to Manager
  */
 
-void PN2S_Proxy::InsertCompartmentModel(Id seed, double dt){
+void PN2S_Proxy::Setup(double dt)
+{
+	PN2S_Manager::Setup(dt);
+}
+
+void PN2S_Proxy::InsertCompartmentModel(Eref master_hsolve, Id seed){
 
 	//Get Compartment id's with hine's index order
 	vector<Id> compartmentIds;
@@ -57,7 +62,16 @@ void PN2S_Proxy::InsertCompartmentModel(Id seed, double dt){
 	}
 
 
-	//Now model is ready to import into the PN2S
+	/**
+	 * Zumbify
+	 */
+	vector< Id >::const_iterator i;
+	for ( i = compartmentIds.begin(); i != compartmentIds.end(); ++i )
+		zombify( master_hsolve.element(), i->eref().element() );
+
+	/**
+	 * Now model is ready to import into the PN2S
+	 */
 	PN2S_Manager::InsertModel(neutral);
 }
 
@@ -116,6 +130,32 @@ void PN2S_Proxy::walkTree( Id seed, vector<Id> &compartmentIds )
     reverse( compartmentIds.begin(), compartmentIds.end() );
 }
 
+void PN2S_Proxy::zombify( Element* solver, Element* orig)
+{
+//    vector< Id >::const_iterator i;
+//
+//    for ( i = compartmentId_.begin(); i != compartmentId_.end(); ++i )
+//        ZombieCompartment::zombify( hsolve.element(), i->eref().element() );
+//
+//    for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
+//        ZombieCaConc::zombify( hsolve.element(), i->eref().element() );
+//
+//    for ( i = channelId_.begin(); i != channelId_.end(); ++i )
+//        ZombieHHChannel::zombify( hsolve.element(), i->eref().element() );
+
+	// Delete "process" msg.
+	static const Finfo* procDest = Compartment::initCinfo()->findFinfo("process");
+	assert( procDest );
+
+	const DestFinfo* df = dynamic_cast< const DestFinfo* >( procDest );
+	assert( df );
+	ObjId mid = orig->findCaller( df->getFid() );
+	if ( ! mid.bad() )
+		Msg::deleteMsg( mid );
+
+	//TODO: Check zumbswap is necessary or not
+
+}
 
 void PN2S_Proxy::Reinit(){
 	PN2S_Manager::Reinit();
@@ -125,6 +165,6 @@ void PN2S_Proxy::Reinit(){
 /**
  * If it's the first time to execute, prepare solver
  */
-void PN2S_Proxy::Process(int id){
+void PN2S_Proxy::Process(){
 
 }

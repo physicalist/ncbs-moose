@@ -164,6 +164,7 @@ private:
 	string path_;
 	vector<Id> seeds_;
 
+	bool isMasterHSolve(){return seeds_.size() > 1;}
 };
 
 #endif // _HSOLVE_H
