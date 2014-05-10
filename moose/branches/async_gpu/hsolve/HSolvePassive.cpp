@@ -111,7 +111,6 @@ void HSolvePassive::initialize()
     for ( unsigned int ic = 0; ic < compartmentId_.size(); ++ic )
     {
         Id cc = compartmentId_[ ic ];
-
         Vm = HSolveUtils::get< Compartment, double >( cc, "Vm" );
         Cm = HSolveUtils::get< Compartment, double >( cc, "Cm" );
         Em = HSolveUtils::get< Compartment, double >( cc, "Em" );
@@ -184,11 +183,11 @@ void HSolvePassive::storeTree()
         childId.clear();
 
         HSolveUtils::children( *ic, childId );
-        Ra = HSolveUtils::get< Compartment, double >( *ic, "Ra" );
-        Cm = HSolveUtils::get< Compartment, double >( *ic, "Cm" );
-        Rm = HSolveUtils::get< Compartment, double >( *ic, "Rm" );
-        Em = HSolveUtils::get< Compartment, double >( *ic, "Em" );
-        initVm = HSolveUtils::get< Compartment, double >( *ic, "initVm" );
+        Ra 		= HSolveUtils::get< Compartment, double >( *ic, "Ra" );
+        Cm 		= HSolveUtils::get< Compartment, double >( *ic, "Cm" );
+        Rm 		= HSolveUtils::get< Compartment, double >( *ic, "Rm" );
+        Em 		= HSolveUtils::get< Compartment, double >( *ic, "Em" );
+        initVm 	= HSolveUtils::get< Compartment, double >( *ic, "initVm" );
 
         TreeNodeStruct node;
         // Push hines' indices of children

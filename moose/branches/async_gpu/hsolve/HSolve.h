@@ -149,7 +149,7 @@ public:
 	
 private:
 	static vector< Id > children( Id obj );
-	static Id deepSearchForCompartment( Id base );
+	static Id deepSearchForCompartment(  Id base );
 	
 	void setup( Eref hsolve );
 	void zombify( Eref hsolve ) const;
@@ -162,7 +162,8 @@ private:
 	
 	double dt_;
 	string path_;
-	Id seed_;
+	vector<Id> seeds_;
+
 };
 
 #endif // _HSOLVE_H
