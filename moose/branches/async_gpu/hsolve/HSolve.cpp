@@ -23,6 +23,9 @@
 #include "../biophysics/ChanBase.h"
 #include "../biophysics/HHChannel.h"
 #include "ZombieHHChannel.h"
+#include "../shell/Wildcard.h"
+
+#include "PN2S_Proxy.h"
 
 const Cinfo* HSolve::initCinfo()
 {
@@ -201,6 +204,7 @@ void HSolve::reinit( const Eref& hsolve, ProcPtr p )
 {
     dt_ = p->dt;
     this->HSolveActive::reinit( p );
+    PN2S_Proxy::Reinit();
 }
 
 void HSolve::zombify( Eref hsolve ) const
@@ -219,11 +223,23 @@ void HSolve::zombify( Eref hsolve ) const
 
 void HSolve::setup( Eref hsolve )
 {
-    // Setup solver.
-    this->HSolveActive::setup( seed_, dt_ );
+	int n_models = seeds_.size();
 
-    zombify( hsolve );
-    mapIds();
+	if( n_models <= 1)
+	{
+		// Setup solver for CPU execution
+		this->HSolveActive::setup( seeds_[0], dt_ );
+		zombify( hsolve );
+		mapIds();
+	}
+	else
+	{
+		//Setup Master HSolve
+		for (int i=0; i<n_models; i++) {
+			PN2S_Proxy::InsertCompartmentModel(seeds_[i], dt_ );
+		}
+	}
+	zombify( hsolve );
 }
 
 ///////////////////////////////////////////////////
@@ -239,12 +255,14 @@ void HSolve::setSeed( Id seed )
         return;
     }
 
-    seed_ = seed;
+    seeds_[0] = seed;
 }
+
+//TODO: Saeed, add Set/Get seedPool
 
 Id HSolve::getSeed() const
 {
-    return seed_;
+    return seeds_[0];
 }
 
 void HSolve::setPath( const Eref& hsolve, string path )
@@ -255,17 +273,30 @@ void HSolve::setPath( const Eref& hsolve, string path )
         return;
     }
 
-    seed_ = deepSearchForCompartment( Id( path ) );
+    //Find all objects with the path address
+    vector<ObjId> ids;
+    wildcardFind(path, ids);
 
-    if ( seed_ == Id() )
-        cerr << "Warning: HSolve::setPath(): No compartments found at or below '"
-             << path << "'.\n";
-    else
+    seeds_.clear();
+    for(vector<ObjId>::iterator ic = ids.begin(); ic != ids.end() ; ++ic )
     {
-        // cout << "HSolve: Seed compartment found at '" << seed_.path() << "'.\n";
-        path_ = path;
-        setup( hsolve );
+    	Id seed = deepSearchForCompartment( ic->id );
+    	//Just add ones that are correct
+		if ( seed != Id() )
+			seeds_.push_back(seed);
     }
+
+    if ( seeds_.empty() )
+    {
+		cerr << "Warning: HSolve::setPath(): No compartments found at or below '"
+			 << path << "'.\n";
+    }
+    else
+	{
+		// cout << "HSolve: Seed compartment found at '" << seed_.path() << "'.\n";
+		path_ = path;
+		setup( hsolve);
+	}
 }
 
 string HSolve::getPath( const Eref& e) const
