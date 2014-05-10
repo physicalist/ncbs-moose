@@ -197,14 +197,19 @@ HSolve::HSolve()
 
 void HSolve::process( const Eref& hsolve, ProcPtr p )
 {
-//    this->HSolveActive::step( p );
+	if( isMasterHSolve() )
+		PN2S_Proxy::Process();
+	else
+		this->HSolveActive::step( p );
 }
 
 void HSolve::reinit( const Eref& hsolve, ProcPtr p )
 {
     dt_ = p->dt;
-    this->HSolveActive::reinit( p );
-    PN2S_Proxy::Reinit();
+    if( isMasterHSolve() )
+    	PN2S_Proxy::Reinit();
+    else
+    	this->HSolveActive::reinit( p );
 }
 
 void HSolve::zombify( Eref hsolve ) const
@@ -223,23 +228,22 @@ void HSolve::zombify( Eref hsolve ) const
 
 void HSolve::setup( Eref hsolve )
 {
-	int n_models = seeds_.size();
-
-	if( n_models <= 1)
+	if( isMasterHSolve())
+	{
+		PN2S_Proxy::Setup(dt_);
+		//Setup Master HSolve for each model
+		int n_models = seeds_.size();
+		for (int i=0; i<n_models; i++) {
+			PN2S_Proxy::InsertCompartmentModel(hsolve, seeds_[i]);
+		}
+	}
+	else
 	{
 		// Setup solver for CPU execution
 		this->HSolveActive::setup( seeds_[0], dt_ );
 		zombify( hsolve );
 		mapIds();
 	}
-	else
-	{
-		//Setup Master HSolve
-		for (int i=0; i<n_models; i++) {
-			PN2S_Proxy::InsertCompartmentModel(seeds_[i], dt_ );
-		}
-	}
-	zombify( hsolve );
 }
 
 ///////////////////////////////////////////////////

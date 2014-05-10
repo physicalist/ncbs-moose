@@ -765,7 +765,7 @@ void ZombieCompartment::cable()
 void ZombieCompartment::zombify( Element* solver, Element* orig )
 {
     // Delete "process" msg.
-    static const Finfo* procDest = Compartment::initCinfo()->findFinfo( "process");
+    static const Finfo* procDest = Compartment::initCinfo()->findFinfo("process");
     assert( procDest );
 
     const DestFinfo* df = dynamic_cast< const DestFinfo* >( procDest );
