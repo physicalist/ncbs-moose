@@ -9,19 +9,18 @@
 #define FCD33A96_9E58_4bec_BA66_91CF4FD383BD__INCLUDED_
 
 #include "../Definitions.h"
-#include "PN2S_SolverData.h"
+#include "PN2S_ModelPack.h"
 #include "PN2S_SolverChannels.h"
 #include "PN2S_SolverComps.h"
-#include "../model/PN2SModel.h"
-#include "../PN2S_Device.h"
+#include "../core/PN2SModel.h"
 
 class PN2S_Solver
 {
 private:
 	double _dt;
-	map<uint, PN2S_SolverData*> _modelToPackMap;
+	map<uint, PN2S_ModelPack*> _modelToPackMap;
 public:
-	vector<PN2S_SolverData> solverPacks;
+	vector<PN2S_ModelPack> modelPacks;
 
 	PN2S_Solver();
 	virtual ~PN2S_Solver();
@@ -31,9 +30,9 @@ public:
 
 
 	hscError Setup(double dt);
-	hscError PrepareSolver( vector<PN2SModel> & _models);
-	PN2S_SolverData* LocateDataByID(hscID_t id);
-	void Process(PN2S_SolverData* data, PN2S_Device* d);
+	hscError PrepareSolver( vector<PN2SModel> & _models,  double dt);
+	PN2S_ModelPack* FindModelPack(hscID_t id);
+	void Process(PN2S_ModelPack* data);
 };
 
 #endif // !defined(FCD33A96_9E58_4bec_BA66_91CF4FD383BD__INCLUDED_)

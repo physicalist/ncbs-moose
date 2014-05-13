@@ -11,11 +11,11 @@
 #include "PN2S_SolverComps.h"
 #include "PN2S_NetworkAnalyzer.h"
 
-class PN2S_SolverData
+class PN2S_ModelPack
 {
 public:
-	PN2S_SolverData();
-	virtual ~PN2S_SolverData();
+	PN2S_ModelPack();
+	virtual ~PN2S_ModelPack();
 
 	double GetDt(){ return _dt;}
 	void SetDt(double dt){ _dt = dt; _compsSolver.SetDt(dt);}

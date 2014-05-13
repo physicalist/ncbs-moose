@@ -22,7 +22,7 @@ public:
 	static void Setup(double dt);
 	static void InsertCompartmentModel(Eref hsolve, Id seed);
 	static void Reinit();
-	static void Process();
+	static void Process(ProcPtr info);
 private:
 	static void walkTree( Id seed, vector<Id> &compartmentIds );
 	static void storeTree(vector<Id> &compartmentIds, vector< TreeNodeStruct >& tree);

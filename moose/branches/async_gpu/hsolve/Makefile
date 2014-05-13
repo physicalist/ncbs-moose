@@ -57,9 +57,15 @@ PN2S_Proxy.o:	PN2S_Proxy.cpp	PN2S_Proxy.h
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I. -I../basecode -I../msg $< -c -I/usr/local/cuda/include
 
-$(TARGET): $(OBJ) $(SMOLDYN_OBJ) $(HEADERS)
+$(TARGET): $(OBJ) $(SMOLDYN_OBJ) $(HEADERS) $(SUBDIR)
 	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i; done)
 	$(LD) -r -o $(TARGET) $(OBJ) $(SMOLDYN_OBJ) $(SMOLDYN_LIB_PATH) $(SMOLDYN_LIBS) $(GSL_LIBS) $(CLIB) 
+
+$(SUBDIR): force
+	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i; done)
+
+.PHONY: force
+force :;
 
 clean:
 	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i clean;  done)

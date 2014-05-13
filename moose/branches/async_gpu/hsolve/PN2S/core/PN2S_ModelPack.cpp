@@ -5,20 +5,20 @@
 //  Original author: Saeed Shariati
 ///////////////////////////////////////////////////////////
 
-#include "PN2S_SolverData.h"
+#include "PN2S_ModelPack.h"
 #include "../Definitions.h"
 #include <assert.h>
 
 
-PN2S_SolverData::PN2S_SolverData(){
+PN2S_ModelPack::PN2S_ModelPack(){
 
 }
 
-PN2S_SolverData::~PN2S_SolverData(){
+PN2S_ModelPack::~PN2S_ModelPack(){
 
 }
 
-hscError PN2S_SolverData::PrepareSolver(vector<PN2SModel > &net){
+hscError PN2S_ModelPack::PrepareSolver(vector<PN2SModel > &net){
 	hscError res = NO_ERROR;
 
 	_analyzer.ImportNetwork(net);
@@ -30,7 +30,9 @@ hscError PN2S_SolverData::PrepareSolver(vector<PN2SModel > &net){
 	return  res;
 }
 
-hscError PN2S_SolverData::Process()
+
+
+hscError PN2S_ModelPack::Process()
 {
 	_compsSolver.Process();
 	return NO_ERROR;

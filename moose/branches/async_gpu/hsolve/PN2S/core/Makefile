@@ -15,11 +15,19 @@ ifndef CXXFLAGS
 endif
 ####################################################################
 
-TARGET = _model.o
+TARGET = _core.o
 
-OBJS += PN2SModel_HHChannel.o \
-	PN2SModel.o \
-	PN2SModel_Compartment.o 
+COBJS += PN2S_SolverChannels.o	\
+		PN2S_SolverComps.o	\
+		PN2S_ModelPack.o	\
+		solve.o			\
+#		PN2S_Solver.o 		\
+		
+		 
+OBJS += PN2S_NetworkAnalyzer.o \
+		PN2SModel_HHChannel.o \
+		PN2SModel.o \
+		PN2SModel_Compartment.o 
 
 .PHONY: all
 all: $(TARGET)
@@ -28,12 +36,21 @@ default: all
 PN2SModel_HHChannel.o: PN2SModel_HHChannel.cpp PN2SModel_HHChannel.h
 PN2SModel.o: PN2SModel.cpp PN2SModel.h 
 PN2SModel_Compartment.o: PN2SModel_Compartment.cpp PN2SModel_Compartment.h
+#PN2S_Solver.o: PN2S_Solver.cpp PN2S_Solver.h PN2S_ModelPack.h PN2S_ModelPack.cpp PN2S_SolverChannels.h PN2S_SolverChannels.cpp PN2S_SolverComps.h PN2S_SolverComps.cu 
+PN2S_ModelPack.o: PN2S_ModelPack.cpp PN2S_ModelPack.h PN2S_SolverChannels.cpp PN2S_SolverChannels.h PN2S_SolverComps.cu PN2S_SolverComps.h 
+PN2S_SolverChannels.o: PN2S_SolverChannels.cpp PN2S_SolverChannels.h 
+PN2S_SolverComps.o: PN2S_SolverComps.cu PN2S_SolverComps.h
+PN2S_NetworkAnalyzer.o: PN2S_NetworkAnalyzer.cpp PN2S_NetworkAnalyzer.h
+solve.o: solve.cu solve.h operations.h
 
 $(TARGET): $(OBJS) $(COBJS)
 	$(LD) -r -o  $(TARGET) $(OBJS) $(COBJS) 
 $(OBJS):
 	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg $< -c 
 	
+$(COBJS):
+	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30 -gencode arch=compute_20,code=sm_20 -x cu  -DDO_UNIT_TESTS
+
 .PHONY: clean
 clean:
-	rm -rf $(OBJS) $(TARGET)
+	rm -rf $(OBJS) $(COBJS) $(TARGET)

@@ -13,7 +13,7 @@
 #include "PN2SModel_Compartment.h"
 
 /*
- * This class inherits from vector, there is no destructor call for this function.
+ *
  */
 class PN2SModel
 {
