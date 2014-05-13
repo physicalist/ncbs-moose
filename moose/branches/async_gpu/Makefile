@@ -240,7 +240,7 @@ endif
 #Saeed
 # To use CUDA, pass USE_CUDA=1 in make command line
 # ifeq ($(USE_CUDA),1)
-LIBS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lm
+LIBS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lm -lgomp
 HCUDA_DIR = hsolve
 HCUDA_LIB = hsolve/_hsolve.o 
 # endif

@@ -11,7 +11,7 @@
 PN2S_Solver::PN2S_Solver()
 {
 	_dt = 1; //1ms
-	solverPacks.clear();
+	modelPacks.clear();
 	_modelToPackMap.clear();
 }
 
@@ -20,29 +20,25 @@ PN2S_Solver::~PN2S_Solver()
 
 }
 
-hscError PN2S_Solver::Setup(double dt){
+hscError PN2S_Solver::PrepareSolver(vector<PN2SModel> &m,  double dt){
 	_dt = dt;
-	return  NO_ERROR;
-}
 
+	//TODO: Generate model packs
+	modelPacks.resize(1);
+	modelPacks[0].SetDt(_dt);
 
-hscError PN2S_Solver::PrepareSolver(vector<PN2SModel> &m){
-	//Estimate size of modelpack
-	solverPacks.resize(1);
-	solverPacks[0].SetDt(_dt);
-
-	// Prepare solver for each modelpack
-	hscError res = solverPacks[0].PrepareSolver(m);
+	//Prepare solver for each modelpack
+	hscError res = modelPacks[0].PrepareSolver(m);
 
 	//Assign keys to modelPack, to be able to find later
 	for(vector<PN2SModel>::iterator it = m.begin(); it != m.end(); ++it) {
-		_modelToPackMap[it->id] = &solverPacks[0];
+		_modelToPackMap[it->id] = &modelPacks[0];
 	}
 	return res;
 }
 
 
-PN2S_SolverData* PN2S_Solver::LocateDataByID(hscID_t id){
+PN2S_ModelPack* PN2S_Solver::FindModelPack(hscID_t id){
 	return _modelToPackMap[id];
 }
 /**
@@ -54,7 +50,7 @@ PN2S_SolverData* PN2S_Solver::LocateDataByID(hscID_t id){
  *
  * When the output is ready, send it to the output task list
  */
-void PN2S_Solver::Process(PN2S_SolverData* data, PN2S_Device* d){
+void PN2S_Solver::Process(PN2S_ModelPack* data){
 	hscError res = data->Process();
 	assert(!res);
 }

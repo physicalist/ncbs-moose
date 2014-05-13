@@ -9,10 +9,7 @@
 #define A1182FDE9_1428_42fc_B1C4_EB304C128113__INCLUDED_
 
 #include "Definitions.h"
-#include "model/PN2SModel.h"
-#include "solver/PN2S_Solver.h"
-#include "PN2S_Scheduler.h"
-#include "PN2S_Device.h"
+#include "core/PN2SModel.h"
 #include "PN2S_DeviceManager.h"
 
 /**
@@ -27,12 +24,11 @@ public:
 	static bool IsInitialized();
 	static void InsertModel(PN2SModel &m);
 	static hscError PrepareSolver();
-	static hscError Process(uint id);
+	static hscError Process();
 	static hscError AddInputTask(uint id);
 
 private:
 
-	static void startDeviceThreads();
 
 };
 #endif // !defined(A1182FDE9_1428_42fc_B1C4_EB304C128113__INCLUDED_)

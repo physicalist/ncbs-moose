@@ -9,7 +9,7 @@
 #define EA_ABB95B66_E531_4681_AE2B_D1CE4B940FF6__INCLUDED_
 
 #include "../Definitions.h"
-#include "../model/PN2SModel.h"
+#include "../core/PN2SModel.h"
 #include "PN2S_NetworkAnalyzer.h"
 
 

@@ -9,7 +9,7 @@
 #define AA2911C45_CDD0_4e09_A1A2_A5363E6EF36B__INCLUDED_
 
 #include "../Definitions.h"
-#include "../model/PN2SModel.h"
+#include "../core/PN2SModel.h"
 
 class PN2S_NetworkAnalyzer
 {

@@ -7,7 +7,7 @@
 
 #include "PN2S_Proxy.h"
 #include "PN2S/Definitions.h"
-#include "PN2S/model/PN2SModel.h"
+#include "PN2S/core/PN2SModel.h"
 #include "PN2S/PN2S_Manager.h"
 #include "HSolveUtils.h"
 // #include "PN2S/modelr/PN2SModel_Compartment.h"
@@ -165,6 +165,6 @@ void PN2S_Proxy::Reinit(){
 /**
  * If it's the first time to execute, prepare solver
  */
-void PN2S_Proxy::Process(){
-
+void PN2S_Proxy::Process(ProcPtr info){
+	PN2S_Manager::Process();
 }

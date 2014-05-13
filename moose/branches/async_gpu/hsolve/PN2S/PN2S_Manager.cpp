@@ -11,24 +11,16 @@
 static vector<PN2SModel> _models;
 
 static double _dt;
-static PN2S_Solver _solver;
-static PN2S_Scheduler _scheduler;
-static PN2S_DeviceManager _deviceManager;
 static bool _isInitialized = false;
+static PN2S_DeviceManager _deviceManager;
 
 /**
  * Initialize the manager and set main parameters
  */
 hscError PN2S_Manager::Setup(double dt){
 	_dt = dt;
-	_solver.Setup(dt);
 	_models.clear();
 	return  NO_ERROR;
-}
-
-
-void PN2S_Manager::startDeviceThreads(){
-	//TODO: using scheduler to asynchronous execution
 }
 
 
@@ -49,8 +41,8 @@ void PN2S_Manager::InsertModel(PN2SModel &neutral){
 
 
 hscError PN2S_Manager::PrepareSolver(){
-	_deviceManager.Setup();
-	hscError res = _solver.PrepareSolver(_models);
+	hscError res = _deviceManager.Setup(_models,_dt);
+
 //	if( res == NO_ERROR)
 //		models.clear();
 
@@ -59,42 +51,42 @@ hscError PN2S_Manager::PrepareSolver(){
 }
 
 
-/**
- * Create and add a task to scheduler
- */
-hscError PN2S_Manager::AddInputTask(uint id){
-	//make taskID
-	PN2S_TaskInfo task;
-	task.modelPack = _solver.LocateDataByID(id);
+///**
+// * Create and add a task to scheduler
+// */
+//hscError PN2S_Manager::AddInputTask(uint id){
+//	//make taskID
+//	PN2S_TaskInfo task;
+//	task.modelPack = _solver.LocateDataByID(id);
+//
+//	//Add to scheduler
+//	_scheduler.AddInputTask(task);
+//
+//	return  NO_ERROR;
+//}
 
-	//Add to scheduler
-	_scheduler.AddInputTask(task);
 
-	return  NO_ERROR;
-}
+
 
 /**
  * A time increment process for each object
  */
-hscError PN2S_Manager::Process(uint id){
-	PN2S_TaskInfo tInfo;
-	tInfo.modelPack = _solver.LocateDataByID(id);
-	_scheduler.AddInputTask(tInfo);
 
-	//TODO: This part should do Asynchronously
-	PN2S_TaskInfo* t = _scheduler.GetInputTask();
 
-	_solver.Process(t->modelPack, &(_deviceManager._devices[0]));
+hscError PN2S_Manager::Process(){
+	//Process for all devices
+	_deviceManager.Process();
+
 	return  NO_ERROR;
 }
 
 
-#ifdef DO_UNIT_TESTS
+#ifdef DO_UNIT_TESTS0
 
 #include <cassert>
 #include <assert.h>
-#include "model/PN2SModel_HHChannel.h"
-#include "model/PN2SModel_Compartment.h"
+#include "core/PN2SModel_HHChannel.h"
+#include "core/PN2SModel_Compartment.h"
 
 #ifdef DO_UNIT_TESTS
 # define ASSERT( isOK, message ) \
@@ -468,7 +460,7 @@ void testPN2S_manager()
 		}
 
 		for(int i = 1; i<1000;i++)
-			PN2S_Manager::Process(0);
+			PN2S_Manager::Process();
 		cout <<"Cell "<<cell<<endl<<flush;
 //		tolerance = 4.0; // ratio to machine epsilon
 //

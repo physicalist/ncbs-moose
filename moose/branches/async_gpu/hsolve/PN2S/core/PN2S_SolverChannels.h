@@ -8,7 +8,7 @@
 #if !defined(A8661C97F_679E_4bb9_84D8_5EEB3718169D__INCLUDED_)
 #define A8661C97F_679E_4bb9_84D8_5EEB3718169D__INCLUDED_
 #include "../Definitions.h"
-#include "../model/PN2SModel.h"
+#include "../core/PN2SModel.h"
 #include "PN2S_NetworkAnalyzer.h"
 
 class PN2S_SolverChannels
