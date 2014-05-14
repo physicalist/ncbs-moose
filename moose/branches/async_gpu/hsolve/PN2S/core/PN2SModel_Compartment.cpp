@@ -8,17 +8,21 @@
 #include "PN2SModel_Compartment.h"
 //#include "../Definitions.h"
 
-PN2SModel_Compartment::PN2SModel_Compartment(){
+template <typename T, int arch>
+PN2SModel_Compartment<T,arch>::PN2SModel_Compartment(){
 }
 
-
-PN2SModel_Compartment::~PN2SModel_Compartment(){
+template <typename T, int arch>
+PN2SModel_Compartment<T,arch>::~PN2SModel_Compartment(){
 
 }
 
 //Copy constractor
-PN2SModel_Compartment::PN2SModel_Compartment( const PN2SModel_Compartment& other ) :
+template <typename T, int arch>
+PN2SModel_Compartment<T,arch>::PN2SModel_Compartment( const PN2SModel_Compartment& other ) :
 		Ra(other.Ra), Rm(other.Rm), Cm(other.Cm), Em(other.Em), initVm(other.initVm), Vm(other.Vm)
 {
 	children.assign(other.children.begin(), other.children.end());
 }
+
+template class PN2SModel_Compartment<double, ARCH_SM30>;

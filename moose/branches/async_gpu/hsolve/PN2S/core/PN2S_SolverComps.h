@@ -42,12 +42,12 @@ private:
 		T *_Rm; 	// Rm of the compartments
 		T *_Rm_dev; // Rm of the compartments
 
-	void  makeHinesMatrix(PN2SModel *model, T * matrix);// float** matrix, uint nCompt);
+	void  makeHinesMatrix(PN2SModel<T,arch> *model, T * matrix);// float** matrix, uint nCompt);
 
 public:
 	PN2S_SolverComps();
 	~PN2S_SolverComps();
-	hscError PrepareSolver(vector< PN2SModel> &models, PN2S_NetworkAnalyzer &analyzer);
+	hscError PrepareSolver(vector< PN2SModel<T,arch> > &models, PN2S_NetworkAnalyzer<T,arch> &analyzer);
 	hscError Process();
 	hscError UpdateMatrix();
 

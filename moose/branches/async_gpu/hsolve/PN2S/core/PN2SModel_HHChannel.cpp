@@ -6,13 +6,14 @@
 ///////////////////////////////////////////////////////////
 
 #include "PN2SModel_HHChannel.h"
+#include "../Definitions.h"
 
-
-PN2SModel_HHChannel::PN2SModel_HHChannel(){
+template <typename T, int arch>
+PN2SModel_HHChannel<T,arch>::PN2SModel_HHChannel(){
 }
 
-
-
-PN2SModel_HHChannel::~PN2SModel_HHChannel(){
-
+template <typename T, int arch>
+PN2SModel_HHChannel<T,arch>::~PN2SModel_HHChannel(){
 }
+
+template class PN2SModel_HHChannel<double, ARCH_SM30>;

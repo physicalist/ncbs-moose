@@ -8,7 +8,7 @@
 
 #include "PN2S_Manager.h"
 
-static vector<PN2SModel> _models;
+static vector<PN2SModel<CURRENT_TYPE, CURRENT_ARCH> > _models;
 
 static double _dt;
 static bool _isInitialized = false;
@@ -35,7 +35,7 @@ bool PN2S_Manager::IsInitialized(){
 	return  _isInitialized;
 }
 
-void PN2S_Manager::InsertModel(PN2SModel &neutral){
+void PN2S_Manager::InsertModel(PN2SModel<CURRENT_TYPE, CURRENT_ARCH> &neutral){
 	_models.push_back(neutral);
 }
 

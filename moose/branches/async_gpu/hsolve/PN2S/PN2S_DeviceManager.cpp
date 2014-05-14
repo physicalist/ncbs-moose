@@ -26,7 +26,7 @@ PN2S_DeviceManager::~PN2S_DeviceManager(){
 
 }
 
-hscError PN2S_Device::SelectDevice(){
+hscError PN2S_DeviceManager::SelectDevice(int id){
 	cudaDeviceProp deviceProp;
 	cudaSetDevice(id);
 	//TODO: Set configurations in device
@@ -34,7 +34,7 @@ hscError PN2S_Device::SelectDevice(){
 	return  NO_ERROR;
 }
 
-hscError PN2S_DeviceManager::Setup(vector<PN2SModel> &m, double dt){
+hscError PN2S_DeviceManager::Setup(vector<PN2SModel<CURRENT_TYPE, CURRENT_ARCH> > &m, double dt){
 	cudaDeviceReset();
 
 	//TODO: Devide model for more than one devices
@@ -48,9 +48,9 @@ hscError PN2S_DeviceManager::Setup(vector<PN2SModel> &m, double dt){
 
 void PN2S_DeviceManager::Process()
 {
-	for(vector<PN2S_Device>::iterator it = _devices.begin(); it != _devices.end(); ++it)
+	for(vector<PN2S_Device>::iterator device = _devices.begin(); device != _devices.end(); ++device)
 	{
-		it->Process();
+		device->Process();
 	}
 }
 

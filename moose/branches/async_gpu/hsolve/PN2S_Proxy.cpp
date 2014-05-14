@@ -30,7 +30,7 @@ void PN2S_Proxy::InsertCompartmentModel(Eref master_hsolve, Id seed){
 
 	int nCompt = compartmentIds.size();
 
-	PN2SModel neutral(seed.value());
+	PN2SModel<CURRENT_TYPE,CURRENT_ARCH> neutral(seed.value());
 
 	/**
 	 * Create Compartmental Model

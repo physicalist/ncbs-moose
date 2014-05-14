@@ -15,13 +15,14 @@
 /*
  *
  */
+template <typename T, int arch>
 class PN2SModel
 {
 public:
 	uint id;
 
-	vector<PN2SModel_HHChannel> hhChannels;
-	vector<PN2SModel_Compartment> compts;
+	vector<PN2SModel_HHChannel<T,arch> > hhChannels;
+	vector<PN2SModel_Compartment<T,arch> > compts;
 
 	PN2SModel(uint _id);
 	virtual ~PN2SModel();

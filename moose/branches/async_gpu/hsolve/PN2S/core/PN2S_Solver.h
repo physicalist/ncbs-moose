@@ -14,13 +14,14 @@
 #include "PN2S_SolverComps.h"
 #include "../core/PN2SModel.h"
 
+template <typename T, int arch>
 class PN2S_Solver
 {
 private:
 	double _dt;
-	map<uint, PN2S_ModelPack*> _modelToPackMap;
+	map<uint, PN2S_ModelPack<T,arch>*> _modelToPackMap;
 public:
-	vector<PN2S_ModelPack> modelPacks;
+	vector<PN2S_ModelPack<T,arch> > modelPacks;
 
 	PN2S_Solver();
 	virtual ~PN2S_Solver();
@@ -30,9 +31,9 @@ public:
 
 
 	hscError Setup(double dt);
-	hscError PrepareSolver( vector<PN2SModel> & _models,  double dt);
-	PN2S_ModelPack* FindModelPack(hscID_t id);
-	void Process(PN2S_ModelPack* data);
+	hscError PrepareSolver( vector<PN2SModel<T,arch> > & _models,  double dt);
+	PN2S_ModelPack<T,arch>* FindModelPack(hscID_t id);
+	void Process(PN2S_ModelPack<T,arch>* data);
 };
 
 #endif // !defined(FCD33A96_9E58_4bec_BA66_91CF4FD383BD__INCLUDED_)

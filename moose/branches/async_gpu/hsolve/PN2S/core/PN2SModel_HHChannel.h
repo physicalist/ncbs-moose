@@ -8,6 +8,7 @@
 #if !defined(A904F55B9_7DDF_45c6_81E6_3396EFC0EED4__INCLUDED_)
 #define A904F55B9_7DDF_45c6_81E6_3396EFC0EED4__INCLUDED_
 
+template <typename T, int arch>
 class PN2SModel_HHChannel
 {
 public:
