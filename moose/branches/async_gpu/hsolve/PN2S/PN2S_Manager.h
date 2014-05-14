@@ -22,7 +22,7 @@ public:
 	static hscError Setup(double dt);
 	static hscError Reinit();
 	static bool IsInitialized();
-	static void InsertModel(PN2SModel &m);
+	static void InsertModel(PN2SModel<CURRENT_TYPE, CURRENT_ARCH> &m);
 	static hscError PrepareSolver();
 	static hscError Process();
 	static hscError AddInputTask(uint id);

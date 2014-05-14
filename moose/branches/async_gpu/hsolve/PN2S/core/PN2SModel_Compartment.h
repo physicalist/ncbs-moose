@@ -14,25 +14,26 @@
 #include "PN2SModel_HHChannel.h"
 #include "PN2SModel_SynapticChannel.h"
 
+template <typename T, int arch>
 class PN2SModel_Compartment
 {
 public:
 	vector< unsigned int > children;	///< Hines indices of child compts
-	double Ra;
-	double Rm;
-	double Cm;
-	double Em;
-	double Vm;
-	double initVm;
+	T Ra;
+	T Rm;
+	T Cm;
+	T Em;
+	T Vm;
+	T initVm;
 
-	vector<PN2SModel_HHChannel> hhchannels;
+	vector<PN2SModel_HHChannel<T,arch> > hhchannels;
 
 	PN2SModel_Compartment();
 	PN2SModel_Compartment(uint _id);
 	virtual ~PN2SModel_Compartment();
 
 	//Copy constractor
-	PN2SModel_Compartment( const PN2SModel_Compartment& other );
+	PN2SModel_Compartment( const PN2SModel_Compartment<T,arch>& other );
 private:
 
 };

@@ -40,7 +40,7 @@ SUBDIR = \
 
 default: $(TARGET)
 
-$(OBJ)	: $(HEADERS)
+$(OBJ)	: $(HEADERS) 
 HSolveStruct.o:	HSolveStruct.h
 HinesMatrix.o:	HinesMatrix.h TestHSolve.h HinesMatrix.cpp
 HSolvePassive.o:	HSolvePassive.h HinesMatrix.h HSolveStruct.h HSolveUtils.h TestHSolve.h ../biophysics/Compartment.h

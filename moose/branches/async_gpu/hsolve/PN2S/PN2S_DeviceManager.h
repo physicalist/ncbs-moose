@@ -20,10 +20,10 @@ class PN2S_DeviceManager
 public:
 	PN2S_DeviceManager();
 	virtual ~PN2S_DeviceManager();
-	hscError Setup(vector<PN2SModel> &m, double dt);
+	hscError Setup(vector<PN2SModel<CURRENT_TYPE, CURRENT_ARCH> > &m, double dt);
 	void Process();
 	vector<PN2S_Device> _devices; //TODO: Should be private
 private:
-	hscError SelectDevice();
+	hscError SelectDevice(int id);
 };
 #endif // !defined(EA_8204B80E_EF46_47df_8AB8_FC787EF1223C__INCLUDED_)

@@ -19,7 +19,7 @@ PN2S_Device::~PN2S_Device(){
 	cudaDeviceReset();
 }
 
-hscError PN2S_Device::PrepareSolver(vector<PN2SModel> &m,  double dt){
+hscError PN2S_Device::PrepareSolver(vector<PN2SModel<CURRENT_TYPE,CURRENT_ARCH> > &m,  double dt){
 	_dt = dt;
 
 	//TODO: Generate model packs
@@ -37,36 +37,37 @@ hscError PN2S_Device::PrepareSolver(vector<PN2SModel> &m,  double dt){
 }
 
 /**
- * Multithread tasks
+ * Multithread tasks. Two queues, each one follow producer-consumer model
  */
 
 int _iq_size;
 int _iq_limit;
-std::deque<PN2S_ModelPack> _iq;
+std::deque<PN2S_ModelPack<CURRENT_TYPE,CURRENT_ARCH> > _iq;
 
 //No limit size for output queue
 int _oq_size;
-std::deque<PN2S_ModelPack> _oq;
+std::deque<PN2S_ModelPack<CURRENT_TYPE,CURRENT_ARCH> > _oq;
 
 void PN2S_Device::Process()
 {
 	if(_modelPacks.size() < 1)
 		return;
 
-	omp_lock_t _empty_lock_input;
-	omp_lock_t _full_lock_input;
-	omp_init_lock(&_empty_lock_input);
-	omp_init_lock(&_full_lock_input);
-	omp_set_lock(&_empty_lock_input);
-	omp_set_lock(&_full_lock_input);
-
-	omp_lock_t _empty_lock_output;
-	omp_init_lock(&_empty_lock_output);
-	omp_set_lock(&_empty_lock_output);
-
+	//State variable for three threads
 	int state=0;	//Start:0, task1 done: 1, task2 done: 2, Stop: 3
 
-	//Create queues for task scheduling
+	//Lock initialization
+	omp_lock_t _empty_lock_input;
+	omp_lock_t _full_lock_input;
+	omp_lock_t _empty_lock_output;
+	omp_init_lock(&_empty_lock_input);
+	omp_init_lock(&_full_lock_input);
+	omp_init_lock(&_empty_lock_output);
+	omp_set_lock(&_empty_lock_input);
+	omp_set_lock(&_full_lock_input);
+	omp_set_lock(&_empty_lock_output);
+
+	//TODO: Replace omp with pthread
 	_iq_limit = _queue_size;
 	#pragma omp parallel \
 		shared(_iq, _iq_size, state) \
@@ -80,7 +81,7 @@ void PN2S_Device::Process()
 		}
 		else if(tid%3==1)
 		{
-			task2_DoProcess(_empty_lock_input,_full_lock_input,_empty_lock_output,  state);
+			task2_doProcess(_empty_lock_input,_full_lock_input,_empty_lock_output,  state);
 		}
 		else if(tid%3==2)
 		{
@@ -93,7 +94,7 @@ void PN2S_Device::Process()
 }
 
 void PN2S_Device::task1_prepareInput(omp_lock_t& _empty_lock,omp_lock_t& _full_lock, int& state) {
-	for (vector<PN2S_ModelPack>::iterator it = _modelPacks.begin(); it != _modelPacks.end(); ++it)
+	for (vector<PN2S_ModelPack<CURRENT_TYPE,CURRENT_ARCH> >::iterator it = _modelPacks.begin(); it != _modelPacks.end(); ++it)
 	{
 		if(_iq_size >= _iq_limit)
 			omp_set_lock(&_full_lock);
@@ -115,7 +116,7 @@ void PN2S_Device::task1_prepareInput(omp_lock_t& _empty_lock,omp_lock_t& _full_l
 	#pragma omp flush(state)
 }
 
-void PN2S_Device::task2_DoProcess(omp_lock_t& _empty_lock_input,
+void PN2S_Device::task2_doProcess(omp_lock_t& _empty_lock_input,
 		omp_lock_t& _full_lock_input,
 		omp_lock_t& _empty_lock_output,
 		int& state)
@@ -124,7 +125,7 @@ void PN2S_Device::task2_DoProcess(omp_lock_t& _empty_lock_input,
 		if(_iq.size() == 0)
 			omp_set_lock(&_empty_lock_input);
 
-		PN2S_ModelPack& t= _iq[0];
+		PN2S_ModelPack<CURRENT_TYPE,CURRENT_ARCH>& t= _iq[0];
 		_iq.pop_front();
 
 		//Do Process
@@ -155,7 +156,7 @@ void PN2S_Device::task3_prepareOutput(omp_lock_t& _empty_lock, int& state) {
 			omp_set_lock(&_empty_lock);
 
 		sleep(1);
-		PN2S_ModelPack* res= &_oq[0];
+		PN2S_ModelPack<CURRENT_TYPE,CURRENT_ARCH>* res= &_oq[0];
 		_oq.pop_front();
 
 		//Output routins

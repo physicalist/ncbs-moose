@@ -44,6 +44,8 @@ enum hscError
 #define ARCH_SM30       (2)
 #define ARCH_SM35       (3)
 
+#define CURRENT_ARCH 	ARCH_SM30
+#define CURRENT_TYPE	double
 //#define checkCudaErrors(val)    ( (val), #val, __FILE__, __LINE__ )
 
 //#define hsc_uint uint

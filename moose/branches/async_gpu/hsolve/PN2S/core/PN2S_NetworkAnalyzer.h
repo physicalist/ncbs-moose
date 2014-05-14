@@ -9,8 +9,9 @@
 #define AA2911C45_CDD0_4e09_A1A2_A5363E6EF36B__INCLUDED_
 
 #include "../Definitions.h"
-#include "../core/PN2SModel.h"
+#include "PN2SModel.h"
 
+template <typename T, int arch>
 class PN2S_NetworkAnalyzer
 {
 
@@ -19,13 +20,13 @@ public:
 	uint nModel;
 	PN2S_NetworkAnalyzer();
 	virtual ~PN2S_NetworkAnalyzer();
-	hscError ImportNetwork(vector<PN2SModel> &network);
+	hscError ImportNetwork(vector<PN2SModel <T,arch> > &network);
 
-	vector<PN2SModel_Compartment*> allCompartments;
-	vector<PN2SModel_HHChannel*> allHHChannels;
+	vector<PN2SModel_Compartment<T,arch> *> allCompartments;
+	vector<PN2SModel_HHChannel<T,arch> *> allHHChannels;
 private:
-	hscError importCompts(vector<PN2SModel_Compartment> &cmpts);
-	hscError importHHChannels(vector<PN2SModel_HHChannel> &chs);
+	hscError importCompts(vector<PN2SModel_Compartment<T,arch> > &cmpts);
+	hscError importHHChannels(vector<PN2SModel_HHChannel<T,arch> > &chs);
 
 };
 #endif // !defined(AA2911C45_CDD0_4e09_A1A2_A5363E6EF36B__INCLUDED_)

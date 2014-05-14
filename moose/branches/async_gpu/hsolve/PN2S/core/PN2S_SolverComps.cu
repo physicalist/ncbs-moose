@@ -94,7 +94,7 @@ PN2S_SolverComps<T,arch>::~PN2S_SolverComps()
 
 
 template <typename T, int arch>
-hscError PN2S_SolverComps<T,arch>::PrepareSolver(vector<PN2SModel > &network, PN2S_NetworkAnalyzer &analyzer)
+hscError PN2S_SolverComps<T,arch>::PrepareSolver(vector<PN2SModel<T,arch> > &network, PN2S_NetworkAnalyzer<T,arch> &analyzer)
 {
 //	cudaError_t success;
 	cublasStatus_t stat;
@@ -239,7 +239,7 @@ hscError PN2S_SolverComps<T,arch>::UpdateMatrix()
 }
 
 template <typename T, int arch>
-void PN2S_SolverComps<T,arch>::makeHinesMatrix(PN2SModel *model, T * matrix)
+void PN2S_SolverComps<T,arch>::makeHinesMatrix(PN2SModel<T,arch> *model, T * matrix)
 {
 	/*
 	 * Some convenience variables

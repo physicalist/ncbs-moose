@@ -8,19 +8,22 @@
 #include "PN2S_Solver.h"
 #include <assert.h>
 
-PN2S_Solver::PN2S_Solver()
+template <typename T, int arch>
+PN2S_Solver<T,arch>::PN2S_Solver()
 {
 	_dt = 1; //1ms
 	modelPacks.clear();
 	_modelToPackMap.clear();
 }
 
-PN2S_Solver::~PN2S_Solver()
+template <typename T, int arch>
+PN2S_Solver<T,arch>::~PN2S_Solver()
 {
 
 }
 
-hscError PN2S_Solver::PrepareSolver(vector<PN2SModel> &m,  double dt){
+template <typename T, int arch>
+hscError PN2S_Solver<T,arch>::PrepareSolver(vector<PN2SModel<T,arch> > &m,  double dt){
 	_dt = dt;
 
 	//TODO: Generate model packs
@@ -31,14 +34,14 @@ hscError PN2S_Solver::PrepareSolver(vector<PN2SModel> &m,  double dt){
 	hscError res = modelPacks[0].PrepareSolver(m);
 
 	//Assign keys to modelPack, to be able to find later
-	for(vector<PN2SModel>::iterator it = m.begin(); it != m.end(); ++it) {
+	for(vector<PN2SModel<T,arch> >::iterator it = m.begin(); it != m.end(); ++it) {
 		_modelToPackMap[it->id] = &modelPacks[0];
 	}
 	return res;
 }
 
-
-PN2S_ModelPack* PN2S_Solver::FindModelPack(hscID_t id){
+template <typename T, int arch>
+PN2S_ModelPack<T,arch>* PN2S_Solver<T,arch>::FindModelPack(hscID_t id){
 	return _modelToPackMap[id];
 }
 /**
@@ -50,10 +53,12 @@ PN2S_ModelPack* PN2S_Solver::FindModelPack(hscID_t id){
  *
  * When the output is ready, send it to the output task list
  */
-void PN2S_Solver::Process(PN2S_ModelPack* data){
+template <typename T, int arch>
+void PN2S_Solver<T,arch>::Process(PN2S_ModelPack<T,arch>* data){
 	hscError res = data->Process();
 	assert(!res);
 }
+
 
 #ifdef DO_UNIT_TESTS
 #include <cassert>
@@ -66,4 +71,4 @@ void testPN2S_Solver()
 }
 #endif
 
-
+template class PN2S_Solver<double, ARCH_SM30>;

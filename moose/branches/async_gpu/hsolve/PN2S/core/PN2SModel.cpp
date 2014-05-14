@@ -11,13 +11,17 @@
 
 #include <typeinfo>
 
-PN2SModel::PN2SModel(uint _id) :
+template <typename T, int arch>
+PN2SModel<T,arch>::PN2SModel(uint _id) :
 		id(_id) {
 
 	compts.clear();
 	hhChannels.clear();
 }
 
-PN2SModel::~PN2SModel() {
+template <typename T, int arch>
+PN2SModel<T,arch>::~PN2SModel() {
 
 }
+
+template class PN2SModel<double, ARCH_SM30>;

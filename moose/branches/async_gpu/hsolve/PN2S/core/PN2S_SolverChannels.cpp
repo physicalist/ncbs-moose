@@ -12,15 +12,18 @@
 
 #define IDX2C(i,j,ld) (((j)*(ld))+(i))
 
-PN2S_SolverChannels::PN2S_SolverChannels() {
+template <typename T, int arch>
+PN2S_SolverChannels<T,arch>::PN2S_SolverChannels() {
 
 }
 
-PN2S_SolverChannels::~PN2S_SolverChannels() {
+template <typename T, int arch>
+PN2S_SolverChannels<T,arch>::~PN2S_SolverChannels() {
 //	free(hostMemory);
 }
 
-hscError PN2S_SolverChannels::PrepareSolver(vector<PN2SModel> &network, PN2S_NetworkAnalyzer &analyzer) {
+template <typename T, int arch>
+hscError PN2S_SolverChannels<T,arch>::PrepareSolver(vector<PN2SModel<T,arch> > &network, PN2S_NetworkAnalyzer<T,arch> &analyzer) {
 
 //	uint hhSize = 0;
 //	uint networkSize = network.size();
@@ -58,3 +61,6 @@ hscError PN2S_SolverChannels::PrepareSolver(vector<PN2SModel> &network, PN2S_Net
 
 	return NO_ERROR;
 }
+
+template class PN2S_SolverChannels<double, ARCH_SM30>;
+

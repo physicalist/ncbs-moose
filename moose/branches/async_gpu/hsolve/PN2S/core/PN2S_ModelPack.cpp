@@ -9,16 +9,18 @@
 #include "../Definitions.h"
 #include <assert.h>
 
-
-PN2S_ModelPack::PN2S_ModelPack(){
-
-}
-
-PN2S_ModelPack::~PN2S_ModelPack(){
+template <typename T, int arch>
+PN2S_ModelPack<T,arch>::PN2S_ModelPack(): _dt(1){
 
 }
 
-hscError PN2S_ModelPack::PrepareSolver(vector<PN2SModel > &net){
+template <typename T, int arch>
+PN2S_ModelPack<T,arch>::~PN2S_ModelPack(){
+
+}
+
+template <typename T, int arch>
+hscError PN2S_ModelPack<T,arch>::PrepareSolver(vector<PN2SModel<T,arch> > &net){
 	hscError res = NO_ERROR;
 
 	_analyzer.ImportNetwork(net);
@@ -31,9 +33,21 @@ hscError PN2S_ModelPack::PrepareSolver(vector<PN2SModel > &net){
 }
 
 
-
-hscError PN2S_ModelPack::Process()
+template <typename T, int arch>
+hscError PN2S_ModelPack<T,arch>::Process()
 {
+	//For each model in the pack, executes the Process()
 	_compsSolver.Process();
 	return NO_ERROR;
 }
+
+template <typename T, int arch>
+hscError PN2S_ModelPack<T,arch>::AddField()
+{
+
+	return NO_ERROR;
+}
+
+template class PN2S_ModelPack<double, ARCH_SM30>;
+
+

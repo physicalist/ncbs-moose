@@ -8,24 +8,27 @@
 #include "PN2S_NetworkAnalyzer.h"
 #include <assert.h>
 
-PN2S_NetworkAnalyzer::PN2S_NetworkAnalyzer(){
+template <typename T, int arch>
+PN2S_NetworkAnalyzer<T,arch>::PN2S_NetworkAnalyzer(){
 	allCompartments.clear();
 	allHHChannels.clear();
 	nComp = 0;
 }
 
-
-PN2S_NetworkAnalyzer::~PN2S_NetworkAnalyzer(){
+template <typename T, int arch>
+PN2S_NetworkAnalyzer<T,arch>::~PN2S_NetworkAnalyzer(){
 
 }
 
-hscError PN2S_NetworkAnalyzer::ImportNetwork(vector<PN2SModel> &network){
+template <typename T, int arch>
+hscError PN2S_NetworkAnalyzer<T,arch>::ImportNetwork(vector<PN2SModel<T,arch> > &network){
 	hscError res;
 	nModel = network.size();
 	if( nModel >0)
 		nComp = network[0].compts.size();
 
-	for(vector<PN2SModel>::iterator n = network.begin(); n != network.end(); ++n) {
+	typename vector<PN2SModel<T,arch> >::iterator n;
+	for( n = network.begin(); n != network.end(); ++n) {
 		res = importCompts(n->compts);
 		assert(res==NO_ERROR);
 		res = importHHChannels(n->hhChannels);
@@ -34,22 +37,29 @@ hscError PN2S_NetworkAnalyzer::ImportNetwork(vector<PN2SModel> &network){
 	return NO_ERROR;
 }
 
-hscError PN2S_NetworkAnalyzer::importCompts(vector<PN2SModel_Compartment> &cmpts)
+template <typename T, int arch>
+hscError PN2S_NetworkAnalyzer<T,arch>::importCompts(vector<PN2SModel_Compartment<T,arch> > &cmpts)
 {
-	for(vector<PN2SModel_Compartment>::iterator n = cmpts.begin(); n != cmpts.end(); ++n) {
+	typename vector<PN2SModel_Compartment<T,arch> >::iterator n;
+
+	for(n = cmpts.begin(); n != cmpts.end(); ++n) {
 		allCompartments.push_back(n.base());
 		importHHChannels(n->hhchannels);
 	}
 	return NO_ERROR;
 }
 
-hscError PN2S_NetworkAnalyzer::importHHChannels(vector<PN2SModel_HHChannel> &chs)
+template <typename T, int arch>
+hscError PN2S_NetworkAnalyzer<T,arch>::importHHChannels(vector<PN2SModel_HHChannel<T,arch> > &chs)
 {
 	if(chs.size() > 0)
 	{
-		for(vector<PN2SModel_HHChannel>::iterator n = chs.begin(); n != chs.end(); ++n) {
+		typename vector<PN2SModel_HHChannel<T,arch> >::iterator n;
+		for(n = chs.begin(); n != chs.end(); ++n) {
 			allHHChannels.push_back(n.base());
 		}
 	}
 	return NO_ERROR;
 }
+
+template class PN2S_NetworkAnalyzer<double, ARCH_SM30>;
