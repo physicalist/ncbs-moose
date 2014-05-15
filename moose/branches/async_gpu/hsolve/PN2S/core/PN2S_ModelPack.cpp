@@ -6,7 +6,7 @@
 ///////////////////////////////////////////////////////////
 
 #include "PN2S_ModelPack.h"
-#include "../Definitions.h"
+#include "../PN2S.h"
 #include <assert.h>
 
 template <typename T, int arch>

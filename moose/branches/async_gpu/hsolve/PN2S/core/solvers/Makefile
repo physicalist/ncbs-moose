@@ -15,41 +15,31 @@ ifndef CXXFLAGS
 endif
 ####################################################################
 
-TARGET = _core.o
+TARGET = _solvers.o
 
-COBJS += PN2S_ModelPack.o	
+COBJS += PN2S_SolverChannels.o	\
+		PN2S_SolverComps.o	\
+		solve.o			
+		
 		 
-OBJS += PN2S_NetworkAnalyzer.o 
-		
-SUBDIR = 	models \
-			solvers
-	
-MODULES = 	models/_models.o \
-			solvers/_solvers.o 
-		
+#OBJS += 
+
 .PHONY: all
 all: $(TARGET)
 default: all
 
-PN2S_ModelPack.o: PN2S_ModelPack.cpp PN2S_ModelPack.h solvers/PN2S_SolverChannels.cpp solvers/PN2S_SolverChannels.h solvers/PN2S_SolverComps.cu solvers/PN2S_SolverComps.h 
-PN2S_NetworkAnalyzer.o: PN2S_NetworkAnalyzer.cpp PN2S_NetworkAnalyzer.h
+PN2S_SolverChannels.o: PN2S_SolverChannels.cpp PN2S_SolverChannels.h 
+PN2S_SolverComps.o: PN2S_SolverComps.cu PN2S_SolverComps.h
+solve.o: solve.cu solve.h operations.h
 
-$(TARGET): $(OBJS) $(COBJS) $(SUBDIR) 
-	$(LD) -r -o  $(TARGET) $(OBJS) $(COBJS) $(MODULES)
-	 
+$(TARGET): $(OBJS) $(COBJS)
+	$(LD) -r -o  $(TARGET) $(OBJS) $(COBJS) 
 $(OBJS):
 	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg $< -c 
 	
 $(COBJS):
-	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fopenmp -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30  -x cu     
+	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30 -gencode arch=compute_20,code=sm_20 -x cu -DDO_UNIT_TESTS
 
 .PHONY: clean
-$(SUBDIR): force
-	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i; done)
-
-.PHONY: force
-force :;
-
 clean:
-	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i clean;  done)
 	rm -rf $(OBJS) $(COBJS) $(TARGET)
