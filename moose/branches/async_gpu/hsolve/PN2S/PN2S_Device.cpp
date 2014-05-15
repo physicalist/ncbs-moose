@@ -6,7 +6,7 @@
 ///////////////////////////////////////////////////////////
 
 #include "PN2S_Device.h"
-#include "Definitions.h"
+#include "PN2S.h"
 #include <cuda.h>
 #include <cuda_runtime.h>
 

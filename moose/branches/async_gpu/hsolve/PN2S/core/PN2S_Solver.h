@@ -8,11 +8,11 @@
 #if !defined(FCD33A96_9E58_4bec_BA66_91CF4FD383BD__INCLUDED_)
 #define FCD33A96_9E58_4bec_BA66_91CF4FD383BD__INCLUDED_
 
-#include "../Definitions.h"
+#include "../PN2S.h"
 #include "PN2S_ModelPack.h"
-#include "PN2S_SolverChannels.h"
-#include "PN2S_SolverComps.h"
-#include "PN2SModel.h"
+#include "solvers/PN2S_SolverChannels.h"
+#include "solvers/PN2S_SolverComps.h"
+#include "models/PN2SModel.h"
 
 template <typename T, int arch>
 class PN2S_Solver

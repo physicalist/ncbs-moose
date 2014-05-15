@@ -7,8 +7,8 @@
 
 #if !defined(A73EC9AE3_8C2D_45e3_AE47_0F3CC8B2E661__INCLUDED_)
 #define A73EC9AE3_8C2D_45e3_AE47_0F3CC8B2E661__INCLUDED_
-#include "PN2S_SolverChannels.h"
-#include "PN2S_SolverComps.h"
+#include "solvers/PN2S_SolverChannels.h"
+#include "solvers/PN2S_SolverComps.h"
 #include "PN2S_NetworkAnalyzer.h"
 
 //template <typename T, int arch>

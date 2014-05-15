@@ -8,8 +8,8 @@
 #if !defined(AA2911C45_CDD0_4e09_A1A2_A5363E6EF36B__INCLUDED_)
 #define AA2911C45_CDD0_4e09_A1A2_A5363E6EF36B__INCLUDED_
 
-#include "../Definitions.h"
-#include "PN2SModel.h"
+#include "../PN2S.h"
+#include "models/PN2SModel.h"
 
 template <typename T, int arch>
 class PN2S_NetworkAnalyzer

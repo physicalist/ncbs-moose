@@ -8,8 +8,8 @@
 #if !defined(A1182FDE9_1428_42fc_B1C4_EB304C128113__INCLUDED_)
 #define A1182FDE9_1428_42fc_B1C4_EB304C128113__INCLUDED_
 
-#include "Definitions.h"
-#include "core/PN2SModel.h"
+#include "PN2S.h"
+#include "core/models/PN2SModel.h"
 #include "PN2S_DeviceManager.h"
 
 /**
