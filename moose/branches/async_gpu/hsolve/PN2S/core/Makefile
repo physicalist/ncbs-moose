@@ -20,8 +20,7 @@ TARGET = _core.o
 COBJS += PN2S_SolverChannels.o	\
 		PN2S_SolverComps.o	\
 		PN2S_ModelPack.o	\
-		solve.o			\
-#		PN2S_Solver.o 		\
+		solve.o			
 		
 		 
 OBJS += PN2S_NetworkAnalyzer.o \
@@ -33,6 +32,7 @@ OBJS += PN2S_NetworkAnalyzer.o \
 all: $(TARGET)
 default: all
 
+PN2S_HSolve.o: PN2S_HSolve.cu PN2S_HSolve.h
 PN2SModel_HHChannel.o: PN2SModel_HHChannel.cpp PN2SModel_HHChannel.h
 PN2SModel.o: PN2SModel.cpp PN2SModel.h 
 PN2SModel_Compartment.o: PN2SModel_Compartment.cpp PN2SModel_Compartment.h

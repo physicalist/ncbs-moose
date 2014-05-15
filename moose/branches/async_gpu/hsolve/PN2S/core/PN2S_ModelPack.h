@@ -31,7 +31,7 @@ public:
 	hscError PrepareSolver(vector<PN2SModel<T,arch> > &models);
 
 	hscError Process();
-	hscError AddField();
+	hscError AddOutput();
 //	vector<vector<PN2SModel_Base> > models; //TODO: Encapsulation
 
 	PN2S_SolverComps<CURRENT_TYPE,CURRENT_ARCH> _compsSolver; //TODO Encapsulation
