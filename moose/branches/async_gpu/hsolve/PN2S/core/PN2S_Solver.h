@@ -12,7 +12,7 @@
 #include "PN2S_ModelPack.h"
 #include "PN2S_SolverChannels.h"
 #include "PN2S_SolverComps.h"
-#include "../core/PN2SModel.h"
+#include "PN2SModel.h"
 
 template <typename T, int arch>
 class PN2S_Solver

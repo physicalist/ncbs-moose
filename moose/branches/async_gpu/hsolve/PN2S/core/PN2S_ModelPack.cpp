@@ -42,7 +42,7 @@ hscError PN2S_ModelPack<T,arch>::Process()
 }
 
 template <typename T, int arch>
-hscError PN2S_ModelPack<T,arch>::AddField()
+hscError PN2S_ModelPack<T,arch>::AddOutput()
 {
 
 	return NO_ERROR;
