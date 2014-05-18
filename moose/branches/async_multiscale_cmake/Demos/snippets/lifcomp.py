@@ -117,7 +117,7 @@ def setup_two_cells():
     model = moose.Neutral('/model')
     data = moose.Neutral('/data')
     a1 = LIFComp('/model/a1')
-    b2 = LIFComp('/model/b2')
+    b2 = LIFComp(moose.copy(a1, '/model', 'b2'))
     a1.Vthreshold = 10e-3
     a1.Vreset = 0
     b2.Vthreshold = 10e-3
@@ -127,7 +127,8 @@ def setup_two_cells():
     syn.tau2 = 5e-3
     syn.Ek = 90e-3
     syn.bufferTime = delayMax * 2
-    syn.numSynapses = 1
+    syn.synapse.num += 1
+    # syn.numSynapses = 1
     syn.synapse.delay = delayMax
     moose.connect(b2, 'channel', syn, 'channel')
     ## Single message works most of the time but occassionally gives a
@@ -166,11 +167,15 @@ if __name__ == '__main__':
     utils.assignDefaultTicks(modelRoot='/model', dataRoot='/data', solver='ee')
     moose.reinit()
     utils.stepRun(simtime, stepsize)
-    for ii, tab in enumerate(tables):
-        subplot(len(tables), 1, ii+1)
-        t = np.linspace(0, simtime, len(tab.vector))*1e3
-        plot(t, tab.vector*1e3, label=tab.name)
-        legend()
-    show()
+    data = []
+    for tab in tables:
+        data.append(tab.vector)
+    data = np.concatenate(data)
+    np.savetxt('lifcomp.csv', data.transpose(), delimiter='\t', header=' '.join([tab.name for tab in tables]))
+    #     subplot(len(tables), 1, ii+1)
+    #     t = np.linspace(0, simtime, len(tab.vector))*1e3
+    #     plot(t, tab.vector*1e3, label=tab.name)
+    #     legend()
+    # show()
 # 
 # lifcomp.py ends here

@@ -60,15 +60,12 @@
 #include <mpi.h>
 #endif
 
-#include <sstream>
-
 #include "../basecode/header.h"
 #include "../basecode/Id.h"
 #include "../basecode/ObjId.h"
 #include "../utility/utility.h"
 #include "../randnum/randnum.h"
 #include "../shell/Shell.h"
-#include "../external/debug/print_function.h"
 
 #include "moosemodule.h"
 
@@ -728,7 +725,7 @@ extern "C" {
                 } else {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<double> _value;
-                    for (unsigned int ii = 0; ii < length; ++ii){
+                    for ( int ii = 0; ii < length; ++ii){
                         double v = PyFloat_AsDouble(PySequence_GetItem(value, ii));
                         _value.push_back(v);
                     }
@@ -772,7 +769,7 @@ extern "C" {
                 }
                 Py_ssize_t length = PySequence_Length(value);
                 vector<int> _value;
-                for (unsigned int ii = 0; ii < length; ++ii){
+                for ( int ii = 0; ii < length; ++ii){
                     int v = PyInt_AsLong(PySequence_GetItem(value, ii));
                     _value.push_back(v);
                 }
@@ -785,7 +782,7 @@ extern "C" {
                 } else {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<short> _value;
-                    for (unsigned int ii = 0; ii < length; ++ii){
+                    for ( int ii = 0; ii < length; ++ii){
                         short v = PyInt_AsLong(PySequence_GetItem(value, ii));
                         _value.push_back(v);
                     }
@@ -800,7 +797,7 @@ extern "C" {
                 } else {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<long> _value;
-                    for (unsigned int ii = 0; ii < length; ++ii){
+                    for ( int ii = 0; ii < length; ++ii){
                         long v = PyInt_AsLong(PySequence_GetItem(value, ii));
                         _value.push_back(v);
                     }
@@ -814,7 +811,7 @@ extern "C" {
                 } else {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<unsigned int> _value;
-                    for (unsigned int ii = 0; ii < length; ++ii){
+                    for ( int ii = 0; ii < length; ++ii){
                         unsigned int v = PyInt_AsUnsignedLongMask(PySequence_GetItem(value, ii));
                         _value.push_back(v);
                     }
@@ -828,7 +825,7 @@ extern "C" {
                 } else {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<unsigned long> _value;
-                    for (unsigned int ii = 0; ii < length; ++ii){
+                    for ( int ii = 0; ii < length; ++ii){
                         unsigned long v = PyInt_AsUnsignedLongMask(PySequence_GetItem(value, ii));
                         _value.push_back(v);
                     }
@@ -842,7 +839,7 @@ extern "C" {
                 } else {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<float> _value;
-                    for (unsigned int ii = 0; ii < length; ++ii){
+                    for ( int ii = 0; ii < length; ++ii){
                         float v = PyFloat_AsDouble(PySequence_GetItem(value, ii));
                         _value.push_back(v);
                     }
@@ -856,7 +853,7 @@ extern "C" {
                 } else {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<string> _value;
-                    for (unsigned int ii = 0; ii < length; ++ii){
+                    for ( int ii = 0; ii < length; ++ii){
                         char * v = PyString_AsString(PySequence_GetItem(value, ii));
                         _value.push_back(string(v));
                     }
@@ -949,7 +946,7 @@ extern "C" {
         PyObject * ret = PyTuple_New((Py_ssize_t)(end - start));
         
         // Py_XINCREF(ret);        
-        for (unsigned int ii = start; ii < end; ++ii){
+        for ( int ii = start; ii < end; ++ii){
             _ObjId * value = PyObject_New(_ObjId, &ObjIdType);
             value->oid_ = ObjId(self->oid_.id, self->oid_.dataIndex, ii);
             if (PyTuple_SetItem(ret, (Py_ssize_t)(ii-start), (PyObject*)value)){
@@ -1269,7 +1266,6 @@ extern "C" {
         if (!Id::isValid(self->oid_.id)){
             RAISE_INVALID_ID(NULL, "moose_ObjId_setDestField");
         }
-
         PyObject * arglist[10] = {NULL, NULL, NULL, NULL, NULL,
                                   NULL, NULL, NULL, NULL, NULL};
         ostringstream error;
@@ -1297,32 +1293,8 @@ extern "C" {
         
         // Try to parse the arguments.
         vector< string > argType;
-
-#ifdef  DEVELOPER
-        int res = parseFinfoType(Field<string>::get(oid, "className")
-                , "destFinfo"
-                , string(fieldName)
-                , argType);
-        if(res < 0)
-        {
-            error << "In file " << __FILE__  << ":" << __LINE__ << endl
-                << colored("ERROR: ") << "Argument of type " << fieldName 
-                << " with values ";
-            for(int ii = 0; ii < argType.size(); ii++)
-                error << argType[ii] << ", ";
-            error << endl;
-            error << " is not handled.";
-            PyErr_SetString(PyExc_RuntimeError
-                    , colored("See the message above").c_str()
-                    );
-        }
-
-#else
         if (parseFinfoType(Field<string>::get(oid, "className"),
-                             "destFinfo", string(fieldName), argType) < 0)
-        {
-
-            
+                             "destFinfo", string(fieldName), argType) < 0){
             error << "Arguments not handled: " << fieldName << "(";
             for (unsigned int ii = 0; ii < argType.size(); ++ii){
                 error << argType[ii] << ",";
@@ -1331,8 +1303,6 @@ extern "C" {
             PyErr_SetString(PyExc_TypeError, error.str().c_str());
             return NULL;
         }
-#endif     /* -----  DEVELOPER  ----- */
-
         if (argType.size() == 1){
             if ( arglist[1] == NULL && argType[0] == "void"){
                 bool ret = SetGet0::set(oid, string(fieldName));
@@ -1353,7 +1323,6 @@ extern "C" {
 
     PyObject * setDestFinfo(ObjId obj, string fieldName, PyObject *arg, string argType)
     {
-
         char typecode = shortType(argType);
         bool ret;
         ostringstream error;
@@ -1492,9 +1461,6 @@ extern "C" {
         }
         default: {
             error << "Cannot handle argument type: " << argType;
-#ifdef  DEBUG2
-            error << colored(" in function ") << __func__;
-#endif     /* -----  DEBUG2  ----- */
             PyErr_SetString(PyExc_TypeError, error.str().c_str());
             return NULL;
         }

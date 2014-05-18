@@ -41,6 +41,14 @@ const Cinfo* PoolBase::initCinfo()
 			&PoolBase::getDiffConst
 		);
 
+		static ElementValueFinfo< PoolBase, double > motorConst(
+			"motorConst",
+			"Motor transport rate molecule. + is away from soma, - is "
+			"towards soma. Only relevant for ZombiePool subclasses.",
+			&PoolBase::setMotorConst,
+			&PoolBase::getMotorConst
+		);
+
 		static ElementValueFinfo< PoolBase, double > conc(
 			"conc",
 			"Concentration of molecules in this pool",
@@ -73,13 +81,6 @@ const Cinfo* PoolBase::initCinfo()
 			"Species identifier for this mol pool. Eventually link to ontology.",
 			&PoolBase::setSpecies,
 			&PoolBase::getSpecies
-		);
-
-		static ValueFinfo< PoolBase, Id > solver(
-			"setSolver",
-			"Access the Id for the solver that handles this pool",
-			&PoolBase::setSolver,
-			&PoolBase::getSolver
 		);
 
 		//////////////////////////////////////////////////////////////
@@ -148,11 +149,11 @@ const Cinfo* PoolBase::initCinfo()
 		&n,			// Value
 		&nInit,		// Value
 		&diffConst,	// Value
+		&motorConst,	// Value
 		&conc,		// Value
 		&concInit,	// Value
 		&volume,	// Readonly Value
 		&speciesId,	// Value
-		&solver,			// Value
 		&reac,				// SharedFinfo
 		&proc,				// SharedFinfo
 		&species,			// SharedFinfo
@@ -277,6 +278,16 @@ double PoolBase::getDiffConst(const Eref& e ) const
 	return vGetDiffConst( e );
 }
 
+void PoolBase::setMotorConst( const Eref& e, double v )
+{
+	vSetMotorConst( e, v );
+}
+
+double PoolBase::getMotorConst(const Eref& e ) const
+{
+	return vGetMotorConst( e );
+}
+
 void PoolBase::setVolume( const Eref& e, double v )
 {
 	vSetVolume( e, v );
@@ -297,16 +308,17 @@ unsigned int PoolBase::getSpecies( const Eref& e ) const
 	return vGetSpecies( e );
 }
 
-// Virtual func: default does nothing.
-Id PoolBase::getSolver() const
-{
-	return vGetSolver();
-}
+//////////////////////////////////////////////////////////////
+// Virtual Field Definitions
+//////////////////////////////////////////////////////////////
 
-// Virtual func: default does nothing.
-void PoolBase::setSolver( Id solver )
+/// Dummy MotorConst field for most Pool subclasses.
+void PoolBase::vSetMotorConst( const Eref& e, double v )
+{;}
+
+double PoolBase::vGetMotorConst(const Eref& e ) const
 {
-	vSetSolver( solver );
+	return 0.0;
 }
 
 //////////////////////////////////////////////////////////////
@@ -316,7 +328,8 @@ void PoolBase::setSolver( Id solver )
 // There should also be a subsequent call to resched for the entire tree.
 //////////////////////////////////////////////////////////////
 // static func
-void PoolBase::zombify( Element* orig, const Cinfo* zClass, Id solver )
+void PoolBase::zombify( Element* orig, const Cinfo* zClass, 
+				Id ksolve, Id dsolve )
 {
 	if ( orig->cinfo() == zClass )
 		return;
@@ -327,6 +340,7 @@ void PoolBase::zombify( Element* orig, const Cinfo* zClass, Id solver )
 	vector< unsigned int > species( num, 0 );
 	vector< double > concInit( num, 0.0 );
 	vector< double > diffConst( num, 0.0 );
+	vector< double > motorConst( num, 0.0 );
 	for ( unsigned int i = 0; i < num; ++i ) {
 		Eref er( orig, i + start );
 		const PoolBase* pb = 
@@ -334,25 +348,22 @@ void PoolBase::zombify( Element* orig, const Cinfo* zClass, Id solver )
 		species[ i ] = pb->getSpecies( er );
 		concInit[ i ] = pb->getConcInit( er );
 		diffConst[ i ] = pb->getDiffConst( er );
+		motorConst[ i ] = pb->getMotorConst( er );
 	}
 	orig->zombieSwap( zClass );
 	for ( unsigned int i = 0; i < num; ++i ) {
 		Eref er( orig, i + start );
 		PoolBase* pb = reinterpret_cast< PoolBase* >( er.data() );
-		pb->setSolver( solver );
+		pb->vSetSolver( ksolve, dsolve );
 		pb->setSpecies( er, species[i] );
 		pb->setConcInit( er, concInit[i] );
 		pb->setDiffConst( er, diffConst[i] );
+		pb->setMotorConst( er, motorConst[i] );
 	}
-}
-// Virtual func: default does nothing.
-Id PoolBase::vGetSolver() const
-{
-	return Id();
 }
 
 // Virtual func: default does nothing.
-void PoolBase::vSetSolver( Id solver )
+void PoolBase::vSetSolver( Id ksolve, Id dsolve )
 {
 	;
 }

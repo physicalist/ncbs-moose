@@ -7,7 +7,11 @@ add_library(mesh
     MeshEntry.cpp	
     CubeMesh.cpp	
     CylBase.cpp	
+    CylMesh.cpp
     NeuroNode.cpp	
     NeuroMesh.cpp	
+    SpineEntry.cpp
+    SpineMesh.cpp
+    PsdMesh.cpp
     testMesh.cpp	
     )

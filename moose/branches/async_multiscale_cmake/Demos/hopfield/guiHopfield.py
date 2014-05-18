@@ -1,4 +1,3 @@
-import sys
 import os
 os.environ['NUMPTHREADS'] = '1'
 from PyQt4 import QtCore,QtGui

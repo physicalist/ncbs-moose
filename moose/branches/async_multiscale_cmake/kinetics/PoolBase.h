@@ -49,6 +49,8 @@ class PoolBase
 		double getNinit( const Eref& e ) const;
 		void setDiffConst( const Eref& e, double v );
 		double getDiffConst( const Eref& e ) const;
+		void setMotorConst( const Eref& e, double v );
+		double getMotorConst( const Eref& e ) const;
 
 		void setConc( const Eref& e, double v );
 		double getConc( const Eref& e ) const;
@@ -66,9 +68,6 @@ class PoolBase
 
 		void setSpecies( const Eref& e, SpeciesId v );
 		SpeciesId getSpecies( const Eref& e ) const;
-
-		void setSolver( Id solver );
-		Id getSolver() const;
 		
 		//////////////////////////////////////////////////////////////////
 		// Here are the inner virtual funcs for fields. 
@@ -81,6 +80,8 @@ class PoolBase
 		virtual double vGetNinit( const Eref& e ) const = 0;
 		virtual void vSetDiffConst( const Eref& e, double v ) = 0;
 		virtual double vGetDiffConst( const Eref& e ) const = 0;
+		virtual void vSetMotorConst( const Eref& e, double v );
+		virtual double vGetMotorConst( const Eref& e ) const;
 
 		virtual void vSetConc( const Eref& e, double v ) = 0;
 		virtual double vGetConc( const Eref& e ) const = 0;
@@ -96,8 +97,7 @@ class PoolBase
 		 * casting, and assignment. Default version of this function does
 		 * nothing.
 		 */
-		virtual void vSetSolver( Id solver );
-		virtual Id vGetSolver() const;
+		virtual void vSetSolver( Id ksolve, Id dsolve );
 		
 		//////////////////////////////////////////////////////////////////
 		/**
@@ -109,15 +109,15 @@ class PoolBase
 		 * fields. Typically needs to be followed by rescheduling and
 		 * possibly a class-specific function for assigning further
 		 * zombie fields outside the ken of the PoolBase.
-		 * The 'solver' argument specifies which object handles the solver
-		 * for this conversion. Typically this is the Stoich object for
-		 * deterministic calculations.
+		 * The 'solver' argument specifies which objects handle the solver
+		 * for this conversion. For the Pool this is either or both of
+		 * a kinetic solver /ksolve/ and a diffusion solver /dsolve/.
 		 * The term zombie arises because this operation was originally
 		 * carried out to strip an object of independent function, and
 		 * replace it with a solver-controlled facsimile.
 		 */
 		static void zombify( Element* original, const Cinfo* zClass, 
-			Id solver );
+			Id ksolve, Id dsolve );
 
 		//////////////////////////////////////////////////////////////////
 		// Dest funcs

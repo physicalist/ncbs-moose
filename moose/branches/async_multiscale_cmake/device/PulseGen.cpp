@@ -357,7 +357,7 @@ double PulseGen::getWidth(unsigned int index) const
 }
 void PulseGen::setWidth(unsigned int index, double width)
 {
-    if (index < width_.size()){
+    if ( index < width_.size()){
         width_[index] = width;
     } else {
         cout << "WARNING: PulseGen::setWidth - invalid index. First set the number of pulses by setting 'count' field." << endl;
@@ -365,7 +365,7 @@ void PulseGen::setWidth(unsigned int index, double width)
 }
 double PulseGen::getDelay(unsigned int index) const
 {
-    if (index < delay_.size()){
+    if ( index < delay_.size()){
         return delay_[index];
     } else {
         cout << "WARNING: PulseGen::getDelay - invalid index." << endl;
@@ -375,7 +375,7 @@ double PulseGen::getDelay(unsigned int index) const
 
 void PulseGen::setDelay(unsigned int index, double delay)
 {
-    if (index < delay_.size() ){
+    if (  index < delay_.size() ){
         delay_[index] = delay;
     } else {
         cout << "WARNING: PulseGen::setDelay - invalid index. First set the number of pulses by setting 'count' field." << endl;

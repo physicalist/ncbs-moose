@@ -31,8 +31,8 @@
 #ifndef _MOOSEMODULE_H
 #define _MOOSEMODULE_H
 
-
 #include <string>
+
 #include "../basecode/Id.h"
 extern char shortType(string);
 extern char innerType(char); // declared in utility.h, defined in utility/types.cpp
