@@ -159,7 +159,9 @@ const Cinfo* CaConc::initCinfo()
 		Neutral::initCinfo(),
 		CaConcFinfos,
 		sizeof( CaConcFinfos )/sizeof(Finfo *),
-                &dinfo
+                &dinfo,
+                doc,
+                sizeof(doc)/sizeof(string)
 	);
 
 	return &CaConcCinfo;
@@ -174,6 +176,8 @@ CaConc::CaConc()
 		CaBasal_( 0.0 ),
 		tau_( 1.0 ),
 		B_( 1.0 ),
+		c_( 0.0 ),
+		activation_( 0.0 ),
 		thickness_( 0.0 ),
 		ceiling_( 1.0e9 ),
 		floor_( 0.0 )

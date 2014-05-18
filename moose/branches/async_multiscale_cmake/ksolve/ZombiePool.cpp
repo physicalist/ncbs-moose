@@ -56,7 +56,7 @@ const Cinfo* ZombiePool::initCinfo()
 static const Cinfo* zombiePoolCinfo = ZombiePool::initCinfo();
 
 ZombiePool::ZombiePool()
-	: dsolve_( 0 ), ksolve_( 0 ), diffConst_( 1e-12 )
+	: dsolve_( 0 ), ksolve_( 0 ), diffConst_( 1e-12 ), motorConst_( 0.0 )
 {;}
 
 ZombiePool::~ZombiePool()
@@ -130,14 +130,26 @@ double ZombiePool::vGetConcInit( const Eref& e ) const
 
 void ZombiePool::vSetDiffConst( const Eref& e, double v )
 {
+	diffConst_ = v;
 	if ( dsolve_ )
 		dsolve_->setDiffConst( e, v );
-	diffConst_ = v;
 }
 
 double ZombiePool::vGetDiffConst( const Eref& e ) const
 {
 	return diffConst_;
+}
+
+double ZombiePool::vGetMotorConst( const Eref& e ) const
+{
+	return motorConst_;
+}
+
+void ZombiePool::vSetMotorConst( const Eref& e, double v )
+{
+	motorConst_ = v;
+	if ( dsolve_ )
+		dsolve_->setMotorConst( e, v );
 }
 
 void ZombiePool::vSetSpecies( const Eref& e, unsigned int v )
@@ -164,38 +176,33 @@ double ZombiePool::vGetVolume( const Eref& e ) const
 // Zombie conversion functions.
 //////////////////////////////////////////////////////////////
 
-void ZombiePool::vSetSolver( Id s )
+void ZombiePool::vSetSolver( Id ksolve, Id dsolve )
 {
 	// Nasty unsafe typecast. I would have preferred to pass in a 
 	// safely typed pointer but that would have exposed a low-level
 	// class for the ZombiePoolInterface.
-	assert( s.element()->cinfo()->isA( "Ksolve" ) ||
-					s.element()->cinfo()->isA( "Gsolve" ) ||
-					s.element()->cinfo()->isA( "Dsolve" ) );
-	ZombiePoolInterface* zpi = reinterpret_cast< ZombiePoolInterface *>(
-					ObjId( s, 0 ).data() );
-
-	if ( dsolve_ == 0 )
-		dsolve_ = zpi;
-	else
-		ksolve_ = zpi;
+	if ( ksolve.element()->cinfo()->isA( "Ksolve" ) ||
+					ksolve.element()->cinfo()->isA( "Gsolve" ) ) {
+			ksolve_= reinterpret_cast< ZombiePoolInterface *>(
+					ObjId( ksolve, 0 ).data() );
+	} else if ( ksolve == Id() ) {
+			ksolve_ = 0;
+	} else {
+			cout << "Warning:ZombiePool::vSetSolver: solver class " << 
+					ksolve.element()->cinfo()->name() << 
+					" not known.\nShould be Ksolve or Gsolve\n";
+			ksolve_ = 0;
+	}
+	
+	if ( dsolve.element()->cinfo()->isA( "Dsolve" ) ) {
+			dsolve_= reinterpret_cast< ZombiePoolInterface *>(
+					ObjId( dsolve, 0 ).data() );
+	} else if ( dsolve == Id() ) {
+			dsolve_ = 0;
+	} else {
+			cout << "Warning:ZombiePool::vSetSolver: solver class " << 
+					dsolve.element()->cinfo()->name() << 
+					" not known.\nShould be Dsolve\n";
+			dsolve_ = 0;
+	}
 }
-
-Id ZombiePool::vGetSolver() const
-{
-		return Id();
-}
-
-/*
-void ZombiePool::setKineticSolver( ZombiePoolInterface* k )
-{
-	assert( k != 0 );
-	ksolve_ = k ;
-}
-
-void ZombiePool::setDiffSolver( ZombiePoolInterface* d )
-{
-	assert( d != 0 );
-	dsolve_ = d;
-}
-*/

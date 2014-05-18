@@ -31,7 +31,10 @@ Cinfo::Cinfo( const string& name,
 	init( finfoArray, nFinfos );
 	cinfoMap()[ name ] = this;
 	doc_.clear();
-	// cout << "Doing initCinfo for " << name << " with numDoc = " << numDoc << endl;
+
+#if  VERBOSITY > 2
+	cerr << setw(VERBOSITY) << "Doing initCinfo for " << name << " with numDoc = " << numDoc << endl;
+#endif     /* -----  not DEBUG  ----- */
 	if ( doc && numDoc ) {
 		for ( unsigned int i = 0; i < numDoc - 1; i += 2 ) {
 			const string argName = doc[i];
@@ -77,7 +80,7 @@ Cinfo::~Cinfo()
  */
 void Cinfo::init( Finfo** finfoArray, unsigned int nFinfos )
 {
-	if ( baseCinfo_ ) {
+        if ( baseCinfo_ ) {
 		// Copy over base Finfos.
 		numBindIndex_ = baseCinfo_->numBindIndex_;
 		finfoMap_ = baseCinfo_->finfoMap_;
@@ -198,6 +201,14 @@ const Cinfo* Cinfo::find( const string& name )
 	map<string, Cinfo*>::iterator i = cinfoMap().find(name);
 	if ( i != cinfoMap().end() )
 		return i->second;
+
+#ifdef  RESULT_CHECK
+        stringstream ss;
+        ss << "+ " << name << " not found. Available names are " << endl;
+        ss << mapToString<string, Cinfo*>( cinfoMap() );
+        dump(ss.str(), "DEBUG");
+#endif     /* -----  not RESULT_CHECK  ----- */
+
 	return 0;
 }
 

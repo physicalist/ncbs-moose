@@ -305,6 +305,13 @@ class Element
 				vector< string >& func
 				) const;
 
+		/**
+		 * Enumerates msg targets. Will get confused if some
+		 * are across nodes.
+		 */
+		vector< ObjId > getMsgTargets( DataId srcDataId,
+				const SrcFinfo* finfo  ) const;
+
 		/** Used upon ending of MOOSE session, to rapidly clear out 
 		 * messages, secure in the knowledge that the data structures 
 		 * will be destroyed separately.

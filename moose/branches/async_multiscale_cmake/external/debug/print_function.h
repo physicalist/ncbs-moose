@@ -81,7 +81,7 @@ bool isBackTick(char a);
  * ==============================================================================
  */
 template<typename A, typename B>
-string mapToString(const map<A, B>& m, bool value)
+string mapToString(const map<A, B>& m, bool value=true)
 {
     unsigned int width = 80;
     unsigned int mapSize = m.size();
@@ -107,7 +107,7 @@ string mapToString(const map<A, B>& m, bool value)
     ss.str("");
     
     int i = 0;
-    for(int ii = 0; ii < row.size(); ii++)
+    for(unsigned int ii = 0; ii < row.size(); ii++)
     {
         if(i < colums)
         {

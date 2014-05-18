@@ -10,7 +10,7 @@
 #include <cctype>
 #include "header.h"
 #include "SparseMatrix.h"
-#include "Vec.h"
+#include "../utility/Vec.h"
 
 #include "ElementValueFinfo.h"
 #include "Boundary.h"
@@ -154,6 +154,9 @@ void PsdMesh::handlePsdList(
 		assert( diskCoords.size() == 8 * parentVoxel.size() );
 		psd_.resize( parentVoxel.size() );
 		pa_.resize( parentVoxel.size() );
+		vs_.resize( parentVoxel.size() );
+		area_.resize( parentVoxel.size() );
+		length_.resize( parentVoxel.size() );
 		cell_ = cell;
 
 		psd_.clear();
@@ -168,7 +171,12 @@ void PsdMesh::handlePsdList(
 			x += 3;
 			psd_.back().setDia( *x++ );
 			psd_.back().setIsCylinder( true );
+			psd_.back().setLength( *x ); // This is an entirely nominal
+						// length, so that the effective vol != 0.
 			parentDist_.push_back( *x++ );
+			vs_[i] = psd_.back().volume( psd_.back() );
+			area_[i] = psd_.back().getDiffusionArea( psd_.back(), 0 );
+			length_[i] = parentDist_.back();
 		}
 		parent_ = parentVoxel;
 
@@ -184,8 +192,7 @@ void PsdMesh::handlePsdList(
 		}
 		vector< vector< unsigned int > > outgoingEntries;
 		vector< vector< unsigned int > > incomingEntries;
-		meshSplit()->fastSend( e, oldVol, vols,
-						localIndices, outgoingEntries, incomingEntries );
+		// meshSplit()->send( e, oldVol, vols, localIndices, outgoingEntries, incomingEntries );
 		lookupEntry( 0 )->triggerRemesh( meshEntry.eref(),
 						oldVol, 0, localIndices, vols );
 
@@ -423,3 +430,29 @@ void PsdMesh::matchCubeMeshEntries( const ChemCompt* other,
 		i, surfaceGranularity_, ret, false, true );
 	}
 }
+
+
+////////////////////////////////////////////////////////////////////////
+// Inherited Virtual funcs for getting voxel info.
+////////////////////////////////////////////////////////////////////////
+
+vector< unsigned int > PsdMesh::getParentVoxel() const
+{
+	return parent_;
+}
+
+const vector< double >& PsdMesh::vGetVoxelVolume() const
+{
+	return vs_;
+}
+
+const vector< double >& PsdMesh::getVoxelArea() const
+{
+	return area_;
+}
+
+const vector< double >& PsdMesh::getVoxelLength() const
+{
+	return length_;
+}
+

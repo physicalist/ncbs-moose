@@ -36,6 +36,8 @@
 #include "muParserToken.h"
 #include "muParserStack.h"
 #include "muParserTemplateMagic.h"
+#include "../debug/current_function.hpp"
+#include "../debug/print_function.h"
 
 
 namespace mu
@@ -304,10 +306,14 @@ namespace mu
                 bOptimized = true;
               }
               break;
-
         default:
-              std::cerr << "Unknown case. Using default." << std::endl;
-              std::cerr << "|- Doing nothing" << std::endl;
+              stringstream ss;
+              ss << "In function: " << MOOSE_CURRENT_FUNCTION << " case statment " 
+                  << " has incomplete defination "
+                  << " Case " << a_Oprt << " is not handled. " << endl;
+#ifdef  DEBUG
+              dump(ss.str(), "WARN");
+#endif     /* -----  DEBUG  ----- */
               break;
               
         } // switch a_Oprt

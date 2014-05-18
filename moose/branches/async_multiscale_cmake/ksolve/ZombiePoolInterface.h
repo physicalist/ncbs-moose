@@ -34,6 +34,11 @@ class ZombiePoolInterface
 		/// Diffusion constant: Only one per pool, voxel number is ignored.
 		virtual double getDiffConst( const Eref& e ) const = 0;
 
+		/// Motor constant: Only one per pool, voxel number is ignored.
+		/// Used only in Dsolves, so here I put in a dummy.
+		virtual void setMotorConst( const Eref& e, double val )
+		{;}
+
 		/// Specifies number of pools (species) handled by system.
 		virtual void setNumPools( unsigned int num ) = 0;
 		/// gets number of pools (species) handled by system.
@@ -59,6 +64,21 @@ class ZombiePoolInterface
 		 * followed by numVoxels * numPools of data values.
 		 */
 		virtual void setBlock( const vector< double >& values ) = 0;
+
+		/**
+		 * Informs the ZPI about the stoich, used during subsequent
+		 * computations.
+		 * Called to wrap up the model building. The Stoich
+		 * does this call after it has set up its own path.
+		 */
+		virtual void setStoich( Id stoich ) = 0;
+
+		/// Assignes the diffusion solver. Used by the reac solvers
+		virtual void setDsolve( Id dsolve ) = 0;
+
+		/// Assigns compartment.
+		virtual void setCompartment( Id compartment ) = 0;
+		virtual Id getCompartment() const = 0;
 };
 
 #endif	// _ZOMBIE_POOL_INTERFACE_H

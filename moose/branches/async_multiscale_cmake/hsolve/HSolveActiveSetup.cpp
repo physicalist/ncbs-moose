@@ -171,20 +171,16 @@ void HSolveActive::readHHChannels()
             current_.resize( current_.size() + 1 );
             CurrentStruct& current = current_.back();
 
-#ifdef  OLD_API
-            Gbar    = HSolveUtils::get< ChanBase, double >( *ichan, "Gbar" );
-            Ek      = HSolveUtils::get< ChanBase, double >( *ichan, "Ek" );
-            X       = HSolveUtils::get< HHChannel, double >( *ichan, "X" );
-            Y       = HSolveUtils::get< HHChannel, double >( *ichan, "Y" );
-            Z       = HSolveUtils::get< HHChannel, double >( *ichan, "Z" );
-            Xpower  = HSolveUtils::get< HHChannel, double >( *ichan, "Xpower" );
-            Ypower  = HSolveUtils::get< HHChannel, double >( *ichan, "Ypower" );
-            Zpower  = HSolveUtils::get< HHChannel, double >( *ichan, "Zpower" );
-            instant = HSolveUtils::get< HHChannel, int >( *ichan, "instant" );
+            Gbar    = Field< double >::get( *ichan, "Gbar" );
+            Ek    = Field< double >::get( *ichan, "Ek" );
+            X    = Field< double >::get( *ichan, "X" );
+            Y    = Field< double >::get( *ichan, "Y" );
+            Z    = Field< double >::get( *ichan, "Z" );
+            Xpower    = Field< double >::get( *ichan, "Xpower" );
+            Ypower    = Field< double >::get( *ichan, "Ypower" );
+            Zpower    = Field< double >::get( *ichan, "Zpower" );
+            instant    = Field< int >::get( *ichan, "instant" );
 
-#else      /* -----  not OLD_API  ----- */
-
-#endif     /* -----  not OLD_API  ----- */
             current.Ek = Ek;
 
             channel.Gbar_ = Gbar;
@@ -231,12 +227,7 @@ void HSolveActive::readGates()
     {
         nGates = HSolveUtils::gates( *ichan, gateId_ );
         gCaDepend_.insert( gCaDepend_.end(), nGates, 0 );
-#ifdef  OLD_API
-        useConcentration =
-            HSolveUtils::get< HHChannel, int >( *ichan, "useConcentration" );
-#else      /* -----  not OLD_API  ----- */
-
-#endif     /* -----  not OLD_API  ----- */
+        useConcentration = Field< int >::get( *ichan, "useConcentration" );
         if ( useConcentration )
             gCaDepend_.back() = 1;
     }
@@ -278,18 +269,12 @@ void HSolveActive::readCalcium()
                     caConcIndex[ *iconc ] = caCount_[ ic ];
                     ++caCount_[ ic ];
 
-                    Ca =
-                        HSolveUtils::get< CaConc, double >( *iconc, "Ca" );
-                    CaBasal =
-                        HSolveUtils::get< CaConc, double >( *iconc, "CaBasal" );
-                    tau =
-                        HSolveUtils::get< CaConc, double >( *iconc, "tau" );
-                    B =
-                        HSolveUtils::get< CaConc, double >( *iconc, "B" );
-                    ceiling =
-                        HSolveUtils::get< CaConc, double >( *iconc, "ceiling" );
-                    floor =
-                        HSolveUtils::get< CaConc, double >( *iconc, "floor" );
+                    Ca = Field< double >::get( *iconc, "Ca" );
+                    CaBasal = Field< double >::get( *iconc, "CaBasal" );
+                    tau = Field< double >::get( *iconc, "tau" );
+                    B = Field< double >::get( *iconc, "B" );
+                    ceiling = Field< double >::get( *iconc, "ceiling" );
+                    floor = Field< double >::get( *iconc, "floor" );
 
                     caConc_.push_back(
                         CaConcStruct(
@@ -364,12 +349,9 @@ void HSolveActive::createLookupTables()
 
     for ( unsigned int ig = 0; ig < caGate.size(); ++ig )
     {
-#ifdef  OLD_API
-        min = HSolveUtils::get< HHGate, double >( caGate[ ig ], "min" );
-        max = HSolveUtils::get< HHGate, double >( caGate[ ig ], "max" );
-        divs = HSolveUtils::get< HHGate, unsigned int >(
-                   caGate[ ig ], "divs" );
-
+        min = Field< double >::get( caGate[ ig ], "min" );
+        max = Field< double >::get( caGate[ ig ], "max" );
+        divs = Field< unsigned int >::get( caGate[ ig ], "divs" );
         dx = ( max - min ) / divs;
 
         if ( min < caMin_ )
@@ -378,20 +360,15 @@ void HSolveActive::createLookupTables()
             caMax_ = max;
         if ( dx < caDx )
             caDx = dx;
-#else      /* -----  not OLD_API  ----- */
-#endif     /* -----  not OLD_API  ----- */
     }
     double caDiv = ( caMax_ - caMin_ ) / caDx;
     caDiv_ = static_cast< int >( caDiv + 0.5 ); // Round-off to nearest int.
 
     for ( unsigned int ig = 0; ig < vGate.size(); ++ig )
     {
-#ifdef  OLD_API
-        min = HSolveUtils::get< HHGate, double >( vGate[ ig ], "min" );
-        max = HSolveUtils::get< HHGate, double >( vGate[ ig ], "max" );
-        divs = HSolveUtils::get< HHGate, unsigned int >(
-                   vGate[ ig ], "divs" );
-
+        min = Field< double >::get( vGate[ ig ], "min" );
+        max = Field< double >::get( vGate[ ig ], "max" );
+        divs = Field< unsigned int >::get( vGate[ ig ], "divs" );
         dx = ( max - min ) / divs;
 
         if ( min < vMin_ )
@@ -400,9 +377,6 @@ void HSolveActive::createLookupTables()
             vMax_ = max;
         if ( dx < vDx )
             vDx = dx;
-#else      /* -----  not OLD_API  ----- */
-
-#endif     /* -----  not OLD_API  ----- */
     }
     double vDiv = ( vMax_ - vMin_ ) / vDx;
     vDiv_ = static_cast< int >( vDiv + 0.5 ); // Round-off to nearest int.
@@ -412,7 +386,7 @@ void HSolveActive::createLookupTables()
 
     vector< double > A, B;
     vector< double >::iterator ia, ib;
-    double a, b;
+    // double a, b;
     //~ int AMode, BMode;
     //~ bool interpolate;
 
@@ -437,8 +411,8 @@ void HSolveActive::createLookupTables()
         {
             // Use one of the optimized forms below, instead of A and B
             // directly. Also updated reinit() accordingly (for gate state).
-            a = *ia;
-            b = *ib;
+//            a = *ia;
+//            b = *ib;
 
             // *ia = ( 2.0 - dt_ * b ) / ( 2.0 + dt_ * b );
             // *ib = dt_ * a / ( 1.0 + dt_ * b / 2.0 );
@@ -473,8 +447,8 @@ void HSolveActive::createLookupTables()
         {
             // Use one of the optimized forms below, instead of A and B
             // directly. Also updated reinit() accordingly (for gate state).
-            a = *ia;
-            b = *ib;
+//            a = *ia;
+//            b = *ib;
 
             // *ia = ( 2.0 - dt_ * b ) / ( 2.0 + dt_ * b );
             // *ib = dt_ * a / ( 1.0 + dt_ * b / 2.0 );
@@ -561,13 +535,9 @@ void HSolveActive::readSynapses()
                 SpikeGenStruct( &V_[ ic ], spike->eref() )
             );
 
-#ifdef  OLD_API
-            MsgId mid = spike->element()->findCaller( df->getFid() );
-            if ( mid != Msg::bad )
+            ObjId mid = spike->element()->findCaller( df->getFid() );
+            if ( ! mid.bad()  )
                 Msg::deleteMsg( mid );
-#else      /* -----  not OLD_API  ----- */
-
-#endif     /* -----  not OLD_API  ----- */
         }
     }
 }

@@ -3178,12 +3178,404 @@ Yes, that is the problem.
 
 Lots of stepping through the script and gdb later, turns out that I can
 get the solver to set up the diffusion calculations but:
-- The Zombie solver used by the pools should be set up automatically.
-- The assignment Dsolve::setInit for assigning concInit from the
+* The Zombie solver used by the pools should be set up automatically.
+* The assignment Dsolve::setInit for assigning concInit from the
 	script fails for poolNum > 0 because convertIdToPoolIndex fails.
 	This fails because Dsolve::poolMap_ isn't set anywhere.
-- The diffusion constant needs to be transferred into the 
+* The diffusion constant needs to be transferred into the 
 	DiffPoolVec array on Dsolve, but before the pool is zombified.
-- The non-diffusing pools need to be identified and their diffusion ops 
+* The non-diffusing pools need to be identified and their diffusion ops 
 	ignored.
-- The two solvers need to talk.
+* The two solvers need to talk.
+============================================================================
+26 April.
+Try this:
+ZombiePool just has a single ZPI.
+Ksolve maintains ptr to a ZPI. If set, then all field value ops are forwarded.
+	Else Ksolve does its own diffusion. If ZPI is subsequently set then
+	the diffusion term gets handed over.
+Stoich doesn't know about Dsolve, just talks to the Ksolve.
+
+============================================================================
+27 April.
+Or:
+* Dsolve::setStoich extracts poolMap. Must happen _after_ Stoich::path is set.
+* Zombie pools maintain their own diffConst, to be used to set up the Dsolve.
+* Dsolve::build should be moved over to setStoich. 
+	* Need to get dt somehow.
+	* Should avoid losing concInit values.
+* Dsolve::reinint needs to reinit values.
+Also: Implemented a Dsolve::path field which gives an alternative way to
+	set multiple pools to diffuse.
+
+At this point the unit tests clear. I haven't tested the use of the stoich
+in setting the pools to diffuse. Nor have I put the new interface into the
+snippet.
+Also if there is a pool with diffConst = 0, it will fail. 
+- Need to put in dummy calculations for diffConst=0, buffering, and sumtots.
+
+Checkin 5283.
+
+Implemented dummy calculations for diffConst=0. I'm not dealing with 
+buffering here, in principle we could have a buffered diffusing molecule so
+I will let the usual diffConst deal with the diffusibility of buffers.
+
+Tried out the script version. Works with direct path assignment (which
+I have done in the unit tests). Doesn't crash but doesn't work with
+the stoich assignment. Perhaps need another unit test here.
+
+Some more fixing later. Stoich assignment seems to work and give a
+reasonable output, but since it isn't talking to the other solver it
+isn't visible from the pool either.
+
+Next step: Dsolve extracts id of poolInterface from Stoich when the
+Stoich is being assigned, and the two ZombiePoolInterfaces set up
+pointers to each other to transfer blocks of data at the timestep of
+the slower solver. In practice, the Ksolver would request the updated
+concs, do an interpolation (trapezoidal) to get its start,
+do an integration timestep. Then get the delta from its start, add it to
+the latest concs, and send those back to the Dsolver.
+
+For now trying the simple addition to the latest diffusion values.
+Fails in Dsolve::getBlock around 514.
+============================================================================
+28 April.
+Fixed it, trivial matter of passign the wrong range.
+After a bit of schedule juggling it works.
+In principle we're now OK to do reac-diff. 
+I would prefer to have the pools reporting values from the dsolve by default
+as it is usually going to have the faster rates.
+
+For now, let's give it a nice reac-diff problem to chew on, preferably in
+the script.
+
+Done, works insofar as mass conservation goes. Added script to snippets,
+cylinderDiffusion.py.
+
+Also implemented a 1-D Turing pattern model. Relatively easy to set up.
+Not terribly fast, has to run for 200 sec to build up.
+
+From Jan, here are the steps
+Week	Date		Steps
+1	Jan1-5		Naming policy stuff
+2	Jan 5-11	Kinetics brought in. Volume handling revisited.
+			Msg fixes.
+3-4	Jan 12-25	Kinetics works, mostly. Fixes to Python/MPI stuff.
+5-6	Jan 26-Feb7	Standalone fast matrix elimination. Fixing wildcards.
+7-8	Feb8-21		Ksolve skeleton in place.		
+9-10	Feb22-Mar8	Ksolve works
+11	Mar9-14		Steady State solver ported and works.
+12	Mar 15-20	GSSA ported and works.
+13-17	Mar 21-Apr28	Dsolver implemented, set up ReacDiff with Ksolve.
+			Not to mention almost 3 weeks of travel too.
+
+Next:
+- Build inter-compartment reactions
+- Set up adaptors and other multiscale effects
+- Set up RDesigneur
+- Set up interface to Mumbl
+
+============================================================================
+30 April
+Working on motors. After a sign fix things are better, but the molecules
+march off the end of the compartments. Should pile up instead.
+
+Still confused about motors.
+============================================================================
+1 May
+Revisited math for setting up motors. Did so. Now it works. Added snippet
+cylinderMotor.py.
+
+Checkin 5337.
+
+Some fixes in the problems with SpikeRingBuffer. Latest issue was that
+it wasn't scheduled, so it didn't know CurrTime. When fixed I get
+spiking but need to see how it matches.
+
+============================================================================
+2 May
+Working on adaptors. Now compiles and clears unit tests but need to 
+incorporate it and figure out what to do with requestField msg - do I
+really want this?
+
+============================================================================
+3 May.
+Working through loadMulti snippet. Ran into silly wildcard bug. Fixed.
+Also a silly ZombieFuncPool bug. fixed.
+Stuck now with Stoich calculations.
+Valgrind may help.
+
+Something seriously wrong with the ksolver. I have implemented stuff
+to deal with setting up a reasonable initial dt, but this isn't 
+fixing it. It was working earlier. Symptoms are that there is a mismatch
+between internal vectors of mols and the visible ones.
+
+Will have to fall back to ee for the demo of multiscale models in 
+NeuroHDF
+
+============================================================================
+5 May
+Working on script in snippets/MULTI/TuringInNeuron.py.
+============================================================================
+6 May
+Even though the numpy plots don't work, I can explicitly scan through the data
+points and save the ones I want. Ran a sim embedded in the regular neuronal
+geometry, examined in xplot. The Turing
+pattern in the first few compts is fine, but then the concs go all over the
+place, apparently in some coordination with the segments of the neuron.
+============================================================================
+7 May
+Confirmed inverse relationship between volume and the concs in the output.
+Concs are not so bad, they can easily be redone and stored in Sinit.
+My intuition is that the rates will also be different in each voxel,
+because they are expressed in # units.
+
+Working on Ksolve.cpp, goal is to extract concInit from each pool and use
+it to fill in the  concInit in all the array entries
+============================================================================
+8 May
+Some fixes to the documentation.
+Further fixes on Ksolve.
+
+Working on building a Turing pattern in neuronal geometry. I thought the
+problem was initial conditions. Turns out that the concs were set
+explicitly, after the reaction system was distributed. The problem is that
+the rates have not been scaled suitably across the voxels.
+
+Options:
+- Put in a volscale vector in the VoxelPools, to multiply each rate
+	This needs changes to the Stoich::updateRates function.
+- Do inline volume scaling to multiply each rate. Only volume is stored in voxel
+	This needs changes to the Stoich::updateRates function.
+	It will involve numerous repeated powers and multiplications.
+	Minimal memory costs.
+- Put in independent Stoich ptrs for each volume in model. 
+	Call Stoich::updateRatesAfterRemesh for each.
+	This needs a Stoich on each Voxel Pool.
+		To make it efficient, could share Stoich Ptrs among all with
+		same volume. 
+	Still very costly.
+- Put in independent RateTerms for each volume in model.
+	Call Stoich::updateRatesAfterRemesh for each.
+	Need a way for Stoich to use specified RateTerms set in updateFuncs.
+	Possibly again share ptrs, here the RateTerm vector, among all with
+		the same volume.
+
+OK let's try the last. It is not horribly memory-expensive, nor is it going 
+	to cost a lot of multiplications each cycle.
+
+Stoich::generateRescaledRates
+Stoich::updateRates using rates as an argument.
+Stoich::updateReacVeolocities. Seems like it should move into the 
+	VoxelPoolsBase.
+
+VoxelPoolsBase::myVol or some other way to map to rates_ vector.
+VoxelPoolsBase::rates_ ptr to vector. Would like to have a reference counter
+	so I avoid having to worry about management. Either that or the
+	master Stoich keeps the original of all of them.
+Something to figure out matching volumes. Probably in Ksolve. Possibly
+on Stoich as it is asked for a ptr for a new volume.
+
+Will need the equivalent changes in GssaVoxelPools.
+Ksolve needs to have the voxel vols assigned to it, to pass to the VoxelPools,
+	so that they can ask the Stoich which volIndex they should use.
+
+Massive code changes to do the above. Some things work but
+the TuringInNeuron test still doesn't give a nice flat line for
+mol concs.
+============================================================================
+9 May
+Sequence of actions on setup of reac-diff solver system.
+
+0. Compartment is set up to a cell (neuroMesh) or volume (other meshes)
+1. Dsolve and Ksolve both assign compartment. Needed to figure out vols and
+	numVoxels. This doesn't need anything else assigned.
+2. stoich.addPoolInterface fills in the pool interface vector. Just 
+	assigning the Ids at this point, though it might be nice to
+	compute the ptrs since this lets us avoid exposing functions to
+	the MOOSE interface.
+3. Call Stoich::setPath. This builds the whole system.
+	3.1 At an early stage in setPath..resizeArrays it sets numPools on
+	each of the PoolInterfaces. Note that they already know the
+	# of voxels and vols from 1).
+	3.2 at setPath..Stoich::zombify gets numVoxels from the PoolInterface.
+	3.3 After Zombification the Stoich builds the list of unique volumes,
+		and with it the vector< vector< RateTerm* > >.
+	3.4 After this the Stoich calls each of the PoolInterfaces and assigns
+		Stoichs unto them. 
+		- Ksolve uses this to go through each VoxelPool and set up 
+		the volIndex to use for its reac calculations.
+		- Dsolve uses this to get the vector of all pools from the
+		Stoich, and extract DiffConst and MotorConst.
+4. Assign the Dsolve to the Ksolve::dsolve field. This is used during
+	the process function to pass data back and forth between the solvers.
+
+
+To simplify further, 
+- I could assign the compartment to the Stoich.
+	It would use this to get the volumes right up front. I could then
+	use this to fill in the compartment info to the Ksolve and Dsolve.
+- I could also use the ZombiePoolInterface ptrs to do step 4, that is,
+	assign Dsolve to the Ksolve and vice-versa (as a dummy).
+
+Yet to consider:
+	- Dsolves that span multiple Ksolve reac systems
+		e.g., Ca diffusion that goes into spines, where spines have
+		different reacs.
+	- Ksolves that work with different Dsolves
+		e.g., the spine Ksolve that needs to talk to the spine
+		Dsolve as well as the Ca Dsolve.
+	- Ksolve that maps to only a subset of voxels on a Dsolve.
+		Same as above.
+	- Reactions that go between different Ksolves.
+		e.g., Spine to PSD and back again.
+
+Alternatively, and much simpler
+	- Intercompt reacs
+	- intercompt diffusion processes, implemented same as reacs but 
+		set up by examining molecule names between compts.
+
+Decision.
+0. Compartment is set up to a cell (neuroMesh) or volume (other meshes)
+1. Compartment assigned to Stoich. Here it can assign unique vols already.
+2. Dsolve and Ksolve assigned to Stoich using setKsolve and setDsolve.
+	2.1 At this point the Stoich::useOneWay_ flag is set if it is a Gsolve.
+3. Call Stoich::setPath. All the rest happens internally, done by Stoich:
+	3.1 assign compartment to Dsolve and Ksolve.
+	3.2 assign numPools and compts to Dsolve and Ksolve.
+	3.3 During Zombification, zeroth vector< RateTerm* > is built.
+	3.4 afterZombification, stoich builds rateTerm vector for all vols.
+	3.5 Stoich assigns itself to Dsolve and Ksolve. 
+		- Ksolve sets up volIndex on each VoxelPool
+		- Dsolve gets vector of pools, extracts DiffConst and MotorConst
+	3.6 Dsolve assigned to Ksolve::dsolve_ field by the Stoich.
+4. Reinit, 
+	4.1 Dsolve builds matrix, provided dt has changed. It needs dt.
+	4.2 Ksolve builds solvers if not done already, assigning initDt
+
+As seen by the user, this reduces to just 4 stages, all centered on the Stoich.
+
+Need some care with defaults to handle the old-fashioned multi-compartment 
+but non-diffusive reactions.
+Also this approach is terrible for building a reaction system and running it
+on the fly.
+
+I want to reverse the order of the uniqueVols.
+============================================================================
+10 May
+Compiling. The Dsolve::setStoich function needs to be sorted in the new format.
+If the Dsolve can work without a Stoich it needs a suitable fallback too.
+
+============================================================================
+11 May
+Finally got the compilation done. Into testKsolve. Problem with CubeMesh
+not providing the voxel information needed by the Stoich.
+
+Works for most of the tests, still doesn't work for the Turing pattern
+test in the neuronal morphology.
+
+Checkin 5398.
+
+Trying to find why the system hangs. Using zug.py with Kholodenko.g
+and a runtime of 5000.
+Valgrind says that there is an invalid read of size 8 in the
+RateTerm::FirstOrder. Haven't been able to track this. The entire python
+side of things seems infested with memory issues.
+
+How to put breakpoints in a python script:
+
+import signal
+import os
+PID = os.getpid()
+
+def doNothing( *args ):
+	pass
+signal.signal( signal.SIGUSR1, doNothing )
+
+and for the breakpoint:
+os.kill( PID, signal.SIGUSR1 )
+
+Tracked down the numerical integration problem. It turns out that I had
+set the absolute tolerance of integration to 1e6. Set it to 1e-4 and all
+is well. Also implemented stuff so that the Ksolve can define the
+numerical method and the tolerances.
+
+Tracked down the problem with TuringInNeuron calculations. Turned out to
+be a whole lot of little problems to do with setting up distinct 
+rateTerm vectors for each compartment volume. One of them was to do with the
+difficulty of doing a doubleEq comparison for tiny values like the voxel
+volumes (in the range 1e-17).
+Now it is working, but the algorithm for finding the volIndex isn't going
+so well. It is currently a brute force search, but there turn out to be
+176 distinct volumes in this model, so an N^2 approach isn't advisable.
+Checkin 5400.
+
+Also, even though the answers are coming out well, the python script is
+failing at end. Fails even to be able to plot the data using matplotlib.
+
+
+Trying to run both the elec and reac-diff models together. Stuck for a
+long time on plots, turned out that there was actually a scheduler bug
+that had laid in wait for all this time. With that fixed I'm getting
+reasonable plots. Next step is to connect the models with an adaptor.
+============================================================================
+12 May. Thinking about how to set off the adaptor to request data from
+a number of targets. I have a variant of send, sendVec, but it isn't 
+mpi-compatible.
+============================================================================
+13 May
+Updated adaptor to use sendVec. Will deal with MPI-compatibility in due 
+course. Checkin 5405.
+
+A little stuck with this. Seems that the vector of voxelVolumes isn't 
+being filled by the PSD. Need to check what is up with Spine as well.
+
+============================================================================
+Subha wants the vector of ObjIds to help with the value harvesting in 
+sendVec.
+
+Trying to load chem model standalone to figure out why the loadMulti sim
+isn't working.
+Trying with OSC_diff_vols.g as a good test.
+
+The thing has loaded with all parameters set correctly. There is the tiny
+correction for the NA value in MOOSE. Let's see... no, that doesn't
+fix it. Tried lots of variations on it and it doesn't oscillate.
+OK tracked it. The moose.loadModel only loads contents of /kinetics.
+
+Fixed. I added an option to prefix the method with 'old_', in which case
+it turns off the flag to move objects onto their volume-defining compartments.
+With this fix the model runs.  Checkin 5413.
+
+Converted Element::getNumMsgTargets to getMsgTargets. Put in unit test.
+Checkin 5414.
+
+To handle the x-compt reacs, should just put in an exp-Euler calculation
+at the interface between solvers. Likewise for diffusion.
+
+Need now to move on the demos.
+============================================================================
+16 May 2014.
+Made tutorials directory, especially for course use.
+First demo: Cleaned up and animated the TuringOneDim.py demo. Moved to 
+tutorials.
+Trying to get oscillatory models in.  To do:
+	- The diagram for the cspace relaxation oscillator
+	- Get the novak-tyson cell cycle oscillator from kkit to work.
+		Loads the model and ee runs ok. So it is something with
+		zombie.
+	- The repressillator
+	- A standard feedback-delay oscillator.: Kholdenko.g
+
+
+============================================================================
+17 May 2014
+Many fixes to Hsolver. Seems to be doing something reasonable, see 
+testHsolve.py. Checkin 5424.
+
+Now back to looking at the novak_tyson model. This is now loading and
+running but the output is incorrect. Checked that the FuncPools that are
+set in place to follow a pool conc, are working.
+
+I've set up all the other oscillators:
+repressillator, slowFB (KHoldenko), relaxationOsc, Turing

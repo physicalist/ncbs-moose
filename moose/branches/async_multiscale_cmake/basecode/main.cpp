@@ -59,8 +59,8 @@ extern void testHSolve();
 // extern void testGeom();
 extern void testMesh();
 // extern void testSimManager();
-// extern void testSigNeur();
-// extern void testSigNeurProcess();
+extern void testSigNeur();
+extern void testSigNeurProcess();
 
 extern unsigned int initMsgManagers();
 extern void destroyMsgManagers();
@@ -268,20 +268,20 @@ void nonMpiTests( Shell* s )
 		unsigned int numCores = s->numCores();
 		if ( numCores > 0 )
 		s->setHardware( 1, 1, 0 );
-		//testAsync();
-		//testMsg();
-		//testShell();
-		//testScheduling();
-		//testBuiltins();
-		//// testKinetics();
-		//testKsolve();
-		//testKsolveProcess();
-		//testBiophysics();
-		//testDiffusion();
-		testHSolve();
+		testAsync();
+		testMsg();
+		testShell();
+		testScheduling();
+		testBuiltins();
+		// testKinetics();
+                testKsolve();
+//		testKsolveProcess();
+//		testBiophysics();
+//		testDiffusion();
+                testHSolve();
 		// testGeom();
 		testMesh();
-		// testSigNeur();
+		testSigNeur();
 #ifdef USE_SMOLDYN
 		// testSmoldyn();
 #endif
@@ -303,7 +303,7 @@ void processTests( Shell* s )
 	testBiophysicsProcess();
 	// testKineticSolversProcess();
 	// testSimManager();
-	// testSigNeurProcess();
+	testSigNeurProcess();
 #endif
 }
 
@@ -324,8 +324,6 @@ void mpiTests()
 		cout << "." << flush;
 #endif
 }
-
-unsigned int totalTests = 0;
 #ifndef PYMOOSE
 int main( int argc, char** argv )
 {
@@ -352,8 +350,8 @@ int main( int argc, char** argv )
 		}
 #ifdef DO_UNIT_TESTS
 		if ( doUnitTests ) {
-//			mpiTests();
-//			processTests( s );
+			mpiTests();
+			processTests( s );
 		}
 		// if ( doRegressionTests ) regressionTests();
 #endif

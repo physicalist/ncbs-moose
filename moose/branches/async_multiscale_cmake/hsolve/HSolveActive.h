@@ -10,7 +10,7 @@
 #ifndef _HSOLVE_ACTIVE_H
 #define _HSOLVE_ACTIVE_H
 
-#include "header.h"
+#include "../basecode/header.h"
 #include <set>
 #include <limits> // Max and min 'double' values needed for lookup table init.
 #include "../biophysics/CaConc.h"

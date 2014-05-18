@@ -12,6 +12,7 @@
 #include "header.h"
 #include "../shell/Shell.h"
 #include "../randnum/randnum.h"
+#include "CompartmentBase.h"
 #include "Compartment.h"
 /*
 #include "HHGate.h"
@@ -33,7 +34,6 @@ extern void testMarkovSolver();		//Defined in MarkovSolver.cpp
 // Use a larger value of runsteps when benchmarking
 void testIntFireNetwork( unsigned int runsteps = 5 )
 {
-        dump("Testing IntFireNetwork", "TESTING");
 	static const double thresh = 0.8;
 	static const double Vmax = 1.0;
 	static const double refractoryPeriod = 0.4;
