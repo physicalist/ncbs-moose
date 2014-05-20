@@ -168,7 +168,7 @@ target_link_libraries(moose
     moose_mpi
     utility 
     muparser
-    debug_print
+    simpletest
     biophysics 
     kinetics 
     ksolve
@@ -248,7 +248,7 @@ if(BUILD_PYMOOSE)
         moose_builtins
         utility 
         muparser
-        debug_print
+        simpletest
         biophysics 
         kinetics 
         ksolve
