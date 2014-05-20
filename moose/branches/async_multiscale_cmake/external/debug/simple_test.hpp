@@ -21,5 +21,6 @@
 
 #include "print_function.hpp"
 #include "testing_macros.hpp"
+#include "assert.hpp"
 
 #endif   /* ----- #ifndef SIMPLETEST_INC  ----- */
