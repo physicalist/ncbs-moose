@@ -1,6 +1,37 @@
-/* This file is a modified version of boost/assert.hpp file. I guess I have to
- * release it under the same license
- */
+//  moose/assert.hpp - SIMPLE_ASSERT(expr)
+//                     SIMPLE_ASSERT_MSG(expr, msg)
+//                     SIMPLE_VERIFY(expr)
+//
+//  Copyright (c) 2001, 2002 Peter Dimov and Multi Media Ltd.
+//  Copyright (c) 2007 Peter Dimov
+//  Copyright (c) Beman Dawes 2011
+//  Copyright (c) Dilawar Singh 2013
+//
+// Distributed under the Boost Software License, Version 1.0. (See
+// accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt)
+//
+//  Note: There are no include guards. This is intentional.
+//
+//  See http://www.moose.org/libs/utility/assert.html for documentation.
+//
+
+//
+// Stop inspect complaining about use of 'assert':
+//
+// mooseinspect:naassert_macro
+//
+// Log: 
+// Thursday 01 May 2014 01:18:02 PM IST
+//
+// This files is a modified version of boost/assert.hpp file. The names of
+// macros have been changed.
+//
+
+//--------------------------------------------------------------------------------------//
+//                                     SIMPLE_ASSERT                                     //
+//--------------------------------------------------------------------------------------//
+
 #undef SIMPLE_ASSERT
 
 #if defined(SIMPLE_DISABLE_ASSERTS)
@@ -101,13 +132,13 @@ namespace moose
 
 #undef SIMPLE_VERIFY
 
-#if defined(SIMPLE_DISABLE_ASSERTS) || ( !defined(SIMPLE_ENABLE_ASSERT_HANDLER) && defined(NDEBUG) )
+#if defined(SIMPLE_DISABLE_ASSERTS) || ( !defined(MOOSE_ENABLE_ASSERT_HANDLER) && defined(NDEBUG) )
 
 # define SIMPLE_VERIFY(expr) ((void)(expr))
 
 #else
 
-# define SIMPLE_VERIFY(expr) SIMPLE_ASSERT(expr)
+# define SIMPLE_VERIFY(expr) MOOSE_ASSERT(expr)
 
 /*-----------------------------------------------------------------------------
  *                                  SIMPLE_WARN
