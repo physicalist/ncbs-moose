@@ -1,3 +1,4 @@
+cimport Eref as _Eref
 cimport Compartment as _comp
 
 # Class 
@@ -11,60 +12,38 @@ cdef class Compartment:
         del self.thisptr
 
     property Vm:
-        def __get__(self): return self.thisptr.getVm()
-        def __set__(self, x): self.thisptr.setVm(x)
+        def __get__(self): return self.thisptr.vGetVm(e)
+        def __set__(self, x): self.thisptr.vSetVm(x)
 
     property Em:
-        def __get__(self): return self.thisptr.getEm()
-        def __set__(self, x): self.thisptr.setEm(x)
+        def __get__(self): return self.thisptr.vGetEm()
+        def __set__(self, x): self.thisptr.vSetEm(x)
     
     property Rm:
-        def __get__(self): return self.thisptr.getRm()
-        def __set__(self, x): self.thisptr.setRm(x)
+        def __get__(self): return self.thisptr.vGetRm()
+        def __set__(self, x): self.thisptr.vSetRm(x)
     
     property Ra:
-        def __get__(self): return self.thisptr.getRa()
-        def __set__(self, x): self.thisptr.setRa(x)
+        def __get__(self): return self.thisptr.vGetRa()
+        def __set__(self, x): self.thisptr.vSetRa(x)
 
     property Im:
-        def __get__(self): return self.thisptr.getIm()
-        def __set__(self, x): self.thisptr.setIm(x)
+        def __get__(self): return self.thisptr.vGetIm()
+        def __set__(self, x): self.thisptr.vSetIm(x)
 
     property Inject:
-        def __get__(self): return self.thisptr.getInject()
-        def __set__(self, x): self.thisptr.setInject(x)
+        def __get__(self): return self.thisptr.vGetInject()
+        def __set__(self, x): self.thisptr.vSetInject(x)
 
     property initVm:
-        def __get__(self): return self.thisptr.getInitVm()
-        def __set__(self, x): self.thisptr.setInitVm(x)
+        def __get__(self): return self.thisptr.vGetInitVm()
+        def __set__(self, x): self.thisptr.vSetInitVm(x)
 
     property diameter:
-        def __get__(self): return self.thisptr.getDiameter()
-        def __set__(self, x): self.thisptr.setDiameter(x)
+        def __get__(self): return self.thisptr.vGetDiameter()
+        def __set__(self, x): self.thisptr.vSetDiameter(x)
 
     property lenght:
-        def __get__(self): return self.thisptr.getLength()
-        def __set__(self, x): self.thisptr.setLength(x)
-
-    property p0:
-        def __get__(self): 
-            return (self.thisptr.getX0()
-                    , self.thisptr.getY0()
-                    , self.thisptr.getZ0()
-                    )
-        def __set__(self, p):
-            self.thisptr.setX0(p[0])
-            self.thisptr.setY0(p[1])
-            self.thisptr.setZ0(p[2])
-
-    property p1:
-        def __get__(self): 
-            return (self.thisptr.getX()
-                    , self.thisptr.getY()
-                    , self.thisptr.getZ()
-                    )
-        def __set__(self, p):
-            self.thisptr.setX(p[0])
-            self.thisptr.setY(p[1])
-            self.thisptr.setZ(p[2])
+        def __get__(self): return self.thisptr.vGetLength()
+        def __set__(self, x): self.thisptr.vSetLength(x)
 

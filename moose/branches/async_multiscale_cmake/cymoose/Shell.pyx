@@ -1,17 +1,18 @@
 # Wrapper around msg/Shell class
-include "Id.pyx"
-include "ObjId.pyx"
+#include "Id.pyx"
+#include "ObjId.pyx"
 
 from libcpp.string cimport string
-cimport Shell as _shell
+
+cimport Shell as _Shell
 cimport Id as _id 
 cimport ObjId as _objid 
 
 cdef class Shell:
-    cdef _shell.Shell *thisptr
-    cdef _objid.ObjId objId
+    cdef _Shell.Shell *thisptr
+
     def __cinit__(self):
-        self.thisptr = new _shell.Shell()
+        self.thisptr = new _Shell.Shell()
 
     def __dealloc__(self):
         del self.thisptr 
