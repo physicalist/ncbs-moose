@@ -20,5 +20,3 @@ add_library(biophysics
 	testBiophysics.cpp	
 	IzhikevichNrn.cpp	
     )
-
-target_link_libraries(biophysics debug_print)
