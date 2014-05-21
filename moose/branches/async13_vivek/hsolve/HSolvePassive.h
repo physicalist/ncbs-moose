@@ -10,6 +10,7 @@
 #ifndef _HSOLVE_PASSIVE_H
 #define _HSOLVE_PASSIVE_H
 #include "../basecode/header.h"
+#include "../biophysics/CompartmentBase.h"
 #include "../biophysics/Compartment.h"
 using namespace moose; // For moose::Compartment from 'Compartment.h'
 #include "HSolveUtils.h"
@@ -20,6 +21,7 @@ class HSolvePassive: public HinesMatrix
 {
 #ifdef DO_UNIT_TESTS
 	friend void testHSolvePassive();
+        friend void testHSolveCable();
 #endif
 	
 public:

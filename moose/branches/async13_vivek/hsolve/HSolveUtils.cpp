@@ -77,7 +77,6 @@ int HSolveUtils::gates(
 	vector< Id >& ret,
 	bool getOriginals )
 {
-        dump("HSolveUtils::gates() is not tested with new hsolve api", "FIXME");
 	unsigned int oldSize = ret.size();
 	
 	static string gateName[] = {
@@ -94,17 +93,13 @@ int HSolveUtils::gates(
 
         unsigned int nGates = 3; // Number of possible gates
         for ( unsigned int i = 0; i < nGates; i++ ) {
-            double power  = HSolveUtils::get< HHChannel, double >(
-                    channel, powerField[ i ] );
+            double power  = Field< double >::get ( channel, powerField[i] );
 
             if ( power > 0.0 ) {
                 string gatePath = moose::joinPath(channel.path(), gateName[i]);
                 Id gate( gatePath );
 
                 string gPath = moose::fixPath(gate.path());
-                errorSS.str("");
-                errorSS << "Got " << gatePath << " expected " << gPath;
-                MOOSE_ASSERT_MSG(gPath == gatePath, errorSS.str().c_str());
 
                 if ( getOriginals ) {
                     HHGate* g = reinterpret_cast< HHGate* >( gate.eref().data() );
@@ -207,16 +202,13 @@ void HSolveUtils::rates(
 	vector< double >& A,
 	vector< double >& B )
 {
-    dump("HSolveUtils::rates() has not been tested yet.", "WARN");
-    double min = HSolveUtils::get< HHGate, double >( gateId, "min" );
-    double max = HSolveUtils::get< HHGate, double >( gateId, "max" );
-    unsigned int divs = HSolveUtils::get< HHGate, unsigned int >(
-            gateId, "divs" );
+    double min = Field< double >::get( gateId, "min" );
+    double max = Field< double >::get( gateId, "max" );
+    unsigned int divs = Field< unsigned int >::get( gateId, "divs" );
 
     if ( grid == Grid( min, max, divs ) ) {
-        A = HSolveUtils::get< HHGate, vector< double > >( gateId, "tableA" );
-        B = HSolveUtils::get< HHGate, vector< double > >( gateId, "tableB" );
-
+        A = Field< vector< double > >::get( gateId, "tableA" );
+        B = Field< vector< double > >::get( gateId, "tableB" );
         return;
     }
 
@@ -234,9 +226,7 @@ void HSolveUtils::rates(
      * Setting interpolation flag on. Will set back to its original value once
      * we're done.
      */
-    bool useInterpolation = HSolveUtils::get< HHGate, bool >
-        ( gateId, "useInterpolation" );
-    //~ HSolveUtils::set< HHGate, bool >( gateId, "useInterpolation", true );
+    bool useInterpolation = Field< bool >::get( gateId, "useInterpolation");
     gate->setUseInterpolation( gateId.eref(), true );
 
     unsigned int igrid;
@@ -320,7 +310,7 @@ int HSolveUtils::targets(
 	const Finfo* f = e->cinfo()->findFinfo( msg );
 	if ( !f ) // Might not find SymCompartment Finfos if it is a Compartment
 		return 0;
-	e->getNeighbours( all, f );
+	e->getNeighbors( all, f );
 	
 	vector< Id >::iterator ia;
 	if ( filter.empty() )
@@ -396,16 +386,16 @@ void testHSolveUtils( )
 	
 	/* 
 	 * Testing version 1 of HSolveUtils::adjacent.
-	 * It finds all neighbours of given compartment.
+	 * It finds all neighbors of given compartment.
 	 */
-	// Neighbours of c0
+	// Neighbors of c0
 	nFound = HSolveUtils::adjacent( c[ 0 ], found );
 	ASSERT( nFound == found.size(), "Finding adjacent compartments" );
 	// c1 is adjacent
 	ASSERT( nFound == 1, "Finding adjacent compartments" );
 	ASSERT( found[ 0 ] == c[ 1 ], "Finding adjacent compartments" );
 	
-	// Neighbours of c1
+	// Neighbors of c1
 	found.clear();
 	nFound = HSolveUtils::adjacent( c[ 1 ], found );
 	ASSERT( nFound == 5, "Finding adjacent compartments" );
@@ -420,7 +410,7 @@ void testHSolveUtils( )
 		ASSERT( success, "Finding adjacent compartments" );
 	}
 	
-	// Neighbours of c2
+	// Neighbors of c2
 	found.clear();
 	nFound = HSolveUtils::adjacent( c[ 2 ], found );
 	// c1 is adjacent
@@ -429,10 +419,10 @@ void testHSolveUtils( )
 	
 	/*
 	 * Testing version 2 of HSolveUtils::adjacent.
-	 * It finds all but one neighbours of given compartment.
+	 * It finds all but one neighbors of given compartment.
 	 * The the second argument to 'adjacent' is the one that is excluded.
 	 */
-	// Neighbours of c1 (excluding c0)
+	// Neighbors of c1 (excluding c0)
 	found.clear();
 	nFound = HSolveUtils::adjacent( c[ 1 ], c[ 0 ], found );
 	ASSERT( nFound == 4, "Finding adjacent compartments" );
@@ -443,7 +433,7 @@ void testHSolveUtils( )
 		ASSERT( success, "Finding adjacent compartments" );
 	}
 	
-	// Neighbours of c1 (excluding c2)
+	// Neighbors of c1 (excluding c2)
 	found.clear();
 	nFound = HSolveUtils::adjacent( c[ 1 ], c[ 2 ], found );
 	ASSERT( nFound == 4, "Finding adjacent compartments" );
@@ -458,13 +448,13 @@ void testHSolveUtils( )
 		ASSERT( success, "Finding adjacent compartments" );
 	}
 	
-	// Neighbours of c2 (excluding c1)
+	// Neighbors of c2 (excluding c1)
 	found.clear();
 	nFound = HSolveUtils::adjacent( c[ 2 ], c[ 1 ], found );
 	// None adjacent, if c1 is excluded
 	ASSERT( nFound == 0, "Finding adjacent compartments" );
 	
-	// Neighbours of c2 (excluding c3)
+	// Neighbors of c2 (excluding c3)
 	found.clear();
 	nFound = HSolveUtils::adjacent( c[ 2 ], c[ 3 ], found );
 	// c1 is adjacent, while c3 is not even connected
