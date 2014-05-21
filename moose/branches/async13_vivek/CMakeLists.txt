@@ -22,7 +22,7 @@ endif()
 
 ################################# CMKAE MACROS #################################
 
-set(CMAKE_VERBOSE_MAKEFILE OFF)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
 set(INSTALL_LIB_DIR lib CACHE PATH "/usr/local/lib")
 set(INSTALL_BIN_DIR bin CACHE PATH "/usr/local/bin")
@@ -45,6 +45,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 else()
     message(WARNING "Continuing with unsupported compiler")
 endif()
+set(CMAKE_CXX_COMPILER "clang++")
 
 ## Turn warning to error
 add_definitions(-Wall
@@ -87,6 +88,12 @@ add_definitions(-DUSE_GENESIS_PARSER)
 set(DEBUG 1)
 if(DEBUG)
     set(CMAKE_BUILD_TYPE Debug)
+    # This macro define __FILENAME__ macro. The default __FILE__ macro return
+    # full-path of a file. This macro chops it off and returns the relative path
+    # of file.
+    set(CMAKE_CXX_FLAGS 
+        "${CMAKE_CXX_FLAGS} -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"'"
+        )
 endif()
 
 ################################### SETUP BUILD ################################
@@ -168,7 +175,7 @@ target_link_libraries(moose
     moose_mpi
     utility 
     muparser
-    debug_print
+    simpletest
     biophysics 
     kinetics 
     ksolve
@@ -214,6 +221,7 @@ if(BUILD_PYMOOSE)
     find_package(PythonLibs REQUIRED)
     include_directories(${PYTHON_INCLUDE_DIRS})
     add_subdirectory(pymoose)
+    include_directories("external/debug")
     add_library(_moose SHARED pymoose/moosemodule.cpp)
     set_target_properties(_moose PROPERTIES COMPILE_DEFINITIONS "PYMOOSE")
     set_target_properties(_moose PROPERTIES 
@@ -248,7 +256,7 @@ if(BUILD_PYMOOSE)
         moose_builtins
         utility 
         muparser
-        debug_print
+        simpletest
         biophysics 
         kinetics 
         ksolve
@@ -278,8 +286,8 @@ add_custom_target(check_moose
 add_custom_target(check_python
     COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/python/moose/test.py"
     COMMENT "Checking: loading moose into python" VERBATIM
-    COMMAND ${PYTHON_EXECUTABLE} testHsolve.py --output-on-failure
-    COMMENT "Checking: running hsolve in python" VERBATIM
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Demos/snippets"
+    COMMAND ${PYTHON_EXECUTABLE} test_pymoose.py 
+    COMMENT "Checking: running test_pymoose in python" VERBATIM
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests/python"
     )
 

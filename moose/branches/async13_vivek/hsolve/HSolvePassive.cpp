@@ -103,7 +103,7 @@ void HSolvePassive::initialize()
 
     double Vm, Cm, Em, Rm, inject;
     double EmLeak, GmLeak;
-    double EmGmThev, GmThev, RmThev;
+    double EmGmThev, GmThev;
 
     vector< Id > leakage;
     vector< Id >::iterator ileakage;
@@ -112,12 +112,11 @@ void HSolvePassive::initialize()
     {
         Id cc = compartmentId_[ ic ];
 
-        Vm = HSolveUtils::get< Compartment, double >( cc, "Vm" );
-        Cm = HSolveUtils::get< Compartment, double >( cc, "Cm" );
-        Em = HSolveUtils::get< Compartment, double >( cc, "Em" );
-        Rm = HSolveUtils::get< Compartment, double >( cc, "Rm" );
-        inject = HSolveUtils::get< Compartment, double >( cc, "inject" );
-
+		Vm = Field< double >::get( cc, "Vm" );
+		Cm = Field< double >::get( cc, "Cm" );
+		Em = Field< double >::get( cc, "Em" );
+		Rm = Field< double >::get( cc, "Rm" );
+		inject = Field< double >::get( cc, "inject" );
         V_.push_back( Vm );
 
         /*
@@ -144,8 +143,8 @@ void HSolvePassive::initialize()
                 ileakage != leakage.end();
                 ileakage++ )
         {
-            EmLeak = HSolveUtils::get< Compartment, double >( *ileakage, "Ek" );
-            GmLeak = HSolveUtils::get< Compartment, double >( *ileakage, "Gk" );
+            EmLeak = Field< double >::get( *ileakage, "Ek" );
+            GmLeak = Field< double >::get( *ileakage, "Gk" );
             GmThev   += GmLeak;
             EmGmThev += EmLeak * GmLeak;
         }
@@ -184,11 +183,11 @@ void HSolvePassive::storeTree()
         childId.clear();
 
         HSolveUtils::children( *ic, childId );
-        Ra = HSolveUtils::get< Compartment, double >( *ic, "Ra" );
-        Cm = HSolveUtils::get< Compartment, double >( *ic, "Cm" );
-        Rm = HSolveUtils::get< Compartment, double >( *ic, "Rm" );
-        Em = HSolveUtils::get< Compartment, double >( *ic, "Em" );
-        initVm = HSolveUtils::get< Compartment, double >( *ic, "initVm" );
+		Ra = Field< double >::get( *ic, "Ra" );
+		Cm = Field< double >::get( *ic, "Cm" );
+		Rm = Field< double >::get( *ic, "Rm" );
+		Em = Field< double >::get( *ic, "Em" );
+		initVm = Field< double >::get( *ic, "initVm" );
 
         TreeNodeStruct node;
         // Push hines' indices of children
@@ -447,9 +446,12 @@ bool isClose( T a, T b, T tolerance )
 }
 
 #include <sstream>
+#include <vector>
 #include "../shell/Shell.h"
 #include "../basecode/global.h"
 #include "TestHSolve.h"
+using namespace std;
+
 void testHSolvePassive()
 {
     tbegin;
@@ -986,4 +988,62 @@ void testHSolvePassive()
     tend;
 }
 
+
+/*-----------------------------------------------------------------------------
+ *  This functon creates a cable of three compartments connected in series.
+ *  Apply a current pulse to the first compartment and record from the last
+ *  compartment. Use HSolve as solver. 
+ *
+ *  This tests is intended to be a comprehensive tests of HSolve in passive
+ *  conditions.
+ *-----------------------------------------------------------------------------*/
+void testHSolveCable()
+{
+    tbegin;
+    unsigned int totalCompartmentInCable = 3;
+    Shell* pShell = reinterpret_cast< Shell* > ( Id().eref().data() );
+
+    Id n = pShell->doCreate( "Neutral", Id(), "", 1);
+
+    vector< Id > cable( totalCompartmentInCable );
+    for( unsigned int i = 0; i < totalCompartmentInCable; i++)
+    {
+        ostringstream name;
+        name << "compartment" << i;
+        Id cId = pShell->doCreate( "Compartment", n, name.str(), 1);
+        /* Added parameters to compartments. */
+        double ra = 1.0e6;
+        double rm = 1.0e9;
+        double cm = 1.0e-12;
+
+        Field< double >::set( cId, "Ra", ra);
+        Field< double >::set( cId, "Rm", rm);
+        Field< double >::set( cId, "Cm", rm);
+        Field< double >::set( cId, "Em", -65e-3);
+        Field< double >::set( cId, "initVm", -65e-3);
+
+        cable.at(i) = cId;
+    }
+
+    EXPECT_EQ( cable.size(), totalCompartmentInCable
+            , "Failed to create a cable with " << totalCompartmentInCable 
+            << " compartments "
+            );
+
+    /* Now connect the cable */
+    for( vector< Id >::const_iterator it = cable.begin()
+            ; it != cable.end() - 1
+            ; ++it 
+       )
+    {
+        ObjId msgId = pShell->doAddMsg("Single", *it, "axial", *(it+1), "raxial");
+        ASSERT_FALSE( msgId.bad()
+                , "Failed to connect " << it->path() << " to " << (it+1)->path()
+                );
+    }
+
+    HSolvePassive hpSolver;
+
+    tend;
+}
 #endif // DO_UNIT_TESTS
