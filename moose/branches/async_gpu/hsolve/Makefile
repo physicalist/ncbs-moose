@@ -8,6 +8,7 @@
 #** See the file COPYING.LIB for the full notice.
 #**********************************************************************/
 
+
 ifndef CXXFLAGS 
 	CXXFLAGS = -g -fpermissive -fno-strict-aliasing -fPIC -fno-inline-functions \
 	-Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER -DSVN_REVISION=\"5340M\" \
@@ -55,7 +56,7 @@ ZombieHHChannel.o:	ZombieHHChannel.h ../biophysics/HHChannel.h ../biophysics/Cha
 PN2S_Proxy.o:	PN2S_Proxy.cpp	PN2S_Proxy.h
 
 .cpp.o:
-	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I. -I../basecode -I../msg $< -c -I/usr/local/cuda/include
+	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I. -I../basecode -I../msg -I./PN2S/extra $< -c -I/usr/local/cuda/include
 
 $(TARGET): $(OBJ) $(SMOLDYN_OBJ) $(HEADERS) $(SUBDIR)
 	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i; done)

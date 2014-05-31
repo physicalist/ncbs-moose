@@ -14,6 +14,7 @@ using namespace std;
 int main()
 {
 	Py_Initialize();
+
 	FILE *file = fopen("testHsolve.py", "r+");
 	if(file != NULL) {
 	     PyRun_SimpleFile(file, "testHsolve.py");

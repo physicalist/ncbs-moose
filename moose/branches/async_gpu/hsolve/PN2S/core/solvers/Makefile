@@ -17,10 +17,10 @@ endif
 
 TARGET = _solvers.o
 
-COBJS += PN2S_SolverChannels.o	\
-		PN2S_SolverComps.o	\
+COBJS += SolverChannels.o	\
+		SolverComps.o	\
 		solve.o	\
-		PN2S_Field.o		
+		Field.o		
 		 
 #OBJS += 
 
@@ -28,18 +28,18 @@ COBJS += PN2S_SolverChannels.o	\
 all: $(TARGET)
 default: all
 
-PN2S_Field.o: PN2S_Field.cpp PN2S_Field.h
-PN2S_SolverChannels.o: PN2S_SolverChannels.cpp PN2S_SolverChannels.h 
-PN2S_SolverComps.o: PN2S_SolverComps.cu PN2S_SolverComps.h
+Field.o: Field.cpp Field.h
+SolverChannels.o: SolverChannels.cpp SolverChannels.h 
+SolverComps.o: SolverComps.cu SolverComps.h
 solve.o: solve.cu solve.h operations.h
 
 $(TARGET): $(OBJS) $(COBJS)
 	$(LD) -r -o  $(TARGET) $(OBJS) $(COBJS) 
 $(OBJS):
-	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg $< -c 
+	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg -I../../extra $< -c 
 	
 $(COBJS):
-	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30 -gencode arch=compute_20,code=sm_20 -x cu -DDO_UNIT_TESTS
+	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30 -gencode arch=compute_20,code=sm_20 -x cu -DDO_UNIT_TESTS -I../../extra
 
 .PHONY: clean
 clean:
