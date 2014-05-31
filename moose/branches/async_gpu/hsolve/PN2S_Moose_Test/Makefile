@@ -1,4 +1,4 @@
-CXXFLAGS =	-O2 -g -Wall -fmessage-length=0 -lm -I/usr/include/python2.7
+CXXFLAGS =	-g -Wall -fmessage-length=0 -lm -I/usr/include/python2.7
 
 OBJS =		PN2S_Moose_Test.o
 

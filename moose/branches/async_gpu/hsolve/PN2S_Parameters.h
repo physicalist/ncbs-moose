@@ -1,1 +1,1 @@
-#define PN2S_MAX_THREADS 10
+#define MAX_THREADS 10

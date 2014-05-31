@@ -17,10 +17,10 @@ endif
 
 TARGET = _pn2s.o
 
-COBJS += PN2S_Device.o \
-	PN2S_DeviceManager.o \
+COBJS += Device.o \
+	DeviceManager.o \
 		 
-OBJS += PN2S_Manager.o 
+OBJS += Manager.o 
 
 SUBDIR = core
 	
@@ -28,21 +28,21 @@ MODULES = core/_core.o
 
 .PHONY: all
 all: $(TARGET)
-default: all
+default: benchmark 
 
-PN2S_Manager.o: PN2S_Manager.cpp PN2S_Manager.h 
-PN2S_Device.o: PN2S_Device.cpp PN2S_Device.h
-PN2S_DeviceManager.o: PN2S_DeviceManager.cpp PN2S_DeviceManager.h 
+Manager.o: Manager.cpp Manager.h 
+Device.o: Device.cpp Device.h
+DeviceManager.o: DeviceManager.cpp DeviceManager.h 
 
 $(TARGET): $(OBJS) $(COBJS) $(SUBDIR) 
 #	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i; done)
 	$(LD) -r -o  $(TARGET) $(OBJS) $(COBJS) $(MODULES)
 	 
 $(OBJS):
-	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg $< -c 
+	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg -I./extra $< -c 
 	
 $(COBJS):
-	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fopenmp -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30  -x cu     
+	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fopenmp -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30  -x cu  -I./extra   
 
 .PHONY: clean
 $(SUBDIR): force
@@ -51,9 +51,13 @@ $(SUBDIR): force
 .PHONY: force
 force :;
 
+#TODO: Remove test
 test: $(TARGET) 
-	$(CXX)  PN2S_Test.cpp $(TARGET) -o PN2S_Test -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -I/usr/local/cuda/include $(CXXFLAGS)
+	$(CXX)  Test.cpp $(TARGET) -o Test -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -I/usr/local/cuda/include -I./extra$(CXXFLAGS)
+
+benchmark: $(TARGET) force
+	$(CXX) -fopenmp $(CXXFLAGS) $(TARGET) -o benchmark -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -I/usr/local/cuda/include -I./extra Benchmark.cpp  
 
 clean:
 	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i clean;  done)
-	rm -rf $(OBJS) $(COBJS) $(TARGET) PN2S_Test
+	rm -rf $(OBJS) $(COBJS) $(TARGET) Test benchmark

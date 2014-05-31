@@ -6,35 +6,39 @@
 ///////////////////////////////////////////////////////////
 
 #include "PN2S_Proxy.h"
-#include "PN2S/PN2S.h"
-#include "PN2S/core/models/PN2SModel.h"
-#include "PN2S/PN2S_Manager.h"
+#include "PN2S/headers.h"
+#include "PN2S/core/models/Model.h"
+#include "PN2S/Manager.h"
 #include "HSolveUtils.h"
 // #include "PN2S/modelr/PN2SModel_Compartment.h"
 #include "../biophysics/Compartment.h" //For get info from Shell
 
-#include "PN2S/core/solvers/PN2S_SolverComps.h"
+#include "PN2S/core/solvers/SolverComps.h"
 
 //Static objects
 static map< uint, Id > _objects;
 
+using namespace pn2s;
+using namespace pn2s::solvers;
+
+
 //Getter and Setter
-CURRENT_TYPE _getValue(uint id, PN2S_SolverComps<CURRENT_TYPE,CURRENT_ARCH>::Fields field)
+CURRENT_TYPE _getValue(uint id, SolverComps<CURRENT_TYPE,CURRENT_ARCH>::Fields field)
 {
 	switch(field)
 	{
-		case PN2S_SolverComps<CURRENT_TYPE,CURRENT_ARCH>::CM_FIELD:
-			return HSolveUtils::get< Compartment, double >( _objects[ id ], "Cm" );
-		case PN2S_SolverComps<CURRENT_TYPE,CURRENT_ARCH>::EM_FIELD:
-			return HSolveUtils::get< Compartment, double >( _objects[ id ], "Em" );
-		case PN2S_SolverComps<CURRENT_TYPE,CURRENT_ARCH>::RM_FIELD:
-			return HSolveUtils::get< Compartment, double >( _objects[ id ], "Rm" );
-		case PN2S_SolverComps<CURRENT_TYPE,CURRENT_ARCH>::RA_FIELD:
-			return HSolveUtils::get< Compartment, double >( _objects[ id ], "Ra" );
-		case PN2S_SolverComps<CURRENT_TYPE,CURRENT_ARCH>::VM_FIELD:
-			return HSolveUtils::get< Compartment, double >( _objects[ id ], "Vm" );
-		case PN2S_SolverComps<CURRENT_TYPE,CURRENT_ARCH>::INIT_VM_FIELD:
-			return HSolveUtils::get< Compartment, double >( _objects[ id ], "initVm" );
+		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::CM_FIELD:
+			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "Cm" );
+		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::EM_FIELD:
+			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "Em" );
+		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::RM_FIELD:
+			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "Rm" );
+		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::RA_FIELD:
+			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "Ra" );
+		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::VM_FIELD:
+			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "Vm" );
+		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::INIT_VM_FIELD:
+			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "initVm" );
 	}
 	return 0;
 }
@@ -46,11 +50,11 @@ CURRENT_TYPE _getValue(uint id, PN2S_SolverComps<CURRENT_TYPE,CURRENT_ARCH>::Fie
 
 void PN2S_Proxy::Setup(double dt)
 {
-	PN2S_Manager::Setup(dt);
+	Manager::Setup(dt);
 	_objects.clear();
 
 	//Register Setter and Getter
-	PN2S_SolverComps<CURRENT_TYPE,CURRENT_ARCH>::GetValue_Func = &_getValue;
+	SolverComps<CURRENT_TYPE,CURRENT_ARCH>::GetValue_Func = &_getValue;
 }
 
 
@@ -62,7 +66,7 @@ void PN2S_Proxy::InsertCompartmentModel(Eref master_hsolve, Id seed){
 
 	int nCompt = compartmentIds.size();
 
-	PN2SModel<CURRENT_TYPE,CURRENT_ARCH> neutral(seed.value());
+	models::Model<CURRENT_TYPE> neutral(seed.value());
 
 	/**
 	 * Create Compartmental Model
@@ -107,7 +111,7 @@ void PN2S_Proxy::InsertCompartmentModel(Eref master_hsolve, Id seed){
 	/**
 	 * Now model is ready to import into the PN2S
 	 */
-	PN2S_Manager::InsertModel(neutral);
+	Manager::InsertModel(neutral);
 }
 
 void PN2S_Proxy::walkTree( Id seed, vector<Id> &compartmentIds )
@@ -193,7 +197,7 @@ void PN2S_Proxy::zombify( Element* solver, Element* orig)
 }
 
 void PN2S_Proxy::Reinit(){
-	PN2S_Manager::Reinit();
+	Manager::Reinit();
 }
 
 
@@ -201,5 +205,5 @@ void PN2S_Proxy::Reinit(){
  * If it's the first time to execute, prepare solver
  */
 void PN2S_Proxy::Process(ProcPtr info){
-	PN2S_Manager::Process();
+	Manager::Process();
 }

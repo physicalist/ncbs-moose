@@ -1,11 +1,10 @@
 #PN2S (Parallel Neural Network Simulator)
-===
-PN2S is an application module for providing GPU (CUDA) computational back-end in the MOOSE simulator (http://moose.ncbs.res.in/). 
+
+PN2S is a framwork to simulate neural models in parallel systems.
 
 ## Features:
-- Multi GPUs execution
-- Provide CPU+GPU simulation 
+- Provide simulation for systems with multiple CPU, GPU and XeonPhi
+- Supports models of complex neurons and large networks.
 - Modular and extensible architecture
-- Easy to install
-- Simulate complex neurons and large networks.
+- Supporting MOOSE (http://moose.ncbs.res.in) simulator
 
