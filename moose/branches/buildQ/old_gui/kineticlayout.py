@@ -189,7 +189,7 @@ class  KineticsWidget(QtGui.QWidget):
         for k,v in cmptMol.items(): 
             print k
             for vl in v:
-                print vl.class_,vl
+                print vl.className,vl
         '''
 	#Check to see if all the cordinates are zero (which is a case for kkit8 version)
         x = []
@@ -271,8 +271,10 @@ class  KineticsWidget(QtGui.QWidget):
             for reitem in Neutral(meshEnt).getNeighbors('remeshReacs'):
                 molrecList.append(reitem)
             for mitem in Neutral(meshEnt).getNeighbors('remesh'):
-                if ( (mitem[0].class_ != 'GslStoich')):
-                        molrecList.append(mitem)
+                if (mitem[0].className != 'GslIntegrator'):
+                    if (mitem[0].className != 'GslStoich'):
+		#if (mitem[0].className != 'GslIntegrator'):
+                        	molrecList.append(mitem)
             mobject[meshEnt] = molrecList
     
     def coordinates(self,x,y,cmptMol):
@@ -284,8 +286,9 @@ class  KineticsWidget(QtGui.QWidget):
         allzeroCord = False
         for mreObjitems in cmptMol.itervalues():
             for mre in mreObjitems:
+		print "mre",mre
                 if isinstance(element(mre[0].parent),CplxEnzBase):
-                 #if ((mre[0].parent).class_ == 'CplxEnzBase'):
+                 #if ((mre[0].parent).className == 'CplxEnzBase'):
                     mreObjinfo = (mre[0].parent).path+'/info'
                 else:
                     mreObjinfo = mre.path+'/info'
@@ -322,7 +325,7 @@ class  KineticsWidget(QtGui.QWidget):
                     mobjItem = ReacItem(mre,comptRef)
 
                 elif isinstance(element(mre),EnzBase):
-                    if mre.class_ == 'ZEnz':
+                    if mre.className == 'ZEnz':
                         mobjItem = EnzItem(mre,comptRef)
                     else:
                         mobjItem = MMEnzItem(mre,comptRef)
@@ -360,7 +363,7 @@ class  KineticsWidget(QtGui.QWidget):
 
     def positioninfo(self,mre):#,xratio,yratio,xMin,yMin):
         if isinstance(element(mre[0].parent),CplxEnzBase):
-        #if ((mre[0].parent).class_ == 'ZEnz'):
+        #if ((mre[0].parent).className == 'ZEnz'):
             iteminfo = (mre[0].parent).path+'/info'
         else:
             iteminfo = mre.path+'/info'
@@ -589,9 +592,9 @@ class  KineticsWidget(QtGui.QWidget):
         srcIntersects, lineSrcPoint = self.calcLineRectIntersection(srcRect, tmpLine)
         destIntersects, lineDestPoint = self.calcLineRectIntersection(desRect, tmpLine)
         if not srcIntersects:
-            print 'Source does not intersect line. Arrow points:', lineSrcPoint, src.mobj[0].name, src.mobj[0].class_
+            print 'Source does not intersect line. Arrow points:', lineSrcPoint, src.mobj[0].name, src.mobj[0].className
         if not destIntersects:
-            print 'Dest does not intersect line. Arrow points:', lineDestPoint,  des.mobj[0].name, des.mobj[0].class_
+            print 'Dest does not intersect line. Arrow points:', lineDestPoint,  des.mobj[0].name, des.mobj[0].className
         # src and des are connected with line co-ordinates
         # Arrow head is drawned if the distance between src and des line is >8 just for clean appeareance
         if (abs(lineSrcPoint.x()-lineDestPoint.x()) > 8 or abs(lineSrcPoint.y()-lineDestPoint.y())>8):
@@ -714,8 +717,11 @@ class  KineticsWidget(QtGui.QWidget):
             self.updateArrow(srcdes.childItems()[0])
 
     def updateScale( self, scale, ):
+	print "update @@@"
         for item in self.sceneContainer.items():
+	    #print "item",type(item)
             if isinstance(item,ReacItem) or isinstance(item,EnzItem):
+		print "i3",item.mobj.path
                 item.refresh(scale)
                 xpos,ypos = self.positioninfo(item.mobj)
                 item.setGeometry(xpos,ypos, 
@@ -777,6 +783,7 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     size = QtCore.QSize(1024 ,768)
     modelPath = 'OSC_Cspace'
+    modelPath = '78'
     itemignoreZooming = False
     try:
         filepath = '../Demos/Genesis_files/'+modelPath+'.g'

@@ -109,7 +109,7 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
 			flag = Qt.ItemIsEnabled | Qt.ItemIsSelectable
 			srchField = 'set_'+fieldName
 			try:	
-			    for fn in (fn for fn in moose.getFieldDict(self.mooseObject.class_,'destFinfo').keys() if fn.startswith(srchField)):
+			    for fn in (fn for fn in moose.getFieldDict(self.mooseObject.className,'destFinfo').keys() if fn.startswith(srchField)):
 				    flag = flag | Qt.ItemIsEditable
 			    value = mooseObject.getField(fieldName)
 				
@@ -176,8 +176,8 @@ class ObjectFieldsModel(QtCore.QAbstractTableModel):
         field = self.fields[index.row()]        
         #if role == Qt.ToolTipRole:
             #print "$$",field,str(field)
-            #return self.tr('<html>' + moose.doc(self.mooseObject.class_ + '.' + str(field)).replace(chr(27) + '[1m', '<b>').replace(chr(27) + '[0m', '</b>') + '</html>') # This is to remove special characters used for pretty printing in terminals
-         #   return self.tr('<html>' + moose.doc(self.mooseObject.class_ + '.' + str(field)) + '</html>') # This is to remove special characters used for pretty printing in terminals
+            #return self.tr('<html>' + moose.doc(self.mooseObject.className + '.' + str(field)).replace(chr(27) + '[1m', '<b>').replace(chr(27) + '[0m', '</b>') + '</html>') # This is to remove special characters used for pretty printing in terminals
+         #   return self.tr('<html>' + moose.doc(self.mooseObject.className + '.' + str(field)) + '</html>') # This is to remove special characters used for pretty printing in terminals
         if index.column() == 0 and role == Qt.DisplayRole:
             try:
                 ret = QtCore.QVariant(QtCore.QString(field)+' ('+defaults.FIELD_UNITS[field]+')')
