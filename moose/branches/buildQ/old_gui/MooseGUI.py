@@ -19,8 +19,8 @@ from utils import copyTree
 import moose
 import moose.utils as mooseUtils
 from collections import defaultdict
-#from objectedit import ObjectFieldsModel, ObjectEditView
-from objectedit2 import ObjectFieldsModel
+from objectedit import ObjectFieldsModel, ObjectEditView
+#from objectedit2 import ObjectFieldsModel
 from moosehandler import MooseHandler
 from mooseplot import MoosePlot,MoosePlotWindow,newPlotSubWindow
 
@@ -618,7 +618,7 @@ class DesignerMainWindow(QtGui.QMainWindow, Ui_MainWindow):
         display = self.strTruncate(obj)
         self.propEditorSelectionNameLabel.setText(display)
         #self.propEditorSelectionNameLabel.setText(str(obj.getField('name')))
-        if obj.class_ == 'Shell' or obj.class_ == 'PyMooseContext' or obj.class_ == 'GenesisParser':
+        if obj.className == 'Shell' or obj.className == 'PyMooseContext' or obj.className == 'GenesisParser':
             print '%s of class %s is a system object and not to be edited in object editor.' % (obj.path, obj.class_)
             return
         self.propEditorCurrentSelection = obj
@@ -666,8 +666,8 @@ class DesignerMainWindow(QtGui.QMainWindow, Ui_MainWindow):
                      
     def updatePlotDockFields(self,obj):
         #add plot-able elements according to predefined  ('%.3f' %self.currentTime)
-        self.plotConfigCurrentSelectionLabel.setText(str(obj.getField('name')+'-'+obj.getField('class')))
-        fieldType = obj.getField('class')
+        self.plotConfigCurrentSelectionLabel.setText(str(obj.getField('name')+'-'+obj.getField('className')))
+        fieldType = obj.getField('className')
 #        self.plotConfigCurrentSelectionTypeLabel.setText(fieldType)
         self.plotConfigFieldSelectionComboBox.clear()
         try: 
@@ -917,7 +917,7 @@ class DesignerMainWindow(QtGui.QMainWindow, Ui_MainWindow):
     def strTruncate(self,mobj):
         objPathinfo = str(mobj.getField('path'))
         objPath_sp = objPathinfo.split('/')
-        objClassinfo = str(mobj.getField('class'))
+        objClassinfo = str(mobj.getField('className'))
         maxlenChar = 35
         pathlength = maxlenChar - len(objClassinfo)
         displayf = objClassinfo+' : ' + objPathinfo

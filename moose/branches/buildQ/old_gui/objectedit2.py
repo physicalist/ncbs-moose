@@ -56,7 +56,7 @@ class ObjectFieldsModel(QAbstractTableModel):
 
         ## Added by Aditya, if gate power is zero, moose crashes on getField() below,
         ## hence don't show its fields, in any case, editing is not allowed for those.
-        if self.mooseObject.class_ in ['HHGate','HHGate2D','Interpol2D']: return
+        if self.mooseObject.className in ['HHGate','HHGate2D','Interpol2D']: return
         
         for fieldName in self.mooseObject.getFieldNames('valueFinfo'):
             
