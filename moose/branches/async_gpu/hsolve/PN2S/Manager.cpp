@@ -9,7 +9,7 @@
 #include "Manager.h"
 
 using namespace pn2s;
-static vector<models::Model<CURRENT_TYPE> > _models;
+static vector<models::Model> _models;
 
 static double _dt;
 static bool _isInitialized = false;
@@ -28,7 +28,8 @@ Error_PN2S Manager::Setup(double dt){
 Error_PN2S Manager::Reinit(){
 	if (!_isInitialized)
 		_isInitialized = true;
-	PrepareSolver();
+
+	_deviceManager.Reinit(_models,_dt);
 	return  Error_PN2S::NO_ERROR;
 }
 
@@ -36,19 +37,8 @@ bool Manager::IsInitialized(){
 	return  _isInitialized;
 }
 
-void Manager::InsertModel(models::Model<CURRENT_TYPE> &neutral){
+void Manager::InsertModel(models::Model &neutral){
 	_models.push_back(neutral);
-}
-
-
-Error_PN2S Manager::PrepareSolver(){
-	Error_PN2S res = _deviceManager.Reinit(_models,_dt);
-
-//	if( res == NO_ERROR)
-//		models.clear();
-
-//	startDeviceThreads();
-	return res;
 }
 
 

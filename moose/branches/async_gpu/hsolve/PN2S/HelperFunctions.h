@@ -115,4 +115,10 @@ void inline _printVector(vector< uint >& vec)
 	cout << endl<<endl<<flush;
 }
 
+//Debugging
+#define _D(call)                                          \
+do {                                                                  \
+	call;				\
+} while (0)
+
 #endif //! defined(EA_8104B80E_EF46_47df_2AB8_FC787EF2223C__INCLUDED_)

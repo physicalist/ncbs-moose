@@ -18,14 +18,13 @@ namespace pn2s
 namespace models
 {
 
-template <typename T>
 class Model
 {
 public:
 	uint id;
 
-	vector<HHChannel<T> > hhChannels;
-	vector<Compartment<T> > compts;
+	vector<HHChannel> hhChannels;
+	vector<Compartment > compts;
 
 	Matrix matrix;
 

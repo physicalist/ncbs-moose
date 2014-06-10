@@ -10,12 +10,9 @@
 
 using namespace pn2s::models;
 
-template <typename T>
-HHChannel<T>::HHChannel(){
+HHChannel::HHChannel(){
 }
 
-template <typename T>
-HHChannel<T>::~HHChannel(){
+HHChannel::~HHChannel(){
 }
 
-template class HHChannel<double>;

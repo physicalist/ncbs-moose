@@ -227,6 +227,7 @@ def make_spiny_compt():
     comptLength = 100e-6
     comptDia = 4e-6
     numSpines = 5
+
     compt = create_squid()
     compt.inject = 1e-7
     compt.x0 = 0
@@ -287,13 +288,15 @@ def test_elec_alone():
     # make Hsolver and rerun
     hsolve = moose.HSolve( '/n/hsolve' )
     moose.useClock( 1, '/n/hsolve', 'process' )
+    hsolve.dt = 20e-6
+    hsolve.target = '/n/compt'
+    moose.le( '/n' )
     for dt in ( 20e-6, 50e-6, 100e-6 ):
         print 'running at dt =', dt
         moose.setClock( 0, dt )
         moose.setClock( 1, dt )
         moose.setClock( 2, dt )
         hsolve.dt = dt
-        hsolve.target = '/n/compt'
         moose.reinit()
         moose.start( runTime )
         dump_plots( 'h_instab' + str( dt ) + '.plot' )

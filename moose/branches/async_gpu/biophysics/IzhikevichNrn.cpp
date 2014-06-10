@@ -113,12 +113,17 @@ const Cinfo* IzhikevichNrn::initCinfo()
     static ReadOnlyValueFinfo<IzhikevichNrn, double> Im(
             "Im",
             "Total current going through the membrane. Unit is A.",
-            &IzhikevichNrn::getInject);
+            &IzhikevichNrn::getIm);
     static ValueFinfo<IzhikevichNrn, double> initVm(
             "initVm",
             "Initial membrane potential. Unit is V.",
             &IzhikevichNrn::setInitVm,
             &IzhikevichNrn::getInitVm);
+    static ValueFinfo<IzhikevichNrn, double> inject(
+            "inject",
+            "External current injection into the neuron",
+            &IzhikevichNrn::setInject,
+            &IzhikevichNrn::getInject);
     static ValueFinfo<IzhikevichNrn, double> initU(
             "initU",
             "Initial value of u.",
@@ -144,15 +149,15 @@ const Cinfo* IzhikevichNrn::initCinfo()
             " physiological and SI units. unit is V/s.",
             &IzhikevichNrn::setGamma,
             &IzhikevichNrn::getGamma);
-    static ValueFinfo<IzhikevichNrn, double> Rm(
-            "Rm",
-            "Hidden cefficient of input current term (I) in Izhikevich model. Defaults to 1e6 Ohm.",
-            &IzhikevichNrn::setRm,
-            &IzhikevichNrn::getRm);
+    static ValueFinfo<IzhikevichNrn, double> RmByTau(
+            "RmByTau",
+            "Hidden coefficient of input current term (I) in Izhikevich model. Defaults to 1e9 Ohm/s.",
+            &IzhikevichNrn::setRmByTau,
+            &IzhikevichNrn::getRmByTau);
 
     static ValueFinfo<IzhikevichNrn, bool> accommodating(
             "accommodating",
-            "True of this neuron is an accommodating one. The equation for recovery"
+            "True if this neuron is an accommodating one. The equation for recovery"
             " variable u is special in this case.",
             &IzhikevichNrn::setAccommodating,
             &IzhikevichNrn::getAccommodating);
@@ -167,8 +172,8 @@ const Cinfo* IzhikevichNrn::initCinfo()
     ///////////////////////////////
     // MsgDest definition
     ///////////////////////////////
-    static DestFinfo injectDest(
-            "injectDest",
+    static DestFinfo injectMsg(
+            "injectMsg",
             "Injection current into the neuron.",
             new OpFunc1<IzhikevichNrn, double>( &IzhikevichNrn::setInject));
     
@@ -191,7 +196,24 @@ const Cinfo* IzhikevichNrn::initCinfo()
             "bDest",
             "Destination message to modify parameter b at runtime",            
             new OpFunc1<IzhikevichNrn, double>(&IzhikevichNrn::setB));
+    
 
+    static DestFinfo handleChannel("handleChannel",
+                                   "Handles conductance and reversal potential arguments from Channel",
+                                   new OpFunc2<IzhikevichNrn, double, double >(&IzhikevichNrn::handleChannel));
+
+    static Finfo * channelShared[] = {
+        &handleChannel,
+        VmOut()
+    };
+
+    static SharedFinfo channel("channel",
+			"This is a shared message from a IzhikevichNrn to channels."
+			"The first entry is a MsgDest for the info coming from "
+			"the channel. It expects Gk and Ek from the channel "
+			"as args. The second entry is a MsgSrc sending Vm ",
+                               channelShared, sizeof( channelShared ) / sizeof( Finfo* )
+	);                               
     static Finfo* IzhikevichNrnFinfos[] = {
         &proc,
         &Vmax,
@@ -202,7 +224,8 @@ const Cinfo* IzhikevichNrn::initCinfo()
         &u,
         &Vm,
         &Im,
-        &Rm,
+        &inject,
+        &RmByTau,
         &accommodating,
         &u0,
         &initVm,
@@ -210,13 +233,14 @@ const Cinfo* IzhikevichNrn::initCinfo()
         &alpha,
         &beta,
         &gamma,
-        &injectDest,
+        &injectMsg,
         &cDest,
         &dDest,
         &bDest,
         &aDest,
         VmOut(),
         spikeOut(),
+        &channel,        
     };
     
     static string doc[] = {
@@ -224,7 +248,7 @@ const Cinfo* IzhikevichNrn::initCinfo()
         "Author", "Subhasis Ray",
         "Description", "Izhikevich model of spiking neuron "
         "(Izhikevich,EM. 2003. Simple model of spiking neurons. Neural"
-        " Networks, IEEE Transactions on 14(6). pp 1569–1572).\n"
+        " Networks, IEEE Transactions on 14(6). pp 1569-1572).\n"
         " This class obeys the equations (in physiological units):\n"
         "  dVm/dt = 0.04 * Vm^2 + 5 * Vm + 140 - u + inject\n"
         "  du/dt = a * (b * Vm - u)\n"
@@ -250,7 +274,7 @@ IzhikevichNrn::IzhikevichNrn():
         alpha_(40000.0), // 0.04 physiological unit
         beta_(5000.0), // 5 physiological unit
         gamma_(140.0), // 140 physiological unit
-        Rm_(1e6), // Assuming Izhikevich was using nA as unit of
+        RmByTau_(1e6), // Assuming Izhikevich was using nA as unit of
         // current, 1e6 Ohm will be the scaling term for SI
         a_(20.0), 
         b_(200.0),
@@ -265,7 +289,8 @@ IzhikevichNrn::IzhikevichNrn():
         Im_(0.0),
         savedVm_(-0.065),
         accommodating_(false),
-        u0_(-0.065)
+        u0_(-0.065),
+        inject_(0.0)
 {
     ;
 }
@@ -313,14 +338,14 @@ double IzhikevichNrn::getD() const
     return d_;
 }
 
-void IzhikevichNrn::setRm( double value)
+void IzhikevichNrn::setRmByTau( double value)
 {
-    Rm_ = value;
+    RmByTau_ = value;
 }
 
-double IzhikevichNrn::getRm() const
+double IzhikevichNrn::getRmByTau() const
 {
-    return Rm_;
+    return RmByTau_;
 }                             
 void IzhikevichNrn::setVm( double value)       
 {
@@ -378,10 +403,15 @@ double IzhikevichNrn::getGamma() const
 
 void IzhikevichNrn::setInject( double value)
 {
-    sum_inject_ += value;
+    inject_ = value;
 }
 
 double IzhikevichNrn::getInject() const
+{
+    return inject_;
+}                        
+
+double IzhikevichNrn::getIm() const
 {
     return Im_;
 }                        
@@ -426,17 +456,22 @@ double IzhikevichNrn::getU0() const
     return u0_;
 }
 
+void IzhikevichNrn::handleChannel(double Gk, double Ek)
+{
+    sum_inject_ += Gk * (Ek - Vm_);
+}
+
 void IzhikevichNrn::process(const Eref& eref, ProcPtr proc)
-{    
+{
     Vm_ += proc->dt * ((alpha_ * Vm_ + beta_) * Vm_
-                       + gamma_ - u_ + 1e3 * Rm_ * sum_inject_);
+                       + gamma_ - u_ + RmByTau_ * sum_inject_);
     if (accommodating_){
         u_ += proc->dt * a_ * b_ * (Vm_ - u0_);
     } else {
         u_ += proc->dt * a_ * (b_ * Vm_ - u_);
     }
     Im_ = sum_inject_;
-    sum_inject_ = 0.0;
+    sum_inject_ = inject_;
     // This check is to ensure that checking Vm field will always
     // return Vmax when Vm actually crosses Vmax.
     if (Vm_ >= Vmax_){

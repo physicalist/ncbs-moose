@@ -61,6 +61,8 @@ class IzhikevichNrn
     void setGamma( double value );
     double getGamma() const;
 
+    double getIm() const;
+
     void setInject( double value );
     double getInject() const;
 
@@ -74,14 +76,16 @@ class IzhikevichNrn
     double getInitU() const;
     double getU() const;
 
-    void setRm(double value );
-    double getRm() const;
+    void setRmByTau(double value );
+    double getRmByTau() const;
 
     void setAccommodating( bool value );
     bool getAccommodating() const;
 
     void setU0( double value );
     double getU0() const;
+
+    void handleChannel( double Gk, double Ek);
 
     void process(const Eref& eref, ProcPtr proc );
     void reinit(const Eref& eref, ProcPtr proc );
@@ -93,7 +97,7 @@ class IzhikevichNrn
     double alpha_;
     double beta_;
     double gamma_;
-    double Rm_;
+    double RmByTau_;
     double a_;
     double b_;
     double c_;
@@ -108,6 +112,7 @@ class IzhikevichNrn
     double savedVm_;
     bool accommodating_;
     double u0_;
+    double inject_;
 };
 
 #endif

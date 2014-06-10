@@ -3286,4 +3286,442 @@ Still confused about motors.
 Revisited math for setting up motors. Did so. Now it works. Added snippet
 cylinderMotor.py.
 
+Checkin 5337.
+
+Some fixes in the problems with SpikeRingBuffer. Latest issue was that
+it wasn't scheduled, so it didn't know CurrTime. When fixed I get
+spiking but need to see how it matches.
+
+============================================================================
+2 May
+Working on adaptors. Now compiles and clears unit tests but need to 
+incorporate it and figure out what to do with requestField msg - do I
+really want this?
+
+============================================================================
+3 May.
+Working through loadMulti snippet. Ran into silly wildcard bug. Fixed.
+Also a silly ZombieFuncPool bug. fixed.
+Stuck now with Stoich calculations.
+Valgrind may help.
+
+Something seriously wrong with the ksolver. I have implemented stuff
+to deal with setting up a reasonable initial dt, but this isn't 
+fixing it. It was working earlier. Symptoms are that there is a mismatch
+between internal vectors of mols and the visible ones.
+
+Will have to fall back to ee for the demo of multiscale models in 
+NeuroHDF
+
+============================================================================
+5 May
+Working on script in snippets/MULTI/TuringInNeuron.py.
+============================================================================
+6 May
+Even though the numpy plots don't work, I can explicitly scan through the data
+points and save the ones I want. Ran a sim embedded in the regular neuronal
+geometry, examined in xplot. The Turing
+pattern in the first few compts is fine, but then the concs go all over the
+place, apparently in some coordination with the segments of the neuron.
+============================================================================
+7 May
+Confirmed inverse relationship between volume and the concs in the output.
+Concs are not so bad, they can easily be redone and stored in Sinit.
+My intuition is that the rates will also be different in each voxel,
+because they are expressed in # units.
+
+Working on Ksolve.cpp, goal is to extract concInit from each pool and use
+it to fill in the  concInit in all the array entries
+============================================================================
+8 May
+Some fixes to the documentation.
+Further fixes on Ksolve.
+
+Working on building a Turing pattern in neuronal geometry. I thought the
+problem was initial conditions. Turns out that the concs were set
+explicitly, after the reaction system was distributed. The problem is that
+the rates have not been scaled suitably across the voxels.
+
+Options:
+- Put in a volscale vector in the VoxelPools, to multiply each rate
+	This needs changes to the Stoich::updateRates function.
+- Do inline volume scaling to multiply each rate. Only volume is stored in voxel
+	This needs changes to the Stoich::updateRates function.
+	It will involve numerous repeated powers and multiplications.
+	Minimal memory costs.
+- Put in independent Stoich ptrs for each volume in model. 
+	Call Stoich::updateRatesAfterRemesh for each.
+	This needs a Stoich on each Voxel Pool.
+		To make it efficient, could share Stoich Ptrs among all with
+		same volume. 
+	Still very costly.
+- Put in independent RateTerms for each volume in model.
+	Call Stoich::updateRatesAfterRemesh for each.
+	Need a way for Stoich to use specified RateTerms set in updateFuncs.
+	Possibly again share ptrs, here the RateTerm vector, among all with
+		the same volume.
+
+OK let's try the last. It is not horribly memory-expensive, nor is it going 
+	to cost a lot of multiplications each cycle.
+
+Stoich::generateRescaledRates
+Stoich::updateRates using rates as an argument.
+Stoich::updateReacVeolocities. Seems like it should move into the 
+	VoxelPoolsBase.
+
+VoxelPoolsBase::myVol or some other way to map to rates_ vector.
+VoxelPoolsBase::rates_ ptr to vector. Would like to have a reference counter
+	so I avoid having to worry about management. Either that or the
+	master Stoich keeps the original of all of them.
+Something to figure out matching volumes. Probably in Ksolve. Possibly
+on Stoich as it is asked for a ptr for a new volume.
+
+Will need the equivalent changes in GssaVoxelPools.
+Ksolve needs to have the voxel vols assigned to it, to pass to the VoxelPools,
+	so that they can ask the Stoich which volIndex they should use.
+
+Massive code changes to do the above. Some things work but
+the TuringInNeuron test still doesn't give a nice flat line for
+mol concs.
+============================================================================
+9 May
+Sequence of actions on setup of reac-diff solver system.
+
+0. Compartment is set up to a cell (neuroMesh) or volume (other meshes)
+1. Dsolve and Ksolve both assign compartment. Needed to figure out vols and
+	numVoxels. This doesn't need anything else assigned.
+2. stoich.addPoolInterface fills in the pool interface vector. Just 
+	assigning the Ids at this point, though it might be nice to
+	compute the ptrs since this lets us avoid exposing functions to
+	the MOOSE interface.
+3. Call Stoich::setPath. This builds the whole system.
+	3.1 At an early stage in setPath..resizeArrays it sets numPools on
+	each of the PoolInterfaces. Note that they already know the
+	# of voxels and vols from 1).
+	3.2 at setPath..Stoich::zombify gets numVoxels from the PoolInterface.
+	3.3 After Zombification the Stoich builds the list of unique volumes,
+		and with it the vector< vector< RateTerm* > >.
+	3.4 After this the Stoich calls each of the PoolInterfaces and assigns
+		Stoichs unto them. 
+		- Ksolve uses this to go through each VoxelPool and set up 
+		the volIndex to use for its reac calculations.
+		- Dsolve uses this to get the vector of all pools from the
+		Stoich, and extract DiffConst and MotorConst.
+4. Assign the Dsolve to the Ksolve::dsolve field. This is used during
+	the process function to pass data back and forth between the solvers.
+
+
+To simplify further, 
+- I could assign the compartment to the Stoich.
+	It would use this to get the volumes right up front. I could then
+	use this to fill in the compartment info to the Ksolve and Dsolve.
+- I could also use the ZombiePoolInterface ptrs to do step 4, that is,
+	assign Dsolve to the Ksolve and vice-versa (as a dummy).
+
+Yet to consider:
+	- Dsolves that span multiple Ksolve reac systems
+		e.g., Ca diffusion that goes into spines, where spines have
+		different reacs.
+	- Ksolves that work with different Dsolves
+		e.g., the spine Ksolve that needs to talk to the spine
+		Dsolve as well as the Ca Dsolve.
+	- Ksolve that maps to only a subset of voxels on a Dsolve.
+		Same as above.
+	- Reactions that go between different Ksolves.
+		e.g., Spine to PSD and back again.
+
+Alternatively, and much simpler
+	- Intercompt reacs
+	- intercompt diffusion processes, implemented same as reacs but 
+		set up by examining molecule names between compts.
+
+Decision.
+0. Compartment is set up to a cell (neuroMesh) or volume (other meshes)
+1. Compartment assigned to Stoich. Here it can assign unique vols already.
+2. Dsolve and Ksolve assigned to Stoich using setKsolve and setDsolve.
+	2.1 At this point the Stoich::useOneWay_ flag is set if it is a Gsolve.
+3. Call Stoich::setPath. All the rest happens internally, done by Stoich:
+	3.1 assign compartment to Dsolve and Ksolve.
+	3.2 assign numPools and compts to Dsolve and Ksolve.
+	3.3 During Zombification, zeroth vector< RateTerm* > is built.
+	3.4 afterZombification, stoich builds rateTerm vector for all vols.
+	3.5 Stoich assigns itself to Dsolve and Ksolve. 
+		- Ksolve sets up volIndex on each VoxelPool
+		- Dsolve gets vector of pools, extracts DiffConst and MotorConst
+	3.6 Dsolve assigned to Ksolve::dsolve_ field by the Stoich.
+4. Reinit, 
+	4.1 Dsolve builds matrix, provided dt has changed. It needs dt.
+	4.2 Ksolve builds solvers if not done already, assigning initDt
+
+As seen by the user, this reduces to just 4 stages, all centered on the Stoich.
+
+Need some care with defaults to handle the old-fashioned multi-compartment 
+but non-diffusive reactions.
+Also this approach is terrible for building a reaction system and running it
+on the fly.
+
+I want to reverse the order of the uniqueVols.
+============================================================================
+10 May
+Compiling. The Dsolve::setStoich function needs to be sorted in the new format.
+If the Dsolve can work without a Stoich it needs a suitable fallback too.
+
+============================================================================
+11 May
+Finally got the compilation done. Into testKsolve. Problem with CubeMesh
+not providing the voxel information needed by the Stoich.
+
+Works for most of the tests, still doesn't work for the Turing pattern
+test in the neuronal morphology.
+
+Checkin 5398.
+
+Trying to find why the system hangs. Using zug.py with Kholodenko.g
+and a runtime of 5000.
+Valgrind says that there is an invalid read of size 8 in the
+RateTerm::FirstOrder. Haven't been able to track this. The entire python
+side of things seems infested with memory issues.
+
+How to put breakpoints in a python script:
+
+import signal
+import os
+PID = os.getpid()
+
+def doNothing( *args ):
+	pass
+signal.signal( signal.SIGUSR1, doNothing )
+
+and for the breakpoint:
+os.kill( PID, signal.SIGUSR1 )
+
+Tracked down the numerical integration problem. It turns out that I had
+set the absolute tolerance of integration to 1e6. Set it to 1e-4 and all
+is well. Also implemented stuff so that the Ksolve can define the
+numerical method and the tolerances.
+
+Tracked down the problem with TuringInNeuron calculations. Turned out to
+be a whole lot of little problems to do with setting up distinct 
+rateTerm vectors for each compartment volume. One of them was to do with the
+difficulty of doing a doubleEq comparison for tiny values like the voxel
+volumes (in the range 1e-17).
+Now it is working, but the algorithm for finding the volIndex isn't going
+so well. It is currently a brute force search, but there turn out to be
+176 distinct volumes in this model, so an N^2 approach isn't advisable.
+Checkin 5400.
+
+Also, even though the answers are coming out well, the python script is
+failing at end. Fails even to be able to plot the data using matplotlib.
+
+
+Trying to run both the elec and reac-diff models together. Stuck for a
+long time on plots, turned out that there was actually a scheduler bug
+that had laid in wait for all this time. With that fixed I'm getting
+reasonable plots. Next step is to connect the models with an adaptor.
+============================================================================
+12 May. Thinking about how to set off the adaptor to request data from
+a number of targets. I have a variant of send, sendVec, but it isn't 
+mpi-compatible.
+============================================================================
+13 May
+Updated adaptor to use sendVec. Will deal with MPI-compatibility in due 
+course. Checkin 5405.
+
+A little stuck with this. Seems that the vector of voxelVolumes isn't 
+being filled by the PSD. Need to check what is up with Spine as well.
+
+============================================================================
+Subha wants the vector of ObjIds to help with the value harvesting in 
+sendVec.
+
+Trying to load chem model standalone to figure out why the loadMulti sim
+isn't working.
+Trying with OSC_diff_vols.g as a good test.
+
+The thing has loaded with all parameters set correctly. There is the tiny
+correction for the NA value in MOOSE. Let's see... no, that doesn't
+fix it. Tried lots of variations on it and it doesn't oscillate.
+OK tracked it. The moose.loadModel only loads contents of /kinetics.
+
+Fixed. I added an option to prefix the method with 'old_', in which case
+it turns off the flag to move objects onto their volume-defining compartments.
+With this fix the model runs.  Checkin 5413.
+
+Converted Element::getNumMsgTargets to getMsgTargets. Put in unit test.
+Checkin 5414.
+
+To handle the x-compt reacs, should just put in an exp-Euler calculation
+at the interface between solvers. Likewise for diffusion.
+
+Need now to move on the demos.
+============================================================================
+16 May 2014.
+Made tutorials directory, especially for course use.
+First demo: Cleaned up and animated the TuringOneDim.py demo. Moved to 
+tutorials.
+Trying to get oscillatory models in.  To do:
+	- The diagram for the cspace relaxation oscillator
+	- Get the novak-tyson cell cycle oscillator from kkit to work.
+		Loads the model and ee runs ok. So it is something with
+		zombie.
+	- The repressillator
+	- A standard feedback-delay oscillator.: Kholdenko.g
+
+
+============================================================================
+17 May 2014
+Many fixes to Hsolver. Seems to be doing something reasonable, see 
+testHsolve.py. Checkin 5424.
+
+Now back to looking at the novak_tyson model. This is now loading and
+running but the output is incorrect. Checked that the FuncPools that are
+set in place to follow a pool conc, are working.
+
+I've set up all the other oscillators:
+repressillator, slowFB (KHoldenko), relaxationOsc, Turing
+
+============================================================================
+18 May 2014
+The chem oscillator tutorials are now in a directory of their own, each with a 
+small png to explain what they are about. Would like to bring in the 
+monstrous Novak-Tyson example but it isn't running.
+
+============================================================================
+
+Need to figure out what is happening in the stoich.path assignment
+leading to only 2 entries.
+Turned out I was doing a setCoords on the cylinder, but using CubeMesh
+arguments.
+
+Yet again: Look at volume handling.
+
+- Need to have the volume_ field return the total volume of the compartment.
+	Allow a setVolume too, but only if the compartment has a single voxel.
+	This function rescales all rates and n's.
+- Provide a utility function setVolumeNotRates which changes the volume
+	field if a single voxel, but does not rescale rates and n's.
+
+When loading models from SBML and kkit, use the setVolumeNotRates as needed.
+
+============================================================================
+20 May 2014
+Cleanup for volume handling in meshes. Now it is possible to load a model
+right onto the target mesh.
+With this I have implemented a tutorial for propagating bistables.
+Added a whole series of tutorials for such bistables. Still want to put in 
+a dose-response curve.
+
+There is an issue with setting rates in reaction-diffusion systems. It only
+sets the rate for the largest vol compartment. I know why but it should set
+for all.
+
+Attempted to update but there were severe problems with the repository
+version. Downgraded back to my version.
+
+Fixed a bug where concInit was not being propagated to all pools when
+an array was created.
+Working through snippets/MULTI/loadmulti
+
+============================================================================
+22 May. 
+Numerous fixes in ReadKkit to be able to load models onto NeuroMesh,
+SpineMesh and PsdMesh directly, and get volumes right. With this done the
+entire multiscale model loads but doesn't run.
+
+Put in a check in Shell::doCreate to block creation of FieldElements
+or abstract classes.
+
+This is all based on 5439. There was a huge mess with upgrading so I'm taking
+a backup before trying again.
+
+Checkin 5458.
+============================================================================
+23 May 
+Able to upload the new revision, things compile now. Apparently the hsolve
+is now working well and clearing the Rallpacks.
+
+Sahil has found a problem with the cspace reader. Trying out in 
+ChemicalBistables/foo.py
+This turned out just to be a numerical instability, lowering dt fixed it.
+============================================================================
+24 May.
+Trying to get loadMulti to work. The setDiffLength in the NeuroMesh has
+to be called before the cell path is set, because only the cell Path
+operation sends out the spine and PSD information. Should fix.
+
+There is a nasty crash when the calculations start. Hard to track. Valgrind
+doesn't handle it either, it thinks that my code is writing past the end
+of the heap block.
+
+Two obvious places to look: The adaptor and the dangling reactions at
+the interface between compartments.
+
+Removed all references to adaptor. Still fails. 
+
+Check if file runs as an individual model under a single solver.
+Then check if it fails in a similar way when loaded in the default way under
+multiple solvers.
+
+============================================================================
+30 May
+Loaded in psd_merged31d.g both with separate compartments, and with the 
+solver handling all compts. In both cases the model loads and runs fine.
+Next to assign the solver to a different compt and see what happens.
+Doing.
+============================================================================
+31 May
+Well, it handles the spine portion fine as well.
+And the psd portion too. So something goes wrong with the compartmentalization.
+
+Went back to LoadMulti. Loaded in a version of the cell model that did
+not have any active conductances. Still crashes.
+============================================================================
+1 June. Need to try from scratch. Make a really simple cell with a 
+single soma, spine and PSD. Use a minimal chem model with just Ca binding
+to a single target. Couple Ca directly to the Vm.
+
+minimal.py now works for the following:
+	- Passive charging of spine and soma
+	- Simple reaction in each compt.
+	- Each compt has a single voxel, 
+	- No cross-compt reactions
+	- No active channels.
+
+Next:
+	Active channels: minchan.py.
+	Multiple voxels:
+
+Doing active channels.
+Turns out that the moment I instatiate a vgated channel the system crashes.
+This is even when the vgated channel in question is not loaded.
+Oddly, if I run it with valgrind it is fine.
+Also oddly, I can do an assignment to alpha field of the channel with an
+array, and the system does not crash.
+Looking at HHGate::setupTables as called by HHGate::setupAlpha
+
+============================================================================
+2 June
+Checkin 5483.
+Now converted the setupAlpha DestFinfo to an ElementValueFinfo. This
+fixes the problems with loading in channels in minchan.py, which tests
+out a minimal model with ion channels.
+
+The main loadMulti file still fails in the gsl calculations.
+Next step is to introduce multiple voxels into the minchan model.
+Did this. Just worked.
+
+Next step is to get in some Ca channels
+Did this. Just worked.
+
+Then get adaptors doing something.
+Seem to be doing something, but the Ca trace is not coming over.
+	This was a nasty scheduling issue, where things in a wildcard ##
+	seem to be scheduled for each individual entry, but the message from
+	the Clock is OneToAll so it gets multiplied.
+
+Next step is to deal with cross-compartment diffusion. For now this only
+crops up in NeuroMesh/SpineMesh/PsdMesh, but would like to generalize.
+
+Then cross-compartment reactions.
+
 ============================================================================

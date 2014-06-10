@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
 	for (int idx_batch = 0; idx_batch < batch_size; ++idx_batch) {
 
-		models::Model<CURRENT_TYPE> neutral(mx, idx_batch);
+		models::Model<TYPE_> neutral(mx, idx_batch);
 
 		Manager::InsertModel(neutral);
 	}

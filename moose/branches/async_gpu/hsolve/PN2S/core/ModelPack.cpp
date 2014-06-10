@@ -10,24 +10,21 @@
 #include <assert.h>
 
 using namespace pn2s;
-template <typename T, int arch>
-ModelPack<T,arch>::ModelPack(): _dt(1){
+ModelPack::ModelPack(): _dt(1){
 
 }
 
-template <typename T, int arch>
-ModelPack<T,arch>::~ModelPack(){
+ModelPack::~ModelPack(){
 
 }
 
-template <typename T, int arch>
-Error_PN2S ModelPack<T,arch>::Reinit(vector<models::Model<T> > &net){
+Error_PN2S ModelPack::Reinit(vector<models::Model > &net){
 	Error_PN2S res = Error_PN2S::NO_ERROR;
 
 	_analyzer.ImportNetwork(net);
 
-	res = _compsSolver.PrepareSolver(net, _analyzer);
-	assert(res==Error_PN2S::NO_ERROR);
+//	res = _compsSolver.PrepareSolver(net, _analyzer);
+//	assert(res==Error_PN2S::NO_ERROR);
 //	res = _channelsSolver.PrepareSolver(net, _analyzer);
 //	assert(res==Error_PN2S::NO_ERROR);
 
@@ -35,26 +32,25 @@ Error_PN2S ModelPack<T,arch>::Reinit(vector<models::Model<T> > &net){
 }
 
 
-template <typename T, int arch>
-Error_PN2S ModelPack<T,arch>::Process()
+
+Error_PN2S ModelPack::Input()
 {
 	//For each model in the pack, executes the Process()
-	_compsSolver.Process();
+//	_compsSolver.Input();
 	return Error_PN2S::NO_ERROR;
 }
 
-template <typename T, int arch>
-Error_PN2S ModelPack<T,arch>::Output()
+Error_PN2S ModelPack::Process()
 {
+//	_compsSolver.Process();
 	return Error_PN2S::NO_ERROR;
 }
 
-template <typename T, int arch>
-Error_PN2S ModelPack<T,arch>::Input()
+Error_PN2S ModelPack::Output()
 {
+//	_compsSolver.Output();
 	return Error_PN2S::NO_ERROR;
 }
 
-template class ModelPack<double, ARCH_SM30>;
 
 

@@ -7,41 +7,54 @@
 
 #include "PN2S_Proxy.h"
 #include "PN2S/headers.h"
-#include "PN2S/core/models/Model.h"
+#include "PN2S/core/models/NeuronVector.h"
+#include "PN2S/core/Network.h"
 #include "PN2S/Manager.h"
+#include "PN2S/core/models/SolverComps.h"
 #include "HSolveUtils.h"
-// #include "PN2S/modelr/PN2SModel_Compartment.h"
-#include "../biophysics/Compartment.h" //For get info from Shell
 
-#include "PN2S/core/solvers/SolverComps.h"
+//For get info from Shell
+#include "../headers.h"
+#include "../biophysics/Compartment.h"
+#include "ZombieCompartment.h"
+#include "../biophysics/CaConc.h"
+#include "ZombieCaConc.h"
+#include "../biophysics/HHGate.h"
+#include "../biophysics/ChanBase.h"
+#include "../biophysics/HHChannel.h"
+#include "ZombieHHChannel.h"
+#include "../shell/Wildcard.h"
+#include "../shell/Shell.h"
 
 //Static objects
-static map< uint, Id > _objects;
+static map< uint, Id > _objectMap;
 
 using namespace pn2s;
-using namespace pn2s::solvers;
 
+
+
+models::NeuronVector neurons;
 
 //Getter and Setter
-CURRENT_TYPE _getValue(uint id, SolverComps<CURRENT_TYPE,CURRENT_ARCH>::Fields field)
-{
-	switch(field)
-	{
-		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::CM_FIELD:
-			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "Cm" );
-		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::EM_FIELD:
-			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "Em" );
-		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::RM_FIELD:
-			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "Rm" );
-		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::RA_FIELD:
-			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "Ra" );
-		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::VM_FIELD:
-			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "Vm" );
-		case SolverComps<CURRENT_TYPE,CURRENT_ARCH>::INIT_VM_FIELD:
-			return HSolveUtils::get< moose::Compartment, double >( _objects[ id ], "initVm" );
-	}
-	return 0;
-}
+//TYPE_ _getValue(uint id, SolverComps::Fields field)
+//{
+//	switch(field)
+//	{
+//		case SolverComps::CM_FIELD:
+//			return ::Field< double >::get( _objectMap[ id ], "Cm" );
+//		case SolverComps::EM_FIELD:
+//			return ::Field< double >::get( _objectMap[ id ], "Em" );
+//		case SolverComps::RM_FIELD:
+//			return ::Field< double >::get( _objectMap[ id ], "Rm" );
+//		case SolverComps::RA_FIELD:
+//			return ::Field< double >::get( _objectMap[ id ], "Ra" );
+//		case SolverComps::VM_FIELD:
+//			return ::Field< double >::get( _objectMap[ id ], "Vm" );
+//		case SolverComps::INIT_VM_FIELD:
+//			return ::Field< double >::get( _objectMap[ id ], "initVm" );
+//	}
+//	return 0;
+//}
 
 /**
  * This method is responsible to create model and get pertinent information from
@@ -50,15 +63,16 @@ CURRENT_TYPE _getValue(uint id, SolverComps<CURRENT_TYPE,CURRENT_ARCH>::Fields f
 
 void PN2S_Proxy::Setup(double dt)
 {
+	cout << "Size: " << sizeof(PN2S_Proxy) << flush;
 	Manager::Setup(dt);
-	_objects.clear();
+	_objectMap.clear();
 
 	//Register Setter and Getter
-	SolverComps<CURRENT_TYPE,CURRENT_ARCH>::GetValue_Func = &_getValue;
+//	SolverComps::Fetch_Func = &_getValue;
 }
 
 
-void PN2S_Proxy::InsertCompartmentModel(Eref master_hsolve, Id seed){
+void PN2S_Proxy::CreateCompartmentModel(Eref hsolve, Id seed){
 
 	//Get Compartment id's with hine's index order
 	vector<Id> compartmentIds;
@@ -66,37 +80,33 @@ void PN2S_Proxy::InsertCompartmentModel(Eref master_hsolve, Id seed){
 
 	int nCompt = compartmentIds.size();
 
-	models::Model<CURRENT_TYPE> neutral(seed.value());
-
-	/**
-	 * Create Compartmental Model
-	 */
-
-	// A map from the MOOSE Id to Hines' index.
+	// A map from the MOOSE Id to Hines' index. It will remove after this method
 	map< Id, unsigned int > hinesIndex;
 	for ( int i = 0; i < nCompt; ++i )
 	{
 		hinesIndex[ compartmentIds[ i ] ] = i;
-		_objects[compartmentIds[ i ].value()] = compartmentIds[ i ];
+		_objectMap[compartmentIds[ i ].value()] = compartmentIds[ i ];
 	}
 
+	/**
+	 * Create Compartmental Model
+	 */
 	vector< Id > childId;
 	vector< Id >::iterator child;
 
-	neutral.compts.resize(nCompt);
+	models::Neuron* n = neurons.Create(seed.value());
 
 	for (int i = 0; i < nCompt; ++i) {
 		//Assign a general ID to each compartment
-		neutral.compts[i].gid = compartmentIds[ i ].value();
+		models::Compartment* c = n->compt().Create(compartmentIds[ i ].value());
 
 		//Find Children
 		childId.clear();
 		HSolveUtils::children( compartmentIds[ i ], childId );
 		for ( child = childId.begin(); child != childId.end(); ++child )
 		{
-			neutral.compts[i].children.push_back( hinesIndex[ *child ] );
+			c->children.push_back( hinesIndex[ *child ] );
 		}
-
 //		_printVector(tree[i].children.size(), &(tree[i].children[0]));
 	}
 
@@ -104,14 +114,35 @@ void PN2S_Proxy::InsertCompartmentModel(Eref master_hsolve, Id seed){
 	/**
 	 * Zumbify
 	 */
-	vector< Id >::const_iterator i;
-	for ( i = compartmentIds.begin(); i != compartmentIds.end(); ++i )
-		zombify( master_hsolve.element(), i->eref().element() );
+    vector< Id >::const_iterator i;
+	vector< ObjId > temp;
+
+    for ( i = compartmentIds.begin(); i != compartmentIds.end(); ++i )
+		temp.push_back( ObjId( *i, 0 ) );
+	Shell::dropClockMsgs( temp, "init" );
+	Shell::dropClockMsgs( temp, "process" );
+    for ( i = compartmentIds.begin(); i != compartmentIds.end(); ++i )
+        CompartmentBase::zombify( i->eref().element(),
+					   ZombieCompartment::initCinfo(), hsolve.id() );
+
+//	temp.clear();
+//    for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
+//		temp.push_back( ObjId( *i, 0 ) );
+//	Shell::dropClockMsgs( temp, "process" );
+//    for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
+//        ZombieCaConc::zombify( hsolve.element(), i->eref().element() );
+//
+//	temp.clear();
+//    for ( i = channelId_.begin(); i != channelId_.end(); ++i )
+//		temp.push_back( ObjId( *i, 0 ) );
+//	Shell::dropClockMsgs( temp, "process" );
+//    for ( i = channelId_.begin(); i != channelId_.end(); ++i )
+//        ZombieHHChannel::zombify( hsolve.element(), i->eref().element() );
 
 	/**
 	 * Now model is ready to import into the PN2S
 	 */
-	Manager::InsertModel(neutral);
+//	Manager::InsertModel(neutral);
 }
 
 void PN2S_Proxy::walkTree( Id seed, vector<Id> &compartmentIds )
@@ -143,7 +174,8 @@ void PN2S_Proxy::walkTree( Id seed, vector<Id> &compartmentIds )
     cstack[ 0 ].push_back( seed );
     while ( !cstack.empty() )
     {
-        vector< Id >& top = cstack.back();
+    	vector< Id >& top = cstack.back();
+
 
         if ( top.empty() )
         {
@@ -163,47 +195,45 @@ void PN2S_Proxy::walkTree( Id seed, vector<Id> &compartmentIds )
             HSolveUtils::adjacent( current, above, cstack.back() );
         }
     }
-
+    for (int var = 0; var < compartmentIds.size(); ++var) {
+        	    	   	cout << compartmentIds[var] << " " << flush;
+        	    	}
     // Compartments get ordered according to their hines' indices once this
     // list is reversed.
     reverse( compartmentIds.begin(), compartmentIds.end() );
 }
 
-void PN2S_Proxy::zombify( Element* solver, Element* orig)
-{
-//    vector< Id >::const_iterator i;
-//
-//    for ( i = compartmentId_.begin(); i != compartmentId_.end(); ++i )
-//        ZombieCompartment::zombify( hsolve.element(), i->eref().element() );
-//
-//    for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
-//        ZombieCaConc::zombify( hsolve.element(), i->eref().element() );
-//
-//    for ( i = channelId_.begin(); i != channelId_.end(); ++i )
-//        ZombieHHChannel::zombify( hsolve.element(), i->eref().element() );
-
-	// Delete "process" msg.
-	static const Finfo* procDest = Compartment::initCinfo()->findFinfo("process");
-	assert( procDest );
-
-	const DestFinfo* df = dynamic_cast< const DestFinfo* >( procDest );
-	assert( df );
-	ObjId mid = orig->findCaller( df->getFid() );
-	if ( ! mid.bad() )
-		Msg::deleteMsg( mid );
-
-	//TODO: Check zumbswap is necessary or not
-
-}
 
 void PN2S_Proxy::Reinit(){
 	Manager::Reinit();
 }
 
-
 /**
  * If it's the first time to execute, prepare solver
  */
 void PN2S_Proxy::Process(ProcPtr info){
-	Manager::Process();
+//	Manager::Process();
+}
+
+/**
+ * Interface Set/Get functions
+ */
+void PN2S_Proxy::setValue( Id id, TYPE_ value , FIELD n)
+{
+//	switch(n)
+//	{
+//		case FIELD::CM_FIELD:
+//			return ::Field< double >::get( _objects[ id ], "Cm" );
+//	}
+
+//	cout << id << ".Cm = "<< __func__<<value<<flush;
+}
+
+TYPE_ PN2S_Proxy::getValue( Id id, FIELD n)
+{
+//    assert(this);
+//    unsigned int index = localIndex( id );
+//    assert( index < V_.size() );
+//    return V_[ index ];
+	return 11;
 }

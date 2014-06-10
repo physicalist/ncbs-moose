@@ -10,7 +10,7 @@
 #include <cctype>
 #include "header.h"
 #include "SparseMatrix.h"
-#include "Vec.h"
+#include "../utility/Vec.h"
 
 #include "ElementValueFinfo.h"
 #include "Boundary.h"
@@ -107,7 +107,10 @@ static const Cinfo* spineMeshCinfo = SpineMesh::initCinfo();
 SpineMesh::SpineMesh()
 	:
 		spines_( 1 ),
-		surfaceGranularity_( 0.1 )
+		surfaceGranularity_( 0.1 ),
+		vs_( 1, 1.0e-18 ),
+		area_( 1, 1.0e-12 ),
+		length_( 1, 1.0e-6 )
 {;}
 
 SpineMesh::SpineMesh( const SpineMesh& other )
@@ -125,11 +128,18 @@ SpineMesh::~SpineMesh()
 // Field assignment stuff
 //////////////////////////////////////////////////////////////////
 
+/**
+ * This function returns the diffusively connected parent voxel within
+ * the current (spine) mesh. Since each spine is treated as an independed
+ * voxel, there is no such voxel, so we return -1U for each spine.
+ * Note that there is a separate function that returns the parentVoxel
+ * referred to the NeuroMesh that this spine sits on.
+ */
 vector< unsigned int > SpineMesh::getParentVoxel() const
 {
-	vector< unsigned int > ret( spines_.size() );
-	for ( unsigned int i = 0; i < spines_.size(); ++i )
-		ret[i] = spines_[i].parent();
+	vector< unsigned int > ret( spines_.size(), -1U );
+	// for ( unsigned int i = 0; i < spines_.size(); ++i ) 
+	// 	ret[i] = spines_[i].parent(); // Wrong, returns voxel on NeuroMesh
 	return ret;
 }
 
@@ -155,8 +165,7 @@ unsigned int SpineMesh::innerGetDimensions() const
 
 // Here we set up the spines. We don't permit heads without shafts.
 void SpineMesh::handleSpineList( 
-		const Eref& e, const Qinfo* q, 
-		Id cell,
+		const Eref& e, Id cell,
 		vector< Id > shaft, vector< Id > head, 
 		vector< unsigned int > parentVoxel )
 {
@@ -164,6 +173,9 @@ void SpineMesh::handleSpineList(
 		assert( head.size() == parentVoxel.size() );
 		assert( head.size() == shaft.size() );
 		spines_.resize( head.size() );
+		vs_.resize( head.size() );
+		area_.resize( head.size() );
+		length_.resize( head.size() );
 		cell_ = cell;
 
 		vector< double > ret;
@@ -175,6 +187,9 @@ void SpineMesh::handleSpineList(
 			// assert( ret.size() == 8 );
 			// psdCoords.insert( psdCoords.end(), ret.begin(), ret.end() );
 			// index[i] = i;
+			vs_[i] = spines_[i].volume();
+			area_[i] = spines_[i].rootArea();
+			length_[i] = spines_[i].diffusionLength();
 		}
 		// psdListOut()->send( e ), cell_, psdCoords, index );
 
@@ -189,8 +204,7 @@ void SpineMesh::handleSpineList(
 		}
 		vector< vector< unsigned int > > outgoingEntries;
 		vector< vector< unsigned int > > incomingEntries;
-		meshSplit()->fastSend( e, oldVol, vols,
-						localIndices, outgoingEntries, incomingEntries );
+		// meshSplit()->send( e, oldVol, vols, localIndices, outgoingEntries, incomingEntries );
 		lookupEntry( 0 )->triggerRemesh( meshEntry.eref(),
 						oldVol, 0, localIndices, vols );
 }
@@ -261,20 +275,68 @@ double SpineMesh::extendedMeshEntryVolume( unsigned int fid ) const
 // Dest funcsl
 //////////////////////////////////////////////////////////////////
 
+/*
 /// More inherited virtual funcs: request comes in for mesh stats
 /// Not clear what this does.
-void SpineMesh::innerHandleRequestMeshStats( const Eref& e, const Qinfo* q, 
+void SpineMesh::innerHandleRequestMeshStats( const Eref& e,
 		const SrcFinfo2< unsigned int, vector< double > >* meshStatsFinfo
 	)
 {
 		;
 }
+*/
 
 void SpineMesh::innerHandleNodeInfo(
-			const Eref& e, const Qinfo* q, 
+			const Eref& e,
 			unsigned int numNodes, unsigned int numThreads )
 {
+
+
 }
+//////////////////////////////////////////////////////////////////
+// Inherited virtual funcs
+//////////////////////////////////////////////////////////////////
+
+const vector< double >& SpineMesh::vGetVoxelVolume() const
+{
+	return vs_;
+}
+
+const vector< double >& SpineMesh::getVoxelArea() const
+{
+	return area_;
+}
+
+const vector< double >& SpineMesh::getVoxelLength() const
+{
+	return length_;
+}
+
+double SpineMesh::vGetEntireVolume() const
+{
+	double ret = 0.0;
+	for ( vector< double >::const_iterator i = 
+					vs_.begin(); i != vs_.end(); ++i )
+		ret += *i;
+	return ret;
+}
+
+bool SpineMesh::vSetVolumeNotRates( double volume )
+{
+	double volscale = volume / vGetEntireVolume();
+	double linscale = pow( volscale, 1.0/3.0 );
+	assert( vs_.size() == spines_.size() );
+	assert( area_.size() == spines_.size() );
+	assert( length_.size() == spines_.size() );
+	for ( unsigned int i = 0; i < spines_.size(); ++i ) {
+		spines_[i].setVolume( volume );
+		vs_[i] *= volscale;
+		area_[i] *= linscale * linscale;
+		length_[i] *= linscale;
+	}
+	return true;
+}
+
 //////////////////////////////////////////////////////////////////
 
 /**
@@ -297,7 +359,7 @@ void SpineMesh::innerSetNumEntries( unsigned int n )
 /**
  * Not allowed.
  */
-void SpineMesh::innerBuildDefaultMesh( const Eref& e, const Qinfo* q,
+void SpineMesh::innerBuildDefaultMesh( const Eref& e,
 	double volume, unsigned int numEntries )
 {
 	cout << "Warning: attempt to build a default spine: not permitted\n";

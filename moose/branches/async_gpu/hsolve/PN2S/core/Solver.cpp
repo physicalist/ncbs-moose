@@ -10,40 +10,36 @@
 
 using namespace pn2s;
 
-template <typename T, int arch>
-Solver<T,arch>::Solver()
+Solver::Solver()
 {
 	_dt = 1; //1ms
 	modelPacks.clear();
 	_modelToPackMap.clear();
 }
 
-template <typename T, int arch>
-Solver<T,arch>::~Solver()
+Solver::~Solver()
 {
 
 }
 
-template <typename T, int arch>
-Error_PN2S Solver<T,arch>::PrepareSolver(vector<models::Model<T> > &m,  double dt){
+Error_PN2S Solver::PrepareSolver(vector<models::Model > &m,  double dt){
 	_dt = dt;
 
 	//TODO: Generate model packs
 	modelPacks.resize(1);
-	modelPacks[0].SetDt(_dt);
+//	modelPacks[0].SetDt(_dt);
 
 	//Prepare solver for each modelpack
-	ErrorType_PN2S res = modelPacks[0].PrepareSolver(m);
+//	ErrorType_PN2S res = modelPacks[0].PrepareSolver(m);
 
 	//Assign keys to modelPack, to be able to find later
-	for(vector<models<T,arch> >::iterator it = m.begin(); it != m.end(); ++it) {
+	for(vector<models >::iterator it = m.begin(); it != m.end(); ++it) {
 		_modelToPackMap[it->id] = &modelPacks[0];
 	}
 	return res;
 }
 
-template <typename T, int arch>
-ModelPack<T,arch>* Solver<T,arch>::FindModelPack(hscID_t id){
+ModelPack* Solver::FindModelPack(hscID_t id){
 	return _modelToPackMap[id];
 }
 /**
@@ -55,8 +51,7 @@ ModelPack<T,arch>* Solver<T,arch>::FindModelPack(hscID_t id){
  *
  * When the output is ready, send it to the output task list
  */
-template <typename T, int arch>
-void Solver<T,arch>::Process(ModelPack<T,arch>* data){
+void Solver::Process(ModelPack* data){
 	ErrorType_PN2S res = data->Process();
 	assert(!res);
 }

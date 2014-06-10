@@ -34,6 +34,8 @@
 #include <string>
 
 #include "../basecode/Id.h"
+#include "../basecode/global.h"
+
 extern char shortType(string);
 extern char innerType(char); // declared in utility.h, defined in utility/types.cpp
 extern "C" {
@@ -175,7 +177,7 @@ extern "C" {
     
     PyObject * moose_Id_repr(_Id * self);
     PyObject * moose_Id_str(_Id * self);
-    PyObject * deleteId(_Id * obj); // inner function
+    PyObject * deleteId(Id obj); // inner function
     PyObject * moose_Id_delete(_Id * self);
     PyObject * moose_Id_getValue(_Id * self);
     PyObject * moose_Id_getPath(_Id * self);
@@ -219,6 +221,7 @@ extern "C" {
     // Methods for LookupField
     ////////////////////////////////////////////
     int moose_Field_init(_Field * self, PyObject * args, PyObject * kwds);
+    /* void moose_Field_dealloc(_Field * self); */
     long moose_Field_hash(_Field * self);
     PyObject * moose_Field_repr(_Field * self);
     PyObject * moose_LookupField_getItem(_Field * self, PyObject * key);
@@ -328,6 +331,7 @@ vector< T > * PySequenceToVector(PyObject * seq, char typecode)
             return NULL;
         }
         value = (T*)to_cpp(item, typecode);
+        Py_DECREF(item);
         if (value == NULL){
             ostringstream error;
             error << "Cannot handle sequence of type " << Py_TYPE(item)->tp_name;
@@ -356,7 +360,7 @@ vector < vector < T > > * PySequenceToVectorOfVectors(PyObject * seq, char typec
             return NULL;
         }
         vector< T > * inner = PySequenceToVector< T >(innerSeq, typecode);
-        Py_XDECREF(innerSeq);
+        Py_DECREF(innerSeq);
         if (inner == NULL){
             delete ret;
             return NULL;

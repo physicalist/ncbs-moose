@@ -5,8 +5,6 @@ import sys
 from datetime import datetime
 
 sys.path.append('../../python')
-# sys.path.append('/src/saeed/cuda-workspace/moose-code/moose/branches/async_gpu/python')
-
 try:
     import moose
 except ImportError:    

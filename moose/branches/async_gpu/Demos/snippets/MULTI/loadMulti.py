@@ -51,7 +51,7 @@ def loadElec():
 	proto18.make_NMDA_Ca_conc()
 	proto18.make_axon()
 	model = moose.Neutral( '/model' )
-	cellId = moose.loadModel( 'ca1_asym.p', '/model/elec', "hsolve" )
+	cellId = moose.loadModel( 'ca1_asym.p', '/model/elec', "Neutral" )
 	return cellId
 
 def addPlot( objpath, field, plot ):
@@ -78,57 +78,24 @@ def dumpPlots( fname ):
     for x in moose.wildcardFind( '/graphs/elec/#[ISA=Table]' ):
         moose.element( x[0] ).xplot( fname, x[0].name + '_e' )
 
-def moveCompt( path, oldParent, newParent ):
-	meshEntries = moose.element( newParent.path + '/mesh' )
-	# Set up vol messaging from new compts to all their child objects.
-	for x in moose.wildcardFind( path + '/##[ISA=PoolBase]' ):
-		moose.connect( meshEntries, 'mesh', x, 'mesh', 'OneToOne' )
-	orig = moose.element( path )
-	moose.move( orig, newParent )
-	moose.delete( moose.vec( oldParent.path ) )
-	chem = moose.element( '/model/chem' )
-	moose.move( newParent, chem )
+def loadChem( diffLength ):
+	chem = moose.Neutral( '/model/chem' )
+	neuroCompt = moose.NeuroMesh( '/model/chem/kinetics' )
+	neuroCompt.separateSpines = 1
+	neuroCompt.geometryPolicy = 'cylinder'
+	spineCompt = moose.SpineMesh( '/model/chem/compartment_1' )
+	moose.connect( neuroCompt, 'spineListOut', spineCompt, 'spineList', 'OneToOne' )
+	psdCompt = moose.PsdMesh( '/model/chem/compartment_2' )
+	#print 'Meshvolume[neuro, spine, psd] = ', neuroCompt.mesh[0].volume, spineCompt.mesh[0].volume, psdCompt.mesh[0].volume
+	moose.connect( neuroCompt, 'psdListOut', psdCompt, 'psdList', 'OneToOne' )
+	modelId = moose.loadModel( 'psd_merged31d.g', '/model/chem', 'ee' )
+        neuroCompt.name = 'dend'
+        spineCompt.name = 'spine'
+        psdCompt.name = 'psd'
 
-def loadChem( neuroCompt, spineCompt, psdCompt ):
-	# We need the compartments to come in with a volume of 1 to match the
-	# original CubeMesh.
-	assert( neuroCompt.volume == 1.0 )
-	assert( spineCompt.volume == 1.0 )
-	assert( psdCompt.volume == 1.0 )
-	assert( neuroCompt.mesh.num == 1 )
-	print 'volume = ', neuroCompt.mesh[0].volume
-	#assert( neuroCompt.mesh[0].volume == 1.0 ) 
-	#an unfortunate mismatch
-	# So we'll have to resize the volumes of the current compartments to the
-	# new ones.
-
-	modelId = moose.loadModel( 'psd_merged31d.g', '/model', 'ee' )
-	chem = moose.element( '/model/model' )
-	chem.name = 'chem'
-	oldN = moose.element( '/model/chem/kinetics' )
-	oldS = moose.element( '/model/chem/compartment_1' )
-	oldP = moose.element( '/model/chem/compartment_2' )
-	print 'old NSP vols = ', oldN.volume, oldS.volume, oldP.volume
-	for i in moose.wildcardFind( '/model/chem/#/#/#/transloc#' ):
-		print i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb
-	tr0 = moose.element( '/model/chem/kinetics/SPINE/CaMKII_BULK/tr0[6]' )
-	print "tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb
-	oldN.volume = neuroCompt.mesh[0].volume
-	oldS.volume = spineCompt.mesh[0].volume
-	oldP.volume = psdCompt.mesh[0].volume
-	print 'new NSP vols = ', neuroCompt.volume, spineCompt.volume, psdCompt.volume 
-	print "tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb
-	for i in moose.wildcardFind( '/model/chem/#/#/#/transloc#' ):
-		print i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb
-	moveCompt( '/model/chem/kinetics/PSD', oldP, psdCompt )
-	moveCompt( '/model/chem/kinetics/SPINE', oldS, spineCompt )
-	moveCompt( '/model/chem/kinetics/DEND', oldN, neuroCompt )
-	print "aftermove tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb
-	for i in moose.wildcardFind( '/model/chem/#/#/#/transloc#' ):
-		print i[0].name, i[0].Kf, i[0].Kb, i[0].kf, i[0].kb
 
 def makeNeuroMeshModel():
-	diffLength = 20e-6 # But we only want diffusion over part of the model.
+	diffLength = 10e-6 # But we only want diffusion over part of the model.
 	numSyn = 13
 	elec = loadElec()
 	synInput = moose.SpikeGen( '/model/elec/synInput' )
@@ -146,111 +113,100 @@ def makeNeuroMeshModel():
 		syn.weight = 0.2 * i * ( numSyn - 1 - i )
 		syn.delay = i * 1.0e-3
 
-	neuroCompt = moose.NeuroMesh( '/model/neuroMesh' )
-	neuroCompt.separateSpines = 1
+	loadChem( diffLength )
+        neuroCompt = moose.element( '/model/chem/dend' )
 	neuroCompt.diffLength = diffLength
-	neuroCompt.geometryPolicy = 'cylinder'
-	spineCompt = moose.SpineMesh( '/model/spineMesh' )
-	moose.connect( neuroCompt, 'spineListOut', spineCompt, 'spineList', 'OneToOne' )
-	psdCompt = moose.PsdMesh( '/model/psdMesh' )
-	#print 'Meshvolume[neuro, spine, psd] = ', neuroCompt.mesh[0].volume, spineCompt.mesh[0].volume, psdCompt.mesh[0].volume
-	moose.connect( neuroCompt, 'psdListOut', psdCompt, 'psdList', 'OneToOne' )
-	loadChem( neuroCompt, spineCompt, psdCompt )
+	neuroCompt.cellPortion( elec, '/model/elec/#' )
 	for x in moose.wildcardFind( '/model/chem/##[ISA=PoolBase]' ):
 		if (x.diffConst > 0):
 			x.diffConst = 1e-11
 	for x in moose.wildcardFind( '/model/chem/##/Ca' ):
 		x.diffConst = 1e-10
 
-	# Put in the solvers, see how they fare.
-	nmksolve = moose.GslStoich( '/model/chem/neuroMesh/ksolve' )
-	nmksolve.path = '/model/chem/neuroMesh/##'
-	nmksolve.compartment = moose.element( '/model/chem/neuroMesh' )
-	nmksolve.method = 'rk5'
-	nm = moose.element( '/model/chem/neuroMesh/mesh' )
-	moose.connect( nm, 'remesh', nmksolve, 'remesh' )
-    #print "neuron: nv=", nmksolve.numLocalVoxels, ", nav=", nmksolve.numAllVoxels, nmksolve.numVarPools, nmksolve.numAllPools
-
-    #print 'setting up smksolve'
-	smksolve = moose.GslStoich( '/model/chem/spineMesh/ksolve' )
-	smksolve.path = '/model/chem/spineMesh/##'
-	smksolve.compartment = moose.element( '/model/chem/spineMesh' )
-	smksolve.method = 'rk5'
-	sm = moose.element( '/model/chem/spineMesh/mesh' )
-	moose.connect( sm, 'remesh', smksolve, 'remesh' )
-	#print "spine: nv=", smksolve.numLocalVoxels, ", nav=", smksolve.numAllVoxels, smksolve.numVarPools, smksolve.numAllPools
-	#
-	#print 'setting up pmksolve'
-	pmksolve = moose.GslStoich( '/model/chem/psdMesh/ksolve' )
-	pmksolve.path = '/model/chem/psdMesh/##'
-	pmksolve.compartment = moose.element( '/model/chem/psdMesh' )
-	pmksolve.method = 'rk5'
-	pm = moose.element( '/model/chem/psdMesh/mesh' )
-	moose.connect( pm, 'remesh', pmksolve, 'remesh' )
-	#print "psd: nv=", pmksolve.numLocalVoxels, ", nav=", pmksolve.numAllVoxels, pmksolve.numVarPools, pmksolve.numAllPools
-	#
-
-	# Now to set up the model.
-	#neuroCompt.cell = elec # This loads the chem pathways into the entire neuronal model
-	# It is preferable to put chem only in selected compartments, as here:
-	neuroCompt.cellPortion( elec, '/model/elec/lat_14_#,/model/elec/spine_neck#,/model/elec/spine_head#' )
+	# Put in dend solvers
 	ns = neuroCompt.numSegments
-	#assert( ns == 11 ) # dend, 5x (shaft+head)
 	ndc = neuroCompt.numDiffCompts
-	assert( ndc == 13 )
-	ndc = neuroCompt.mesh.num
-	assert( ndc == 13 )
-
+        print 'ns = ', ns, ', ndc = ', ndc
+        assert( neuroCompt.numDiffCompts == neuroCompt.mesh.num )
+	assert( ns == 36 ) # dend, 5x (shaft+head)
+	assert( ndc == 278 )
+	nmksolve = moose.Ksolve( '/model/chem/dend/ksolve' )
+	nmdsolve = moose.Dsolve( '/model/chem/dend/dsolve' )
+        nmstoich = moose.Stoich( '/model/chem/dend/stoich' )
+        nmstoich.compartment = neuroCompt
+        nmstoich.ksolve = nmksolve
+        nmstoich.dsolve = nmdsolve
+        nmstoich.path = "/model/chem/dend/##"
+        print 'done setting path, numPools = ', nmdsolve.numPools
+        assert( nmdsolve.numPools == 1 )
+	# oddly, numLocalFields does not work.
+	ca = moose.element( '/model/chem/dend/DEND/Ca' )
+	assert( ca.numData == ndc )
+        
+        # Put in spine solvers. Note that these get info from the neuroCompt
+        spineCompt = moose.element( '/model/chem/spine' )
 	sdc = spineCompt.mesh.num
+        print 'sdc = ', sdc
 	assert( sdc == 13 )
+	smksolve = moose.Ksolve( '/model/chem/spine/ksolve' )
+	smdsolve = moose.Dsolve( '/model/chem/spine/dsolve' )
+        smstoich = moose.Stoich( '/model/chem/spine/stoich' )
+        smstoich.compartment = spineCompt
+        smstoich.ksolve = smksolve
+        smstoich.dsolve = smdsolve
+        smstoich.path = "/model/chem/spine/##"
+        assert( smstoich.numAllPools == 36 )
+        
+        # Put in PSD solvers. Note that these get info from the neuroCompt
+        psdCompt = moose.element( '/model/chem/psd' )
 	pdc = psdCompt.mesh.num
 	assert( pdc == 13 )
-	#print 'mesh nums ( neuro, spine, psd ) = ', ndc, sdc, pdc, ', numSeg = ', ns
+	pmksolve = moose.Ksolve( '/model/chem/psd/ksolve' )
+	pmdsolve = moose.Dsolve( '/model/chem/psd/dsolve' )
+        pmstoich = moose.Stoich( '/model/chem/psd/stoich' )
+        pmstoich.compartment = psdCompt
+        pmstoich.ksolve = pmksolve
+        pmstoich.dsolve = pmdsolve
+        pmstoich.path = "/model/chem/psd/##"
+        print 'numAllPools = ', pmstoich.numAllPools
+        assert( pmstoich.numAllPools == 56 )
+        foo = moose.element( '/model/chem/psd/Ca' )
+        bar = moose.element( '/model/chem/psd/I1_p' )
+        print 'PSD: numfoo = ', foo.numData, 'numbar = ', bar.numData
+        print 'PSD: numAllVoxels = ', pmksolve.numAllVoxels
 
-	mesh = moose.vec( '/model/chem/neuroMesh/mesh' )
-	mesh2 = moose.vec( '/model/chem/spineMesh/mesh' )
-	mesh = moose.vec( '/model/chem/psdMesh/mesh' )
-
-	# We need to use the spine solver as the master for the purposes of
-	# these calculations. This will handle the diffusion calculations
-	# between head and dendrite, and between head and PSD.
-	smksolve.addJunction( nmksolve )
-	#print "spine: nv=", smksolve.numLocalVoxels, ", nav=", smksolve.numAllVoxels, smksolve.numVarPools, smksolve.numAllPools
-	smksolve.addJunction( pmksolve )
-	#print "psd: nv=", pmksolve.numLocalVoxels, ", nav=", pmksolve.numAllVoxels, pmksolve.numVarPools, pmksolve.numAllPools
-
-	# oddly, numLocalFields does not work.
-	#moose.le( '/model/chem/neuroMesh' )
-	ca = moose.element( '/model/chem/neuroMesh/DEND/Ca' )
-	assert( ca.lastDimension == ndc )
 	"""
 	CaNpsd = moose.vec( '/model/chem/psdMesh/PSD/PP1_PSD/CaN' )
 	print 'numCaN in PSD = ', CaNpsd.nInit, ', vol = ', CaNpsd.volume
-	CaNspine = moose.vec( '/model/chem/spineMesh/SPINE/CaN_BULK/CaN' )
+	CaNspine = moose.vec( '/model/chem/spine/SPINE/CaN_BULK/CaN' )
 	print 'numCaN in spine = ', CaNspine.nInit, ', vol = ', CaNspine.volume
 	"""
 
 	# set up adaptors
-	aCa = moose.Adaptor( '/model/chem/psdMesh/adaptCa', pdc )
-	adaptCa = moose.vec( '/model/chem/psdMesh/adaptCa' )
-	chemCa = moose.vec( '/model/chem/psdMesh/PSD/CaM/Ca' )
+	aCa = moose.Adaptor( '/model/chem/psd/adaptCa', pdc )
+	adaptCa = moose.vec( '/model/chem/psd/adaptCa' )
+	#chemCa = moose.vec( '/model/chem/psd/PSD/CaM/Ca' )
+	chemCa = moose.vec( '/model/chem/psd/Ca' )
+	print 'aCa = ', aCa, ' foo = ', foo, "len( ChemCa ) = ", len( chemCa ), ", numData = ", chemCa.numData
 	assert( len( adaptCa ) == pdc )
 	assert( len( chemCa ) == pdc )
 	for i in range( pdc ):
 		path = '/model/elec/spine_head_14_' + str( i + 1 ) + '/NMDA_Ca_conc'
 		elecCa = moose.element( path )
 		moose.connect( elecCa, 'concOut', adaptCa[i], 'input', 'Single' )
-	moose.connect( adaptCa, 'outputSrc', chemCa, 'setConc', 'OneToOne' )
+	#moose.connect( adaptCa, 'outputSrc', chemCa, 'setConc', 'OneToOne' )
 	adaptCa.inputOffset = 0.0	# 
 	adaptCa.outputOffset = 0.00008	# 80 nM offset in chem.
    	adaptCa.scale = 1e-5	# 520 to 0.0052 mM
 	#print adaptCa.outputOffset
 	#print adaptCa.scale
+        """
+        """
 
 	"""
-	aGluR = moose.Adaptor( '/model/chem/psdMesh/adaptGluR', 5 )
-    adaptGluR = moose.vec( '/model/chem/psdMesh/adaptGluR' )
-	chemR = moose.vec( '/model/chem/psdMesh/psdGluR' )
+	aGluR = moose.Adaptor( '/model/chem/psd/adaptGluR', 5 )
+    adaptGluR = moose.vec( '/model/chem/psd/adaptGluR' )
+	chemR = moose.vec( '/model/chem/psd/psdGluR' )
 	assert( len( adaptGluR ) == 5 )
 	for i in range( 5 ):
     	path = '/model/elec/head' + str( i ) + '/gluR'
@@ -262,8 +218,8 @@ def makeNeuroMeshModel():
     adaptGluR.outputOffset = 1e-7    # pS
     adaptGluR.scale = 1e-6 / 100     # from n to pS
 
-    adaptK = moose.Adaptor( '/model/chem/neuroMesh/adaptK' )
-    chemK = moose.element( '/model/chem/neuroMesh/kChan' )
+    adaptK = moose.Adaptor( '/model/chem/dend/adaptK' )
+    chemK = moose.element( '/model/chem/dend/kChan' )
     elecK = moose.element( '/model/elec/compt/K' )
 	moose.connect( adaptK, 'requestField', chemK, 'getConc', 'OneToAll' )
 	moose.connect( adaptK, 'outputSrc', elecK, 'setGbar', 'Single' )
@@ -283,59 +239,50 @@ def makeElecPlots():
     addPlot( '/model/elec/spine_head_14_13/NMDA_Ca_conc', 'getCa', 'elec/spine_13Ca' )
 
 def makeChemPlots():
-	spineMesh = moose.element( '/model/chem/spineMesh' )
+	spineMesh = moose.element( '/model/chem/spine' )
 	middleSpine = 6
 	# handy lookup function to find which voxel # the spine is on.
 	midSpineVoxel = spineMesh.parentVoxel[middleSpine]
+        print spineMesh.parentVoxel
 	graphs = moose.Neutral( '/graphs' )
-	#moose.le( '/model/chem/psdMesh/PSD' )
-	addPlot( '/model/chem/psdMesh/PSD/tot_PSD_R[0]', 'getN', 'psd0R' )
-	addPlot( '/model/chem/psdMesh/PSD/tot_PSD_R[1]', 'getN', 'psd1R' )
-	addPlot( '/model/chem/psdMesh/PSD/tot_PSD_R[2]', 'getN', 'psd2R' )
-	addPlot( '/model/chem/psdMesh/PSD/CaM/CaM_dash_Ca4[0]', 'getConc', 'psdCaM0' )
-	addPlot( '/model/chem/psdMesh/PSD/CaM/CaM_dash_Ca4[6]', 'getConc', 'psdCaM6' )
-	addPlot( '/model/chem/psdMesh/PSD/CaM_CaN[0]', 'getConc', 'CaM_CaN' )
-	addPlot( '/model/chem/psdMesh/PSD/PP1_PSD/PP1_dash_active[0]', 'getConc', 'PP1_active0' )
-	addPlot( '/model/chem/psdMesh/PSD/PP1_PSD/PP1_dash_active[6]', 'getConc', 'psdPP1_active6' )
-	addPlot( '/model/chem/psdMesh/PSD/actCaMKII[6]', 'getConc', 'psdCaMKII6' )
-	addPlot( '/model/chem/spineMesh/SPINE/actCaMKII[6]', 'getConc', 'spineCaMKII6' )
-	#moose.le( '/model/chem/spineMesh/SPINE' )
-	#moose.le( '/model/chem/neuroMesh/DEND' )
-	addPlot( '/model/chem/psdMesh/PSD/CaM/Ca[0]', 'getConc', 'psd0Ca' )
-	addPlot( '/model/chem/psdMesh/PSD/CaM/Ca[6]', 'getConc', 'psd6Ca' )
-	addPlot( '/model/chem/psdMesh/PSD/CaM/Ca[12]', 'getConc', 'psd12Ca' )
+	addPlot( '/model/chem/psd/tot_PSD_R[0]', 'getN', 'psd0R' )
+	addPlot( '/model/chem/psd/tot_PSD_R[1]', 'getN', 'psd1R' )
+	addPlot( '/model/chem/psd/tot_PSD_R[2]', 'getN', 'psd2R' )
+	addPlot( '/model/chem/psd/CaM_dash_Ca4[0]', 'getConc', 'psdCaM0' )
+	addPlot( '/model/chem/psd/CaM_dash_Ca4[6]', 'getConc', 'psdCaM6' )
+	addPlot( '/model/chem/psd/CaM_CaN[0]', 'getConc', 'CaM_CaN' )
+	addPlot( '/model/chem/psd/PP1_dash_active[0]', 'getConc', 'PP1_active0' )
+	addPlot( '/model/chem/psd/PP1_dash_active[6]', 'getConc', 'psdPP1_active6' )
+	addPlot( '/model/chem/psd/actCaMKII[6]', 'getConc', 'psdCaMKII6' )
+	addPlot( '/model/chem/spine/actCaMKII[6]', 'getConc', 'spineCaMKII6' )
+	addPlot( '/model/chem/psd/Ca[0]', 'getConc', 'psd0Ca' )
+	addPlot( '/model/chem/psd/Ca[6]', 'getConc', 'psd6Ca' )
+	addPlot( '/model/chem/psd/Ca[12]', 'getConc', 'psd12Ca' )
 
-	addPlot( '/model/chem/spineMesh/SPINE/CaM/Ca[0]', 'getConc', 'spine0Ca' )
-	addPlot( '/model/chem/spineMesh/SPINE/CaM/Ca[6]', 'getConc', 'spine6Ca' )
-	addPlot( '/model/chem/spineMesh/SPINE/CaM/Ca[12]', 'getConc', 'spine12Ca' )
+	addPlot( '/model/chem/spine/Ca[0]', 'getConc', 'spine0Ca' )
+	addPlot( '/model/chem/spine/Ca[6]', 'getConc', 'spine6Ca' )
+	addPlot( '/model/chem/spine/Ca[12]', 'getConc', 'spine12Ca' )
 
-	path = '/model/chem/neuroMesh/DEND/Ca['
-	addPlot( '/model/chem/neuroMesh/DEND/Ca[0]', 'getConc', 'dend0Ca' )
+	addPlot( '/model/chem/dend/DEND/Ca[0]', 'getConc', 'dend0Ca' )
+	path = '/model/chem/dend/DEND/Ca['
 	addPlot( path + str( midSpineVoxel ) + ']', 'getConc', 'dendMidCa' )
 	addPlot( path + str( midSpineVoxel+2 ) + ']', 'getConc', 'dendMid2Ca' )
 	addPlot( path + str( midSpineVoxel+4 ) + ']', 'getConc', 'dendMid4Ca' )
 	addPlot( path + str( midSpineVoxel+6 ) + ']', 'getConc', 'dendMid6Ca' )
-	addPlot( '/model/chem/neuroMesh/DEND/Ca[144]', 'getConc', 'dend144Ca' )
+	addPlot( '/model/chem/dend/DEND/Ca[144]', 'getConc', 'dend144Ca' )
 
-	#addPlot( '/n/neuroMesh/Ca', 'getConc', 'dendCa' )
-	#addPlot( '/n/neuroMesh/inact_kinase', 'getConc', 'inactDendKinase' )
-	#addPlot( '/n/psdMesh/psdGluR', 'getN', 'psdGluR' )
-	addPlot( '/model/chem/psdMesh/PSD/CaMKII_PSD/CaMKII_dash_CaM[6]', 'getConc', 'psdCaM_CaMKII6' )
-	addPlot( '/model/chem/spineMesh/SPINE/CaMKII_BULK/CaMKII_dash_CaM[6]', 'getConc', 'spineCaM_CaMKII6' )
-	addPlot( '/model/chem/spineMesh/SPINE/CaMKII_BULK/NMDAR[6]', 'getConc', 'psd_NMDAR6' )
+	#addPlot( '/n/dend/Ca', 'getConc', 'dendCa' )
+	#addPlot( '/n/dend/inact_kinase', 'getConc', 'inactDendKinase' )
+	#addPlot( '/n/psd/psdGluR', 'getN', 'psdGluR' )
+	addPlot( '/model/chem/psd/CaMKII_dash_CaM[6]', 'getConc', 'psdCaM_CaMKII6' )
+	addPlot( '/model/chem/spine/CaMKII_dash_CaM[6]', 'getConc', 'spineCaM_CaMKII6' )
+	addPlot( '/model/chem/spine/NMDAR[6]', 'getConc', 'psd_NMDAR6' )
 
-	addPlot( '/model/chem/psdMesh/PSD/CaMKII_PSD/bar[6]', 'getConc', 'psd_bar' )
-	addPlot( '/model/chem/spineMesh/SPINE/CaMKII_BULK/foo[6]', 'getConc', 'spine_foo' )
-	bar = moose.element( '/model/chem/psdMesh/PSD/CaMKII_PSD/bar[6]' )
-	foo = moose.element( '/model/chem/spineMesh/SPINE/CaMKII_BULK/foo[6]' )
-	print "bar,foo vols = ", bar.volume, foo.volume, bar.concInit, foo.concInit
-	tr0 = moose.element( '/model/chem/spineMesh/SPINE/CaMKII_BULK/tr0[6]' )
-	print "tr0 rates = ", tr0.Kf, tr0.Kb, tr0.kf, tr0.kb
 
 def testNeuroMeshMultiscale():
 	elecDt = 50e-6
-	chemDt = 1e-4
-	plotDt = 5e-4
+	chemDt = 1e-2
+	plotDt = 1e-2
 	plotName = 'nm.plot'
 
 	makeNeuroMeshModel()
@@ -349,13 +296,18 @@ def testNeuroMeshMultiscale():
 			grandpaname = i.parent[0].parent.name + '/'
 			paname = i.parent[0].name + '/'
 			print grandpaname + paname + i[0].name, i[0].diffConst
-	moose.le( '/model/chem/spineMesh/ksolve' )
 	print 'Neighbors:'
-	for t in moose.element( '/model/chem/spineMesh/ksolve/junction' ).neighbors['masterJunction']:
+	for t in moose.element( '/model/chem/spine/ksolve/junction' ).neighbors['masterJunction']:
 		print 'masterJunction <-', t.path
-	for t in moose.wildcardFind( '/model/chem/#Mesh/ksolve' ):
+	for t in moose.wildcardFind( '/model/chem/#/ksolve' ):
 		k = moose.element( t[0] )
 		print k.path + ' localVoxels=', k.numLocalVoxels, ', allVoxels= ', k.numAllVoxels
+	"""
+	"""
+        moose.useClock( 4, '/model/chem/dend/dsolve', 'process' )
+        moose.useClock( 5, '/model/chem/dend/ksolve', 'process' )
+        moose.useClock( 5, '/model/chem/spine/ksolve', 'process' )
+        moose.useClock( 5, '/model/chem/psd/ksolve', 'process' )
 	"""
 
 	makeChemPlots()
@@ -363,6 +315,7 @@ def testNeuroMeshMultiscale():
 	moose.setClock( 0, elecDt )
 	moose.setClock( 1, elecDt )
 	moose.setClock( 2, elecDt )
+	moose.setClock( 4, chemDt )
 	moose.setClock( 5, chemDt )
 	moose.setClock( 6, chemDt )
 	moose.setClock( 7, plotDt )
@@ -370,35 +323,35 @@ def testNeuroMeshMultiscale():
 	moose.useClock( 0, '/model/elec/##[ISA=Compartment]', 'init' )
 	moose.useClock( 1, '/model/elec/##[ISA=SpikeGen]', 'process' )
 	moose.useClock( 2, '/model/elec/##[ISA=ChanBase],/model/##[ISA=SynBase],/model/##[ISA=CaConc]','process')
-	moose.useClock( 5, '/model/chem/##[ISA=PoolBase],/model/##[ISA=ReacBase],/model/##[ISA=EnzBase]', 'process' )
-	moose.useClock( 6, '/model/chem/##[ISA=Adaptor]', 'process' )
+	#moose.useClock( 5, '/model/chem/##[ISA=PoolBase],/model/##[ISA=ReacBase],/model/##[ISA=EnzBase]', 'process' )
+	#moose.useClock( 6, '/model/chem/##[ISA=Adaptor]', 'process' )
 	moose.useClock( 7, '/graphs/#', 'process' )
 	moose.useClock( 8, '/graphs/elec/#', 'process' )
-	moose.useClock( 5, '/model/chem/#Mesh/ksolve', 'init' )
-	moose.useClock( 6, '/model/chem/#Mesh/ksolve', 'process' )
-	hsolve = moose.HSolve( '/model/elec/hsolve' )
-	moose.useClock( 1, '/model/elec/hsolve', 'process' )
-	hsolve.dt = elecDt
-	hsolve.target = '/model/elec/compt'
-	moose.reinit()
+	moose.useClock( 5, '/model/chem/#/dsolve', 'process' )
+	moose.useClock( 6, '/model/chem/#/ksolve', 'process' )
+	#hsolve = moose.HSolve( '/model/elec/hsolve' )
+	#moose.useClock( 1, '/model/elec/hsolve', 'process' )
+	#hsolve.dt = elecDt
+	#hsolve.target = '/model/elec/compt'
+	#moose.reinit()
 	moose.reinit()
 	"""
 	print 'pre'
-	eca = moose.vec( '/model/chem/psdMesh/PSD/CaM/Ca' )
+	eca = moose.vec( '/model/chem/psd/PSD/CaM/Ca' )
 	for i in range( 3 ):
 		print eca[i].concInit, eca[i].conc, eca[i].nInit, eca[i].n, eca[i].volume
 	print 'dend'
-	eca = moose.vec( '/model/chem/neuroMesh/DEND/Ca' )
+	eca = moose.vec( '/model/chem/dend/DEND/Ca' )
 	#for i in ( 0, 1, 2, 30, 60, 90, 120, 144 ):
 	for i in range( 13 ):
 		print i, eca[i].concInit, eca[i].conc, eca[i].nInit, eca[i].n, eca[i].volume
 
 	print 'PSD'
-	eca = moose.vec( '/model/chem/psdMesh/PSD/CaM/Ca' )
+	eca = moose.vec( '/model/chem/psd/PSD/CaM/Ca' )
 	for i in range( 3 ):
 		print eca[i].concInit, eca[i].conc, eca[i].nInit, eca[i].n, eca[i].volume
 	print 'spine'
-	eca = moose.vec( '/model/chem/spineMesh/SPINE/CaM/Ca' )
+	eca = moose.vec( '/model/chem/spine/SPINE/CaM/Ca' )
 	for i in range( 3 ):
 		print eca[i].concInit, eca[i].conc, eca[i].nInit, eca[i].n, eca[i].volume
 	"""

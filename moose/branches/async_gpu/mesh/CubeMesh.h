@@ -120,6 +120,9 @@ class CubeMesh: public MeshCompt
 			const Eref& e, 
 			unsigned int numNodes, unsigned int numThreads );
 
+		/// Virtual func to get volume of entire compartment.
+		double vGetEntireVolume() const;
+
 		//////////////////////////////////////////////////////////////////
 		// Dest funcs
 		//////////////////////////////////////////////////////////////////
@@ -131,6 +134,9 @@ class CubeMesh: public MeshCompt
 		/// Virtual func to make a mesh with specified Volume and numEntries
 		void innerBuildDefaultMesh( const Eref& e,
 			double volume, unsigned int numEntries );
+
+		/// Virtual func, assigns volume, usually to single voxel.
+		bool vSetVolumeNotRates( double volume );
 
 		//////////////////////////////////////////////////////////////////
 		//  Utility func
@@ -226,12 +232,12 @@ class CubeMesh: public MeshCompt
 
 		/// Inherited virtual, do nothing for now.
 		vector< unsigned int > getParentVoxel() const;
-		const vector< double >& getVoxelVolume() const;
+		const vector< double >& vGetVoxelVolume() const;
 		const vector< double >& getVoxelArea() const;
 		const vector< double >& getVoxelLength() const;
 
 		/**
-		 * Sets up the stencil that defines how to combine neighbouring
+		 * Sets up the stencil that defines how to combine neighboring
 		 * mesh elements to set up the diffusion du/dt term, using the
 		 * method of lines.
 		 * This is a very general function. It uses the information in the

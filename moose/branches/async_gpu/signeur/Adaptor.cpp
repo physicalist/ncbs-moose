@@ -18,12 +18,12 @@
 ///////////////////////////////////////////////////////
 // MsgSrc definitions
 ///////////////////////////////////////////////////////
-static SrcFinfo1< double > *outputSrc()
+static SrcFinfo1< double > *output()
 {
-	static SrcFinfo1< double > outputSrc( "outputSrc", 
+	static SrcFinfo1< double > output( "output", 
 			"Sends the output value every timestep."
 	);
-	return &outputSrc;
+	return &output;
 }
 
 static SrcFinfo0 *requestInput()
@@ -34,15 +34,17 @@ static SrcFinfo0 *requestInput()
 	return &requestInput;
 }
 
-static SrcFinfo1< FuncId >  *requestField()
+static SrcFinfo1< double* >  *requestField()
 {
-	static SrcFinfo1< FuncId > requestField( "requestField", 
+	static SrcFinfo1< double* > requestField( "requestField", 
 			"Sends out a request to a generic double field. "
 			"Issued from the process call."
+			"Works for any number of targets."
 	);
 	return &requestField;
 }
 
+/*
 static DestFinfo* handleInput() {
 	static DestFinfo handleInput( "handleInput", 
 			"Handle the returned value, which is in a prepacked buffer.",
@@ -50,6 +52,7 @@ static DestFinfo* handleInput() {
 	);
 	return &handleInput;
 }
+*/
 
 const Cinfo* Adaptor::initCinfo()
 {
@@ -74,8 +77,8 @@ const Cinfo* Adaptor::initCinfo()
 			&Adaptor::setScale,
 			&Adaptor::getScale
 		);
-	static ReadOnlyValueFinfo< Adaptor, double > output( 
-			"output",
+	static ReadOnlyValueFinfo< Adaptor, double > outputValue( 
+			"outputValue",
 			"This is the linearly transformed output.",
 			&Adaptor::getOutput
 		);
@@ -136,7 +139,6 @@ const Cinfo* Adaptor::initCinfo()
 			"Handle the returned value.",
 			new OpFunc1< Adaptor, double >( &Adaptor::input )
 	);
-	*/
 
 	static Finfo* inputRequestShared[] =
 	{
@@ -149,6 +151,7 @@ const Cinfo* Adaptor::initCinfo()
 		inputRequestShared, 
 		sizeof( inputRequestShared ) / sizeof( Finfo* )
 	);
+	*/
 
 	//////////////////////////////////////////////////////////////////////
 	// Now set it all up.
@@ -158,12 +161,13 @@ const Cinfo* Adaptor::initCinfo()
 		&inputOffset,				// Value
 		&outputOffset,				// Value
 		&scale,						// Value
-		&output,					// ReadOnlyValue
+		&outputValue,				// ReadOnlyValue
 		&input,						// DestFinfo
-		outputSrc(),				// SrcFinfo
+		output(),					// SrcFinfo
+		requestInput(),				// SrcFinfo
 		requestField(),				// SrcFinfo
 		&proc,						// SharedFinfo
-		&inputRequest,				// SharedFinfo
+	//	&inputRequest,				// SharedFinfo
 	};
 	
 	static string doc[] =
@@ -199,7 +203,8 @@ Adaptor::Adaptor()
 		scale_( 1.0 ),
 		molName_( "" ),
 		sum_( 0.0 ), 
-		counter_( 0 )
+		counter_( 0 ),
+		numRequestField_( 0 )
 { 
 	;
 }
@@ -250,6 +255,7 @@ void Adaptor::input( double v )
 	++counter_;
 }
 
+/*
 void Adaptor::handleBufInput( PrepackedBuffer pb )
 {
 	assert( pb.dataSize() == 1 );
@@ -257,6 +263,7 @@ void Adaptor::handleBufInput( PrepackedBuffer pb )
 	sum_ += v;
 	++counter_;
 }
+*/
 
 // separated out to help with unit tests.
 void Adaptor::innerProcess()
@@ -273,15 +280,27 @@ void Adaptor::innerProcess()
 
 void Adaptor::process( const Eref& e, ProcPtr p )
 {
-	static FuncId fid = handleInput()->getFid(); 
+	// static FuncId fid = handleInput()->getFid(); 
 	requestInput()->send( e );
-	requestField()->send( e, fid );
+	if ( numRequestField_ > 0 ) {
+		vector< double > vals( numRequestField_, 0.0 );
+		vector< double* > args( numRequestField_ );
+		for ( unsigned int i = 0; i < numRequestField_; ++i )
+			args[i] = &vals[i];
+		requestField()->sendVec( e, args );
+		for ( unsigned int i = 0; i < numRequestField_; ++i ) {
+			sum_ += vals[i];
+		}
+		counter_ += numRequestField_;
+	}
 	innerProcess();
-	outputSrc()->send( e, output_ );
+	output()->send( e, output_ );
 }
 
 void Adaptor::reinit( const Eref& e, ProcPtr p )
 {
+	numRequestField_ = e.element()->getMsgTargets( e.dataIndex(),
+					requestField() ).size();
 	process( e, p );
 }
 

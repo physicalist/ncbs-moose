@@ -10,6 +10,42 @@
 #ifndef _STOICH_H
 #define _STOICH_H
 
+/**
+ * Stoich is the class that handles the stoichiometry matrix for a
+ * reaction system, and also setting up the computations for reaction 
+ * rates. It has to coordinate the operation of a number of model 
+ * definition classes, most importantly: Pools, Reacs and Enz(yme)s.
+ * It also coordinates the setup of a large number of numerical solution
+ * engines, or solvers: Ksolve, Gsolve, Dsolve, and SteadyState.
+ * The setup process has to follow a tight order, most of which is
+ * internally manged by the Stoich.
+ * The Stoich itself does not do any 'process' functions. It just sets up
+ * data structures for the other objects that do the crunching.
+ *
+ * 1. Compartment is set up to a cell (neuroMesh) or volume (other meshes)
+ * 2. Compartment assigned to Stoich. Here it assigns unique vols.  
+ * 3. Dsolve and Ksolve assigned to Stoich using setKsolve and setDsolve.
+ * 	 3.1 At this point the Stoich::useOneWay_ flag is set if it is a Gsolve.
+ * 4. Call Stoich::setPath. All the rest happens internally, done by Stoich:
+ * 		4.1 assign compartment to Dsolve and Ksolve.
+ * 		4.2 assign numPools and compts to Dsolve and Ksolve. 
+ * 		4.3 During Zombification, zeroth vector< RateTerm* > is built.  
+ * 		4.4 afterZombification, stoich builds rateTerm vector for all vols.
+ * 		4.5 Stoich assigns itself to Dsolve and Ksolve.  
+ * 			- Ksolve sets up volIndex on each VoxelPool 
+ * 			- Dsolve gets vector of pools, extracts DiffConst and MotorConst
+ * 		4.6 Dsolve assigned to Ksolve::dsolve_ field by the Stoich.
+ * 	5. Reinit, 
+ * 		5.1 Dsolve builds matrix, provided dt has changed. It needs dt.  
+ * 		5.2 Ksolve builds solvers if not done already, assigning initDt 
+ *
+ * As seen by the user, this reduces to just 4 stages:
+ * - Make the objects.
+ * - Assign compartment, Ksolve and Dsolve to stoich.
+ * - Set the stoich path.
+ * - Reinit.
+ */
+
 class Stoich
 {
 	public: 
@@ -58,8 +94,17 @@ class Stoich
 		void setPath( const Eref& e, string path );
 		string getPath( const Eref& e ) const;
 
-		void setPoolInterface( Id v );
-		Id getPoolInterface() const;
+		/// assigns kinetic solver: Ksovle or GSSAsolve.
+		void setKsolve( Id v ); 
+		Id getKsolve() const;
+
+		/// assigns diffusion solver: Dsovle or a Gillespie voxel stepper
+		void setDsolve( Id v ); 
+		Id getDsolve() const;
+
+		/// assigns compartment occupied by Stoich.
+		void setCompartment( Id v ); 
+		Id getCompartment() const;
 
 		/**
 		 * This does a quick and dirty estimate of the timestep suitable 
@@ -97,6 +142,9 @@ class Stoich
 		 * elist of all elements managed by this solver.
 		 */
 		void setElist( const Eref& e, const vector< ObjId >& elist );
+
+		/// Builds new RateTerm vectors scaled to all the unique volumes.
+		void buildAllRateTermVectors();
 
 		/**
 		 * Scans through elist to find any reactions that connect to
@@ -318,11 +366,21 @@ class Stoich
 		// Utility funcs for numeric calculations
 		//////////////////////////////////////////////////////////////////
 
-		/// Updates the yprime array, rate of change of each molecule
-		void updateRates( const double* s, double* yprime ) const;
+		/**
+		 * Updates the yprime array, rate of change of each molecule
+		 * The volIndex specifies which set of rates to use, since the
+		 * rates are volume dependent.
+		 */
+		void updateRates( const double* s, double* yprime,
+					   unsigned int volIndex ) const;
 		
-		/// Computes the velocity of each reaction, vel.
-		void updateReacVelocities( const double* s, vector< double >& vel ) const;
+		/**
+		 * Computes the velocity of each reaction, vel.
+		 * The volIndex specifies which set of rates to use, since the
+		 * rates are volume dependent.
+		 */
+		void updateReacVelocities( const double* s, vector< double >& vel,
+					   unsigned int volIndex ) const;
 
 		/// Updates the function values, within s.
 		void updateFuncs( double* s, double t ) const;
@@ -335,7 +393,8 @@ class Stoich
 		 * Get the rate for a single reaction specified by r, as per all 
 		 * the mol numbers in s.
 		 */
-		double getReacVelocity( unsigned int r, const double* s ) const;
+		double getReacVelocity( unsigned int r, const double* s,
+					   unsigned int volIndex ) const;
 
 		/// Returns the stoich matrix. Used by gsolve.
 		const KinSparseMatrix& getStoichiometryMatrix() const;
@@ -355,6 +414,12 @@ class Stoich
 		 * compartment, that are represented on this compartment as proxies.
 		 */
 		const vector< Id >& offSolverPoolMap( Id compt ) const;
+
+		/**
+		 * Returns the index of the matching volume,
+		 * which is also the index into the RateTerm vector.
+		 */
+		unsigned int indexOfMatchingVolume( double vol ) const;
 		
 		//////////////////////////////////////////////////////////////////
 		static const unsigned int PoolIsNotOnSolver;
@@ -367,11 +432,19 @@ class Stoich
 		bool useOneWay_;
 		string path_;
 
-		/** 
-		 * This contains the Id of the object that handles the storage and
-		 * arrays for the zombie pools.
-		 */
-		Id poolInterface_;
+		/// This contains the Id of the Kinetic solver.
+		Id ksolve_;
+
+		/// This contains the Id of the Diffusion solver. Optional.
+		Id dsolve_;
+
+		/// Contains Id of compartment holding reac system. Optional
+		Id compartment_;
+
+		/// Pointer for ksolve
+		ZombiePoolInterface* kinterface_;
+		/// Pointer for dsolve
+		ZombiePoolInterface* dinterface_;
 
 		/**
 		 * Lookup from each molecule to its Species identifer
@@ -380,7 +453,16 @@ class Stoich
 		vector< unsigned int > species_;
 
 		/// The RateTerms handle the update operations for reaction rate v_
-		vector< RateTerm* > rates_;
+		vector< vector< RateTerm* > > rates_;
+
+		/**
+		 * This tracks the unique volumes handled by the reac system.
+		 * Maps one-to-one with the vector of vector of RateTerms.
+		 */
+		vector< double > uniqueVols_;
+
+		/// Number of voxels in reac system.
+		unsigned int numVoxels_;
 
 		/// The FuncTerms handle mathematical ops on mol levels.
 		vector< FuncTerm* > funcs_;

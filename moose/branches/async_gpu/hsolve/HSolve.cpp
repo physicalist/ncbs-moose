@@ -24,6 +24,7 @@
 #include "../biophysics/HHChannel.h"
 #include "ZombieHHChannel.h"
 #include "../shell/Wildcard.h"
+#include "../shell/Shell.h"
 
 #include "PN2S_Proxy.h"
 
@@ -186,7 +187,7 @@ const Cinfo* HSolve::initCinfo()
 static const Cinfo* hsolveCinfo = HSolve::initCinfo();
 
 HSolve::HSolve()
-    : dt_( 0.0 )
+    : dt_( 0.0 ), isMasterHSolve_ (false)
 {
     ;
 }
@@ -198,16 +199,16 @@ HSolve::HSolve()
 
 void HSolve::process( const Eref& hsolve, ProcPtr p )
 {
-    if( isMasterHSolve() )
-	PN2S_Proxy::Process(p);
+    if( isMasterHSolve_ )
+    	PN2S_Proxy::Process(p);
     else
-	this->HSolveActive::step( p );
+    	this->HSolveActive::step( p );
 }
 
 void HSolve::reinit( const Eref& hsolve, ProcPtr p )
 {
     dt_ = p->dt;
-    if( isMasterHSolve() )
+    if( isMasterHSolve_ )
     	PN2S_Proxy::Reinit();
     else
     	this->HSolveActive::reinit( p );
@@ -216,35 +217,66 @@ void HSolve::reinit( const Eref& hsolve, ProcPtr p )
 void HSolve::zombify( Eref hsolve ) const
 {
     vector< Id >::const_iterator i;
+	vector< ObjId > temp;
 
     for ( i = compartmentId_.begin(); i != compartmentId_.end(); ++i )
-        ZombieCompartment::zombify( hsolve.element(), i->eref().element() );
+		temp.push_back( ObjId( *i, 0 ) );
+	Shell::dropClockMsgs( temp, "init" );
+	Shell::dropClockMsgs( temp, "process" );
+    for ( i = compartmentId_.begin(); i != compartmentId_.end(); ++i )
+        CompartmentBase::zombify( i->eref().element(),
+					   ZombieCompartment::initCinfo(), hsolve.id() );
 
+	temp.clear();
+    for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
+		temp.push_back( ObjId( *i, 0 ) );
+	Shell::dropClockMsgs( temp, "process" );
     for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
         ZombieCaConc::zombify( hsolve.element(), i->eref().element() );
 
+	temp.clear();
+    for ( i = channelId_.begin(); i != channelId_.end(); ++i )
+		temp.push_back( ObjId( *i, 0 ) );
+	Shell::dropClockMsgs( temp, "process" );
     for ( i = channelId_.begin(); i != channelId_.end(); ++i )
         ZombieHHChannel::zombify( hsolve.element(), i->eref().element() );
 }
 
 void HSolve::setup( Eref hsolve )
 {
-	if( isMasterHSolve())
+	if( isMasterHSolve_)
 	{
+		/**
+		 * First Initializations such as reseting device
+		 */
 		PN2S_Proxy::Setup(dt_);
-		//Setup Master HSolve for each model
+
 		int n_models = seeds_.size();
 
+		/**
+		 * Create internal representation for each model, and release the memory
+		 * afterwards. All visited compartments and other objects keep in the analysis object.
+		 * After
+		 *
+		 */
 		for (int i=0; i<n_models; i++) {
-			PN2S_Proxy::InsertCompartmentModel(hsolve, seeds_[i]);
+			PN2S_Proxy::CreateCompartmentModel(hsolve, seeds_[i]);
 		}
+		/**
+		 * Add model to model repositor
+		 */
+
+		/**
+		 * Zumbify all objects
+		 */
 	}
 	else
 	{
-		// Setup solver for CPU execution
-		this->HSolveActive::setup( seeds_[0], dt_ );
-		zombify( hsolve );
-		mapIds();
+    	// Setup solver.
+    	this->HSolveActive::setup(seeds_[0], dt_ );
+
+    	mapIds();
+    	zombify( hsolve );
 	}
 }
 
@@ -301,6 +333,7 @@ void HSolve::setPath( const Eref& hsolve, string path )
 	{
 		// cout << "HSolve: Seed compartment found at '" << seed_.path() << "'.\n";
 		path_ = path;
+		isMasterHSolve_ = seeds_.size()>1;
 		setup( hsolve);
 	}
 }

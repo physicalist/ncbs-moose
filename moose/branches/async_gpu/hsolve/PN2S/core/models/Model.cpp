@@ -14,24 +14,20 @@
 using namespace pn2s::models;
 
 
-template <typename T>
-Model<T>::Model(uint _id) :
+Model::Model(uint _id) :
 		id(_id) {
 
 	compts.clear();
 	hhChannels.clear();
 }
 
-template <typename T>
-Model<T>::Model(Matrix m,uint _id)
+Model::Model(Matrix m,uint _id)
 {
 	id = _id ;
 	matrix = m;
 }
 
-template <typename T>
-Model<T>::~Model() {
+Model::~Model() {
 
 }
 
-template class Model<double>;

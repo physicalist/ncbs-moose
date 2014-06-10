@@ -10,7 +10,7 @@
 #include <cctype>
 #include "header.h"
 #include "SparseMatrix.h"
-#include "Vec.h"
+#include "../utility/Vec.h"
 
 #include "ElementValueFinfo.h"
 #include "Boundary.h"
@@ -91,7 +91,10 @@ PsdMesh::PsdMesh()
 		pa_( 1 ),
 		parentDist_( 1, 1e-6 ),
 		parent_( 1, 0 ),
-		surfaceGranularity_( 0.1 )
+		surfaceGranularity_( 0.1 ),
+		vs_(1, 5.0e-21 ),
+		area_(1, 1.0e-13 ),
+		length_(1, 50.0e-9 )
 {
 	const double defaultLength = 1e-6;
 	psd_[0].setDia( defaultLength );
@@ -154,6 +157,9 @@ void PsdMesh::handlePsdList(
 		assert( diskCoords.size() == 8 * parentVoxel.size() );
 		psd_.resize( parentVoxel.size() );
 		pa_.resize( parentVoxel.size() );
+		vs_.resize( parentVoxel.size() );
+		area_.resize( parentVoxel.size() );
+		length_.resize( parentVoxel.size() );
 		cell_ = cell;
 
 		psd_.clear();
@@ -168,7 +174,12 @@ void PsdMesh::handlePsdList(
 			x += 3;
 			psd_.back().setDia( *x++ );
 			psd_.back().setIsCylinder( true );
+			psd_.back().setLength( *x ); // This is an entirely nominal
+						// length, so that the effective vol != 0.
 			parentDist_.push_back( *x++ );
+			vs_[i] = psd_.back().volume( psd_.back() );
+			area_[i] = psd_.back().getDiffusionArea( psd_.back(), 0 );
+			length_[i] = parentDist_.back();
 		}
 		parent_ = parentVoxel;
 
@@ -184,8 +195,7 @@ void PsdMesh::handlePsdList(
 		}
 		vector< vector< unsigned int > > outgoingEntries;
 		vector< vector< unsigned int > > incomingEntries;
-		meshSplit()->fastSend( e, oldVol, vols,
-						localIndices, outgoingEntries, incomingEntries );
+		// meshSplit()->send( e, oldVol, vols, localIndices, outgoingEntries, incomingEntries );
 		lookupEntry( 0 )->triggerRemesh( meshEntry.eref(),
 						oldVol, 0, localIndices, vols );
 
@@ -423,3 +433,64 @@ void PsdMesh::matchCubeMeshEntries( const ChemCompt* other,
 		i, surfaceGranularity_, ret, false, true );
 	}
 }
+
+
+////////////////////////////////////////////////////////////////////////
+// Inherited Virtual funcs for getting voxel info.
+////////////////////////////////////////////////////////////////////////
+
+/**
+ * This function returns the diffusively connected parent voxel within
+ * the current (psd) mesh. Since each spine is treated as an independed
+ * voxel, there is no such voxel, so we return -1U for each psd.
+ * Note that there is a separate function that returns the parentVoxel
+ * referred to the NeuroMesh that this spine/psd sits on.
+ */
+vector< unsigned int > PsdMesh::getParentVoxel() const
+{
+	vector< unsigned int > ret( parent_.size(), -1U );
+	return ret;
+	// return parent_;
+}
+
+const vector< double >& PsdMesh::vGetVoxelVolume() const
+{
+	return vs_;
+}
+
+const vector< double >& PsdMesh::getVoxelArea() const
+{
+	return area_;
+}
+
+const vector< double >& PsdMesh::getVoxelLength() const
+{
+	return length_;
+}
+
+double PsdMesh::vGetEntireVolume() const
+{
+	double ret = 0.0;
+	for ( vector< double >::const_iterator i = 
+					vs_.begin(); i != vs_.end(); ++i )
+		ret += *i;
+	return ret;
+}
+
+bool PsdMesh::vSetVolumeNotRates( double volume )
+{
+	double volscale = volume / vGetEntireVolume();
+	double linscale = pow( volscale, 1.0/3.0 );
+	assert( vs_.size() == psd_.size() );
+	assert( area_.size() == psd_.size() );
+	assert( length_.size() == psd_.size() );
+	for ( unsigned int i = 0; i < psd_.size(); ++i ) {
+		psd_[i].setLength( psd_[i].getLength() * linscale );
+		psd_[i].setDia( psd_[i].getDia() * linscale );
+		vs_[i] *= volscale;
+		area_[i] *= linscale * linscale;
+		length_[i] *= linscale;
+	}
+	return true;
+}
+

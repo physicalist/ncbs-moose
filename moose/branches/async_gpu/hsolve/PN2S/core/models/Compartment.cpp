@@ -6,24 +6,13 @@
 ///////////////////////////////////////////////////////////
 
 #include "Compartment.h"
+#include "PField.h"
 
 using namespace pn2s::models;
 
-template <typename T>
-Compartment<T>::Compartment(): gid(-1){
-}
-
-template <typename T>
-Compartment<T>::~Compartment(){
-
-}
-
 //Copy constractor
-template <typename T>
-Compartment<T>::Compartment( const Compartment& other )
+Compartment::Compartment( const Compartment& other )
 {
-	children.assign(other.children.begin(), other.children.end());
-	gid = other.gid;
+//	children.assign(other.children.begin(), other.children.end());
+//	gid = other.gid;
 }
-
-template class Compartment<double>;

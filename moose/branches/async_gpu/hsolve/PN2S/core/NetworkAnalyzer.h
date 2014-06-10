@@ -14,7 +14,6 @@
 namespace pn2s
 {
 
-template <typename T, int arch>
 class NetworkAnalyzer
 {
 
@@ -23,13 +22,13 @@ public:
 	uint nModel;
 	NetworkAnalyzer();
 	virtual ~NetworkAnalyzer();
-	Error_PN2S ImportNetwork(vector<models::Model <T> > &network);
+	Error_PN2S ImportNetwork(vector<models::Model > &network);
 
-	vector<models::Compartment<T> *> allCompartments;
-	vector<models::HHChannel<T> *> allHHChannels;
+	vector<models::Compartment *> allCompartments;
+	vector<models::HHChannel *> allHHChannels;
 private:
-	Error_PN2S importCompts(vector<models::Compartment<T> > &cmpts);
-	Error_PN2S importHHChannels(vector<models::HHChannel<T> > &chs);
+	Error_PN2S importCompts(vector<models::Compartment > &cmpts);
+	Error_PN2S importHHChannels(vector<models::HHChannel > &chs);
 
 };
 }

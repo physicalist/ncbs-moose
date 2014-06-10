@@ -35,10 +35,10 @@ Error_PN2S DeviceManager::SelectDevice(int id){
 	return  Error_PN2S::NO_ERROR;
 }
 
-Error_PN2S DeviceManager::Reinit(vector<models::Model<CURRENT_TYPE> > &m, double dt){
+Error_PN2S DeviceManager::Reinit(vector<models::Model > &m, double dt){
 	cudaDeviceReset();
 
-	//TODO: Test Multidevice
+	//TODO: Add Multidevice
 	_devices[0].Reinit(m, dt);
 //	int numDevice = _devices.size();
 //	int numModel  = m.size();
@@ -46,11 +46,11 @@ Error_PN2S DeviceManager::Reinit(vector<models::Model<CURRENT_TYPE> > &m, double
 //	if(numDevice > numModel)
 //		numDevice = numModel;
 //
-//	vector<models<CURRENT_TYPE, CURRENT_ARCH> >::iterator it = m.begin();
+//	vector<models<TYPE_, CURRENT_ARCH> >::iterator it = m.begin();
 //
 //	for(int i = 0; i< numDevice;i++)
 //	{
-//		vector<models<CURRENT_TYPE, CURRENT_ARCH> > subModel (it, it + numModel/numDevice);
+//		vector<models<TYPE_, CURRENT_ARCH> > subModel (it, it + numModel/numDevice);
 //		_devices[i].Reinit(subModel, dt);
 //
 //		it += numModel/numDevice+1;
@@ -62,6 +62,7 @@ Error_PN2S DeviceManager::Reinit(vector<models::Model<CURRENT_TYPE> > &m, double
 
 void DeviceManager::Process()
 {
+	//TODO: Each device should get its own pack
 	for(vector<Device>::iterator device = _devices.begin(); device != _devices.end(); ++device)
 	{
 		device->Process();

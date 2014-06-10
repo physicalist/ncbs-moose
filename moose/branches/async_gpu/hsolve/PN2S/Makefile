@@ -31,7 +31,7 @@ all: $(TARGET)
 default: benchmark 
 
 Manager.o: Manager.cpp Manager.h 
-Device.o: Device.cpp Device.h
+Device.o: Device.cpp Device.h 
 DeviceManager.o: DeviceManager.cpp DeviceManager.h 
 
 $(TARGET): $(OBJS) $(COBJS) $(SUBDIR) 
@@ -39,10 +39,10 @@ $(TARGET): $(OBJS) $(COBJS) $(SUBDIR)
 	$(LD) -r -o  $(TARGET) $(OBJS) $(COBJS) $(MODULES)
 	 
 $(OBJS):
-	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg -I./extra $< -c 
+	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg -I./libs $< -c 
 	
 $(COBJS):
-	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fopenmp -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30  -x cu  -I./extra   
+	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fopenmp -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30  -x cu  -I./libs -I./libs/tbb/include   
 
 .PHONY: clean
 $(SUBDIR): force
@@ -53,10 +53,10 @@ force :;
 
 #TODO: Remove test
 test: $(TARGET) 
-	$(CXX)  Test.cpp $(TARGET) -o Test -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -I/usr/local/cuda/include -I./extra$(CXXFLAGS)
+	$(CXX)  Test.cpp $(TARGET) -o Test -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -I/usr/local/cuda/include -I./libs -I./libs/tbb/include $(CXXFLAGS)
 
 benchmark: $(TARGET) force
-	$(CXX) -fopenmp $(CXXFLAGS) $(TARGET) -o benchmark -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -I/usr/local/cuda/include -I./extra Benchmark.cpp  
+	$(CXX) -fopenmp $(CXXFLAGS) $(TARGET) -o benchmark -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -I/usr/local/cuda/include -I./libs -I./libs/tbb/include Benchmark.cpp  
 
 clean:
 	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i clean;  done)

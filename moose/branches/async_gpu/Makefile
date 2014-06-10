@@ -86,59 +86,59 @@ MACHINE=$(shell uname -m)
 PLATFORM := $(shell uname -s)
 endif
 
-
+USE_NUMPY=1
 # Debug mode:
 
 ifeq ($(BUILD),debug)
-CXXFLAGS = -g -fopenmp -fpermissive -fno-strict-aliasing -fPIC -fno-inline-functions -Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER
-USE_GSL = 1
+CXXFLAGS = -g -fpermissive -fno-strict-aliasing -fPIC -fno-inline-functions -Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER
+USE_GSL = true
 endif
 # Optimized mode:
 ifeq ($(BUILD),release)
 CXXFLAGS  = -O3 -fpermissive -fno-strict-aliasing -fPIC -Wall -Wno-long-long -pedantic -DNDEBUG -DUSE_GENESIS_PARSER
-USE_GSL = 1
+USE_GSL = true
 endif
 # Profiling mode:
 ifeq ($(BUILD),profile)
 CXXFLAGS  = -O3 -pg  -fpermissive -fno-strict-aliasing -fPIC -Wall -Wno-long-long -pedantic -DNDEBUG -DUSE_GENESIS_PARSER  
-USE_GSL = 1
+USE_GSL = true
 endif
 # Profiling mode with gperftoools
 ifeq ($(BUILD),gperf)
 CXXFLAGS  = -O3 -fopenmp -fpermissive -fno-strict-aliasing -fPIC -Wall -Wno-long-long -pedantic -DNDEBUG -DUSE_GENESIS_PARSER  
 LDFLAGS += -lprofiler -ltcmalloc
-USE_GSL = 1
+USE_GSL = true
 endif
 # Threading mode:
 ifeq ($(BUILD),thread)
 CXXFLAGS  = -O3 -Wall -Wno-long-long -pedantic -DNDEBUG -DUSE_GENESIS_PARSER  
-USE_GSL = 1
+USE_GSL = true
 endif
 
 # MPI mode:
 ifeq ($(BUILD),mpi)
 CXXFLAGS = -g -fpermissive -fno-strict-aliasing -fPIC -fno-inline-functions -Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER
 USE_MPI = 1
-USE_GSL = 1
+USE_GSL = true
 endif
 
 # optimized MPI mode:
 ifeq ($(BUILD),ompi)
 CXXFLAGS  = -O3 -fpermissive -fno-strict-aliasing -fPIC -Wall -Wno-long-long -pedantic -DNDEBUG -DUSE_GENESIS_PARSER
 USE_MPI = 1
-USE_GSL = 1
+USE_GSL = true
 endif
 
 # optimised mode but with unit tests.
 ifeq ($(BUILD),odebug)
 CXXFLAGS = -O3 -Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER
-USE_GSL = 1
+USE_GSL = true
 endif
 
 # including SMOLDYN
 ifdef USE_SMOLDYN
 CXXFLAGS = -g -Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER
-USE_GSL = 1
+USE_GSL = true
 endif
 
 # Use a strict compilation
@@ -146,7 +146,7 @@ ifeq ($(BUILD),developer)
     CXXFLAGS=-g \
 	     -Wall -Werror -Wno-unused-variable -Wno-unused-function \
 	     -DDO_UNIT_TESTS -DDEVELOPER -DDEBUG 
-    USE_GSL = 1
+    USE_GSL = true
 endif
 ##########################################################################
 #
@@ -240,9 +240,8 @@ endif
 #Saeed
 # To use CUDA, pass USE_CUDA=1 in make command line
 # ifeq ($(USE_CUDA),1)
-LIBS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lm -lgomp
-HCUDA_DIR = hsolve
-HCUDA_LIB = hsolve/_hsolve.o 
+LIBS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lm -lgomp -L./hsolve/PN2S/libs/tbb/lib/intel64/gcc4.4/ -ltbb  
+CXXFLAGS+= -I./hsolve/PN2S/libs/tbb/include
 # endif
 
 # To compile examples, pass EXAMPLES=true ( anything on the right will do) in make command line
@@ -305,17 +304,17 @@ SUBDIR = \
 	builtins\
 	utility \
 	external/muparser \
-	external/debug \
 	biophysics \
 	kinetics \
 	ksolve \
 	mesh \
+	hsolve \
 	diffusion \
 	device \
+	signeur \
 	benchmarks \
 	$(SMOLDYN_DIR) \
 	$(SBML_DIR) \
-	$(HCUDA_DIR) \
 	$(EXAMPLES_DIR) \
 
 # Used for 'make clean'
@@ -331,17 +330,17 @@ OBJLIBS =	\
 	builtins/_builtins.o \
 	utility/_utility.o \
 	external/muparser/_muparser.o \
-	external/debug/_debug.o \
 	biophysics/_biophysics.o \
 	kinetics/_kinetics.o \
 	ksolve/_ksolve.o \
+	hsolve/_hsolve.o \
 	mesh/_mesh.o \
 	diffusion/_diffusion.o \
 	device/_device.o \
+	signeur/_signeur.o \
 	benchmarks/_benchmarks.o \
 	$(SMOLDYN_LIB) \
 	$(SBML_LIB) \
-	$(HCUDA_LIB) \
 	$(EXAMPLES_LIB) \
 
 export CXX
@@ -451,7 +450,7 @@ install:
 	mkdir -p $(DESTDIR)$(install_prefix)/share/moose
 	## copy filtering out the .svn (hidden) files
 	rsync -r --exclude=.svn Demos/* $(DESTDIR)$(install_prefix)/share/moose/Demos
-	rsync -r --exclude=.svn old_gui/* $(DESTDIR)$(install_prefix)/share/moose/gui
+	rsync -r --exclude=.svn gui/* $(DESTDIR)$(install_prefix)/share/moose/gui
 	test -d $(DESTDIR)$(install_prefix)/share/doc || mkdir -p $(DESTDIR)$(install_prefix)/share/doc
 	rsync -r --exclude=.svn Docs/* $(DESTDIR)$(install_prefix)/share/doc/moose
 
@@ -478,21 +477,21 @@ install:
         ## see standards.freedesktop.org for specifications for where to put menu entries and icons
         ## copy the .desktop files to /usr/share/applications for link to show up in main menu
 	mkdir -p $(DESTDIR)$(install_prefix)/share/applications
-	cp old_gui/MooseGUI.desktop $(DESTDIR)$(install_prefix)/share/applications/
-	cp old_gui/MooseSquidAxon.desktop $(DESTDIR)$(install_prefix)/share/applications/
+	cp gui/MooseGUI.desktop $(DESTDIR)$(install_prefix)/share/applications/
+	cp gui/MooseSquidAxon.desktop $(DESTDIR)$(install_prefix)/share/applications/
         ## copy the .desktop files to the desktop too to get icons
-	cp old_gui/MooseGUI.desktop $$HOME/Desktop/
+	cp gui/MooseGUI.desktop $$HOME/Desktop/
 	chmod a+x $$HOME/Desktop/MooseGUI.desktop
 	chown $(username) $(HOME)/Desktop/MooseGUI.desktop
 	chgrp $(username) $(HOME)/Desktop/MooseGUI.desktop
-	cp old_gui/MooseSquidAxon.desktop $$HOME/Desktop/
+	cp gui/MooseSquidAxon.desktop $$HOME/Desktop/
 	chmod a+x $$HOME/Desktop/MooseSquidAxon.desktop
 	chgrp $(username) $(HOME)/Desktop/MooseSquidAxon.desktop
 	chown $(username) $(HOME)/Desktop/MooseSquidAxon.desktop
         ## copy icon to /usr/share/icons/hicolor/<size>/apps (hicolor is the fallback theme)
 	mkdir -p $(DESTDIR)$(install_prefix)/share/icons/hicolor/scalable/apps
-	cp old_gui/icons/moose_icon.png $(DESTDIR)$(install_prefix)/share/icons/hicolor/scalable/apps/
-	cp old_gui/icons/squid.png $(DESTDIR)$(install_prefix)/share/icons/hicolor/scalable/apps/
+	cp gui/icons/moose_icon.png $(DESTDIR)$(install_prefix)/share/icons/hicolor/scalable/apps/
+	cp gui/icons/squid.png $(DESTDIR)$(install_prefix)/share/icons/hicolor/scalable/apps/
         ## need to update the icon cache to show the icon
 	update-icon-caches $(DESTDIR)$(install_prefix)/share/icons/hicolor/
 

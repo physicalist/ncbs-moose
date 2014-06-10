@@ -1,0 +1,25 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+#Specific files
+HSC/HSC_Test
+.svn/
+*/.svn
+Debug/
+PN2S/benchmark
+PN2S_Moose_Test/PN2S_Moose_Test
+
+#Profiling
+*.prof
+

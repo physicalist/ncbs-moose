@@ -13,6 +13,7 @@
 #include "FuncTerm.h"
 #include "SparseMatrix.h"
 #include "KinSparseMatrix.h"
+#include "ZombiePoolInterface.h"
 #include "Stoich.h"
 
 #include "EnzBase.h"
@@ -134,11 +135,11 @@ void ZombieMMenz::setSolver( Id solver, Id enzId )
 	vector< Id > enzvec;
 	vector< Id > subvec;
 	vector< Id > prdvec;
-	unsigned int num = enzId.element()->getNeighbours( enzvec, enzFinfo );
+	unsigned int num = enzId.element()->getNeighbors( enzvec, enzFinfo );
 	assert( num == 1 );
-	num = enzId.element()->getNeighbours( subvec, subFinfo );
+	num = enzId.element()->getNeighbors( subvec, subFinfo );
 	assert( num > 0 );
-	num = enzId.element()->getNeighbours( prdvec, prdFinfo );
+	num = enzId.element()->getNeighbors( prdvec, prdFinfo );
 	assert( num > 0 );
 	stoich_->installMMenz( enzId, enzvec[0], subvec, prdvec );
 }

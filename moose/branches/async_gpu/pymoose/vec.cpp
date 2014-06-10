@@ -48,7 +48,9 @@
 
 #include <Python.h>
 #include <structmember.h> // This defines the type id macros like T_STRING
-#include "numpy/arrayobject.h"
+// #include "numpy/arrayobject.h"
+
+#include "../external/debug/simple_logger.hpp"
 
 #include <iostream>
 #include <typeinfo>
@@ -61,6 +63,7 @@
 #endif
 
 #include "../basecode/header.h"
+#include "../basecode/global.h"
 #include "../basecode/Id.h"
 #include "../basecode/ObjId.h"
 #include "../utility/utility.h"
@@ -309,15 +312,20 @@ extern "C" {
             PyErr_SetString(PyExc_ValueError, message.c_str());
             return Id();
         }
-        return SHELLPTR->doCreate(type,
-                                  parent_id,
-                                  string(name),
-                                  numData, 
-								  static_cast< NodePolicy >( isGlobal ) );
-        
+        Id nId =  SHELLPTR->doCreate(type,
+                parent_id,
+                string(name),
+                numData, 
+                static_cast< NodePolicy >( isGlobal ) 
+                );
+
+#ifdef ENABLE_LOGGER
+        logger.updateGlobalCount(type);
+#endif
+        return nId;
     }
     
-     int moose_Id_init(_Id * self, PyObject * args, PyObject * kwargs)
+    int moose_Id_init(_Id * self, PyObject * args, PyObject * kwargs)
     {
         extern PyTypeObject IdType;
         PyObject * src = NULL;
@@ -374,7 +382,7 @@ extern "C" {
             if (length <= 0){
                 PyErr_SetString(PyExc_ValueError,
                                 "path must be non-empty string.");
-                Py_XDECREF(self);
+                Py_DECREF(self);
                 return -1;
             }
             self->id_ = Id(trimmed_path);
@@ -395,7 +403,7 @@ extern "C" {
             }
             self->id_ = create_Id_from_path(path, numData, isGlobal, type);
             if (self->id_ == Id() && PyErr_Occurred()){
-                Py_XDECREF(self);
+                Py_DECREF(self);
                 return -1;
             }
             return 0;
@@ -420,7 +428,7 @@ extern "C" {
             self->id_ = Id(id);
             return 0;
         }
-        Py_XDECREF(self);
+        Py_DECREF(self);
         return -1;
     }// ! moose_Id_init
 
@@ -428,7 +436,7 @@ extern "C" {
     {
         return self->id_.value(); // hash is the same as the Id value
     }
-
+    
     
     // 2011-03-23 15:14:11 (+0530)
     // 2011-03-26 17:02:19 (+0530)
@@ -437,21 +445,21 @@ extern "C" {
     // ObjId will destroy the containing element and invalidate all
     // the other ObjId with the same Id.
     // 2011-03-28 13:44:49 (+0530)
-    PyObject * deleteId(_Id * obj)
+    PyObject * deleteId(Id id)
     {
 #ifndef NDEBUG
         if (verbosity > 1){
-            cout << "Deleting Id " << obj->id_ << endl;
+            cout << "Deleting Id " << id << endl;
         }
 #endif
-        string className = Field<string >::get(obj->id_, "className");
+        string className = Field<string >::get(id, "className");
         vector <string> destFields = getFieldNames(className, "destFinfo");
         vector <string> lookupFields = getFieldNames(className, "lookupFinfo");
         vector <string> elementFields = getFieldNames(className, "elementFinfo");
-        unsigned int numData = Field<unsigned int>::get(obj->id_, "numData");
+        unsigned int numData = Field<unsigned int>::get(id, "numData");
         // clean up the maps containing initialized lookup/dest/element fields
         for (unsigned int ii = 0; ii < numData; ++ii){
-            ObjId el(obj->id_, ii);
+            ObjId el(id, ii);
 #ifndef NDEBUG
             if (verbosity > 1){
                 cout << "\tDeleting ObjId " << el << endl;
@@ -482,8 +490,7 @@ extern "C" {
                 }
             }    
         }
-        SHELLPTR->doDelete(obj->id_);
-        obj->id_ = Id();
+        SHELLPTR->doDelete(id);
         Py_RETURN_NONE;
     }
     
@@ -496,7 +503,8 @@ extern "C" {
         if (!Id::isValid(self->id_)){
             RAISE_INVALID_ID(NULL, "moose_Id_delete");
         }
-        deleteId(self);
+        deleteId(self->id_);
+        self->id_ = Id();
         Py_CLEAR(self);
         Py_RETURN_NONE;
     }
@@ -579,9 +587,9 @@ extern "C" {
         }
         PyObject * ret = PyTuple_New((Py_ssize_t)1);        
         if (PyTuple_SetItem(ret, (Py_ssize_t)0, Py_BuildValue("I", numData))){
-                Py_XDECREF(ret);
-                PyErr_SetString(PyExc_RuntimeError, "moose_Id_getShape: could not set tuple entry.");
-                return NULL;
+            Py_XDECREF(ret);
+            PyErr_SetString(PyExc_RuntimeError, "moose_Id_getShape: could not set tuple entry.");
+            return NULL;
         }
         return ret;
     }
@@ -709,8 +717,9 @@ extern "C" {
     }
     
      PyObject * moose_Id_getattro(_Id * self, PyObject * attr)
-    {
-        extern PyTypeObject ObjIdType;
+     {
+         int new_attr = 0;
+         extern PyTypeObject ObjIdType;
         if (!Id::isValid(self->id_)){
             RAISE_INVALID_ID(NULL, "moose_Id_getattro");
         }        
@@ -728,8 +737,9 @@ extern "C" {
                 field = const_cast<char*>((it->second).c_str());
                 type = getFieldType(Field<string>::get(self->id_, "className"), it->second);
                 // Update attr for next level (PyObject_GenericGetAttr) in case.
-                Py_XDECREF(attr);
+                // Py_XDECREF(attr);
                 attr = PyString_FromString(field);
+                new_attr = 1;
             }
         }
         if (type.empty()){
@@ -744,71 +754,89 @@ extern "C" {
             case 'd': {
                 vector < double > val;
                 Field< double >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 's': {
                 vector < string > val;
                 Field< string >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 'l': {
                 vector < long > val;
                 Field< long >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 'x': {
                 vector < Id > val;
                 Field< Id >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 'y': {
                 vector < ObjId > val;
                 Field< ObjId >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 'i': {
                 vector < int > val;
                 Field< int >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 'I': {
                 vector < unsigned int > val;
                 Field< unsigned int >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 'k': {
                 vector < unsigned long > val;
                 Field< unsigned long >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 'f': {
                 vector < float > val;
                 Field< float >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }            
             case 'b': {                                                               
                 vector<bool> val;
                 Field< bool >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 'c': {
                 vector < char > val;
                 Field< char >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 'h': {
                 vector < short > val;
                 Field< short >::getVec(self->id_, string(field), val);
-                return to_pytuple(&val, ftype);
+                _ret = to_pytuple(&val, ftype);
+                break;
             }
             case 'z': {
                 PyErr_SetString(PyExc_NotImplementedError, "DataId handling not implemented yet.");
-                return NULL;
+                _ret = NULL;
+                break;
             }
             default:
                 PyErr_SetString(PyExc_ValueError, "unhandled field type.");
-                return NULL;                
+                _ret = NULL;                
+                break;
         }
+        if (new_attr){
+            Py_DECREF(attr);
+        }
+        return _ret;
     }
     
      PyObject * moose_Id_setField(_Id * self, PyObject * args)
@@ -852,7 +880,7 @@ extern "C" {
             if (className != "vec"){
                 Py_INCREF(attr);
                 ret = PyObject_GenericSetAttr((PyObject*)self, attr, value);
-                Py_DECREF(attr);
+                Py_XDECREF(attr);
                 return ret;
             }
             ostringstream msg;
@@ -874,7 +902,9 @@ extern "C" {
                 vector<double> _value;
                 if (is_seq){
                     for ( int ii = 0; ii < length; ++ii){
-                        double v = PyFloat_AsDouble(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        double v = PyFloat_AsDouble(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                 } else {
@@ -888,7 +918,9 @@ extern "C" {
                 vector<string> _value;
                 if (is_seq){
                     for ( int ii = 0; ii < length; ++ii){
-                        char * v = PyString_AsString(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        char * v = PyString_AsString(vo);
+                        Py_XDECREF(v);
                         _value.push_back(string(v));
                     }
                 } else {
@@ -902,7 +934,9 @@ extern "C" {
                 vector<int> _value;
                 if (is_seq){
                     for ( int ii = 0; ii < length; ++ii){
-                        int v = PyInt_AsLong(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        int v = PyInt_AsLong(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                 } else {
@@ -916,7 +950,9 @@ extern "C" {
                 vector<unsigned int> _value;
                 if (is_seq){
                     for ( int ii = 0; ii < length; ++ii){
-                        unsigned int v = PyInt_AsUnsignedLongMask(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        unsigned int v = PyInt_AsUnsignedLongMask(vo);
+                        Py_DECREF(vo);
                         _value.push_back(v);
                     }
                 } else {
@@ -930,7 +966,9 @@ extern "C" {
                 vector<long> _value;
                 if (is_seq){
                     for ( int ii = 0; ii < length; ++ii){
-                        long v = PyInt_AsLong(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        long v = PyInt_AsLong(vo);
+                        Py_DECREF(vo);
                         _value.push_back(v);
                     }
                 } else {
@@ -944,7 +982,9 @@ extern "C" {
                 vector<unsigned long> _value;
                 if (is_seq){
                     for ( int ii = 0; ii < length; ++ii){
-                        unsigned long v = PyInt_AsUnsignedLongMask(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        unsigned long v = PyInt_AsUnsignedLongMask(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                 } else {
@@ -960,6 +1000,7 @@ extern "C" {
                     for ( int ii = 0; ii < length; ++ii){
                         PyObject * _v = PySequence_GetItem(value, ii);
                         bool v = (Py_True ==_v) || (PyInt_AsLong(_v) != 0);
+                        Py_XDECREF(_v);
                         _value.push_back(v);
                     }
                 } else {
@@ -975,6 +1016,7 @@ extern "C" {
                     for ( int ii = 0; ii < length; ++ii){
                         PyObject * _v = PySequence_GetItem(value, ii);
                         char * v = PyString_AsString(_v);
+                        Py_XDECREF(_v);
                         if (v && v[0]){
                             _value.push_back(v[0]);
                         } else {
@@ -1000,7 +1042,9 @@ extern "C" {
                 vector<short> _value;
                 if (is_seq){
                     for ( int ii = 0; ii < length; ++ii){
-                        short v = PyInt_AsLong(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        short v = PyInt_AsLong(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                 } else {
@@ -1014,7 +1058,9 @@ extern "C" {
                 vector<float> _value;
                 if (is_seq){
                     for ( int ii = 0; ii < length; ++ii){
-                        float v = PyFloat_AsDouble(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        float v = PyFloat_AsDouble(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                 } else {
@@ -1030,7 +1076,7 @@ extern "C" {
         // MOOSE Field::set returns 1 for success 0 for
         // failure. Python treats return value 0 from setters as
         // success, anything else failure.
-        if (ret || (PyErr_Occurred() == NULL)){
+        if (ret && (PyErr_Occurred() == NULL)){
             return 0;
         } else {
             return -1;

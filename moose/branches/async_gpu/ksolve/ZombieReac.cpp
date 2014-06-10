@@ -14,6 +14,7 @@
 #include "FuncTerm.h"
 #include "SparseMatrix.h"
 #include "KinSparseMatrix.h"
+#include "ZombiePoolInterface.h"
 #include "Stoich.h"
 #include "ZombieReac.h"
 
@@ -150,8 +151,8 @@ void ZombieReac::setSolver( Id stoich, Id orig )
 
 	vector< Id > sub;
 	vector< Id > prd;
-	orig.element()->getNeighbours( sub, subOut );
-	orig.element()->getNeighbours( prd, prdOut );
+	orig.element()->getNeighbors( sub, subOut );
+	orig.element()->getNeighbors( prd, prdOut );
 
 	assert( stoich.element()->cinfo()->isA( "Stoich" ) );
 	stoich_ = reinterpret_cast< Stoich* >( stoich.eref().data( ) );

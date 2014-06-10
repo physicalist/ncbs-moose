@@ -48,7 +48,7 @@
 
 #include <Python.h>
 #include <structmember.h> // This defines the type id macros like T_STRING
-#include "numpy/arrayobject.h"
+// #include "numpy/arrayobject.h"
 
 #include <iostream>
 #include <typeinfo>
@@ -214,7 +214,7 @@ extern "C" {
         }
         if (basetype == NULL){
             PyErr_SetString(PyExc_TypeError, "Unknown class. Need a valid MOOSE class or subclass thereof.");
-            // Py_XDECREF(self);
+            Py_DECREF(self);
             return -1;
         }
         if (instance->oid_.bad()){
@@ -248,7 +248,11 @@ extern "C" {
             
         
         Id new_id = create_Id_from_path(path, numData, isGlobal, basetype_str);
+#ifndef QUIET_MODE
         cout << "Created " << new_id << " path=" << path << " numData=" << numData << " isGlobal=" << isGlobal << " baseType=" << basetype_str << endl;
+#else
+        cout << "+";
+#endif
         if (new_id == Id() && PyErr_Occurred()){
             // Py_XDECREF(self);
             return -1;
@@ -417,6 +421,7 @@ extern "C" {
     */
     PyObject * moose_ObjId_getattro(_ObjId * self, PyObject * attr)
     {
+        int new_attr = 0;
         if (self->oid_.bad()){
             RAISE_INVALID_ID(NULL, "moose_ObjId_getattro");
         }
@@ -460,149 +465,190 @@ extern "C" {
                 }
                 type = getFieldType(Field<string>::get(self->oid_, "className"), fieldName);
                 // Update attr for next level (PyObject_GenericGetAttr) in case.
-                Py_XDECREF(attr);
+                // Py_XDECREF(attr);
                 attr = PyString_FromString(field);
+                new_attr = 1;
             }
         }
         if (type.empty() || !isValueField){
-            return PyObject_GenericGetAttr((PyObject*)self, attr);            
+            _ret = PyObject_GenericGetAttr((PyObject*)self, attr);
+            if (new_attr){
+                Py_DECREF(attr);
+            }
+            return _ret;
         }
         ftype = shortType(type);
         if (!ftype){
-            return PyObject_GenericGetAttr((PyObject*)self, attr);
+            _ret = PyObject_GenericGetAttr((PyObject*)self, attr);
+            if (new_attr){
+                Py_DECREF(attr);
+            }
+            return _ret;
         }
-                 fieldName= string(field);
+        fieldName= string(field);
         switch(ftype){
             case 's': {
                 string _s = Field<string>::get(self->oid_, fieldName);
-                return Py_BuildValue("s", _s.c_str());
+                _ret = Py_BuildValue("s", _s.c_str());
+                break;
             }
             case 'd': {
                 double value = Field< double >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'i': {
                 int value = Field<int>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'I': {
                 unsigned int value = Field<unsigned int>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'l': {
                 long value = Field<long>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'L': {
                 long long value = Field<long long>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'k': {
                 unsigned long value = Field<unsigned long>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'K': {
                 unsigned long long value = Field<unsigned long long>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'f': {
                 float value = Field<float>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'x': {                    
                 Id value = Field<Id>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'y': {                    
                 ObjId value = Field<ObjId>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'z': {
                 PyErr_SetString(PyExc_NotImplementedError, "DataId handling not implemented yet.");
-                return NULL;
+                _ret = NULL;
+                break;
             }
             case 'D': {
                 vector< double > value = Field< vector < double > >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'X': { // vector<Id>
                 vector < Id > value = Field<vector <Id> >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             } 
             case 'Y': { // vector<ObjId>
                 vector < ObjId > value = Field<vector <ObjId> >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             } 
             case 'M': {
                 vector< long > value = Field< vector <long> >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'P': {
                 vector < unsigned long > value = Field< vector < unsigned long > >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'S': {
                 vector < string > value = Field<vector <string> >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'v': {
                 vector < int > value = Field<vector <int> >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'N': {
                 vector <unsigned int > value = Field< vector < unsigned int> >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'T': { // vector<vector < unsigned int >>
                 vector < vector < unsigned int > > value = Field<vector <vector < unsigned int > > >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             } 
             case 'Q': { // vector< vector < int > >
                 vector <  vector < int >  > value = Field<vector < vector < int > > >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             } 
             case 'R': { // vector< vector < double > >
                 vector <  vector < double >  > value = Field<vector < vector < double > > >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'F': {
                 vector <float> value = Field< vector < float > >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'c': {
                 char value = Field<char>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'h': {
                 short value = Field<short>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
+                break;
             }
             case 'H': {
                 unsigned short value = Field<unsigned short>::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
             }
             case 'w': {
                 vector < short > value = Field<vector <short> >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
             }
             case 'C': {
                 vector < char > value = Field<vector <char> >::get(self->oid_, fieldName);
-                return to_py(&value, ftype);
+                _ret = to_py(&value, ftype);
             }
 
             case 'b': {
                 bool value = Field<bool>::get(self->oid_, fieldName);
                 if (value){
-                    Py_RETURN_TRUE;
+                    _ret = Py_True;
+                    Py_INCREF(Py_True);
                 } else {
-                    Py_RETURN_FALSE;
+                    _ret = Py_False;
+                    Py_INCREF(Py_False);
                 }
             }
 
             default:
-                return PyObject_GenericGetAttr((PyObject*)self, attr);
+                _ret = PyObject_GenericGetAttr((PyObject*)self, attr);
+                
         }
-        return NULL;        
+        if (new_attr){
+            Py_DECREF(attr);
+        }
+        return _ret;        
     }
 
     /**
@@ -726,7 +772,9 @@ extern "C" {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<double> _value;
                     for ( int ii = 0; ii < length; ++ii){
-                        double v = PyFloat_AsDouble(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        double v = PyFloat_AsDouble(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                     ret = Field< vector < double > >::set(self->oid_, string(field), _value);
@@ -770,7 +818,9 @@ extern "C" {
                 Py_ssize_t length = PySequence_Length(value);
                 vector<int> _value;
                 for ( int ii = 0; ii < length; ++ii){
-                    int v = PyInt_AsLong(PySequence_GetItem(value, ii));
+                    PyObject * vo = PySequence_GetItem(value, ii);
+                    int v = PyInt_AsLong(vo);
+                    Py_XDECREF(vo);
                     _value.push_back(v);
                 }
                 ret = Field< vector < int > >::set(self->oid_, string(field), _value);
@@ -783,7 +833,9 @@ extern "C" {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<short> _value;
                     for ( int ii = 0; ii < length; ++ii){
-                        short v = PyInt_AsLong(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        short v = PyInt_AsLong(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                     ret = Field< vector < short > >::set(self->oid_, string(field), _value);
@@ -798,7 +850,9 @@ extern "C" {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<long> _value;
                     for ( int ii = 0; ii < length; ++ii){
-                        long v = PyInt_AsLong(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        long v = PyInt_AsLong(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                     ret = Field< vector < long > >::set(self->oid_, string(field), _value);
@@ -812,7 +866,9 @@ extern "C" {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<unsigned int> _value;
                     for ( int ii = 0; ii < length; ++ii){
-                        unsigned int v = PyInt_AsUnsignedLongMask(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        unsigned int v = PyInt_AsUnsignedLongMask(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                     ret = Field< vector < unsigned int > >::set(self->oid_, string(field), _value);
@@ -826,7 +882,9 @@ extern "C" {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<unsigned long> _value;
                     for ( int ii = 0; ii < length; ++ii){
-                        unsigned long v = PyInt_AsUnsignedLongMask(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        unsigned long v = PyInt_AsUnsignedLongMask(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                     ret = Field< vector < unsigned long > >::set(self->oid_, string(field), _value);
@@ -840,7 +898,9 @@ extern "C" {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<float> _value;
                     for ( int ii = 0; ii < length; ++ii){
-                        float v = PyFloat_AsDouble(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        float v = PyFloat_AsDouble(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(v);
                     }
                     ret = Field< vector < float > >::set(self->oid_, string(field), _value);
@@ -854,7 +914,9 @@ extern "C" {
                     Py_ssize_t length = PySequence_Length(value);
                     vector<string> _value;
                     for ( int ii = 0; ii < length; ++ii){
-                        char * v = PyString_AsString(PySequence_GetItem(value, ii));
+                        PyObject * vo = PySequence_GetItem(value, ii);
+                        char * v = PyString_AsString(vo);
+                        Py_XDECREF(vo);
                         _value.push_back(string(v));
                     }
                     ret = Field< vector < string > >::set(self->oid_, string(field), _value);
@@ -949,10 +1011,10 @@ extern "C" {
         for ( int ii = start; ii < end; ++ii){
             _ObjId * value = PyObject_New(_ObjId, &ObjIdType);
             value->oid_ = ObjId(self->oid_.id, self->oid_.dataIndex, ii);
-            if (PyTuple_SetItem(ret, (Py_ssize_t)(ii-start), (PyObject*)value)){
+            if (PyTuple_SetItem(ret, (Py_ssize_t)(ii-start), (PyObject*)value)){ // danger - must we DECREF all prior values?
                 Py_XDECREF(ret);
-                Py_XDECREF(value);
-                PyErr_SetString(PyExc_RuntimeError, "Could assign tuple entry.");
+                // Py_XDECREF(value);
+                PyErr_SetString(PyExc_RuntimeError, "Failed to assign tuple entry.");
                 return NULL;
             }
         }
@@ -1637,6 +1699,7 @@ PyObject* setDestFinfo2(ObjId obj, string fieldName, PyObject * arg1, char type1
             }
             if (PyTuple_SetItem(pyret, (Py_ssize_t)ii, fname)){
                 Py_XDECREF(pyret);
+                // Py_DECREF(fname);
                 pyret = NULL;
                 break;
             }
@@ -1645,7 +1708,7 @@ PyObject* setDestFinfo2(ObjId obj, string fieldName, PyObject * arg1, char type1
     }
 
     PyDoc_STRVAR(moose_ObjId_getNeighbors_documentation,
-                 "getNeighbours(fieldName)\n"
+                 "getNeighbors(fieldName)\n"
                  "\n"
                  "Get the objects connected to this element by a message on specified\n"
                  "field.\n"
@@ -1676,7 +1739,8 @@ PyObject* setDestFinfo2(ObjId obj, string fieldName, PyObject * arg1, char type1
         for (unsigned int ii = 0; ii < val.size(); ++ ii ){            
             _Id * entry = PyObject_New(_Id, &IdType);
             if (!entry || PyTuple_SetItem(ret, (Py_ssize_t)ii, (PyObject*)entry)){
-                Py_XDECREF(ret);                                  
+                Py_DECREF(ret);
+                // Py_DECREF((PyObject*)entry);
                 ret = NULL;                                 
                 break;                                      
             }

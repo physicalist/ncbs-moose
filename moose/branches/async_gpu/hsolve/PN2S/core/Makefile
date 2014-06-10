@@ -18,31 +18,31 @@ endif
 TARGET = _core.o
 
 COBJS += 	ModelPack.o	\
-
+			Network.o	\
 		 
 OBJS += NetworkAnalyzer.o 
 		
-SUBDIR = 	models \
-			solvers
+SUBDIR = 	models 
 	
-MODULES = 	models/_models.o \
-			solvers/_solvers.o 
+MODULES = 	models/_models.o 
+			 
 		
 .PHONY: all
 all: $(TARGET)
 default: all
 
-ModelPack.o: ModelPack.cpp ModelPack.h solvers/SolverChannels.cpp solvers/SolverChannels.h solvers/SolverComps.cu solvers/SolverComps.h 
+ModelPack.o: ModelPack.cpp ModelPack.h models/SolverChannels.cpp models/SolverChannels.h models/SolverComps.cu models/SolverComps.h 
 NetworkAnalyzer.o: NetworkAnalyzer.cpp NetworkAnalyzer.h
+Network.o: Network.cpp Network.h 
 
 $(TARGET): $(OBJS) $(COBJS) $(SUBDIR) 
 	$(LD) -r -o  $(TARGET) $(OBJS) $(COBJS) $(MODULES)
 	 
 $(OBJS):
-	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg -I../extra $< -c 
+	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg -I../libs $< -c 
 	
 $(COBJS):
-	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fopenmp -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30  -x cu  -I../extra   
+	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fopenmp -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30  -x cu  -I../libs   
 
 .PHONY: clean
 $(SUBDIR): force
