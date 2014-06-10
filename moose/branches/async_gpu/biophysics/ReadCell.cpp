@@ -12,6 +12,7 @@
 #include "ReadCell.h"
 #include "../utility/utility.h"
 #include "../utility/numutil.h"
+#include "CompartmentBase.h"
 #include "Compartment.h"
 #include "SymCompartment.h"
 #include <fstream>
@@ -493,7 +494,7 @@ Id ReadCell::buildCompartment(
 			// Now find all sibling compartments on the same parent.
 			// They must be connected up using 'sibling'.
 			vector< Id > sibs;
-			parentId.element()->getNeighbours( sibs, raxial2OutFinfo );
+			parentId.element()->getNeighbors( sibs, raxial2OutFinfo );
 			// Later put in the soma as a sphere, with its special msgs.
 			shell_->doAddMsg( "Single",
 				parentId, "distal", compt, "proximal" );
@@ -999,9 +1000,11 @@ void ReadCell::addChannelMessage( Id chan )
 		// to set up. So I just bail.
 		if ( src.bad() || dest.bad()) {
 #ifndef NDEBUG
+				/*
 			cout << "ReadCell::addChannelMessage( " << chan.path() << 
 				"): " << name << " " << s << 
 				": Bad src " << src << " or dest " << dest << endl;
+				*/
 #endif
 			continue; 
 		}

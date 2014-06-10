@@ -15,6 +15,7 @@
 #include "HSolveActive.h"
 #include "HSolve.h"
 
+#include "PN2S_Proxy.h"
 
 //////////////////////////////////////////////////////////////////////
 // Mapping global Id to local index.
@@ -60,9 +61,30 @@ void HSolve::mapIds()
 //////////////////////////////////////////////////////////////////////
 // HSolvePassive interface.
 //////////////////////////////////////////////////////////////////////
+#define CHECK_SET_PN2S( NAME )				\
+do{											\
+	if(isMasterHSolve_)						\
+	{										\
+		PN2S_Proxy::setValue				\
+			(id, value, NAME);				\
+		return;								\
+	}										\
+}while(0)
+
+#define CHECK_GET_PN2S( NAME )				\
+do{											\
+	if(isMasterHSolve_)						\
+	{										\
+		return PN2S_Proxy::getValue			\
+				(id, NAME);					\
+	}										\
+}while(0)
+
 
 double HSolve::getVm( Id id ) const
 {
+//	CHECK_GET_PN2S(PN2S_Proxy::VM_FIELD);
+
     assert(this);
     unsigned int index = localIndex( id );
     assert( index < V_.size() );
@@ -71,13 +93,17 @@ double HSolve::getVm( Id id ) const
 
 void HSolve::setVm( Id id, double value )
 {
-    unsigned int index = localIndex( id );
+	CHECK_SET_PN2S(PN2S_Proxy::VM_FIELD);
+
+	unsigned int index = localIndex( id );
     assert( index < V_.size() );
     V_[ index ] = value;
 }
 
 double HSolve::getCm( Id id ) const
 {
+	CHECK_GET_PN2S(PN2S_Proxy::CM_FIELD);
+
     unsigned int index = localIndex( id );
     assert( index < tree_.size() );
     return tree_[ index ].Cm;
@@ -85,6 +111,8 @@ double HSolve::getCm( Id id ) const
 
 void HSolve::setCm( Id id, double value )
 {
+	CHECK_SET_PN2S(PN2S_Proxy::CM_FIELD);
+
     unsigned int index = localIndex( id );
     assert( index < tree_.size() );
     // Also update data structures used for calculations.
@@ -93,6 +121,8 @@ void HSolve::setCm( Id id, double value )
 
 double HSolve::getEm( Id id ) const
 {
+	CHECK_GET_PN2S(PN2S_Proxy::EM_FIELD);
+
     unsigned int index = localIndex( id );
     assert( index < tree_.size() );
     return tree_[ index ].Em;
@@ -100,6 +130,8 @@ double HSolve::getEm( Id id ) const
 
 void HSolve::setEm( Id id, double value )
 {
+	CHECK_SET_PN2S(PN2S_Proxy::EM_FIELD);
+
     unsigned int index = localIndex( id );
     assert( index < tree_.size() );
     // Also update data structures used for calculations.
@@ -108,6 +140,8 @@ void HSolve::setEm( Id id, double value )
 
 double HSolve::getRm( Id id ) const
 {
+	CHECK_GET_PN2S(PN2S_Proxy::RM_FIELD);
+
     unsigned int index = localIndex( id );
     assert( index < tree_.size() );
     return tree_[ index ].Rm;
@@ -115,6 +149,8 @@ double HSolve::getRm( Id id ) const
 
 void HSolve::setRm( Id id, double value )
 {
+	CHECK_SET_PN2S(PN2S_Proxy::RM_FIELD);
+
     unsigned int index = localIndex( id );
     assert( index < tree_.size() );
     // Also update data structures used for calculations.
@@ -123,6 +159,8 @@ void HSolve::setRm( Id id, double value )
 
 double HSolve::getRa( Id id ) const
 {
+	CHECK_GET_PN2S(PN2S_Proxy::RA_FIELD);
+
     unsigned int index = localIndex( id );
     assert( index < tree_.size() );
     return tree_[ index ].Ra;
@@ -130,6 +168,8 @@ double HSolve::getRa( Id id ) const
 
 void HSolve::setRa( Id id, double value )
 {
+	CHECK_SET_PN2S(PN2S_Proxy::RA_FIELD);
+
     unsigned int index = localIndex( id );
     assert( index < tree_.size() );
     tree_[ index ].initVm = value;
@@ -137,6 +177,8 @@ void HSolve::setRa( Id id, double value )
 
 double HSolve::getInitVm( Id id ) const
 {
+	CHECK_GET_PN2S(PN2S_Proxy::INIT_VM_FIELD);
+
     unsigned int index = localIndex( id );
     assert( index < tree_.size() );
     return tree_[ index ].initVm;
@@ -144,6 +186,8 @@ double HSolve::getInitVm( Id id ) const
 
 void HSolve::setInitVm( Id id, double value )
 {
+	CHECK_SET_PN2S(PN2S_Proxy::INIT_VM_FIELD);
+
     unsigned int index = localIndex( id );
     assert( index < tree_.size() );
     tree_[ index ].initVm = value;
@@ -179,6 +223,8 @@ double HSolve::getIa( Id id ) const
 
 double HSolve::getInject( Id id ) const
 {
+	CHECK_GET_PN2S(PN2S_Proxy::INJECT_FIELD);
+
     unsigned int index = localIndex( id );
     // Not assert( index < inject_.size() ), because inject_ is a map.
     assert( index < nCompt_ );
@@ -194,6 +240,7 @@ double HSolve::getInject( Id id ) const
 
 void HSolve::setInject( Id id, double value )
 {
+	CHECK_SET_PN2S(PN2S_Proxy::INJECT_FIELD);
     unsigned int index = localIndex( id );
     // Not assert( index < inject_.size() ), because inject_ is a map.
     assert( index < nCompt_ );
@@ -235,10 +282,11 @@ void HSolve::addInject( Id id, double value )
 
 void HSolve::addGkEk( Id id, double Gk, double Ek )
 {
-    unsigned int index = localIndex( id );
-    assert( 2 * index + 1 < externalCurrent_.size() );
-    externalCurrent_[ 2 * index ] += Gk;
-    externalCurrent_[ 2 * index + 1 ] += Gk * Ek;
+	//TODO:: NO
+//    unsigned int index = localIndex( id );
+//    assert( 2 * index + 1 < externalCurrent_.size() );
+//    externalCurrent_[ 2 * index ] += Gk;
+//    externalCurrent_[ 2 * index + 1 ] += Gk * Ek;
 }
 
 void HSolve::setPowers(

@@ -262,7 +262,6 @@ NeuroMesh& NeuroMesh::operator=( const NeuroMesh& other )
 	nodeIndex_ = other.nodeIndex_;
 	vs_ = other.vs_;
 	area_ = other.area_;
-	volume_ = other.volume_;
 	diffLength_ = other.diffLength_;
 	cell_ = other.cell_;
 	separateSpines_ = other.separateSpines_;
@@ -384,7 +383,7 @@ Id tryParent( Id id, const string& msgName )
 	if ( !finfo )
 		return Id();
 	vector< Id > ret;
-	id.element()->getNeighbours( ret, finfo );
+	id.element()->getNeighbors( ret, finfo );
 	assert( ret.size() <= 1 );
 	if ( ret.size() == 1 )
 		return ret[0];
@@ -554,15 +553,17 @@ void NeuroMesh::setCellPortion( const Eref& e,
 
 void NeuroMesh::separateOutSpines( const Eref& e )
 {
-		/*
 		vector< Id > ids;
-		e.element()->getNeighbours( ids, spineListOut() );
+		/*
+		e.element()->getNeighbors( ids, spineListOut() );
 		if ( ids.size() > 0 ) {
 			SetGet4< Id, vector< Id >, vector< Id >, 
 					vector< unsigned int > >::set( 
 					ids[0], "spineList", cell_, shaft_, head_, parent_ );
 		}
-		// spineListOut()->send( e, thread, cell_, shaft_, head_, parent_ );
+		*/
+		spineListOut()->send( e, cell_, shaft_, head_, parent_ );
+
 		vector< double > ret;
 		vector< double > psdCoords;
 		vector< unsigned int > index( head_.size(), 0 );
@@ -577,12 +578,13 @@ void NeuroMesh::separateOutSpines( const Eref& e )
 				index[i] = i;
 			}
 			ids.clear();
-			e.element()->getNeighbours( ids, psdListOut() );
-			// psdListOut()->send( e, thread, cell_, psdCoords, index );
+			e.element()->getNeighbors( ids, psdListOut() );
+			psdListOut()->send( e, cell_, psdCoords, index );
+			/*
 			SetGet3< Id, vector< double >, vector< unsigned int > >::set( 
 					ids[0], "psdList", cell_, psdCoords, index );
+					*/
 		}
-		*/
 }
 
 /** 
@@ -662,7 +664,7 @@ vector< unsigned int > NeuroMesh::getParentVoxel() const
 	return parentVoxel_;
 }
 
-const vector< double >& NeuroMesh::getVoxelVolume() const
+const vector< double >& NeuroMesh::vGetVoxelVolume() const
 {
 	return vs_;
 }
@@ -675,6 +677,35 @@ const vector< double >& NeuroMesh::getVoxelArea() const
 const vector< double >& NeuroMesh::getVoxelLength() const
 {
 	return length_;
+}
+
+double NeuroMesh::vGetEntireVolume() const
+{
+	double ret = 0.0;
+	for ( vector< double >::const_iterator i = 
+					vs_.begin(); i != vs_.end(); ++i )
+		ret += *i;
+	return ret;
+}
+
+bool NeuroMesh::vSetVolumeNotRates( double volume )
+{
+	assert( parentVoxel_.size() == nodeIndex_.size() );
+	assert( parentVoxel_.size() == 1 );
+	assert( vs_.size() == 1 );
+	if ( parentVoxel_.size() > 1 ) // Can't handle multicompartments yet.
+		return false;
+	NeuroNode& n = nodes_[0];
+	double oldvol = n.volume( nodes_[0] );
+	double scale = pow( volume / oldvol, 1.0/3.0 );
+	n.setLength( n.getLength() * scale );
+	n.setDia( n.getDia() * scale );
+	vs_[0] *= volume / oldvol;
+	area_[0] *= scale * scale;
+	length_[0] *= scale;
+	diffLength_ = length_[0];
+
+	return true;
 }
 
 // Deprecated
@@ -694,17 +725,17 @@ vector< Id > spineVec( const vector< Id >& head )
 		vector< Id > ret;
 		const Element* e = i->element();
 		if ( e->cinfo() == ccinfo ) {
-			if ( e->getNeighbours( ret, axialFinfo ) ) {
+			if ( e->getNeighbors( ret, axialFinfo ) ) {
 				spineMap[ *i ] = ret[0];
-			} else if ( e->getNeighbours( ret, raxialFinfo ) ) {
+			} else if ( e->getNeighbors( ret, raxialFinfo ) ) {
 				spineMap[ *i ] = ret[0];
 			} else {
 				assert( 0 );
 			}
 		} else if ( e->cinfo() == scinfo ) {
-			if ( e->getNeighbours( ret, r2Finfo ) ) {
+			if ( e->getNeighbors( ret, r2Finfo ) ) {
 				spineMap[ *i ] = ret[0];
-			} else if ( e->getNeighbours( ret, r1Finfo ) ) {
+			} else if ( e->getNeighbors( ret, r1Finfo ) ) {
 				spineMap[ *i ] = ret[0];
 			} else {
 				assert( 0 );
@@ -735,19 +766,19 @@ Id getSpineParent( Id spine, Id head )
 	Element* se = spine.element();
 	vector< Id > ret;
 	if ( se->cinfo() == ccinfo ) {
-		if ( se->getNeighbours( ret, axialFinfo ) ) {
+		if ( se->getNeighbors( ret, axialFinfo ) ) {
 			if ( ret[0] != head ) {
 				pa = ret[0];
-			} else if ( se->getNeighbours( ret, raxialFinfo ) ) {
+			} else if ( se->getNeighbors( ret, raxialFinfo ) ) {
 				assert( ret[0] != head );
 				pa = ret[0];
 			} 
 		}
 	} else if ( se->cinfo() == scinfo ) {
-		if ( se->getNeighbours( ret, r2Finfo ) ) {
+		if ( se->getNeighbors( ret, r2Finfo ) ) {
 			if ( ret[0] != head ) {
 				pa = ret[0];
-			} else if ( se->getNeighbours( ret, r1Finfo ) ) {
+			} else if ( se->getNeighbors( ret, r1Finfo ) ) {
 				assert( ret[0] != head );
 				pa = ret[0];
 			} 
@@ -862,7 +893,7 @@ void NeuroMesh::innerHandleRequestMeshStats( const Eref& e,
 		const SrcFinfo2< unsigned int, vector< double > >* meshStatsFinfo
 	)
 {
-	vector< double > ret( volume_ / nodeIndex_.size() ,1 );
+	vector< double > ret( vGetEntireVolume() / nodeIndex_.size() ,1 );
 	meshStatsFinfo->send( e, 1, ret );
 }
 

@@ -412,7 +412,7 @@ void CubeMesh::updateCoords()
 	*/
 	fillThreeDimSurface();
 
-	volume_ = ( x1_ - x0_ ) * ( y1_ - y0_ ) * ( z1_ - z0_ );
+	// volume_ = ( x1_ - x0_ ) * ( y1_ - y0_ ) * ( z1_ - z0_ );
 	assert( size >= 0 );
 
 	buildStencil();
@@ -744,6 +744,11 @@ void CubeMesh::innerHandleNodeInfo(
 		*/
 }
 
+double CubeMesh::vGetEntireVolume() const
+{
+	return fabs( (x1_ - x0_) * (y1_ - y0_) * (z1_ - z0_) );
+}
+
 /////////////////////////////////////////////////////////////////////////
 // Utility function to tell target nodes that something has happened.
 /////////////////////////////////////////////////////////////////////////
@@ -928,10 +933,11 @@ vector< unsigned int > CubeMesh::getParentVoxel() const
 	return ret;
 }
 
-const vector< double >& CubeMesh::getVoxelVolume() const
+const vector< double >& CubeMesh::vGetVoxelVolume() const
 {
 	static vector< double > vol;
-	assert( 0 ); // Not yet operational
+	vol.clear();
+	vol.resize( nx_ * ny_ * nz_, dx_ * dy_ * dz_ );
 	return vol;
 }
 
@@ -949,6 +955,20 @@ const vector< double >& CubeMesh::getVoxelLength() const
 	return length;
 }
 
+bool CubeMesh::vSetVolumeNotRates( double vol ) 
+{
+	// Leave x0,y0.z0 and nx,ny,nz the same. Do NOT update any rates.
+	double oldvol = vGetEntireVolume();
+	double linscale = pow( vol / oldvol , 1.0 / 3.0 );
+	x1_ *= linscale;
+	y1_ *= linscale;
+	z1_ *= linscale;
+	dx_ *= linscale;
+	dy_ *= linscale;
+	dz_ *= linscale;
+
+	return true;
+}
 
 //////////////////////////////////////////////////////////////////
 
@@ -1300,7 +1320,7 @@ void setIntersectVoxel(
  * then puts each of the extracted terms into the ret vector. There is
  * a minor efficiency for one and two diffusion terms as they are
  * encoded within the intersect vector. Higher-order surface alignments
- * require an in-line scan of neighbouring voxels.
+ * require an in-line scan of neighboring voxels.
  * In all casesl the function inserts a flag indicating surface direction
  * into the diffScale
  * field of the VoxelJunction. 0 = x; 1 = y; 2 = z.

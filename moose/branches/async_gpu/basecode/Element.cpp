@@ -630,6 +630,32 @@ unsigned int Element::getMsgTargetAndFunctions( DataId srcDataId,
 	return tgt.size();
 }
 
+vector< ObjId > Element::getMsgTargets( DataId srcDataId,
+				const SrcFinfo* finfo  ) const
+{
+	assert( finfo ); // would like to check that finfo is on this.
+	assert( srcDataId < this->numData() );
+
+	vector< ObjId > ret;
+	Eref er( const_cast< Element* >( this ), srcDataId );
+
+	const vector< MsgDigest >&md = er.msgDigest( finfo->getBindIndex() );
+	for ( vector< MsgDigest >::const_iterator
+		i = md.begin(); i != md.end(); ++i ) {
+		for ( vector< Eref >::const_iterator
+			j = i->targets.begin(); j != i->targets.end(); ++j ) {
+				if ( j->dataIndex() == ALLDATA ) {
+					for ( unsigned int k = 0; 
+									k < j->element()->numData(); ++k )
+						ret.push_back( ObjId( j->id(), k ) );
+				} else {
+					ret.push_back( j->objId() );
+				}
+		}
+	}
+	return ret;
+}
+
 unsigned int Element::getInputs( vector< Id >& ret, const DestFinfo* finfo )
 	const
 {
@@ -652,7 +678,7 @@ unsigned int Element::getInputs( vector< Id >& ret, const DestFinfo* finfo )
 	return ret.size() - oldSize;
 }
 
-unsigned int Element::getNeighbours( vector< Id >& ret, const Finfo* finfo )
+unsigned int Element::getNeighbors( vector< Id >& ret, const Finfo* finfo )
 	const
 {
 	assert( finfo );

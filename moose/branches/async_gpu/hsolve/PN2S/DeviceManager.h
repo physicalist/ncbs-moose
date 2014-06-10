@@ -23,7 +23,7 @@ class DeviceManager
 public:
 	DeviceManager();
 	virtual ~DeviceManager();
-	Error_PN2S Reinit(vector<models::Model<CURRENT_TYPE> > &m, double dt);
+	Error_PN2S Reinit(vector<models::Model > &m, double dt);
 	void Process();
 	vector<Device> _devices; //TODO: Should be private
 private:

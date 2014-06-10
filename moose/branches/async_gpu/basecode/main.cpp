@@ -59,8 +59,8 @@ extern void testHSolve();
 // extern void testGeom();
 extern void testMesh();
 // extern void testSimManager();
-// extern void testSigNeur();
-// extern void testSigNeurProcess();
+extern void testSigNeur();
+extern void testSigNeurProcess();
 
 extern unsigned int initMsgManagers();
 extern void destroyMsgManagers();
@@ -198,7 +198,12 @@ Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests,
 		}
 	}
 	if ( myNode == 0 ) 
-		cout << "on node " << myNode << ", numNodes = " << numNodes << ", numCores = " << numCores << endl;
+        {
+#ifndef QUIET_MODE
+		cout << "on node " << myNode << ", numNodes = " 
+                    << numNodes << ", numCores = " << numCores << endl;
+#endif
+        }
 
 	Id shellId;
 	Element* shelle = 
@@ -278,10 +283,10 @@ void nonMpiTests( Shell* s )
 //		testKsolveProcess();
 //		testBiophysics();
 //		testDiffusion();
-                testHSolve();
+                //testHSolve();
 		// testGeom();
 		testMesh();
-		// testSigNeur();
+		testSigNeur();
 #ifdef USE_SMOLDYN
 		// testSmoldyn();
 #endif
@@ -303,7 +308,7 @@ void processTests( Shell* s )
 	testBiophysicsProcess();
 	// testKineticSolversProcess();
 	// testSimManager();
-	// testSigNeurProcess();
+	testSigNeurProcess();
 #endif
 }
 

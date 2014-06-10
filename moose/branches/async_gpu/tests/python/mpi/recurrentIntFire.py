@@ -3,13 +3,13 @@ import random
 import time
 from numpy import random as nprand
 import sys
-sys.path.append('../../../python')
+sys.path.append('/home/subha/src/moose_async13/python')
 import moose
 
 def make_network():
 	size = 1024
 	timestep = 0.2
-	runtime = 200.0
+	runtime = 100.0
 	delayMin = timestep
 	delayMax = 4
 	weightMax = 0.02

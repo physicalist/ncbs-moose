@@ -516,6 +516,7 @@ void Clock::handleStep( const Eref& e, unsigned int numSteps )
 	}
 	buildTicks( e );
 	assert( currentStep_ == nSteps_ );
+	assert( activeTicks_.size() == activeTicksMap_.size() );
 	nSteps_ += numSteps;
 	runTime_ = nSteps_ * dt_;
 	for ( isRunning_ = true;
@@ -529,8 +530,9 @@ void Clock::handleStep( const Eref& e, unsigned int numSteps )
 			activeTicks_.begin(); j != activeTicks_.end(); ++j ) {
 			if ( endStep % *j == 0 ) {
 				info_.dt = *j * dt_;
-				processVec()[*k++]->send( e, &info_ );
+				processVec()[*k]->send( e, &info_ );
 			}
+			++k;
 		}
 	}
 	info_.dt = dt_;
@@ -563,3 +565,28 @@ void Clock::handleReinit( const Eref& e )
 	info_.dt = dt_;
 	doingReinit_ = false;
 }
+
+/*
+ * Useful function, only I don't need it yet. Was implemented for Dsolve
+double Dsolve::findDt( const Eref& e )
+{
+	// Here is the horrible stuff to traverse the message to get the dt.
+	const Finfo* f = Dsolve::initCinfo()->findFinfo( "reinit" );
+	const DestFinfo* df = dynamic_cast< const DestFinfo* >( f );
+	assert( df );
+	unsigned int fid = df->getFid();
+	ObjId caller = e.element()->findCaller( fid );
+	const Msg* m = Msg::getMsg( caller );
+	assert( m );
+	vector< string > src = m->getSrcFieldsOnE1();
+	assert( src.size() > 0 );
+	string temp = src[0].substr( src[0].length() - 1 ); // reinitxx
+	unsigned int tick = atoi( temp.c_str() );
+	assert( tick < 10 );
+	Id clock( 1 );
+	assert( clock.element() == m->e1() );
+	double dt = LookupField< unsigned int, double >::
+			get( clock, "tickDt", tick );
+	return dt;
+}
+*/

@@ -10,6 +10,8 @@
 #ifndef _SHELL_H
 #define _SHELL_H
 
+#include "../basecode/global.h"
+
 enum AssignmentType { SINGLE, VECTOR, REPEAT };
 
 // These Finfo objects are exposed to other classes for convenience in test cases and other functions.
@@ -590,6 +592,7 @@ class Shell
 		 * actual operation to the 'process' call for a clean reinit.
 		 */
 		static bool doReinit_;
+
 		/**
 		 * Simulation run time
 		 */

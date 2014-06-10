@@ -12,6 +12,7 @@
 #include "header.h"
 #include "../shell/Shell.h"
 #include "../randnum/randnum.h"
+#include "CompartmentBase.h"
 #include "Compartment.h"
 /*
 #include "HHGate.h"
@@ -20,12 +21,12 @@
 */
 extern void testCompartment(); // Defined in Compartment.cpp
 extern void testCompartmentProcess(); // Defined in Compartment.cpp
+extern void testMarkovRateTable(); //Defined in MarkovRateTable.cpp
+extern void testVectorTable();	//Defined in VectorTable.cpp
 /*
 extern void testSpikeGen(); // Defined in SpikeGen.cpp
 extern void testCaConc(); // Defined in CaConc.cpp
 extern void testNernst(); // Defined in Nernst.cpp
-extern void testMarkovRateTable(); //Defined in MarkovRateTable.cpp
-extern void testVectorTable();	//Defined in VectorTable.cpp
 extern void testMarkovSolverBase();	//Defined in MarkovSolverBase.cpp
 extern void testMarkovSolver();		//Defined in MarkovSolver.cpp
 */
@@ -209,6 +210,10 @@ void testIntFireNetwork( unsigned int runsteps = 5 )
 	shell->doDelete( i2 );
 }
 
+static const double EREST = -0.07;
+
+
+
 #if 0
 void testHHGateCreation()
 {
@@ -306,8 +311,6 @@ void testHHGateCreation()
 	cout << "." << flush;
 }
 
-
-static const double EREST = -0.07;
 
 // AP measured in millivolts wrt EREST, at a sample interval of 
 // 100 usec
@@ -656,7 +659,7 @@ void testHHChannel()
 
 	Id tabId = shell->doCreate( "Table", nid, "tab", dims );
 	MsgId mid = shell->doAddMsg( "Single", ObjId( tabId, 0 ), 
-					"requestData", ObjId( comptId, 0 ), "get_Vm" );
+					"requestOut", ObjId( comptId, 0 ), "get_Vm" );
 	assert( mid != Msg::bad );
 	//////////////////////////////////////////////////////////////////////
 	// Schedule, Reset, and run.
@@ -680,7 +683,7 @@ void testHHChannel()
 	//////////////////////////////////////////////////////////////////////
 	// Check output
 	//////////////////////////////////////////////////////////////////////
-	vector< double > vec = Field< vector< double > >::get( tabId, "vec" );
+	vector< double > vec = Field< vector< double > >::get( tabId, "vector" );
 	// assert( vec.size() == 101 );
 	double delta = 0;
 	for ( unsigned int i = 0; i < 100; ++i ) {
@@ -696,14 +699,15 @@ void testHHChannel()
 	cout << "." << flush;
 }
 
+#endif //#if 0
 /////////////////////////////////////
 // Markov Channel unit tests.
 ////////////////////////////////////
 
 //Sample current obtained from channel in Chapter 20, Sakmann & Neher, Pg. 603.
 //The current is sampled at intervals of 10 usec.
-static double sampleCurrent[] = 
-   {0.0000000e+00, 3.0005743e-26, 1.2004594e-25, 2.7015505e-25, 4.8036751e-25, 7.5071776e-25,
+static double sampleCurrent[] = {0.0, // This is to handle the value sent by ChanBase on reinit
+   0.0000000e+00, 3.0005743e-26, 1.2004594e-25, 2.7015505e-25, 4.8036751e-25, 7.5071776e-25,
    1.0812402e-24, 1.4719693e-24, 1.9229394e-24, 2.4341850e-24, 3.0057404e-24, 3.6376401e-24,
    4.3299183e-24, 5.0826095e-24, 5.8957481e-24, 6.7693684e-24, 7.7035046e-24, 8.6981913e-24,
    9.7534627e-24, 1.0869353e-23, 1.2045897e-23, 1.3283128e-23, 1.4581082e-23, 1.5939791e-23,
@@ -724,34 +728,33 @@ static double sampleCurrent[] =
 void testMarkovGslSolver()
 {
 	Shell* shell = reinterpret_cast< Shell* >( ObjId( Id(), 0 ).data() );
-	vector< int > dims( 1, 1 );
+        unsigned size = 1;
 
-	Id nid = shell->doCreate( "Neutral", Id(), "n", dims );
-	Id comptId = shell->doCreate( "Compartment", nid, "compt", dims );
-	Id rateTabId = shell->doCreate( "MarkovRateTable", comptId, "rateTab", dims ); 
-	Id mChanId = shell->doCreate( "MarkovChannel", comptId, "mChan", dims );
-	Id gslSolverId = shell->doCreate( "MarkovGslSolver", comptId, "gslSolver", dims );
+	Id nid = shell->doCreate( "Neutral", Id(), "n", size );
+	Id comptId = shell->doCreate( "Compartment", nid, "compt", size );
+	Id rateTabId = shell->doCreate( "MarkovRateTable", comptId, "rateTab", size ); 
+	Id mChanId = shell->doCreate( "MarkovChannel", comptId, "mChan", size );
+	Id gslSolverId = shell->doCreate( "MarkovGslSolver", comptId, "gslSolver", size );
 
-	Id tabId = shell->doCreate( "Table", nid, "tab", dims );
+	Id tabId = shell->doCreate( "Table", nid, "tab", size );
 
-	MsgId mid = shell->doAddMsg( "Single", ObjId( comptId ), "channel", 
+	ObjId mid = shell->doAddMsg( "Single", ObjId( comptId ), "channel", 
 			ObjId( mChanId ), "channel" );
-	assert( mid != Msg::bad );
+	assert( !mid.bad() );
 
 	mid = shell->doAddMsg( "Single", ObjId( comptId ), "channel",
 			ObjId( rateTabId ), "channel" );
-	assert( mid != Msg::bad );
-
-	mid = shell->doAddMsg( "Single", ObjId( gslSolverId ), "stateOut", 
-			ObjId( mChanId ), "handlestate" );
-	assert( mid != Msg::bad );
+	assert( !mid.bad() );
+        mid = shell->doAddMsg( "Single", ObjId( gslSolverId ), "stateOut", 
+			ObjId( mChanId ), "handleState" );
+	assert( !mid.bad() );
 
 	mid = shell->doAddMsg("Single", ObjId( rateTabId ), "instratesOut",
 			ObjId( gslSolverId ), "handleQ" ); 
 
-	mid = shell->doAddMsg( "Single", ObjId( tabId, 0 ), "requestData",
-			ObjId( mChanId, 0 ), "get_Ik" );
-	assert( mid != Msg::bad );
+	mid = shell->doAddMsg( "Single", ObjId( tabId, 0 ), "requestOut",
+			ObjId( mChanId, 0 ), "getIk" );
+	assert( !mid.bad() );
 
 	//////////////////////////////////////////////////////////////////////
 	// set up compartment properties
@@ -774,19 +777,19 @@ void testMarkovGslSolver()
 	////////////////////////////////
 	
 	//Setting number of states, number of open states.
-	Field< unsigned int >::set( mChanId, "numstates", 5 );
-	Field< unsigned int >::set( mChanId, "numopenstates", 2 );
+	Field< unsigned int >::set( mChanId, "numStates", 5 );
+	Field< unsigned int >::set( mChanId, "numOpenStates", 2 );
 
 	//Setting initial state of system.  
 	vector< double > initState;
 	
 	initState.push_back( 0.0 );
-  initState.push_back( 0.0 );
-  initState.push_back( 0.0 );
+        initState.push_back( 0.0 );
+        initState.push_back( 0.0 );
  	initState.push_back( 0.0 );
  	initState.push_back( 1.0 );
 
-	Field< vector< double > >::set( mChanId, "initialstate", initState );
+	Field< vector< double > >::set( mChanId, "initialState", initState );
 
 	vector< string > stateLabels;
 
@@ -853,10 +856,14 @@ void testMarkovGslSolver()
 	shell->doReinit( );
 	shell->doStart( 1.0e-3 );
 
-	vector< double > vec = Field< vector< double > >::get( tabId, "vec" );
+	vector< double > vec = Field< vector< double > >::get( tabId, "vector" );
 
-	for ( unsigned i = 0; i < 101; ++i )
-		assert( doubleEq( sampleCurrent[i] * 1e25, vec[i] * 1e25 ) );
+	for ( unsigned i = 0; i < 101; ++i ){
+            if (!doubleEq( sampleCurrent[i] * 1e25, vec[i] * 1e25 )){
+                cout << "testMarkovGslSolver: sample=" << sampleCurrent[i]*1e25 << " calculated=" << vec[i]*1e25 << endl;
+            }
+            assert( doubleEq( sampleCurrent[i] * 1e25, vec[i] * 1e25 ) );
+        }
 	//Currents involved here are incredibly small. Scaling them up is necessary
 	//for the doubleEq function to do its job.
 
@@ -882,34 +889,34 @@ void testMarkovGslSolver()
 void testMarkovChannel()
 {
 	Shell* shell = reinterpret_cast< Shell* >( ObjId( Id(), 0 ).data() );
-	vector< int > dims( 1, 1 );
+	unsigned size = 1;
 	
-	Id nid = shell->doCreate( "Neutral", Id(), "n", dims ); 
+	Id nid = shell->doCreate( "Neutral", Id(), "n", size ); 
 
-	Id gslComptId = shell->doCreate( "Compartment", nid, "gslCompt", dims );
+	Id gslComptId = shell->doCreate( "Compartment", nid, "gslCompt", size );
 	Id exptlComptId = shell->doCreate( "Compartment", nid, 	
-																		 "exptlCompt", dims );
+                                           "exptlCompt", size );
 
 	Id gslRateTableId = shell->doCreate( "MarkovRateTable", gslComptId, 
-																			 "gslRateTable", dims );
+                                             "gslRateTable", size );
 	Id exptlRateTableId = shell->doCreate( "MarkovRateTable", exptlComptId, 
-																			 "exptlRateTable", dims );
+                                               "exptlRateTable", size );
 
 	Id mChanGslId = shell->doCreate( "MarkovChannel", gslComptId, 
-																   "mChanGsl", dims );
+                                         "mChanGsl", size );
 	Id mChanExptlId = shell->doCreate( "MarkovChannel", exptlComptId, 
-																		 "mChanExptl", dims );
+                                           "mChanExptl", size );
 
 	Id gslSolverId = shell->doCreate( "MarkovGslSolver", gslComptId, 
-																		"gslSolver", dims );
+                                          "gslSolver", size );
 	Id exptlSolverId = shell->doCreate( "MarkovSolver", exptlComptId, 
-																			"exptlSolver", dims );
+                                            "exptlSolver", size );
 
-	Id gslTableId = shell->doCreate( "Table", nid, "gslTable", dims );
-	Id exptlTableId = shell->doCreate( "Table", nid, "exptlTable", dims );
+	Id gslTableId = shell->doCreate( "Table", nid, "gslTable", size );
+	Id exptlTableId = shell->doCreate( "Table", nid, "exptlTable", size );
 	
-	Id int2dTableId = shell->doCreate( "Interpol2D", nid, "int2dTable", dims );
-	Id vecTableId = shell->doCreate( "VectorTable", nid, "vecTable", dims );
+	Id int2dTableId = shell->doCreate( "Interpol2D", nid, "int2dTable", size );
+	Id vecTableId = shell->doCreate( "VectorTable", nid, "vecTable", size );
 
 	vector< double > table1d;
 	vector< vector< double > > table2d;
@@ -922,13 +929,13 @@ void testMarkovChannel()
 	//Compartment sends Vm to MarkovChannel object. The MarkovChannel, 
 	//via its ChanBase base class, sends back the conductance and current through
 	//it.
-	MsgId	mid = shell->doAddMsg( "Single", ObjId( gslComptId ), "channel", 
+	ObjId mid = shell->doAddMsg( "Single", ObjId( gslComptId ), "channel", 
 			  ObjId( mChanGslId ), "channel" );
-	assert( mid != Msg::bad );
+	assert( !mid.bad() );
 
  	mid = shell->doAddMsg( "Single", ObjId( exptlComptId ), "channel", 
 			  ObjId( mChanExptlId ), "channel" );
-	assert( mid != Msg::bad );
+	assert( !mid.bad() );
 
 	////////
 	//Connecting up the MarkovGslSolver.
@@ -945,7 +952,7 @@ void testMarkovChannel()
 	//solvers.
 	mid = shell->doAddMsg( "Single", ObjId( gslComptId ), "channel",
 			ObjId( gslRateTableId ), "channel" );
-	assert( mid != Msg::bad );
+	assert( !mid.bad() );
 
 	//Connecting the MarkovRateTable with the MarkovGslSolver object.
 	//As mentioned earlier, the MarkovRateTable object sends out information
@@ -960,8 +967,8 @@ void testMarkovChannel()
 	//object will compute the expected conductance of the channel and send
 	//this information to the compartment. 
 	mid = shell->doAddMsg( "Single", ObjId( gslSolverId ), "stateOut", 
-			ObjId( mChanGslId ), "handlestate" );
-	assert( mid != Msg::bad );
+			ObjId( mChanGslId ), "handleState" );
+	assert( !mid.bad() );
 
 	//////////
 	//Connecting up the MarkovSolver class.
@@ -974,25 +981,25 @@ void testMarkovChannel()
 	//tables.
 	mid = shell->doAddMsg( "Single", ObjId( exptlComptId ), "channel", 
 			ObjId( exptlSolverId ), "channel" );
-	assert( mid != Msg::bad );						
+	assert( !mid.bad() );						
 
 	mid = shell->doAddMsg( "Single", ObjId( exptlSolverId ), "stateOut", 
-			ObjId( mChanExptlId ), "handlestate" );
-	assert( mid != Msg::bad );
+			ObjId( mChanExptlId ), "handleState" );
+	assert( !mid.bad() );
 
 	/////////
 	//Connecting up the Table objects to cross-check values.
 	////////
 
 	//Get the current values from the GSL solver based channel.
-	mid = shell->doAddMsg( "Single", ObjId( gslTableId ), "requestData", 
-				ObjId( mChanGslId ), "get_Ik" );
-	assert( mid != Msg::bad );
+	mid = shell->doAddMsg( "Single", ObjId( gslTableId ), "requestOut", 
+				ObjId( mChanGslId ), "getIk" );
+	assert( !mid.bad() );
 
 	//Get the current values from the matrix exponential solver based channel.
-	mid = shell->doAddMsg( "Single", ObjId( exptlTableId ), "requestData", 
-				ObjId( mChanExptlId ), "get_Ik" );
-	assert( mid != Msg::bad );
+	mid = shell->doAddMsg( "Single", ObjId( exptlTableId ), "requestOut", 
+				ObjId( mChanExptlId ), "getIk" );
+	assert( !mid.bad() );
 
 	////////////////////
 	//Compartment properties. Identical to ones used in testHHChannel()
@@ -1020,11 +1027,11 @@ void testMarkovChannel()
 	/////////////////
 
 	//Number of states and open states.
-	Field< unsigned int >::set( mChanGslId, "numstates", 4 );		
-	Field< unsigned int >::set( mChanExptlId, "numstates", 4 );		
+	Field< unsigned int >::set( mChanGslId, "numStates", 4 );		
+	Field< unsigned int >::set( mChanExptlId, "numStates", 4 );		
 
-	Field< unsigned int >::set( mChanGslId, "numopenstates", 1 );		
-	Field< unsigned int >::set( mChanExptlId, "numopenstates", 1 );		
+	Field< unsigned int >::set( mChanGslId, "numOpenStates", 1 );		
+	Field< unsigned int >::set( mChanExptlId, "numOpenStates", 1 );		
 
 	vector< string > stateLabels;
 
@@ -1056,8 +1063,8 @@ void testMarkovChannel()
 	initState.push_back( 0.80 ); 
 	initState.push_back( 0.00 ); 
 
-	Field< vector< double > >::set( mChanGslId, "initialstate", initState );
-	Field< vector< double > >::set( mChanExptlId, "initialstate", initState );
+	Field< vector< double > >::set( mChanGslId, "initialState", initState );
+	Field< vector< double > >::set( mChanExptlId, "initialState", initState );
 
 	//This initializes the GSL solver object.
 	SetGet1< vector< double > >::set( gslSolverId, "init", initState );	
@@ -1114,8 +1121,8 @@ void testMarkovChannel()
 	//that occurs. Hence, I create a 2D lookup table anyway but I manually
 	//set the concentration on the rate table object anyway.
 
-	Field< double >::set( gslRateTableId, "ligandconc", 24e-6 );
-	Field< double >::set( exptlRateTableId, "ligandconc", 24e-6 );
+	Field< double >::set( gslRateTableId, "ligandConc", 24e-6 );
+	Field< double >::set( exptlRateTableId, "ligandConc", 24e-6 );
 
 	Field< double >::set( int2dTableId, "xmin", -0.10 );
 	Field< double >::set( int2dTableId, "xmax", 0.10 );
@@ -1138,12 +1145,12 @@ void testMarkovChannel()
 	}
 
 	Field< vector< vector< double > > >::set( int2dTableId, "tableVector2D", 
-																table2d );
-
+                                                  table2d );
+        
 	SetGet3< unsigned int, unsigned int, Id >::set( gslRateTableId, 
-																			"set2d", 1, 3, int2dTableId ); 
+                                                        "set2d", 1, 3, int2dTableId ); 
 	SetGet3< unsigned int, unsigned int, Id >::set( exptlRateTableId, 
-																			"set2d", 1, 3, int2dTableId ); 
+                                                        "set2d", 1, 3, int2dTableId ); 
 
 	//There is only one 2D rate, so no point manually erasing the elements.
 	
@@ -1157,36 +1164,36 @@ void testMarkovChannel()
 
 	Field< vector< double > >::set( vecTableId, "table", table1d );
 	SetGet4< unsigned int, unsigned int, Id, unsigned int >::set( 
-			gslRateTableId, "set1d", 3, 1, vecTableId, 0 );
+            gslRateTableId, "set1d", 3, 1, vecTableId, 0 );
 	SetGet4< unsigned int, unsigned int, Id, unsigned int >::set( 
-			exptlRateTableId, "set1d", 3, 1, vecTableId, 0 );
+            exptlRateTableId, "set1d", 3, 1, vecTableId, 0 );
 
 	table1d.erase( table1d.begin(), table1d.end() );
 
 	//Transition from "O" to "C" i.e. r14 
 	SetGet3< unsigned int, unsigned int, double >::set( gslRateTableId,	
-									"setconst", 1, 4, 1e3 * exp( -2.847 ) ); 
+                                                            "setconst", 1, 4, 1e3 * exp( -2.847 ) ); 
 	SetGet3< unsigned int, unsigned int, double >::set( exptlRateTableId,	
-									"setconst", 1, 4, 1e3 * exp( -2.847 ) ); 
+                                                            "setconst", 1, 4, 1e3 * exp( -2.847 ) ); 
 	
 	//Transition from "B1" to "C" i.e. r24
 	SetGet3< unsigned int, unsigned int, double >::set( gslRateTableId, 	
 									"setconst", 2, 4, 1e3 * exp( -0.693 ) );
 	SetGet3< unsigned int, unsigned int, double >::set( exptlRateTableId, 	
-									"setconst", 2, 4, 1e3 * exp( -0.693 ) );
+                                                            "setconst", 2, 4, 1e3 * exp( -0.693 ) );
 
 	//Transition from "B2" to "C" i.e. r34
 	SetGet3< unsigned int, unsigned int, double >::set( gslRateTableId, 
 									"setconst", 3, 4, 1e3* exp( -3.101 ) );
 	SetGet3< unsigned int, unsigned int, double >::set( exptlRateTableId, 
-									"setconst", 3, 4, 1e3* exp( -3.101 ) );
+                                                            "setconst", 3, 4, 1e3* exp( -3.101 ) );
 
 	//Once the rate tables have been set up, we can initialize the 
 	//tables in the MarkovSolver class.
 	SetGet2< Id, double >::set( exptlSolverId, "init", exptlRateTableId, 1.0e-3 );
-	SetGet1< double >::set( exptlSolverId, "ligandconc", 24e-6 );
-	Field< vector< double > >::set( exptlSolverId, "initialstate", 
-																	initState );
+	SetGet1< double >::set( exptlSolverId, "ligandConc", 24e-6 );
+	Field< vector< double > >::set( exptlSolverId, "initialState", 
+                                        initState );
 
 	Field< double >::set( gslSolverId, "relativeAccuracy", 1e-24 );
 	Field< double >::set( gslSolverId, "absoluteAccuracy", 1e-24 );
@@ -1209,11 +1216,11 @@ void testMarkovChannel()
 	shell->doUseClock( "/n/exptlCompt/mChanExptl,/n/exptlTable", "process", 5 );
 
 	shell->doReinit();
-	shell->doReinit();
+	// shell->doReinit();// why twice? - subha
 	shell->doStart( 1.0 );
 
-	vector< double > gslVec = Field< vector< double > >::get( gslTableId, "vec" );
-	vector< double > exptlVec = Field< vector< double > >::get( exptlTableId, "vec");
+	vector< double > gslVec = Field< vector< double > >::get( gslTableId, "vector" );
+	vector< double > exptlVec = Field< vector< double > >::get( exptlTableId, "vector");
 
 	assert( gslVec.size() == 1001 );
 	assert( exptlVec.size() == 1001 );
@@ -1224,6 +1231,8 @@ void testMarkovChannel()
 	shell->doDelete( nid );
 	cout << "." << flush;
 }
+
+#if 0
 
 ///////////////////////////////////////////////////
 // Unit tests for SynChan
@@ -1278,11 +1287,11 @@ void testSynChan()
 	MsgId mid = shell->doAddMsg( "single", 
 		ObjId( sgId1, DataId( 0 ) ), "spikeOut",
 		ObjId( synId, DataId( 0 ) ), "addSpike" );
-	assert( mid != Msg::bad );
+	assert( mid != Id() );
 	mid = shell->doAddMsg( "single", 
 		ObjId( sgId2, DataId( 0 ) ), "spikeOut",
 		ObjId( synId, DataId( 1 ) ), "addSpike" );
-	assert( mid != Msg::bad );
+	assert( mid != Id() );
 	
 	ret = Field< double >::set( sgId1, "threshold", 0.0 );
 	ret = Field< double >::set( sgId1, "refractT", 1.0 );
@@ -1395,7 +1404,7 @@ void testNMDAChan()
 	MsgId mid = shell->doAddMsg( "single", 
 		ObjId( sgId1, DataId( 0 ) ), "spikeOut",
 		ObjId( synId, DataId( 0 ) ), "addSpike" );
-	assert( mid != Msg::bad );
+	assert( mid != Id() );
 	
 	ret = Field< double >::set( sgId1, "threshold", 0.0 );
 	ret = Field< double >::set( sgId1, "refractT", 1.0 );
@@ -1467,16 +1476,16 @@ void testNMDAChan()
 void testBiophysics()
 {
 	testCompartment();
+	testVectorTable();
 #if 0
+	testMarkovSolverBase();
+	testMarkovSolver();
 	testHHGateCreation();
 	testHHGateLookup();
 	testHHGateSetup();
 	testSpikeGen();
 	testCaConc();
 	testNernst();
-	testVectorTable();
-	testMarkovSolverBase();
-	testMarkovSolver();
 #endif
 }
 
@@ -1485,10 +1494,10 @@ void testBiophysicsProcess()
 {
 	testIntFireNetwork();
 	testCompartmentProcess();
+	testMarkovGslSolver();
+	testMarkovChannel();
 #if 0
 	testHHChannel();
-//	testMarkovGslSolver();
-//	testMarkovChannel();
 	testSynChan();
 #endif
 }

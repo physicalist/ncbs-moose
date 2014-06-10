@@ -34,6 +34,54 @@ void testAdaptor()
 	cout << "." << flush;
 }
 
+/// Tests the multi-input RequestField message.
+void testAdaptorRequestField()
+{
+	Shell* shell = reinterpret_cast< Shell* >( ObjId().data() );
+	Id model = shell->doCreate( "Neutral", Id(), "model", 1 );
+	Id adaptor = shell->doCreate( "Adaptor", model, "adaptor", 1 );
+	Id onepool = shell->doCreate( "Pool", model, "onepool", 1 );
+	Id twopool = shell->doCreate( "Pool", model, "twopool", 2 );
+	Id tenpool = shell->doCreate( "Pool", model, "tenpool", 10 );
+	ObjId mid = shell->doAddMsg( "Single", adaptor, "requestField", 
+					onepool, "getNInit" );
+	assert( !mid.bad() );
+	mid = shell->doAddMsg( "Single", adaptor, "requestField", 
+					ObjId( twopool, 0 ), "getNInit" );
+	assert( !mid.bad() );
+	mid = shell->doAddMsg( "Single", adaptor, "requestField", 
+					ObjId( twopool, 1 ), "getNInit" );
+	assert( !mid.bad() );
+	mid = shell->doAddMsg( "OneToAll", adaptor, "requestField", 
+					tenpool, "getNInit" );
+	assert( !mid.bad() );
+	Field< double >::set( onepool, "nInit", 1.0 );
+	Field< double >::set( ObjId( twopool, 0 ), "nInit", 20.0 );
+	Field< double >::set( ObjId( twopool, 1 ), "nInit", 30.0 );
+	for ( unsigned int i = 0; i < 10; ++i )
+		Field< double >::
+				set( ObjId( tenpool, i ), "nInit", (i + 1 ) * 100 );
+	ProcInfo p;
+	SetGet1< ProcPtr >::set( adaptor, "reinit", &p );
+	double ret = Field< double >::get( adaptor, "outputValue" );
+	assert( doubleEq( ret, ( 1.0 + 50.0 + 5500.0 )/13.0 ) );
+
+	const Finfo *f = adaptor.element()->cinfo()->findFinfo( "requestField" );
+	const SrcFinfo* sf = dynamic_cast< const SrcFinfo* >( f );
+	assert( sf );
+	vector< ObjId > temp;
+	temp = adaptor.element()->getMsgTargets( 0, sf );
+	assert ( temp.size() == 13 );
+	assert( temp[0] == ObjId( onepool, 0 ) );
+	assert( temp[1] == ObjId( twopool, 0 ) );
+	assert( temp[2] == ObjId( twopool, 1 ) );
+	for ( int i = 0; i < 10; ++i )
+		assert( temp[i + 3] == ObjId( tenpool, i ) );
+
+	shell->doDelete( model );
+	cout << "." << flush;
+}
+
 
 //////////////////////////////////////////////////////////////////////
 // Test of multiscale model setup. Model structure is as follows:
@@ -59,22 +107,22 @@ void testAdaptor()
 //
 //////////////////////////////////////////////////////////////////////
 
+#if 0
 // Defined in testBiophysics.cpp
-Id makeSquid();
+extern Id makeSquid();
 // Defined in testMesh.cpp
-Id makeSpine( Id compt, Id cell, unsigned int index, double frac, 
+extern Id makeSpine( Id compt, Id cell, unsigned int index, double frac, 
 			double len, double dia, double theta );
 
 Id makeSpineWithReceptor( Id compt, Id cell, unsigned int index, double frac )
 {
 	Shell* shell = reinterpret_cast< Shell* >( ObjId( Id(), 0 ).data() );
-	vector< int > dims( 1, 1 );
 	double spineLength = 5.0e-6;
 	double spineDia = 4.0e-6;
 	Id spineCompt = makeSpine( compt, cell, index, frac, 
 					spineLength, spineDia, 0.0 );
 
-	Id gluR = shell->doCreate( "SynChan", spineCompt, "gluR", dims.size() );
+	Id gluR = shell->doCreate( "SynChan", spineCompt, "gluR", 1 );
 	Field< double >::set( gluR, "tau1", 1e-3 );
 	Field< double >::set( gluR, "tau2", 1e-3 );
 	Field< double >::set( gluR, "Gbar", 1e-5 );
@@ -84,7 +132,7 @@ Id makeSpineWithReceptor( Id compt, Id cell, unsigned int index, double frac )
 	assert( ! mid.bad() );
 
 
-	Id caPool = shell->doCreate( "CaConc", spineCompt, "ca", dims.size() );
+	Id caPool = shell->doCreate( "CaConc", spineCompt, "ca", 1 );
 	Field< double >::set( caPool, "CaBasal", 1e-4 ); // millimolar
 	Field< double >::set( caPool, "tau", 0.01 ); // seconds
 	double B = 1.0 / ( 
@@ -814,7 +862,7 @@ Id buildAdaptorsInCubeMesh( vector< Id >& plots )
 	*/
 
 	mid = shell->doAddMsg( "OneToAll", 
-					adaptCa, "outputSrc", chemCa, "set_conc" );
+					adaptCa, "output", chemCa, "set_conc" );
 	assert( ! mid.bad() );
 	Field< double >::set( adaptCa, "outputOffset", 0.0001 ); // 100 nM
 	Field< double >::set( adaptCa, "scale", 0.05 ); // .06 to .003 mM
@@ -824,7 +872,7 @@ Id buildAdaptorsInCubeMesh( vector< Id >& plots )
 					adaptGluR, "requestField", chemGluR, "get_n" );
 	assert( ! mid.bad() );
 	mid = shell->doAddMsg( "OneToAll", 
-					adaptGluR, "outputSrc", elecGluR, "set_Gbar" );
+					adaptGluR, "output", elecGluR, "set_Gbar" );
 	assert( ! mid.bad() );
 	// max n = 100, max Gar = 
 	Field< double >::set( adaptGluR, "scale", 1e-4/100 ); // from n to pS
@@ -834,7 +882,7 @@ Id buildAdaptorsInCubeMesh( vector< Id >& plots )
 					adaptK, "requestField", chemK, "get_conc" );
 	assert( ! mid.bad() );
 	mid = shell->doAddMsg( "OneToAll", 
-					adaptK, "outputSrc", elecK, "set_Gbar" );
+					adaptK, "output", elecK, "set_Gbar" );
 	assert( ! mid.bad() );
 	Field< double >::set( adaptK, "scale", 0.3 ); // from mM to Siemens
 		// The starting Gbar is 0.0002827.
@@ -941,6 +989,7 @@ void testAdaptorsInCubeMesh()
 	shell->doDelete( nid );
 	cout << "." << flush;
 }
+#endif
 
 // This tests stuff without using the messaging.
 void testSigNeur()
@@ -951,6 +1000,7 @@ void testSigNeur()
 // This is applicable to tests that use the messaging and scheduling.
 void testSigNeurProcess()
 {
+	testAdaptorRequestField();
 	// After 2 June 2013, checkin 4579, the tests in 
 	// testSigNeurElec
 	// testChemInCubeMesh 
@@ -959,11 +1009,13 @@ void testSigNeurProcess()
 	// separate Python snippet called testSigNeur.py. These tests take
 	// too long to run in unit tests and anyway it does not test as much
 	// as generate an output that I can compare with the expected one.
+	/*
 	makeChemInNeuroMesh();
 	Id nid = makeChemInCubeMesh();
 	Shell* shell = reinterpret_cast< Shell* >( ObjId( Id(), 0 ).data() );
 	shell->doDelete( nid );
 	cout << "." << flush;
+	*/
 }
 
 #endif

@@ -5,8 +5,8 @@
 //  Original author: saeed
 ///////////////////////////////////////////////////////////
 
-#if !defined(AB1F38D16_FE78_4893_BC39_356BCBBCF345__INCLUDED_)
-#define AB1F38D16_FE78_4893_BC39_356BCBBCF345__INCLUDED_
+#pragma once
+
 #include "headers.h"
 #include "core/Solver.h"
 #include <omp.h>
@@ -21,12 +21,12 @@ public:
 
 	int id;
 	double _dt;
-	vector<ModelPack<CURRENT_TYPE,CURRENT_ARCH> > _modelPacks;
+	vector<ModelPack> _modelPacks;
 
 	Device(int _id);
 	virtual ~Device();
 
-	Error_PN2S Reinit(vector<models::Model<CURRENT_TYPE> > &m,  double dt);
+	Error_PN2S Reinit(vector<models::Model> &m,  double dt);
 	void Process();
 	Error_PN2S Setup();
 
@@ -40,5 +40,3 @@ private:
 };
 }
 
-
-#endif // !defined(AB1F38D16_FE78_4893_BC39_356BCBBCF345__INCLUDED_)

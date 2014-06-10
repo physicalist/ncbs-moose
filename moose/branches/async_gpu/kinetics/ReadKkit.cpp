@@ -39,10 +39,20 @@ unsigned int chopLine( const string& line, vector< string >& ret )
 	return ret.size();
 }
 
+string lower( const string& input )
+{
+	string ret = input;
+	for ( unsigned int i = 0; i < input.length(); ++i )
+		ret[i] = tolower( ret[i] );
+	return ret;
+}
+
 ////////////////////////////////////////////////////////////////////////
 
 ReadKkit::ReadKkit()
 	:
+	basePath_( "" ),
+	baseId_(),
 	fastdt_( 0.001 ),
 	simdt_( 0.01 ),
 	controldt_( 0.1 ),
@@ -113,11 +123,19 @@ void ReadKkit::setMoveOntoCompartment( bool v )
 Id  makeStandardElements( Id pa, const string& modelname )
 {
 	Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
-	cout << " kkit read " << pa << " " << modelname << " "<< MooseGlobal;
-	Id mgr = shell->doCreate( "Neutral", pa, modelname, 1, MooseGlobal );
-	Id kinetics = 
+	//cout << " kkit read " << pa << " " << modelname << " "<< MooseGlobal;
+	string modelPath = pa.path() + "/" + modelname;
+	if ( pa == Id() )
+		modelPath = "/" + modelname;
+	Id mgr( modelPath );
+	if ( mgr == Id() )
+		mgr = shell->doCreate( "Neutral", pa, modelname, 1, MooseGlobal );
+	Id kinetics( modelPath + "/kinetics" );
+	if ( kinetics == Id() ) {
+		kinetics = 
 		shell->doCreate( "CubeMesh", mgr, "kinetics", 1,  MooseGlobal );
 		SetGet2< double, unsigned int >::set( kinetics, "buildDefaultMesh", 1e-15, 1 );
+	}
 	assert( kinetics != Id() );
 
 	Id graphs = shell->doCreate( "Neutral", mgr, "graphs", 1, MooseGlobal);
@@ -132,6 +150,52 @@ Id  makeStandardElements( Id pa, const string& modelname )
 	assert( groups != Id() );
 	return mgr;
 }
+
+void setMethod( Shell* s, Id mgr, double simdt, double plotdt, 
+				const string& method )
+{
+	Id compt( mgr.path() + "/kinetics" );
+	assert( compt != Id() );
+	string cpath = compt.path();
+	string simpath = cpath + "/##[]";
+	string simpath2 = cpath + "/##[ISA=StimulusTable]," +
+			cpath + "/##[ISA=PulseGen]";
+
+	string m = lower( method );
+	if ( m == "rk4" ) {
+		cout << "Warning, not yet implemented. Using rk5 instead\n";
+		m = "rk5";
+	}	
+	if ( m == "ksolve" || m == "gsl" || 
+		m == "rk5" || m == "rkf" || m == "rk" ) {
+			Id ksolve = s->doCreate( "Ksolve", compt, "ksolve", 1 );
+			Id stoich = s->doCreate( "Stoich", compt, "stoich", 1 );
+			Field< Id >::set( stoich, "compartment", compt );
+			Field< Id >::set( stoich, "ksolve", ksolve );
+			Field< string >::set( stoich, "path", simpath );
+			simpath2 += "," + cpath + "/ksolve";
+			s->doUseClock( simpath2, "process", 4 );
+			s->doSetClock( 4, plotdt );
+	} else if ( m == "gssa" || m == "gsolve" || 
+		m == "gillespie" || m == "stochastic" ) {
+			Id gsolve = s->doCreate( "Gsolve", compt, "gsolve", 1 );
+			Id stoich = s->doCreate( "Stoich", compt, "stoich", 1 );
+			Field< Id >::set( stoich, "compartment", compt );
+			Field< Id >::set( stoich, "ksolve", gsolve );
+			Field< string >::set( stoich, "path", simpath );
+			simpath2 += "," + cpath + "/gsolve";
+			s->doUseClock( simpath2, "process", 4 );
+			s->doSetClock( 4, plotdt );
+	} else if ( m == "ee" || m == "neutral" ) {
+			s->doUseClock( simpath, "process", 4 );
+			s->doSetClock( 4, simdt );
+	} else {
+			cout << "ReadKkit::setMethod: option " << method <<
+					" not known, using Exponential Euler (ee)\n";
+			s->doUseClock( simpath, "process", 4 );
+			s->doSetClock( 4, simdt );
+	}
+}
 /**
  * The readcell function implements the old GENESIS cellreader
  * functionality. Although it is really a parser operation, I
@@ -141,16 +205,18 @@ Id  makeStandardElements( Id pa, const string& modelname )
 Id ReadKkit::read(
 	const string& filename, 
 	const string& modelname,
-	Id pa, const string& method )
+	Id pa, const string& methodArg )
 {
+	string method = methodArg;
 	ifstream fin( filename.c_str() );
 	if (!fin){
 		cerr << "ReadKkit::read: could not open file " << filename << endl;
 		return Id();
     }
 
-	if ( method.substr(0, 5) == "multi" ) {
-		moveOntoCompartment_ = true;
+	if ( method.substr(0, 4) == "old_" ) {
+		moveOntoCompartment_ = false;
+		method = method.substr( 4 );
 	}
 
 	Shell* s = reinterpret_cast< Shell* >( ObjId().data() );
@@ -170,23 +236,14 @@ Id ReadKkit::read(
 
 	convertParametersToConcUnits();
 
-	s->doSetClock( 4, simdt_ );
 	s->doSetClock( 8, plotdt_ );
 	
-	string simpath = basePath_ + "/kinetics/##[]";
-	s->doUseClock( simpath, "process", 4 );
 	string plotpath = basePath_ + "/graphs/##[TYPE=Table]," +
 			basePath_ + "/moregraphs/##[TYPE=Table]";
 	s->doUseClock( plotpath, "process", 8 );
 
-	/*
-	s->setCwe( mgr );
-	Field< double >::set( mgr, "plotDt", plotdt_ );
-	Field< double >::set( mgr, "simDt", simdt_ );
-	Field< double >::set( mgr, "runTime", maxtime_ );
-	Field< double >::set( mgr, "version", version_ );
-	SetGet1< string >::set( mgr, "build", method );
-	*/
+	setMethod( s, mgr, simdt_, plotdt_, method );
+
 	s->doReinit();
 	return mgr;
 }
@@ -618,21 +675,27 @@ void ReadKkit::assignPoolCompartments()
 			stringstream ss;
 			ss << "compartment_" << j;
 			name = ss.str();
-			comptId = shell_->doCreate( "CubeMesh", baseId_, name, 1 ) ;
+			comptId = Neutral::child( baseId_.eref(), name );
+			if ( comptId == Id() ) 
+				comptId = shell_->doCreate( "CubeMesh", baseId_, name, 1 );
 		}
-		Id meshId = Neutral::child( comptId.eref(), "mesh" );
-		assert( meshId != Id() );
-		double side = pow( vols_[i], 1.0 / 3.0 );
-		vector< double > coords( 9, side );
-		coords[0] = coords[1] = coords[2] = 0;
-		// Field< double >::set( comptId, "volume", vols_[i] );
-		Field< vector< double > >::set( comptId, "coords", coords );
+		SetGet1< double >::set( comptId, "setVolumeNotRates",vols_[i]);
+		/*
+		if ( comptId.element()->cinfo()->isA( "CubeMesh" ) ) {
+			double side = pow( vols_[i], 1.0 / 3.0 );
+			vector< double > coords( 9, side );
+			coords[0] = coords[1] = coords[2] = 0;
+			// Field< double >::set( comptId, "volume", vols_[i] );
+			Field< vector< double > >::set( comptId, "coords", coords );
+		} else {
+		}
+		*/
 		// compartments_.push_back( comptId );
-		for ( vector< Id >::iterator j = volCategories_[i].begin();
-			j != volCategories_[i].end(); ++j ) {
+		for ( vector< Id >::iterator k = volCategories_[i].begin();
+			k != volCategories_[i].end(); ++k ) {
 			if ( moveOntoCompartment_ ) {
-				if ( ! (getCompt( *j ).id == comptId ) )
-					shell_->doMove( *j, comptId );
+				if ( ! (getCompt( *k ).id == comptId ) )
+					shell_->doMove( *k, comptId );
 			}
 		}
 	}
@@ -646,7 +709,7 @@ Id findParentComptOfReac( Id reac )
 
 		vector< Id > subVec;
 		unsigned int numSub = 
-				reac.element()->getNeighbours( subVec, subFinfo );
+				reac.element()->getNeighbors( subVec, subFinfo );
 		assert( numSub > 0 );
 		// For now just put the reac in the compt belonging to the 
 		// first substrate
@@ -685,7 +748,7 @@ Id findMeshOfEnz( Id enz )
 
 		vector< Id > enzVec;
 		unsigned int numEnz = 
-				enz.element()->getNeighbours( enzVec, enzFinfo );
+				enz.element()->getNeighbors( enzVec, enzFinfo );
 		assert( numEnz == 1 );
 		vector< Id > meshEntries;
 		return getCompt( enzVec[0] );
@@ -698,7 +761,18 @@ Id findMeshOfEnz( Id enz )
  * be informed.
  */
 void ReadKkit::assignEnzCompartments()
-{;
+{
+		/*
+		Should not be needed, because the parent pool will move.
+	for ( map< string, Id >::iterator i = enzIds_.begin(); 
+		i != enzIds_.end(); ++i ) {
+		Id compt = getCompt( Neutral::parent( i->second ).id );
+		if ( moveOntoCompartment_ ) {
+			if ( ! (getCompt( i->second ).id == compt ) )
+				shell_->doMove( i->second, compt );
+		}
+	}
+	*/
 }
 
 /**
@@ -708,7 +782,18 @@ void ReadKkit::assignEnzCompartments()
  * be informed.
  */
 void ReadKkit::assignMMenzCompartments()
-{;
+{
+		/*
+		Should not be needed, because the parent pool will move.
+	for ( map< string, Id >::iterator i = mmEnzIds_.begin(); 
+		i != mmEnzIds_.end(); ++i ) {
+		Id compt = getCompt( Neutral::parent( i->second ).id );
+		if ( moveOntoCompartment_ ) {
+			if ( ! (getCompt( i->second ).id == compt ) )
+				shell_->doMove( i->second, compt );
+		}
+	}
+	*/
 }
 
 Id ReadKkit::buildEnz( const vector< string >& args )
@@ -1233,7 +1318,7 @@ void ReadKkit::addmsg( const vector< string >& args)
 				return;
 			}
 			vector< Id > enzcplx;
-			i->second.element()->getNeighbours( enzcplx, 
+			i->second.element()->getNeighbors( enzcplx, 
 				i->second.element()->cinfo()->findFinfo( "toCplx" ) );
 			assert( enzcplx.size() == 1 );
 			pool = enzcplx[0];

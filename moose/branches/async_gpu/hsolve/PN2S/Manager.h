@@ -26,8 +26,7 @@ public:
 	static Error_PN2S Setup(double dt);
 	static Error_PN2S Reinit();
 	static bool IsInitialized();
-	static void InsertModel(models::Model<CURRENT_TYPE> &m);
-	static Error_PN2S PrepareSolver();
+	static void InsertModel(models::Model &m);
 	static Error_PN2S Process();
 	static Error_PN2S AddInputTask(uint id);
 

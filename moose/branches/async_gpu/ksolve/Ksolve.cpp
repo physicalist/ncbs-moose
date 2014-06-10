@@ -34,6 +34,33 @@ const Cinfo* Ksolve::initCinfo()
 		// Field definitions
 		///////////////////////////////////////////////////////
 		
+		static ValueFinfo< Ksolve, string > method (
+			"method",
+			"Integration method, using GSL. So far only explict. Options are:"
+			"rk5: The default Runge-Kutta-Fehlberg 5th order adaptive dt method"
+			"gsl: alias for the above"
+			"rk4: The Runge-Kutta 4th order fixed dt method"
+			"rk2: The Runge-Kutta 2,3 embedded fixed dt method"
+			"rkck: The Runge-Kutta Cash-Karp (4,5) method"
+			"rk8: The Runge-Kutta Prince-Dormand (8,9) method" ,
+			&Ksolve::setMethod,
+			&Ksolve::getMethod
+		);
+		
+		static ValueFinfo< Ksolve, double > epsAbs (
+			"epsAbs",
+			"Absolute permissible integration error range.",
+			&Ksolve::setEpsAbs,
+			&Ksolve::getEpsAbs
+		);
+		
+		static ValueFinfo< Ksolve, double > epsRel (
+			"epsRel",
+			"Relative permissible integration error range.",
+			&Ksolve::setEpsRel,
+			&Ksolve::getEpsRel
+		);
+		
 		static ValueFinfo< Ksolve, Id > stoich (
 			"stoich",
 			"Stoichiometry object for handling this reaction system.",
@@ -46,6 +73,13 @@ const Cinfo* Ksolve::initCinfo()
 			"Diffusion solver object handling this reactin system.",
 			&Ksolve::setDsolve,
 			&Ksolve::getDsolve
+		);
+
+		static ValueFinfo< Ksolve, Id > compartment(
+			"compartment",
+			"Compartment in which the Ksolve reaction system lives.",
+			&Ksolve::setCompartment,
+			&Ksolve::getCompartment
 		);
 
 		static ReadOnlyValueFinfo< Ksolve, unsigned int > numLocalVoxels(
@@ -101,8 +135,12 @@ const Cinfo* Ksolve::initCinfo()
 
 	static Finfo* ksolveFinfos[] =
 	{
+		&method,			// Value
+		&epsAbs,			// Value
+		&epsRel,			// Value
 		&stoich,			// Value
 		&dsolve,			// Value
+		&compartment,		// Value
 		&numLocalVoxels,	// ReadOnlyValue
 		&nVec,				// LookupValue
 		&numAllVoxels,		// ReadOnlyValue
@@ -130,12 +168,17 @@ static const Cinfo* ksolveCinfo = Ksolve::initCinfo();
 
 Ksolve::Ksolve()
 	: 
+		method_( "rk5" ),
+		epsAbs_( 1e-4 ),
+		epsRel_( 1e-6 ),
 		pools_( 1 ),
 		startVoxel_( 0 ),
 		stoich_(),
 		stoichPtr_( 0 ),
 		dsolve_(),
-		dsolvePtr_( 0 )
+		compartment_(),
+		dsolvePtr_( 0 ),
+		isBuilt_( false )
 {;}
 
 Ksolve::~Ksolve()
@@ -144,6 +187,54 @@ Ksolve::~Ksolve()
 //////////////////////////////////////////////////////////////
 // Field Access functions
 //////////////////////////////////////////////////////////////
+
+string Ksolve::getMethod() const
+{
+	return method_;
+}
+
+void Ksolve::setMethod( string method )
+{
+	if ( method == "rk5" || method == "gsl" ) {
+		method_ = "rk5";
+	} else if ( method == "rk4"  || method == "rk2" || 
+					method == "rk8" || method == "rkck" ) {
+		method_ = method;
+	} else {
+		cout << "Warning: Ksolve::setMethod: '" << method << 
+				"' not known, using rk5\n";
+		method_ = "rk5";
+	}
+}
+
+double Ksolve::getEpsAbs() const
+{
+	return epsAbs_;
+}
+
+void Ksolve::setEpsAbs( double epsAbs )
+{
+	if ( epsAbs < 0 ) {
+			epsAbs_ = 1.0e-4;
+	} else {
+		epsAbs_ = epsAbs;
+	}
+}
+
+
+double Ksolve::getEpsRel() const
+{
+	return epsRel_;
+}
+
+void Ksolve::setEpsRel( double epsRel )
+{
+	if ( epsRel < 0 ) {
+			epsRel_ = 1.0e-6;
+	} else {
+		epsRel_ = epsRel;
+	}
+}
 
 Id Ksolve::getStoich() const
 {
@@ -154,7 +245,7 @@ void Ksolve::setStoich( Id stoich )
 {
 	assert( stoich.element()->cinfo()->isA( "Stoich" ) );
 	stoich_ = stoich;
-	stoichPtr_ = reinterpret_cast< const Stoich* >( stoich.eref().data() );
+	stoichPtr_ = reinterpret_cast< Stoich* >( stoich.eref().data() );
 }
 
 Id Ksolve::getDsolve() const
@@ -164,10 +255,39 @@ Id Ksolve::getDsolve() const
 
 void Ksolve::setDsolve( Id dsolve )
 {
-	assert( dsolve.element()->cinfo()->isA( "Dsolve" ) );
-	dsolve_ = dsolve;
-	dsolvePtr_ = 
-		reinterpret_cast< ZombiePoolInterface* >( dsolve.eref().data() );
+	if ( dsolve == Id () ) {
+		dsolvePtr_ = 0;
+		dsolve_ = Id();
+	} else if ( dsolve.element()->cinfo()->isA( "Dsolve" ) ) {
+		dsolve_ = dsolve;
+		dsolvePtr_ = reinterpret_cast< ZombiePoolInterface* >( 
+						dsolve.eref().data() );
+	} else {
+		cout << "Warning: Ksolve::setDsolve: Object '" << dsolve.path() <<
+				"' should be class Dsolve, is: " << 
+				dsolve.element()->cinfo()->name() << endl;
+	}
+}
+
+Id Ksolve::getCompartment() const
+{
+	return compartment_;
+}
+
+void Ksolve::setCompartment( Id compt )
+{
+	isBuilt_ = false; // We will have to now rebuild the whole thing.
+	if ( compt.element()->cinfo()->isA( "ChemCompt" ) ) {
+		compartment_ = compt;
+		vector< double > vols = 
+			Field< vector < double > >::get( compt, "voxelVolume" );
+		if ( vols.size() > 0 ) {
+			pools_.resize( vols.size() );
+			for ( unsigned int i = 0; i < vols.size(); ++i ) {
+				pools_[i].setVolume( vols[i] );
+			}
+		}
+	}
 }
 
 unsigned int Ksolve::getNumLocalVoxels() const
@@ -291,13 +411,57 @@ void Ksolve::process( const Eref& e, ProcPtr p )
 	}
 }
 
-void Ksolve::reinit( const Eref& e, ProcPtr p )
+#ifdef USE_GSL
+void innerSetMethod( OdeSystem& ode, const string& method )
 {
-	for ( vector< VoxelPools >::iterator 
-					i = pools_.begin(); i != pools_.end(); ++i ) {
-		i->reinit();
+	ode.method = method;
+	if ( method == "rk5" ) {
+		ode.gslStep = gsl_odeiv2_step_rkf45;
+	} else if ( method == "rk4" ) {
+		ode.gslStep = gsl_odeiv2_step_rk4;
+	} else if ( method == "rk2" ) {
+		ode.gslStep = gsl_odeiv2_step_rk2;
+	} else if ( method == "rkck" ) {
+		ode.gslStep = gsl_odeiv2_step_rkck;
+	} else if ( method == "rk8" ) {
+		ode.gslStep = gsl_odeiv2_step_rk8pd;
+	} else {
+		ode.gslStep = gsl_odeiv2_step_rkf45;
 	}
 }
+#endif
+
+void Ksolve::reinit( const Eref& e, ProcPtr p )
+{
+	assert( stoichPtr_ );
+	if ( isBuilt_ ) {
+		for ( unsigned int i = 0 ; i < pools_.size(); ++i )
+			pools_[i].reinit();
+	} else {
+		OdeSystem ode;
+		ode.epsAbs = epsAbs_;
+		ode.epsRel = epsRel_;
+		ode.initStepSize = stoichPtr_->getEstimatedDt();
+		if ( ode.initStepSize > p->dt )
+			ode.initStepSize = p->dt;
+#ifdef USE_GSL
+		innerSetMethod( ode, method_ );
+		ode.gslSys.function = &VoxelPools::gslFunc;
+   		ode.gslSys.jacobian = 0;
+		ode.gslSys.dimension = stoichPtr_->getNumAllPools();
+		innerSetMethod( ode, method_ );
+		unsigned int numVoxels = pools_.size();
+		for ( unsigned int i = 0 ; i < numVoxels; ++i ) {
+   			ode.gslSys.params = &pools_[i];
+			pools_[i].setStoich( stoichPtr_, &ode );
+			// pools_[i].setIntDt( ode.initStepSize ); // We're setting it up anyway
+			pools_[i].reinit();
+		}
+		isBuilt_ = true;
+	}
+#endif
+}
+
 //////////////////////////////////////////////////////////////
 // Solver ops
 //////////////////////////////////////////////////////////////
@@ -361,23 +525,9 @@ double Ksolve::getDiffConst( const Eref& e ) const
 
 void Ksolve::setNumPools( unsigned int numPoolSpecies )
 {
-	assert( stoichPtr_ );
-	OdeSystem ode;
-#ifdef USE_GSL
-	ode.gslSys.function = &VoxelPools::gslFunc;
-   	ode.gslSys.jacobian = 0;
-	ode.gslSys.dimension = stoichPtr_->getNumAllPools();
-	// This cast is needed because the C interface for GSL doesn't 
-	// use const void here.
-   	ode.gslSys.params = const_cast< Stoich* >( stoichPtr_ );
-	if ( ode.method == "rk5" ) {
-		ode.gslStep = gsl_odeiv2_step_rkf45;
-	}
-#endif
 	unsigned int numVoxels = pools_.size();
 	for ( unsigned int i = 0 ; i < numVoxels; ++i ) {
 		pools_[i].resizeArrays( numPoolSpecies );
-		pools_[i].setStoich( stoichPtr_, &ode );
 	}
 }
 

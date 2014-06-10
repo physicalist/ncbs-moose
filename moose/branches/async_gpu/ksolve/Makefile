@@ -33,6 +33,8 @@ HEADERS = \
 	../basecode/ElementValueFinfo.h \
 	RateTerm.h \
 	KinSparseMatrix.h \
+	ZombiePoolInterface.h \
+	Stoich.h \
 	../kinetics/Pool.h \
 	../kinetics/lookupVolumeFromMesh.h \
 
@@ -47,8 +49,8 @@ ifeq ($(USE_GSL),1)
 GSL_OBJ = \
 #	GslIntegrator.o
 
-#GSL_LIBS = -L/usr/lib -lgsl -lgslcblas
-#GSL_FLAGS = -DUSE_GSL
+GSL_LIBS = -L/usr/lib -lgsl -lgslcblas
+GSL_FLAGS = -DUSE_GSL
 endif
 
 default: $(TARGET)

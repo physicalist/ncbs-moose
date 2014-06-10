@@ -91,7 +91,9 @@ void HSolvePassive::walkTree( Id seed )
             HSolveUtils::adjacent( current, above, cstack.back() );
         }
     }
-
+    for (int var = 0; var < compartmentId_.size(); ++var) {
+    	cout << compartmentId_[var] << " " << flush;
+	}
     // Compartments get ordered according to their hines' indices once this
     // list is reversed.
     reverse( compartmentId_.begin(), compartmentId_.end() );
@@ -103,7 +105,7 @@ void HSolvePassive::initialize()
 
     double Vm, Cm, Em, Rm, inject;
     double EmLeak, GmLeak;
-    double EmGmThev, GmThev, RmThev;
+    double EmGmThev, GmThev;
 
     vector< Id > leakage;
     vector< Id >::iterator ileakage;
@@ -111,12 +113,12 @@ void HSolvePassive::initialize()
     for ( unsigned int ic = 0; ic < compartmentId_.size(); ++ic )
     {
         Id cc = compartmentId_[ ic ];
-        Vm = HSolveUtils::get< Compartment, double >( cc, "Vm" );
-        Cm = HSolveUtils::get< Compartment, double >( cc, "Cm" );
-        Em = HSolveUtils::get< Compartment, double >( cc, "Em" );
-        Rm = HSolveUtils::get< Compartment, double >( cc, "Rm" );
-        inject = HSolveUtils::get< Compartment, double >( cc, "inject" );
 
+		Vm = Field< double >::get( cc, "Vm" );
+		Cm = Field< double >::get( cc, "Cm" );
+		Em = Field< double >::get( cc, "Em" );
+		Rm = Field< double >::get( cc, "Rm" );
+		inject = Field< double >::get( cc, "inject" );
         V_.push_back( Vm );
 
         /*
@@ -143,8 +145,8 @@ void HSolvePassive::initialize()
                 ileakage != leakage.end();
                 ileakage++ )
         {
-            EmLeak = HSolveUtils::get< Compartment, double >( *ileakage, "Ek" );
-            GmLeak = HSolveUtils::get< Compartment, double >( *ileakage, "Gk" );
+            EmLeak = Field< double >::get( *ileakage, "Ek" );
+            GmLeak = Field< double >::get( *ileakage, "Gk" );
             GmThev   += GmLeak;
             EmGmThev += EmLeak * GmLeak;
         }
@@ -183,11 +185,11 @@ void HSolvePassive::storeTree()
         childId.clear();
 
         HSolveUtils::children( *ic, childId );
-        Ra 		= HSolveUtils::get< Compartment, double >( *ic, "Ra" );
-        Cm 		= HSolveUtils::get< Compartment, double >( *ic, "Cm" );
-        Rm 		= HSolveUtils::get< Compartment, double >( *ic, "Rm" );
-        Em 		= HSolveUtils::get< Compartment, double >( *ic, "Em" );
-        initVm 	= HSolveUtils::get< Compartment, double >( *ic, "initVm" );
+		Ra = Field< double >::get( *ic, "Ra" );
+		Cm = Field< double >::get( *ic, "Cm" );
+		Rm = Field< double >::get( *ic, "Rm" );
+		Em = Field< double >::get( *ic, "Em" );
+		initVm = Field< double >::get( *ic, "initVm" );
 
         TreeNodeStruct node;
         // Push hines' indices of children
@@ -451,7 +453,7 @@ bool isClose( T a, T b, T tolerance )
 #include "TestHSolve.h"
 void testHSolvePassive()
 {
-    tbegin;
+//    TEST_BEGIN;
     Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
 
     vector< int* > childArray;
@@ -982,7 +984,7 @@ void testHSolvePassive()
         shell->doDelete( n );
     }
 
-    tend;
+//    TEST_END;
 }
 
 #endif // DO_UNIT_TESTS

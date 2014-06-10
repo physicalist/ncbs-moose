@@ -1,15 +1,55 @@
 #!/usr/bin/env python
-"""Utility functions for MOOSE
-"""
-__author__ = 'Subhasis Ray and Aditya Gilra, NCBS'
-__date__ = '21 November 2012'
+"""utils.py: 
 
-import types, parser, token, symbol, string, os, math
+    Utility functions for moose.
+
+    Last modified: Sat Jan 18, 2014  05:01PM
+
+"""
+    
+__author__           = 'Subhasis Ray, Aditya Gilra, Dilawar Singh, NCBS'
+__copyright__        = "Copyright 2013, NCBS Bangalore"
+__credits__          = ["NCBS Bangalore", "Bhalla Lab"]
+__license__          = "GPL"
+__version__          = "1.0.0"
+
+
+import types
+import parser
+import token
+import symbol
+import string
+import os
+import math
 from datetime import datetime
 import _moose
-import plot_utils
 
-plotAscii = plot_utils.plotAscii
+import plot_utils
+import verification_utils
+import print_utils
+import graph_utils
+import sim_utils
+
+# Import functions from sub-libraries.
+plotTable = plot_utils.plotTable
+plotTables = plot_utils.plotTables
+saveTables = plot_utils.saveTables 
+
+# 
+recordAt = sim_utils.recordTarget
+recordTarget = sim_utils.recordTarget
+
+# dump messages onto console
+dump = print_utils.dump
+
+# Verification related function.
+verify = verification_utils.verify
+
+# Topology and graph related functions.
+writeGraphviz  = graph_utils.writeGraphviz
+
+# Some verification tests
+verify = verification_utils.verify
 
 ## for Ca Pool
 #FARADAY = 96154.0 # Coulombs # from cadecay.mod : 1/(2*96154.0) = 5.2e-6 which is the Book of Genesis / readcell value
@@ -962,10 +1002,6 @@ cell1
             self.assertAlmostEqual(comp.x, 0.0, sigfig)
             self.assertAlmostEqual(comp.y, 0.0, sigfig)
             self.assertAlmostEqual(comp.z, soma.diameter/2.0 + (ii + 1) * 100e-6, sigfig)
-        
-            
-            
-        
         
 
 if __name__ == "__main__": # test printtree

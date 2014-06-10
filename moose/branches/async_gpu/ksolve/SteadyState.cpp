@@ -23,6 +23,7 @@
 #include "KinSparseMatrix.h"
 #include "RateTerm.h"
 #include "FuncTerm.h"
+#include "ZombiePoolInterface.h"
 #include "Stoich.h"
 #include "../randnum/randnum.h"
 
@@ -471,7 +472,7 @@ void SteadyState::assignY( double* S )
 void print_gsl_mat( gsl_matrix* m, const char* name )
 {
     size_t i, j;
-    printf( "%s[%zu, %zu] = \n", name, m->size1, m->size2 );
+    printf( "%s[%lu, %lu] = \n", name, m->size1, m->size2 );
     for (i = 0; i < m->size1; i++) {
         for (j = 0; j < m->size2; j++) {
             double x = gsl_matrix_get (m, i, j );
@@ -521,17 +522,17 @@ void SteadyState::setupSSmatrix()
 	vector< unsigned int > rowStart = Field< vector< unsigned int > >::get(
 					stoich_, "rowStart" );
 
-	cout << endl << endl;
+	// cout << endl << endl;
 	for ( unsigned int i = 0; i < numVarPools_; ++i ) {
 		gsl_matrix_set (LU_, i, i + nReacs_, 1 );
 		unsigned int k = rowStart[i];
-		cout << endl << i << ":	";
+		// cout << endl << i << ":	";
 		for ( unsigned int j = 0; j < nReacs_; ++j ) {
 			double x = 0;
 			if ( j == colIndex[k] && k < rowStart[i+1] ) {
 				x = entry[k++];
 			}
-			cout << "	" << x;
+			// cout << "	" << x;
 			gsl_matrix_set (N, i, j, x);
 			gsl_matrix_set (LU_, i, j, x );
 		}
@@ -579,7 +580,7 @@ void SteadyState::setupSSmatrix()
 		cout << s_->Sinit()[ j ] << ", ";
 	cout << ")\n";
 	*/
-	Id ksolve = Field< Id >::get( stoich_, "poolInterface" );
+	Id ksolve = Field< Id >::get( stoich_, "ksolve" );
 	vector< double > nVec = 
 			LookupField< unsigned int, vector< double > >::get(
 			ksolve,"nVec", 0 );
@@ -679,7 +680,7 @@ void SteadyState::classifyState( const double* T )
 	double tot = 0.0;
 	Stoich* s = reinterpret_cast< Stoich* >( stoich_.eref().data() );
 	vector< double > nVec = LookupField< unsigned int, vector< double > >::get(
-		s->getPoolInterface(), "nVec", 0 );
+		s->getKsolve(), "nVec", 0 );
 	for ( unsigned int i = 0; i < numVarPools_; ++i ) {
 		tot += nVec[i];
 	}
@@ -702,7 +703,8 @@ void SteadyState::classifyState( const double* T )
 			return;
 		}
 		nVec[i] = orig + tot;
-		s->updateRates( &nVec[0], &yprime[0] );
+		/// Here we assume we always use voxel zero.
+		s->updateRates( &nVec[0], &yprime[0], 0 );
 		nVec[i] = orig;
 
 		// Assign the rates for each mol.
@@ -779,7 +781,7 @@ void SteadyState::settle( bool forceSetup )
 	unsigned int i, j;
 
 
-	Id ksolve = Field< Id >::get( stoich_, "poolInterface" );
+	Id ksolve = Field< Id >::get( stoich_, "ksolve" );
 	struct reac_info ri;
 	ri.rank = rank_;
 	ri.num_reacs = nReacs_;
@@ -857,7 +859,7 @@ int ss_func( const gsl_vector* x, void* params, gsl_vector* f )
 		}
 	}
 	vector< double > vels;
-	s->updateReacVelocities( &ri->nVec[0], vels );
+	s->updateReacVelocities( &ri->nVec[0], vels, 0 ); // use compt zero
 	assert( vels.size() == static_cast< unsigned int >( ri->num_reacs ) );
 
 	// y = Nr . v
@@ -990,7 +992,7 @@ void recalcTotal( vector< double >& tot, gsl_matrix* g, const double* S )
 void SteadyState::randomizeInitialCondition( const Eref& me )
 {
 #ifdef USE_GSL
-	Id ksolve = Field< Id >::get( stoich_, "poolInterface" );
+	Id ksolve = Field< Id >::get( stoich_, "ksolve" );
 	vector< double > nVec = 
 			LookupField< unsigned int, vector< double > >::get(
 			ksolve,"nVec", 0 );

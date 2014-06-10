@@ -149,7 +149,7 @@ public:
 	
 private:
 	static vector< Id > children( Id obj );
-	static Id deepSearchForCompartment(  Id base );
+	static Id deepSearchForCompartment( Id base );
 	
 	void setup( Eref hsolve );
 	void zombify( Eref hsolve ) const;
@@ -164,7 +164,7 @@ private:
 	string path_;
 	vector<Id> seeds_;
 
-	bool isMasterHSolve(){return seeds_.size() > 1;}
+	bool isMasterHSolve_;
 };
 
 #endif // _HSOLVE_H

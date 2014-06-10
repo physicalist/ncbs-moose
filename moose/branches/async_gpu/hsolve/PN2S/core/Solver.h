@@ -10,21 +10,20 @@
 
 #include "../headers.h"
 #include "ModelPack.h"
-#include "solvers/SolverChannels.h"
-#include "solvers/SolverComps.h"
+#include "models/SolverChannels.h"
+#include "models/SolverComps.h"
 #include "models/Model.h"
 
 namespace pn2s
 {
 
-template <typename T, int arch>
 class Solver
 {
 private:
 	double _dt;
-	map<uint, ModelPack<T,arch>*> _modelToPackMap;
+	map<uint, ModelPack*> _modelToPackMap;
 public:
-	vector<ModelPack<T,arch> > modelPacks;
+	vector<ModelPack > modelPacks;
 
 	Solver();
 	virtual ~Solver();
@@ -34,9 +33,9 @@ public:
 
 
 	Error_PN2S Setup(double dt);
-	Error_PN2S PrepareSolver( vector<models::Model<T> > & _models,  double dt);
-	ModelPack<T,arch>* FindModelPack(hscID_t id);
-	void Process(ModelPack<T,arch>* data);
+	Error_PN2S PrepareSolver( vector<models::Model > & _models,  double dt);
+	ModelPack* FindModelPack(hscID_t id);
+	void Process(ModelPack* data);
 };
 
 }

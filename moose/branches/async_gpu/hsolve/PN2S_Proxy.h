@@ -5,8 +5,7 @@
 //  Original author: Saeed Shariati
 ///////////////////////////////////////////////////////////
 
-#if !defined(EA_27150678_5056_4754_82F6_A77DCEB1BC1C__INCLUDED_)
-#define EA_27150678_5056_4754_82F6_A77DCEB1BC1C__INCLUDED_
+#pragma once
 
 /**
  * The class that use PN2S package and deal with moose constrains.
@@ -20,14 +19,19 @@ class PN2S_Proxy
 {
 
 public:
+	int a;
 	static void Setup(double dt);
-	static void InsertCompartmentModel(Eref hsolve, Id seed);
+	static void CreateCompartmentModel(Eref hsolve, Id seed);
 	static void Reinit();
 	static void Process(ProcPtr info);
+
+	//Setter and Getter functions
+	enum FIELD {CM_FIELD, EM_FIELD, RM_FIELD, RA_FIELD,INIT_VM_FIELD, VM_FIELD, INJECT_FIELD};
+
+	static void setValue( Id id, TYPE_ value , FIELD n);
+	static TYPE_ getValue( Id id , FIELD n);
+
 private:
 	static void walkTree( Id seed, vector<Id> &compartmentIds );
 	static void storeTree(vector<Id> &compartmentIds, vector< TreeNodeStruct >& tree);
-
-	static void zombify( Element* solver, Element* orig);
 };
-#endif // !defined(EA_27150678_5056_4754_82F6_A77DCEB1BC1C__INCLUDED_)
