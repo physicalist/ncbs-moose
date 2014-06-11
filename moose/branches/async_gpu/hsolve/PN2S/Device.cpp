@@ -34,15 +34,21 @@ Device::~Device(){
 
 Error_PN2S Device::GenerateModelPacks(double dt, models::Model *m, size_t start, size_t end, int32_t address){
 	_dt = dt;
+
+	//Assign part of array to packs which is for them
 	models::Model *m_start = &m[start];
 
 	size_t nModel = end - start;
-	//Check nComp for each compartments
+	int idx = 0;
+	//Check nComp for each compartments and update it's fields
 	size_t nCompt = m_start->compts.size();
 	for (int i = 0; i < nModel; ++i) {
-		assert(m_start[i].compts.size() != nCompt);
+		assert(m_start[i].compts.size() == nCompt);
 		for (int c = 0; c < nCompt; ++c) {
-			m_start[i].compts[c].address = address;
+			//Assign address for each compartment
+			m_start[i].compts[c].location.address = address;
+			//Assign index of each object in a modelPack
+			m_start[i].compts[c].location.index = idx++;
 		}
 	}
 	//Check network structure

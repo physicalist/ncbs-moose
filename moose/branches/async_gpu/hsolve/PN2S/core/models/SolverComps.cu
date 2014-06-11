@@ -259,47 +259,47 @@ void SolverComps::makeHinesMatrix(models::Model *model, TYPE_ * matrix)
 //	}
 }
 
-void SolverComps::SetValue(Compartment* c, FIELD::TYPE field, TYPE_ value)
+void SolverComps::SetValue(int index, FIELD::TYPE field, TYPE_ value)
 {
 	switch(field)
 	{
-		case FIELD::CM_FIELD:
-			_Cm[c->_index] = value;
+		case FIELD::CM:
+			_Cm[index] = value;
 			break;
-		case FIELD::EM_FIELD:
-			_Em[c->_index] = value;
+		case FIELD::EM:
+			_Em[index] = value;
 			break;
-		case FIELD::RM_FIELD:
-			_Rm[c->_index] = value;
+		case FIELD::RM:
+			_Rm[index] = value;
 			break;
-		case FIELD::RA_FIELD:
-			_Ra[c->_index] = value;
+		case FIELD::RA:
+			_Ra[index] = value;
 			break;
-		case FIELD::VM_FIELD:
-			_Vm[c->_index] = value;
+		case FIELD::VM:
+			_Vm[index] = value;
 			break;
-		case FIELD::INIT_VM_FIELD:
-			_Vm[c->_index] = value;
+		case FIELD::INIT_VM:
+			_Vm[index] = value;
 			break;
 	}
 }
 
-TYPE_ SolverComps::GetValue(Compartment* c, FIELD::TYPE field)
+TYPE_ SolverComps::GetValue(int index, FIELD::TYPE field)
 {
 	switch(field)
 	{
-		case FIELD::CM_FIELD:
-			return _Cm[c->_index];
-		case FIELD::EM_FIELD:
-			return _Em[c->_index];
-		case FIELD::RM_FIELD:
-			return _Rm[c->_index];
-		case FIELD::RA_FIELD:
-			return _Ra[c->_index];
-		case FIELD::VM_FIELD:
-			return _Vm[c->_index];
-		case FIELD::INIT_VM_FIELD:
-			return _Vm[c->_index];
+		case FIELD::CM:
+			return _Cm[index];
+		case FIELD::EM:
+			return _Em[index];
+		case FIELD::RM:
+			return _Rm[index];
+		case FIELD::RA:
+			return _Ra[index];
+		case FIELD::VM:
+			return _Vm[index];
+		case FIELD::INIT_VM:
+			return _Vm[index];
 	}
 }
 
