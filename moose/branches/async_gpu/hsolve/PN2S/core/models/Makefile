@@ -22,14 +22,12 @@ OBJS +=		HHChannel.o \
 			Model.o \
 			Compartment.o \
 			Matrix.o	\
-			Neuron.o	\
-			NeuronVector.o \
-			CompartmentVector.o \
+			
 
 COBJS += SolverChannels.o	\
 		SolverComps.o	\
-		PField.o		
-#		solve.o	\
+		PField.o		\
+		solve.o	\
 
 .PHONY: all
 all: $(TARGET)
@@ -46,8 +44,6 @@ PField.o: PField.cpp PField.h
 SolverChannels.o: SolverChannels.cpp SolverChannels.h 
 SolverComps.o: SolverComps.cu SolverComps.h
 solve.o: solve.cu solve.h operations.h
-
-
 
 $(TARGET): $(OBJS) $(COBJS) 
 	$(LD) -r -o  $(TARGET) $(OBJS) $(COBJS) 

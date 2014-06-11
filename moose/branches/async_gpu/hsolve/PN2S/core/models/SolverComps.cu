@@ -17,7 +17,7 @@
 #include <thrust/functional.h>
 #include <thrust/fill.h>
 
-using namespace pn2s::solvers;
+using namespace pn2s::models;
 //CuBLAS variables
 cublasHandle_t _handle;
 
@@ -45,102 +45,94 @@ SolverComps::~SolverComps()
 //	if (_Rm_dev) cudaFree(_Rm_dev);
 }
 
-Error_PN2S SolverComps::PrepareSolver(vector< models::Model > &network, NetworkAnalyzer &analyzer)
+
+Error_PN2S SolverComps::AllocateMemory(models::Model * m, models::ModelStatistic& s)
 {
-////	cudaError_t success;
-//	cublasStatus_t stat;
-//	if(analyzer.allCompartments.size() == 0)
-//		return Error_PN2S::NO_ERROR;
-//
-//	nModel = analyzer.nModel;
-//	nComp = analyzer.nComp;
-//	uint modelSize = nComp*nComp;
-//	uint vectorSize = nModel * nComp;
-//
-//	_ids.resize(vectorSize);
-//	_hm.AllocateMemory(modelSize*nModel);
-//	_rhs.AllocateMemory(vectorSize);
-//	_Vm.AllocateMemory(vectorSize);
-//	_Cm.AllocateMemory(vectorSize);
-//	_Em.AllocateMemory(vectorSize);
-//	_Rm.AllocateMemory(vectorSize);
-//
-//
-//	//TODO: OpenMP
-//	int idx = 0;
-//	for(int i=0; i< nModel;i++ )
-//	{
-//		for(int n=0; n< nComp;n++)
-//		{
-//			//Initialize values
-//			uint gid = analyzer.allCompartments[idx]->gid;
-//			_ids[idx] = gid;
-//			_Vm[idx] = Fetch_Func(gid,INIT_VM_FIELD);
-//			_Cm[idx] = Fetch_Func(gid,CM_FIELD);
-//			_Em[idx] = Fetch_Func(gid,EM_FIELD);
-//			_Rm[idx] = Fetch_Func(gid,RM_FIELD);
-//			idx++;
-//		}
-//		//making Hines Matrices
-//		makeHinesMatrix(&network[i], &_hm[i*modelSize]);
-////		_printMatrix_Column(nComp,nComp, &_hm[i*modelSize]);
-//	}
-//
-//	//Copy to GPU
-//	_hm.Host2Device_Sync();
-//	_rhs.Host2Device_Sync();
-//	_Vm.Host2Device_Sync();
-//	_Cm.Host2Device_Sync();
-//	_Em.Host2Device_Sync();
-//	_Rm.Host2Device_Sync();
-//
-//	//Create Cublas
-//	if ( cublasCreate(&_handle) != CUBLAS_STATUS_SUCCESS)
-//	{
-//		return Error_PN2S(Error_PN2S::CuBLASError,
-//				"CUBLAS initialization failed");
-//	}
-//
-//	cudaDeviceSynchronize();
+	_stat = s;
+	_models = m;
+
+	if(_stat.nCompts == 0)
+		return Error_PN2S::NO_ERROR;
+
+	size_t modelSize = s.nCompts*s.nCompts;
+	size_t vectorSize = s.nModels * s.nCompts;
+
+	_hm.AllocateMemory(modelSize*s.nModels);
+	_rhs.AllocateMemory(vectorSize);
+	_Vm.AllocateMemory(vectorSize);
+	_Cm.AllocateMemory(vectorSize);
+	_Em.AllocateMemory(vectorSize);
+	_Rm.AllocateMemory(vectorSize);
+	_Ra.AllocateMemory(vectorSize);
+
+	return Error_PN2S::NO_ERROR;
+}
+Error_PN2S SolverComps::PrepareSolver()
+{
+//	cudaError_t success;
+	cublasStatus_t stat;
+	if(_stat.nCompts == 0)
+		return Error_PN2S::NO_ERROR;
+
+	//TODO: OpenMP
+	//making Hines Matrices
+	for(int i=0; i< _stat.nModels;i++ )
+	{
+		makeHinesMatrix(&_models[i], &_hm[i*_stat.nCompts*_stat.nCompts]);
+//		_printMatrix_Column(nComp,nComp, &_hm[i*modelSize]);
+	}
+
+	//Copy to GPU
+	_hm.Host2Device_Sync();
+	_Em.Host2Device_Sync();
+
+	//Create Cublas
+	if ( cublasCreate(&_handle) != CUBLAS_STATUS_SUCCESS)
+	{
+		return Error_PN2S(Error_PN2S::CuBLASError,
+				"CUBLAS initialization failed");
+	}
+
+	cudaDeviceSynchronize();
 	return Error_PN2S::NO_ERROR;
 }
 
 Error_PN2S SolverComps::Input()
 {
-//	//Copy to GPU
-//	_rhs.Send2Device(_Em); // Em -> rhs
-//	_Rm.Host2Device_Sync();
-//	_Vm.Host2Device_Sync();
-//	_Cm.Host2Device_Sync();
+	//Copy to GPU
+	_rhs.Send2Device(_Em); // Em -> rhs
+	_Rm.Host2Device_Sync();
+	_Vm.Host2Device_Sync();
+	_Cm.Host2Device_Sync();
 
 	return Error_PN2S::NO_ERROR;
 }
 
 Error_PN2S SolverComps::Process()
 {
-//	UpdateMatrix();
-//
-//    //Solve
-//	int ret = dsolve_batch (_hm.device, _rhs.device, _Vm.device, nComp, nModel);
-//    assert(!ret);
-//	return Error_PN2S::NO_ERROR;
-//    //_printVector(nModel*nComp, _Vm);
+	UpdateMatrix();
+
+    //Solve
+	int ret = dsolve_batch (_hm.device, _rhs.device, _Vm.device, _stat.nCompts, _stat.nModels);
+    assert(!ret);
+	return Error_PN2S::NO_ERROR;
+    //_printVector(nModel*nComp, _Vm);
 }
 
 
 Error_PN2S SolverComps::Output()
 {
-//	_Vm.Device2Host_Sync();
-//
+	_Vm.Device2Host_Sync();
+
 //	for(int i=0; i< _ids.size();i++ )
 //	{
 //		uint gid = _ids[i];
 ////		SetValue_Func(gid,VM_FIELD, _Vm[i]);
 ////		SetValue_Func(gid,VM_FIELD, 10);
 //	}
-//
-//	return Error_PN2S::NO_ERROR;
-//	//_printVector(nModel*nComp, _Vm);
+
+	return Error_PN2S::NO_ERROR;
+	//_printVector(nModel*nComp, _Vm);
 }
 
 /**
@@ -171,24 +163,24 @@ struct update_rhs_functor
 
 Error_PN2S SolverComps::UpdateMatrix()
 {
-//	uint vectorSize = nModel * nComp;
-//
-//	thrust::for_each(
-//		thrust::make_zip_iterator(
-//				thrust::make_tuple(
-//						_rhs.DeviceStart(),
-//						_Vm.DeviceStart(),
-//						_Cm.DeviceStart(),
-//						_Rm.DeviceStart())),
-//
-//		thrust::make_zip_iterator(
-//				thrust::make_tuple(
-//						_rhs.DeviceEnd(),
-//						_Vm.DeviceEnd(),
-//						_Cm.DeviceEnd(),
-//						_Rm.DeviceEnd())),
-//
-//		update_rhs_functor< T >( _dt ) );
+	uint vectorSize = _stat.nModels * _stat.nCompts;
+
+	thrust::for_each(
+		thrust::make_zip_iterator(
+				thrust::make_tuple(
+						_rhs.DeviceStart(),
+						_Vm.DeviceStart(),
+						_Cm.DeviceStart(),
+						_Rm.DeviceStart())),
+
+		thrust::make_zip_iterator(
+				thrust::make_tuple(
+						_rhs.DeviceEnd(),
+						_Vm.DeviceEnd(),
+						_Cm.DeviceEnd(),
+						_Rm.DeviceEnd())),
+
+		update_rhs_functor< TYPE_ >( _stat.dt ) );
 
 //	getVector(vectorSize, _rhs,_rhs_dev); //TODO maybe is not necessary
 
@@ -198,16 +190,16 @@ Error_PN2S SolverComps::UpdateMatrix()
 
 void SolverComps::makeHinesMatrix(models::Model *model, TYPE_ * matrix)
 {
-//	/*
-//	 * Some convenience variables
-//	 */
-//	vector< double > CmByDt(nComp);
-//	vector< double > Ga(nComp);
-//	for ( unsigned int i = 0; i < nComp; i++ ) {
-//		T cm = Fetch_Func(model->compts[ i ].gid,CM_FIELD);
-//		T ra = Fetch_Func(model->compts[ i ].gid,RA_FIELD);
+	/*
+	 * Some convenience variables
+	 */
+//	vector< double > CmByDt(_stat.nCompts);
+//	vector< double > Ga(_stat.nCompts);
+//	for ( unsigned int i = 0; i < _stat.nCompts; i++ ) {
+//		TYPE_ cm = Fetch_Func(model->compts[ i ].gid,CM_FIELD);
+//		TYPE_ ra = Fetch_Func(model->compts[ i ].gid,RA_FIELD);
 //
-//		CmByDt[i] = cm / ( _dt / 2.0 ) ;
+//		CmByDt[i] = cm / ( _stat.dt / 2.0 ) ;
 //		Ga[i] =  2.0 / ra ;
 //	}
 //
@@ -216,17 +208,17 @@ void SolverComps::makeHinesMatrix(models::Model *model, TYPE_ * matrix)
 //	 * of the cell.
 //	 */
 //	vector< vector< unsigned int > > coupled;
-//	for ( unsigned int i = 0; i < nComp; i++ )
+//	for ( unsigned int i = 0; i < _stat.nCompts; i++ )
 //		if ( model->compts[ i ].children.size() >= 1 ) {
 //			coupled.push_back( model->compts[ i ].children );
 //			coupled.back().push_back( i );
 //		}
 //
 //	// Setting diagonal elements
-//	for ( unsigned int i = 0; i < nComp; i++ )
+//	for ( unsigned int i = 0; i < _stat.nCompts; i++ )
 //	{
-//		T rm = Fetch_Func(model->compts[ i ].gid,RM_FIELD);
-//		matrix[ i * nComp + i ] = (T)(CmByDt[ i ] + 1.0 / rm);
+//		TYPE_ rm = Fetch_Func(model->compts[ i ].gid,RM_FIELD);
+//		matrix[ i * _stat.nCompts + i ] = (TYPE_)(CmByDt[ i ] + 1.0 / rm);
 //	}
 //
 //
@@ -242,7 +234,7 @@ void SolverComps::makeHinesMatrix(models::Model *model, TYPE_ * matrix)
 //		for ( ic = group->begin(); ic != group->end(); ++ic ) {
 //			gi = Ga[ *ic ];
 //
-//			matrix[ *ic * nComp + *ic ] += (T) (gi * ( 1.0 - gi / gsum ));
+//			matrix[ *ic * _stat.nCompts + *ic ] += (TYPE_) (gi * ( 1.0 - gi / gsum ));
 //		}
 //	}
 //
@@ -260,12 +252,55 @@ void SolverComps::makeHinesMatrix(models::Model *model, TYPE_ * matrix)
 //			for ( jc = ic + 1; jc != group->end(); ++jc ) {
 //				gij = Ga[ *ic ] * Ga[ *jc ] / gsum;
 //
-//				matrix[ *ic * nComp + *jc ] = (T)(-gij);
-//				matrix[ *jc * nComp + *ic ] = (T)(-gij);
+//				matrix[ *ic * _stat.nCompts + *jc ] = (TYPE_)(-gij);
+//				matrix[ *jc * _stat.nCompts + *ic ] = (TYPE_)(-gij);
 //			}
 //		}
 //	}
 }
 
+void SolverComps::SetValue(Compartment* c, FIELD::TYPE field, TYPE_ value)
+{
+	switch(field)
+	{
+		case FIELD::CM_FIELD:
+			_Cm[c->_index] = value;
+			break;
+		case FIELD::EM_FIELD:
+			_Em[c->_index] = value;
+			break;
+		case FIELD::RM_FIELD:
+			_Rm[c->_index] = value;
+			break;
+		case FIELD::RA_FIELD:
+			_Ra[c->_index] = value;
+			break;
+		case FIELD::VM_FIELD:
+			_Vm[c->_index] = value;
+			break;
+		case FIELD::INIT_VM_FIELD:
+			_Vm[c->_index] = value;
+			break;
+	}
+}
 
-TYPE_ (*SolverComps::Fetch_Func) (uint, SolverComps::Fields);
+TYPE_ SolverComps::GetValue(Compartment* c, FIELD::TYPE field)
+{
+	switch(field)
+	{
+		case FIELD::CM_FIELD:
+			return _Cm[c->_index];
+		case FIELD::EM_FIELD:
+			return _Em[c->_index];
+		case FIELD::RM_FIELD:
+			return _Rm[c->_index];
+		case FIELD::RA_FIELD:
+			return _Ra[c->_index];
+		case FIELD::VM_FIELD:
+			return _Vm[c->_index];
+		case FIELD::INIT_VM_FIELD:
+			return _Vm[c->_index];
+	}
+}
+
+//TYPE_ (*SolverComps::Fetch_Func) (uint, SolverComps::Fields);

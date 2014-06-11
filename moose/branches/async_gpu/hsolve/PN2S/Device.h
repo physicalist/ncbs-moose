@@ -26,7 +26,12 @@ public:
 	Device(int _id);
 	virtual ~Device();
 
-	Error_PN2S Reinit(vector<models::Model> &m,  double dt);
+	Error_PN2S GenerateModelPacks(double dt,
+			models::Model *m,
+			size_t start, size_t end,
+			int32_t address); //Address: 2 byte(Machine+Device) + 2 byte(ModelPack)
+	Error_PN2S PrepareSolvers();
+
 	void Process();
 	Error_PN2S Setup();
 

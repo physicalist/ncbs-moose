@@ -56,7 +56,7 @@ ZombieHHChannel.o:	ZombieHHChannel.h ../biophysics/HHChannel.h ../biophysics/Cha
 PN2S_Proxy.o:	PN2S_Proxy.cpp	PN2S_Proxy.h 
 
 .cpp.o:
-	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I. -I../basecode -I../msg -I./PN2S/libs $< -c -I/usr/local/cuda/include
+	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I. -I../basecode -I../msg -I./PN2S/libs -I./PN2S/libs/tbb/include  $< -c -I/usr/local/cuda/include
 
 $(TARGET): $(OBJ) $(SMOLDYN_OBJ) $(HEADERS) $(SUBDIR)
 	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i; done)

@@ -13,6 +13,8 @@
 #include "tbb/flow_graph.h"
 #include "tbb/atomic.h"
 #include "tbb/tick_count.h"
+#include "core/models/ModelStatistic.h"
+#include <assert.h>
 
 using namespace pn2s;
 using namespace std;
@@ -30,22 +32,42 @@ Device::~Device(){
 	cudaDeviceReset();
 }
 
-Error_PN2S Device::Reinit(vector<models::Model> &m,  double dt){
+Error_PN2S Device::GenerateModelPacks(double dt, models::Model *m, size_t start, size_t end, int32_t address){
 	_dt = dt;
+	models::Model *m_start = &m[start];
+
+	size_t nModel = end - start;
+	//Check nComp for each compartments
+	size_t nCompt = m_start->compts.size();
+	for (int i = 0; i < nModel; ++i) {
+		assert(m_start[i].compts.size() != nCompt);
+		for (int c = 0; c < nCompt; ++c) {
+			m_start[i].compts[c].address = address;
+		}
+	}
+	//Check network structure
+	ModelStatistic stat(dt, nModel, nCompt);
 
 	//TODO: Generate model packs
 	_modelPacks.resize(1);
-	_modelPacks[0].SetDt(_dt);
 
 	//Prepare solver for each modelpack
-	Error_PN2S res = _modelPacks[0].Reinit(m);
+//	address = address + 0;
+	Error_PN2S res = _modelPacks[0].Allocate(m_start, stat);
 
-//	//Assign keys to modelPack, to be able to find later
+	//Update Data
 //	for(vector<models>::iterator it = m.begin(); it != m.end(); ++it) {
 //		_modelToPackMap[it->id] = &modelPacks[0];
 //	}
 	return res;
 }
+
+Error_PN2S Device::PrepareSolvers(){
+	for(vector<ModelPack>::iterator it = _modelPacks.begin(); it != _modelPacks.end(); ++it) {
+		it->PrepareSolvers();
+	}
+}
+
 
 /**
  * Multithread tasks section

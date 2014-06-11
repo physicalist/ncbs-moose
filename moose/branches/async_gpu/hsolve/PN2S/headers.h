@@ -44,4 +44,10 @@ using namespace std;
 #define hscID_t uint
 
 
+//Setter and Getter functions
+struct FIELD{
+	enum  TYPE {CM_FIELD, EM_FIELD, RM_FIELD, RA_FIELD,INIT_VM_FIELD, VM_FIELD, INJECT_FIELD};
+};
+
+
 #endif // !defined(A412A01E5_7D8D_4c56_A915_73B69DCFE454__INCLUDED_)
