@@ -21,7 +21,8 @@ struct Error_PN2S
     {
     	NO_ERROR = 0,
 		CuBLASError = 1,
-		CUDA_Error = 2
+		CUDA_Error = 2,
+		NOT_INITIALIZED_Error = 3,
     };
     Type t_;
     string msg_;

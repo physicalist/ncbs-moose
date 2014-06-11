@@ -7,8 +7,6 @@
 
 #include "PN2S_Proxy.h"
 #include "PN2S/headers.h"
-#include "PN2S/core/models/NeuronVector.h"
-#include "PN2S/core/Network.h"
 #include "PN2S/Manager.h"
 #include "PN2S/core/models/SolverComps.h"
 #include "HSolveUtils.h"
@@ -26,35 +24,11 @@
 #include "../shell/Wildcard.h"
 #include "../shell/Shell.h"
 
-//Static objects
-static map< uint, Id > _objectMap;
 
 using namespace pn2s;
 
-
-
-models::NeuronVector neurons;
-
-//Getter and Setter
-//TYPE_ _getValue(uint id, SolverComps::Fields field)
-//{
-//	switch(field)
-//	{
-//		case SolverComps::CM_FIELD:
-//			return ::Field< double >::get( _objectMap[ id ], "Cm" );
-//		case SolverComps::EM_FIELD:
-//			return ::Field< double >::get( _objectMap[ id ], "Em" );
-//		case SolverComps::RM_FIELD:
-//			return ::Field< double >::get( _objectMap[ id ], "Rm" );
-//		case SolverComps::RA_FIELD:
-//			return ::Field< double >::get( _objectMap[ id ], "Ra" );
-//		case SolverComps::VM_FIELD:
-//			return ::Field< double >::get( _objectMap[ id ], "Vm" );
-//		case SolverComps::INIT_VM_FIELD:
-//			return ::Field< double >::get( _objectMap[ id ], "initVm" );
-//	}
-//	return 0;
-//}
+//TODO: Replace with hash maps
+map< uint, models::Compartment* > _compartmentMap;
 
 /**
  * This method is responsible to create model and get pertinent information from
@@ -63,15 +37,13 @@ models::NeuronVector neurons;
 
 void PN2S_Proxy::Setup(double dt)
 {
-	cout << "Size: " << sizeof(PN2S_Proxy) << flush;
 	Manager::Setup(dt);
-	_objectMap.clear();
-
-	//Register Setter and Getter
-//	SolverComps::Fetch_Func = &_getValue;
+	_compartmentMap.clear();
 }
 
-
+/**
+ * Create Compartmental Model
+ */
 void PN2S_Proxy::CreateCompartmentModel(Eref hsolve, Id seed){
 
 	//Get Compartment id's with hine's index order
@@ -80,12 +52,14 @@ void PN2S_Proxy::CreateCompartmentModel(Eref hsolve, Id seed){
 
 	int nCompt = compartmentIds.size();
 
-	// A map from the MOOSE Id to Hines' index. It will remove after this method
+	models::Model neutral(seed.value());
+
+
+	// A map from the MOOSE Id to Hines' index.
 	map< Id, unsigned int > hinesIndex;
 	for ( int i = 0; i < nCompt; ++i )
 	{
-		hinesIndex[ compartmentIds[ i ] ] = i;
-		_objectMap[compartmentIds[ i ].value()] = compartmentIds[ i ];
+		hinesIndex[ compartmentIds[ i ] ] = i; //TODO: go to below loop
 	}
 
 	/**
@@ -94,22 +68,20 @@ void PN2S_Proxy::CreateCompartmentModel(Eref hsolve, Id seed){
 	vector< Id > childId;
 	vector< Id >::iterator child;
 
-	models::Neuron* n = neurons.Create(seed.value());
-
 	for (int i = 0; i < nCompt; ++i) {
 		//Assign a general ID to each compartment
-		models::Compartment* c = n->compt().Create(compartmentIds[ i ].value());
+		models::Compartment c(compartmentIds[ i ].value());
 
 		//Find Children
 		childId.clear();
 		HSolveUtils::children( compartmentIds[ i ], childId );
 		for ( child = childId.begin(); child != childId.end(); ++child )
 		{
-			c->children.push_back( hinesIndex[ *child ] );
+			c.children.push_back( hinesIndex[ *child ] );
 		}
-//		_printVector(tree[i].children.size(), &(tree[i].children[0]));
+		neutral.compts.push_back(c);
+		_compartmentMap[compartmentIds[ i ].value()] = &(*neutral.compts.end());
 	}
-
 
 	/**
 	 * Zumbify
@@ -142,7 +114,7 @@ void PN2S_Proxy::CreateCompartmentModel(Eref hsolve, Id seed){
 	/**
 	 * Now model is ready to import into the PN2S
 	 */
-//	Manager::InsertModel(neutral);
+    Manager::InsertModelShape(neutral);
 }
 
 void PN2S_Proxy::walkTree( Id seed, vector<Id> &compartmentIds )
@@ -205,7 +177,33 @@ void PN2S_Proxy::walkTree( Id seed, vector<Id> &compartmentIds )
 
 
 void PN2S_Proxy::Reinit(){
-	Manager::Reinit();
+	//Create model structures and Allocate memory
+	Manager::Allocate();
+
+//	//Copy data values and Initialize values
+//	typename vector<Device>::iterator dev;
+//	typename vector<ModelPack>::iterator mp;
+//	for( dev = DeviceManager::_device.begin(); dev != DeviceManager::_device.end(); ++dev) {
+//		for( mp = dev->_modelPacks.begin(); mp != dev->_modelPacks.end(); ++mp) {
+//			for (size_t m = mp->stat.model_start; m < mp->stat.model_end; ++m) {
+//				models::Model* model = mp->models[m];
+//				for (size_t c = 0; c < mp->stat.nCompts; ++m) {
+//					mp->_compsSolver.SetVm()
+//				}
+//			}
+//		}
+//	}
+
+//			int gid = m[i].compts[n].gid;
+////			_ids[idx] = gid;
+//			_Vm[idx] = Fetch_Func(gid,INIT_VM_FIELD);
+//			_Cm[idx] = Fetch_Func(gid,CM_FIELD);
+//			_Em[idx] = Fetch_Func(gid,EM_FIELD);
+//			_Rm[idx] = Fetch_Func(gid,RM_FIELD);
+//			idx++;
+
+	//Prepare solvers
+	Manager::PrepareSolvers();
 }
 
 /**
@@ -218,18 +216,13 @@ void PN2S_Proxy::Process(ProcPtr info){
 /**
  * Interface Set/Get functions
  */
-void PN2S_Proxy::setValue( Id id, TYPE_ value , FIELD n)
+void PN2S_Proxy::setValue( Id id, TYPE_ value , FIELD::TYPE n)
 {
-//	switch(n)
-//	{
-//		case FIELD::CM_FIELD:
-//			return ::Field< double >::get( _objects[ id ], "Cm" );
-//	}
-
-//	cout << id << ".Cm = "<< __func__<<value<<flush;
+	models::Compartment* c = _compartmentMap[id.value()];
+	DeviceManager::_device[0]._modelPacks[0]._compsSolver.SetValue(c,n,value);
 }
 
-TYPE_ PN2S_Proxy::getValue( Id id, FIELD n)
+TYPE_ PN2S_Proxy::getValue( Id id, FIELD::TYPE n)
 {
 //    assert(this);
 //    unsigned int index = localIndex( id );

@@ -37,7 +37,7 @@ private:
 public:
 	SolverComps();
 	~SolverComps();
-	Error_PN2S PrepareSolver(vector< models::Model<T> > &models, NetworkAnalyzer<T,arch> &analyzer);
+	Error_PN2S PrepareSolver(vector< models::Model<T> > &models, ModelPackStatistic<T,arch> &analyzer);
 	Error_PN2S Process();
 	Error_PN2S UpdateMatrix();
 

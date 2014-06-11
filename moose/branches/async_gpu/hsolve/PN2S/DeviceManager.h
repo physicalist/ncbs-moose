@@ -19,15 +19,16 @@ namespace pn2s
 
 class DeviceManager
 {
-
 public:
-	DeviceManager();
-	virtual ~DeviceManager();
-	Error_PN2S Reinit(vector<models::Model > &m, double dt);
-	void Process();
-	vector<Device> _devices; //TODO: Should be private
-private:
-	Error_PN2S SelectDevice(int id);
+	static vector<Device> _device; //TODO: Should be private
+
+	static int CkeckAvailableDevices();
+
+	// Distribute model between devices
+	static Error_PN2S Allocate(vector<models::Model > &m, double dt);
+	static void PrepareSolvers();
+	static void Process();
+
 };
 }
 #endif // !defined(EA_8204B80E_EF46_47df_8AB8_FC787EF1223C__INCLUDED_)

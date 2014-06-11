@@ -10,9 +10,19 @@
 
 using namespace pn2s::models;
 
+Compartment::Compartment(int _gid): gid(_gid){
+	static int number_of_instances = 0;
+	_index = number_of_instances++;
+}
+
+Compartment::~Compartment(){
+
+}
+
 //Copy constractor
 Compartment::Compartment( const Compartment& other )
 {
-//	children.assign(other.children.begin(), other.children.end());
-//	gid = other.gid;
+	children.assign(other.children.begin(), other.children.end());
+	gid = other.gid;
+	_index = other._index;
 }
