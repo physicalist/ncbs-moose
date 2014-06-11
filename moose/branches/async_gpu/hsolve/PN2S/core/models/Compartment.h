@@ -21,10 +21,8 @@ namespace models
 
 class Compartment
 {
-	friend class SolverComps;
-	int _index;
 public:
-	int address;
+	Location location;
 	int gid;
 
 	vector< unsigned int > children;	///< Hines indices of child compts

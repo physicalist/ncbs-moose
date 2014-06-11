@@ -24,12 +24,12 @@
 #include "../shell/Wildcard.h"
 #include "../shell/Shell.h"
 
-
 using namespace pn2s;
 
 //TODO: Replace with hash maps
-map< uint, models::Compartment* > _compartmentMap;
-
+map< int, Location > _compartmentMap;
+//map< uint, Id > _idMap;
+vector<Id> _all_compartmentIds;
 /**
  * This method is responsible to create model and get pertinent information from
  * the Shell and send it to Manager
@@ -39,18 +39,22 @@ void PN2S_Proxy::Setup(double dt)
 {
 	Manager::Setup(dt);
 	_compartmentMap.clear();
+//	_idMap.clear();
+	_all_compartmentIds.clear();
 }
 
 /**
  * Create Compartmental Model
  */
-void PN2S_Proxy::CreateCompartmentModel(Eref hsolve, Id seed){
+void PN2S_Proxy::CreateCompartmentModel(Id seed){
 
 	//Get Compartment id's with hine's index order
 	vector<Id> compartmentIds;
 	walkTree(seed,compartmentIds);
-
 	int nCompt = compartmentIds.size();
+
+	//TODO: Merge it with _all_compartmentIds
+	_all_compartmentIds.insert( _all_compartmentIds.end(), compartmentIds.begin(), compartmentIds.end() );
 
 	models::Model neutral(seed.value());
 
@@ -60,6 +64,7 @@ void PN2S_Proxy::CreateCompartmentModel(Eref hsolve, Id seed){
 	for ( int i = 0; i < nCompt; ++i )
 	{
 		hinesIndex[ compartmentIds[ i ] ] = i; //TODO: go to below loop
+//		_idMap[compartmentIds[ i ].value()] = compartmentIds[ i ];
 	}
 
 	/**
@@ -80,36 +85,7 @@ void PN2S_Proxy::CreateCompartmentModel(Eref hsolve, Id seed){
 			c.children.push_back( hinesIndex[ *child ] );
 		}
 		neutral.compts.push_back(c);
-		_compartmentMap[compartmentIds[ i ].value()] = &(*neutral.compts.end());
 	}
-
-	/**
-	 * Zumbify
-	 */
-    vector< Id >::const_iterator i;
-	vector< ObjId > temp;
-
-    for ( i = compartmentIds.begin(); i != compartmentIds.end(); ++i )
-		temp.push_back( ObjId( *i, 0 ) );
-	Shell::dropClockMsgs( temp, "init" );
-	Shell::dropClockMsgs( temp, "process" );
-    for ( i = compartmentIds.begin(); i != compartmentIds.end(); ++i )
-        CompartmentBase::zombify( i->eref().element(),
-					   ZombieCompartment::initCinfo(), hsolve.id() );
-
-//	temp.clear();
-//    for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
-//		temp.push_back( ObjId( *i, 0 ) );
-//	Shell::dropClockMsgs( temp, "process" );
-//    for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
-//        ZombieCaConc::zombify( hsolve.element(), i->eref().element() );
-//
-//	temp.clear();
-//    for ( i = channelId_.begin(); i != channelId_.end(); ++i )
-//		temp.push_back( ObjId( *i, 0 ) );
-//	Shell::dropClockMsgs( temp, "process" );
-//    for ( i = channelId_.begin(); i != channelId_.end(); ++i )
-//        ZombieHHChannel::zombify( hsolve.element(), i->eref().element() );
 
 	/**
 	 * Now model is ready to import into the PN2S
@@ -176,33 +152,53 @@ void PN2S_Proxy::walkTree( Id seed, vector<Id> &compartmentIds )
 }
 
 
-void PN2S_Proxy::Reinit(){
+void PN2S_Proxy::Reinit(Eref hsolve){
 	//Create model structures and Allocate memory
 	Manager::Allocate();
 
-//	//Copy data values and Initialize values
-//	typename vector<Device>::iterator dev;
-//	typename vector<ModelPack>::iterator mp;
-//	for( dev = DeviceManager::_device.begin(); dev != DeviceManager::_device.end(); ++dev) {
-//		for( mp = dev->_modelPacks.begin(); mp != dev->_modelPacks.end(); ++mp) {
-//			for (size_t m = mp->stat.model_start; m < mp->stat.model_end; ++m) {
-//				models::Model* model = mp->models[m];
-//				for (size_t c = 0; c < mp->stat.nCompts; ++m) {
-//					mp->_compsSolver.SetVm()
-//				}
-//			}
-//		}
-//	}
+	//create a map from Id to Location
+	typename vector<Device>::iterator dev;
+	typename vector<ModelPack>::iterator mp;
+	for( dev = DeviceManager::_device.begin(); dev != DeviceManager::_device.end(); ++dev) {
+		for( mp = dev->_modelPacks.begin(); mp != dev->_modelPacks.end(); ++mp) {
+			for (size_t m = 0; m < mp->stat.nModels; ++m) {
+				models::Model& model = mp->models[m];
+				for (size_t c = 0; c < mp->stat.nCompts; ++c) {
+					models::Compartment* cmp = &(model.compts[c]);
+					_compartmentMap[cmp->gid] = cmp->location;
+				}
+			}
+		}
+	}
 
-//			int gid = m[i].compts[n].gid;
-////			_ids[idx] = gid;
-//			_Vm[idx] = Fetch_Func(gid,INIT_VM_FIELD);
-//			_Cm[idx] = Fetch_Func(gid,CM_FIELD);
-//			_Em[idx] = Fetch_Func(gid,EM_FIELD);
-//			_Rm[idx] = Fetch_Func(gid,RM_FIELD);
-//			idx++;
+	/**
+	 * Zumbify and Copy data values
+	 */
+    vector< Id >::const_iterator i;
+	vector< ObjId > temp;
 
-	//Prepare solvers
+    for ( i = _all_compartmentIds.begin(); i != _all_compartmentIds.end(); ++i )
+		temp.push_back( ObjId( *i, 0 ) );
+	Shell::dropClockMsgs( temp, "init" );
+	Shell::dropClockMsgs( temp, "process" );
+    for ( i = _all_compartmentIds.begin(); i != _all_compartmentIds.end(); ++i )
+        CompartmentBase::zombify( i->eref().element(),
+					   ZombieCompartment::initCinfo(), hsolve.id() );
+    //	temp.clear();
+    //    for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
+    //		temp.push_back( ObjId( *i, 0 ) );
+    //	Shell::dropClockMsgs( temp, "process" );
+    //    for ( i = caConcId_.begin(); i != caConcId_.end(); ++i )
+    //        ZombieCaConc::zombify( hsolve.element(), i->eref().element() );
+    //
+    //	temp.clear();
+    //    for ( i = channelId_.begin(); i != channelId_.end(); ++i )
+    //		temp.push_back( ObjId( *i, 0 ) );
+    //	Shell::dropClockMsgs( temp, "process" );
+    //    for ( i = channelId_.begin(); i != channelId_.end(); ++i )
+    //        ZombieHHChannel::zombify( hsolve.element(), i->eref().element() );
+
+    //Prepare solvers
 	Manager::PrepareSolvers();
 }
 
@@ -210,7 +206,7 @@ void PN2S_Proxy::Reinit(){
  * If it's the first time to execute, prepare solver
  */
 void PN2S_Proxy::Process(ProcPtr info){
-//	Manager::Process();
+	Manager::Process();
 }
 
 /**
@@ -218,15 +214,13 @@ void PN2S_Proxy::Process(ProcPtr info){
  */
 void PN2S_Proxy::setValue( Id id, TYPE_ value , FIELD::TYPE n)
 {
-	models::Compartment* c = _compartmentMap[id.value()];
-	DeviceManager::_device[0]._modelPacks[0]._compsSolver.SetValue(c,n,value);
+	Location l = _compartmentMap[id.value()];
+	DeviceManager::_device[0]._modelPacks[l.address]._compsSolver.SetValue(l.index,n,value);
 }
 
 TYPE_ PN2S_Proxy::getValue( Id id, FIELD::TYPE n)
 {
-//    assert(this);
-//    unsigned int index = localIndex( id );
-//    assert( index < V_.size() );
-//    return V_[ index ];
+//    models::Compartment* c = _compartmentMap[id.value()];
+//    return DeviceManager::_device[0]._modelPacks[0]._compsSolver.GetValue(c,n);
 	return 11;
 }

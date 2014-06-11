@@ -51,8 +51,8 @@ public:
 //	TYPE_ GetA(int n,int i, int j){return _hm[n*nComp*nComp+i*nComp+j];}
 //	TYPE_ GetRHS(int n,int i){return _rhs[n*nComp+i];}
 //	static TYPE_ GetVm(int n,int i){return _Vm[n*nComp+i];}
-	void 	SetValue(Compartment* c, FIELD::TYPE field, TYPE_ value);
-	TYPE_ 	GetValue(Compartment* c, FIELD::TYPE field);
+	void 	SetValue(int index, FIELD::TYPE field, TYPE_ value);
+	TYPE_ 	GetValue(int index, FIELD::TYPE field);
 //	TYPE_ GetCm(int n,int i){return _Cm[n*nComp+i];}
 //	TYPE_ GetRm(int n,int i){return _Rm[n*nComp+i];}
 //	TYPE_ GetEm(int n,int i){return _Em[n*nComp+i];}

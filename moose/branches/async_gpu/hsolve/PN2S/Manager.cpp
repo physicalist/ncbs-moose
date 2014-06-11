@@ -21,6 +21,7 @@ static DeviceManager _deviceManager;
 Error_PN2S Manager::Setup(double dt){
 	_dt = dt;
 	_models.clear();
+	DeviceManager::CkeckAvailableDevices();
 	return  Error_PN2S::NO_ERROR;
 }
 
