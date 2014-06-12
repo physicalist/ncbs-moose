@@ -1817,7 +1817,7 @@ gauss_solve_gpu2 (const T *A, T *b, T *x, int n, int batch)
 }
 
 template <typename T, int arch>
-int fast_solve (const T *A_d, T *b_d, T *x_d, int n, int batch, int matinv)
+int fast_solve (const T *A_d, T *b_d, T *x_d, int n, int batch, int matinv, cudaStream_t stream)
 { 
     typedef void (* func)(const T *A_d, T *b_d, T *x_d, int n, int batch);
 
@@ -2159,7 +2159,7 @@ int fast_solve (const T *A_d, T *b_d, T *x_d, int n, int batch, int matinv)
                      sizeof(T) * srchThrd[n] +
                      sizeof(int) * srchThrd[n]);
 
-    pf[77*(!!matinv)+n]<<<dimGrid,dimBlock,smem_size>>>(A_d,b_d,x_d,n,batch);
+    pf[77*(!!matinv)+n]<<<dimGrid,dimBlock,smem_size, stream>>>(A_d,b_d,x_d,n,batch);
     cudaError_t err = cudaGetLastError();
     /* Check synchronous errors, i.e. pre-launch */
     if (cudaSuccess != err) {
@@ -2169,23 +2169,23 @@ int fast_solve (const T *A_d, T *b_d, T *x_d, int n, int batch, int matinv)
 }
 
 /* C-callable wrapper functions */
-int dsolve_batch (double *A, double *b, double *x, int n, int batch)
+int dsolve_batch (double *A, double *b, double *x, int n, int batch, cudaStream_t stream)
 {
-    return fast_solve<double,GPU_ARCH>(A, b, x, n, batch, 0);
+    return fast_solve<double,GPU_ARCH>(A, b, x, n, batch, 0, stream);
 }
 
 int zsolve_batch (cuDoubleComplex *A, cuDoubleComplex *b, cuDoubleComplex *x,
-                  int n, int batch)
+                  int n, int batch, cudaStream_t stream)
 { 
-    return fast_solve<cuDoubleComplex,GPU_ARCH>(A, b, x, n, batch, 0);
+    return fast_solve<cuDoubleComplex,GPU_ARCH>(A, b, x, n, batch, 0, stream);
 }
 
-int dmatinv (double *A, double *Ainv, int n)
+int dmatinv (double *A, double *Ainv, int n, cudaStream_t stream)
 {
-    return fast_solve<double,GPU_ARCH>(A, 0, Ainv, n, n, 1);
+    return fast_solve<double,GPU_ARCH>(A, 0, Ainv, n, n, 1, stream);
 }
 
-int zmatinv (cuDoubleComplex *A, cuDoubleComplex *Ainv, int n)
+int zmatinv (cuDoubleComplex *A, cuDoubleComplex *Ainv, int n, cudaStream_t stream)
 {
-    return fast_solve<cuDoubleComplex,GPU_ARCH>(A, 0, Ainv, n, n, 1);
+    return fast_solve<cuDoubleComplex,GPU_ARCH>(A, 0, Ainv, n, n, 1, stream);
 }

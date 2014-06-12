@@ -22,8 +22,8 @@
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include "Parameters.h"
 #include "HelperFunctions.h"
-
 //#include <typeinfo> // used in Conv.h to extract compiler independent typeid
 //#include <climits> // Required for g++ 4.3.2
 //#include <cstring> // Required for g++ 4.3.2
@@ -36,8 +36,6 @@ using namespace std;
 #define ARCH_SM30       (2)
 #define ARCH_SM35       (3)
 
-#define ARCH_ 	ARCH_SM30
-#define TYPE_	double
 //#define checkCudaErrors(val)    ( (val), #val, __FILE__, __LINE__ )
 
 //#define hsc_uint uint

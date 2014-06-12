@@ -13,6 +13,11 @@ ifndef CXXFLAGS
 	-Wall -Wno-long-long -pedantic -DDO_UNIT_TESTS -DUSE_GENESIS_PARSER -DSVN_REVISION=\"5340M\" \
 	-DLINUX -DUSE_GSL -DUSE_HDF5  -DH5_NO_DEPRECATED_SYMBOLS -I/usr/local/hdf5/include 
 endif
+
+ifndef CUDAFLAGS 
+	CUDAFLAGS = -G -O0 -Xcompiler -fopenmp -Xcompiler -fPIC -g -gencode arch=compute_30,code=compute_30 -gencode arch=compute_30,code=sm_30 -x cu  -I./libs -I./libs/tbb/include
+endif
+
 ####################################################################
 
 TARGET = _core.o
@@ -40,7 +45,7 @@ $(OBJS):
 	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I/usr/local/cuda/include -I. -I../basecode -I../msg -I../libs $< -c 
 	
 $(COBJS):
-	nvcc --compile -o  "$@" "$<" -G -O0 -Xcompiler -fopenmp -Xcompiler -fPIC -g -gencode arch=compute_30,code=sm_30  -x cu  -I../libs   
+	nvcc --compile $(CUDAFLAGS) -o  "$@" "$<"   
 
 .PHONY: clean
 $(SUBDIR): force

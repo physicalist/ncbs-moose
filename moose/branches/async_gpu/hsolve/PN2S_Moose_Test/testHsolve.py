@@ -227,7 +227,7 @@ def dump_plots( fname ):
 def make_spiny_compt(root_path, number,synInput):
     comptLength = 100e-6
     comptDia = 4e-6
-    numSpines = 1
+    numSpines = 20
     cell = moose.Neutral (root_path+"/cell"+str(number))
     
     compt = create_squid(cell)
@@ -277,10 +277,10 @@ def createCells(net_size=1):
 
 def test_elec_alone(sim_time=1):
     eeDt = 2e-6
-    hSolveDt = 2e-5
+    hSolveDt = 1e-4
     dt = 1e-6
 
-    createCells(2)
+    createCells(100)
  
     make_elec_plots("/n/cell0")
 
@@ -297,20 +297,18 @@ def test_elec_alone(sim_time=1):
     dump_plots( 'instab.plot' )
     # make Hsolver and rerun
     hsolve = moose.HSolve( '/n/hsolve' )
-    moose.setClock( 0, dt )
-    moose.setClock( 1, dt )
-    moose.setClock( 2, dt )
-    hsolve.dt = dt
+    moose.setClock( 0, hSolveDt )
+    moose.setClock( 1, hSolveDt )
+    moose.setClock( 2, hSolveDt )
+    hsolve.dt = hSolveDt
     moose.useClock( 1, '/n/hsolve', 'process' )
     hsolve.target = '/n/#/compt'
     moose.reinit()    
-    moose.start( sim_time )
-    dump_plots( 'h_instab.plot' )
+    moose.start( hSolveDt*1000 )
+#     dump_plots( 'h_instab.plot' )
 
 def main():
 	test_elec_alone(3e-6)
 
 if __name__ == '__main__':
 	main()
-# 
-# testHsolve.py ends here

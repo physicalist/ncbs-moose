@@ -60,7 +60,7 @@ extern "C" {
    -1    n is out of bounds, or batch is out of bounds
    -2    a CUDA error occured
 */  
-int dsolve_batch (double *A, double *b, double *x, int n, int batch);
+int dsolve_batch (double *A, double *b, double *x, int n, int batch, cudaStream_t stream);
 
 /* zsolve_batch() solves one or many double-complex systems of linear 
    equations, each with a single right-hand side. Partial pivoting is 
@@ -87,7 +87,7 @@ int dsolve_batch (double *A, double *b, double *x, int n, int batch);
    -2    a CUDA error occured
 */  
 int zsolve_batch (cuDoubleComplex *A, cuDoubleComplex *b, cuDoubleComplex *x, 
-                  int n, int batch);
+                  int n, int batch, cudaStream_t stream);
 
 
 /* dmatinv() inverts a square, non-singular matrix of double-precision 
@@ -109,7 +109,7 @@ int zsolve_batch (cuDoubleComplex *A, cuDoubleComplex *b, cuDoubleComplex *x,
    -1    n is out of bounds
    -2    a CUDA error occured
 */
-int dmatinv (double *A, double *Ainv, int n);
+int dmatinv (double *A, double *Ainv, int n, cudaStream_t stream);
 
 /* zmatinv() inverts a square, non-singular matrix of double-complex elements. 
    Partial pivoting is employed in the inversion process for increased 
@@ -130,7 +130,7 @@ int dmatinv (double *A, double *Ainv, int n);
    -1    n is out of bounds
    -2    a CUDA error occured
 */
-int zmatinv (cuDoubleComplex *A, cuDoubleComplex *Ainv, int n);
+int zmatinv (cuDoubleComplex *A, cuDoubleComplex *Ainv, int n, cudaStream_t stream);
 
 #ifdef __cplusplus
 }

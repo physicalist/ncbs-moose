@@ -11,7 +11,7 @@
 #include "../../headers.h"
 #include "HHChannel.h"
 #include "Compartment.h"
-#include "Matrix.h"
+//#include "Matrix.h"
 namespace pn2s
 {
 namespace models
@@ -25,10 +25,10 @@ public:
 	vector<HHChannel> hhChannels;
 	vector<Compartment > compts;
 
-	Matrix matrix;
+//	Matrix matrix;
 
 	Model(uint _id);
-	Model(Matrix m, uint _id);
+//	Model(Matrix m, uint _id);
 	virtual ~Model();
 
 };

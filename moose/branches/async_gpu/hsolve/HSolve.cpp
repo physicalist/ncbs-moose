@@ -192,6 +192,10 @@ HSolve::HSolve()
     ;
 }
 
+HSolve::~HSolve(){
+	PN2S_Proxy::Close();
+}
+
 
 ///////////////////////////////////////////////////
 // Dest function definitions
@@ -209,7 +213,7 @@ void HSolve::reinit( const Eref& hsolve, ProcPtr p )
 {
     dt_ = p->dt;
     if( isMasterHSolve_ )
-    	PN2S_Proxy::Reinit(hsolve);
+    	PN2S_Proxy::Reinit(hsolve); //Also zumbify
     else
     	this->HSolveActive::reinit( p );
 }
@@ -262,13 +266,7 @@ void HSolve::setup( Eref hsolve )
 		for (int i=0; i<n_models; i++) {
 			PN2S_Proxy::CreateCompartmentModel(seeds_[i]);
 		}
-		/**
-		 * Add model to model repositor
-		 */
 
-		/**
-		 * Zumbify all objects
-		 */
 	}
 	else
 	{

@@ -25,7 +25,6 @@ Error_PN2S Manager::Setup(double dt){
 	return  Error_PN2S::NO_ERROR;
 }
 
-
 Error_PN2S Manager::Allocate(){
 	if (!_isInitialized)
 		_isInitialized = true;

@@ -10,6 +10,7 @@
 #include "models/SolverChannels.h"
 #include "models/SolverComps.h"
 #include "models/ModelStatistic.h"
+#include <cuda.h>
 
 namespace pn2s
 {
@@ -31,12 +32,12 @@ public:
 		_compsSolver.SetDt(dt);
 	}
 
-	Error_PN2S Allocate(models::Model *m, models::ModelStatistic s);
+	Error_PN2S Allocate(models::Model *m, models::ModelStatistic s, cudaStream_t st);
 	Error_PN2S PrepareSolvers();
 
-	Error_PN2S Process();
-	Error_PN2S Output();
-	Error_PN2S Input();
+	void Process();
+	void Output();
+	void Input();
 
 	models::SolverComps _compsSolver; //TODO Encapsulation
 //	solvers::SolverChannels<TYPE_,CURRENT_ARCH> _channelsSolver; //TODO Encapsulation
