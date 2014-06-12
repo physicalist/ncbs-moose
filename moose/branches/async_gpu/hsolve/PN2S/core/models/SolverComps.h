@@ -23,6 +23,7 @@ class SolverComps
 private:
 	ModelStatistic _stat;
 	Model* _models;
+	cudaStream_t _stream;
 
 	//Connection Fields
 	PField<TYPE_, ARCH_>  _hm;	// Hines Matrices
@@ -38,12 +39,12 @@ private:
 public:
 	SolverComps();
 	~SolverComps();
-	Error_PN2S AllocateMemory(models::Model * m, models::ModelStatistic& s);
+	Error_PN2S AllocateMemory(models::Model * m, models::ModelStatistic& s, cudaStream_t stream);
 	Error_PN2S PrepareSolver();
-	Error_PN2S Input();
-	Error_PN2S Process();
-	Error_PN2S Output();
-	Error_PN2S UpdateMatrix();
+	void Input();
+	void Process();
+	void Output();
+	void UpdateMatrix();
 
 	double GetDt(){ return _stat.dt;}
 	void SetDt(double dt){ _stat.dt = dt;}

@@ -83,8 +83,7 @@ do{											\
 
 double HSolve::getVm( Id id ) const
 {
-//	CHECK_GET_PN2S(PN2S_Proxy::VM_FIELD);
-
+	CHECK_GET_PN2S(pn2s::FIELD::VM);
     assert(this);
     unsigned int index = localIndex( id );
     assert( index < V_.size() );

@@ -19,7 +19,7 @@ HSC/HSC_Test
 Debug/
 PN2S/benchmark
 PN2S_Moose_Test/PN2S_Moose_Test
-
+PN2S_Moose_Test/.pydevproject
 #Profiling
 *.prof
 

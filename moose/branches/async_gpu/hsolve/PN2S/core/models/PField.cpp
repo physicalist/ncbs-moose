@@ -23,24 +23,26 @@ do {                                                                  \
 } while (0)
 
 template <typename T>
-__inline__ Error_PN2S sendVector(uint size, T* h, T* d)
+__inline__ Error_PN2S sendVector(uint size, T* h, T* d, cudaStream_t stream)
 {
-	cublasStatus_t stat = cublasSetVector(size, sizeof(h[0]),h, 1,d,1);
-	if (stat != CUBLAS_STATUS_SUCCESS) {
-		cerr << "CUBLAS setting Variables\n";
-		return Error_PN2S::CuBLASError;
-	}
+//	cudaError_t stat = cudaMemcpyAsync(d, h, sizeof(h[0])*size, cudaMemcpyHostToDevice, stream);
+	cublasStatus_t stat = cublasSetVectorAsync(size, sizeof(h[0]),h, 1,d,1,stream);
+//	if (stat != CUDA_SUCCESS) {
+//			cerr << "CUDA setting Variables\n";
+//			return Error_PN2S::CUDA_Error;
+//		}
 	return Error_PN2S::NO_ERROR;
 }
 
 template <typename T>
-__inline__ Error_PN2S getVector(uint size, T* h, T* d)
+__inline__ Error_PN2S getVector(uint size, T* h, T* d, cudaStream_t stream)
 {
-	cublasStatus_t stat = cublasGetVector(size, sizeof(h[0]),d, 1,h,1);
-	if (stat != CUBLAS_STATUS_SUCCESS) {
-		cerr << "CUBLAS setting Variables\n";
-		return Error_PN2S::CuBLASError;
-	}
+	cublasStatus_t stat = cublasGetVectorAsync(size, sizeof(h[0]),d, 1,h,1,stream);
+//	cudaError_t stat = cudaMemcpyAsync(h, d, sizeof(h[0])*size, cudaMemcpyDeviceToHost, stream);
+//	if (stat != CUDA_SUCCESS) {
+//		cerr << "CUDA setting Variables\n";
+//		return Error_PN2S::CUDA_Error;
+//	}
 	return Error_PN2S::NO_ERROR;
 }
 
@@ -57,20 +59,9 @@ PField<T,arch>::PField():
 
 }
 
-//template <typename T, int arch>
-//Field<T,arch>::Field(FieldType t):
-//	fieldType(t),
-//	host(0),
-//	device(0),
-//	host_inc(1),
-//	device_inc(1)
-//{
-//
-//}
-
 template <typename T, int arch>
 PField<T,arch>::~PField(){
-	//TODO: Remove!
+	//Driver shutting down, so not necessary to release memory
 }
 
 
@@ -85,34 +76,34 @@ Error_PN2S PField<T,arch>::AllocateMemory(size_t size)
 }
 
 template <typename T, int arch>
-Error_PN2S PField<T,arch>::Host2Device_Sync()
+Error_PN2S PField<T,arch>::Host2Device_Async(cudaStream_t stream)
 {
-	CALL(sendVector<T>(_size, host,device));
+	CALL(sendVector<T>(_size, host,device, stream));
 	return Error_PN2S::NO_ERROR;
 }
 
 template <typename T, int arch>
-Error_PN2S PField<T,arch>::Device2Host_Sync()
+Error_PN2S PField<T,arch>::Device2Host_Async(cudaStream_t stream)
 {
-	CALL(getVector<T>(_size, host,device));
+	CALL(getVector<T>(_size, host,device,stream));
 	return Error_PN2S::NO_ERROR;
 }
 
 template <typename T, int arch>
-Error_PN2S PField<T,arch>::Send2Device(PField& _hostResource)
+Error_PN2S PField<T,arch>::Send2Device_Async(PField& _hostResource,cudaStream_t stream)
 {
 	size_t minSize = min(_hostResource._size, _size);
 	if(minSize > 0)
-		CALL(sendVector<T>(minSize, _hostResource.host,device));
+		CALL(sendVector<T>(minSize, _hostResource.host,device,stream));
 	return Error_PN2S::NO_ERROR;
 }
 
 template <typename T, int arch>
-Error_PN2S PField<T,arch>::Send2Host(PField& _hostResource)
+Error_PN2S PField<T,arch>::Send2Host_Async(PField& _hostResource,cudaStream_t stream)
 {
 	size_t minSize = min(_hostResource._size, _size);
 	if(minSize > 0)
-		CALL(getVector<T>(minSize, _hostResource.host,device));
+		CALL(getVector<T>(minSize, _hostResource.host,device,stream));
 	return Error_PN2S::NO_ERROR;
 }
 

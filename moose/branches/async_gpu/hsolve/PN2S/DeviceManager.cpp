@@ -8,13 +8,17 @@
 #include "DeviceManager.h"
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include <cuda_profiler_api.h>
 
 using namespace pn2s;
 
 vector<Device> DeviceManager::_device;
 int DeviceManager::CkeckAvailableDevices(){
+	cudaProfilerStop();
 	_device.clear();
-	int device_count = 0;
+
+	int device_count = 0; //TODO: get value from device
+	cudaDeviceReset();
 	cudaGetDeviceCount(&device_count);
 
 	for(int i =0; i<device_count; i++)
@@ -22,6 +26,8 @@ int DeviceManager::CkeckAvailableDevices(){
 		Device d(i);
 		_device.push_back(d);
 	}
+
+
 	return device_count;
 }
 
@@ -31,7 +37,6 @@ int DeviceManager::CkeckAvailableDevices(){
  */
 
 Error_PN2S DeviceManager::Allocate(vector<models::Model > &m, double dt){
-	cudaDeviceReset();
 
 	//TODO: Add Multidevice
 	int32_t address = 0;
@@ -51,6 +56,7 @@ Error_PN2S DeviceManager::Allocate(vector<models::Model > &m, double dt){
 //
 //		it += numModel/numDevice+1;
 //	}
+
 	return Error_PN2S::NO_ERROR;
 }
 
@@ -60,14 +66,22 @@ void DeviceManager::PrepareSolvers()
 	{
 		device->PrepareSolvers();
 	}
+	cudaProfilerStart();
 }
 
 void DeviceManager::Process()
 {
+
 	//TODO: Each device should get its own pack
 	for(vector<Device>::iterator device = _device.begin(); device != _device.end(); ++device)
-	{
 		device->Process();
-	}
+
+}
+
+void DeviceManager::Close()
+{
+	cudaProfilerStop();
+	for(vector<Device>::iterator device = _device.begin(); device != _device.end(); ++device)
+		device->Destroy();
 }
 

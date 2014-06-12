@@ -21,11 +21,11 @@ Model::Model(uint _id) :
 	hhChannels.clear();
 }
 
-Model::Model(Matrix m,uint _id)
-{
-	id = _id ;
-	matrix = m;
-}
+//Model::Model(Matrix m,uint _id)
+//{
+//	id = _id ;
+//	matrix = m;
+//}
 
 Model::~Model() {
 

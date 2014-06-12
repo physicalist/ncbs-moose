@@ -7,10 +7,12 @@
 
 #include "ModelPack.h"
 #include "../headers.h"
+
 #include <assert.h>
 
 using namespace pn2s;
-ModelPack::ModelPack(): _dt(1){
+
+ModelPack::ModelPack(): _dt(1), models(0){
 
 }
 
@@ -18,12 +20,12 @@ ModelPack::~ModelPack(){
 
 }
 
-Error_PN2S ModelPack::Allocate(models::Model *m, models::ModelStatistic s){
+Error_PN2S ModelPack::Allocate(models::Model *m, models::ModelStatistic s, cudaStream_t st){
 	stat = s;
 	models = m;
 
 	Error_PN2S res = Error_PN2S::NO_ERROR;
-	res = _compsSolver.AllocateMemory(models,stat);
+	res = _compsSolver.AllocateMemory(models,stat, st);
 	assert(res==Error_PN2S::NO_ERROR);
 
 	return res;
@@ -41,23 +43,20 @@ Error_PN2S ModelPack::PrepareSolvers(){
 }
 
 
-Error_PN2S ModelPack::Input()
+void ModelPack::Input()
 {
 	//For each model in the pack, executes the Process()
-//	_compsSolver.Input();
-	return Error_PN2S::NO_ERROR;
+	_compsSolver.Input();
 }
 
-Error_PN2S ModelPack::Process()
+void ModelPack::Process()
 {
-//	_compsSolver.Process();
-	return Error_PN2S::NO_ERROR;
+	_compsSolver.Process();
 }
 
-Error_PN2S ModelPack::Output()
+void ModelPack::Output()
 {
-//	_compsSolver.Output();
-	return Error_PN2S::NO_ERROR;
+	_compsSolver.Output();
 }
 
 

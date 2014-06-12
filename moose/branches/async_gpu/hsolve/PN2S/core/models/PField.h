@@ -26,8 +26,8 @@ template <typename T, int arch>
 class PField
 {
 private:
-	size_t _size;
 public:
+	size_t _size;
 	enum FieldType {TYPE_IO, TYPE_INPUT, TYPE_OUTPUT} fieldType;
 	T* host;
 	int host_inc;
@@ -43,11 +43,11 @@ public:
 
 	Error_PN2S AllocateMemory(size_t size);
 //	Error_PN2S AllocateMemory(size_t size, int inc);
-	Error_PN2S Host2Device_Sync();
-	Error_PN2S Device2Host_Sync();
+	Error_PN2S Host2Device_Async(cudaStream_t stream);
+	Error_PN2S Device2Host_Async(cudaStream_t stream);
 
-	Error_PN2S Send2Device(PField& _hostResource);
-	Error_PN2S Send2Host(PField& _hostResource);
+	Error_PN2S Send2Device_Async(PField& _hostResource,cudaStream_t stream);
+	Error_PN2S Send2Host_Async(PField& _hostResource,cudaStream_t stream);
 
 	thrust::device_ptr<T> DeviceStart() {return thrust::device_ptr<T> (device); }
 	thrust::device_ptr<T> DeviceEnd() {return thrust::device_ptr<T> (device+_size); }

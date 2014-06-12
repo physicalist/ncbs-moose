@@ -28,6 +28,7 @@ public:
 	static Error_PN2S Allocate(vector<models::Model > &m, double dt);
 	static void PrepareSolvers();
 	static void Process();
+	static void Close();
 
 };
 }

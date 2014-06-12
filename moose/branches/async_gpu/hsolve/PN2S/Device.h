@@ -29,18 +29,17 @@ public:
 	Error_PN2S GenerateModelPacks(double dt,
 			models::Model *m,
 			size_t start, size_t end,
-			int32_t address); //Address: 2 byte(Machine+Device) + 2 byte(ModelPack)
-	Error_PN2S PrepareSolvers();
+			int32_t address); //Device address
+	void PrepareSolvers();
 
+	void Destroy();
 	void Process();
-	Error_PN2S Setup();
-
 
 private:
-	int _queue_size;
-	void task1_prepareInput(omp_lock_t& _empty_lock,omp_lock_t& _full_lock, int& state);
-	void task2_doProcess(omp_lock_t& _empty_lock_input,	omp_lock_t& _full_lock_input,omp_lock_t& _empty_lock_output, int& state);
-	void task3_prepareOutput(omp_lock_t& _empty_lock, int& state);
+//	int _queue_size;
+//	void task1_prepareInput(omp_lock_t& _empty_lock,omp_lock_t& _full_lock, int& state);
+//	void task2_doProcess(omp_lock_t& _empty_lock_input,	omp_lock_t& _full_lock_input,omp_lock_t& _empty_lock_output, int& state);
+//	void task3_prepareOutput(omp_lock_t& _empty_lock, int& state);
 
 };
 }

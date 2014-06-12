@@ -23,6 +23,7 @@ struct Error_PN2S
 		CuBLASError = 1,
 		CUDA_Error = 2,
 		NOT_INITIALIZED_Error = 3,
+		EMPTY = 4,
     };
     Type t_;
     string msg_;
@@ -117,6 +118,7 @@ void inline _printVector(vector< uint >& vec)
 }
 
 //Debugging
+//#define _D(call)
 #define _D(call)                                          \
 do {                                                                  \
 	call;				\

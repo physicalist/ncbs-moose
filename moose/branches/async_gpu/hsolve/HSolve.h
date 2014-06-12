@@ -17,6 +17,7 @@ class HSolve: public HSolveActive
 {
 public:
 	HSolve();
+	~HSolve();
 	
 	void process( const Eref& hsolve, ProcPtr p );
 	void reinit( const Eref& hsolve, ProcPtr p );
