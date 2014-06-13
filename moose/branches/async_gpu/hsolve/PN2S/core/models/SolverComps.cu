@@ -24,6 +24,8 @@ cublasHandle_t _handle;
 
 cudaStream_t _stream;
 
+__global__ void update_rhs(TYPE_* rhs, TYPE_* vm, TYPE_* cm, TYPE_* rm, size_t size, TYPE_ dt);
+
 SolverComps::SolverComps(): _models(0), _stream(0)
 {
 }
@@ -98,7 +100,6 @@ void SolverComps::Process()
 {
 	UpdateMatrix();
 
-	//Solve
 	int ret = dsolve_batch (_hm.device, _rhs.device, _Vm.device, _stat.nCompts, _stat.nModels, _stream);
 	assert(!ret);
 }
@@ -115,7 +116,8 @@ void SolverComps::Output()
  * RHS = Vm * Cm / ( dt / 2.0 ) + Em/Rm;
  *
  */
-
+//#define USE_THRUST
+#ifdef USE_THRUST
 template< class ValueType >
 struct update_rhs_functor
 {
@@ -133,12 +135,35 @@ struct update_rhs_functor
 				thrust::get<0>(t) / thrust::get<3>(t);
 	}
 };
+#else
 
+__global__ void update_rhs(TYPE_* rhs, TYPE_* vm, TYPE_* cm, TYPE_* rm, size_t size, TYPE_ dt)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    rhs[idx] = vm[idx] * cm[idx] / dt * 2.0 + rhs[idx] / rm[idx];
+}
+
+#endif
 
 void SolverComps::UpdateMatrix()
 {
 	uint vectorSize = _stat.nModels * _stat.nCompts;
 
+#ifndef USE_THRUST
+	dim3 threads, blocks;
+	threads=dim3(512, 1);
+	blocks=dim3(vectorSize / threads.x, 1);
+
+
+	update_rhs <<<blocks, threads,0, _stream>>> (
+			_rhs.device,
+			_Vm.device,
+			_Cm.device,
+			_Rm.device,
+			vectorSize,
+			_stat.dt);
+
+#else
 	thrust::for_each(
 		thrust::make_zip_iterator(
 				thrust::make_tuple(
@@ -155,7 +180,7 @@ void SolverComps::UpdateMatrix()
 						_Rm.DeviceEnd())),
 
 		update_rhs_functor< TYPE_ >( _stat.dt ) );
-
+#endif
 //	getVector(vectorSize, _rhs,_rhs_dev); //TODO maybe is not necessary
 
 }
@@ -169,7 +194,7 @@ void SolverComps::makeHinesMatrix(models::Model *model, TYPE_ * matrix)
 	vector< double > CmByDt(_stat.nCompts);
 	vector< double > Ga(_stat.nCompts);
 	for ( unsigned int i = 0; i < _stat.nCompts; i++ ) {
-		TYPE_ cm = GetValue(model->compts[ i ].location.index, FIELD::CM);
+		TYPE_ cm = GetValue(model->compts[ i ].location.index, FIELD::CM); //TODO: check values are equal _Cm[i] or not?
 		TYPE_ ra = GetValue(model->compts[ i ].location.index, FIELD::RA);
 
 		CmByDt[i] = cm / ( _stat.dt / 2.0 ) ;

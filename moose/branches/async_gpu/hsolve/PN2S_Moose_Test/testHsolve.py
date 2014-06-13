@@ -208,7 +208,7 @@ def add_plot( objpath, field, plot ):
 def make_elec_plots(cellpath):
     graphs = moose.Neutral( '/graphs' )
     elec = moose.Neutral( '/graphs/elec' )
-    add_plot( cellpath+'/compt', 'getVm', 'elec/dendVm' )
+    add_plot( cellpath+'/compt', 'getVm', 'elec/comptVm' )
     # add_plot( cellpath+'/head0', 'getVm', 'elec/head0Vm' )
     # add_plot( cellpath+'/head2', 'getVm', 'elec/head2Vm' )
     # add_plot( cellpath+'/head2/ca', 'getCa', 'elec/head2Ca' )
@@ -218,16 +218,16 @@ def dump_plots( fname ):
         os.remove( fname )
     for x in moose.wildcardFind( '/graphs/##[ISA=Table]' ):
     	print x.vector
-#         t = numpy.arange( 0, x.vector.size, 1 )
-#         pylab.plot( t, x.vector, label=x.name )
-    # pylab.legend()
-    # pylab.show()
+        t = numpy.arange( 0, len(x.vector), 1 )
+        pylab.plot( t, x.vector, label=x.name )
+    pylab.legend()
+    pylab.show()
     #moose.utils.plotAscii(x.vector, file=fname)
 
-def make_spiny_compt(root_path, number,synInput):
+def make_spiny_compt(root_path, number,synInput, isGPU):
     comptLength = 100e-6
     comptDia = 4e-6
-    numSpines = 20
+    numSpines = 2
     cell = moose.Neutral (root_path+"/cell"+str(number))
     
     compt = create_squid(cell)
@@ -256,7 +256,13 @@ def make_spiny_compt(root_path, number,synInput):
              sib2 = moose.element( '/n/head' + str(j) )
              moose.connect( sib1, 'sibling', sib2, 'sibling', 'Single' )
         """
-
+    # make HSove for neurons
+    if isGPU == False:
+        hsolve = moose.HSolve( cell.path+'/hsolve' )
+        hsolve.dt = 1e-6
+        moose.useClock( 1, hsolve.path, 'process' )
+        hsolve.target = compt.path
+    
 def create_pool( compt, name, concInit ):
     meshEntries = moose.element( compt.path + '/mesh' )
     pool = moose.Pool( compt.path + '/' + name )
@@ -264,7 +270,7 @@ def create_pool( compt, name, concInit ):
     pool.concInit = concInit
     return pool
 
-def createCells(net_size=1):
+def createCells(net_size=1,isMasterHsolve=False):
     network = moose.Neutral ("/n")
     synInput = moose.SpikeGen("/n/synInput")
     synInput.refractT = 47e-3
@@ -272,43 +278,43 @@ def createCells(net_size=1):
     synInput.edgeTriggered = 0
     synInput.Vm( 0 )
     for i in range(net_size):
- 		make_spiny_compt(network.path, i,synInput)
+ 		make_spiny_compt(network.path, i,synInput,isMasterHsolve)
 
 
-def test_elec_alone(sim_time=1):
-    eeDt = 2e-6
-    hSolveDt = 1e-4
-    dt = 1e-6
-
-    createCells(100)
- 
-    make_elec_plots("/n/cell0")
-
+def test_elec_alone(dt = 1e-6, ncell=1, isMasterHsolve = False):
+    
     moose.setClock( 0, dt )
     moose.setClock( 1, dt )
     moose.setClock( 2, dt )
     moose.setClock( 8, 0.1e-3 )
+    
+    createCells(ncell,isMasterHsolve)  
+    
+    make_elec_plots("/n/cell0")
+    
     moose.useClock( 0, '/n/##[ISA=Compartment]', 'init' )
     moose.useClock( 1, '/n/##[ISA=Compartment]', 'process' )
     moose.useClock( 2, '/n/##[ISA=ChanBase],/n/##[ISA=SynBase],/n/##[ISA=CaConc],/n/##[ISA=SpikeGen]','process')
-    moose.useClock( 0, '/graphs/elec/#', 'process' )
-    moose.reinit()
-    moose.start( sim_time )
-    dump_plots( 'instab.plot' )
-    # make Hsolver and rerun
-    hsolve = moose.HSolve( '/n/hsolve' )
-    moose.setClock( 0, hSolveDt )
-    moose.setClock( 1, hSolveDt )
-    moose.setClock( 2, hSolveDt )
-    hsolve.dt = hSolveDt
-    moose.useClock( 1, '/n/hsolve', 'process' )
-    hsolve.target = '/n/#/compt'
-    moose.reinit()    
-    moose.start( hSolveDt*1000 )
-#     dump_plots( 'h_instab.plot' )
-
+    moose.useClock( 8, '/graphs/elec/#', 'process' )
+    
+    if isMasterHsolve:
+        # make Hsolver and rerun
+        hsolve = moose.HSolve( '/n/hsolve' )
+        hsolve.dt = dt
+        moose.useClock( 1, '/n/hsolve', 'process' )
+        hsolve.target = '/n/cell0/compt'
+    
+    
 def main():
-	test_elec_alone(3e-6)
+    dt = 1e-6
+    ncell=1
+    isGPU = True
+
+    test_elec_alone(dt, ncell, isGPU )
+    
+    moose.reinit()    
+    # moose.start( dt * 20000 )
+    # dump_plots( 'h_instab.plot' )
 
 if __name__ == '__main__':
 	main()
