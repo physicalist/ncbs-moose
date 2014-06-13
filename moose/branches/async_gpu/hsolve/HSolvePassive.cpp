@@ -91,9 +91,7 @@ void HSolvePassive::walkTree( Id seed )
             HSolveUtils::adjacent( current, above, cstack.back() );
         }
     }
-    for (int var = 0; var < compartmentId_.size(); ++var) {
-    	cout << compartmentId_[var] << " " << flush;
-	}
+
     // Compartments get ordered according to their hines' indices once this
     // list is reversed.
     reverse( compartmentId_.begin(), compartmentId_.end() );
