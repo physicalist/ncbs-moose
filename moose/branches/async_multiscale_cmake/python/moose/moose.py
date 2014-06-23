@@ -317,7 +317,8 @@ def getmoosedoc(tokens, inherited=False):
         else:
             append_finfodocs(tokens[0], docstring, indent)
             if inherited:
-                for class_ in eval('_moose.%s' % (tokens[0])).mro():
+                mro = eval('_moose.%s' % (tokens[0])).mro()
+                for class_ in mro[1:]:
                     docstring.write('\n\n#Inherited from %s#\n' % (class_.__name__))
                     append_finfodocs(class_.__name__, docstring, indent)
                     if class_ == _moose.Neutral:    # Neutral is the toplevel moose class
@@ -348,7 +349,7 @@ def append_finfodocs(classname, docstring, indent):
 # help and python user's expectation of seeing the help via more/less.
 pager=None
 
-def doc(arg, inherited=False, paged=False):
+def doc(arg, inherited=True, paged=True):
     """Display the documentation for class or field in a class.
     
     Parameters
