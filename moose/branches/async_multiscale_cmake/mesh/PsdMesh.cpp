@@ -91,7 +91,10 @@ PsdMesh::PsdMesh()
 		pa_( 1 ),
 		parentDist_( 1, 1e-6 ),
 		parent_( 1, 0 ),
-		surfaceGranularity_( 0.1 )
+		surfaceGranularity_( 0.1 ),
+		vs_(1, 5.0e-21 ),
+		area_(1, 1.0e-13 ),
+		length_(1, 50.0e-9 )
 {
 	const double defaultLength = 1e-6;
 	psd_[0].setDia( defaultLength );
@@ -171,8 +174,10 @@ void PsdMesh::handlePsdList(
 			x += 3;
 			psd_.back().setDia( *x++ );
 			psd_.back().setIsCylinder( true );
-			psd_.back().setLength( *x ); // This is an entirely nominal
-						// length, so that the effective vol != 0.
+				// This is an entirely nominal
+				// length, so that the effective vol != 0.
+			psd_.back().setLength( thickness_ ); 
+
 			parentDist_.push_back( *x++ );
 			vs_[i] = psd_.back().volume( psd_.back() );
 			area_[i] = psd_.back().getDiffusionArea( psd_.back(), 0 );
@@ -436,9 +441,18 @@ void PsdMesh::matchCubeMeshEntries( const ChemCompt* other,
 // Inherited Virtual funcs for getting voxel info.
 ////////////////////////////////////////////////////////////////////////
 
+/**
+ * This function returns the diffusively connected parent voxel within
+ * the current (psd) mesh. Since each spine is treated as an independed
+ * voxel, there is no such voxel, so we return -1U for each psd.
+ * Note that there is a separate function that returns the parentVoxel
+ * referred to the NeuroMesh that this spine/psd sits on.
+ */
 vector< unsigned int > PsdMesh::getParentVoxel() const
 {
-	return parent_;
+	vector< unsigned int > ret( parent_.size(), -1U );
+	return ret;
+	// return parent_;
 }
 
 const vector< double >& PsdMesh::vGetVoxelVolume() const
@@ -454,5 +468,31 @@ const vector< double >& PsdMesh::getVoxelArea() const
 const vector< double >& PsdMesh::getVoxelLength() const
 {
 	return length_;
+}
+
+double PsdMesh::vGetEntireVolume() const
+{
+	double ret = 0.0;
+	for ( vector< double >::const_iterator i = 
+					vs_.begin(); i != vs_.end(); ++i )
+		ret += *i;
+	return ret;
+}
+
+bool PsdMesh::vSetVolumeNotRates( double volume )
+{
+	double volscale = volume / vGetEntireVolume();
+	double linscale = pow( volscale, 1.0/3.0 );
+	assert( vs_.size() == psd_.size() );
+	assert( area_.size() == psd_.size() );
+	assert( length_.size() == psd_.size() );
+	for ( unsigned int i = 0; i < psd_.size(); ++i ) {
+		psd_[i].setLength( psd_[i].getLength() * linscale );
+		psd_[i].setDia( psd_[i].getDia() * linscale );
+		vs_[i] *= volscale;
+		area_[i] *= linscale * linscale;
+		length_[i] *= linscale;
+	}
+	return true;
 }
 

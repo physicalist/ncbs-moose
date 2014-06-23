@@ -52,25 +52,6 @@
 
 using namespace std;
 
-
-string debugPrint(string msg, string prefix, string color = T_RESET
-        , unsigned indentLevel = 10);
-
-
-string colored(string msg);
-
-string colored(string msg, string colorName);
-
-/*  pretty print onto console using colors. */
-void dump(string msg, string type="WARNING", bool autoFormat=true);
-
-/*  log to a file and also write to console. */
-void log(string msg, string type, bool redirectToConsole=true
-        , bool removeTicks=true);
-
-/* Check if a given character is a backtick ` */
-bool isBackTick(char a);
-
 /* 
  * ===  FUNCTION  ==============================================================
  *         Name:  mapToString
@@ -83,7 +64,7 @@ bool isBackTick(char a);
     template<typename A, typename B>
 string mapToString(const map<A, B>& m, bool value=true)
 {
-    unsigned int width = 80;
+    unsigned int width = 81;
     unsigned int mapSize = m.size();
     unsigned int size = 0;
 
@@ -97,7 +78,7 @@ string mapToString(const map<A, B>& m, bool value=true)
         ss.str("");
         ss << it->first;
         if(value)
-            ss << ": `" << it->second << '`';
+            ss << ": " << it->second;
         row.push_back(ss.str());
         if(ss.str().size() > size)
             size = ss.str().size()+1;
@@ -111,7 +92,7 @@ string mapToString(const map<A, B>& m, bool value=true)
     {
         if(i < colums)
         {
-            ss << setw(size) << row[ii];
+            ss << setw(size+1) << row[ii];
             i++;
         }
         else
@@ -126,21 +107,23 @@ string mapToString(const map<A, B>& m, bool value=true)
 #include <ctime>
 #include <algorithm>
 
-string colored(string msg)
+inline string colored(string msg)
 {
     stringstream ss;
     ss << T_RED << msg << T_RESET;
     return ss.str();
 }
 
-string colored(string msg, string colorName)
+inline string colored(string msg, string colorName)
 {
     stringstream ss;
     ss << colorName << msg << T_RESET;
     return ss.str();
 }
 
-string debugPrint(string msg, string prefix, string color, unsigned debugLevel) 
+inline string debugPrint(string msg, string prefix = "DEBUG"
+        , string color=T_RESET, unsigned debugLevel = 0
+        ) 
 {
     stringstream ss; ss.str("");
     if(debugLevel <= DEBUG_LEVEL)
@@ -155,8 +138,13 @@ string debugPrint(string msg, string prefix, string color, unsigned debugLevel)
  *  This function dumps a message onto console. Fills appropriate colors as
  *  needed. What can I do, I love colors.
  *-----------------------------------------------------------------------------*/
-void dump(string msg, string type, bool autoFormat)
+
+
+inline void dump(string msg, string type = "DEBUG", bool autoFormat = true)
 {
+#if QUIET_MODE || VERBOSITY < 0
+    return;
+#else
     stringstream ss;
     ss << "[" << type << "] ";
     bool set = false;
@@ -168,7 +156,7 @@ void dump(string msg, string type, bool autoFormat)
         color = T_CYAN;
     else if(type == "ERROR" || type == "FAIL" || type == "FATAL" || type == "ASSERT_FAILURE")
         color = T_RED;
-    else if(type == "INFO" | type == "EXPECT_FAILURE")
+    else if(type == "INFO" || type == "EXPECT_FAILURE")
         color = T_MAGENTA;
     else if(type == "LOG")
         color = T_BLUE;
@@ -200,30 +188,44 @@ void dump(string msg, string type, bool autoFormat)
     if(!reset)
         ss << T_RESET;
     cerr << ss.str() << endl;
+#endif
 }
+
+/* A macro would be cool. */
+#define DUMP(a, t) \
+    ostringstream ss; \
+    ss << a << endl;\
+    dump(ss.str(), t); \
 
 /*-----------------------------------------------------------------------------
  *  Log to a file, and also to console.
  *-----------------------------------------------------------------------------*/
-bool isBackTick(char a)
+inline bool isBackTick(char a)
 {
     if('`' == a)
         return true;
     return false;
 }
 
-void log(string msg, string type, bool redirectToConsole, bool removeTicks)
+inline string formattedMsg(string& msg)
+{
+    remove_if(msg.begin(), msg.end(), isBackTick);
+    return msg;
+}
+
+inline void log(string msg, string type = "DEBUG"
+        , bool redirectToConsole = true
+        , bool removeTicks = true 
+        )
 {
     if(redirectToConsole)
         dump(msg, type, true);
 
     /* remove any backtick from the string. */
-    if(removeTicks)
-        remove_if(msg.begin(), msg.end(), isBackTick);
+    formattedMsg( msg );
 
     fstream logF;
-    logF.open("__simple__.log", ios::app);
-
+    logF.open( "__moose__.log", ios::app);
     time_t rawtime; time(&rawtime);
     struct tm* timeinfo;
     timeinfo = localtime(&rawtime);
@@ -232,6 +234,5 @@ void log(string msg, string type, bool redirectToConsole, bool removeTicks)
 
     logF.close();
 }
-
 
 #endif   /* ----- #ifndef print_function_INC  ----- */

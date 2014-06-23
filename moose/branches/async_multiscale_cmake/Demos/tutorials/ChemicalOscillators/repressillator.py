@@ -24,13 +24,10 @@ import sys
 def main():
         #solver = "gsl"  # Pick any of gsl, gssa, ee..
         solver = "gssa"  # Pick any of gsl, gssa, ee..
-	mfile = '../Genesis_files/Repressillator.g'
+	mfile = '../../Genesis_files/Repressillator.g'
 	runtime = 6000.0
-	if ( len( sys.argv ) >= 3 ):
-		mfile = '../Genesis_files/' + sys.argv[1]
-		runtime = float( sys.argv[2] )
-	if ( len( sys.argv ) == 4 ):
-                solver = sys.argv[3]
+	if ( len( sys.argv ) >= 2 ):
+                solver = sys.argv[1]
 	modelId = moose.loadModel( mfile, 'model', solver )
         # Increase volume so that the stochastic solver gssa 
         # gives an interesting output
@@ -42,7 +39,7 @@ def main():
 	moose.start( runtime ) 
 
 	# Display all plots.
-        img = mpimg.imread( 'repressillator_tut.png' )
+        img = mpimg.imread( 'repressillatorOsc.png' )
         fig = plt.figure( figsize=(12, 10 ) )
         png = fig.add_subplot( 211 )
         imgplot = plt.imshow( img )

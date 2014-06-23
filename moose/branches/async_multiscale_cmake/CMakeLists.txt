@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6)
+set(CMAKE_INSTALL_PREFIX /usr/local)
 
 project(moose)
 
@@ -10,19 +11,19 @@ project(moose)
 # (which would end up getting picked up by header search, instead of the correct
 # versions).
 if( CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND NOT MSVC_IDE )
-  message(FATAL_ERROR 
-    "In-source builds are not allowed.
-    CMake would overwrite the makefiles distributed with Moose.
-    Please create a directory and run cmake from there, passing the path
-    to this source directory as the last argument.
-    This process created the file `CMakeCache.txt' and the directory `CMakeFiles'.
-    Please delete them."
-    )
+    message(FATAL_ERROR 
+        "In-source builds are not allowed.
+        CMake would overwrite the makefiles distributed with Moose.
+        Please create a directory and run cmake from there, passing the path
+        to this source directory as the last argument.
+        This process created the file `CMakeCache.txt' and the directory `CMakeFiles'.
+        Please delete them."
+        )
 endif()
 
 ################################# CMKAE MACROS #################################
 
-set(CMAKE_VERBOSE_MAKEFILE OFF)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
 set(INSTALL_LIB_DIR lib CACHE PATH "/usr/local/lib")
 set(INSTALL_BIN_DIR bin CACHE PATH "/usr/local/bin")
@@ -38,20 +39,21 @@ else()
 endif()
 
 # Compiler 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_COMPILER "g++")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_COMPILER "clang++")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(CMAKE_CXX_COMPILER "g++")
 else()
     message(WARNING "Continuing with unsupported compiler")
 endif()
 
 ## Turn warning to error
 add_definitions(-Wall
-    -Wno-return-type-c-linkage
+    #-Wno-return-type-c-linkage
     -Wno-unused-variable
     -Wno-unused-function
-    -Wno-unused-private-field
+    #-Wno-unused-private-field
     )
 add_definitions(-fPIC)
 
@@ -75,23 +77,36 @@ if(VERIFY)
 endif(VERIFY)
 
 # VERBOSITY OF OUTPUT
-set(VERBOSITY "1" CACHE STRING "0")
+set(VERBOSITY 0)
 if(VERBOSITY)
     message("++ Verbosity of output is ${VERBOSITY}")
     add_definitions(-DVERBOSITY=${VERBOSITY})
+else()
+    #message("++ Moose will be quiet")
+    #add_definitions(-DQUIET_MODE)
+endif()
+
+# STATS INSIDE MOOSE
+set(ENABLE_LOGGER 1)
+if(ENABLE_LOGGER)
+    message("++ Moose will print statistics during simulation")
+    add_definitions(-DENABLE_LOGGER)
 endif()
 
 # Default macros
 add_definitions(-DUSE_GENESIS_PARSER)
 
-set(DEBUG 1)
+set(DEBUG 0)
 if(DEBUG)
     set(CMAKE_BUILD_TYPE Debug)
+else()
+    set(CMAKE_BUILD_TYPE distribution)
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -O3)
 endif()
 
 ################################### SETUP BUILD ################################
 include_directories(msg basecode)
-add_executable(moose basecode/main.cpp)
+add_executable(moose.bin basecode/main.cpp)
 
 ## GSL
 add_definitions(-DUSE_GSL)
@@ -99,7 +114,7 @@ if(LOCAL_GSL)
     include_directories(gsl)
 else()
     include_directories(${GSL_INCLUDE_DIR})
-    target_link_libraries(moose ${GSL_LIBRARIES})
+    target_link_libraries(moose.bin ${GSL_LIBRARIES})
 endif()
 
 
@@ -108,7 +123,7 @@ find_package(HDF5)
 if(HDF5_FOUND)
     add_definitions(-DUSE_HDF5)
     include_directories(${HDF5_INCLUDE_DIR})
-    target_link_libraries(moose ${HDF5_LIBRARY})
+    target_link_libraries(moose.bin ${HDF5_LIBRARY})
 endif(HDF5_FOUND)
 
 find_package(BZip2)
@@ -130,8 +145,8 @@ find_package(Readline)
 if(READLINE_FOUND AND TERMCAP_FOUND)
     add_definitions(-DUSE_READLINE)
     include_directories(${Readline_INCLUDE_DIR})
-    target_link_libraries(moose ${Readline_LIBRARY})
-    target_link_libraries(moose ${TERMCAP_LIBRARY})
+    target_link_libraries(moose.bin ${Readline_LIBRARY})
+    target_link_libraries(moose.bin ${TERMCAP_LIBRARY})
 endif()
 
 
@@ -145,7 +160,8 @@ add_subdirectory(scheduling)
 add_subdirectory(builtins)
 add_subdirectory(utility)
 add_subdirectory(external/muparser)
-add_subdirectory(external/debug/)
+add_subdirectory(external/debug)
+add_subdirectory(external/tinyxml)
 add_subdirectory(mesh)
 add_subdirectory(mpi)
 add_subdirectory(signeur)
@@ -157,7 +173,7 @@ add_subdirectory(benchmarks)
 add_subdirectory(kinetics)
 
 ###################################### LINKING #################################
-target_link_libraries(moose 
+target_link_libraries(moose.bin 
     "-Wl,--whole-archive"
     moose_builtins
     basecode
@@ -168,13 +184,13 @@ target_link_libraries(moose
     moose_mpi
     utility 
     muparser
-    simpletest
     biophysics 
     kinetics 
     ksolve
     hsolve 
     mesh
     signeur
+    tinyxml
     diffusion 
     device
     benchmarks
@@ -182,36 +198,38 @@ target_link_libraries(moose
     )
 
 if(LIBSBML_FOUND)
-    target_link_libraries(moose moose_sbml ${LIBSBML_LIBRARY} z)
+    target_link_libraries(moose.bin moose_sbml ${LIBSBML_LIBRARY} z)
     if(BZIP2_FOUND)
-        target_link_libraries(moose ${BZIP2_LIBRARIES})
+        target_link_libraries(moose.bin ${BZIP2_LIBRARIES})
     else()
-        target_link_libraries(moose bz2)
+        target_link_libraries(moose.bin bz2)
     endif()
     if(LIBXML2_FOUND)
-        target_link_libraries(moose ${LibXML2_LIBRARIES})
+        target_link_libraries(moose.bin ${LibXML2_LIBRARIES})
     endif()
 endif()
 
 # Link gsl 
 set(LOCAL_GSL_LIBRARIES  gsl gslcblas m)
-target_link_libraries(moose ${LOCAL_GSL_LIBRARIES})
+target_link_libraries(moose.bin ${LOCAL_GSL_LIBRARIES})
 
 ######################### BUILD PYMOOSE ########################################
 set(BUILD_PYMOOSE 1)
 if(BUILD_PYMOOSE)
-    find_package(NumpyHeaders REQUIRED)
+    find_package(NumpyHeaders)
     if(PYTHON_NUMPY_FOUND)
         add_definitions(-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
         include_directories(${PYTHON_NUMPY_INCLUDE_DIR})
+        add_definitions(-DUSE_NUMPY)
     else()
-        message(FATAL_ERROR "Could not find numpy/arrayobject.h in usual places")
+        message(WARNING "Could not find numpy/arrayobject.h in usual places")
+        add_definitions(-UUSE_NUMPY)
     endif()
     # Openmpi
     find_package(MPI REQUIRED)
     set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
 
-    find_package(PythonLibs REQUIRED)
+    find_package(PythonDev REQUIRED)
     include_directories(${PYTHON_INCLUDE_DIRS})
     add_subdirectory(pymoose)
     add_library(_moose SHARED pymoose/moosemodule.cpp)
@@ -248,10 +266,10 @@ if(BUILD_PYMOOSE)
         moose_builtins
         utility 
         muparser
-        simpletest
         biophysics 
         kinetics 
         ksolve
+        tinyxml
         hsolve 
         mesh
         signeur
@@ -263,6 +281,14 @@ if(BUILD_PYMOOSE)
         "-Wl,--no-whole-archive"
         )
 endif(BUILD_PYMOOSE)
+
+######################### INSTALL ##############################################
+install(TARGETS moose.bin
+    RUNTIME DESTINATION bin
+    )
+install(PROGRAMS ${CMAKE_SOURCE_DIR}/scripts/moose 
+    DESTINATION bin
+    )
 
 ######################  TESTING  ###############################################
 include(CTest)
@@ -276,10 +302,15 @@ add_custom_target(check_moose
     )
 
 add_custom_target(check_python
-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/python/moose/test.py"
-    COMMENT "Checking: loading moose into python" VERBATIM
+    #COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/python/moose/test.py"
+    #COMMENT "Checking: loading moose into python" VERBATIM
     COMMAND ${PYTHON_EXECUTABLE} test_pymoose.py 
     COMMENT "Checking: running test_pymoose in python" VERBATIM
+    COMMAND ${PYTHON_EXECUTABLE} Rallpacks/rallpacks_passive_cable.py
+    COMMENT "Checking: running rallpack2"
+    #COMMAND ${PYTHON_EXECUTABLE} Rallpacks/rallpacks_passive_cable.py
+    #COMMENT "Checking: running rallpack2"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests/python"
     )
+
 

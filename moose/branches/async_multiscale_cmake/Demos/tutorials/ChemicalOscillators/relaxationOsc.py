@@ -7,10 +7,10 @@
 ## See the file COPYING.LIB for the full notice.
 #########################################################################
 # This example illustrates loading, and running a kinetic model 
-# for a relaxation oscillator, defined in kkit format. It uses a default 
-# kkit model but you can
-# specify another using the command line 
-#     python filename runtime solver
+# for a relaxation oscillator, defined in kkit format.
+# It uses the deterministic gsl solver for starters, you can specify 
+# another the stochastic Gillespie solver the command line 
+#     python filename gssa
 # We use the gsl solver here. The model already
 # defines some plots and sets the runtime to 4000 seconds.
 
@@ -24,13 +24,10 @@ import sys
 def main():
         solver = "gsl"  # Pick any of gsl, gssa, ee..
         #solver = "gssa"  # Pick any of gsl, gssa, ee..
-	mfile = '../Genesis_files/OSC_Cspace.g'
+	mfile = '../../Genesis_files/OSC_Cspace.g'
 	runtime = 4000.0
-	if ( len( sys.argv ) >= 3 ):
-		mfile = '../Genesis_files/' + sys.argv[1]
-		runtime = float( sys.argv[2] )
-	if ( len( sys.argv ) == 4 ):
-                solver = sys.argv[3]
+	if ( len( sys.argv ) >= 2 ):
+                solver = sys.argv[1]
 	modelId = moose.loadModel( mfile, 'model', solver )
         # Increase volume so that the stochastic solver gssa 
         # gives an interesting output

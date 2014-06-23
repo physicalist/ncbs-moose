@@ -46,7 +46,7 @@ class FatalTestFailure
         string msg;
 };
 
-ostringstream assertStream;
+static ostringstream assertStream;
 
 #define LOCATION(ss) \
     ss << "In function: " << SIMPLE_CURRENT_FUNCTION; \
@@ -55,6 +55,7 @@ ostringstream assertStream;
 #define EXPECT_TRUE( condition, msg) \
     if( !(condition) ) {\
         assertStream.str(""); \
+        LOCATION( assertStream ); \
         assertStream << msg << endl; \
         dump(assertStream.str(), "EXPECT_FAILURE"); \
     }
@@ -62,6 +63,7 @@ ostringstream assertStream;
 #define EXPECT_FALSE( condition, msg) \
     if( (condition) ) {\
         assertStream.str(""); \
+        LOCATION( assertStream ); \
         assertStream << msg << endl; \
         dump(assertStream.str(), "EXPECT_FAILURE"); \
     }
