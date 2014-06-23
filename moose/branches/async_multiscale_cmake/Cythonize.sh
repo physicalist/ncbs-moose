@@ -1,2 +1,2 @@
 #!/bin/bash
-cd cymoose && make
+( cd cymoose && ./run.sh )
