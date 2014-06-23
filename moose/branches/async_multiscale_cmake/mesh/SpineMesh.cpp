@@ -54,9 +54,19 @@ const Cinfo* SpineMesh::initCinfo()
 			parentVoxel 
 		(
 		 	"parentVoxel",
+			"Vector of indices of proximal voxels within this mesh."
+			"Spines are at present modeled with just one compartment,"
+			"so each entry in this vector is always set to EMPTY == -1U",
+			&SpineMesh::getParentVoxel
+		);
+
+		static ReadOnlyValueFinfo< SpineMesh, vector< unsigned int > >
+			neuronVoxel 
+		(
+		 	"neuronVoxel",
 			"Vector of indices of voxels on parent NeuroMesh, from which "
 			"the respective spines emerge.",
-			&SpineMesh::getParentVoxel
+			&SpineMesh::getNeuronVoxel
 		);
 
 		//////////////////////////////////////////////////////////////
@@ -107,7 +117,10 @@ static const Cinfo* spineMeshCinfo = SpineMesh::initCinfo();
 SpineMesh::SpineMesh()
 	:
 		spines_( 1 ),
-		surfaceGranularity_( 0.1 )
+		surfaceGranularity_( 0.1 ),
+		vs_( 1, 1.0e-18 ),
+		area_( 1, 1.0e-12 ),
+		length_( 1, 1.0e-6 )
 {;}
 
 SpineMesh::SpineMesh( const SpineMesh& other )
@@ -125,10 +138,28 @@ SpineMesh::~SpineMesh()
 // Field assignment stuff
 //////////////////////////////////////////////////////////////////
 
+/**
+ * This function returns the diffusively connected parent voxel within
+ * the current (spine) mesh. Since each spine is treated as an independed
+ * voxel, there is no such voxel, so we return -1U for each spine.
+ * Note that there is a separate function that returns the parentVoxel
+ * referred to the NeuroMesh that this spine sits on.
+ */
 vector< unsigned int > SpineMesh::getParentVoxel() const
 {
-	vector< unsigned int > ret( spines_.size() );
-	for ( unsigned int i = 0; i < spines_.size(); ++i )
+	vector< unsigned int > ret( spines_.size(), -1U );
+	// for ( unsigned int i = 0; i < spines_.size(); ++i ) 
+	// 	ret[i] = spines_[i].parent(); // Wrong, returns voxel on NeuroMesh
+	return ret;
+}
+
+/**
+ * Returns index of voxel on NeuroMesh to which this spine is connected.
+ */
+vector< unsigned int > SpineMesh::getNeuronVoxel() const
+{
+	vector< unsigned int > ret( spines_.size(), -1U );
+	for ( unsigned int i = 0; i < spines_.size(); ++i ) 
 		ret[i] = spines_[i].parent();
 	return ret;
 }
@@ -300,6 +331,31 @@ const vector< double >& SpineMesh::getVoxelArea() const
 const vector< double >& SpineMesh::getVoxelLength() const
 {
 	return length_;
+}
+
+double SpineMesh::vGetEntireVolume() const
+{
+	double ret = 0.0;
+	for ( vector< double >::const_iterator i = 
+					vs_.begin(); i != vs_.end(); ++i )
+		ret += *i;
+	return ret;
+}
+
+bool SpineMesh::vSetVolumeNotRates( double volume )
+{
+	double volscale = volume / vGetEntireVolume();
+	double linscale = pow( volscale, 1.0/3.0 );
+	assert( vs_.size() == spines_.size() );
+	assert( area_.size() == spines_.size() );
+	assert( length_.size() == spines_.size() );
+	for ( unsigned int i = 0; i < spines_.size(); ++i ) {
+		spines_[i].setVolume( volume );
+		vs_[i] *= volscale;
+		area_[i] *= linscale * linscale;
+		length_[i] *= linscale;
+	}
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////

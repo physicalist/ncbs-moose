@@ -3579,3 +3579,176 @@ set in place to follow a pool conc, are working.
 
 I've set up all the other oscillators:
 repressillator, slowFB (KHoldenko), relaxationOsc, Turing
+
+============================================================================
+18 May 2014
+The chem oscillator tutorials are now in a directory of their own, each with a 
+small png to explain what they are about. Would like to bring in the 
+monstrous Novak-Tyson example but it isn't running.
+
+============================================================================
+
+Need to figure out what is happening in the stoich.path assignment
+leading to only 2 entries.
+Turned out I was doing a setCoords on the cylinder, but using CubeMesh
+arguments.
+
+Yet again: Look at volume handling.
+
+- Need to have the volume_ field return the total volume of the compartment.
+	Allow a setVolume too, but only if the compartment has a single voxel.
+	This function rescales all rates and n's.
+- Provide a utility function setVolumeNotRates which changes the volume
+	field if a single voxel, but does not rescale rates and n's.
+
+When loading models from SBML and kkit, use the setVolumeNotRates as needed.
+
+============================================================================
+20 May 2014
+Cleanup for volume handling in meshes. Now it is possible to load a model
+right onto the target mesh.
+With this I have implemented a tutorial for propagating bistables.
+Added a whole series of tutorials for such bistables. Still want to put in 
+a dose-response curve.
+
+There is an issue with setting rates in reaction-diffusion systems. It only
+sets the rate for the largest vol compartment. I know why but it should set
+for all.
+
+Attempted to update but there were severe problems with the repository
+version. Downgraded back to my version.
+
+Fixed a bug where concInit was not being propagated to all pools when
+an array was created.
+Working through snippets/MULTI/loadmulti
+
+============================================================================
+22 May. 
+Numerous fixes in ReadKkit to be able to load models onto NeuroMesh,
+SpineMesh and PsdMesh directly, and get volumes right. With this done the
+entire multiscale model loads but doesn't run.
+
+Put in a check in Shell::doCreate to block creation of FieldElements
+or abstract classes.
+
+This is all based on 5439. There was a huge mess with upgrading so I'm taking
+a backup before trying again.
+
+Checkin 5458.
+============================================================================
+23 May 
+Able to upload the new revision, things compile now. Apparently the hsolve
+is now working well and clearing the Rallpacks.
+
+Sahil has found a problem with the cspace reader. Trying out in 
+ChemicalBistables/foo.py
+This turned out just to be a numerical instability, lowering dt fixed it.
+============================================================================
+24 May.
+Trying to get loadMulti to work. The setDiffLength in the NeuroMesh has
+to be called before the cell path is set, because only the cell Path
+operation sends out the spine and PSD information. Should fix.
+
+There is a nasty crash when the calculations start. Hard to track. Valgrind
+doesn't handle it either, it thinks that my code is writing past the end
+of the heap block.
+
+Two obvious places to look: The adaptor and the dangling reactions at
+the interface between compartments.
+
+Removed all references to adaptor. Still fails. 
+
+Check if file runs as an individual model under a single solver.
+Then check if it fails in a similar way when loaded in the default way under
+multiple solvers.
+
+============================================================================
+30 May
+Loaded in psd_merged31d.g both with separate compartments, and with the 
+solver handling all compts. In both cases the model loads and runs fine.
+Next to assign the solver to a different compt and see what happens.
+Doing.
+============================================================================
+31 May
+Well, it handles the spine portion fine as well.
+And the psd portion too. So something goes wrong with the compartmentalization.
+
+Went back to LoadMulti. Loaded in a version of the cell model that did
+not have any active conductances. Still crashes.
+============================================================================
+1 June. Need to try from scratch. Make a really simple cell with a 
+single soma, spine and PSD. Use a minimal chem model with just Ca binding
+to a single target. Couple Ca directly to the Vm.
+
+minimal.py now works for the following:
+	- Passive charging of spine and soma
+	- Simple reaction in each compt.
+	- Each compt has a single voxel, 
+	- No cross-compt reactions
+	- No active channels.
+
+Next:
+	Active channels: minchan.py.
+	Multiple voxels:
+
+Doing active channels.
+Turns out that the moment I instatiate a vgated channel the system crashes.
+This is even when the vgated channel in question is not loaded.
+Oddly, if I run it with valgrind it is fine.
+Also oddly, I can do an assignment to alpha field of the channel with an
+array, and the system does not crash.
+Looking at HHGate::setupTables as called by HHGate::setupAlpha
+
+============================================================================
+2 June
+Checkin 5483.
+Now converted the setupAlpha DestFinfo to an ElementValueFinfo. This
+fixes the problems with loading in channels in minchan.py, which tests
+out a minimal model with ion channels.
+
+The main loadMulti file still fails in the gsl calculations.
+Next step is to introduce multiple voxels into the minchan model.
+Did this. Just worked.
+
+Next step is to get in some Ca channels
+Did this. Just worked.
+
+Then get adaptors doing something.
+Seem to be doing something, but the Ca trace is not coming over.
+	This was a nasty scheduling issue, where things in a wildcard ##
+	seem to be scheduled for each individual entry, but the message from
+	the Clock is OneToAll so it gets multiplied.
+
+Checkin 5485.
+
+Next step is to deal with cross-compartment diffusion. For now this only
+crops up in NeuroMesh/SpineMesh/PsdMesh, but would like to generalize.
+
+Setting this up in Dsolve.cpp.
+See around line 200
+
+Then cross-compartment reactions.
+
+============================================================================
+3 June.
+Building up the cross-compartment diffusion setup and calculations, yet to 
+compile.
+
+Compilation now coming together. I've set up a separate MOOSE function,
+buildNeuroMeshJunctions, to do the junction setup.
+============================================================================
+4 June
+Compiled, isn't doing anything yet.
+Also realized that I may as well do an implicit solution for the 2-compartment
+diffusion problem at the junction. Let A be conc in one compartment, and
+B be conc in the other. Then:
+
+A(t+1) - A'(t+1) dt = A(t)
+where A'(t+1) = D.( B - A ).xa/L
+
+Later. Checkin 5487.
+
+Implemented a unit test for testing inter-compartment diffusion. Seems
+promising. Lots of fixes ensued. The minchan.py model looks better too.
+
+============================================================================

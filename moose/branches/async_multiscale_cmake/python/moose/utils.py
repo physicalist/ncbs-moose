@@ -22,59 +22,31 @@ import string
 import os
 import math
 from datetime import datetime
+from collections import defaultdict
+
 import _moose
 
 import plot_utils
 import verification_utils
 import print_utils
-import graph_utils
+import sim_utils
+from moose_constants import *
 
 # Import functions from sub-libraries.
 plotTable = plot_utils.plotTable
 plotTables = plot_utils.plotTables
-recordAt = plot_utils.recordTarget
-recordTarget = plot_utils.recordTarget
+saveTables = plot_utils.saveTables 
+
+# 
+recordAt = sim_utils.recordTarget
+recordTarget = sim_utils.recordTarget
+run = sim_utils.run
 
 # dump messages onto console
 dump = print_utils.dump
 
 # Verification related function.
 verify = verification_utils.verify
-
-# Topology and graph related functions.
-writeGraphviz  = graph_utils.writeGraphviz
-
-# Some verification tests
-verify = verification_utils.verify
-
-## for Ca Pool
-#FARADAY = 96154.0 # Coulombs # from cadecay.mod : 1/(2*96154.0) = 5.2e-6 which is the Book of Genesis / readcell value
-FARADAY = 96485.3415 # Coulombs/mol # from Wikipedia
-
-## Table step_mode
-TAB_IO=0 # table acts as lookup - default mode
-TAB_ONCE=2 # table outputs value until it reaches the end and then stays at the last value
-TAB_BUF=3 # table acts as a buffer: succesive entries at each time step
-TAB_SPIKE=4 # table acts as a buffer for spike times. Threshold stored in the pymoose 'stepSize' field.
-
-## Table fill modes
-BSplineFill = 0 # B-spline fill (default)
-CSplineFill = 1 # C_Spline fill (not yet implemented)
-LinearFill = 2 # Linear fill
-
-## clock 0 is for init & hsolve
-## The ee method uses clocks 1, 2.
-## hsolve & ee use clock 3 for Ca/ion pools.
-## clocks 4 and 5 are for biochemical simulations.
-## clock 6 for lookup tables, clock 7 for stimuli
-## clocks 8 and 9 for tables for plots.
-INITCLOCK = 0
-ELECCLOCK = 1
-CHANCLOCK = 2
-POOLCLOCK = 3
-LOOKUPCLOCK = 6
-STIMCLOCK = 7
-PLOTCLOCK = 8
 
 
 def readtable(table, filename, separator=None):
@@ -260,11 +232,10 @@ def printtree(root, vchar='|', hchar='__', vcount=1, depth=0, prefix='', is_last
     is_last - for internal use - should not be explicitly passed.
 
     """
-    if isinstance(root, str) or isinstance(root, _moose.vec) or isinstance(root, _moose.melement):
-        root = _moose.Neutral(root)
-
+    root = _moose.element(root)
+    print('%s: "%s"' % (root, root.children))
     for i in range(vcount):
-        print prefix
+        print(prefix)
 
     if depth != 0:
         print prefix + hchar,
@@ -276,9 +247,9 @@ def printtree(root, vchar='|', hchar='__', vcount=1, depth=0, prefix='', is_last
     else:
         prefix = prefix + vchar
 
-    print root.name
+    print(root.name)
     
-    children = [ _moose.Neutral(child) for child in root.children ]
+    children = [ _moose.element(child) for child in root.children ]
     for i in range(0, len(children) - 1):
         printtree(children[i],
                   vchar, hchar, vcount, depth + 1, 
@@ -314,13 +285,13 @@ def autoposition(root):
     """
     compartments = _moose.wildcardFind('%s/##[TYPE=Compartment]' % (root.path))
     stack = [compartment for compartment in map(_moose.element, compartments)
-              if len(compartment.neighbours['axial']) == 0]
+              if len(compartment.neighbors['axial']) == 0]
     if len(stack) != 1:
         raise Exception('There must be one and only one top level compartment. Found %d' % (len(topcomp_list)))
     ret = stack[0]
     while len(stack) > 0:
         comp = stack.pop()        
-        parentlist = comp.neighbours['axial']
+        parentlist = comp.neighbors['axial']
         parent = None
         if len(parentlist) > 0:
             parent = parentlist[0]
@@ -335,11 +306,11 @@ def autoposition(root):
             comp.x, comp.y, comp.z, = comp.x0, comp.y0, comp.z0 + comp.diameter/2.0 
         # We take z == 0 as an indicator that this compartment has not
         # been processed before - saves against inadvertent loops.
-        stack.extend([childcomp for childcomp in map(_moose.element, comp.neighbours['raxial']) if childcomp.z == 0])    
+        stack.extend([childcomp for childcomp in map(_moose.element, comp.neighbors['raxial']) if childcomp.z == 0])    
     return ret
 
 
-def readcell_scrambled(filename, target):
+def readcell_scrambled(filename, target, method='ee'):
     """A special version for handling cases where a .p file has a line
     with specified parent yet to be defined.
 
@@ -351,26 +322,31 @@ def readcell_scrambled(filename, target):
     data = {}
     error = None
     root = None
+    ccomment_started = False
+    current_compt_params = []
     for line in pfile:
         tmpline = line.strip()
-        if tmpline.startswith("*") or tmpline.startswith("//"):
+        if not tmpline or tmpline.startswith("//"):
             continue
         elif tmpline.startswith("/*"):
-            error = "Handling C style comments not implemented."
-            break
-        node, parent, rest, = tmpline.split(None, 2)
-        print node, parent
+            ccomment_started = True
+        if tmpline.endswith('*/'):
+            ccomment_started = False
+        if ccomment_started:
+            continue
+        if tmpline.startswith('*set_compt_param'):
+            current_compt_params.append(tmpline)
+            continue
+        node, parent, rest, = tmpline.partition(' ')
+        print '22222222', node, parent
         if (parent == "none"):
             if (root is None):
                 root = node
             else:
-                error = "Duplicate root elements: ", root, node, "> Cannot process any further."
+                raise ValueError("Duplicate root elements: ", root, node, "> Cannot process any further.")
                 break
         graph[parent].append(node)
-        data[node] = line
-    if error is not None:
-        print error
-        return None
+        data[node] = '\n'.join(current_compt_params)
 
     tmpfile = open(tmpfilename, "w")
     stack = [root]
@@ -378,10 +354,11 @@ def readcell_scrambled(filename, target):
         current = stack.pop()
         children = graph[current]
         stack.extend(children)
+        print '#########"', current, '": ', data[current]
         tmpfile.write(data[current])
     tmpfile.close()
-    _moose.readCell(tmpfilename, target)
-    return _moose.Cell(target)
+    ret = _moose.loadModel(tmpfilename, target, method)
+    return ret
 
 ## Subha: In many scenarios resetSim is too rigid and focussed on
 ## neuronal simulation.  The setDefaultDt and
@@ -474,6 +451,7 @@ def assignDefaultTicks(modelRoot='/model', dataRoot='/data', solver='hsolve'):
         _moose.useClock(0, '%s/##[ISA=Compartment]' % (modelRoot), 'init')
         _moose.useClock(1, '%s/##[ISA=Compartment]'  % (modelRoot), 'process')
         _moose.useClock(2, '%s/##[ISA=HHChannel]'  % (modelRoot), 'process')
+        # _moose.useClock(2, '%s/##[ISA=ChanBase]'  % (modelRoot), 'process')
     _moose.useClock(0, '%s/##[ISA=IzhikevichNrn]' % (modelRoot), 'process')
     _moose.useClock(0, '%s/##[ISA=GapJunction]' % (modelRoot), 'process')
     _moose.useClock(0, '%s/##[ISA=HSolve]'  % (modelRoot), 'process')
@@ -585,6 +563,7 @@ def resetSim(simpaths, simdt, plotdt, simmethod='hsolve'):
         _moose.useClock(STIMCLOCK, simpath+'/##[TYPE=TimeTable]', 'process')
         _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=LeakyIaF]', 'process')
         _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=IntFire]', 'process')
+        _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=IzhikevichNrn]', 'process')
         _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=SpikeGen]', 'process')
         _moose.useClock(CHANCLOCK, simpath+'/##[TYPE=HHChannel2D]', 'process')
         _moose.useClock(CHANCLOCK, simpath+'/##[TYPE=SynChan]', 'process')
@@ -612,30 +591,31 @@ def resetSim(simpaths, simdt, plotdt, simmethod='hsolve'):
                     _moose.useClock(INITCLOCK, h.path, 'process')
     _moose.reinit()
 
-def setupTable(name, obj, qtyname, tables_path=None, threshold=None):
+def setupTable(name, obj, qtyname, tables_path=None, threshold=None, spikegen=None):
     """ Sets up a table with 'name' which stores 'qtyname' field from 'obj'.
     The table is created under tables_path if not None, else under obj.path . """
     if tables_path is None:
         tables_path = obj.path+'/data'
     ## in case tables_path does not exist, below wrapper will create it
-    _moose.Neutral(tables_path)
-    qtyTable = _moose.Table(tables_path+'/'+name)
+    tables_path_obj = _moose.Neutral(tables_path)
+    qtyTable = _moose.Table(tables_path_obj.path+'/'+name)
     ## stepMode no longer supported, connect to 'input'/'spike' message dest to record Vm/spiktimes
     # qtyTable.stepMode = TAB_BUF 
-    if threshold is None:
-        ## below is wrong! reads qty twice every clock tick!
-        #_moose.connect( obj, qtyname+'Out', qtyTable, "input")
-        ## this is the correct method
-        _moose.connect( qtyTable, "requestOut", obj, 'get'+qtyname)
-        print qtyTable.path, obj.path
+    if spikegen is None:
+        if threshold is None:
+            ## below is wrong! reads qty twice every clock tick!
+            #_moose.connect( obj, qtyname+'Out', qtyTable, "input")
+            ## this is the correct method
+            _moose.connect( qtyTable, "requestOut", obj, 'get'+qtyname)
+        else:
+            ## create new spikegen
+            spikegen = _moose.SpikeGen(tables_path_obj.path+'/'+name+'_spikegen')
+            ## connect the compartment Vm to the spikegen
+            _moose.connect(obj,"VmOut",spikegen,"Vm")
+            ## spikegens for different synapse_types can have different thresholds
+            spikegen.threshold = threshold
+            spikegen.edgeTriggered = 1 # This ensures that spike is generated only on leading edge.
     else:
-        ## create new spikegen
-        spikegen = _moose.SpikeGen(tables_path+'/'+name+'_spikegen')
-        ## connect the compartment Vm to the spikegen
-        _moose.connect(obj,"VmOut",spikegen,"Vm")
-        ## spikegens for different synapse_types can have different thresholds
-        spikegen.threshold = threshold
-        spikegen.edgeTriggered = 1 # This ensures that spike is generated only on leading edge.
         _moose.connect(spikegen,'spikeOut',qtyTable,'input') ## spikeGen gives spiketimes
     return qtyTable
 
@@ -644,8 +624,7 @@ def connectSynapse(compartment, synname, gbar_factor):
     Creates a synname synapse under compartment, sets Gbar*gbar_factor, and attaches to compartment.
     synname must be a synapse in /library of MOOSE.
     """
-    synapseid = _moose.copy(_moose.SynChan('/library/'+synname),\
-                            _moose.Compartment(compartment.path),synname)
+    synapseid = _moose.copy(_moose.SynChan('/library/'+synname),compartment,synname)
     synapse = _moose.SynChan(synapseid)
     synapse.Gbar = synapse.Gbar*gbar_factor
     synapse_mgblock = _moose.Mstring(synapse.path+'/mgblockStr')
@@ -835,6 +814,7 @@ def get_child_Mstring(mooseobject,mstring):
             return child
     return None
 
+# Note: This function is also moved to helper.moose_methods 
 def connect_CaConc(compartment_list, temperature=None):
     """ Connect the Ca pools and channels within each of the compartments in compartment_list
      Ca channels should have a child Mstring named 'ion' with value set in MOOSE.
@@ -864,7 +844,11 @@ def connect_CaConc(compartment_list, temperature=None):
                     channel = _moose.HHChannel(child)
                     ## If child Mstring 'ion' is present and is Ca, connect channel current to caconc
                     for childid in channel.children:
-                        child = _moose.Neutral(childid)
+                        try:
+                            child = _moose.element(childid)
+                        except TypeError:  # in async13, gates which have not been created still 'exist'
+                                            # i.e. show up as a child, but cannot be wrapped.
+                            pass
                         if child.className=='Mstring':
                             child = _moose.Mstring(child)
                             if child.name=='ion':
@@ -878,7 +862,7 @@ def connect_CaConc(compartment_list, temperature=None):
                                 nernst.Cout = float(nernst_params[0])
                                 nernst.valence = float(nernst_params[1])
                                 nernst.Temperature = temperature
-                                _moose.connect(nernst,'Eout',channel,'set_Ek')
+                                _moose.connect(nernst,'Eout',channel,'setEk')
                                 _moose.connect(caconc,'concOut',nernst,'ci')
                                 print 'Connected Nernst',nernst.path
                             
@@ -901,8 +885,6 @@ from cStringIO import StringIO as _sio
 
 class _TestMooseUtils(unittest.TestCase):
     def test_printtree(self):
-        orig_stdout = sys.stdout
-        sys.stdout = _sio()
         s = _moose.Neutral('/cell')
         soma = _moose.Neutral('%s/soma'% (s.path))
         d1 = _moose.Neutral('%s/d1'% (soma.path))
@@ -910,6 +892,8 @@ class _TestMooseUtils(unittest.TestCase):
         d3 = _moose.Neutral('%s/d3'% (d1.path))
         d4 = _moose.Neutral('%s/d4'% (d1.path))
         d5 = _moose.Neutral('%s/d5'% (s.path))
+        orig_stdout = sys.stdout
+        sys.stdout = _sio()
         printtree(s)                
         expected = """
 cell

@@ -940,11 +940,11 @@ void testShellAddMsg()
 	const SrcFinfo* sf = dynamic_cast< const SrcFinfo* >(
 		Clock::initCinfo()->findFinfo( "process0" ) );
 	assert( sf );
-	unsigned int numTgts = clock.eref().element()->getNeighbours( tgts, sf );
+	unsigned int numTgts = clock.eref().element()->getNeighbors( tgts, sf );
 	assert( numTgts == 0 );
 
 	shell->doUseClock( "a1,a2,b1,b2,c1,c2,d1,d2,e1,e2,f1,f2,g1,g2", "process", 0 );
-	numTgts = clock.eref().element()->getNeighbours( tgts, sf );
+	numTgts = clock.eref().element()->getNeighbors( tgts, sf );
 	assert( numTgts == 14 );
 
 	///////////////////////////////////////////////////////////
@@ -1410,14 +1410,14 @@ void testFindModelParent()
 
 	ok = findModelParent( zod, "/foo", parentId, modelName );
 	assert( ok );
-	assert( parentId == foo );
-	assert( modelName == "model" );
+	assert( parentId == Id() );
+	assert( modelName == "foo" );
 	modelName = "";
 
 	ok = findModelParent( zod, "foo", parentId, modelName );
 	assert( ok );
-	assert( parentId == foo2 );
-	assert( modelName == "model" );
+	assert( parentId == zod );
+	assert( modelName == "foo" );
 	modelName = "";
 
 	//////////////// spec model name too

@@ -543,13 +543,13 @@ static bool isOffSolverReac( const Element* e, Id myCompt,
 	assert( myCompt != Id() );
 	assert( myCompt.element()->cinfo()->isA( "ChemCompt" ) );
 	bool ret = false;
-	vector< Id > neighbours;
-	e->getNeighbours( neighbours, e->cinfo()->findFinfo( "subOut" ));
+	vector< Id > neighbors;
+	e->getNeighbors( neighbors, e->cinfo()->findFinfo( "subOut" ));
 	vector< Id > n2;
-	e->getNeighbours( n2, e->cinfo()->findFinfo( "prdOut" ));
-	neighbours.insert( neighbours.end(), n2.begin(), n2.end() );
+	e->getNeighbors( n2, e->cinfo()->findFinfo( "prdOut" ));
+	neighbors.insert( neighbors.end(), n2.begin(), n2.end() );
 	for ( vector< Id >::const_iterator 
-			j = neighbours.begin(); j != neighbours.end(); ++j )
+			j = neighbors.begin(); j != neighbors.end(); ++j )
 	{
 		Id otherCompt = getCompt( *j );
 		if ( myCompt != otherCompt ) {
@@ -646,6 +646,8 @@ void Stoich::allocateObjMap( const vector< Id >& elist )
 					offSolverPools_.end() );
 	temp.insert( temp.end(), offSolverReacs_.begin(), 
 					offSolverReacs_.end() );
+	if ( temp.size() == 0 )
+		return;
 	objMapStart_ = ~0;
 	unsigned int maxId = 0;
 	for ( vector< Id >::const_iterator 
@@ -803,7 +805,7 @@ void Stoich::installAndUnschedFunc( Id func, Id Pool )
 	FuncBase* fb = reinterpret_cast< FuncBase* >( func.eref().data() );
 	FuncTerm* ft = fb->func();
 	vector< Id > srcPools;
-	unsigned int numSrc = func.element()->getNeighbours( 
+	unsigned int numSrc = func.element()->getNeighbors( 
 					srcPools, funcSrcFinfo );
 	assert( numSrc > 0 );
 	vector< unsigned int > poolIndex( numSrc, 0 );
@@ -869,13 +871,24 @@ void Stoich::zombifyModel( const Eref& e, const vector< Id >& elist )
 		Shell::dropClockMsgs( unsched, "process" );
 		Element* ei = i->element();
 		if ( ei->cinfo() == poolCinfo ) {
+			double concInit = 
+				Field< double >::get( ObjId( ei->id(), 0 ), "concInit" );
 			PoolBase::zombify( ei, zombiePoolCinfo, ksolve_, dsolve_ );
 			ei->resize( numVoxels_ );
-			
+			for ( unsigned int j = 0; j < numVoxels_; ++j ) {
+				ObjId oi( ei->id(), j );
+				Field< double >::set( oi, "concInit", concInit );
+			}
 		}
 		else if ( ei->cinfo() == bufPoolCinfo ) {
+			double concInit = 
+				Field< double >::get( ObjId( ei->id(), 0 ), "concInit" );
 			PoolBase::zombify( ei, zombieBufPoolCinfo, ksolve_, dsolve_ );
 			ei->resize( numVoxels_ );
+			for ( unsigned int j = 0; j < numVoxels_; ++j ) {
+				ObjId oi( ei->id(), j );
+				Field< double >::set( oi, "concInit", concInit );
+			}
 		}
 		else if ( ei->cinfo() == funcPoolCinfo ) {
 			PoolBase::zombify( ei, zombieFuncPoolCinfo, ksolve_, dsolve_);

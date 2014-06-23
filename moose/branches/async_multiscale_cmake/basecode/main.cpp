@@ -198,7 +198,12 @@ Id init( int argc, char** argv, bool& doUnitTests, bool& doRegressionTests,
 		}
 	}
 	if ( myNode == 0 ) 
-		cout << "on node " << myNode << ", numNodes = " << numNodes << ", numCores = " << numCores << endl;
+        {
+#ifndef QUIET_MODE
+		cout << "on node " << myNode << ", numNodes = " 
+                    << numNodes << ", numCores = " << numCores << endl;
+#endif
+        }
 
 	Id shellId;
 	Element* shelle = 
@@ -277,8 +282,8 @@ void nonMpiTests( Shell* s )
                 testKsolve();
 //		testKsolveProcess();
 //		testBiophysics();
-//		testDiffusion();
-                testHSolve();
+		testDiffusion();
+        testHSolve();
 		// testGeom();
 		testMesh();
 		testSigNeur();

@@ -8,6 +8,7 @@
 **********************************************************************/
 
 #include "header.h"
+#include "global.h"
 #include "SingleMsg.h"
 #include "DiagonalMsg.h"
 #include "OneToOneMsg.h"
@@ -20,6 +21,7 @@
 
 // Want to separate out this search path into the Makefile options
 #include "../scheduling/Clock.h"
+#include "../external/debug/simple_logger.hpp"
 
 #ifdef USE_SBML
 #include "../sbml/SbmlWriter.h"
@@ -43,6 +45,11 @@ double Shell::runtime_( 0.0 );
 
 const Cinfo* Shell::initCinfo()
 {
+
+#ifdef ENABLE_LOGGER
+    clock_t t = clock();
+#endif
+
 ////////////////////////////////////////////////////////////////
 // Value Finfos
 ////////////////////////////////////////////////////////////////
@@ -124,6 +131,11 @@ const Cinfo* Shell::initCinfo()
 		//new Dinfo< Shell >()
 	);
 
+#ifdef ENABLE_LOGGER 
+        float time = (float(clock() - t)/CLOCKS_PER_SEC);
+        logger.initializationTime.push_back( time );
+#endif
+
 	return &shellCinfo;
 }
 
@@ -164,6 +176,9 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 				NodePolicy nodePolicy,
 				unsigned int preferredNode )
 {
+#ifdef ENABLE_LOGGER
+    clock_t t = clock();
+#endif
 	const Cinfo* c = Cinfo::find( type );
 	if ( name.find_first_of( "[] #?\"/\\" ) != string::npos ) {
 		stringstream ss;
@@ -174,6 +189,13 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 	}
 
 	if ( c ) {
+		if ( c->banCreation() ) {
+			stringstream ss;
+			ss << "Shell::doCreate: Cannot create an object of class '" <<
+				type << "' because it is an abstract base class or a FieldElement.\n";
+			warning( ss.str() );
+			return Id();
+		}
 		Element* pa = parent.element();
 		if ( !pa ) {
 			stringstream ss;
@@ -193,6 +215,7 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 		NodeBalance nb( numData, nodePolicy, preferredNode );
 		// Get the parent MsgIndex ahead of time and pass to all nodes.
 		unsigned int parentMsgIndex = OneToAllMsg::numMsg();
+
 		SetGet6< string, ObjId, Id, string, NodeBalance, unsigned int >::set(
 			ObjId(), // Apply command to Shell
 			"create",	// Function to call.
@@ -204,12 +227,21 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 			parentMsgIndex	// Message index of child-parent msg.
 		);
 		// innerCreate( type, parent, ret, name, numData, isGlobal );
+
+#ifdef ENABLE_LOGGER 
+        logger.creationTime.push_back((float(clock() - t)/CLOCKS_PER_SEC));
+#endif
+
 		return ret;
 	} else {
 		stringstream ss;
 		ss << "Shell::doCreate: Class '" << type << "' not known. No Element created";
 		warning( ss.str() );
 	}
+
+#ifdef ENABLE_LOGGER 
+        logger.creationTime.push_back((float(clock() - t)/CLOCKS_PER_SEC));
+#endif
 	return Id();
 }
 
@@ -227,6 +259,10 @@ ObjId Shell::doAddMsg( const string& msgType,
 	ObjId src, const string& srcField, 
 	ObjId dest, const string& destField )
 {
+#ifdef ENABLE_LOGGER 
+    clock_t t = clock();
+#endif
+
 	if ( !src.id.element() ) {
 		cout << myNode_ << ": Error: Shell::doAddMsg: src not found" << endl;
 		return ObjId();
@@ -245,6 +281,9 @@ ObjId Shell::doAddMsg( const string& msgType,
 	if ( !f2 ) {
 		cout << myNode_ << ": Shell::doAddMsg: Error: Failed to find field " << destField << 
 			" on dest: " << dest.id.element()->getName() << endl;
+                cout << "Available fields are : " << endl
+                    << mapToString<string, Finfo*>(dest.id.element()->cinfo()->finfoMap());
+                
 		return ObjId( 0, BADINDEX );
 	}
 	if ( ! f1->checkTarget( f2 ) ) {
@@ -265,6 +304,11 @@ ObjId Shell::doAddMsg( const string& msgType,
 		m->mid().dataIndex
 	);
 
+#ifdef ENABLE_LOGGER
+        logger.updateGlobalCount("Msgs");
+        float time = (float(clock() - t)/ CLOCKS_PER_SEC);
+        logger.creationTime.push_back(time);
+#endif
 	return m->mid();
 
 	// const Msg* m = innerAddMsg( msgType, src, srcField, dest, destField );
@@ -276,12 +320,25 @@ void Shell::doQuit()
 {
 	SetGet0::set( ObjId(), "quit" );
 	// Shell::keepLooping_ = 0;
+#ifdef ENABLE_LOGGER 
+        cout << logger.dumpStats(1);
+        logger.save();
+#endif
 }
 
 void Shell::doStart( double runtime )
 {
+#ifdef ENABLE_LOGGER
+        clock_t t = clock();
+#endif
+
 	Id clockId( 1 );
 	SetGet1< double >::set( clockId, "start", runtime );
+
+#ifdef ENABLE_LOGGER
+        float time = (float(clock() - t) / CLOCKS_PER_SEC);
+        logger.simulationTime.push_back(time);
+#endif
 }
 
 bool isDoingReinit()
@@ -295,8 +352,18 @@ bool isDoingReinit()
 
 void Shell::doReinit( )
 {
+
+#ifdef ENABLE_LOGGER
+        clock_t t = clock();
+        cout << logger.dumpStats(0);
+#endif
 	Id clockId( 1 );
 	SetGet0::set( clockId, "reinit" );
+
+#ifdef ENABLE_LOGGER
+       float time = (float(clock() - t)/CLOCKS_PER_SEC);
+       logger.initializationTime.push_back(time);
+#endif
 }
 
 void Shell::doStop( )
@@ -308,7 +375,7 @@ void Shell::doStop( )
 
 void Shell::doSetClock( unsigned int tickNum, double dt )
 {
-		LookupField< unsigned int, double >::set( ObjId( 1 ), "tickDt", tickNum, dt );
+    LookupField< unsigned int, double >::set( ObjId( 1 ), "tickDt", tickNum, dt );
 }
 
 void Shell::doUseClock( string path, string field, unsigned int tick )

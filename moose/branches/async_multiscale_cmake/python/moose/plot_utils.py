@@ -2,7 +2,7 @@
 
 """plot_utils.py: Some utility function for plotting data in moose.
 
-Last modified: Tue May 13, 2014  09:24PM
+Last modified: Mon May 26, 2014  10:18AM
 
 """
     
@@ -45,7 +45,7 @@ def plotInTerminal(yvec, xvec = None, file=None):
     g.stdin.write("\n")
     g.stdin.flush()
 
-def listsToString( yvec, xvec, sepby = ' '):
+def xyToString( yvec, xvec, sepby = ' '):
     """ Given two list-like objects, returns a text string. 
     """
     textLines = []
@@ -61,7 +61,7 @@ def saveNumpyVec( yvec, xvec, file):
     if file is None:
         return
     print("[INFO] Saving plot data to file {}".format(file))
-    textLines = listsToString( yvec, xvec)
+    textLines = xyToString( yvec, xvec)
     with open(file, "w") as dataF:
         dataF.write(textLines)
 
@@ -70,7 +70,7 @@ def saveAsGnuplot( yvec, xvec, file):
     if file is None:
         return
     print("[INFO] Saving plot data to a gnuplot-script: {}".format(file))
-    dataText = listsToString( yvec, xvec )
+    dataText = xyToString( yvec, xvec )
     text = []
     text.append("#!/bin/bash")
     text.append("gnuplot << EOF")
@@ -82,6 +82,29 @@ def saveAsGnuplot( yvec, xvec, file):
     with open(file+".gnuplot","w") as gnuplotF:
         gnuplotF.write("\n".join(text))
 
+def scaleVector(vec, scaleF):
+    """ Scale a vector by a factor """
+    if scaleF == 1.0 or scaleF is None:
+        return vec
+    else:
+        return [ x*scaleF for x in vec ]
+
+def scaleAxis(xvec, yvec, scaleX, scaleY):
+    """ Multiply each elements by factor """
+    xvec = scaleVector( xvec, scaleX )
+    yvec = scaleVector( yvec, scaleY )
+    return xvec, yvec
+
+def reformatTable(table, kwargs):
+    """ Given a table return x and y vectors with proper scaling """
+    if type(table) == _moose.Table:
+        vecY = table.vector 
+        vecX = range(len(vecY))
+    elif type(table) == tuple:
+        vecX, vecY = table
+    xscale = kwargs.get('xscale', 1.0)
+    yscale = kwargs.get('yscale', 1.0)
+    return scaleAxis(vecX, vecY, xscale, yscale)
 
 def plotTable(table, standalone=True, file=None, **kwargs):
     """Plot a given table. It plots table.vector
@@ -97,35 +120,23 @@ def plotTable(table, standalone=True, file=None, **kwargs):
         raise TypeError(msg)
     if standalone:
         pylab.figure()
-    vector = table.vector 
-    xscale = kwargs.get('xscale', 1.0)
-    yscale = kwargs.get('yscale', 1.0)
 
-    if xscale != 1.0:
-        xvector = [ xscale*x for x in range(len(vector)) ]
-    else:
-        xvector = range(len(vector))
-
-    if yscale != 1.0:
-        yvector = [ yscale * v for v in vector ]
-    else:
-        yvector = vector
-    pylab.plot(xvector, yvector)
+    vecX, vecY = reformatTable(table, kwargs)
+    pylab.plot(vecX, vecY)
     if file and standalone:
         debug.dump("PLOT", "Saving plot to {}".format(file))
         pylab.savefig(file)
     elif standalone:
         pylab.show()
 
-
 def plotTables(tables, file=None, **kwargs):
-    """Plot given list of tables onto one figure 
+    """Plot a list of tables onto one figure only.
     """
     assert type(tables) == list, "Expected a list of moose.Tables"
     for t in tables:
-        plotTable(t, standalone=False, file=None, **kwargs)
+        plotTable(t, standalone = False, file = None, **kwargs)
     if file:
-        debug.dump("PLOT", "Saving plots to file".format(file))
+        debug.dump("PLOT", "Saving plots to file {}".format(file))
         try:
             pylab.savefig(file)
         except Exception as e:
@@ -136,46 +147,29 @@ def plotTables(tables, file=None, **kwargs):
     else:
         pylab.show()
 
-def recordTarget(tablePath, target, field = 'vm', **kwargs):
-    """Setup a table to record at given path.
-
-    Make sure that all root paths in tablePath exists.
-
-    Returns a table.
-    """
-
-    # If target is not an moose object but a string representing intended path
-    # then we need to fetch the object first.
-
-    if type( target) == str:
-        if not _moose.exists(target):
-            msg = "Given target `{}` does not exists. ".format( target )
-            raise RuntimeError( msg )
+def saveTables(tables, file=None, **kwargs):
+    """Save a list to tables to a data file. """
+    assert type(tables) == list, "Expecting a list of moose.Table"
+    plots = []
+    xaxis = None
+    for t in tables:
+        vecX, vecY = reformatTable(t, kwargs)
+        plots.append(vecY)
+        if xaxis:
+            if xaxis != vecX:
+                raise UserWarning("Tables must have same x-axis")
         else:
-            target = _moose.Neutral( target )
+            xaxis = vecX
+        tableText = ""
+        for i, x in enumerate(xaxis):
+            tableText += "{} ".format(x)
+            tableText += " ".join(['%s'%p[i] for p in plots])
+            tableText += "\n"
+    if file is None:
+        print(tableText)
     else:
-        assert target.path, "Target must have a valid moose path."
-
-    table = _moose.Table( tablePath )
-    assert table
-
-    # Sanities field. 
-    if field == "output":
-        pass
-    elif 'get' not in field:
-        field = 'get'+field[0].upper()+field[1:]
-    else:
-        field = field[:2]+field[3].upper()+field[4:]
-    try:
-        table.connect( 'requestOut', target, field )
-    except Exception as e:
-        debug.dump("ERROR"
-                , [ "Failed to connect table to target"
-                    , e
-                    ]
-                )
-        raise e
-    assert table, "Moose is not able to create a recording table"
-    return table
-
+        debug.dump("PLOT", "Saving tables data to file {}".format(file))
+        with open(file, "w") as f:
+            f.write(tableText)
     
+   
