@@ -23,8 +23,7 @@ runtime = 0.7 # s
 
 def loadGran98NeuroML_L123(filename, save=False):
     neuromlR = NeuroML()
-    populationDict, projectionDict = \
-        neuromlR.readNeuroMLFromFile(filename)
+    populationDict, projectionDict = neuromlR.readNeuroMLFromFile(filename)
     soma_path = populationDict['Gran'][1][0].path+'/Soma_0'
     somaVm = setupTable('somaVm',moose.Compartment(soma_path),'Vm')
     somaCa = setupTable('somaCa',moose.CaConc(soma_path+'/Gran_CaPool_98'),'Ca')
@@ -69,7 +68,7 @@ def loadGran98NeuroML_L123(filename, save=False):
 
 if __name__ == "__main__":
     filename = "allChannelsCell.net.xml"
-    if len(sys.argv)<2:
+    if len(sys.argv) < 2:
         filename = "allChannelsCell.net.xml"
     else:
         filename = sys.argv[1]
