@@ -23,6 +23,7 @@ import moose
 from moose.neuroml import *
 from moose.utils import * # has setupTable(), resetSim() etc
 import math
+import pylab
 
 ## import numpy and matplotlib in matlab style commands
 from pylab import *
@@ -37,10 +38,10 @@ def create_LIF():
 
 def run_LIF():
 	## reset and run the simulation
-	print "Reinit MOOSE."
+	print("Reinit MOOSE.")
 	## from moose_utils.py sets clocks and resets
 	resetSim(['/cells[0]'], SIMDT, PLOTDT, simmethod='ee')
-	print "Running now..."
+	print("Running now...")
 	moose.start(RUNTIME)
 
 if __name__ == '__main__':
@@ -58,14 +59,22 @@ if __name__ == '__main__':
     moose.connect(spikeGen,'spikeOut',IF1spikesTable,'input') ## spikeGen gives spiketimes
 
     run_LIF()
-    print "Spiketimes :",IF1spikesTable.vector
+    print("Spiketimes :",IF1spikesTable.vector)
     ## plot the membrane potential of the neuron
     timevec = arange(0.0,RUNTIME+PLOTDT/2.0,PLOTDT)
     ## Something is crazy! Why twice the number of table entries compared to time!!??
-    figure(facecolor='w')
-    print IF1vmTable
-    plot(timevec, IF1vmTable.vector)
-    show()
+    pylab.figure(facecolor='w')
+    print(IF1vmTable)
+    pylab.plot(timevec, IF1vmTable.vector)
+    save = os.environ.get('SAVE_FIG', None)
+    if not save:
+        pylab.show()
+    else:
+        for i in pylab.get_fignums():
+            filename = __file__+"_{}.png".format(i)
+            pylab.figure(i)
+            print(("\t++ Storing figure {} to {}".format(i, filename)))
+            pylab.savefig(filename)
 
     ## At the end, some issue with Func (as per Subha) gives below or core dump error
     ## *** glibc detected *** python: corrupted double-linked list: 0x00000000038f9aa0 ***

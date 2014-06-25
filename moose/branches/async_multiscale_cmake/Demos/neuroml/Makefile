@@ -9,7 +9,6 @@ SRCS = allChannelsCell \
 
 all : ${SRCS} 
 
-
 .PHONY: subdirs ${SRCS}
 
 subdirs := ${SRCS}

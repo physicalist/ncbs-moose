@@ -25,8 +25,7 @@ cells_path = '/cells' # neuromlR.readNeuroMLFromFile creates cells in '/cells'
 
 def loadSTGNeuroML_L123(filename):
     neuromlR = NeuroML()
-    populationDict, projectionDict = \
-        neuromlR.readNeuroMLFromFile(filename)
+    populationDict, projectionDict = neuromlR.readNeuroMLFromFile(filename)
     soma1_path = populationDict['AB_PD'][1][0].path+'/Soma_0'
     soma1Vm = setupTable('somaVm',moose.Compartment(soma1_path),'Vm')
     soma2_path = populationDict['LP'][1][0].path+'/Soma_0'
@@ -34,10 +33,10 @@ def loadSTGNeuroML_L123(filename):
     soma3_path = populationDict['PY'][1][0].path+'/Soma_0'
     soma3Vm = setupTable('somaVm',moose.Compartment(soma3_path),'Vm')
 
-    print "Reinit MOOSE ... "
+    print("Reinit MOOSE ... ")
     resetSim(['/elec',cells_path], simdt, plotdt, simmethod='hsolve')
 
-    print "Running ... "
+    print("Running ... ")
     moose.start(runtime)
     tvec = arange(0.0,runtime+2*plotdt,plotdt)
     tvec = tvec[ : soma1Vm.vector.size ]
@@ -48,11 +47,12 @@ def loadSTGNeuroML_L123(filename):
     title('Soma Vm')
     xlabel('time (s)')
     ylabel('Voltage (V)')
-    print "Showing plots ..."
+    print("Showing plots ...")
     show()
 
-filename = "Generated.net.xml"
+
 if __name__ == "__main__":
+    filename = "Generated.net.xml"
     if len(sys.argv)>=2:
         filename = sys.argv[1]
-loadSTGNeuroML_L123(filename)
+    loadSTGNeuroML_L123(filename)

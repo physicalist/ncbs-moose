@@ -15,6 +15,7 @@ sys.path.append('.')
 
 from LIFxml_firing import *
 injectmax = 10e-12 # Amperes
+import pylab
 
 IF1 = create_LIF()
 
@@ -42,9 +43,9 @@ for currenti in currentvec:
     moose.reinit()
     IF1.inject = currenti
     moose.start(RUNTIME)
-    spikesList = array(IF1spikesTable.vector)
+    spikesList = pylab.array(IF1spikesTable.vector)
     if len(spikesList)>0:
-        spikesList = spikesList[where(spikesList>0.0)[0]]
+        spikesList = spikesList[pylab.where(spikesList>0.0)[0]]
         spikesNow = len(spikesList)
     else: spikesNow = 0.0
     print "For injected current =",currenti,\
@@ -52,9 +53,18 @@ for currenti in currentvec:
     freqList.append( spikesNow/float(RUNTIME) )
 
 ## plot the F vs I curve of the neuron
-figure(facecolor='w')
-plot(currentvec, freqList,'o-',linewidth=2)
-xlabel('current (A)',fontsize=24)
-ylabel('frequency (Hz)',fontsize=24)
-title('Leaky Integrate and Fire',fontsize=24)
-show()
+pylab.figure(facecolor='w')
+pylab.plot(currentvec, freqList,'o-',linewidth=2)
+pylab.xlabel('current (A)',fontsize=24)
+pylab.ylabel('frequency (Hz)',fontsize=24)
+pylab.title('Leaky Integrate and Fire',fontsize=24)
+save = os.environ.get('SAVE_FIG', None)
+if not save:
+    pylab.show()
+else:
+    for i in pylab.get_fignums():
+        filename = __file__+"_{}.png".format(i)
+        pylab.figure(i)
+        print(("\t++ Storing figure {} to {}".format(i, filename)))
+        pylab.savefig(filename)
+
