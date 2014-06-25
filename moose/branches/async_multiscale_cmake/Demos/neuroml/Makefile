@@ -3,19 +3,20 @@ PYC := python
 export
 
 SRCS = allChannelsCell \
-#    CA1PyramidalCell \
+       CA1PyramidalCell \
 #    GranuleCell \
 #    LIF \
 #    lobster_pyloric \
 #    OlfactoryBulbPassive \
 #    PurkinjeCellPassive
 #
-all : test 
+all : ${SRCS} 
 
-test: $(SRCS)
-	for curr_dir in ${SRCS}; \
-	    do \
-		echo "++ Testing $${curr_dir}"; \
-		$(MAKE) -C $${curr_dir}; \
-	    done
+
+.PHONY: subdirs ${SRCS}
+
+subdirs := ${SRCS}
+
+${SRCS}:
+	$(MAKE) -C $@
 
