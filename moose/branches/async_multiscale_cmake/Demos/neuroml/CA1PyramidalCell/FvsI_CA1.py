@@ -16,8 +16,7 @@ import moose
 from moose.utils import *
 
 from moose.neuroml.NeuroML import NeuroML
-
-from pylab import *
+import pylab
 
 SIMDT = 25e-6 # s
 PLOTDT = 25e-6 # s
@@ -53,24 +52,33 @@ resetSim(['/cells'],SIMDT,PLOTDT,simmethod='hsolve') # from moose.utils
 
 ## Loop through different current injections
 freqList = []
-currentvec = arange(0, injectmax, injectmax/50.0)
+currentvec = pylab.arange(0, injectmax, injectmax/50.0)
 for currenti in currentvec:
     moose.reinit()
     CA1CellSoma.inject = currenti
     moose.start(RUNTIME)
-    spikesList = array(CA1CellSpikesTable.vector)
+    spikesList = pylab.array(CA1CellSpikesTable.vector)
     if len(spikesList)>0:
-        spikesList = spikesList[where(spikesList>0.0)[0]]
+        spikesList = spikesList[pylab.where(spikesList>0.0)[0]]
         spikesNow = len(spikesList)
     else: spikesNow = 0.0
     print "For injected current =",currenti,\
         "number of spikes in",RUNTIME,"seconds =",spikesNow
     freqList.append( spikesNow/float(RUNTIME) )
 
-## plot the F vs I curve of the neuron
-figure(facecolor='w')
-plot(currentvec, freqList,'o-')
-xlabel('time (s)')
-ylabel('frequency (Hz)')
-title('HH single-compartment Cell')
-show()
+## pylab.plot the F vs I curve of the neuron
+pylab.figure(facecolor='w')
+pylab.plot(currentvec, freqList,'o-')
+pylab.xlabel('time (s)')
+pylab.ylabel('frequency (Hz)')
+pylab.title('HH single-compartment Cell')
+
+save = os.environ.get('SAVE_FIG', None)
+if not save:
+    pylab.show()
+else:
+    for i in pylab.get_fignums():
+        filename = __file__+"_{}.png".format(i)
+        pylab.figure(i)
+        print(("\t++ Storing figure {} to {}".format(i, filename)))
+        pylab.savefig(filename)
