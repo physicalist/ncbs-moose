@@ -619,6 +619,7 @@ class MorphML():
             # if mechanism is not present in compartment, deep copy from library
             if not moose.exists(compartment.path+'/'+mechName):
                 # if channel does not exist in library load it from xml file
+                channel = None
                 if not moose.exists(self.libpath+"/"+mechName):
                     cmlR = ChannelML(self.nml_params)
                     model_filename = mechName+'.xml'
@@ -646,7 +647,6 @@ class MorphML():
                     # Later, when calling connect_CaConc, B is set for caconc
                     # based on thickness of Ca shell and compartment l and dia
                     # OR based on the Mstring phi under CaConc path.
-                    channel = None
                 elif 'HHChannel2D' == neutralObj.className : ## HHChannel2D
                     libchannel = moose.HHChannel2D(self.libpath+"/"+mechName)
                     ## deep copies the library channel under the compartment
@@ -665,7 +665,6 @@ class MorphML():
                 neutralObj = moose.Neutral(compartment.path+'/'+mechName)
                 if 'CaConc' == neutralObj.className: # Ion concentration pool
                     caconc = moose.CaConc(compartment.path+'/'+mechName) # wraps existing channel
-                    channel = None
                 elif 'HHChannel2D' == neutralObj.className : ## HHChannel2D
                     channel = moose.HHChannel2D(compartment.path+'/'+mechName) # wraps existing channel
                 elif 'HHChannel' == neutralObj.className : ## HHChannel
