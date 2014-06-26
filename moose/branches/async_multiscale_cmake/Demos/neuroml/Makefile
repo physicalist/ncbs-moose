@@ -1,4 +1,6 @@
 include Makefile.inc
+CLEAN_RECORD := $(shell rm -f ${SUCCESS_FILE} ${FAILURE_FILE})
+
 SRCS = allChannelsCell \
        CA1PyramidalCell \
        GranuleCell \
@@ -8,8 +10,12 @@ SRCS = allChannelsCell \
        PurkinjeCellPassive
 
 all : ${SRCS} 
-
-.PHONY: subdirs ${SRCS}
+	@echo "\n\n============================================================"
+	@echo "Successful scripts: "
+	@echo `cat ${SUCCESS_FILE}`
+	@echo "\n\n============================================================"
+	@echo "Failed scripts: "
+	@echo `cat ${FAILURE_FILE}`
 
 subdirs := ${SRCS}
 
@@ -19,6 +25,9 @@ ${SRCS}:
 clean:
 	for dir in ${SRCS}; do \
 	    $(MAKE) -C $$dir clean; \
-	done
+	done 
+	-rm -f $$SUCCESS_FILE
+	-rm -f $$FAILURE_FILE
 
-.PHONEY: clean all subdirs 
+.PHONY: subdirs ${SRCS}
+.PHONY: clean all subdirs 
