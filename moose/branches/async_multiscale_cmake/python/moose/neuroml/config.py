@@ -1,7 +1,7 @@
 
 """config.py: Configuration file for libnml.
 
-Last modified: Sat Jan 18, 2014  05:01PM
+Last modified: Thu Jun 26, 2014  07:02AM
 
 """
     
@@ -15,10 +15,15 @@ __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
 from xml.etree import ElementTree as slowET
+from .. import _moose
 
 neuroml_debug = False
+neuromlPath = '/neuroml'
+_moose.Neutral(neuromlPath)
 elecPath = '/elec'
+_moose.Neutral(elecPath)
 libraryPath = '/library'
+_moose.Neutral(libraryPath)
 
 neuroml_ns='http://morphml.org/neuroml/schema'
 nml_ns='http://morphml.org/networkml/schema'
