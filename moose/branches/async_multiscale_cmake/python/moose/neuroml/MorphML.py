@@ -335,7 +335,7 @@ class MorphML():
                         )
         else:
             if parametername in ['gmax']:
-                gmaxval = float(parameter.attrib.get("value", "0.0"))
+                gmaxval = float(eval(parameter.attrib.get("value", "0.0")))
                 self.set_group_compartment_param(
                         cell
                         , parameter
@@ -647,6 +647,7 @@ class MorphML():
                     # Later, when calling connect_CaConc, B is set for caconc
                     # based on thickness of Ca shell and compartment l and dia
                     # OR based on the Mstring phi under CaConc path.
+                    channel = None
                 elif 'HHChannel2D' == neutralObj.className : ## HHChannel2D
                     libchannel = moose.HHChannel2D(self.libpath+"/"+mechName)
                     ## deep copies the library channel under the compartment
@@ -665,6 +666,7 @@ class MorphML():
                 neutralObj = moose.Neutral(compartment.path+'/'+mechName)
                 if 'CaConc' == neutralObj.className: # Ion concentration pool
                     caconc = moose.CaConc(compartment.path+'/'+mechName) # wraps existing channel
+                    channel = None
                 elif 'HHChannel2D' == neutralObj.className : ## HHChannel2D
                     channel = moose.HHChannel2D(compartment.path+'/'+mechName) # wraps existing channel
                 elif 'HHChannel' == neutralObj.className : ## HHChannel
