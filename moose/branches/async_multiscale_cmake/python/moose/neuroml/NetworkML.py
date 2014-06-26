@@ -153,7 +153,7 @@ class NetworkML():
             if projections.attrib["units"] == 'Physiological Units': 
                 self.Efactor = 1e-3 # V from mV
                 self.Tfactor = 1e-3 # s from ms
-        [self.addProjection(proj) for proj in projections] 
+            [self.addProjection(proj) for proj in projections] 
 
         utils.dump("NEUROML", "Creating inputs in %s ..." % nml_utils.elecPath)
         inputs = self.network.findall(".//{"+nml_utils.nml_ns+"}inputs")
