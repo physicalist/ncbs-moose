@@ -10,6 +10,9 @@
 
 TARGET = _hsolve.o
 
+SUBDIR = \
+	cudaLibraryVivek \
+
 OBJ = \
 	HSolveStruct.o \
 	HinesMatrix.o \
@@ -45,8 +48,12 @@ ZombieHHChannel.o:	ZombieHHChannel.h ../biophysics/HHChannel.h ../biophysics/Cha
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $(SMOLDYN_FLAGS) -I. -I../basecode -I../msg $< -c
 
-$(TARGET): $(OBJ) $(SMOLDYN_OBJ) $(HEADERS)
+$(TARGET): subdirs $(OBJ) $(SMOLDYN_OBJ) $(HEADERS)
 	$(LD) -r -o $(TARGET) $(OBJ) $(SMOLDYN_OBJ) $(SMOLDYN_LIB_PATH) $(SMOLDYN_LIBS) $(GSL_LIBS)
 
+subdirs:
+	@(for i in $(SUBDIR) $(PARALLEL_DIR); do $(MAKE) -C $$i; done)
+
 clean:
+	@(for i in $(SUBDIR) ; do $(MAKE) -C $$i clean;  done)
 	rm -f *.o $(TARGET) core core.*

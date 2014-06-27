@@ -8,6 +8,7 @@
 **********************************************************************/
 
 #include "HSolvePassive.h"
+#include "cudaLibrary/GpuInterface.h"
 
 extern ostream& operator <<( ostream& s, const HinesMatrix& m );
 
@@ -210,10 +211,12 @@ void HSolvePassive::storeTree()
 
 void HSolvePassive::updateMatrix()
 {
+
     /*
      * Copy contents of HJCopy_ into HJ_. Cannot do a vector assign() because
      * iterators to HJ_ get invalidated in MS VC++
      */
+
     if ( HJ_.size() != 0 )
         memcpy( &HJ_[ 0 ], &HJCopy_[ 0 ], sizeof( double ) * HJ_.size() );
 
@@ -241,10 +244,12 @@ void HSolvePassive::updateMatrix()
     }
 
     stage_ = 0;    // Update done.
+
 }
 
 void HSolvePassive::forwardEliminate()
 {
+    
     unsigned int ic = 0;
     vector< double >::iterator ihs = HS_.begin();
     vector< vdIterator >::iterator iop = operand_.begin();
@@ -320,10 +325,14 @@ void HSolvePassive::forwardEliminate()
     }
 
     stage_ = 1;    // Forward elimination done.
+
+    //rand_func();
+    
 }
 
 void HSolvePassive::backwardSubstitute()
 {
+
     int ic = nCompt_ - 1;
     vector< double >::reverse_iterator ivmid = VMid_.rbegin();
     vector< double >::reverse_iterator iv = V_.rbegin();
@@ -398,6 +407,7 @@ void HSolvePassive::backwardSubstitute()
     }
 
     stage_ = 2;    // Backward substitution done.
+
 }
 
 ///////////////////////////////////////////////////////////////////////////
