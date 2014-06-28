@@ -1,0 +1,25 @@
+SCRIPTS = $(wildcard *.py)
+PROFILE_FILES := $(patsubst %.py,%.py.profile, ${SCRIPTS})
+LOG_FILES := $(patsubst %.py,%.py.log, ${SCRIPTS})
+
+all : test
+
+test : ${LOG_FILES}
+
+%.py.profile : %.py
+	@echo "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
+	@echo "++ Testing and profiling $<"
+	${PYC_PROFILER} -o $@ $< 
+
+%.py.log : %.py
+	@echo "\n\n"
+	@echo "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
+	@echo "++ Running scripts and logging results: $<"
+	${PYC} $< && echo SUCCESS > $@ || ( \
+	    echo "Failed to execute $<. Deleting log."; \
+	    echo "$< \n\t" >> $$FAILURE_FILE; \
+	    rm -f $@; \
+	    )
+
+clean:
+	-rm -f ${LOG_FILES} ${PROFILE_FILES}

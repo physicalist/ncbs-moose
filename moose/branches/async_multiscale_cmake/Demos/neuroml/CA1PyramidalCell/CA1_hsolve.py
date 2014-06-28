@@ -49,7 +49,6 @@ def loadGran98NeuroML_L123(filename):
             pylab.figure(i)
             print(("\t++ Storing figure {} to {}".format(i, filename)))
             pylab.savefig(filename)
-
 if __name__ == "__main__":
     if len(sys.argv)<2:
         filename = "CA1soma.net.xml"

@@ -82,3 +82,4 @@ else:
         pylab.figure(i)
         print(("\t++ Storing figure {} to {}".format(i, filename)))
         pylab.savefig(filename)
+

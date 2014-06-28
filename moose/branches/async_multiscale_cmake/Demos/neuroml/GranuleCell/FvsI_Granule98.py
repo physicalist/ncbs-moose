@@ -16,8 +16,8 @@ import moose
 from moose.utils import *
 
 from moose.neuroml.NeuroML import NeuroML
-import pylab
 
+from pylab import *
 
 SIMDT = 25e-6 # s
 PLOTDT = 25e-6 # s
@@ -39,41 +39,31 @@ moose.connect(granCellSoma,'VmOut',spikeGen,'Vm')
 ## save spikes in table
 table_path = moose.Neutral(granCell.path+'/data').path
 granCellSpikesTable = moose.Table(table_path+'/spikesTable')
-moose.connect(spikeGen,'spikeOut',granCellSpikesTable,'spike')
+moose.connect(spikeGen,'event',granCellSpikesTable,'input')
 
 ## from moose_utils.py sets clocks and resets/reinits
 resetSim(['/cells'], SIMDT, PLOTDT, simmethod='hsolve')
 
 ## Loop through different current injections
 freqList = []
-currentvec = pylab.arange(0.0, injectmax, injectmax/50.0)
+currentvec = arange(0.0, injectmax, injectmax/50.0)
 for currenti in currentvec:
     moose.reinit()
     granCellSoma.inject = currenti
     moose.start(RUNTIME)
-    spikesList = pylab.array(granCellSpikesTable.vector)
+    spikesList = array(granCellSpikesTable.vector)
     if len(spikesList)>0:
-        spikesList = spikesList[pylab.where(spikesList>0.0)[0]]
+        spikesList = spikesList[where(spikesList>0.0)[0]]
         spikesNow = len(spikesList)
     else: spikesNow = 0.0
-    print("For injected current =", currenti
-            , "number of spikes in",RUNTIME,"seconds =",spikesNow
-            )
+    print "For injected current =",currenti,\
+        "number of spikes in",RUNTIME,"seconds =",spikesNow
     freqList.append( spikesNow/float(RUNTIME) )
 
 ## plot the F vs I curve of the neuron
-pylab.figure(facecolor='w')
-pylab.plot(currentvec, freqList,'o-',linewidth=2)
-pylab.xlabel('time (s)',fontsize=24)
-pylab.ylabel('frequency (Hz)',fontsize=24)
-pylab.title('HH single-compartment Cell',fontsize=24)
-save = os.environ.get('SAVE_FIG', None)
-if not save:
-    pylab.show()
-else:
-    for i in pylab.get_fignums():
-        filename = __file__+"_{}.png".format(i)
-        pylab.figure(i)
-        print(("\t++ Storing figure {} to {}".format(i, filename)))
-        pylab.savefig(filename)
-
+figure(facecolor='w')
+plot(currentvec, freqList,'o-',linewidth=2)
+xlabel('time (s)',fontsize=24)
+ylabel('frequency (Hz)',fontsize=24)
+title('HH single-compartment Cell',fontsize=24)
+show()
