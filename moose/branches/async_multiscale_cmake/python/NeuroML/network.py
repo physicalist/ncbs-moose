@@ -15,7 +15,7 @@
 
 """network.py: 
 
-Last modified: Sat Jan 18, 2014  05:01PM
+Last modified: Mon Jun 30, 2014  02:27AM
 
 """
     
@@ -35,6 +35,7 @@ import inspect
 
 from . import moose_config
 from . import print_utils
+from .moose_compartment import MooseCompartment
 from neuroml import loaders
 
 class MooseNetwork():
@@ -101,20 +102,13 @@ class MooseNetwork():
             self.cellDefinitions[cellId] = cell.morphology.segments
     
     def addCompartments(self, cellPath, component, segments):
-        """Add segments to cell """
+        """For a given segment, create a moose compartment. 
+        """
         print_utils.dump("INFO"
-                , "Adding segments under %s " % cellPath
+                , "Creating a moose compartment for segments under %s " % cellPath
                 )
         for segment in segments:
-            if not segment.id:
-                segment.id = '0'
-            compartmentPath = '{}/{}/{}'.format(cellPath, component, segment.id)
-            comp = moose.Compartment(compartmentPath)
-            if segment.parent:
-                parentSegment = segment.parent.segments
-                parentPath = '{}/{}/{}'.format(cellPath, component, parentSegment)
-                parentComp = moose.Compartment(parentPath)
-                parentComp.connect('axial', comp, 'raxial')
+            MooseCompartment.segmentToCompartment(cellPath, component, segment)
 
 
     def addInstanceOfPopulation(self, populationId, instance, component):
@@ -130,9 +124,11 @@ class MooseNetwork():
                         ]
                     )
             raise e
+
         # Now populate the Neuron with compartment
         cellSegments = self.cellDefinitions[component]
         moose.Neutral('{}/{}'.format(instancePath, component))
+
         # In neuroml, paths are usually
         # ../instanceName/instanceId/componentName/segmentId 
         self.addCompartments(instancePath, component, cellSegments)
