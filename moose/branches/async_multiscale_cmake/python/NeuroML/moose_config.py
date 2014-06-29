@@ -44,10 +44,22 @@ def cell_path(populationName, instanceId=None):
     return '{0}/{1}/{2}'.format(cellPath, populationName, instanceId)
 
 def moose_path(cellId, segmentId, prefix=None):
-    """Return moose-path for a given cell and segment """
+    """Return moose-path for a given cell and segment 
+    
+    The return path:
+        prefix/population/population_instance/cell_type/segmentId
+    
+    """
     if not prefix:
         prefix = cellPath 
     if '../' in cellId:
         cellId = cellId.replace('../', '')
     path = '{}/{}/{}'.format(prefix, cellId, segmentId)
+    return path
+
+def moose_path_for_segment(cellPath, cellType, segmentId):
+    """Return a valid Compartment path for a given segment in Moose 
+    
+    """
+    path = '{}/{}/{}'.format(cellPath, cellType, segmentId)
     return path
