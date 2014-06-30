@@ -42,6 +42,7 @@ class DotFile():
         self.compShape = "box3d"
         self.tableShape = "folder"
         self.pulseShape = "invtriangle"
+        self.ignorePat = None
 
     def setIgnorePat(self, ignorePat):
         self.ignorePat = ignorePat
@@ -77,10 +78,11 @@ class DotFile():
             return
 
         with open(fileName, 'w') as graphviz:
+            msg = [ "Writing network to file {}".format(fileName) ]
+            if self.ignorePat:
+                msg.append("Ignoring pattern: {}".format(self.ignorePat.pattern))
             print_utils.dump("GRAPHVIZ"
-                    , [ "Writing compartment topology to file {}".format(fileName)
-                        , "Ignoring pattern : {}".format(self.ignorePat.pattern)
-                        ]
+                    , msg
                     )
             graphviz.write(dotText)
 
@@ -186,7 +188,7 @@ def getConnectedCompartments(obj):
 # @param Ignore paths containing this pattern. A regular expression. 
 #
 # @return None. 
-def writeGraphviz(filename=None, pat='/##[TYPE=Compartment]', ignore=None):
+def writeGraphviz(filename=None, pat='/##[TYPE=Compartment]', **kwargs):
     '''This is  a generic function. It takes the the pattern, search for paths
     and write a graphviz file.
     '''
@@ -195,11 +197,17 @@ def writeGraphviz(filename=None, pat='/##[TYPE=Compartment]', ignore=None):
     b = backend.Backend()
     b.populateStoreHouse()
 
+    ignore = kwargs.get('ignore', None)
+    ignorePat = None
     if ignore:
         ignorePat = re.compile(r'%s'%ignore, re.I)
         dotFile.setIgnorePat(ignorePat)
 
     compList = b.filterPaths(b.compartments, ignorePat)
+
+    dotFile.compShape = kwargs.get('compartment_shape', 'box3d')
+    dotFile.tableShape = kwargs.get('table_shape', 'folder')
+    dotFile.pulseShape = kwargs.get('pulse_shape', 'invtriangle')
 
     if not compList:
         print_utils.dump("WARN"
@@ -237,5 +245,6 @@ def writeGraphviz(filename=None, pat='/##[TYPE=Compartment]', ignore=None):
     for t in tables:
         sources = t.neighbors['requestOut']
         dotFile.addTable(t, sources)
-    return True
+
+    dotFile.writeDotFile(filename)
 
