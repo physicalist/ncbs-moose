@@ -36,6 +36,7 @@ import os
 from . import print_utils
 from . import globals
 from neuroml import loaders
+import re
 
 class Synapse():
 
@@ -46,9 +47,36 @@ class Synapse():
 
     def loadSynapse(self, synName):
         """Load definition file and create synapse """
-        filename = os.path.join(globals.design_dir, '{}.xml'.format(synName))
-        channelML = loaders.NeuroMLLoader.load(filename)
-        self.synapses[synName] = channelML
+        filename = os.path.join(globals.design_dir, '{}.nml'.format(synName))
+        channel = loaders.NeuroMLLoader.load(filename)
+        self.createSyanspeDefinition(synName, channel)
+
+    def addExpOneSynapse(self, synPath, expOneSynapse):
+        """Add Exp one synapse """
+        syn = moose.SynChan(synPath)
+        tau = expOneSynapse.tau_decay
+        syn.tau1 = globals.toSIValue(tau)
+        syn.tau2 = syn.tau1
+        syn.Ek = globals.toSIValue(expOneSynapse.erev)
+        syn.Gbar = globals.toSIValue(expOneSynapse.gbase)
+        print expOneSynapse.__dict__
+
+    
+    def createSyanspeDefinition(self, synName, channel):
+        """Create Synapse definition from given channel file """
+        synapse = None 
+        for i, syn in enumerate(channel.exp_one_synapses):
+            synPath = '{}/{}'.format(self.basePath, synName)
+            moose.Neutral(synPath)
+            synPath = '{}/{}'.format(synPath, i)
+            self.addExpOneSynapse(synPath, syn)
+        if channel.exp_two_synapses:
+            print_utils.dump("TODO", "Unsupported exp_two_synapse")
+        elif channel.exp_cond_synapses:
+            print_utils.dump("TODO", "Unsupported exp_cond_synapse")
+        else:
+            print_utils.dump("WARN", "Missing or unsupported synapse")
+        self.synapses[synName] = synapse
 
     def create(self, name, sourcePath, targetPath, **kwargs):
         """Create a synapse in Moose of synType """
@@ -60,13 +88,13 @@ class Synapse():
                     )
             self.loadSynapse(name)
 
-        print_utils.dump("SYNAPSE"
-                , "Connecting {} and {}, synapse {}".format(
-                    sourcePath
-                    , targetPath
-                    , name
-                    )
-                )        
+        #print_utils.dump("SYNAPSE"
+        #        , "Connecting {} and {}, synapse {}".format(
+        #            sourcePath
+        #            , targetPath
+        #            , name
+        #            )
+        #        )        
         # Check source and target exists in Moose.
         if not moose.exists(sourcePath):
             print_utils.dump("FATAL"

@@ -29,5 +29,26 @@ __maintainer__       = "Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
+import re
+import inspect
+import sys
+from . import print_utils
 
 design_dir = "."
+
+valuePat = re.compile(r'(?P<value>[\d\.eE-]+)(?P<unit>\D+)$')
+
+def toSIValue(value):
+    """Convert a given value string to SI value"""
+    m = valuePat.match(value)
+    assert m, "Could not match the given value {}".format(value)
+    unit = m.group('unit')
+    if unit in [ "ms", "mV", "mI", "mS"]:
+        return float(m.group('value')) * 1e-3
+    else:
+        print_utils.dump("FATAL"
+                , "Don't know what to do with unit %s " % unit
+                , frame = inspect.currentframe()
+                )
+        raise
+                
