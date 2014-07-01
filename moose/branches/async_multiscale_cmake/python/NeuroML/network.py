@@ -88,7 +88,7 @@ class MooseNetwork():
                         ]
                     , frame = inspect.currentframe()
                     )
-            sys.exit(0)
+            raise IOError("Definition file is not found")
         
         # File is found. Load cell definition into dictionary so that it can be
         # used later.
@@ -98,7 +98,9 @@ class MooseNetwork():
                 print_utils.dump("TODO"
                         , "Unsupported biophysical_properties"
                         )
-                return 
+                raise UserWarning("Incomplete function") 
+            else:
+                pass
             self.cellDefinitions[cellId] = cell.morphology.segments
     
     def addCompartments(self, cellPath, component, segments):
@@ -109,7 +111,6 @@ class MooseNetwork():
                 )
         for segment in segments:
             MooseCompartment.segmentToCompartment(cellPath, component, segment)
-
 
     def addInstanceOfPopulation(self, populationId, instance, component):
         """Add an instance of population to mooose """
@@ -130,7 +131,8 @@ class MooseNetwork():
         moose.Neutral('{}/{}'.format(instancePath, component))
 
         # In neuroml, paths are usually
-        # ../instanceName/instanceId/componentName/segmentId 
+        # ../instanceName/instanceId/componentName/segmentId . We remove the
+        # leading ../ from the path.
         self.addCompartments(instancePath, component, cellSegments)
 
     def addPopulation(self, population):
@@ -150,7 +152,7 @@ class MooseNetwork():
             self.addInstanceOfPopulation(populationId, instance, component)
 
 
-    def synapse(self, sourcePath, targetPath):
+    def addSynapse(self, sourcePath, targetPath):
         """Add a synapse from sourcePath to targetPath """
         print_utils.dump("SYNAPSE"
                 , "Connecting {} and {}".format(sourcePath, targetPath)
@@ -172,10 +174,13 @@ class MooseNetwork():
                             )
                         ]
                     )
-            sys.exit(0)
+            raise RuntimeError("Path does not exists in Moose")
+
+        # Cool, we have source and target exist in Moose. Now create a synapse.
 
     def addProjection(self, projection):
         """Add projection in moose """
+        print projection.__dict__
         for connection in projection.connections:
             connectionId = connection.id
             sourcePath = moose_config.moose_path(
@@ -186,5 +191,5 @@ class MooseNetwork():
                     connection.post_cell_id
                     , connection.post_segment_id 
                     )
-            #self.synapse(sourcePath, targetPath)
+            self.addSynapse(sourcePath, targetPath)
 
