@@ -36,7 +36,6 @@ import os
 from . import print_utils
 from . import globals
 from neuroml import loaders
-import re
 
 class Synapse():
 
@@ -59,8 +58,7 @@ class Synapse():
         syn.tau2 = syn.tau1
         syn.Ek = globals.toSIValue(expOneSynapse.erev)
         syn.Gbar = globals.toSIValue(expOneSynapse.gbase)
-        print expOneSynapse.__dict__
-
+        return syn
     
     def createSyanspeDefinition(self, synName, channel):
         """Create Synapse definition from given channel file """
@@ -69,14 +67,15 @@ class Synapse():
             synPath = '{}/{}'.format(self.basePath, synName)
             moose.Neutral(synPath)
             synPath = '{}/{}'.format(synPath, i)
-            self.addExpOneSynapse(synPath, syn)
+            synapse = self.addExpOneSynapse(synPath, syn)
         if channel.exp_two_synapses:
             print_utils.dump("TODO", "Unsupported exp_two_synapse")
         elif channel.exp_cond_synapses:
             print_utils.dump("TODO", "Unsupported exp_cond_synapse")
         else:
             print_utils.dump("WARN", "Missing or unsupported synapse")
-        self.synapses[synName] = synapse
+        if synapse:
+            self.synapses[synName] = synapse
 
     def create(self, name, sourcePath, targetPath, **kwargs):
         """Create a synapse in Moose of synType """
@@ -87,14 +86,14 @@ class Synapse():
                         ]
                     )
             self.loadSynapse(name)
-
-        #print_utils.dump("SYNAPSE"
-        #        , "Connecting {} and {}, synapse {}".format(
-        #            sourcePath
-        #            , targetPath
-        #            , name
-        #            )
-        #        )        
+        synapse = self.synapses[name]
+        print_utils.dump("SYNAPSE"
+                , "Connecting {} and {}, synapse {}".format(
+                    sourcePath
+                    , targetPath
+                    , name
+                    )
+                )        
         # Check source and target exists in Moose.
         if not moose.exists(sourcePath):
             print_utils.dump("FATAL"
@@ -115,3 +114,9 @@ class Synapse():
                     )
             raise RuntimeError("Path does not exists in Moose")
         # Cool, we have source and target exist in Moose. Now create a synapse.
+        target = moose.Compartment(targetPath)
+        synapse.connect('channel', target, 'channel', 'Single')
+        source = moose.Compartment(sourcePath)
+        spikegen = moose.SpikeGen(source.path + '/spikegen')
+        spikegen.threshold = 0.0
+        source.connect('VmOut', spikegen, 'Vm')
