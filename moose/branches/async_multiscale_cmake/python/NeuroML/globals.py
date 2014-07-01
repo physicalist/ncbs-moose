@@ -12,8 +12,9 @@
 # You should have received a copy of the GNU General Public License
 # along with MOOSE.  If not, see <http://www.gnu.org/licenses/>.
 
+"""global.py: 
 
-"""loader.py: 
+    Keep all of your global variables here.
 
 Last modified: Sat Jan 18, 2014  05:01PM
 
@@ -28,18 +29,5 @@ __maintainer__       = "Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
-from neuroml import loaders
-import sys
-import os
-import moose
-import network
-import print_utils
-import globals
 
-def loadNeuroML(filename):
-    """Load neuroml file into moose simulator """
-    globals.design_dir = os.path.dirname(filename)
-    mooseNetwork = network.MooseNetwork(filename)
-    mooseNetwork.build()
-
-
+design_dir = "."
