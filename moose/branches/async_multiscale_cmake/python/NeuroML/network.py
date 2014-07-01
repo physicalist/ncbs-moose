@@ -35,8 +35,11 @@ import inspect
 
 from . import moose_config
 from . import print_utils
+from . import globals
 from .moose_compartment import MooseCompartment
+from .moose_synapse import Synapse
 from neuroml import loaders
+
 
 class MooseNetwork():
 
@@ -46,7 +49,8 @@ class MooseNetwork():
         self.doc = None
         self.networkDoc = None
         self.networkFile = filename
-        self.networkDir = os.path.dirname(filename)
+        self.networkDir = globals.design_dir
+        self.syn = Synapse()
     
     def parseNetwork(self):
         self.populations = self.networkDoc.populations
@@ -152,35 +156,14 @@ class MooseNetwork():
             self.addInstanceOfPopulation(populationId, instance, component)
 
 
-    def addSynapse(self, sourcePath, targetPath):
+    def addSynapse(self, synapseType, sourcePath, targetPath):
         """Add a synapse from sourcePath to targetPath """
-        print_utils.dump("SYNAPSE"
-                , "Connecting {} and {}".format(sourcePath, targetPath)
-                )        
-        if not moose.exists(sourcePath):
-            print_utils.dump("FATAL"
-                    , [ "Can't create synapse"
-                        , "Source compartment {} does not exists".format(
-                            sourcePath
-                            )
-                        ]
-                    )
-            sys.exit(0)
-        if not moose.exists(targetPath):
-            print_utils.dump("FATAL"
-                    , [ "Can't create synapse"
-                        , "Target compartment {} does not exists".format(
-                            targetPath
-                            )
-                        ]
-                    )
-            raise RuntimeError("Path does not exists in Moose")
-
-        # Cool, we have source and target exist in Moose. Now create a synapse.
+        self.syn.create(synapseType, sourcePath, targetPath)
+        
 
     def addProjection(self, projection):
         """Add projection in moose """
-        print projection.__dict__
+        synapseType = projection.synapse
         for connection in projection.connections:
             connectionId = connection.id
             sourcePath = moose_config.moose_path(
@@ -191,5 +174,5 @@ class MooseNetwork():
                     connection.post_cell_id
                     , connection.post_segment_id 
                     )
-            self.addSynapse(sourcePath, targetPath)
+            self.addSynapse(synapseType, sourcePath, targetPath)
 
