@@ -32,17 +32,20 @@ __status__           = "Development"
 import moose
 import sys
 import os 
+from neuroml import loaders
+import re
 
+from collections import defaultdict
 from . import print_utils
 from . import globals
-from neuroml import loaders
+
 
 class Synapse():
 
     def __init__(self):
         self.basePath = '/synapse'
         moose.Neutral(self.basePath)
-        self.synapses = dict()
+        self.synapses = defaultdict(list)
 
     def loadSynapse(self, synName):
         """Load definition file and create synapse """
@@ -58,8 +61,15 @@ class Synapse():
         syn.tau2 = syn.tau1
         syn.Ek = globals.toSIValue(expOneSynapse.erev)
         syn.Gbar = globals.toSIValue(expOneSynapse.gbase)
-        return syn
-    
+
+    def addExpTwoSynapse(self, synPath, expTwoSynapse):
+        """Add a two exponential synapse """
+        syn = moose.SynChan(synPath)
+        syn.tau1 = globals.toSIValue(expTwoSynapse.tau_rise)
+        syn.tau2 = globals.toSIValue(expTwoSynapse.tau_decay)
+        syn.Ek = globals.toSIValue(expTwoSynapse.erev)
+        syn.Gbar = globals.toSIValue(expTwoSynapse.gbase) 
+
     def createSyanspeDefinition(self, synName, channel):
         """Create Synapse definition from given channel file """
         synapse = None 
@@ -67,15 +77,15 @@ class Synapse():
             synPath = '{}/{}'.format(self.basePath, synName)
             moose.Neutral(synPath)
             synPath = '{}/{}'.format(synPath, i)
-            synapse = self.addExpOneSynapse(synPath, syn)
-        if channel.exp_two_synapses:
-            print_utils.dump("TODO", "Unsupported exp_two_synapse")
-        elif channel.exp_cond_synapses:
+            self.addExpOneSynapse(synPath, syn)
+            self.synapses[synName].append(synPath)
+        for i, syn in enumerate(channel.exp_two_synapses):
+            synPath = '{}/{}'.format(self.basePath, synName)
+            moose.Neutral(synPath)
+            self.addExpTwoSynapse(synPath, syn)
+            self.synapses[synName].append(synPath)
+        for i, syn in enumerate(channel.exp_cond_synapses):
             print_utils.dump("TODO", "Unsupported exp_cond_synapse")
-        else:
-            print_utils.dump("WARN", "Missing or unsupported synapse")
-        if synapse:
-            self.synapses[synName] = synapse
 
     def create(self, name, sourcePath, targetPath, **kwargs):
         """Create a synapse in Moose of synType """
@@ -86,14 +96,14 @@ class Synapse():
                         ]
                     )
             self.loadSynapse(name)
-        synapse = self.synapses[name]
-        print_utils.dump("SYNAPSE"
-                , "Connecting {} and {}, synapse {}".format(
-                    sourcePath
-                    , targetPath
-                    , name
-                    )
-                )        
+
+        #print_utils.dump("SYNAPSE"
+        #        , "Connecting {} and {}, synapse {}".format(
+        #            sourcePath
+        #            , targetPath
+        #            , name
+        #            )
+        #        )        
         # Check source and target exists in Moose.
         if not moose.exists(sourcePath):
             print_utils.dump("FATAL"
@@ -114,9 +124,3 @@ class Synapse():
                     )
             raise RuntimeError("Path does not exists in Moose")
         # Cool, we have source and target exist in Moose. Now create a synapse.
-        target = moose.Compartment(targetPath)
-        synapse.connect('channel', target, 'channel', 'Single')
-        source = moose.Compartment(sourcePath)
-        spikegen = moose.SpikeGen(source.path + '/spikegen')
-        spikegen.threshold = 0.0
-        source.connect('VmOut', spikegen, 'Vm')
