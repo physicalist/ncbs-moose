@@ -30,12 +30,12 @@ __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
 import moose
-import sys
 import os 
-from neuroml import loaders
-import re
+import inspect 
 
+from neuroml import loaders
 from collections import defaultdict
+
 from . import print_utils
 from . import globals
 
@@ -56,11 +56,12 @@ class Synapse():
     def addExpOneSynapse(self, synPath, expOneSynapse):
         """Add Exp one synapse """
         syn = moose.SynChan(synPath)
-        tau = expOneSynapse.tau_decay
-        syn.tau1 = globals.toSIValue(tau)
+        syn.tau1 = globals.toSIValue(expOneSynapse.tau_decay)
         syn.tau2 = syn.tau1
         syn.Ek = globals.toSIValue(expOneSynapse.erev)
         syn.Gbar = globals.toSIValue(expOneSynapse.gbase)
+        syn.synapse.num = 1
+        return syn
 
     def addExpTwoSynapse(self, synPath, expTwoSynapse):
         """Add a two exponential synapse """
@@ -69,58 +70,53 @@ class Synapse():
         syn.tau2 = globals.toSIValue(expTwoSynapse.tau_decay)
         syn.Ek = globals.toSIValue(expTwoSynapse.erev)
         syn.Gbar = globals.toSIValue(expTwoSynapse.gbase) 
+        syn.synapse.num = 1
+        return syn
 
     def createSyanspeDefinition(self, synName, channel):
         """Create Synapse definition from given channel file """
-        synapse = None 
         for i, syn in enumerate(channel.exp_one_synapses):
-            synPath = '{}/{}'.format(self.basePath, synName)
-            moose.Neutral(synPath)
-            synPath = '{}/{}'.format(synPath, i)
-            self.addExpOneSynapse(synPath, syn)
-            self.synapses[synName].append(synPath)
+            synBasePath = '{}/{}'.format(self.basePath, synName)
+            moose.Neutral(synBasePath)
+            synPath = '{}/{}'.format(synBasePath, i)
+            synChan = self.addExpOneSynapse(synPath, syn)
+            self.synapses[synName].append(synChan)
         for i, syn in enumerate(channel.exp_two_synapses):
-            synPath = '{}/{}'.format(self.basePath, synName)
-            moose.Neutral(synPath)
-            self.addExpTwoSynapse(synPath, syn)
-            self.synapses[synName].append(synPath)
+            synBasePath = '{}/{}'.format(self.basePath, synName)
+            moose.Neutral(synBasePath)
+            synPath = '{}/{}'.format(synBasePath, i)
+            synChan = self.addExpTwoSynapse(synPath, syn)
+            self.synapses[synName].append(synChan)
         for i, syn in enumerate(channel.exp_cond_synapses):
             print_utils.dump("TODO", "Unsupported exp_cond_synapse")
 
     def create(self, name, sourcePath, targetPath, **kwargs):
         """Create a synapse in Moose of synType """
-        if name not in self.synapses:
-            print_utils.dump("INFO"
-                    , [ "Synapse {} definition does not exists ".format(name)
-                        , " Loading it from XML file "
-                        ]
-                    )
-            self.loadSynapse(name)
 
-        #print_utils.dump("SYNAPSE"
-        #        , "Connecting {} and {}, synapse {}".format(
-        #            sourcePath
-        #            , targetPath
-        #            , name
-        #            )
-        #        )        
+        assert name in self.synapses, "Definition of synapse is missing"
+
+        # Get the SynChan.
+        synChan = self.synapses[name][-1]
         # Check source and target exists in Moose.
-        if not moose.exists(sourcePath):
-            print_utils.dump("FATAL"
-                    , [ "Can't create synapse"
-                        , "Source compartment {} does not exists".format(
-                            sourcePath
-                            )
-                        ]
-                    )
-            sys.exit(0)
-        if not moose.exists(targetPath):
-            print_utils.dump("FATAL"
-                    , [ "Can't create synapse"
-                        , "Target compartment {} does not exists".format(
-                            targetPath
-                            )
-                        ]
-                    )
-            raise RuntimeError("Path does not exists in Moose")
+        assert moose.exists(sourcePath)
+        assert moose.exists(targetPath)
         # Cool, we have source and target exist in Moose. Now create a synapse.
+        sourceComp = moose.Compartment(sourcePath)
+        targetComp = moose.Compartment(targetPath)
+
+        ##print_utils.dump("INFO"
+        ##        , "Currently only event-based synapse are supported"
+        ##        , frame = inspect.currentframe()
+        ##        )
+
+        # Souce compartment is fed to a SpikeGen which produces spikes. These
+        # spikes are fed to SynChan and SynChan finally makes connection onto
+        # target compartment.
+        spikeGen = moose.SpikeGen('{}/{}'.format(sourcePath, 'spikegen'))
+        spikeGen.threshold = 0.0
+        spikeGen.edgeTriggered = True
+        sourceComp.connect('VmOut', spikeGen, 'Vm')
+        spikeGen.connect('spikeOut', synChan.synapse[-1], 'addSpike', 'Single')
+
+        # Synapse on targetCompartment
+        targetComp.connect('channel', synChan, 'channel')
