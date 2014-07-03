@@ -44,6 +44,8 @@
 # 
 
 # Code:
+import sys
+sys.path.append("../../python")
 import moose
 
 def many_ematrix_to_one_element():
