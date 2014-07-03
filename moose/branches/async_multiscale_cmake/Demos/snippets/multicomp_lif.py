@@ -156,7 +156,7 @@ def setup_two_cells():
     m.setRandomConnectivity(1.0, 1)
     stim = moose.PulseGen('/model/stim')
     stim.delay[0] = 100e-3
-    stim.width[0] = 1e3
+    stim.width[0]= 1e3
     stim.level[0] = 11e-9
     moose.connect(stim, 'output', a1, 'injectMsg')
     tables = []
