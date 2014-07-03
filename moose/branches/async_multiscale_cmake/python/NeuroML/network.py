@@ -41,16 +41,16 @@ from .moose_synapse import Synapse
 from neuroml import loaders
 
 
-class MooseNetwork():
+class MooseNetwork(Synapse):
 
     def __init__(self, filename):
+        Synapse.__init__(self)
         self.cellDefinitions = dict()
         self.modelDir = '.'
         self.doc = None
         self.networkDoc = None
         self.networkFile = filename
         self.networkDir = globals.design_dir
-        self.syn = Synapse()
     
     def parseNetwork(self):
         self.populations = self.networkDoc.populations
@@ -156,14 +156,14 @@ class MooseNetwork():
             self.addInstanceOfPopulation(populationId, instance, component)
 
 
-    def addSynapse(self, synapseType, sourcePath, targetPath):
-        """Add a synapse from sourcePath to targetPath """
-        self.syn.create(synapseType, sourcePath, targetPath)
-        
-
     def addProjection(self, projection):
         """Add projection in moose """
+        
         synapseType = projection.synapse
+        # Each project comes with a synapse.
+        if synapseType not in self.synapses:
+            self.loadSynapse(synapseType)
+
         for connection in projection.connections:
             connectionId = connection.id
             sourcePath = moose_config.moose_path(
@@ -174,5 +174,5 @@ class MooseNetwork():
                     connection.post_cell_id
                     , connection.post_segment_id 
                     )
-            self.addSynapse(synapseType, sourcePath, targetPath)
+            self.create(synapseType, sourcePath, targetPath)
 
