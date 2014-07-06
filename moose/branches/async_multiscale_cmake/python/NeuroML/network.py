@@ -58,25 +58,14 @@ class MooseNetwork(Synapse):
         
     def buildMooseNetwork(self, network):
         """Build Moose network for a given neuroml network """
+        
+        if network.type == 'networkWithTemperature':
+            globals.setTemperature(network.temperature)
         for pop in network.populations:
             self.addPopulation(pop)
         for proj in network.projections:
             self.addProjection(proj)
         
-    def build(self, **kwargs):
-        """Build  moose network"""
-        try:
-            self.doc = loaders.NeuroMLLoader.load(self.networkFile)
-        except Exception as e:
-            print_utils.dump("ERROR"
-                    , ["Failed to load NeuroML model into Moose"
-                        , "The error was: %s " % e 
-                    ]
-                )
-            sys.exit(0)
-        for network in self.doc.networks:
-            self.buildMooseNetwork(network)
-
     def createCellDefinition(self, cellId):
         """Read a file containing cell definition """
         print_utils.dump("STEP"
@@ -142,7 +131,6 @@ class MooseNetwork(Synapse):
     def addPopulation(self, population):
         """Add population to moose """
         populationId = population.id
-
         component = population.component
         if component not in self.cellDefinitions:
             print_utils.dump("INFO"
@@ -154,7 +142,6 @@ class MooseNetwork(Synapse):
         moose.Neutral(populationPath)
         for instance in population.instances:
             self.addInstanceOfPopulation(populationId, instance, component)
-
 
     def addProjection(self, projection):
         """Add projection in moose """
@@ -175,4 +162,20 @@ class MooseNetwork(Synapse):
                     , connection.post_segment_id 
                     )
             self.create(synapseType, sourcePath, targetPath)
+
+    # Top-most function in this class.
+    def build(self, **kwargs):
+        """Build  moose network"""
+        try:
+            self.doc = loaders.NeuroMLLoader.load(self.networkFile)
+        except Exception as e:
+            print_utils.dump("ERROR"
+                    , ["Failed to load NeuroML model into Moose"
+                        , "The error was: %s " % e 
+                    ]
+                )
+            sys.exit(0)
+        for network in self.doc.networks:
+            self.buildMooseNetwork(network)
+
 
