@@ -36,7 +36,21 @@ from . import print_utils
 
 design_dir = "."
 
-valuePat = re.compile(r'(?P<value>[\d\.eE-]+)(?P<unit>\D+)$')
+valuePat = re.compile(r'(?P<value>[\d\.eE-]+)\s*(?P<unit>\D+)$')
+
+temperature = 25.0 # degC
+
+def setTemperature(tempString):
+    """Setting up temperature """
+    global temperature
+    m = valuePat.match(tempString)
+    if m.group('unit') == 'degC':
+        temperature = float(m.group('value'))
+    elif m.group('unit') == 'K':
+        temperature == float(m.group('value')) - 273.15
+    else:
+        temperature = float(m.group('value'))
+
 
 def toSIValue(value):
     """Convert a given value string to SI value"""
