@@ -31,8 +31,10 @@ os.environ['CXX'] = "g++"
 moduleName = "cymoose"
 for root, dirs, files in os.walk(".", topdown=False):
     for name in files:
-        if (name.startswith(moduleName) and not(name.endswith(".pyx") or
-            name.endswith(".pxd") or name.endswith(".cxx"))):
+        if (name.startswith(moduleName) and not(
+                name.endswith(".pyx") or name.endswith(".pxd") or name.endswith(".cxx") or name.endswith(".hpp")
+                )
+            ):
             os.remove(os.path.join(root, name))
 for name in dirs:
     if(name == "build"):
@@ -50,15 +52,16 @@ setup(
                     ]
                 , sources = ["cymoose.pyx"
                     ]
-                , extra_compile_args = [ "-fopenmp", "-g"
+                , extra_compile_args = [
+                    "-g"
+                    , "-DCYMOOSE"
                     , "-DCYTHON"
                     , "-DLINUX"
-                    , "-DPYMOOSE"
                     ]
-                , extra_link_args = ["-L."]
+                , extra_link_args = ["-L.", "-g"]
                 , libraries = [
                     "mpi"
-                    , "mooselib"
+                    , "moose"
                     , "stdc++"
                     ]
                 )

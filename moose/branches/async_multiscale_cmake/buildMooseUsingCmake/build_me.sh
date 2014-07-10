@@ -9,6 +9,7 @@ if [ $# -gt 0 ]; then
 fi
 rm -rf ../CMakeFiles/ 
 rm -f ../CMakeCache.txt
-cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+cmake ..
 make VERBOSE=1
 make check_python
+make check_cymoose

@@ -96,12 +96,17 @@ endif()
 # Default macros
 add_definitions(-DUSE_GENESIS_PARSER)
 
-set(DEBUG 0)
+set(DEBUG 1)
 if(DEBUG)
     set(CMAKE_BUILD_TYPE Debug)
 else()
     set(CMAKE_BUILD_TYPE distribution)
     set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -O3)
+endif()
+
+set(CYMOOSE 1)
+if(CYMOOSE)
+    add_definitions("-DCYMOOSE -DCYTHON")
 endif()
 
 ################################### SETUP BUILD ################################
@@ -282,6 +287,44 @@ if(BUILD_PYMOOSE)
         )
 endif(BUILD_PYMOOSE)
 
+######################### CYMOOSE #############################################
+add_library(moose SHARED cymoose/cymoose_methods.cxx)
+set_target_properties(moose PROPERTIES COMPILE_DEFINITIONS "CYMOOSE")
+add_definitions("-DCYMOOSE -DCYTHON")
+if(DEBUG)
+    add_definitions("-g -Wall")
+endif()
+
+set_target_properties(moose PROPERTIES 
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/cymoose"
+        )
+target_link_libraries(moose 
+    "-Wl,--whole-archive"
+    basecode
+    msg
+    shell
+    randnum
+    scheduling
+    moose_mpi
+    moose_builtins
+    utility 
+    muparser
+    biophysics 
+    kinetics 
+    ksolve
+    tinyxml
+    hsolve 
+    mesh
+    signeur
+    diffusion 
+    device
+    benchmarks
+    pthread
+    ${LIBRARIES}
+    "-Wl,--no-whole-archive"
+    )
+
+
 ######################### INSTALL ##############################################
 install(TARGETS moose.bin
     RUNTIME DESTINATION bin
@@ -313,4 +356,8 @@ add_custom_target(check_python
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests/python"
     )
 
-
+add_custom_target(check_cymoose
+    COMMAND ${PYTHON_EXECUTABLE} test.py 
+    COMMENT "Checking: running test_cymoose in python" VERBATIM
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/cymoose"
+    )
