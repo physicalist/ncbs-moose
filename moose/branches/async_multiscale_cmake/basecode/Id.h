@@ -10,6 +10,13 @@
 #ifndef _ID_H
 #define _ID_H
 
+#ifdef CYMOOSE
+#include "Eref.h"
+//#include "ObjId.h"
+class ObjId;
+class Element;
+#endif
+
 /**
  * This class manages id lookups for elements. Ids provide a uniform
  * handle for every object, independent of which node they are located on.

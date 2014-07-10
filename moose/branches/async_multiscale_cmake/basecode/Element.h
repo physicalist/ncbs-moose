@@ -9,6 +9,22 @@
 #ifndef _ELEMENT_H
 #define _ELEMENT_H
 
+#include "declarations.h"
+#include <string>
+#include <vector>
+
+using namespace std;
+
+#ifdef  CYMOOSE
+#include "Id.h"
+class Cinfo;
+class ObjId;
+class MsgFuncBinding;
+class MsgDigest;
+class Finfo;
+class DestFinfo;
+#endif     /* -----  CYMOOSE  ----- */
+
 class SrcFinfo;
 class FuncOrder;
 

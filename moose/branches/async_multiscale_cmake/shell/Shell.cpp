@@ -46,10 +46,12 @@ double Shell::runtime_( 0.0 );
 const Cinfo* Shell::initCinfo()
 {
 
+    cerr << "Calling Shell::initCinfo" << endl;
+
 #ifdef ENABLE_LOGGER
     clock_t t = clock();
 #endif
-
+    //
 ////////////////////////////////////////////////////////////////
 // Value Finfos
 ////////////////////////////////////////////////////////////////
@@ -154,10 +156,35 @@ Shell::Shell()
 Shell::~Shell()
 {;}
 
+
+/*-----------------------------------------------------------------------------
+ *  This function must create a fully functional Shell. Used in cython
+ *  interface.
+ *-----------------------------------------------------------------------------*/
+Shell* Shell::initShell()
+{
+    Eref sheller = Id().eref();
+    Shell* shell = reinterpret_cast< Shell* >( sheller.data() );
+    return shell;
+}
+
+Id Shell::create( string type, ObjId* parent, string name, unsigned int numData
+        , NodePolicy nodePolicy, unsigned int preferredNode 
+        ) 
+{
+    if(NULL == parent)
+    {
+        ObjId parentObj = Id();
+        parent = &parentObj;
+    }
+    return doCreate(type, *parent, name, numData, nodePolicy, preferredNode);
+}
+
 void Shell::setShellElement( Element* shelle )
 {
 	shelle_ = shelle;
 }
+
 ////////////////////////////////////////////////////////////////
 // Parser functions.
 ////////////////////////////////////////////////////////////////
@@ -179,6 +206,11 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 #ifdef ENABLE_LOGGER
     clock_t t = clock();
 #endif
+
+
+    cerr << "+ Creating " << name << "<" << type << ">" << " under " 
+        << parent.path() << endl;
+
 	const Cinfo* c = Cinfo::find( type );
 	if ( name.find_first_of( "[] #?\"/\\" ) != string::npos ) {
 		stringstream ss;
