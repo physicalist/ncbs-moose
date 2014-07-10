@@ -177,7 +177,9 @@ Id Shell::create( string type, ObjId* parent, string name, unsigned int numData
         ObjId parentObj = Id();
         parent = &parentObj;
     }
-    return doCreate(type, *parent, name, numData, nodePolicy, preferredNode);
+    Id obj = doCreate(type, *parent, name, numData, nodePolicy, preferredNode);
+    cerr << "Created " << obj.path() << "<" << type << ">" << endl;
+    return obj;
 }
 
 void Shell::setShellElement( Element* shelle )
@@ -206,10 +208,6 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 #ifdef ENABLE_LOGGER
     clock_t t = clock();
 #endif
-
-
-    cerr << "+ Creating " << name << "<" << type << ">" << " under " 
-        << parent.path() << endl;
 
 	const Cinfo* c = Cinfo::find( type );
 	if ( name.find_first_of( "[] #?\"/\\" ) != string::npos ) {

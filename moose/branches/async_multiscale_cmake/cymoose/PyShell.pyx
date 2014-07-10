@@ -29,8 +29,6 @@ cdef class PyShell:
     def create(self, string path, PyObjId parent, string name, unsigned int numData
             , _Shell.NodePolicy nodePolicy = _Shell.MooseBlockBalance
             , unsigned int preferredNode = 1):
-        """ Wrapper to doCreate function in Shell """
-
         cdef _Id.Id obj
         if not parent:
             obj = self.thisptr.create(path, NULL, name , numData
@@ -43,5 +41,4 @@ cdef class PyShell:
 
         newObj = PyId()
         newObj.thisptr = &obj
-        assert newObj
         return newObj
