@@ -168,18 +168,20 @@ Shell* Shell::initShell()
     return shell;
 }
 
-Id Shell::create( string type, ObjId* parent, string name, unsigned int numData
+Id Shell::create(string type, string name, unsigned int numData
         , NodePolicy nodePolicy, unsigned int preferredNode 
         ) 
 {
-    if(NULL == parent)
-    {
-        ObjId parentObj = Id();
-        parent = &parentObj;
-    }
-    Id obj = doCreate(type, *parent, name, numData, nodePolicy, preferredNode);
-    cerr << "Created " << obj.path() << "<" << type << ">" << endl;
-    return obj;
+    if(name.size() == 0)
+        return doCreate(type, Id(), name, numData, nodePolicy, preferredNode);
+
+    string::size_type pos = name.find_last_of('/');
+    string parentPath = name.substr(0, pos);
+    ObjId parentObj = ObjId(parentPath);
+    Id id = doCreate(type, parentObj, name.substr(pos+1)
+            , numData, nodePolicy, preferredNode
+            );
+    return id;
 }
 
 void Shell::setShellElement( Element* shelle )
@@ -205,10 +207,6 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 				NodePolicy nodePolicy,
 				unsigned int preferredNode )
 {
-#ifdef ENABLE_LOGGER
-    clock_t t = clock();
-#endif
-
 	const Cinfo* c = Cinfo::find( type );
 	if ( name.find_first_of( "[] #?\"/\\" ) != string::npos ) {
 		stringstream ss;
@@ -219,13 +217,6 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 	}
 
 	if ( c ) {
-		if ( c->banCreation() ) {
-			stringstream ss;
-			ss << "Shell::doCreate: Cannot create an object of class '" <<
-				type << "' because it is an abstract base class or a FieldElement.\n";
-			warning( ss.str() );
-			return Id();
-		}
 		Element* pa = parent.element();
 		if ( !pa ) {
 			stringstream ss;
@@ -245,7 +236,6 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 		NodeBalance nb( numData, nodePolicy, preferredNode );
 		// Get the parent MsgIndex ahead of time and pass to all nodes.
 		unsigned int parentMsgIndex = OneToAllMsg::numMsg();
-
 		SetGet6< string, ObjId, Id, string, NodeBalance, unsigned int >::set(
 			ObjId(), // Apply command to Shell
 			"create",	// Function to call.
@@ -257,21 +247,12 @@ Id Shell::doCreate( string type, ObjId parent, string name,
 			parentMsgIndex	// Message index of child-parent msg.
 		);
 		// innerCreate( type, parent, ret, name, numData, isGlobal );
-
-#ifdef ENABLE_LOGGER 
-        logger.creationTime.push_back((float(clock() - t)/CLOCKS_PER_SEC));
-#endif
-
 		return ret;
 	} else {
 		stringstream ss;
 		ss << "Shell::doCreate: Class '" << type << "' not known. No Element created";
 		warning( ss.str() );
 	}
-
-#ifdef ENABLE_LOGGER 
-        logger.creationTime.push_back((float(clock() - t)/CLOCKS_PER_SEC));
-#endif
 	return Id();
 }
 
