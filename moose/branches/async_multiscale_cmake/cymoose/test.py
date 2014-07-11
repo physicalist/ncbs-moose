@@ -9,4 +9,6 @@ import cymoose
 
 if __name__ == "__main__":
     c = cymoose.PyShell()
-    c.create("Neutral", None, "comp", 1)
+    a = c.create("Neutral", "/comp", 1)
+    a = c.create("Neutral", "/comp/comp1", 1)
+    print c.wildcardFind("/##")

@@ -65,8 +65,7 @@ class Shell
                  *
                  * @return Id of the element.
                  */
-		Id create( string type, ObjId* parent, string name, 
-				unsigned int numData, 
+		Id create( string type, string name, unsigned int numData, 
 				NodePolicy nodePolicy = MooseBlockBalance,
 				unsigned int preferredNode = 1 );
 
@@ -635,6 +634,9 @@ class Shell
 
 		/// Current working Element
 		ObjId cwe_;
+
+                /// deliminator in path
+                char deliminator;
 };
 
 /*

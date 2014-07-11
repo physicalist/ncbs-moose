@@ -11,9 +11,13 @@ include "PyId.pyx"
 include "PyObjId.pyx"
 
 from libcpp.string cimport string
+from libcpp.vector cimport vector
 
 cdef extern from "./cymoose.hpp":
     _Shell.Shell* initMoose(int argc, char** argv, _Shell.Shell* s)
+
+cdef extern from "../shell/Wildcard.h":
+    int wildcardFind(const string& n, vector[_ObjId.ObjId]& ret) 
 
 cdef class PyShell:
 
@@ -26,19 +30,20 @@ cdef class PyShell:
     def __dealloc__(self):
         del self.thisptr 
 
-    def create(self, string path, PyObjId parent, string name, unsigned int numData
+    def wildcardFind(self, pattern):
+        cdef vector[_ObjId.ObjId] paths
+        wildcardFind(pattern, paths)
+        pypaths = list()
+        for i in paths:
+            pypaths.append(i.path())
+        return pypaths
+
+    def create(self, string elemType, string elemPath, unsigned int numData
             , _Shell.NodePolicy nodePolicy = _Shell.MooseBlockBalance
             , unsigned int preferredNode = 1):
         cdef _Id.Id obj
-        if not parent:
-            obj = self.thisptr.create(path, NULL, name , numData
-                    , nodePolicy, preferredNode
-                    )
-        else:
-            obj = self.thisptr.create(path, parent.thisptr, name, numData
-                    , nodePolicy, preferredNode 
-                    )
-
+        obj = self.thisptr.create(elemType, elemPath , numData, nodePolicy, preferredNode)
         newObj = PyId()
         newObj.thisptr = &obj
+        newObj.setPath()
         return newObj
