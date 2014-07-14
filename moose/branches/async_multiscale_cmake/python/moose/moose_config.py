@@ -40,8 +40,6 @@ cellPath = nmlCellPath
 libraryPath = '/library'
 cellPath = '/cells'
 mumblePath = '/mumbl'
-nmlCellPath = '/neuroml{}'.format(cellPath)
-elecPath = '/elec'
 
 
 st = time.time()

@@ -18,4 +18,6 @@ add_library(ksolve
         Gsolve.cpp
         testKsolve.cpp
     )
-target_link_libraries(ksolve basecode)
+if(USE_GSL)
+    target_link_libraries(ksolve gsl gslcblas)
+endif()

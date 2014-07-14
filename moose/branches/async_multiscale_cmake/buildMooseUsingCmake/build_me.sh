@@ -9,7 +9,6 @@ if [ $# -gt 0 ]; then
 fi
 rm -rf ../CMakeFiles/ 
 rm -f ../CMakeCache.txt
+rm -f CMakeCache.txt
 cmake ..
-make VERBOSE=1
-make check_python
-make check_cymoose
+make  VERBOSE=0

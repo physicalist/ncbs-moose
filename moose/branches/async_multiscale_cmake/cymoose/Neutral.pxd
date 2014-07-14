@@ -4,6 +4,7 @@
 
 from libcpp.string cimport string
 cimport Eref as _eref
+
 cdef extern from "../shell/Neutral.h":
     cdef cppclass Neutral:
         void setName(const _eref.Eref&, string)
