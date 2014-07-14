@@ -29,25 +29,31 @@ import _moose
 import plot_utils
 import verification_utils
 import print_utils
+import graph_utils
 import sim_utils
 from backend import graphviz
 from moose_constants import *
 
 # Import functions from sub-libraries.
-plotTable = plot_utils.plotTable
-plotTables = plot_utils.plotTables
-saveTables = plot_utils.saveTables 
+#plotTable = plot_utils.plotTable
+#plotTables = plot_utils.plotTables
+#saveTables = plot_utils.saveTables 
 
 # 
-recordAt = sim_utils.recordTarget
-recordTarget = sim_utils.recordTarget
-run = sim_utils.run
+#recordAt = sim_utils.recordTarget
+#recordTarget = sim_utils.recordTarget
 
 # dump messages onto console
-dump = print_utils.dump
+#dump = print_utils.dump
 
 # Verification related function.
-verify = verification_utils.verify
+#verify = verification_utils.verify
+
+# Topology and graph related functions.
+#writeGraphviz  = graph_utils.writeGraphviz
+
+# Some verification tests
+#verify = verification_utils.verify
 
 # Topology and graph related functions.
 writeGraphviz  = graphviz.writeGraphviz
@@ -572,6 +578,8 @@ def resetSim(simpaths, simdt, plotdt, simmethod='hsolve'):
         _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=IntFire]', 'process')
         _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=IzhikevichNrn]', 'process')
         _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=SpikeGen]', 'process')
+        _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=Interpol]', 'process')
+        _moose.useClock(ELECCLOCK, simpath+'/##[TYPE=Interpol2D]', 'process')
         _moose.useClock(CHANCLOCK, simpath+'/##[TYPE=HHChannel2D]', 'process')
         _moose.useClock(CHANCLOCK, simpath+'/##[TYPE=SynChan]', 'process')
         ## If simmethod is not hsolve, set clocks for the biophysics,
