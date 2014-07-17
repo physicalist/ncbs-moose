@@ -46,7 +46,7 @@ double Shell::runtime_( 0.0 );
 const Cinfo* Shell::initCinfo()
 {
 
-    cerr << "Calling Shell::initCinfo" << endl;
+//    cerr << "Calling Shell::initCinfo" << endl;
 
 #ifdef ENABLE_LOGGER
     clock_t t = clock();

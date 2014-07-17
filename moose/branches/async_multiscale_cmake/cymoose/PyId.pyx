@@ -13,8 +13,17 @@ cdef class PyId:
     cdef public PyEref eref_
     cdef public string path
 
-    def __cinit__(self):
-        self.thisptr = new _Id.Id()
+    def __cinit__(self
+            , unsigned int id = 0
+            , string path = ""
+            ):
+        if id:
+            self.thisptr = new _Id.Id(id)
+        elif len(path) > 0:
+            self.thisptr = new _Id.Id(path)
+        else:
+            self.thisptr = new _Id.Id()
+
 
     def __del__(self):
         del self.thisptr
