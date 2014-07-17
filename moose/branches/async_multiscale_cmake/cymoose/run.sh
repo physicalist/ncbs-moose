@@ -1,11 +1,12 @@
 #!/bin/bash -e
+export LDFLAGS="-L. -L/usr/lib -L/usr/local/lib -L/usr/lib/mpi/gcc/openmpi/lib/" 
 if [ $# -lt 1 ]; then
-    rm -f ./moose_cython.so
-    rm -f *.cpp
     CXX="g++" \
     CC="g++" \
     LDFLAGS="-L. -L/usr/lib -L/usr/local/lib -L/usr/lib/mpi/gcc/openmpi/lib/" \
     python ./setup.py build_ext --inplace
+    echo "Copying latest libmoose.so to /usr/local/lib"
+    cp libmoose.so /usr/local/lib/
 else
     echo "Just testing"
 fi

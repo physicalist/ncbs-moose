@@ -16,9 +16,6 @@ from libcpp.vector cimport vector
 cdef extern from "./cymoose.hpp":
     _Shell.Shell* initMoose(int argc, char** argv, _Shell.Shell* s)
 
-cdef extern from "../shell/Wildcard.h":
-    int wildcardFind(const string& n, vector[_ObjId.ObjId]& ret) 
-
 cdef class PyShell:
 
     cdef _Shell.Shell *thisptr
@@ -30,13 +27,6 @@ cdef class PyShell:
     def __dealloc__(self):
         del self.thisptr 
 
-    def wildcardFind(self, pattern):
-        cdef vector[_ObjId.ObjId] paths
-        wildcardFind(pattern, paths)
-        pypaths = list()
-        for i in paths:
-            pypaths.append(i.path())
-        return pypaths
 
     def create(self, string elemType, string elemPath, unsigned int numData
             , _Shell.NodePolicy nodePolicy = _Shell.MooseBlockBalance
