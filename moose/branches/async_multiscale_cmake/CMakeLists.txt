@@ -126,11 +126,6 @@ else()
     find_package(GSL REQUIRED)
 endif()
 
-set(CYMOOSE 1)
-if(CYMOOSE)
-    add_definitions("-DCYMOOSE -DCYTHON")
-endif()
-
 ################################### SETUP BUILD ################################
 include_directories(msg basecode)
 add_executable(moose.bin basecode/main.cpp)
@@ -344,6 +339,12 @@ set(CMAKE_INSTALL_PREFIX /usr/local)
 install(TARGETS moose.bin 
     RUNTIME DESTINATION bin
     )
+
+# libmoose for cymoose.
+install(TARGETS moose 
+    LIBRARY DESTINATION lib
+    )
+
 install(PROGRAMS scripts/moose DESTINATION bin)
 install(DIRECTORY gsl/lib/ DESTINATION lib
     USE_SOURCE_PERMISSIONS
