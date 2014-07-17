@@ -23,8 +23,8 @@ if __name__ == "__main__":
     a = moose.Compartment('/comp/comp', 1000000)
     t = time.time()
     paths = moose.wildcardFind('/comp/##')
-    for i  in paths[0:10]:
-        print i, type(i)
+    for p in paths:
+        p.path
     print("total time taken : {} ".format( time.time() - t))
 
 
