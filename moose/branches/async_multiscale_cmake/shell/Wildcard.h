@@ -11,6 +11,8 @@
 #ifndef _WILDCARD_H
 #define _WILDCARD_H
 
+#include <map>
+
 // Just a couple of extern definitions for general use.
 
 /**
@@ -52,6 +54,19 @@ int simpleWildcardFind( const string& path, vector<ObjId>& ret);
  * non-unique entries, and in the process will scramble the ordering.
  */
 int wildcardFind(const string& n, vector<ObjId>& ret);
+
+#ifdef CYTHON
+/**
+ * @brief returns the number of Objs found for a given pattern.
+ *
+ * @param n Wildcard pattern (genesis like).
+ * @param ret a map<string, ObjId>.
+ *
+ * @return No of entries.
+ */
+int wildcardFind(const string& wildcard, map<string, ObjId>& ret);
+
+#endif
 
 /**
  * Recursive function to compare all descendants and cram matches into ret.

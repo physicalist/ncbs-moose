@@ -7,13 +7,11 @@ from cython.operator import dereference as deref
 cdef class PyObjId:
 
     cdef _ObjId.ObjId* thisptr
-    cdef public string path_
+    cdef public string path
 
     def __repr__(self):
-        return "{} {}".format("", self.path_)
+        return "{} {}".format("ObjId", self.path)
 
-    def __cinit__(self,  id_ = None):
+    def __cinit__(self, id_ = None, dataIndex = 0, fieldIndex = 0):
         self.thisptr = new _ObjId.ObjId()
-        if id_:
-            self.path_ = id_.path()
-        
+

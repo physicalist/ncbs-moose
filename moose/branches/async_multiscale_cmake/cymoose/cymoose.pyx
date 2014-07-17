@@ -11,23 +11,24 @@ cimport ObjId as _ObjId
 cimport Neutral as _Neutral
 cimport Compartment as _Compartment
 cimport Shell as _Shell
+from libcpp.map cimport map
 
 shell = PyShell()
 
 ## CyMoose functions
 
 def wildcardFind(pattern):
-    cdef vector[_ObjId.ObjId] paths
+    cdef map[string, _ObjId.ObjId] paths
     cdef int ret = _Shell.wildcardFind(pattern, paths)
     pypath = []
-    for i in paths:
+    for p in paths:
         obj = PyObjId()
-        obj.thisptr = &i
+        obj.path = p.first
+        obj.thisptr = &(p.second)
         pypath.append(obj)
     return pypath
 
 cdef class Neutral:
-
     """Neutral class """
 
     cdef public PyId obj

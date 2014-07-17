@@ -170,6 +170,21 @@ int wildcardFind(const string& path, vector<ObjId>& ret)
 	return ret.size();
 }
 
+#ifdef CYTHON
+/* To be used for cython binding.  */
+int wildcardFind(const string& path, map<string, ObjId>& ret)
+{
+    vector<ObjId> objVec;
+    wildcardFind(path, objVec);
+    vector<ObjId>::const_iterator it;
+
+    /* Return a map of ObjIds */
+    for(it = objVec.begin(); it != objVec.end(); it++)
+        ret[it->path()] = *it;
+    return ret.size();
+}
+#endif
+
 /**
  * 	singleLevelWildcard parses a single level of the path and returns all
  * 	ids that match it. If there is a suitable doublehash, it will recurse

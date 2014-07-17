@@ -50,6 +50,11 @@ add_definitions(-Wall
     )
 add_definitions(-fPIC)
 
+set(CYMOOSE 1)
+if(CYMOOSE)
+    add_definitions(-DCYMOOSE -DCYTHON)
+endif()
+
 ## Enable/Disable 2011 stupport.
 set(ENABLE_STD_2011 0)
 if(ENABLE_STD_2011)
@@ -298,41 +303,42 @@ if(BUILD_PYMOOSE)
 endif(BUILD_PYMOOSE)
 
 ######################### CYMOOSE #############################################
-add_library(moose SHARED cymoose/cymoose_methods.cxx)
-set_target_properties(moose PROPERTIES COMPILE_DEFINITIONS "CYMOOSE")
-add_definitions("-DCYMOOSE -DCYTHON")
-if(DEBUG)
-    add_definitions("-g -Wall")
-endif()
+if(CYMOOSE)
+    add_library(moose SHARED cymoose/cymoose_methods.cxx)
+    set_target_properties(moose PROPERTIES COMPILE_DEFINITIONS "CYMOOSE")
+    if(DEBUG)
+        add_definitions("-g -Wall")
+    endif()
 
-set_target_properties(moose PROPERTIES 
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/cymoose"
+    set_target_properties(moose PROPERTIES 
+            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/cymoose"
+            )
+    target_link_libraries(moose 
+        "-Wl,--whole-archive"
+        basecode
+        msg
+        shell
+        randnum
+        scheduling
+        moose_mpi
+        moose_builtins
+        utility 
+        muparser
+        biophysics 
+        kinetics 
+        ksolve
+        tinyxml
+        hsolve 
+        mesh
+        signeur
+        diffusion 
+        device
+        benchmarks
+        "-Wl,--no-whole-archive"
+        ${LIBRARIES}
+        ${LOCAL_GSL_LIBRARIES}
         )
-target_link_libraries(moose 
-    "-Wl,--whole-archive"
-    basecode
-    msg
-    shell
-    randnum
-    scheduling
-    moose_mpi
-    moose_builtins
-    utility 
-    muparser
-    biophysics 
-    kinetics 
-    ksolve
-    tinyxml
-    hsolve 
-    mesh
-    signeur
-    diffusion 
-    device
-    benchmarks
-    "-Wl,--no-whole-archive"
-    ${LIBRARIES}
-    ${LOCAL_GSL_LIBRARIES}
-    )
+endif()
 
 ######################### INSTALL ##############################################
 set(CMAKE_INSTALL_PREFIX /usr/local)
@@ -340,10 +346,12 @@ install(TARGETS moose.bin
     RUNTIME DESTINATION bin
     )
 
-# libmoose for cymoose.
-install(TARGETS moose 
-    LIBRARY DESTINATION lib
-    )
+if(CYMOOSE)
+    # libmoose for cymoose.
+    install(TARGETS moose 
+        LIBRARY DESTINATION lib
+        )
+endif()
 
 install(PROGRAMS scripts/moose DESTINATION bin)
 install(DIRECTORY gsl/lib/ DESTINATION lib
