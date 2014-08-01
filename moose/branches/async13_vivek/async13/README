@@ -1,0 +1,167 @@
+# MOOSE
+
+MOOSE is the Multiscale Object-Oriented Simulation Environment. It is the
+core of a modern software platform for the simulation of neural
+systems ranging from subcellular components and biochemical reactions
+to complex models of single neurons, large networks, and systems-level
+processes.
+
+
+# LICENSE
+
+MOOSE is released under GPLv3.
+
+
+# HOMEPAGE 
+
+http://moose.ncbs.res.in/
+
+
+# SOURCE REPOSITORY
+
+https://sourceforge.net/projects/moose/
+
+
+# REQUIREMENTS
+
+    ## Core MOOSE
+    
+        - g++ (>= 4.6.x)            REQUIRED
+          --------------
+          For building the C++ MOOSE core.
+
+        - GSL     (1.16.x)          OPTIONAL
+          ----------------
+          For core moose numerical computation
+
+        - OpenMPI (1.8.x)           OPTIONAL
+          ---------------
+          For running moose in parallel on clusters
+
+
+    ## PyMOOSE                              OPTIONAL
+
+    Python interface for core MOOSE API
+
+        - Python2       ( >= 2.7.x)         REQUIRED
+          -------------------------
+          For building the MOOSE Python bindings 
+
+        - Python-dev    ( >= 2.7.x)         REQUIRED
+          -------------------------
+          Python development headers and libraries 
+
+        - NumPy         ( >= 1.6.x)         REQUIRED
+          -------------------------
+          For numerical computation in PyMOOSE
+
+        - H5py          (2.3.x)             REQUIRED
+          ---------------------
+          For reading and writing data to HDF5 files
+
+
+        ### Chemical Kinetics Network Simulations   OPTIONAL
+    
+            - GSL     (1.16.x)                      REQUIRED
+              ----------------
+              For core moose numerical computation
+
+            - PyQt4         (4.8.x)                 REQUIRED
+              ---------------------
+              For Python GUI    
+
+            - Matplotlib    ( >= 1.1.x)             REQUIRED
+              -------------------------
+              For plotting simulation results
+
+            - SBML          (5.9.x)                 OPTIONAL
+              ---------------------
+              For reading and writing signalling models to SBML files
+
+
+
+        ### Compartmental Model Viusalization       OPTIONAL
+            - GSL     (1.16.x)                      REQUIRED
+              ----------------
+              For core moose numerical computation
+
+            - OSG           (3.2.x)                 REQUIRED
+              ---------------------
+              For 3D rendering and simulation of neuronal models
+
+            - Qt4           (4.8.x)                 REQUIRED
+              ---------------------
+              For C++ GUI of Moogli
+
+            - PyQt4         (4.8.x)                 REQUIRED
+              ---------------------
+              For Python GUI    
+
+            - Matplotlib    ( >= 1.1.x)             REQUIRED
+              -------------------------
+              For plotting simulation results
+
+
+# AUTHORS
+
+- Upinder S. Bhalla     -   Primary Architect, Chemical kinetic solvers
+- Niraj Dudani          -   Neuronal solver
+- Subhasis Ray          -   PyMOOSE Design and Documentation, Python Plugin Interface, NSDF Format
+- G.V.HarshaRani        -   Web page design, SBML support, Kinetikit Plugin Development
+- Aditya Gilra          -   NeuroML reader development
+- Aviral Goel           -   Moogli/Neurokit Development
+- Dilawar Singh         -   Packaging
+
+
+# Support:
+
+You can join the MOOSE generic mailing list for your queries -
+https://lists.sourceforge.net/lists/listinfo/moose-generic
+
+
+# Bugs:
+  
+You can file bug reports and feature requets at the sourceforge tracker -
+http://sourceforge.net/p/moose/bugs/
+
+# Getting started:
+
+MOOSE can be used as a python module. Look into the Demos directory
+for sample code. A starting point can be Demos/snippets with useful
+python code snippets that can be used as building blocks.
+
+MOOSE also comes with a NeuroML reader. Demos/neuroml has some
+python scripts showing how to load NeuroML models.
+
+MOOSE is backward compatible with GENESIS
+kinetikit. Demos/Genesis_files has some examples. You can load a
+kinetikit model with the loadModel function:
+
+    moose.loadModel(kkit_file_path, target_model_path)
+
+You can also load GENESIS prototype files. The same loadModel
+function can be used for this (but you need to have all the channels
+used in the prototype preloaded in /library):
+
+    moose.loadModel(prototype_file_path, prototype_model_path)
+
+Top level moose documentation can be accessed in the Python
+interpreter the usual way:
+
+    import moose
+    help(moose)
+
+
+MOOSE classes have built-in documentation that can be accessed via
+the `doc()` function -
+
+    moose.doc(classname)
+
+This will give the full documentation for the class including the fields
+available.
+
+`moose.doc(classname.fieldname)` 
+will give you information about a particular field in a class.
+
+Complete MOOSE Documentation can be found at -
+http://moose.ncbs.res.in/content/view/5/6/
