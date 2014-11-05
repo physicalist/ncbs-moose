@@ -95,26 +95,31 @@ else()
     add_definitions(-UDO_UNIT_TESTS)
 endif()
 
-find_package(GSL 1.16 REQUIRED)
+find_package(GSL 1.16)
 
 # If installed version of gsl is not 1.16 then download and build gsl locally.
 # THIS IS USEFULL TO BUILD MOOSE FOR VARIOUS DISTRIBUTIONS.
-if(${GSL_VERSION} VERSION_LESS 1.16)
-    MESSAGE("+ Trouble. Needed version 1.16.")
-    MESSAGE("+-- I'll go ahead, download gsl-1.16 and build it for moose. Make
-    sure you have proxy environment variables set.")
-    SET(LOCAL_GSL 1)
+if(NOT GSL_FOUND)
+    MESSAGE("++ No GSL found. Using local gsl")
+    set(LOCAL_GSL 1)
+else()
+    if(${GSL_VERSION} VERSION_LESS 1.16)
+        MESSAGE("+ Trouble. Needed version 1.16.")
+        MESSAGE("+-- I'll go ahead, download gsl-1.16 and build it for moose. Make
+        sure you have proxy environment variables set.")
+        SET(LOCAL_GSL 1)
+    endif()
 endif()
 
+set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/../externals)
 if(LOCAL_GSL)
-    set(GSL_SOURCE_DIR ${CMAKE_SOURCE_DIR}/external/gsl-1.16)
+    set(GSL_SOURCE_DIR ${CMAKE_SOURCE_DIR}/gsl)
     set(GSL_INSTALL_DIR ${CMAKE_SOURCE_DIR}/gsl)
     include(ExternalProject)
     ExternalProject_Add(GSL
-        PREFIX ${GSL_SOURCE_DIR}
-        DOWNLOAD_DIR ${CMAKE_SOURCE_DIR}/external
-        URL http://psg.mtu.edu/pub/gnu/gsl/gsl-1.16.tar.gz
-        CONFIGURE_COMMAND ${GSL_SOURCE_DIR}/configure --prefix=${GSL_INSTALL_DIR}
+        PREFIX ${EXTERNAL_DIR}
+        URL ${EXTERNAL_DIR}/gsl-1.16.tar.gz
+        CONFIGURE_COMMAND ./configure --prefix=${GSL_INSTALL_DIR}
         BUILD_COMMAND make
         BUILD_IN_SOURCE 1
         INSTALL_COMMAND make install
@@ -123,6 +128,26 @@ if(LOCAL_GSL)
     LINK_DIRECTORIES(${GSL_INSTALL_DIR}/lib)
     set(LOCAL_GSL_LIBRARIES gsl gslcblas)
 endif()
+
+find_package(LIBSBML)
+if(NOT LIBSBML)
+    MESSAGE("+ LIBSBML NOT FOUND. Using local SBML")
+    SET(LOCAL_SBML 1)
+else()
+    include_directories(${LIBSBML_INCLUDE_DIR})
+endif()
+
+if(LOCAL_SBML)
+    set(SBML_SOURCE_DIR ${CMAKE_SOURCE_DIR}/sbml)
+    set(SBML_INSTALL_DIR ${CMAKE_SOURCE_DIR}/sbml)
+    include(ExternalProject)
+    ExternalProject_Add(LIBSBML
+        PREFIX ${EXTERNAL_DIR}
+        URL ${EXTERNAL_DIR}/libSBML-5.10.2-core-src.tar.gz
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR}
+        )
+endif()
+
 
 ################################### SETUP BUILD ################################
 include_directories(msg basecode)
@@ -151,15 +176,11 @@ if(HDF5_FOUND)
     include_directories(${HDF5_INCLUDE_DIR})
 endif(HDF5_FOUND)
 
-find_package(LIBSBML)
 if(LIBSBML_FOUND)
     # If LIBSBML_FOUND then we'll probably also need the LibXML2.
     add_definitions(-DUSE_SBML)
     find_package(LibXML2 REQUIRED)
     add_subdirectory(sbml)
-    include_directories(${LIBSBML_INCLUDE_DIR})
-elseif()
-    add_definitions(-UUSE_SBML)
 endif(LIBSBML_FOUND)
 
 find_package(Termcap)
