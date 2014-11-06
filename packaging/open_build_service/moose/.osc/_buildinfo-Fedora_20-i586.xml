@@ -1,0 +1,264 @@
+<buildinfo project="home:dilawar" repository="Fedora_20" downloadurl="http://download.opensuse.org/repositories">
+  <arch>i586</arch>
+  <debuginfo>0</debuginfo>
+  <subpack>moose</subpack>
+  <subpack>moose-core</subpack>
+  <subpack>moose-python</subpack>
+  <subpack>moose-gui</subpack>
+  <bdep name="acl" preinstall="1" notmeta="1" version="2.2.52" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="attr" preinstall="1" notmeta="1" version="2.4.47" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="bash" preinstall="1" notmeta="1" version="4.2.45" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="bzip2" preinstall="1" version="1.0.6" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="coreutils" preinstall="1" notmeta="1" version="8.21" release="18.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="device-mapper-libs" preinstall="1" notmeta="1" version="1.02.82" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="diffutils" preinstall="1" notmeta="1" version="3.3" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="filesystem" preinstall="1" notmeta="1" version="3.2" release="19.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="glibc" preinstall="1" version="2.18" release="11.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="grep" preinstall="1" notmeta="1" version="2.15" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libacl" preinstall="1" notmeta="1" version="2.2.52" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libattr" preinstall="1" notmeta="1" version="2.4.47" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libgcc" preinstall="1" notmeta="1" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="m4" preinstall="1" notmeta="1" version="1.4.16" release="10.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="ncurses" preinstall="1" version="5.9" release="12.20130511.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="pam" preinstall="1" notmeta="1" version="1.1.8" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="nss" preinstall="1" notmeta="1" version="3.15.2" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="nspr" preinstall="1" notmeta="1" version="4.10.1" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="popt" preinstall="1" notmeta="1" version="1.13" release="15.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="readline" preinstall="1" notmeta="1" version="6.2" release="8.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="ncurses-libs" preinstall="1" notmeta="1" version="5.9" release="12.20130511.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="rpm" preinstall="1" version="4.11.1" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="rpm-sign" preinstall="1" notmeta="1" version="4.11.1" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="sed" preinstall="1" notmeta="1" version="4.2.2" release="5.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="tar" preinstall="1" notmeta="1" epoch="2" version="1.26" release="29.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="zlib" preinstall="1" version="1.2.8" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="rpm-libs" preinstall="1" notmeta="1" version="4.11.1" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="pcre" preinstall="1" notmeta="1" version="8.33" release="2.fc20.1" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="info" preinstall="1" notmeta="1" version="5.1" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libselinux" preinstall="1" notmeta="1" version="2.1.13" release="19.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="sqlite" preinstall="1" notmeta="1" version="3.8.1" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="elfutils-libelf" preinstall="1" notmeta="1" version="0.157" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="findutils" preinstall="1" notmeta="1" epoch="1" version="4.5.11" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="openssl" preinstall="1" notmeta="1" epoch="1" version="1.0.1e" release="30.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="krb5-libs" preinstall="1" notmeta="1" version="1.11.3" release="33.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="e2fsprogs-libs" preinstall="1" notmeta="1" version="1.42.8" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="expat" preinstall="1" notmeta="1" version="2.1.0" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="bzip2-libs" preinstall="1" notmeta="1" version="1.0.6" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libstdc++" preinstall="1" notmeta="1" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="setup" preinstall="1" notmeta="1" version="2.8.71" release="2.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="libsepol" preinstall="1" notmeta="1" version="2.1.9" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libcap" preinstall="1" notmeta="1" version="2.22" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libdb" preinstall="1" notmeta="1" version="5.3.28" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="file-libs" preinstall="1" notmeta="1" version="5.14" release="12.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="lua" preinstall="1" notmeta="1" version="5.2.2" release="5.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="shadow-utils" preinstall="1" notmeta="1" epoch="2" version="4.1.5.1" release="8.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="chkconfig" preinstall="1" notmeta="1" version="1.3.60" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="util-linux" preinstall="1" notmeta="1" version="2.24" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="xz-libs" preinstall="1" notmeta="1" version="5.1.2" release="6alpha.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="nss-util" preinstall="1" notmeta="1" version="3.15.2" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="nss-softokn-freebl" preinstall="1" version="3.15.2" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="nss-softokn" preinstall="1" notmeta="1" version="3.15.2" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl" vminstall="1" epoch="4" version="5.18.1" release="288.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-libs" vminstall="1" epoch="4" version="5.18.1" release="288.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Carp" vminstall="1" version="1.26" release="245.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Digest-MD5" vminstall="1" notmeta="1" version="2.53" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="device-mapper" vminstall="1" notmeta="1" version="1.02.82" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libblkid" vminstall="1" version="2.24" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libuuid" vminstall="1" version="2.24" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libmount" vminstall="1" version="2.24" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gcc-c++" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="cmake" version="2.8.12.1" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="python-devel" version="2.7.5" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gsl-devel" version="1.15" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="hdf5-devel" version="1.8.11" release="6.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="numpy" epoch="1" version="1.8.0" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="python-setuptools" version="1.3.1" release="1.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="autoconf" version="2.69" release="13.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="automake" version="1.13.4" release="5.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="binutils" version="2.23.88.0.1" release="13.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gcc" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gdbm" version="1.10" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gettext" version="0.18.3.1" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libtool" version="2.4.2" release="21.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="rpm-build" version="4.11.1" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gmp" epoch="1" version="5.1.2" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="mpfr" version="3.1.2" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libmpc" version="1.0.1" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libstdc++-devel" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libcurl" version="7.32.0" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libarchive" version="3.1.2" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="emacs-filesystem" epoch="1" version="24.3" release="13.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="pkgconfig" epoch="1" version="0.28" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="python-libs" version="2.7.5" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="python" version="2.7.5" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gsl" version="1.15" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="hdf5" version="1.8.11" release="6.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libgfortran" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libquadmath" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="python-nose" version="1.3.0" release="1.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="python-backports-ssl_match_hostname" version="3.4.0.2" release="1.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Exporter" version="5.68" release="293.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-constant" version="1.27" release="292.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Getopt-Long" version="2.42" release="1.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-PathTools" version="3.40" release="291.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Data-Dumper" version="2.145" release="292.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-File-Path" version="2.09" release="292.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Text-ParseWords" version="3.29" release="3.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-threads" epoch="1" version="1.89" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Test-Harness" version="3.28" release="3.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Thread-Queue" version="3.02" release="291.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="libgomp" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libasan" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libatomic" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="glib2" version="2.38.2" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libxml2" version="2.9.1" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libcroco" version="0.6.8" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libunistring" version="0.9.3" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gettext-libs" version="0.18.3.1" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="glibc-common" version="2.18" release="11.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="basesystem" version="10.0" release="9.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Scalar-List-Utils" version="1.31" release="293.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-File-Temp" version="0.23.01" release="4.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Socket" epoch="1" version="2.013" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Time-HiRes" version="1.9726" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Storable" version="2.45" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Time-Local" version="1.2300" release="291.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Module-CoreList" epoch="1" version="2.96" release="288.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Filter" epoch="1" version="1.49" release="5.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-threads-shared" version="1.43" release="291.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Pod-Simple" epoch="1" version="3.28" release="292.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-macros" epoch="4" version="5.18.1" release="288.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="curl" version="7.32.0" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libdb-utils" version="5.3.28" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="xz" version="5.1.2" release="6alpha.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="rpm-build-libs" version="4.11.1" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gdb" version="7.6.50.20130731" release="16.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="elfutils" version="0.157" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="ncurses-base" version="5.9" release="12.20130511.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="libcom_err" version="1.42.8" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="openldap" version="2.4.36" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libidn" version="1.28" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libssh2" version="1.4.3" release="8.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="openssl-libs" epoch="1" version="1.0.1e" release="30.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="lzo" version="2.06" release="5.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libffi" version="3.0.13" release="5.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="python-backports" version="1.0" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Pod-Usage" version="1.63" release="4.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="glibc-headers" version="2.18" release="11.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="shared-mime-info" version="1.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="tzdata" version="2013h" release="1.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-version" epoch="3" version="0.99.04" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Encode" epoch="1" version="2.54" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Pod-Escapes" epoch="1" version="1.04" release="288.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="nss-sysinit" version="3.15.2" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libmetalink" version="0.1.2" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gnupg2" version="2.0.22" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="zip" version="3.0" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-srpm-macros" version="1" release="10.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="dwz" version="0.11" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="elfutils-libs" version="0.157" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="keyutils-libs" version="1.5.8" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libverto" version="0.2.5" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="cyrus-sasl-lib" version="2.1.26" release="14.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="nss-tools" version="3.15.2" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="ca-certificates" version="2013.1.94" release="18.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Pod-Perldoc" version="3.20" release="7.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-podlators" version="2.5.1" release="291.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="systemd-libs" version="208" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="audit-libs" version="2.3.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libcap-ng" version="0.7.3" release="6.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libutempter" version="1.1.6" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libuser" version="0.60" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="kernel-headers" version="3.11.10" release="301.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libgcrypt" version="1.5.3" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libgpg-error" version="1.12" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libassuan" version="2.1.0" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="pinentry" version="0.8.1" release="11.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="pth" version="2.0.7" release="21.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="p11-kit" version="0.20.1" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="p11-kit-trust" version="0.20.1" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-parent" epoch="1" version="0.228" release="1.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="groff-base" version="1.22.2" release="8.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-HTTP-Tiny" version="0.034" release="3.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="cracklib-dicts" version="2.9.0" release="5.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libpwquality" version="1.2.3" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="dbus-libs" epoch="1" version="1.6.12" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libtasn1" version="3.3" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libsemanage" version="2.1.10" release="14.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="ustr" version="1.0.4" release="15.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="atlas" version="3.8.4" release="10.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="expat-devel" notmeta="1" version="2.1.0" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="bind-libs" notmeta="1" epoch="32" version="9.9.4" release="8.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="bind-utils" notmeta="1" epoch="32" version="9.9.4" release="8.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="bison" notmeta="1" version="2.7" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="cpp" notmeta="1" version="4.8.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="cracklib" notmeta="1" version="2.9.0" release="5.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="cvs" notmeta="1" version="1.11.23" release="33.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="cpio" notmeta="1" version="2.11" release="24.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="e2fsprogs" notmeta="1" version="1.42.8" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="file" notmeta="1" version="5.14" release="12.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="flex" notmeta="1" version="2.5.37" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gawk" notmeta="1" version="4.1.0" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gdbm-devel" notmeta="1" version="1.10" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gettext-devel" notmeta="1" version="0.18.3.1" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="glibc-devel" notmeta="1" version="2.18" release="11.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gpm" notmeta="1" version="1.20.7" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="groff" notmeta="1" version="1.22.2" release="8.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gzip" notmeta="1" version="1.6" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="less" notmeta="1" version="458" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="make" notmeta="1" epoch="1" version="3.82" release="19.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="man-db" notmeta="1" version="2.6.5" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="kmod" notmeta="1" version="15" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="which" notmeta="1" version="2.20" release="6.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="ncurses-devel" notmeta="1" version="5.9" release="12.20130511.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="net-tools" notmeta="1" version="2.0" release="0.15.20131119git.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="patch" notmeta="1" version="2.7.1" release="7.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="procinfo" notmeta="1" version="18" release="33.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="psmisc" notmeta="1" version="22.20" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="rcs" notmeta="1" version="5.9.0" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="strace" notmeta="1" version="4.8" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="texinfo" notmeta="1" version="5.1" release="4.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="unzip" notmeta="1" version="6.0" release="12.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="zlib-devel" notmeta="1" version="1.2.8" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="vim-enhanced" notmeta="1" epoch="2" version="7.4.027" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="initscripts" notmeta="1" version="9.50" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="bzip2-devel" notmeta="1" version="1.0.6" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="redhat-rpm-config" notmeta="1" version="9.1.0" release="54.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="bind-license" notmeta="1" epoch="32" version="9.9.4" release="8.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="vim-minimal" notmeta="1" epoch="2" version="7.4.027" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="systemd" notmeta="1" version="208" release="9.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libss" notmeta="1" version="1.42.8" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="git" notmeta="1" version="1.8.4.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="gettext-common-devel" notmeta="1" version="0.18.3.1" release="1.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="gpm-libs" notmeta="1" version="1.20.7" release="3.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="linuxconsoletools" notmeta="1" version="1.4.6" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libpipeline" notmeta="1" version="1.2.4" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="kmod-libs" notmeta="1" version="15" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="procps-ng" notmeta="1" version="3.3.8" release="14.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Text-Unidecode" notmeta="1" version="0.04" release="21.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-libintl" notmeta="1" version="1.20" release="13.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="vim-common" notmeta="1" epoch="2" version="7.4.027" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="iproute" notmeta="1" version="3.11.0" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="hostname" notmeta="1" version="3.13" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="sysvinit-tools" notmeta="1" version="2.88" release="14.dsf.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Digest" notmeta="1" version="1.17" release="291.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="tcp_wrappers-libs" notmeta="1" version="7.6" release="76.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="dbus" notmeta="1" epoch="1" version="1.6.12" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="cryptsetup-libs" notmeta="1" version="1.6.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="qrencode-libs" notmeta="1" version="3.4.2" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="openssh-clients" notmeta="1" version="6.3p1" release="5.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libgnome-keyring" notmeta="1" version="3.10.1" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-TermReadKey" notmeta="1" version="2.30" release="20.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="rsync" notmeta="1" version="3.1.0" release="1pre1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Error" notmeta="1" epoch="1" version="0.17021" release="1.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="perl-Git" notmeta="1" version="1.8.4.2" release="1.fc20" arch="noarch" project="Fedora:20" repository="standard" />
+  <bdep name="SDL" notmeta="1" version="1.2.15" release="11.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="vim-filesystem" notmeta="1" epoch="2" version="7.4.027" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="iptables" notmeta="1" version="1.4.19.1" release="1.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="linux-atm-libs" notmeta="1" version="2.5.1" release="8.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="fipscheck-lib" notmeta="1" version="1.4.1" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="libedit" notmeta="1" version="3.1" release="2.20130601cvs.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="openssh" notmeta="1" version="6.3p1" release="5.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <bdep name="fipscheck" notmeta="1" version="1.4.1" release="2.fc20" arch="i686" project="Fedora:20" repository="standard" />
+  <path project="home:dilawar" repository="Fedora_20" />
+  <path project="Fedora:20" repository="standard" />
+</buildinfo>

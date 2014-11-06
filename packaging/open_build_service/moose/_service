@@ -1,0 +1,16 @@
+<services>
+    <service name="tar_scm">
+        <param name="scm">svn</param>
+        <param name="url">https://svn.code.sf.net/p/moose/code/moose/pre3.0.0</param>
+        <param name="version">3.0.0</param>
+        <param name="filename">moose</param>
+    </service>
+    <service name="recompress">
+        <param name="compression">bz2</param>
+        <param name="file">*.tar</param>
+    </service>
+    <service name="extract_file">
+        <param name="archive">*moose*.tar.bz2</param>
+        <param name="files">*</param>
+    </service>
+</services>
