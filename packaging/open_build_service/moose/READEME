@@ -1,0 +1,10 @@
+This document describes how to use OSC from command line to build the package.
+
+    1. To commit changes, use 
+            osc ci
+        This will trigger _service to run on server. Once _service is run, a
+        tar file will be created by fetching the source code from the server.
+        Once this is done, we need to trigger build.
+
+    2. Trigger building on OSC.
+            osc 
