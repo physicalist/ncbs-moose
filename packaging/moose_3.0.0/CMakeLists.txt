@@ -111,7 +111,7 @@ else()
     endif()
 endif()
 
-set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/../externals)
+set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
 if(LOCAL_GSL)
     set(GSL_SOURCE_DIR ${CMAKE_SOURCE_DIR}/gsl)
     set(GSL_INSTALL_DIR ${CMAKE_SOURCE_DIR}/gsl)
