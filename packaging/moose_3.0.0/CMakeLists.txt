@@ -370,12 +370,12 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgsl (>= 1.16) libopenmpi libhdf5-7 python-n
 include(CPack)
 
 #####################  TESTING  ###############################################
-include(CTest)
-find_package(PythonInterp REQUIRED)
-set(ENV{PYTHONPATH} "${CMAKE_SOURCE_DIR}/python")
-message("++ PYTHONPATH is set to $ENV{PYTHONPATH}")
-
-add_test(NAME check_moose
-    WORKING_DIRECTORY .
-    COMMAND ./run_moose.sh
-    )
+#include(CTest)
+#find_package(PythonInterp REQUIRED)
+#set(ENV{PYTHONPATH} "${CMAKE_SOURCE_DIR}/python")
+#message("++ PYTHONPATH is set to $ENV{PYTHONPATH}")
+#
+#add_test(NAME check_moose
+#    WORKING_DIRECTORY .
+#    COMMAND ./run_moose.sh
+#    )

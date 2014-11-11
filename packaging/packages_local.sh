@@ -1,8 +1,9 @@
 #!/bin/bash
 echo "This scripts creates various type of packages of moose to be distributed \
     locally"
-cd ./moose_3.0.0/build/
-cmake ..
+mkdir -p  _build
+cd _build/
+cmake ../moose_3.0.0/
 make 
 echo "Creating self-extracting package"
 cpack -G STGZ

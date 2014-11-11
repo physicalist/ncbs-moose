@@ -24,7 +24,7 @@ Prefer: openSUSE-release
 %endif
 %if "%_project" == "openSUSE:Factory" || "%_project" == "openSUSE:Factory:NonFree" || "%_project" == "openSUSE:Factory:PowerPC"
 Repotype: none
-Macros:f
+Macros:
 %shim_enforce_ms_signature 1
 :Macros
 %endif
@@ -97,7 +97,7 @@ Support: build-compare
 Support: brp-extract-appdata
 
 # trim the desktop files when building directly in factory
-%if "%_project" == "openSUSE:Factory" || "%_project" == "openSUSE:Factory:PowerPC" || "%_project" == "openSUSE:Factory:ARM" || "%_project" == "openSUSE:Factory:Rebuild"
+%if "%_project" == "openSUSE:Factory" || "%_project" == "openSUSE:Factory:PowerPC" || "%_project" == "openSUSE:Factory:ARM" || "%_project" == "openSUSE:Factory:Rebuild" || "%_project" == "openSUSE:Factory:Live" || "%_project" == "openSUSE:Factory:NonFree"
 Support: brp-trim-desktopfiles rpmlint-Factory-strict
 %endif
 
