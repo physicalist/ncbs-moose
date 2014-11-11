@@ -1,7 +1,7 @@
 %global branch 3.0.0
 %define _unpackaged_files_terminate_build 0 
 Name: moose
-Summary: MOOSE is the Multiscale Object-Oriented Simulation Environment, a neural simulator
+Summary: MOOSE is the Multiscale Object-Oriented Simulation Environment
 Version: 3.0.0
 Release: 1%{?dist}
 Url: http://sourceforge.net/projects/moose
@@ -56,7 +56,7 @@ Requires: libxml2
 
 
 %package gui
-Summary: GUI frontend of MOOSE simulator.
+Summary: GUI frontend of MOOSE simulator
 %description gui
 GUI frontend of MOOSE. It uses openscenegraph to visualize neural networks.
 Requires: OpenSceneGraph
@@ -76,4 +76,5 @@ cd moose_3.0.0
 ( cd python && python2 setup.py install --root $RPM_BUILD_ROOT )
 
 %files python
-/usr/lib
+%defattr(-,root,root)
+%{python_sitelib}/*
