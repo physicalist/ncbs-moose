@@ -14,5 +14,8 @@
     </description>
   <person userid="dilawar" role="bugowner"/>
   <person userid="dilawar" role="maintainer"/>
+  <debuginfo>
+    <enable/>
+  </debuginfo>
 </package>
 

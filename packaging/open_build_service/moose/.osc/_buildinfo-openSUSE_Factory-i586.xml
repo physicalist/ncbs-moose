@@ -50,13 +50,14 @@
   <bdep name="gsl-devel" version="1.16" release="6.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="hdf5-devel" version="1.8.13" release="3.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="python-setuptools" version="5.4.1" release="3.1" arch="noarch" project="openSUSE:Factory" repository="snapshot" />
+  <bdep name="libxml2-devel" version="2.9.1" release="9.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="rpm-build" version="4.12.0.1" release="2.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="gcc48-c++" version="4.8.3+r212056" release="4.2" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="gcc" version="4.8" release="8.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
-  <bdep name="libcurl4" version="7.38.0" release="1.2" arch="i586" project="openSUSE:Factory" repository="snapshot" />
+  <bdep name="libcurl4" version="7.38.0" release="2.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="libexpat1" version="2.1.0" release="15.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
-  <bdep name="make" version="4.0" release="4.4" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="libarchive13" version="3.1.2" release="8.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
+  <bdep name="make" version="4.0" release="4.4" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="glibc-devel" version="2.20" release="1.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="python-base" version="2.7.8" release="1.2" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="python" version="2.7.8" release="1.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
@@ -68,6 +69,10 @@
   <bdep name="python-numpy" version="1.9.0" release="1.2" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="python-xml" version="2.7.8" release="1.2" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="update-alternatives" version="1.16.10" release="9.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
+  <bdep name="zlib-devel" version="1.2.8" release="7.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
+  <bdep name="xz-devel" version="5.0.7" release="1.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
+  <bdep name="libxml2-2" version="2.9.1" release="9.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
+  <bdep name="libxml2-tools" version="2.9.1" release="9.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="cpio" version="2.11" release="31.2" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="xz" version="5.0.7" release="1.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="findutils" version="4.5.14" release="3.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
@@ -93,7 +98,6 @@
   <bdep name="libldap-2_4-2" version="2.4.39" release="11.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="libidn11" version="1.29" release="1.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="libssh2-1" version="1.4.3" release="10.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
-  <bdep name="libxml2-2" version="2.9.1" release="9.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="linux-glibc-devel" version="3.16" release="3.1" arch="noarch" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="libpython2_7-1_0" version="2.7.8" release="1.2" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="libsqlite3-0" version="3.8.7" release="1.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
@@ -126,13 +130,13 @@
   <bdep name="perl" notmeta="1" version="5.20.1" release="1.2" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="build-mkbaselibs" notmeta="1" version="20140424" release="3.1" arch="noarch" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="brp-check-suse" notmeta="1" version="13.2+git20140727.d76b99d" release="4.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
-  <bdep name="post-build-checks" notmeta="1" version="13.2+git20141007.c6e35c3" release="1.13" arch="noarch" project="openSUSE:Factory" repository="snapshot" />
-  <bdep name="rpmlint-Factory" notmeta="1" version="1.0" release="89.72" arch="noarch" project="openSUSE:Factory" repository="snapshot" />
+  <bdep name="post-build-checks" notmeta="1" version="13.2+git20141007.c6e35c3" release="1.14" arch="noarch" project="openSUSE:Factory" repository="snapshot" />
+  <bdep name="rpmlint-Factory" notmeta="1" version="1.0" release="89.73" arch="noarch" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="build-compare" notmeta="1" version="2014.07.15" release="5.1" arch="noarch" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="brp-extract-appdata" notmeta="1" version="2012.02.13" release="23.1" arch="noarch" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="libgdbm4" notmeta="1" version="1.11" release="4.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="aaa_base-malloccheck" notmeta="1" version="13.2+git20140911.61c1681" release="1.2" arch="i586" project="openSUSE:Factory" repository="snapshot" />
-  <bdep name="rpmlint-mini" notmeta="1" version="1.5" release="9.63" arch="i586" project="openSUSE:Factory" repository="snapshot" />
+  <bdep name="rpmlint-mini" notmeta="1" version="1.5" release="9.68" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <bdep name="libncurses6" notmeta="1" version="5.9" release="56.1" arch="i586" project="openSUSE:Factory" repository="snapshot" />
   <path project="home:dilawar" repository="openSUSE_Factory" />
   <path project="openSUSE:Factory" repository="snapshot" />

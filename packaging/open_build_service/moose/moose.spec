@@ -16,6 +16,7 @@ BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: numpy
 BuildRequires: python-setuptools
+BuildRequires: libxml2-devel
 
 %description
 MOOSE is the base and numerical core for large, detailed simulations
@@ -51,6 +52,7 @@ Requires: gsl
 Requires: PyOpenGL
 Requires: python-matplotlib
 Requires: python-matplotlib-qt4
+Requires: libxml2
 
 
 %package gui
@@ -64,10 +66,12 @@ Requires: moose-python
 %setup -q -n %{name}-%{branch}
 
 %build
+cd moose_3.0.0
 mkdir -p build
 cd build && cmake .. && make %{?_smp_mflags}
 
 %install
+cd moose_3.0.0
 ( cd build && make install DESTDIR=$RPM_BUILD_ROOT )
 ( cd python && python2 setup.py install --root $RPM_BUILD_ROOT )
 

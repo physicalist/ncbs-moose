@@ -24,12 +24,12 @@ Prefer: openSUSE-release
 %endif
 %if "%_project" == "openSUSE:Factory" || "%_project" == "openSUSE:Factory:NonFree" || "%_project" == "openSUSE:Factory:PowerPC"
 Repotype: none
-Macros:
+Macros:f
 %shim_enforce_ms_signature 1
 :Macros
 %endif
 
-Substitute: kiwi-packagemanager:instsource kiwi-instsource cdrkit-cdrtools-compat syslinux kiwi-instsource-plugins-openSUSE-12-1 kiwi-instsource-plugins-openSUSE-13-2
+Substitute: kiwi-packagemanager:instsource kiwi-instsource cdrkit-cdrtools-compat syslinux kiwi-instsource-plugins-openSUSE-13-2
 Substitute: kiwi-setup:image kiwi createrepo tar -kiwi-desc-isoboot-requires -kiwi-desc-oemboot-requires -kiwi-desc-netboot-requires -kiwi-desc-vmxboot-requires -kiwi-desc-xenboot-requires
 Conflict: kiwi:libudev-mini1
 Conflict: kiwi:systemd-mini
