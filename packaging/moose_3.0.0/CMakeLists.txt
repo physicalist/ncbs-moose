@@ -342,7 +342,7 @@ install(FILES scripts/moose.desktop
     )
 ########################## PACKAGING #########################################
 
-set(CPACK_GENERATOR "DEB")
+#set(CPACK_GENERATOR "DEB")
 set(CPACK_STRIP_FILES TRUE)
 
 #  We need to compile python scripts on the installation  host.
