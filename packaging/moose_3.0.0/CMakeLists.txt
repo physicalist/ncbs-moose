@@ -27,6 +27,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
 set(INSTALL_LIB_DIR lib CACHE PATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(INSTALL_BIN_DIR bin CACHE PATH "${CMAKE_INSTALL_PREFIX}/bin")
 set(INSTALL_INCLUDE_DIR include CACHE PATH "${CMAKE_INSTALL_PREFIX}/include/")
+# DONT DELETE IT.
+LINK_DIRECTORIES(${GSL_INSTALL_DIR}/lib)
 
 ########################### COMPILER MACROS #####################################
 # Compiler 
@@ -125,7 +127,6 @@ if(LOCAL_GSL)
         INSTALL_COMMAND make install
         )
     include_directories(${GSL_INSTALL_DIR}/include)
-    LINK_DIRECTORIES(${GSL_INSTALL_DIR}/lib)
     set(LOCAL_GSL_LIBRARIES gsl gslcblas)
 endif()
 
@@ -144,7 +145,7 @@ if(LOCAL_SBML)
     ExternalProject_Add(LIBSBML
         PREFIX ${EXTERNAL_DIR}
         URL ${EXTERNAL_DIR}/libSBML-5.10.2-core-src.tar.gz
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR}
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR} -DBUILD_SHARED_LIBS=OFF
         )
 endif()
 
