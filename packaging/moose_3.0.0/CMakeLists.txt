@@ -231,14 +231,17 @@ if(LIBXML2_FOUND)
     list(APPEND LIBRARIES ${LibXML2_LIBRARIES})
 endif()
 
-if(GSL_FOUND)
-    # Link gsl 
+# Link gsl 
+if(LOCAL_GSL)
+    list(APPEND LIBRARIES ${LOCAL_GSL_LIBRARIES})
+else(GSL_FOUND)
     list(APPEND LIBRARIES ${GSL_LIBRARIES})
 endif()
 
 if(READLINE_FOUND AND TERMCAP_FOUND)
     list(APPEND LIBRARIES ${Readline_LIBRARY} ${TERMCAP_LIBRARY})
 endif()
+
 
 ###################################### LINKING #################################
 set(MOOSE_LIBRARIES
@@ -266,7 +269,6 @@ set(MOOSE_LIBRARIES
 
 target_link_libraries(moose
     ${MOOSE_LIBRARIES}
-    ${LOCAL_GSL_LIBRARIES}
     ${LIBRARIES}
     )
 
