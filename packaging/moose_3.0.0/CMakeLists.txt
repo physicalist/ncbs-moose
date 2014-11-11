@@ -115,19 +115,17 @@ endif()
 
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
 if(LOCAL_GSL)
+    MESSAGE("++ GSL include path ${GSL_HEADER_PATHS}")
     set(GSL_SOURCE_DIR ${CMAKE_SOURCE_DIR}/gsl)
     set(GSL_INSTALL_DIR ${CMAKE_SOURCE_DIR}/gsl)
     include(ExternalProject)
     ExternalProject_Add(GSL
         PREFIX ${EXTERNAL_DIR}
-        URL ${EXTERNAL_DIR}/gsl-1.16.tar.gz
-        CONFIGURE_COMMAND ./configure --prefix=${GSL_INSTALL_DIR}
-        BUILD_COMMAND make
-        BUILD_IN_SOURCE 1
-        INSTALL_COMMAND make install
+        URL ${EXTERNAL_DIR}/gsl-1.16.zip
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${GSL_INSTALL_DIR} -DBUILD_SHARED_LIBS=OFF
         )
     include_directories(${GSL_INSTALL_DIR}/include)
-    set(LOCAL_GSL_LIBRARIES gsl gslcblas)
+    set(LOCAL_GSL_LIBRARIES ${GSL_INSTALL_DIR}/lib/libgsl.a)
 endif()
 
 find_package(LIBSBML)
