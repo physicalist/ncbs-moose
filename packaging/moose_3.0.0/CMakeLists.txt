@@ -325,10 +325,10 @@ install(TARGETS moose-bin
     COMPONENT moose-core
     )
 
-#install(SCRIPT python/InstallPyMoose.cmake
-#    COMPONENT moose-python
-#    )
-#
+install(SCRIPT python/InstallPyMoose.cmake
+    COMPONENT moose-python
+    )
+
 ## Install the icon
 install(FILES gui/icons/moose_icon.png 
     DESTINATION share/moose
