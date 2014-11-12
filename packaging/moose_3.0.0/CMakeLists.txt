@@ -321,19 +321,15 @@ install(TARGETS moose
     COMPONENT moose-core
     )
 
-install(FILES scripts/moose
+install(PROGRAMS scripts/moose
     DESTINATION bin
     COMPONENT moose-core
     )
 
-install(FILES scripts/moosegui
+install(PROGRAMS scripts/moosegui
     DESTINATION bin
     COMPONENT moose-gui
     )
-
-#install(SCRIPT python/InstallPyMoose.cmake
-#    COMPONENT moose-python
-#    )
 
 ## Install the icon
 install(FILES gui/icons/moose_icon.png 
@@ -365,7 +361,6 @@ install(DIRECTORY python
 set(CPACK_STRIP_FILES TRUE)
 set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
 #  We need to compile python scripts on the installation  host.
-#set(CPACK_COMPONENTS_ALL applications libraries)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Dilawar Singh")
 set(CPACK_PACKAGE_CONTACT "dilawars@ncbs.res.in")
 #set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
