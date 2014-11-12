@@ -353,20 +353,27 @@ install(DIRECTORY gui
     COMPONENT moose-gui
     )
 
+# and the python dependencies
+install(DIRECTORY python
+    DESTINATION share/moose
+    COMPONENT moose-python
+    )
+
 ########################## PACKAGING #########################################
 
 #set(CPACK_GENERATOR "DEB")
 set(CPACK_STRIP_FILES TRUE)
-
+set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
 #  We need to compile python scripts on the installation  host.
 set(CPACK_COMPONENTS_ALL applications libraries)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Dilawar Singh")
 set(CPACK_PACKAGE_CONTACT "dilawars@ncbs.res.in")
 #set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Moose")
-set(CPACK_INSTALL_SCRIPT "${CMAKE_SOURCE_DIR}/python/InstallPyMoose.cmake")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MOOSE, The Neural Simulator")
+set(CPACK_PACKAGE_VERSION "Kheer-Kadam")
 set(CPACK_PACKAGE_VERSION_MAJOR "3")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_PATCH "1")
 set(CPACK_PACKAGE_VENDOR "NCBS Bangalore")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Dilawar Singh <dilawars@ncbs.res.in>")
@@ -380,6 +387,9 @@ set(CPACK_PACKAGE_FILE_NAME
     "moose_${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.1-kheer-kadam"
     )
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgsl (>= 1.16) libopenmpi libhdf5-7 python-numpy libsbml")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+    "${CMAKE_SOURCE_DIR}/scripts/postinst;${CMAKE_SOURCE_DIR}/scripts/prerm;"
+    )
 include(CPack)
 
 #####################  TESTING  ###############################################
