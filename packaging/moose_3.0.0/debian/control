@@ -36,8 +36,8 @@ Description: C++ core of MOOSE neural simulator.
 
 Package: moose-python
 Architecture: any
-Depends: python-setuptools, python-pip, python-numpy, libxml2, python-matplotlib, python-nose, moose-doc
-Suggests: python-networkx
+Depends: python-setuptools, python-pip, python-tornado, python-certifi, python-numpy, libxml2, python-matplotlib, python-nose
+Suggests: python-networkx, moose-doc
 Description: Python interface of MOOSE neural simulator.
  .
  This package installs the Python scripting interface of MOOSE. 
