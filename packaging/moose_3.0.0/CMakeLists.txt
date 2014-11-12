@@ -321,9 +321,14 @@ install(TARGETS moose
     COMPONENT moose-core
     )
 
-install(TARGETS moose-bin
+install(FILES scripts/moose
     RUNTIME DESTINATION bin
     COMPONENT moose-core
+    )
+
+install(FILES scripts/moosegui
+    RUNTIME DESTINATION bin
+    COMPONENT moose-gui
     )
 
 install(SCRIPT python/InstallPyMoose.cmake
@@ -341,6 +346,13 @@ install(FILES scripts/moose.desktop
     DESTINATION share/applications
     COMPONENT moose-python
     )
+
+# And the gui
+install(DIRECTORY gui
+    DESTINATION share/moose
+    COMPONENT moose-gui
+    )
+
 ########################## PACKAGING #########################################
 
 #set(CPACK_GENERATOR "DEB")
@@ -365,7 +377,7 @@ else()
 endif()
 set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 set(CPACK_PACKAGE_FILE_NAME
-    "moose_${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.0-kheer-kadam"
+    "moose_${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.1-kheer-kadam"
     )
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgsl (>= 1.16) libopenmpi libhdf5-7 python-numpy libsbml")
 include(CPack)
