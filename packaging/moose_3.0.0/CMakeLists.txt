@@ -353,7 +353,7 @@ install(DIRECTORY gui
 
 # and the python dependencies
 install(DIRECTORY python
-    DESTINATION share/moose
+    DESTINATION lib/moose
     COMPONENT moose-python
     )
 
