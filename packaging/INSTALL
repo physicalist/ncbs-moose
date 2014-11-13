@@ -1,0 +1,51 @@
+# Installing moose
+
+We strongly recommend to use MOOSE repositories for installing it. Currently we
+are building packages for Ubuntu, Fedora and OpenSuse. Generic DEB and RPM
+packages are also built and can be downloaded from moose website. These generic
+packages are only recommended if you can not use the repositories.
+
+## Installing on Ubuntu
+
+MOOSE-3.0.0 is being built on launchpad. Open the terminal and copy-paste
+following lines (or type them one by one).
+
+    $ sudo add-apt-repository ppa:dilawar/moose
+    $ sudo apt-get update
+    $ sudo apt-get install moose-python moose-gui
+
+_NOTE_: First command adds MOOSE repository to your package-manager repository
+list, second line update the database and third line installs the packages. Once
+installation is complete: you can `import moose` in python and can launch gui by
+typing `moosegui` in terminal.
+
+
+## Installing on Fedora, Opensuse
+
+For RPM, we are building MOOSE on Open Build Service. Click on the following
+link, click on your distribution and follow the steps mentioned. 
+
+http://software.opensuse.org/download.html?project=home%3Adilawar&package=moose
+
+## Downloading RPM and DEB packages
+
+If your distribution is not supported above, then you can try to download the
+generic packages for your architecture from the following link:
+
+    http://moose.ncbs.res.in/content/view/35/70/
+
+## Building from source code
+
+If you feeling adventures then you can also build moose from its source code. We
+recommend using CMAKE based build system. Download the source code using
+subversion
+
+    $ svn co https://svn.code.sf.net/p/moose/code/moose/tags/kheer_kadam_3.0.0/ moose
+    $ cd  moose
+    $ mkdir build 
+    $ cd build
+    $ cmake .. && make
+    $ sudo make install
+
+Please take care of dependencies before building MOOSE. Dependencies are listed
+on README file.

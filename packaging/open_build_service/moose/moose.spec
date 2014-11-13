@@ -50,8 +50,7 @@ Requires: numpy
 Requires: PyQt4
 Requires: gsl
 Requires: PyOpenGL
-Requires: python-matplotlib
-Requires: python-matplotlib-qt4
+Requires: python-matplotlib-tk
 Requires: libxml2
 
 
@@ -77,7 +76,6 @@ cd moose_3.0.0
 
 %files core 
 %defattr(-,root,root)
-/scripts/moose /usr/bin
 /usr/bin/moose
 /usr/lib/libmoose.so
 
@@ -87,6 +85,5 @@ cd moose_3.0.0
 
 %files gui
 %defattr(-,root,root)
-
 /usr/bin/moosegui
-
+/usr/share/moose/gui
