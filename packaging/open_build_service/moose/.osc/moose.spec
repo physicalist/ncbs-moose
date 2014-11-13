@@ -50,8 +50,7 @@ Requires: numpy
 Requires: PyQt4
 Requires: gsl
 Requires: PyOpenGL
-Requires: python-matplotlib
-Requires: python-matplotlib-qt4
+Requires: python-matplotlib-tk
 Requires: libxml2
 
 
@@ -75,6 +74,16 @@ cd moose_3.0.0
 ( cd build && make install DESTDIR=$RPM_BUILD_ROOT )
 ( cd python && python2 setup.py install --root $RPM_BUILD_ROOT )
 
+%files core 
+%defattr(-,root,root)
+/usr/bin/moose
+/usr/lib/libmoose.so
+
 %files python
 %defattr(-,root,root)
 %{python_sitelib}/*
+
+%files gui
+%defattr(-,root,root)
+/usr/bin/moosegui
+/usr/share/moose/gui
