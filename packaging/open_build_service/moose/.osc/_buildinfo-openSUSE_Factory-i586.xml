@@ -1,6 +1,6 @@
-<buildinfo project="home:dilawar" repository="openSUSE_Factory" downloadurl="http://download.opensuse.org/repositories">
+<buildinfo project="home:dilawar" repository="openSUSE_Factory" package="moose" downloadurl="http://download.opensuse.org/repositories">
   <arch>i586</arch>
-  <debuginfo>0</debuginfo>
+  <debuginfo>1</debuginfo>
   <subpack>moose</subpack>
   <subpack>moose-all</subpack>
   <subpack>moose-core</subpack>

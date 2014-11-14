@@ -34,13 +34,12 @@ written in C++.
 
 %package all
 Summary: Meta package of MOOSE
-%description all
+%description -n %{name}-all
 This is the meta package of MOOSE. It installs all components of MOOSE
 simulator.
 
 Requires: %{name}-gui
 Requires: %{name}-python
-
 
 %package core
 Summary: Core package of MOOSE simulator
@@ -97,4 +96,4 @@ cd moose_3.0.0
 %defattr(-,root,root)
 %{_bindir}/moosegui
 %{_libdir}/moose
-%{_libdir}/moose/gui
+%dir %{_libdir}/moose/gui

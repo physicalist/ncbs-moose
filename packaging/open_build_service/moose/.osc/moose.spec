@@ -32,15 +32,14 @@ deprecated. MOOSE uses Qt/OpenGL for its graphical interface. The
 entire GUI is written in Python, and the MOOSE numerical code is
 written in C++.
 
-%package -n %{name}
+%package all
 Summary: Meta package of MOOSE
-%description -n %{name}
+%description -n %{name}-all
 This is the meta package of MOOSE. It installs all components of MOOSE
 simulator.
 
 Requires: %{name}-gui
 Requires: %{name}-python
-
 
 %package core
 Summary: Core package of MOOSE simulator
@@ -96,4 +95,5 @@ cd moose_3.0.0
 %files gui
 %defattr(-,root,root)
 /usr/bin/moosegui
-/usr/share/moose/gui
+/usr/share/moose
+%dir /usr/share/moose/gui
