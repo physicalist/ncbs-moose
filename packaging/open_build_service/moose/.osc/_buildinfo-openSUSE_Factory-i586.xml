@@ -3,7 +3,7 @@
   <debuginfo>1</debuginfo>
   <subpack>moose</subpack>
   <subpack>moose-all</subpack>
-  <subpack>moose-core</subpack>
+  <subpack>libmoose</subpack>
   <subpack>moose-python</subpack>
   <subpack>moose-gui</subpack>
   <bdep name="aaa_base" preinstall="1" runscripts="1" notmeta="1" version="13.2+git20140911.61c1681" release="1.2" arch="i586" project="openSUSE:Factory" repository="snapshot" />
