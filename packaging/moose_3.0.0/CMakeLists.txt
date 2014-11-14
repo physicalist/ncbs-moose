@@ -347,7 +347,7 @@ install(FILES scripts/moose.desktop
 
 # And the gui
 install(DIRECTORY gui
-    DESTINATION share/moose
+    DESTINATION lib/moose
     COMPONENT moose-gui
     )
 
