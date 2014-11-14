@@ -323,7 +323,7 @@ install(TARGETS moose
     COMPONENT moose-core
     )
 
-install(TARGETS moose.bin
+install(TARGETS moose-bin
     DESTINATION bin
     COMPONENT moose-core
     )
@@ -361,6 +361,9 @@ install(DIRECTORY python
     DESTINATION lib/moose
     COMPONENT moose-python
     )
+
+# Run script during install
+install(SCRIPT python/InstallPyMoose.cmake)
 
 ########################## PACKAGING #########################################
 
