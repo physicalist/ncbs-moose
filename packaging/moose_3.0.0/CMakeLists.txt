@@ -323,6 +323,11 @@ install(TARGETS moose
     COMPONENT moose-core
     )
 
+install(TARGETS moose.bin
+    DESTINATION bin
+    COMPONENT moose-core
+    )
+
 install(PROGRAMS scripts/moose
     DESTINATION bin
     COMPONENT moose-core
