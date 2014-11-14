@@ -153,15 +153,15 @@ endif()
 ################################### SETUP BUILD ################################
 include_directories(msg basecode)
 add_executable(moose-bin basecode/main.cpp)
-add_library(moose SHARED basecode/main.cpp)
-set_target_properties(moose PROPERTIES COMPILE_FLAGS  "-DMOOSE_LIB")
+add_library(moose3 SHARED basecode/main.cpp)
+set_target_properties(moose3 PROPERTIES COMPILE_FLAGS  "-DMOOSE_LIB")
 
 ## GSL
 # Setup GSL
 if(LOCAL_GSL)
     set(GSL_FOUND 1)
     add_definitions(-DUSE_GSL)
-    add_dependencies(moose GSL)
+    add_dependencies(moose3 GSL)
 else()
     if(GSL_FOUND)
         include_directories(${GSL_INCLUDE_DIR})
@@ -268,13 +268,13 @@ set(MOOSE_LIBRARIES
     ksolve
     )
 
-target_link_libraries(moose
+target_link_libraries(moose3
     ${MOOSE_LIBRARIES}
     ${LIBRARIES}
     )
 
 target_link_libraries(moose-bin 
-    moose
+    moose3
     )
 
 ######################### BUILD PYMOOSE ########################################
@@ -318,7 +318,7 @@ if(BUILD_PYMOOSE)
 endif(BUILD_PYMOOSE)
 
 ######################### INSTALL ##############################################
-install(TARGETS moose 
+install(TARGETS moose3 
     LIBRARY DESTINATION lib
     COMPONENT moose-core
     )

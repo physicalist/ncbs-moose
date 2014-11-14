@@ -86,7 +86,7 @@ cd moose_3.0.0
 %files core 
 %defattr(-,root,root)
 %{_bindir}/moose
-%{_libdir}/libmoose.so
+%{_libdir}/libmoose3.so
 
 %files python
 %defattr(-,root,root)
