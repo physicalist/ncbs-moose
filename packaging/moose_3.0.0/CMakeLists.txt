@@ -130,13 +130,15 @@ if(LOCAL_GSL)
         )
 endif()
 
+## SBML
 find_package(LIBSBML)
-if(NOT LIBSBML)
+if(NOT LIBSBML_FOUND)
     MESSAGE("+ LIBSBML NOT FOUND. Using local SBML")
     SET(LOCAL_SBML 1)
 else()
     include_directories(${LIBSBML_INCLUDE_DIR})
 endif()
+add_definitions(-DUSE_SBML)
 
 if(LOCAL_SBML)
     set(SBML_SOURCE_DIR ${CMAKE_SOURCE_DIR}/sbml)
@@ -180,9 +182,7 @@ endif(HDF5_FOUND)
 
 if(LIBSBML_FOUND)
     # If LIBSBML_FOUND then we'll probably also need the LibXML2.
-    add_definitions(-DUSE_SBML)
     find_package(LibXML2 REQUIRED)
-    add_subdirectory(sbml)
 endif(LIBSBML_FOUND)
 
 find_package(Termcap)
@@ -219,6 +219,7 @@ add_subdirectory(device)
 add_subdirectory(benchmarks)
 add_subdirectory(kinetics)
 add_subdirectory(synapse)
+add_subdirectory(sbml)
 
 set(LIBRARIES ${LibBZip2_LIBRARIES})
 if(HDF5_FOUND)
