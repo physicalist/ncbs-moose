@@ -131,10 +131,12 @@ if(LOCAL_GSL)
 endif()
 
 ## SBML
+set(SBML_INSTALL_DIR ${CMAKE_SOURCE_DIR}/libsbml)
 find_package(LIBSBML)
 if(NOT LIBSBML_FOUND)
     MESSAGE("+ LIBSBML NOT FOUND. Using local SBML")
     SET(LOCAL_SBML 1)
+    include_directories(${SBML_INSTALL_DIR}/include)
 else()
     SET(LOCAL_SBML 0)
     include_directories(${LIBSBML_INCLUDE_DIR})
@@ -142,14 +144,13 @@ endif()
 add_definitions(-DUSE_SBML)
 
 if(LOCAL_SBML)
-    set(SBML_SOURCE_DIR ${CMAKE_SOURCE_DIR}/sbml)
-    set(SBML_INSTALL_DIR ${CMAKE_SOURCE_DIR}/sbml)
     include(ExternalProject)
     ExternalProject_Add(LIBSBML
         PREFIX ${EXTERNAL_DIR}
         URL ${EXTERNAL_DIR}/libSBML-5.10.2-core-src.tar.gz
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR} -DBUILD_SHARED_LIBS=OFF
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR}
         )
+    set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml.so.5)
 endif()
 
 
@@ -228,6 +229,8 @@ if(HDF5_FOUND)
 endif()
 
 if(LIBSBML_FOUND)
+    list(APPEND LIBRARIES moose_sbml ${LIBSBML_LIBRARY})
+else()
     list(APPEND LIBRARIES moose_sbml ${LIBSBML_LIBRARY})
 endif()
 
