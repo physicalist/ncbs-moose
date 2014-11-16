@@ -253,6 +253,9 @@ else(GSL_FOUND)
     list(APPEND LIBRARIES ${GSL_LIBRARIES})
 endif()
 
+## Append bz2 and xml2 to the dependencies because of sbml.
+list(APPEND LIBRARIES bz2 xml2)
+
 if(READLINE_FOUND AND TERMCAP_FOUND)
     list(APPEND LIBRARIES ${Readline_LIBRARY} ${TERMCAP_LIBRARY})
 endif()
@@ -285,8 +288,6 @@ set(MOOSE_LIBRARIES
 target_link_libraries(moose
     ${MOOSE_LIBRARIES}
     ${LIBRARIES}
-    bz2
-    xml2
     )
 
 target_link_libraries(moose-bin 
