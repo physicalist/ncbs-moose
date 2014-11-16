@@ -139,6 +139,7 @@ if(NOT LIBSBML_FOUND)
     include_directories(${SBML_INSTALL_DIR}/include)
 else()
     SET(LOCAL_SBML 0)
+    MESSAGE("++ SBML found")
     include_directories(${LIBSBML_INCLUDE_DIR})
 endif()
 add_definitions(-DUSE_SBML)
@@ -150,7 +151,7 @@ if(LOCAL_SBML)
         URL ${EXTERNAL_DIR}/libSBML-5.10.2-core-src.tar.gz
         CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR}
         )
-    set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml.so.5)
+    set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml.so)
 endif()
 
 
