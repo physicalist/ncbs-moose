@@ -29,7 +29,7 @@ Description: MOOSE is the Multiscale Object-Oriented Simulation Environment.
 Package: moose-core
 Architecture: any
 Depends: ${misc:Depends}, libhdf5-7, libgsl0ldbl
-Suggests: moose-python, moose-gui, moose-doc
+Suggests: moose-python, moose-gui, moose-doc, libxml2, libbz2-1.0
 Description: C++ core of MOOSE neural simulator.
  .
  This package installs the C++ core of MOOSE.
