@@ -167,7 +167,7 @@ include_directories(msg basecode)
 add_executable(moose-bin basecode/main.cpp)
 add_library(moose SHARED basecode/main.cpp)
 set_target_properties(moose PROPERTIES COMPILE_FLAGS  "-DMOOSE_LIB")
-set_target_properties(moose PROPERTIES VERSION 3.0.0 SOVERSION 3.0.0)
+set_target_properties(moose PROPERTIES VERSION 3.0.0 SOVERSION 3)
 
 ## GSL
 # Setup GSL
