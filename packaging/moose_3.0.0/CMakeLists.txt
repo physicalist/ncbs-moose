@@ -150,9 +150,14 @@ if(LOCAL_SBML)
         PREFIX ${EXTERNAL_DIR}
         URL ${EXTERNAL_DIR}/libSBML-5.10.2-core-src.tar.gz
         CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR}
+        -DWITH_BZIP2=ON 
+        -DWITH_LIBXML=ON
         )
-    set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml.so)
+    set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml-static.a)
 endif()
+
+## Get the install path and install the sbml
+
 
 
 ################################### SETUP BUILD ################################
