@@ -150,8 +150,10 @@ if(LOCAL_SBML)
         PREFIX ${EXTERNAL_DIR}
         URL ${EXTERNAL_DIR}/libSBML-5.10.2-core-src.tar.gz
         CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR}
+        -DBUILD_SHARED_LIBS=OFF
         -DWITH_BZIP2=ON 
         -DWITH_LIBXML=ON
+        
         )
     set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml-static.a)
 endif()
@@ -283,6 +285,8 @@ set(MOOSE_LIBRARIES
 target_link_libraries(moose
     ${MOOSE_LIBRARIES}
     ${LIBRARIES}
+    bz2
+    xml2
     )
 
 target_link_libraries(moose-bin 
