@@ -230,6 +230,7 @@ add_subdirectory(benchmarks)
 add_subdirectory(kinetics)
 add_subdirectory(synapse)
 add_subdirectory(sbml)
+add_subdirectory(intfire)
 
 set(LIBRARIES ${LibBZip2_LIBRARIES})
 if(HDF5_FOUND)
@@ -277,6 +278,7 @@ set(MOOSE_LIBRARIES
     kinetics 
     hsolve 
     mesh
+    intfire
     signeur
     tinyxml
     synapse
