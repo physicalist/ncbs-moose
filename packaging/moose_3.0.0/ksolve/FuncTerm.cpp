@@ -28,7 +28,7 @@ using namespace std;
 
 FuncTerm::FuncTerm()
 	: reactantIndex_( 1, 0 ),
-		target_( ~0U )
+		target_( ~0U)
 {
 	args_ = 0;
 	parser_.DefineConst(_T("pi"), (mu::value_type)M_PI);
@@ -109,6 +109,16 @@ void FuncTerm::setTarget( unsigned int t )
 const unsigned int FuncTerm::getTarget() const
 {
 	return target_;
+}
+
+const FuncTerm& FuncTerm::operator=( const FuncTerm& other )
+{
+	args_ = 0; // Don't delete it, the original one is still using it.
+	parser_ = other.parser_;
+	expr_ = other.expr_;
+	target_ = other.target_;
+	setReactantIndex( other.reactantIndex_ );
+	return *this;
 }
 
 /**

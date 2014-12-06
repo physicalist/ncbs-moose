@@ -11,10 +11,12 @@
 #include "FuncTerm.h"
 #include "SparseMatrix.h"
 #include "KinSparseMatrix.h"
+#include "VoxelPoolsBase.h"
+#include "../mesh/VoxelJunction.h"
+#include "XferInfo.h"
 #include "ZombiePoolInterface.h"
 #include "Stoich.h"
 #include "GssaSystem.h"
-#include "VoxelPoolsBase.h"
 #include "GssaVoxelPools.h"
 #include "../randnum/randnum.h"
 
@@ -154,13 +156,14 @@ void GssaVoxelPools::advance( const ProcInfo* p, const GssaSystem* g )
 		}
 
 		g->transposeN.fireReac( rindex, Svec() );
-		updateDependentMathExpn( g, rindex );
-		updateDependentRates( g->dependency[ rindex ], g->stoich );
 		double r = mtrand();
 		while ( r <= 0.0 ) {
 			r = mtrand();
 		}
 		t_ -= ( 1.0 / atot_ ) * log( r );
+		g->stoich->updateFuncs( varS(), t_ );
+		updateDependentMathExpn( g, rindex );
+		updateDependentRates( g->dependency[ rindex ], g->stoich );
 	}
 }
 
@@ -268,4 +271,65 @@ void GssaVoxelPools::setVolumeAndDependencies( double vol )
 	stoichPtr_->setupCrossSolverReacVols();
 	updateAllRateTerms( stoichPtr_->getRateTerms(),
 		stoichPtr_->getNumCoreRates() );
+}
+
+//////////////////////////////////////////////////////////////
+// Handle cross compartment reactions
+//////////////////////////////////////////////////////////////
+void GssaVoxelPools::xferIn( XferInfo& xf,
+	    unsigned int voxelIndex, const GssaSystem* g )
+{
+	unsigned int offset = voxelIndex * xf.xferPoolIdx.size();
+	vector< double >::const_iterator i = xf.values.begin() + offset;
+	vector< double >::const_iterator j = xf.lastValues.begin() + offset;
+	vector< double >::iterator m = xf.subzero.begin() + offset;
+	double* s = varS();
+	bool hasChanged = false;
+	for ( vector< unsigned int >::const_iterator 
+			k = xf.xferPoolIdx.begin(); k != xf.xferPoolIdx.end(); ++k ) {
+		double& x = s[*k];
+		x += round( *i++ - *j );
+		if ( x < *m )  {
+			*m -= x;
+			x = 0;
+		} else {
+			x -= *m;
+			*m = 0;
+		}
+		/*
+		double y = fabs( x - *j );
+		// hasChanged |= ( fabs( x - *j ) < 0.1 ); // they are all integers.
+		hasChanged |= ( y > 0.1 ); // they are all integers.
+		*/
+		j++;
+		m++;
+	}
+	// If S has changed, then I should update rates of all affected reacs.
+	// Go through stoich matrix to find affected reacs for each mol
+	// Store in list, since some may be hit more than once in this func.
+	// When done, go through and update all affected ones.
+	/*
+	if ( hasChanged ) {
+		refreshAtot( g );
+	}
+	*/
+	// Does this fix the problem of negative concs?
+	refreshAtot( g );
+}
+
+void GssaVoxelPools::xferInOnlyProxies(
+		const vector< unsigned int >& poolIndex,
+		const vector< double >& values, 
+		unsigned int numProxyPools,
+	    unsigned int voxelIndex	)
+{
+	unsigned int offset = voxelIndex * poolIndex.size();
+	vector< double >::const_iterator i = values.begin() + offset;
+	for ( vector< unsigned int >::const_iterator 
+			k = poolIndex.begin(); k != poolIndex.end(); ++k ) {
+		if ( *k >= size() - numProxyPools ) {
+			varSinit()[*k] = (varS()[*k] += round( *i ));
+		}
+		i++;
+	}
 }

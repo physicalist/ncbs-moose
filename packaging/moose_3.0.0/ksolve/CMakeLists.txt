@@ -17,6 +17,7 @@ add_library(ksolve
 	Ksolve.cpp 
         SteadyState.cpp
         Gsolve.cpp
+        ZombiePoolInterface.cpp
         testKsolve.cpp
     )
 if(USE_GSL)

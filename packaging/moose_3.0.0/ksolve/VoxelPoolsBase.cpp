@@ -9,6 +9,14 @@
 #include "header.h"
 
 #include "VoxelPoolsBase.h"
+#include "../mesh/VoxelJunction.h"
+#include "XferInfo.h"
+#include "ZombiePoolInterface.h"
+#include "RateTerm.h"
+#include "FuncTerm.h"
+#include "SparseMatrix.h"
+#include "KinSparseMatrix.h"
+#include "Stoich.h"
 
 //////////////////////////////////////////////////////////////
 // Class definitions
@@ -16,6 +24,7 @@
 
 VoxelPoolsBase::VoxelPoolsBase()
 	: 
+		stoichPtr_( 0 ),
 		S_(1),
 		Sinit_(1),
 		volume_(1.0)
@@ -254,6 +263,57 @@ double VoxelPoolsBase::getXreacScaleSubstrates( unsigned int i ) const
 double VoxelPoolsBase::getXreacScaleProducts( unsigned int i ) const
 {
 	return xReacScaleProducts_[i];
+}
+
+/**
+ * Zeroes out rate terms that are involved in cross-reactions that 
+ * are not present on current voxel.
+ */
+void VoxelPoolsBase::filterCrossRateTerms(
+		const vector< Id >& offSolverReacs,
+		const vector< pair< Id, Id > >&  offSolverReacCompts  )
+{
+	assert (offSolverReacs.size() == offSolverReacCompts.size() );
+	// unsigned int numCoreRates = stoichPtr_->getNumCoreRates();
+ 	for ( unsigned int i = 0; i < offSolverReacCompts.size(); ++i ) {
+		const pair< Id, Id >& p = offSolverReacCompts[i];
+		if ( !isVoxelJunctionPresent( p.first, p.second) ) {
+			Id reacId = offSolverReacs[i];
+			const Cinfo* reacCinfo = reacId.element()->cinfo();
+			unsigned int k = stoichPtr_->convertIdToReacIndex( offSolverReacs[i] );
+			// Start by replacing the immediate cross reaction term.
+			if ( rates_[k] )
+				delete rates_[k];
+			rates_[k] = new ExternReac;
+			if ( stoichPtr_->getOneWay() ) {
+				k++; // Delete the next entry too, it is the reverse reacn.
+				assert( k < rates_.size() );
+				if ( reacCinfo->isA( "ReacBase" ) ) {
+					if ( rates_[k] )
+						delete rates_[k];
+					rates_[k] = new ExternReac;
+				}
+				if ( reacCinfo->isA( "CplxEnzBase" ) ) { // Delete next two.
+					if ( rates_[k] )
+						delete rates_[k];
+					rates_[k] = new ExternReac;
+					k++;
+					assert( k < rates_.size() );
+					if ( rates_[k] )
+						delete rates_[k];
+					rates_[k] = new ExternReac;
+				}
+			} else {
+				if ( reacCinfo->isA( "CplxEnzBase" ) ) { // Delete next one.
+					k++;
+					assert( k < rates_.size() );
+					if ( rates_[k] )
+						delete rates_[k];
+					rates_[k] = new ExternReac;
+				}
+			}
+		}
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////

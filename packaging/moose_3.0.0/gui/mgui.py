@@ -69,7 +69,8 @@ import re
 from biomodelsclient import BioModelsClientWidget
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4.QtGui import *
-
+from MdiArea import MdiArea
+import os
 __author__ = 'Subhasis Ray , HarshaRani, Aviral Goel, NCBS'
 
 # This maps model subtypes to corresponding plugin names. Should be
@@ -79,6 +80,11 @@ subtype_plugin_map = {  'genesis/kkit': 'kkit'
                      ,  'xml/sbml': 'kkit'
                      ,  'xml/neuroml': 'NeuroKit'
                      }
+
+APPLICATION_ICON_PATH = os.path.join( os.path.dirname(os.path.realpath(__file__))
+                                    , "icons/moose_icon.png"
+                                    )
+
 
 
 class MWindow(QtGui.QMainWindow):
@@ -129,16 +135,17 @@ class MWindow(QtGui.QMainWindow):
         self.toolBars       = []
         self._loadedPlugins = {}
         self._plugins       = {}
-        self._loadedModels  = {}
+        self._loadedModels  = []
 
         self.setDockOptions(self.AnimatedDocks and self.AllowNestedDocks and self.AllowTabbedDocks)
-        self.mdiArea = QtGui.QMdiArea()
+        self.mdiArea = MdiArea()
 
         self.quitAction = QtGui.QAction('&Quit', self)
         self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), self.quit)
         self.quitAction.setShortcut(QtGui.QApplication.translate("MainWindow", "Ctrl+Q", None, QtGui.QApplication.UnicodeUTF8))
         self.getMyDockWidgets()
         self.setCentralWidget(self.mdiArea)
+        self.setWindowIcon(QIcon(APPLICATION_ICON_PATH))
         # pixmap = QPixmap("icons/moose_icon.png")
 
         # pixmap = pixmap.scaled(self.mdiArea.size())
@@ -159,7 +166,6 @@ class MWindow(QtGui.QMainWindow):
         self.createPopup()
 
     def createPopup(self):
-        print("Hello")
         self.popup = dialog = QDialog(self)
         dialog.setWindowFlags(Qt.Qt.Dialog | Qt.Qt.FramelessWindowHint)
         # dialog.setModal(True)
@@ -313,9 +319,34 @@ class MWindow(QtGui.QMainWindow):
         """
 
         self.plugin = self.loadPluginClass(str(name))(str(root), self)
-        #Harsha: added under file Menu, Recently Loaded Models
-        if root != '/' and root not in self._loadedModels:
-            self._loadedModels[root] = name
+        compt = moose.wildcardFind(root+'/##[ISA=ChemCompt]')
+        if compt:
+            if moose.exists(compt[0].path+'/ksolve'):
+                ksolve = moose.Ksolve( compt[0].path+'/ksolve' )
+                ksolve.tick = 16
+            if moose.exists(compt[0].path+'/gsolve'):
+                gsolve = moose.Gsolve( compt[0].path+'/gsolve' )
+                gsolve.tick = 16
+            # if moose.exists(compt[0].path+'/stoich'):
+            #     stoich = moose.Stoich( compt[0].path+'/stoich' )
+            #     stoich.tick = -1
+            for x in moose.wildcardFind( root+'/data/graph#/#' ):
+                x.tick = 18
+        # if root != '/' and root not in self._loadedModels:
+        #     self._loadedModels[root] = name
+        # for k,v in self._loadedModels.items():
+        #     compt = moose.wildcardFind(k+'/##[ISA=ChemCompt]')
+        #     if compt:
+        #         if moose.exists(compt[0].path+'/ksolve'):
+        #             ksolve = moose.Ksolve( compt[0].path+'/ksolve' )
+        #             ksolve.tick = -1
+        #         if moose.exists(compt[0].path+'/stoich'):
+        #             stoich = moose.Stoich( compt[0].path+'/stoich' )
+        #             stoich.tick = -1
+        #         for x in moose.wildcardFind( k+'/data/graph#/#' ):
+        #             x.tick = -1
+        # if root != '/' and root not in self._loadedModels:
+        #     self._loadedModels[root] = name
 
         # try:
         #     self.plugin = self._plugins[str(name)]
@@ -351,8 +382,8 @@ class MWindow(QtGui.QMainWindow):
             return False
         for action in self.menuBar().actions():
             if menu.title() == action.text():
-                if not action.menu().isEmpty():
-                    action.menu().addSeparator()
+                # if not action.menu().isEmpty():
+                #     action.menu().addSeparator()
                 action.menu().addActions(menu.actions())
                 return True
         return False
@@ -383,6 +414,8 @@ class MWindow(QtGui.QMainWindow):
                 if not self.menuBar().isEmpty():
                     action.menu().addSeparator()
                 self.menuBar().addMenu(menu)
+        menus[0].addSeparator()
+        menus[0].addAction(self.quitAction)
 
     def updateToolbars(self):
         for toolbar in self.toolBars:
@@ -470,6 +503,7 @@ class MWindow(QtGui.QMainWindow):
         #return [self.viewToolBar]
         '''
         return self._toolBars
+
     def getFileMenu(self):
         if self.fileMenu is None:
             self.fileMenu = QtGui.QMenu('&File')
@@ -488,22 +522,22 @@ class MWindow(QtGui.QMainWindow):
         self.fileMenu.addAction(self.loadModelAction)
 
         if not hasattr(self,'loadedModels'):
-            self.loadedModelAction = QtGui.QAction('Recently Loaded Model',self)
+            self.loadedModelAction = QtGui.QAction('Recently Loaded Models',self)
+            self.loadedModelAction.setCheckable(False)
+            #self.fileMenu.addAction(QtGui.QAction(self.loadedModelAction,checkable=True))
             if bool(self._loadedModels):
                 self.fileMenu.addSeparator()
                 self.fileMenu.addAction(self.loadedModelAction)
-                for path,pluginType in self._loadedModels.iteritems():
-                    action = self.fileMenu.addAction(path)
-                    action.triggered.connect(lambda : self.setPlugin(pluginType,path))
+                self.loadedModelAction.setEnabled(False)
+                for (model, modeltype, action) in reversed(self._loadedModels):
+                    self.fileMenu.addAction(action)
                 self.fileMenu.addSeparator()
+
         if not hasattr(self,'connectBioModelAction'):
             self.connectBioModelAction = QtGui.QAction('&Connect BioModels', self)
             self.connectBioModelAction.setShortcut(QtGui.QApplication.translate("MainWindow", "Ctrl+B", None, QtGui.QApplication.UnicodeUTF8))
             self.connect(self.connectBioModelAction, QtCore.SIGNAL('triggered()'), self.connectBioModel)
         self.fileMenu.addAction(self.connectBioModelAction)
-
-        #self.fileMenu.addAction(self.plugin.getSaveAction())
-        self.fileMenu.addAction(self.quitAction)
         return self.fileMenu
 
     def getEditMenu(self):
@@ -725,7 +759,20 @@ class MWindow(QtGui.QMainWindow):
             except KeyError:
                 pluginName = 'default'
             print 'Loaded model', ret['model'].path,subtype
-            self._loadedModels[ret['model'].path] = pluginName
+            self._loadedModels.append([ret['model'].path,pluginName])
+            if len(self._loadedModels)>5:
+                self._loadedModels.pop(0)
+
+            if not moose.exists(ret['model'].path+'/info'):
+                    moose.Annotator(ret['model'].path+'/info')
+                
+            modelAnno = moose.Annotator(ret['model'].path+'/info')
+            if ret['subtype']:
+                modelAnno.modeltype = ret['subtype']
+            else:
+                modelAnno.modeltype = ret['modeltype']
+            modelAnno.dirpath = str(dialog.directory().absolutePath())
+            self.loadedModelsAction(ret['model'].path,pluginName)
             self.setPlugin(pluginName, ret['model'].path)
 
 
@@ -827,6 +874,30 @@ class MWindow(QtGui.QMainWindow):
         self.objectEditDockWidget.setObject(mobj)
         self.objectEditDockWidget.setVisible(visible)
 
+    def loadedModelsAction(self,modelPath,pluginName):
+        #Harsha: added under file Menu, Recently Loaded Models
+        #All the previously loaded chemical models, solver's and table's ticks are made -1
+        if self._loadedModels:
+            l = self._loadedModels[-1]
+            compt = moose.wildcardFind(l[0]+'/##[ISA=ChemCompt]')
+            if compt:
+                if moose.exists(compt[0].path+'/ksolve'):
+                    ksolve = moose.Ksolve( compt[0].path+'/ksolve' )
+                    ksolve.tick = -1
+                if moose.exists(compt[0].path+'/gsolve'):
+                    gsolve = moose.Gsolve( compt[0].path+'/gsolve' )
+                    gsolve.tick = -1
+                # if moose.exists(compt[0].path+'/stoich'):
+                #     stoich = moose.Stoich( compt[0].path+'/stoich' )
+                #     stoich.tick = -1
+                for x in moose.wildcardFind( l[0]+'/data/graph#/#' ):
+                    x.tick = -1
+        action = QAction(modelPath[1:],self)
+        action.triggered.connect(lambda : self.setPlugin(pluginName, modelPath))
+        self._loadedModels.append([modelPath,pluginName,action])
+        if len(self._loadedModels)>5:
+            self._loadedModels.pop(0)
+
     def loadModelDialogSlot(self):
         """Start a file dialog to choose a model file.
 
@@ -869,6 +940,16 @@ class MWindow(QtGui.QMainWindow):
                 except KeyError:
                     pluginName = 'default'
                 print 'Loaded model', ret['model'].path
+                if not moose.exists(ret['model'].path+'/info'):
+                    moose.Annotator(ret['model'].path+'/info')
+                
+                modelAnno = moose.Annotator(ret['model'].path+'/info')
+                if ret['subtype']:
+                    modelAnno.modeltype = ret['subtype']
+                else:
+                    modelAnno.modeltype = ret['modeltype']
+                modelAnno.dirpath = str(dialog.directory().absolutePath())
+                self.loadedModelsAction(ret['model'].path,pluginName)
                 self.setPlugin(pluginName, ret['model'].path)
                 if pluginName == 'kkit':
                     QtCore.QCoreApplication.sendEvent(self.plugin.getEditorView().getCentralWidget().view, QtGui.QKeyEvent(QtCore.QEvent.KeyPress, Qt.Qt.Key_A, Qt.Qt.NoModifier))
@@ -894,11 +975,16 @@ class MWindow(QtGui.QMainWindow):
             '''
             modelContainer = moose.Neutral('%s' %(modelPath))
             modelRoot = moose.Neutral('%s/%s' %(modelContainer.path,"model"))
+            if not moose.exists(modelContainer.path+'/info'):
+                moose.Annotator(modelContainer.path+'/info')
+            
+            modelAnno = moose.element(modelContainer.path+'/info')
+            modelAnno.modeltype = "kkit"
+            modelAnno.dirpath = " "
+            self.loadedModelsAction(modelRoot.path,plugin)
             self.setPlugin(plugin, modelRoot.path)
-            #self._loadedModels[modelContainer.path] = plugin
             #Harsha: This will clear out object editor's objectpath and make it invisible
             self.objectEditSlot('/', False)
-
 
 def main():
     # create the GUI application

@@ -193,7 +193,7 @@ Id SbmlReader::read( string filename, string location, string solverClass)
                                         replace(pltClean.begin(),pltClean.end(),'/','_');
                                         string plotName =  pltClean + ".conc";
                                         Id pltPath(graph.path());
-                                        Id tab = s->doCreate( "Table2", pltPath, plotName, 1 );
+                                        Id tab = s->doCreate( "Table", pltPath, plotName, 1 );
                                         if (tab != Id())
                                             s->doAddMsg("Single",tab,"requestOut",plotSId,"getConc");
                                     }//while
@@ -1132,7 +1132,6 @@ void SbmlReader::getGlobalParameter() {
         parmValueMap[id] = value;
     }
 }
-#endif // USE_SBML
 
 string SbmlReader::nameString( string str ) {
     string str1;
@@ -1151,4 +1150,4 @@ string SbmlReader::nameString( string str ) {
     } while ( i < len );
     return str;
 }
-
+#endif // USE_SBML
