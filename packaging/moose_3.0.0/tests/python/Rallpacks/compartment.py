@@ -19,6 +19,7 @@ __status__           = "Development"
 
 
 import sys
+sys.path.append('../../../python')
 
 import moose
 import unittest
@@ -123,6 +124,4 @@ class TestCompartment( unittest.TestCase):
         print( self.dut )
 
 if __name__ == "__main__":
-    print("This script does not run as standalone anymore")
-    sys.exit()
     unittest.main()

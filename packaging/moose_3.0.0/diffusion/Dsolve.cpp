@@ -11,6 +11,9 @@
 #include "ElementValueFinfo.h"
 #include "SparseMatrix.h"
 #include "KinSparseMatrix.h"
+#include "VoxelPoolsBase.h"
+#include "../mesh/VoxelJunction.h"
+#include "XferInfo.h"
 #include "ZombiePoolInterface.h"
 #include "DiffPoolVec.h"
 #include "FastMatrixElim.h"
@@ -329,11 +332,6 @@ void Dsolve::setCompartment( Id id )
 	}
 }
 
-Id Dsolve::getCompartment() const
-{
-	return compartment_;
-}
-
 void Dsolve::makePoolMapFromElist( const vector< ObjId >& elist, 
 				vector< Id >& temp )
 {
@@ -437,8 +435,12 @@ void Dsolve::build( double dt )
 {
 	if ( doubleEq( dt, dt_ ) )
 		return;
+	if ( compartment_ == Id() ) {
+		cout << "Dsolve::build: Warning: No compartment defined. \n"
+				"Did you forget to assign 'stoich.dsolve = this' ?\n";
+		return;
+	}
 	dt_ = dt;
-
 	const MeshCompt* m = reinterpret_cast< const MeshCompt* >( 
 						compartment_.eref().data() );
 	unsigned int numVoxels = m->getNumEntries();
@@ -556,6 +558,13 @@ unsigned int Dsolve::getNumVarPools() const
 unsigned int Dsolve::getNumVoxels() const
 {
 	return numVoxels_;
+}
+
+void Dsolve::setNumAllVoxels( unsigned int num ) 
+{
+	numVoxels_ = num;
+	for ( unsigned int i = 0 ; i < numLocalPools_; ++i )
+		pools_[i].setNumVoxels( numVoxels_ );
 }
 
 unsigned int Dsolve::convertIdToPoolIndex( const Eref& e ) const
@@ -716,25 +725,30 @@ void Dsolve::setBlock( const vector< double >& values )
 	}
 }
 
-void Dsolve::setupCrossSolverReacs( const map< Id, 
-						vector< Id > >& xr, Id otherStoich )
-{
-	;
-}
-
+//////////////////////////////////////////////////////////////////////
 // Inherited virtual
-void Dsolve::filterCrossRateTerms( const vector< pair< Id, Id > >& xrt )
-{
-}
-
-void Dsolve::setupCrossSolverReacVols( 
-			const vector< vector< Id > >& subCompts,
-			const vector< vector< Id > >& prdCompts )
-{
-		;
-}
 
 void Dsolve::updateRateTerms( unsigned int index )
 {
 	;
+}
+
+unsigned int Dsolve::getPoolIndex( const Eref& e ) const
+{
+	return convertIdToPoolIndex( e );
+}
+
+unsigned int Dsolve::getNumLocalVoxels() const
+{
+	return numVoxels_;
+}
+
+VoxelPoolsBase* Dsolve::pools( unsigned int i )
+{
+	return 0;
+}
+
+double Dsolve::volume( unsigned int i ) const
+{
+	return 1.0;
 }

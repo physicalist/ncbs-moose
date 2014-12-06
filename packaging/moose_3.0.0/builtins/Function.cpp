@@ -288,7 +288,7 @@ const Cinfo * Function::initCinfo()
 static const Cinfo * functionCinfo = Function::initCinfo();
 
 Function::Function(): _valid(false), _numVar(0), _lastValue(0.0),
-                      _value(0.0), _rate(0.0), _mode(1)
+                      _value(0.0), _rate(0.0), _mode(1), _stoich(0)
 {
     _parser.SetVarFactory(_functionAddVar, this);
     // Adding pi and e, the defaults are `_pi` and `_e`
@@ -309,9 +309,9 @@ Function::Function(): _valid(false), _numVar(0), _lastValue(0.0),
 Function::Function(const Function& rhs): _numVar(rhs._numVar),
                                          _lastValue(rhs._lastValue),
                                          _value(rhs._value), _rate(rhs._rate),
-                                         _mode(rhs._mode)
+                                         _mode(rhs._mode), _stoich(0)
 {
-    static Eref er;
+	static Eref er;
     _independent = rhs._independent;
     _parser.SetVarFactory(_functionAddVar, this);
     // Adding pi and e, the defaults are `_pi` and `_e`

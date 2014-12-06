@@ -127,6 +127,7 @@ protected:
     mu::Parser _parser;
     void _clearBuffer();
     void _showError(mu::Parser::exception_type &e) const;
+	char* _stoich; // Used by kinetic solvers when this is zombified.
 };
 
 

@@ -132,6 +132,18 @@ class Stoich
 		vector< unsigned int > getRowStart() const;
 
 		vector< Id > getProxyPools( Id i ) const;
+
+		/**
+		 * getStatus(): Flag to track status of Stoich object.
+		 * -1: No path yet assigned.
+		 *  0: Success
+		 *  1: Warning: Missing reactant in Reac or Enz
+		 *  2: Warning: Missing substrate in MMenz
+		 *  4: Warning: Compartment not defined
+		 *  8: Warning: Neither Ksolve nor Dsolve defined
+		 *  16: Warning: No objects found on path
+		 */
+		int getStatus() const;
 		//////////////////////////////////////////////////////////////////
 		// Model traversal and building functions
 		//////////////////////////////////////////////////////////////////
@@ -222,7 +234,10 @@ class Stoich
 		unsigned int convertIdToReacIndex( Id id ) const;
 		unsigned int convertIdToPoolIndex( Id id ) const;
 		unsigned int convertIdToFuncIndex( Id id ) const;
-		// unsigned int convertIdToComptIndex( Id id ) const;
+
+		/// Utility function to make a half reac and return the rate term.
+		ZeroOrder* makeHalfReaction( 
+						double rate, const vector< Id >& reactants );
 
 		/*
 		 * This takes the specified Reac and its substrate and product
@@ -272,11 +287,23 @@ class Stoich
 		void installDummyEnzyme( Id enzId, Id enzMolId);
 
 		/**
-		 * This installs a funcTerm. Should be generic, that is, work
-		 * for any form of func. The pool is the FuncPool being
-		 * controlled.
+		 * This installs a FuncTerm, which evaluates a function to specify
+		 * the conc of the specific pool. The pool is a BufPool.
 		 */
 		void installAndUnschedFunc( Id func, Id pool );
+
+		/**
+		 * This installs a FuncRate, which evaluates a function to specify
+		 * the rate of change of conc of the specific pool. 
+		 * The pool is a Pool.
+		 */
+		void installAndUnschedFuncRate( Id func, Id pool );
+
+		/**
+		 * This installs a FuncReac, which evaluates a function to specify
+		 * the rate (Kf) of the specified reaction. 
+		 */
+		void installAndUnschedFuncReac( Id func, Id reac );
 
 		//////////////////////////////////////////////////////////////////
 
@@ -370,6 +397,11 @@ class Stoich
 		 * then returns 0.
 		 */
 		double getR2( const Eref& e ) const;
+
+		/**
+		 * Sets the arithmetic expression used in a FuncRate or FuncReac
+		 */
+		void setFunctionExpr( const Eref& e, string expr );
 
 		/**
 		 * This function scans all reacs and enzymes and recalculates the
@@ -578,6 +610,17 @@ class Stoich
 		 * The enzyme reactions count as two reaction steps.
 		 */
 		unsigned int numReac_;
+
+		/**
+		 * Flag to track status of Stoich object.
+		 * -1: No path yet assigned.
+		 *  0: Success
+		 *  1: Warning: Missing reactant in Reac or Enz
+		 *  2: Warning: Missing substrate in MMenz
+		 *  4: Warning: Compartment not defined
+		 *  8: Warning: Neither Ksolve nore Dsolve defined
+		 */
+		int status_;
 
 		//////////////////////////////////////////////////////////////////
 		// Off-solver stuff

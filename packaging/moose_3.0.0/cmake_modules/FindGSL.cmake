@@ -59,14 +59,14 @@ ELSE(WIN32)
     
     IF (GSL_CONFIG) 
       # set CXXFLAGS to be fed into CXX_FLAGS by the user:
-      EXECUTE_PROCESS(COMMAND ${GSL_CONFIG} --cflags OUTPUT_VARIABLE GSL_CXX_FLAGS)
-      EXECUTE_PROCESS(COMMAND ${GSL_CONFIG} --version OUTPUT_VARIABLE GSL_VERSION)
+      SET(GSL_CXX_FLAGS "`${GSL_CONFIG} --cflags`")
       
       # set INCLUDE_DIRS to prefix+include
       EXEC_PROGRAM(${GSL_CONFIG}
         ARGS --prefix
         OUTPUT_VARIABLE GSL_PREFIX)
       message(${GSL_PREFIX})
+
       SET(GSL_INCLUDE_DIR ${GSL_PREFIX}/include CACHE STRING INTERNAL)
 
       # set link libraries and link flags
@@ -78,6 +78,11 @@ ELSE(WIN32)
       EXEC_PROGRAM(${GSL_CONFIG}
         ARGS --libs
         OUTPUT_VARIABLE GSL_CONFIG_LIBS )
+
+     EXEC_PROGRAM(${GSL_CONFIG}
+         ARGS --version
+         OUTPUT_VARIABLE GSL_VERSION
+         )
 
       ## split off the link dirs (for rpath)
       ## use regular expression to match wildcard equivalent "-L*<endchar>"

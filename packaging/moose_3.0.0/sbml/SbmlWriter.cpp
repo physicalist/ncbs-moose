@@ -13,6 +13,8 @@
 ** GNU Lesser General Public License version 2.1
 ** See the file COPYING.LIB for the full notice.
 **********************************************************************/
+#ifdef USE_SBML
+
 #include "header.h"
 #include <sbml/SBMLTypes.h>
 #include "SbmlWriter.h"
@@ -36,8 +38,6 @@ using namespace std;
 int SbmlWriter::write( string filepath,string target )
 {
   //cout << "Sbml Writer: " << filepath << " ---- " << target << endl;
-  //cout << "use_SBML:" << USE_SBML << endl;
-  
 #ifdef USE_SBML
   string::size_type loc;
   while ( ( loc = filepath.find( "\\" ) ) != string::npos ) 
@@ -86,16 +86,25 @@ int SbmlWriter::write( string filepath,string target )
   createModel( filename,sbmlDoc,target );
   SBMLok  = validateModel( &sbmlDoc );
   if ( SBMLok ) 
-    writeModel( &sbmlDoc, filepath );
+  {
+    return writeModel( &sbmlDoc, filepath );
+  }
   //delete sbmlDoc;
   if ( !SBMLok ) {
     cerr << "Errors encountered " << endl;
-    return 1;
+    return -1;
   }
   
 #endif     
-  return 0;
+  return -2;
 }
+
+/*
+1   - Write successful
+0   - Write failed
+-1  - Validation failed
+-2  - No libsbml support
+*/
 #ifdef USE_SBML
 
 //* Check : first will put a model in according to l3v1 with libsbml5.9.0 **/
@@ -110,7 +119,10 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
   sbmlDoc.setNamespaces(&xmlns);
   cremodel_ = sbmlDoc.createModel();
   cremodel_->setId(filename);
-  //cremodel_->setUnits(time);
+  cremodel_->setTimeUnits("second");
+  cremodel_->setExtentUnits("substance");
+  cremodel_->setSubstanceUnits("substance");
+  
   Id baseId(path);
     vector< ObjId > graphs;
   string plots;
@@ -157,6 +169,7 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
   unit->setMultiplier(1);
   unit->setExponent(1.0);
   unit->setScale(0);
+
   //Getting Compartment from moose
   vector< ObjId > chemCompt;
   wildcardFind(path+"/##[ISA=ChemCompt]",chemCompt);
@@ -266,7 +279,16 @@ void SbmlWriter::createModel(string filename,SBMLDocument& sbmlDoc,string path)
 	      species_size = species_size+1;
 	      // true if species is amount, false: if species is concentration 
 	      sp->setHasOnlySubstanceUnits( true );
-	      
+	      string xyCord;
+	      // double x = Field <double> :: get(annotaId,"x");
+	      // double y = Field <double> :: get(annotaId,"y");
+	   	  // xyCord += "x:"+x+"y:"+y+";";   
+	      ostringstream modelAnno;
+  		  modelAnno << "<moose:ModelAnnotation>\n";
+  		  modelAnno << "<moose:xyCord> "<< xyCord<< "</moose:xyCord>\n";
+          modelAnno << "</moose:ModelAnnotation>";
+  		  XMLNode* xnode =XMLNode::convertStringToXMLNode( modelAnno.str() ,&xmlns);
+  		  sp->setAnnotation( xnode );	  
 	      // Buffered Molecule setting BoundaryCondition and constant has to be made true 
 	      if ( (objclass == "BufPool") || (objclass == "ZombieBufPool"))
 		  { sp->setBoundaryCondition(true);
@@ -954,3 +976,4 @@ bool SbmlWriter::validateModel( SBMLDocument* sbmlDoc )
       return ( numConsistencyErrors == 0 && numValidationErrors == 0 );
       }
 }
+#endif // USE_SBML

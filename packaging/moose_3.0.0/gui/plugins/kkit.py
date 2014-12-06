@@ -3,7 +3,6 @@ import sys
 #import re
 from PyQt4 import QtGui, QtCore, Qt
 #import pygraphviz as pgv
-import networkx as nx
 #sys.path.insert(0, '~/async/gui')
 #import numpy as np
 from default import *
@@ -21,6 +20,7 @@ from PyQt4.QtGui import QWidget
 from PyQt4.QtGui import QGridLayout
 from PyQt4.QtGui import QColor
 import RunWidget
+from os.path import expanduser
 
 #from DataTable import DataTable
 class KkitPlugin(MoosePlugin):
@@ -35,7 +35,42 @@ class KkitPlugin(MoosePlugin):
         #self.plotView.updateCallback = self.view._centralWidget.legendUpdate
         #self.view._centralWidget.legendUpdate()
         #self.dataTable = DataTable(self.dataRoot)
+        self.fileinsertMenu = QtGui.QMenu('&File')
+        if not hasattr(self,'SaveModelAction'):
+            #self.fileinsertMenu.addSeparator()
+            self.saveModelAction = QtGui.QAction('Save', self)
+            self.saveModelAction.setShortcut(QtGui.QApplication.translate("MainWindow", "Ctrl+S", None, QtGui.QApplication.UnicodeUTF8))
+            self.connect(self.saveModelAction, QtCore.SIGNAL('triggered()'), self.SaveModelDialogSlot)
+            self.fileinsertMenu.addAction(self.saveModelAction)
+        self._menus.append(self.fileinsertMenu)
+    def SaveModelDialogSlot(self):
+        type_sbml = 'SBML'
+        if moose.Annotator(self.modelRoot+'/info'):
+            moose.Annotator(self.modelRoot+'/info')
+        mooseAnno = moose.Annotator(self.modelRoot+'/info')
+        dirpath = mooseAnno.dirpath
+        if not dirpath:
+            dirpath = expanduser("~")
+        filters = {'SBML(*.xml)': type_sbml}
 
+        filename,filter_ = QtGui.QFileDialog.getSaveFileNameAndFilter(None,'Save File',dirpath,';;'.join(filters))
+        extension = ""
+        if str(filename).rfind('.') != -1:
+            filename = filename[:str(filename).rfind('.')]
+            if str(filter_).rfind('.') != -1:
+                extension = filter_[str(filter_).rfind('.'):len(filter_)-1]
+        if filename:
+            filename = filename+extension
+            if filters[str(filter_)] == 'SBML':
+                writeerror = moose.writeSBML(str(filename),self.modelRoot)
+                if writeerror == -2:
+                    QtGui.QMessageBox.warning(None,'Could not save the Model','\n WriteSBML :  This copy of MOOSE has not been compiled with SBML writing support.')
+                elif writeerror == -1:
+                    QtGui.QMessageBox.warning(None,'Could not save the Model','\n This model is not valid SBML Model, failed in the consistency check')
+                elif writeerror == 1:
+                    QtGui.QMessageBox.information(None,'Saved the Model','\n File saved to \'{filename}\''.format(filename =filename+'.xml'),QtGui.QMessageBox.Ok)                
+                elif writeerror == 0:
+                     QtGui.QMessageBox.information(None,'Could not save the Model','\nThe filename could not be opened for writing')
 
     def getPreviousPlugin(self):
         return None
@@ -113,26 +148,41 @@ class AnotherKkitRunView(RunView):
         self.schedular.runner.simulationReset.connect(self.kkitRunView.getCentralWidget().resetColor)
         # self.schedular.runner.simulationReset.connect(self.setSolver)
         self.schedular.preferences.applyChemicalSettings.connect(lambda x : self.setSolver(x["simulation"]["solver"]))
-        modelpath = moose.element(self.modelRoot).path
-        self.runTime = (moose.Annotator(modelpath+'/info')).runtime
+        compt = moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]')
+        ann = moose.Annotator(self.modelRoot+'/info')
+        if compt:
+            self.runTime = (moose.Annotator(self.modelRoot+'/info')).runtime
+            solver = (moose.Annotator(self.modelRoot+'/info')).solver
+        else:
+            self.runTime = 10
+            solver = "gsl"
         self.schedular.simulationRuntime.setText(str(self.runTime))
         #preferences
         chemprefs = self.schedular.preferences.getChemicalPreferences() 
         c = moose.Clock('/clock')
         self.simulationdt = c.tickDt[11]
         self.plotdt = c.tickDt[16]
-        solver = (moose.Annotator(modelpath+'/info')).solver
         chemprefs["simulation"]["simulation-dt"] = self.simulationdt
         chemprefs["simulation"]["plot-update-interval"] = self.plotdt
         chemprefs["simulation"]["gui-update-interval"] = 2 * self.plotdt
-        if solver == "GSL":
+        chemprefs["simulation"]["solver"] = "Runge Kutta"
+        if solver == "gsl":
             chemprefs["simulation"]["solver"] = "Runge Kutta"
-        else:
+        elif solver == "gssa":
             chemprefs["simulation"]["solver"] = "Gillespie"
+        elif solver == "ee" or solver == " ":
+            chemprefs["simulation"]["solver"] = "Exponential Euler"
+        else:
+            chemprefs["simulation"]["solver"] = "Runge Kutta"
+        # if solver == "GSL":
+        #     chemprefs["simulation"]["solver"] = "Runge Kutta"
+        # else:
+        #     chemprefs["simulation"]["solver"] = "Gillespie"
         self.schedular.preferences.setChemicalPreferences()
         return self._centralWidget
 
     def setSolver(self, solver = None):
+        print " setSolver ",solver
         if solver == None:
             self.kkitRunView.getCentralWidget().addSolver(self.getSchedulingDockWidget().widget().solver)
         else:
@@ -176,38 +226,32 @@ class KkitEditorView(MooseEditorView):
         MooseEditorView.__init__(self, plugin)
         ''' EditorView and if kkit model is loaded then save model in XML is allowed '''
         #self.dataTable = dataTable
-        self.fileinsertMenu = QtGui.QMenu('&File')
-        if not hasattr(self,'SaveModelAction'):
-            #self.fileinsertMenu.addSeparator()
-            self.saveModelAction = QtGui.QAction('SaveToSBMLFile', self)
-            self.saveModelAction.setShortcut(QtGui.QApplication.translate("MainWindow", "Ctrl+S", None, QtGui.QApplication.UnicodeUTF8))
-            self.connect(self.saveModelAction, QtCore.SIGNAL('triggered()'), self.SaveModelDialogSlot)
-            self.fileinsertMenu.addAction(self.saveModelAction)
+        #self.fileinsertMenu = QtGui.QMenu('&File')
         # if not hasattr(self,'SaveModelAction'):
         #     #self.fileinsertMenu.addSeparator()
         #     self.saveModelAction = QtGui.QAction('SaveToGenesisFormat', self)
         #     self.saveModelAction.setShortcut(QtGui.QApplication.translate("MainWindow", "Ctrl+S", None, QtGui.QApplication.UnicodeUTF8))
         #     self.connect(self.saveModelAction, QtCore.SIGNAL('triggered()'), self.SaveToGenesisSlot)
         #     self.fileinsertMenu.addAction(self.saveModelAction)
-        self._menus.append(self.fileinsertMenu)
+        #self._menus.append(self.fileinsertMenu)
 
-    def SaveModelDialogSlot(self):
-        type_sbml = 'SBML'
-        filters = {'SBML(*.xml)': type_sbml}
-        filename,filter_ = QtGui.QFileDialog.getSaveFileNameAndFilter(None,'Save File','',';;'.join(filters))
-        extension = ""
-        if str(filename).rfind('.') != -1:
-            filename = filename[:str(filename).rfind('.')]
-            if str(filter_).rfind('.') != -1:
-                extension = filter_[str(filter_).rfind('.'):len(filter_)-1]
-        if filename:
-            filename = filename+extension
-            if filters[str(filter_)] == 'SBML':
-                writeerror = moose.writeSBML(str(filename),self.plugin.modelRoot)
-                if writeerror:
-                    QtGui.QMessageBox.warning(None,'Could not save the Model','\n Error in the consistency check')
-                else:
-                     QtGui.QMessageBox.information(None,'Saved the Model','\n File Saved to \'{filename}\''.format(filename =filename),QtGui.QMessageBox.Ok)
+    # def SaveModelDialogSlot(self):
+    #     type_sbml = 'SBML'
+    #     filters = {'SBML(*.xml)': type_sbml}
+    #     filename,filter_ = QtGui.QFileDialog.getSaveFileNameAndFilter(None,'Save File','',';;'.join(filters))
+    #     extension = ""
+    #     if str(filename).rfind('.') != -1:
+    #         filename = filename[:str(filename).rfind('.')]
+    #         if str(filter_).rfind('.') != -1:
+    #             extension = filter_[str(filter_).rfind('.'):len(filter_)-1]
+    #     if filename:
+    #         filename = filename+extension
+    #         if filters[str(filter_)] == 'SBML':
+    #             writeerror = moose.writeSBML(str(filename),self.plugin.modelRoot)
+    #             if writeerror:
+    #                 QtGui.QMessageBox.warning(None,'Could not save the Model','\n Error in the consistency check')
+    #             else:
+    #                  QtGui.QMessageBox.information(None,'Saved the Model','\n File Saved to \'{filename}\''.format(filename =filename),QtGui.QMessageBox.Ok)
     '''
     def getToolPanes(self):
         return super(KkitEditorView, self).getToolPanes()
@@ -316,6 +360,7 @@ class  KineticsWidget(EditorWidgetBase):
             #self.meshEntry.clear= {}
             # Compartment and its members are setup
             self.meshEntry,self.xmin,self.xmax,self.ymin,self.ymax,self.noPositionInfo = setupMeshObj(self.modelRoot)
+            #print "xmin y max ",self.xmin,self.xmax,self.ymin,self.ymax
             self.autocoordinates = False
             if self.srcdesConnection:
                 self.srcdesConnection.clear()
@@ -327,7 +372,8 @@ class  KineticsWidget(EditorWidgetBase):
                 self.autocoordinates = True
 
                 self.xmin,self.xmax,self.ymin,self.ymax,self.autoCordinatepos = autoCoordinates(self.meshEntry,self.srcdesConnection)
-            # TODO: size will be dummy at this point, busizet I need the availiable size from the Gui
+            # TODO: size will be dummy at this point, but size I need the availiable size from the Gui
+            #print 'self ',self
             if isinstance(self,kineticEditorWidget):
                 # w = self.width()
                 # h = self.height()
@@ -336,9 +382,11 @@ class  KineticsWidget(EditorWidgetBase):
                 self.size= QtCore.QSize(1000 ,550)
             else:
                 self.size = QtCore.QSize(500 ,550)
+            #self.size= QtCore.QSize(1000 ,550)
             #self.size = QtCore.QSize(300,400)
 
             # Scale factor to translate the x -y position to fit the Qt graphicalScene, scene width. """
+            #print "size ",self.size
             if self.xmax-self.xmin != 0:
                 self.xratio = (self.size.width()-10)/(self.xmax-self.xmin)
             else: self.xratio = self.size.width()-10
@@ -346,6 +394,10 @@ class  KineticsWidget(EditorWidgetBase):
             if self.ymax-self.ymin:
                 self.yratio = (self.size.height()-10)/(self.ymax-self.ymin)
             else: self.yratio = (self.size.height()-10)
+            self.xratio = int(self.xratio)
+            self.yratio = int(self.yratio)
+            #print " ratio ",self.xratio,self.yratio
+    
     def sizeHint(self):
         return QtCore.QSize(800,400)
 
@@ -469,7 +521,6 @@ class  KineticsWidget(EditorWidgetBase):
 
     def positioninfo(self,iteminfo):
         if self.noPositionInfo:
-
             try:
                 # kkit does exist item's/info which up querying for parent.path gives the information of item's parent
                 x,y = self.autoCordinatepos[(element(iteminfo).parent).path]
@@ -485,8 +536,8 @@ class  KineticsWidget(EditorWidgetBase):
             y = float(element(iteminfo).getField('y'))
             #Qt origin is at the top-left corner. The x values increase to the right and the y values increase downwards \
             #as compared to Genesis codinates where origin is center and y value is upwards, that is why ypos is negated
-            # ypos = -(y-self.ymin)*self.yratio
-            ypos = (y-self.ymin)*self.yratio
+            ypos = -(y-self.ymin)*self.yratio
+            #ypos = (y-self.ymin)*self.yratio
         xpos = (x-self.xmin)*self.xratio
 
         return(xpos,ypos)
@@ -615,13 +666,22 @@ class  KineticsWidget(EditorWidgetBase):
                 self.updateArrow(item)
 
     def deleteSolver(self):
+        print " delete Solver"
+        print "### ",moose.wildcardFind(self.modelRoot+'/data/graph#/#')
         if moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]'):
             compt = moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]')
+            print " deletSolver ", 
+            # print moose.exists(compt[0].path+'/stoich'), " ksolve ", moose.exists(compt[0].path+'/ksolve')
+            # print "gsolve ", moose.delete( compt[0].path+'/gsolve' )
             if ( moose.exists( compt[0].path+'/stoich' ) ):
                 #print "delete"
                 moose.delete( compt[0].path+'/stoich' )
+            if ( moose.exists( compt[0].path+'/ksolve' ) ):
                 moose.delete( compt[0].path+'/ksolve' )
-
+            if ( moose.exists( compt[0].path+'/gsolve' ) ):
+                moose.delete( compt[0].path+'/gsolve' )
+            for x in moose.wildcardFind( self.modelRoot+'/data/graph#/#' ):
+                    x.tick = -1
     def positionChange1(self,mooseObject):
         #If the item position changes, the corresponding arrow's are calculated
         if ( (isinstance(element(mooseObject),CubeMesh)) or (isinstance(element(mooseObject),CylMesh))):
@@ -719,7 +779,9 @@ class kineticRunWidget(KineticsWidget):
 
     def updateValue(self):
         for item in self.sceneContainer.items():
+            #print "item ",item
             if isinstance(item,ReacItem) or isinstance(item,MMEnzItem) or isinstance(item,EnzItem) or isinstance(item,PoolItemCircle) or isinstance(item,CplxItem):
+                #print " kkit py file in 774 ", item.mobj
                 item.updateValue(item.mobj)
 
     def changeBgSize(self):
@@ -732,11 +794,11 @@ class kineticRunWidget(KineticsWidget):
                 else:
                     # multipying by 1000 b'cos moose concentration is in milli in moose
                     ratio = presentConc
-                    #print "ratio",item,ratio
-                if ratio > '10':
-                    ratio = 4
-                if ratio < '0.0':
-                    ratio =0.1
+                #print "ratio",item.mobj,ratio
+                # if ratio > '10':
+                #     ratio = 9
+                # if ratio < '0.0':
+                #     ratio =0.1
                 #print "size ",ratio
                 item.updateRect(math.sqrt(abs(ratio)))
 
@@ -744,117 +806,55 @@ class kineticRunWidget(KineticsWidget):
         for item in self.sceneContainer.items():
             if isinstance(item,PoolItemCircle):
                 item.returnEllispeSize()
-
-
-    '''
-    def keyPressEvent(self,event):
-        # key1 = event.key() # key event does not distinguish between capital and non-capital letters
-        key = event.text().toAscii().toHex()
-        if (key ==  '41'): # 'A' fits the view to iconScale factor
-            itemignoreZooming = False
-            self.updateItemTransformationMode(itemignoreZooming)
-            self.view.fitInView(self.sceneContainer.itemsBoundingRect().x()-10,self.sceneContainer.itemsBoundingRect().y()-10,self.sceneContainer.itemsBoundingRect().width()+20,self.sceneContainer.itemsBoundingRect().height()+20,Qt.Qt.IgnoreAspectRatio)
-            self.drawLine_arrow(itemignoreZooming=False)
-
-        elif (key == '2e'): # '.' key, lower case for '>' zooms in
-            self.view.scale(1.1,1.1)
-
-        elif (key == '2c'): # ',' key, lower case for '<' zooms in
-            self.view.scale(1/1.1,1/1.1)
-
-        elif (key == '3c'): # '<' key. zooms-in to iconScale factor
-            self.iconScale *= 0.8
-            self.updateScale( self.iconScale )
-
-        elif (key == '3e'): # '>' key. zooms-out to iconScale factor
-            self.iconScale *= 1.25
-            self.updateScale( self.iconScale )
-
-        elif (key == '61'):  # 'a' fits the view to initial value where iconscale=1
-            self.iconScale = 1
-            self.updateScale( self.iconScale )
-            self.view.fitInView(self.sceneContainer.itemsBoundingRect().x()-10,self.sceneContainer.itemsBoundingRect().y()-10,self.sceneContainer.itemsBoundingRect().width()+20,self.sceneContainer.itemsBoundingRect().height()+20,Qt.Qt.IgnoreAspectRatio)
-
-    def updateScale( self, scale ):
-        for item in self.sceneContainer.items():
-            if isinstance(item,KineticsDisplayItem):
-                item.refresh(scale)
-                #iteminfo = item.mobj.path+'/info'
-                #xpos,ypos = self.positioninfo(iteminfo)
-                xpos = item.scenePos().x()
-                ypos = item.scenePos().y()
-
-                if isinstance(item,ReacItem) or isinstance(item,EnzItem) or isinstance(item,MMEnzItem):
-                     item.setGeometry(xpos,ypos,
-                                     item.gobj.boundingRect().width(),
-                                     item.gobj.boundingRect().height())
-                elif isinstance(item,CplxItem):
-                    item.setGeometry(item.gobj.boundingRect().width()/2,item.gobj.boundingRect().height(),
-                                     item.gobj.boundingRect().width(),
-                                     item.gobj.boundingRect().height())
-                elif isinstance(item,PoolItem):
-                     item.setGeometry(xpos, ypos,item.gobj.boundingRect().width()
-                                     +PoolItem.fontMetrics.width('  '),
-                                     item.gobj.boundingRect().height())
-                     item.bg.setRect(0, 0, item.gobj.boundingRect().width()+PoolItem.fontMetrics.width('  '), item.gobj.boundingRect().height())
-
-        self.drawLine_arrow(itemignoreZooming=False)
-        for k, v in self.qGraCompt.items():
-            rectcompt = v.childrenBoundingRect()
-            comptPen = v.pen()
-            comptWidth =  self.defaultComptsize*self.iconScale
-            comptPen.setWidth(comptWidth)
-            v.setPen(comptPen)
-            v.setRect(rectcompt.x()-comptWidth,rectcompt.y()-comptWidth,(rectcompt.width()+2*comptWidth),(rectcompt.height()+2*comptWidth))
-    '''
+    
     def addSolver(self,solver):
-        #print "addsolver call ",solver
-        #return
-
         compt = moose.wildcardFind(self.modelRoot+'/##[ISA=ChemCompt]')
         comptinfo = moose.Annotator(moose.element(compt[0]).path+'/info')
+        print " $$$$$$$$$$$$$$ ",moose.element(compt[0].path)
         previousSolver = comptinfo.solver
-        #print "pre solver from kkit ",previousSolver
-        currentSolver = "GSL"
+
+        print "pre solver from kkit ",previousSolver, solver
+        currentSolver = previousSolver
         if solver == "Gillespie":
             currentSolver = "Gillespie"
         elif solver == "Runge Kutta":
             currentSolver = "Runge Kutta"
+        elif solver == " Exponential Euler":
+            currentSolver == "Exponential Euler"
 
         if previousSolver != currentSolver:
             if ( moose.exists( compt[0].path+'/stoich' ) ):
+                print "1"
                 self.deleteSolver()
                 self.setCompartmentSolver(compt,currentSolver)
             elif ( moose.exists( compt[0].path+'/stoich' ) ):
+                print "2"
                 self.setCompartmentSolver(compt, currentSolver)
             comptinfo.solver = currentSolver
         else:
+            print "3", moose.exists(compt[0].path+'/stoich')
             if not ( moose.exists( compt[0].path+'/stoich' ) ):
                 self.setCompartmentSolver(compt,currentSolver)
-        moose.reinit()
+        for x in moose.wildcardFind( self.modelRoot+'/data/graph#/#' ):
+                    x.tick = 18
+        #self.solverStatus()
     def setCompartmentSolver(self,compt,solver):
         if solver == 'GSL' or solver == "Runge Kutta":
             solver = 'gsl'
         elif solver == 'Gillespie':
             solver = 'gssa'
-        else: 
-            solver = 'gsl'
-        # print "setComt ",compt[0]
-        # if ( moose.exists( compt[0].path+'/stoich' ) ):
-        #     moose.delete( compt[0].path+'/stoich' )
-        #     moose.delete( compt[0].path+'/ksolve' )
+        elif solver == "Exponential Euler":
+            solver = 'ee'
+        print "setCompartmentSolver ",solver
         if ( solver == 'gsl' ):
             ksolve = moose.Ksolve( compt[0].path+'/ksolve' )
         if ( solver == 'gssa' ):
-            ksolve = moose.Gsolve( compt[0].path+'/ksolve' )
+            ksolve = moose.Gsolve( compt[0].path+'/gsolve' )
         if (solver!= 'ee'):
             stoich = moose.Stoich( compt[0].path+'/stoich' )
             stoich.compartment = compt[0]
             stoich.ksolve = ksolve
-            #print "stoich path " ,compt[0].path+'/##'
             stoich.path = compt[0].path+'/##'
-
-        #print "compt in setCom ",compt[0]
         moose.reinit()
         
 if __name__ == "__main__":
