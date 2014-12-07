@@ -7,7 +7,7 @@ Release: 1%{?dist}
 Url: http://sourceforge.net/projects/moose
 Source0: moose-%{branch}.tar.bz2
 
-License: LGPLv2
+License: GPL-3.0
 
 BuildRequires: gcc-c++
 BuildRequires: cmake
@@ -17,6 +17,7 @@ BuildRequires: hdf5-devel
 BuildRequires: numpy
 BuildRequires: python-setuptools
 BuildRequires: libxml2-devel
+BuildRequires: libbz2-devel
 
 %description
 MOOSE is the base and numerical core for large, detailed simulations
@@ -32,7 +33,7 @@ deprecated. MOOSE uses Qt/OpenGL for its graphical interface. The
 entire GUI is written in Python, and the MOOSE numerical code is
 written in C++.
 
-%package -n moose-all
+%package -n %{name}-all
 Summary: Meta package of MOOSE
 %description -n %{name}-all
 This is the meta package of MOOSE. It installs all components of MOOSE
@@ -41,14 +42,16 @@ simulator.
 Requires: %{name}-gui
 Requires: %{name}-python
 
-%package -n libmoose 
+%package -n libmoose-3
 Summary: Library of MOOSE simulator
-%description -n libmoose
+%description -n libmoose-3
 This package contains C++ core of MOOSE simulator. It is intended for clusters.
 For general purpose MOOSE with python scripting support, install moose-python.
 
 Requires: gsl
 Requires: hdf5
+Requires: bzip2
+Requires: libxml2
 
 %package python
 Summary: Python-2 interface for %{name}
@@ -61,12 +64,14 @@ Requires: gsl
 Requires: PyOpenGL
 Requires: python-matplotlib-tk
 Requires: libxml2
+Requires: bzip2
+Requires: python-networkx
 
 
 %package gui
-Summary: GUI frontend of MOOSE simulator
+Summary: GUI frontend
 %description gui
-GUI frontend of MOOSE. It uses openscenegraph to visualize neural networks.
+GUI frontend. It uses openscenegraph to visualize neural networks.
 Requires: OpenSceneGraph
 Requires: moose-python
 
@@ -75,20 +80,20 @@ Requires: moose-python
 
 %build
 cd moose_3.0.0
-mkdir -p build
-cd build && cmake .. && make %{?_smp_mflags}
+mkdir -p _build
+cd _build && cmake .. && make 
 
 %install
 cd moose_3.0.0
-( cd build && make install DESTDIR=$RPM_BUILD_ROOT )
-( cd python && python2 setup.py install --root $RPM_BUILD_ROOT )
+cd _build && make install DESTDIR=$RPM_BUILD_ROOT
+cd ../python && python2 setup.py install --root $RPM_BUILD_ROOT
 
-%files -n libmoose 
+%files -n libmoose-3
 %defattr(-,root,root)
 %{_bindir}/moose
-%{_libdir}/libmoose.so.3.0.0
+%{_libdir}/libmoose.so.3
 
-%post -n libmoose -p /sbin/ldconfig
+%post -n libmoose-3 -p /sbin/ldconfig
 
 %files python
 %defattr(-,root,root)
