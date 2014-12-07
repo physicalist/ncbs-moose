@@ -27,8 +27,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
 set(INSTALL_LIB_DIR lib CACHE PATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(INSTALL_BIN_DIR bin CACHE PATH "${CMAKE_INSTALL_PREFIX}/bin")
 set(INSTALL_INCLUDE_DIR include CACHE PATH "${CMAKE_INSTALL_PREFIX}/include/")
-# DONT DELETE IT.
-LINK_DIRECTORIES(${GSL_INSTALL_DIR}/lib)
 
 ########################### COMPILER MACROS #####################################
 # Compiler 
@@ -94,72 +92,19 @@ if(DEBUG)
     set(CMAKE_BUILD_TYPE Debug)
 else()
     set(CMAKE_BUILD_TYPE Release)
-    add_definitions(-UDO_UNIT_TESTS)
+    add_definitions(-UDO_UNIT_TESTS -O2)
 endif()
 
-find_package(GSL 1.16)
+find_package(GSL 1.16 REQUIRED)
 
-# If installed version of gsl is not 1.16 then download and build gsl locally.
-# THIS IS USEFULL TO BUILD MOOSE FOR VARIOUS DISTRIBUTIONS.
-if(NOT GSL_FOUND)
-    MESSAGE("++ No GSL found. Using local gsl")
-    set(LOCAL_GSL 1)
-else()
-    if(${GSL_VERSION} VERSION_LESS 1.16)
-        MESSAGE("+ Trouble. Needed version 1.16.")
-        MESSAGE("+-- I'll go ahead, download gsl-1.16 and build it for moose. Make
-        sure you have proxy environment variables set.")
-        SET(LOCAL_GSL 1)
-    endif()
-endif()
-
-set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
-if(LOCAL_GSL)
-    MESSAGE("++ GSL include path ${GSL_HEADER_PATHS}")
-    set(GSL_SOURCE_DIR ${CMAKE_SOURCE_DIR}/gsl)
-    set(GSL_INSTALL_DIR ${CMAKE_SOURCE_DIR}/gsl)
-    include(ExternalProject)
-    ExternalProject_Add(GSL
-        PREFIX ${EXTERNAL_DIR}
-        URL ${EXTERNAL_DIR}/gsl-1.16.zip
-        CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_C_FLAGS=-fpic -DCMAKE_INSTALL_PREFIX:PATH=${GSL_INSTALL_DIR} -DBUILD_SHARED_LIBS=OFF
-        )
-    include_directories(${GSL_INSTALL_DIR}/include)
-    set(LOCAL_GSL_LIBRARIES ${GSL_INSTALL_DIR}/lib/libgsl.a 
-        ${GSL_INSTALL_DIR}/lib/libgslcblas.a
-        )
-endif()
-
-## SBML
-set(SBML_INSTALL_DIR ${CMAKE_SOURCE_DIR}/libsbml)
 find_package(LIBSBML)
-if(NOT LIBSBML_FOUND)
-    MESSAGE("+ LIBSBML NOT FOUND. Using local SBML")
-    SET(LOCAL_SBML 1)
-    include_directories(${SBML_INSTALL_DIR}/include)
+if(NOT LIBSBML)
+    MESSAGE("+ LIBSBML NOT FOUND.  Disabling SBML support.")
+    ADD_DEFINITIONS(-UUSE_SBML)
 else()
-    SET(LOCAL_SBML 0)
-    MESSAGE("++ SBML found")
+    ADD_DEFINITIONS(-DUSE_SBML)
     include_directories(${LIBSBML_INCLUDE_DIR})
 endif()
-add_definitions(-DUSE_SBML)
-
-if(LOCAL_SBML)
-    include(ExternalProject)
-    ExternalProject_Add(LIBSBML
-        PREFIX ${EXTERNAL_DIR}
-        URL ${EXTERNAL_DIR}/libSBML-5.10.2-core-src.tar.gz
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR}
-        -DBUILD_SHARED_LIBS=OFF
-        -DWITH_BZIP2=ON 
-        -DWITH_LIBXML=ON
-        
-        )
-    set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml-static.a)
-endif()
-
-## Get the install path and install the sbml
-
 
 
 ################################### SETUP BUILD ################################
@@ -167,19 +112,12 @@ include_directories(msg basecode)
 add_executable(moose-bin basecode/main.cpp)
 add_library(moose SHARED basecode/main.cpp)
 set_target_properties(moose PROPERTIES COMPILE_FLAGS  "-DMOOSE_LIB")
-set_target_properties(moose PROPERTIES VERSION 3.0.0 SOVERSION 3)
 
 ## GSL
 # Setup GSL
-if(LOCAL_GSL)
-    set(GSL_FOUND 1)
+if(GSL_FOUND)
     add_definitions(-DUSE_GSL)
     add_dependencies(moose GSL)
-else()
-    if(GSL_FOUND)
-        include_directories(${GSL_INCLUDE_DIR})
-        add_definitions(-DUSE_GSL)
-    endif()
 endif()
 
 
@@ -189,11 +127,6 @@ if(HDF5_FOUND)
     add_definitions(-DUSE_HDF5)
     include_directories(${HDF5_INCLUDE_DIR})
 endif(HDF5_FOUND)
-
-if(LIBSBML_FOUND)
-    # If LIBSBML_FOUND then we'll probably also need the LibXML2.
-    find_package(LibXML2 REQUIRED)
-endif(LIBSBML_FOUND)
 
 find_package(Termcap)
 find_package(Readline)
@@ -229,8 +162,8 @@ add_subdirectory(device)
 add_subdirectory(benchmarks)
 add_subdirectory(kinetics)
 add_subdirectory(synapse)
-add_subdirectory(sbml)
 add_subdirectory(intfire)
+add_subdirectory(examples)
 
 set(LIBRARIES ${LibBZip2_LIBRARIES})
 if(HDF5_FOUND)
@@ -239,28 +172,19 @@ endif()
 
 if(LIBSBML_FOUND)
     list(APPEND LIBRARIES moose_sbml ${LIBSBML_LIBRARY})
-else()
-    list(APPEND LIBRARIES moose_sbml ${LIBSBML_LIBRARY})
 endif()
 
 if(LIBXML2_FOUND)
     list(APPEND LIBRARIES ${LibXML2_LIBRARIES})
 endif()
 
-# Link gsl 
-if(LOCAL_GSL)
-    list(APPEND LIBRARIES ${LOCAL_GSL_LIBRARIES})
-else(GSL_FOUND)
+if(GSL_FOUND)
     list(APPEND LIBRARIES ${GSL_LIBRARIES})
 endif()
-
-## Append bz2 and xml2 to the dependencies because of sbml.
-list(APPEND LIBRARIES bz2 xml2)
 
 if(READLINE_FOUND AND TERMCAP_FOUND)
     list(APPEND LIBRARIES ${Readline_LIBRARY} ${TERMCAP_LIBRARY})
 endif()
-
 
 ###################################### LINKING #################################
 set(MOOSE_LIBRARIES
@@ -278,17 +202,19 @@ set(MOOSE_LIBRARIES
     kinetics 
     hsolve 
     mesh
-    intfire
     signeur
     tinyxml
     synapse
     diffusion 
     device
     ksolve
+    intfire
+    examples
     )
 
 target_link_libraries(moose
     ${MOOSE_LIBRARIES}
+    ${LOCAL_GSL_LIBRARIES}
     ${LIBRARIES}
     )
 
@@ -337,24 +263,18 @@ if(BUILD_PYMOOSE)
 endif(BUILD_PYMOOSE)
 
 ######################### INSTALL ##############################################
-install(TARGETS moose
+install(TARGETS moose 
     LIBRARY DESTINATION lib
     COMPONENT moose-core
     )
 
 install(TARGETS moose-bin
-    DESTINATION bin
+    RUNTIME DESTINATION bin
     COMPONENT moose-core
     )
 
-install(PROGRAMS scripts/moose
-    DESTINATION bin
-    COMPONENT moose-core
-    )
-
-install(PROGRAMS scripts/moosegui
-    DESTINATION bin
-    COMPONENT moose-gui
+install(SCRIPT python/InstallPyMoose.cmake
+    COMPONENT moose-python
     )
 
 ## Install the icon
@@ -368,60 +288,3 @@ install(FILES scripts/moose.desktop
     DESTINATION share/applications
     COMPONENT moose-python
     )
-
-# And the gui
-install(DIRECTORY gui
-    DESTINATION lib/moose
-    COMPONENT moose-gui
-    )
-
-# and the python dependencies
-install(DIRECTORY python
-    DESTINATION lib/moose
-    COMPONENT moose-python
-    )
-
-# Run script during install
-install(SCRIPT python/InstallPyMoose.cmake)
-
-########################## PACKAGING #########################################
-
-#set(CPACK_GENERATOR "DEB")
-set(CPACK_STRIP_FILES TRUE)
-set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
-#  We need to compile python scripts on the installation  host.
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Dilawar Singh")
-set(CPACK_PACKAGE_CONTACT "dilawars@ncbs.res.in")
-#set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MOOSE, The Neural Simulator")
-set(CPACK_PACKAGE_VERSION "3.0.1")
-set(CPACK_SYSTEM_NAME "i386")
-set(CPACK_PACKAGE_VERSION_MAJOR "3")
-set(CPACK_PACKAGE_VERSION_MINOR "0")
-set(CPACK_PACKAGE_VERSION_PATCH "1")
-set(CPACK_PACKAGE_VENDOR "NCBS Bangalore")
-set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Dilawar Singh <dilawars@ncbs.res.in>")
-if(WIN32)
-    MESSAGE("++ Currently only Unix is supported")
-else()
-    set(CPACK_STRIP_FILES moose)
-endif()
-set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libopenmpi, libhdf5-7, python-numpy, python-matplotlib, python-qt4, openscenegraph, python-torando, python-suds, python-nose, python-certifi, python-setuptools, libxml2"
-)
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-    "${CMAKE_SOURCE_DIR}/scripts/postinst;${CMAKE_SOURCE_DIR}/scripts/prerm;"
-    )
-include(CPack)
-
-#####################  TESTING  ###############################################
-#include(CTest)
-#find_package(PythonInterp REQUIRED)
-#set(ENV{PYTHONPATH} "${CMAKE_SOURCE_DIR}/python")
-#message("++ PYTHONPATH is set to $ENV{PYTHONPATH}")
-#
-#add_test(NAME check_moose
-#    WORKING_DIRECTORY .
-#    COMMAND ./run_moose.sh
-#    )

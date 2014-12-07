@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
-add_library(intfire
-    IntFireBase.cpp
-    LIF.cpp
-    QIF.cpp
-    ExIF.cpp
+INCLUDE_DIRECTORIES(../basecode)
+ADD_LIBRARY(intfire STATIC
     AdExIF.cpp
     AdThreshIF.cpp
+    ExIF.cpp
+    IntFireBase.cpp
     IzhIF.cpp
+    LIF.cpp
+    QIF.cpp
     testIntFire.cpp
     )
 
