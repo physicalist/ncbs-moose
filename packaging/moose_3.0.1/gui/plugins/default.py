@@ -64,6 +64,8 @@ from checkcombobox import CheckComboBox
 from mplugin import MoosePluginBase, EditorBase, EditorWidgetBase, PlotBase, RunBase
 #from defaultToolPanel import DefaultToolPanel
 #from DataTable import DataTable
+from matplotlib import rcParams
+rcParams.update({'figure.autolayout': True})
 from matplotlib.lines import Line2D
 from PlotWidgetContainer import PlotWidgetContainer
 
@@ -616,7 +618,6 @@ class SchedulingWidget(QtGui.QWidget):
         self.continueFlag               = False
 
     def runSimulation(self):
-
         status = self.solverStatus()
                # if status != 0 or status == -1:
         #     return
@@ -633,8 +634,8 @@ class SchedulingWidget(QtGui.QWidget):
             self.runtime = 100.0
             self.simulationRuntime.setText("100.0")
         self.checkConsistency()
+        self.continueSimulation = True
         self.runner.runSimulation(self.runtime)
-
         # return
         # if self.continueFlag:
         #     self.continueSimulation()
@@ -700,6 +701,7 @@ class SchedulingWidget(QtGui.QWidget):
         else:
             stoich = moose.Stoich(compt[0].path+'/stoich')
             status = int(stoich.status)
+            print("Status =>", status)
             if status == -1:
                 QtGui.QMessageBox.warning(None,"Could not Run the model","Warning: Reaction path not yet assigned.\n ")
                 return -1
@@ -723,7 +725,7 @@ class SchedulingWidget(QtGui.QWidget):
                 return 16
             elif status == 0:
                 print "Successfully built stoichiometry matrix.\n "
-                moose.reinit()
+                # moose.reinit()
                 return 0
     # def setElectricalParameters(self):
     #     chemicalPreferences     = self.preferences.getChemicalPreferences()
@@ -837,11 +839,21 @@ class PlotWidget(QWidget):
         self.model = model
         self.graph = graph
         self.index = index
+
+        self.menu = self.getContextMenu()
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.connect( self
+                    , SIGNAL("customContextMenuRequested(QPoint)")
+                    , self
+                    , SLOT("contextMenuRequested(QPoint)")
+                    )
+
         self.canvas = CanvasWidget(self.model, self.graph, self.index)
         self.canvas.setParent(self)
-        self.canvas.figure.subplots_adjust(left = 0.18, bottom=0.2)
         self.navToolbar = NavigationToolbar(self.canvas, self)
         self.hackNavigationToolbar()
+        self.canvas.mpl_connect('pick_event',self.togglePlot)
+        # self.canvas.
         # self.navToolbar.addSeparator()
         layout = QtGui.QGridLayout()
         # canvasScrollArea = QScrollArea()
@@ -854,7 +866,10 @@ class PlotWidget(QWidget):
         self.pathToLine = defaultdict(set)
         self.lineToDataSource = {}
         self.axesRef = self.canvas.addSubplot(1, 1)
-        self.onclick_count = 0
+        box = self.axesRef.get_position()
+        self.axesRef.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+        self.legend  = None
         # layout.setSizeConstraint( QLayout.SetNoConstraint )
         # self.setSizePolicy( QtGui.QSizePolicy.Expanding
         #                   , QtGui.QSizePolicy.Expanding
@@ -864,20 +879,13 @@ class PlotWidget(QWidget):
         # print("**********************")
         # print(desktop.screenGeometry())
         # print("***********************")
-        self.setMinimumSize(desktop.screenGeometry().width() / 4, desktop.screenGeometry().height() / 4)
+        self.setMinimumSize(desktop.screenGeometry().width() / 4, desktop.screenGeometry().height() / 3)
         # self.setMaximumSize(desktop.screenGeometry().width() / 2, desktop.screenGeometry().height() / 2)
         # self.setMinimumSize(self.width(), self.height())
         # self.setMaximumSize(2 * self.width(), 2* self.height())
         # QtCore.QObject.connect(utils.tableEmitter,QtCore.SIGNAL("tableCreated()"),self.plotAllData)
         self.canvas.updateSignal.connect(self.plotAllData)
         self.plotAllData()
-        # self.menu = self.getContextMenu()
-        # self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect( self
-                    , SIGNAL("customContextMenuRequested(QPoint)")
-                    , self
-                    , SLOT("contextMenuRequested(QPoint)")
-                    )
         # self.plotView = PlotView(model, graph, index, self)
         #self.dataTable = DataTable()
         #utils.tableCreated.connect(plotAllData)
@@ -910,10 +918,7 @@ class PlotWidget(QWidget):
         action  = QAction(icon, "Toggle Grid", self.navToolbar)
         # self.navToolbar.addAction(action)
         action.triggered.connect(self.canvas.toggleGrid)
-
         self.navToolbar.insertAction(self.navToolbar.actions()[2], action)
-
-
         self.navToolbar.insertSeparator(self.navToolbar.actions()[3])
 
 
@@ -921,18 +926,26 @@ class PlotWidget(QWidget):
     def plotAll(self):
         return len(self.pathToLine) == 0
 
-    # def getContextMenu(self):
-    #     menu =  QMenu()
-    #     # closeAction      = menu.addAction("Delete")
-    #     gridToggleAction = menu.addAction("Toggle Grid")
-    #     gridToggleAction.triggered.connect(self.canvas.toggleGrid)
-    #     # configureAction.triggered.connect(self.configure)
-    #     # self.connect(,SIGNAL("triggered()"),
-    #     #                 self,SLOT("slotShow500x500()"))
-    #     # self.connect(action1,SIGNAL("triggered()"),
-    #     #                 self,SLOT("slotShow100x100()"))
+    def toggleLegend(self):
+        if self.legend is not None:
+            self.legend.set_visible(not self.legend.get_visible())
+        self.canvas.draw()
 
-    #     return menu
+    def getContextMenu(self):
+        menu =  QMenu()
+        # closeAction      = menu.addAction("Delete")
+        exportCsvAction = menu.addAction("Export to CSV")
+        exportCsvAction.triggered.connect(self.saveAllCsv)
+        toggleLegendAction = menu.addAction("Toggle legend")
+        toggleLegendAction.triggered.connect(self.toggleLegend)
+        self.removeSubmenu = menu.addMenu("Remove")
+        # configureAction.triggered.connect(self.configure)
+        # self.connect(,SIGNAL("triggered()"),
+        #                 self,SLOT("slotShow500x500()"))
+        # self.connect(action1,SIGNAL("triggered()"),
+        #                 self,SLOT("slotShow100x100()"))
+
+        return menu
 
     def deleteGraph(self):
         print("Deleting " + self.graph.path)
@@ -948,9 +961,9 @@ class PlotWidget(QWidget):
         print("Displaying configure view!")
         self.plotView.getCentralWidget().show()
 
-    # @pyqtSlot(QtCore.QPoint)
-    # def contextMenuRequested(self,point):
-    #     # menu     = QtGui.QMenu()
+    @pyqtSlot(QtCore.QPoint)
+    def contextMenuRequested(self,point):
+        # menu     = QtGui.QMenu()
 
     #     # action1 = menu.addAction("Set Size 100x100")
     #     # action2 = menu.addAction("Set Size 500x500")
@@ -960,7 +973,7 @@ class PlotWidget(QWidget):
     #     #                 self,SLOT("slotShow500x500()"))
     #     # self.connect(action1,SIGNAL("triggered()"),
     #     #                 self,SLOT("slotShow100x100()"))
-    #     self.menu.exec_(self.mapToGlobal(point))
+        self.menu.exec_(self.mapToGlobal(point))
 
     def setModelRoot(self, path):
         self.modelRoot = path
@@ -991,8 +1004,24 @@ class PlotWidget(QWidget):
                 color = 'white'
         return color
 
+
+    def removePlot(self, table):
+        print("removePlot =>", table)
+        moose.delete(table)
+        self.plotAllData()
+
+    def makeRemovePlotAction(self, label, table):
+        action = self.removeSubmenu.addAction(label)
+        action.triggered.connect(lambda: self.removePlot(table))
+        return action
+
     def plotAllData(self):
         """Plot data from existing tables"""
+        self.axesRef.lines = []
+        self.pathToLine.clear()
+        self.removeSubmenu.clear()
+        if self.legend is not None:
+            self.legend.set_visible(False)
         path = self.model.path
         modelroot = self.model.path
         time = moose.Clock('/clock').currentTime
@@ -1003,15 +1032,16 @@ class PlotWidget(QWidget):
 
         plotTables = list(moose.wildcardFind(self.graph.path + '/##[TYPE=Table]'))
         plotTables.extend(moose.wildcardFind(self.graph.path + '/##[TYPE=Table2]'))
-
         if len (plotTables) > 0:
             for tabId in plotTables:
                 tab = moose.Table(tabId)
+                print("Table =>", tab)
                 line_list=[]
                 tableObject = tab.neighbors['requestOut']
                 # Not a good way
                 #tableObject.msgOut[0]
                 if len(tableObject) > 0:
+
                     # This is the default case: we do not plot the same
                     # table twice. But in special cases we want to have
                     # multiple variations of the same table on different
@@ -1039,6 +1069,7 @@ class PlotWidget(QWidget):
                                 + "."
                                 + field
                                 )
+                        self.makeRemovePlotAction(label, tab)
                         if (color != '#FFFFFF'):
                             newLines = self.addTimeSeries(tab, label=label,color=color)
                         else:
@@ -1057,65 +1088,60 @@ class PlotWidget(QWidget):
                                 ts = xSrc.vector.copy()
                             line.set_data(ts, tab.vector.copy())
                     tabList.append(tab)
-                    self.canvas.mpl_connect('pick_event',self.onclick)
 
-            if len(tabList) > 0:
-                leg = self.canvas.callAxesFn( 'legend'
-                                            , loc               ='upper right'
-                                            , prop              = {'size' : 10 }
-                                            # , bbox_to_anchor    = (0.5, -0.03)
-                                             , fancybox          = False
-                                            # , shadow            = True
-                                            , ncol              = 1
+            # if len(tabList) > 0:
+        self.legend = self.canvas.callAxesFn( 'legend'
+                                            , loc='upper right'
+                                            , prop= {'size' : 10 }
+                                            # , bbox_to_anchor=(1.0, 0.5)
+                                            , fancybox = True
+                                            , shadow=False
+                                            , ncol=1
                                             )
-                # leg.draggable(False)
-                # print(leg.get_window_extent())
-                        #leg = self.canvas.callAxesFn('legend')
-                        #leg = self.canvas.callAxesFn('legend',loc='upper left', fancybox=True, shadow=True)
-                        #global legend
-                        #legend =leg
-                for legobj in leg.legendHandles:
-                    legobj.set_linewidth(5.0)
-                    legobj.set_picker(True)
-            else:
-                print "returning as len tabId is zero ",tabId, " tableObject ",tableObject, " len ",len(tableObject)
-            self.canvas.draw()
+        if self.legend is not None:
+            self.legend.draggable()
+            self.legend.get_frame().set_alpha(0.5)
+            self.legend.set_visible(True)
 
 
-    def onclick(self,event1):
+        self.canvas.draw()
+
+            #     # leg = self.canvas.callAxesFn( 'legend'
+            #     #                             , loc               ='upper right'
+            #     #                             , prop              = {'size' : 10 }
+            #     #                             # , bbox_to_anchor    = (0.5, -0.03)
+            #     #                              , fancybox          = False
+            #     #                             # , shadow            = True
+            #     #                             , ncol              = 1
+            #     #                             )
+            #     # leg.draggable(False)
+            #     # print(leg.get_window_extent())
+            #             #leg = self.canvas.callAxesFn('legend')
+            #             #leg = self.canvas.callAxesFn('legend',loc='upper left', fancybox=True, shadow=True)
+            #             #global legend
+            #             #legend =leg
+            #     for legobj in leg.legendHandles:
+            #         legobj.set_linewidth(5.0)
+            #         legobj.set_picker(True)
+            # else:
+            #     print "returning as len tabId is zero ",tabId, " tableObject ",tableObject, " len ",len(tableObject)
+
+    def togglePlot(self, event):
         #print "onclick",event1.artist.get_label()
         #harsha:To workout with double-event-registered on onclick event
         #http://stackoverflow.com/questions/16278358/double-event-registered-on-mouse-click-if-legend-is-outside-axes
-        if self.onclick_count % 2 == 0:
-            legline = event1.artist
-            #vis = event1.artist.get_visible()
-            #self.canvas.figure.get_axes()[0].lines[4].set_visible(True)
-            axes = self.canvas.figure.get_axes()
-            for a in range(len(axes)):
-                #lines =self.canvas.figure.get_axes()[a].lines
-                lines = axes[a].lines
-                for plotline in lines:
-                    if plotline.get_label() == event1.artist.get_label():
-                        vis = not plotline.get_visible()
-                        plotline.set_visible(vis)
-            #global event
-            #event = event1
-            if vis:
-                legline.set_alpha(1.0)
-            else:
-                legline.set_alpha(0.2)
-            self.canvas.draw()
-        self.onclick_count+=1
+        legline = event.artist
+        for line in self.axesRef.lines:
+            if line.get_label() == event.artist.get_label():
+                vis = not line.get_visible()
+                line.set_visible(vis)
+                if vis:
+                    legline.set_alpha(1.0)
+                else:
+                    legline.set_alpha(0.2)
+                break
+        self.canvas.draw()
 
-        '''leg = self.canvas.callAxesFn('legend',loc='upper center',prop={'size':10},bbox_to_anchor=(0.5, -0.03),fancybox=True, shadow=True, ncol=3)
-        print dir(leg)
-        for l in leg.get_lines():
-            l.set_visible(vis)
-        if vis:
-            legline.set_alpha(1.0)
-        else:
-            legline.set_alpha(0.2)
-        '''
     def addTimeSeries(self, table, *args, **kwargs):
         ts = np.linspace(0, moose.Clock('/clock').currentTime, len(table.vector))
         return self.canvas.plot(ts, table.vector, *args, **kwargs)
@@ -1158,8 +1184,9 @@ class PlotWidget(QWidget):
             axes.relim()
             axes.autoscale_view(tight=True,scalex=True,scaley=True)
         self.canvas.draw()
-    #Harsha: Passing directory path to save plots
-    def saveCsv(self, line,directory):
+
+
+    def saveCsv(self, line, directory):
         """Save selected plot data in CSV file"""
         src = self.lineToDataSource[line]
         xSrc = moose.element(src.x)
@@ -1205,6 +1232,9 @@ class PlotWidget(QWidget):
             self._menus.append(self.plotMenu)
         return self._menus
 
+    # def resizeEvent(self, event):
+    #     print("Here", event)
+        # self.canvas.figure.subplots_adjust(bottom=0.2)#, left = 0.18)
 
 ###################################################
 #
