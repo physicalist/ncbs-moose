@@ -31,6 +31,10 @@ case "$1" in
             rm -R /usr/share/doc/moose
 	fi
 
+        if [ -d /usr/share/moose ]; then
+            rm -R /usr/share/moose
+        fi
+
 	if [ -d /usr/share/pyshared/moose ]; then
             rm -R /usr/share/pyshared/moose
 	fi
