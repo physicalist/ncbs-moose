@@ -358,6 +358,11 @@ install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moose
     COMPONENT moose-core
     )
 
+install(FILES ${PROJECT_SOURCE_DIR}/scripts/moose
+    DESTINATION bin
+    COMPONENT moose-core
+    )
+
 install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moosegui
     DESTINATION bin
     COMPONENT moose-gui
