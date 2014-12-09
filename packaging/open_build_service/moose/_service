@@ -2,7 +2,7 @@
     <service name="tar_scm">
         <param name="scm">svn</param>
         <param name="url">https://svn.code.sf.net/p/moose/code/packaging</param>
-        <param name="version">3.0.0</param>
+        <param name="version">3.0.1</param>
         <param name="filename">moose</param>
     </service>
     <service name="recompress">
