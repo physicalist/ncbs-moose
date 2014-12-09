@@ -1,6 +1,6 @@
-<directory name="moose" rev="35" srcmd5="cce4624086eff86a1070feaa7b52f611" vrev="28">
-  <serviceinfo code="succeeded" xsrcmd5="f301ee7f845195568f92ae9c2bdb8b9f" />
+<directory name="moose" rev="36" srcmd5="d399f719eff46d3341a84b417f5b67d5" vrev="29">
+  <serviceinfo code="succeeded" xsrcmd5="a1329fdae17cc6a39025110353b9d747" />
   <entry md5="4463c65100082b9fe397dd36ce1b3078" mtime="1415796630" name="README" size="388" />
-  <entry md5="80bca45322f411f5d22d3728229ee85f" mtime="1415259899" name="_service" size="550" />
+  <entry md5="0f29008069d1c2f021c666b7a66f5607" mtime="1418116391" name="_service" size="550" />
   <entry md5="7d95534b3c9dd58b6f11ac5e50b875bd" mtime="1417237541" name="moose.spec" size="2696" />
 </directory>
