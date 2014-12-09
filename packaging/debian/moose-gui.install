@@ -1,2 +1,2 @@
-gui   usr/share/moose
+gui   usr/lib/moose
 scripts/moosegui usr/bin
