@@ -387,6 +387,13 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
     COMPONENT moose-python
     )
 
+## The demos goes here.
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/Demos
+    DESTINATION share/moose
+    COMPONENT moose-python
+    )
+
+
 ########################## PACKAGING #########################################
 
 #set(CPACK_GENERATOR "DEB")
