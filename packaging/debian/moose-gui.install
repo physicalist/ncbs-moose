@@ -1,1 +1,2 @@
-scripts/moosegui usr/bin
+usr/lib/moose/gui
+usr/bin/moosegui
