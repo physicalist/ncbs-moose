@@ -387,9 +387,6 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
     COMPONENT moose-python
     )
 
-# Run script during install
-install(SCRIPT ${PROJECT_SOURCE_DIR}/python/InstallPyMoose.cmake)
-
 ########################## PACKAGING #########################################
 
 #set(CPACK_GENERATOR "DEB")
