@@ -122,8 +122,8 @@ endif()
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/dependencies)
 if(LOCAL_GSL)
     MESSAGE("++ GSL include path ${GSL_HEADER_PATHS}")
-    set(GSL_SOURCE_DIR ${CMAKE_SOURCE_DIR}/gsl)
-    set(GSL_INSTALL_DIR ${CMAKE_SOURCE_DIR}/gsl)
+    set(GSL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/gsl)
+    set(GSL_INSTALL_DIR ${PROJECT_SOURCE_DIR}/gsl)
     include(ExternalProject)
     ExternalProject_Add(GSL
         PREFIX ${EXTERNAL_DIR}
@@ -137,7 +137,7 @@ if(LOCAL_GSL)
 endif()
 
 ## SBML
-set(SBML_INSTALL_DIR ${CMAKE_SOURCE_DIR}/libsbml)
+set(SBML_INSTALL_DIR ${PROJECT_SOURCE_DIR}/libsbml)
 find_package(LIBSBML)
 if(NOT LIBSBML_FOUND)
     MESSAGE("+ LIBSBML NOT FOUND. Using local SBML")
@@ -327,7 +327,7 @@ if(BUILD_PYMOOSE)
 
     set_target_properties(_moose PROPERTIES COMPILE_DEFINITIONS "PYMOOSE")
     set_target_properties(_moose PROPERTIES 
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/python/moose"
+        LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/python/moose"
         PREFIX ""
         )
     list(APPEND LIBRARIES ${PYTHON_LIBRARIES})
@@ -433,7 +433,7 @@ include(CPack)
 #####################  TESTING  ###############################################
 #include(CTest)
 #find_package(PythonInterp REQUIRED)
-#set(ENV{PYTHONPATH} "${CMAKE_SOURCE_DIR}/python")
+#set(ENV{PYTHONPATH} "${PROJECT_SOURCE_DIR}/python")
 #message("++ PYTHONPATH is set to $ENV{PYTHONPATH}")
 #
 #add_test(NAME check_moose
