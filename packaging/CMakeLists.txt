@@ -353,42 +353,42 @@ install(TARGETS moose-bin
     COMPONENT moose-core
     )
 
-install(PROGRAMS scripts/moose
+install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moose
     DESTINATION bin
     COMPONENT moose-core
     )
 
-install(PROGRAMS scripts/moosegui
+install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moosegui
     DESTINATION bin
     COMPONENT moose-gui
     )
 
 ## Install the icon
-install(FILES gui/icons/moose_icon.png 
+install(FILES ${PROJECT_SOURCE_DIR}/gui/icons/moose_icon.png 
     DESTINATION share/moose
     COMPONENT moose-python
     )
 
 # And the desktop file.
-install(FILES scripts/moose.desktop
+install(FILES ${PROJECT_SOURCE_DIR}/scripts/moose.desktop
     DESTINATION share/applications
     COMPONENT moose-python
     )
 
 # And the gui
-install(DIRECTORY gui
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/gui
     DESTINATION lib/moose
     COMPONENT moose-gui
     )
 
 # and the python dependencies
-install(DIRECTORY python
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
     DESTINATION lib/moose
     COMPONENT moose-python
     )
 
 # Run script during install
-install(SCRIPT python/InstallPyMoose.cmake)
+install(SCRIPT ${PROJECT_SOURCE_DIR}/python/InstallPyMoose.cmake)
 
 ########################## PACKAGING #########################################
 
@@ -417,7 +417,7 @@ set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libopenmpi, libhdf5-7, python-numpy, python-matplotlib, python-qt4, openscenegraph, python-torando, python-suds, python-nose, python-certifi, python-setuptools, libxml2"
 )
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-    "${CMAKE_SOURCE_DIR}/scripts/postinst;${CMAKE_SOURCE_DIR}/scripts/prerm;"
+    "${PROJECT_SOURCE_DIR}/scripts/postinst;${PROJECT_SOURCE_DIR}/scripts/prerm;"
     )
 include(CPack)
 
