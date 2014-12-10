@@ -81,28 +81,29 @@ Requires: moose-python
 %setup -q -n %{name}-%{branch}
 
 %build
-cd moose_3.0.1
 mkdir -p _build
 cd _build && cmake .. && make 
 
 %install
-cd moose_3.0.1
 cd _build && make install DESTDIR=$RPM_BUILD_ROOT
-cd ../python && python2 setup.py install --root $RPM_BUILD_ROOT
 
 %files -n libmoose-3
 %defattr(-,root,root)
 %{_bindir}/moose
-%{_libdir}/libmoose.so.3
+%{_prefix}/lib/libmoose.so.3
 
 %post -n libmoose-3 -p /sbin/ldconfig
 
 %files python
 %defattr(-,root,root)
-%{python_sitelib}/*
+%dir %{_prefix}/lib/moose/python
+
+%post python
+cd %{_prefix}/lib/moose/python && %{__python2} setup.py install
+
 
 %files gui
 %defattr(-,root,root)
 %{_bindir}/moosegui
-%{_libdir}/moose
-%dir %{_libdir}/moose/gui
+%{_prefix}/lib/moose
+%dir %{_prefix}/lib/moose/gui

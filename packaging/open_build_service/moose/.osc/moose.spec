@@ -1,8 +1,8 @@
-%global branch 3.0.0
+%global branch 3.0.1
 %define _unpackaged_files_terminate_build 0 
 Name: moose
 Summary: MOOSE is the Multiscale Object-Oriented Simulation Environment
-Version: 3.0.0
+Version: 3.0.1
 Release: 1%{?dist}
 Url: http://sourceforge.net/projects/moose
 Source0: moose-%{branch}.tar.bz2
@@ -49,7 +49,9 @@ This package contains C++ core of MOOSE simulator. It is intended for clusters.
 For general purpose MOOSE with python scripting support, install moose-python.
 
 Requires: gsl
-Requires: hdf5
+Requires: hdf
+Requires: bzip2
+Requires: libxml2
 Requires: bzip2
 Requires: libxml2
 
@@ -79,19 +81,17 @@ Requires: moose-python
 %setup -q -n %{name}-%{branch}
 
 %build
-cd moose_3.0.0
 mkdir -p _build
 cd _build && cmake .. && make 
 
 %install
-cd moose_3.0.0
 cd _build && make install DESTDIR=$RPM_BUILD_ROOT
 cd ../python && python2 setup.py install --root $RPM_BUILD_ROOT
 
 %files -n libmoose-3
 %defattr(-,root,root)
 %{_bindir}/moose
-%{_libdir}/libmoose.so.3
+%{_prefix}/lib/libmoose.so.3
 
 %post -n libmoose-3 -p /sbin/ldconfig
 
@@ -102,5 +102,5 @@ cd ../python && python2 setup.py install --root $RPM_BUILD_ROOT
 %files gui
 %defattr(-,root,root)
 %{_bindir}/moosegui
-%{_libdir}/moose
-%dir %{_libdir}/moose/gui
+%{_prefix}/lib/moose
+%dir %{_prefix}/lib/moose/gui
