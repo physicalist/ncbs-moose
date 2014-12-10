@@ -49,7 +49,7 @@ This package contains C++ core of MOOSE simulator. It is intended for clusters.
 For general purpose MOOSE with python scripting support, install moose-python.
 
 Requires: gsl
-Requires: hdf
+Requires: hdf5
 Requires: bzip2
 Requires: libxml2
 Requires: bzip2
@@ -67,6 +67,7 @@ Requires: PyOpenGL
 Requires: python-matplotlib-tk
 Requires: libxml2
 Requires: bzip2
+Requires: hdf5
 Requires: python-networkx
 
 
@@ -86,7 +87,6 @@ cd _build && cmake .. && make
 
 %install
 cd _build && make install DESTDIR=$RPM_BUILD_ROOT
-cd ../python && python2 setup.py install --root $RPM_BUILD_ROOT
 
 %files -n libmoose-3
 %defattr(-,root,root)
@@ -97,7 +97,11 @@ cd ../python && python2 setup.py install --root $RPM_BUILD_ROOT
 
 %files python
 %defattr(-,root,root)
-%{python_sitelib}/*
+%dir %{_prefix}/lib/moose/python
+
+%post python
+cd %{_prefix}/lib/moose/python && %{__python2} setup.py install
+
 
 %files gui
 %defattr(-,root,root)

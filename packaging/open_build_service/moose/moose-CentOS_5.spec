@@ -13,8 +13,8 @@ BuildRequires: gcc-c++
 BuildRequires: cmake
 BuildRequires: python-devel
 BuildRequires: gsl-devel
-BuildRequires: hdf5-devel
-BuildRequires: numpy
+BuildRequires: hdf-devel
+BuildRequires: python-numpy-devel
 BuildRequires: python-setuptools
 BuildRequires: libxml2-devel
 BuildRequires: libbz2-devel
@@ -49,26 +49,28 @@ This package contains C++ core of MOOSE simulator. It is intended for clusters.
 For general purpose MOOSE with python scripting support, install moose-python.
 
 Requires: gsl
-Requires: hdf5
+Requires: hdf
 Requires: bzip2
 Requires: libxml2
 Requires: bzip2
 Requires: libxml2
+Requires: hdf
 
 %package python
 Summary: Python-2 interface for %{name}
 %description python
 This package contains %{_summary}.
 
-Requires: numpy
+Requires: python-numpy
 Requires: PyQt4
 Requires: gsl
 Requires: PyOpenGL
 Requires: python-matplotlib-tk
 Requires: libxml2
 Requires: bzip2
-Requires: hdf5
 Requires: python-networkx
+Requires: hdf
+Requires: libxml2
 
 
 %package gui
