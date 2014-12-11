@@ -73,7 +73,7 @@ if(ENABLE_STD_2011)
 endif(ENABLE_STD_2011)
 
 # DO UNIT TESTS 
-set(ENABLE_UNIT_TESTS 0)
+set(ENABLE_UNIT_TESTS 1)
 if(ENABLE_UNIT_TESTS)
     MESSAGE("++ Unit testing enabled.")
     add_definitions(-DDO_UNIT_TESTS)
@@ -109,10 +109,20 @@ if(DEBUG)
     set(CMAKE_BUILD_TYPE Debug)
 else()
     set(CMAKE_BUILD_TYPE Release)
-    add_definitions(-UDO_UNIT_TESTS)
 endif()
 
-#### GSL
+## Setup hdf5
+find_package(HDF5)
+if(HDF5_FOUND)
+    include_directories(${HDF5_INCLUDE_DIR})
+else()
+    MESSAGE("++ Using local HDF5")
+    SET(LOCAL_HDF 1)
+    set(HDF5_FOUND)
+endif(HDF5_FOUND)
+add_definitions(-DUSE_HDF5)
+
+
 find_package(GSL 1.16)
 # If installed version of gsl is not 1.16 then download and build gsl locally.
 # THIS IS USEFULL TO BUILD MOOSE FOR VARIOUS DISTRIBUTIONS.
@@ -159,16 +169,36 @@ else()
 endif()
 add_definitions(-DUSE_SBML)
 
+set(HDF_INSTALL_DIR ${PROJECT_SOURCE_DIR}/libhdf)
+include_directories(${HDF_INSTALL_DIR}/include)
+if(LOCAL_HDF)
+    include(ExternalProject)
+    ExternalProject_Add(LIBHDF
+        PREFIX ${EXTERNAL_DIR}
+        URL ${EXTERNAL_DIR}/hdf5-1.8.14.tar.gz
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${HDF_INSTALL_DIR}
+        -DBUILD_SHARED_LIBS:BOOL=OFF
+        -DBUILD_STATIC_EXECS:BOOL=ON
+        -DHDF5_BUILD_CPP_LIB:BOOL=ON
+        #-C Release
+        -DWITH_BZIP2:BOOL=ON 
+        -DWITH_LIBXML:BOOL=ON
+        )
+    set(HDF5_LIBRARY ${HDF_INSTALL_DIR}/lib/libhdf5_cpp.a
+        ${HDF_INSTALL_DIR}/lib/libhdf5.a
+        )
+endif()
+
+
 if(LOCAL_SBML)
     include(ExternalProject)
     ExternalProject_Add(LIBSBML
         PREFIX ${EXTERNAL_DIR}
         URL ${EXTERNAL_DIR}/libSBML-5.10.2-core-src.tar.gz
         CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR}
-        -DBUILD_SHARED_LIBS=OFF
-        -DWITH_BZIP2=ON 
-        -DWITH_LIBXML=ON
-        
+        -DBUILD_SHARED_LIBS:BOOL=OFF
+        -DWITH_BZIP2:BOOL=ON 
+        -DWITH_LIBXML:BOOL=ON
         )
     set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml-static.a)
 endif()
@@ -197,13 +227,6 @@ else()
     endif()
 endif()
 
-
-## Setup hdf5
-find_package(HDF5)
-if(HDF5_FOUND)
-    add_definitions(-DUSE_HDF5)
-    include_directories(${HDF5_INCLUDE_DIR})
-endif(HDF5_FOUND)
 
 if(LIBSBML_FOUND)
     # If LIBSBML_FOUND then we'll probably also need the LibXML2.
@@ -249,9 +272,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/sbml)
 add_subdirectory(${PROJECT_SOURCE_DIR}/intfire)
 
 set(LIBRARIES ${LibBZip2_LIBRARIES})
-if(HDF5_FOUND)
-    list(APPEND LIBRARIES ${HDF5_LIBRARY})
-endif()
+list(APPEND LIBRARIES ${HDF5_LIBRARY})
 
 if(LIBSBML_FOUND)
     list(APPEND LIBRARIES moose_sbml ${LIBSBML_LIBRARY})
@@ -279,6 +300,9 @@ endif()
 
 
 ###################################### LINKING #################################
+MESSAGE("++ Linking: ${MOOSE_LIBRARIES}")
+MESSAGE(" ++ ${LIBRARIES}")
+
 set(MOOSE_LIBRARIES
     moose_builtins
     basecode
@@ -305,12 +329,14 @@ set(MOOSE_LIBRARIES
 
 target_link_libraries(moose
     ${MOOSE_LIBRARIES}
+    #"-Wl,--whole-archive"
     ${LIBRARIES}
+    #"-Wl,--no-whole-archive"
     )
 
-target_link_libraries(moose-bin 
-    moose
-    )
+#target_link_libraries(moose-bin 
+    #moose
+    #)
 
 ######################### BUILD PYMOOSE ########################################
 set(BUILD_PYMOOSE 1)
@@ -345,10 +371,10 @@ if(BUILD_PYMOOSE)
         _moose 
         # This library is in pymoose folder.
         moosepython  
-        "-Wl,--whole-archive"
         ${MOOSE_LIBRARIES}
-        "-Wl,--no-whole-archive"
+        "-Wl,--whole-archive"
         ${LIBRARIES}
+        "-Wl,--no-whole-archive"
         )
 
 endif(BUILD_PYMOOSE)
@@ -359,10 +385,10 @@ install(TARGETS moose
     COMPONENT moose-core
     )
 
-install(TARGETS moose-bin
-    DESTINATION bin
-    COMPONENT moose-core
-    )
+#install(TARGETS moose-bin
+    #DESTINATION bin
+    #COMPONENT moose-core
+    #)
 
 install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moose
     DESTINATION bin
@@ -434,27 +460,15 @@ else()
     set(CPACK_STRIP_FILES moose)
 endif()
 set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
-
 set(CPACK_DEBIAN_PACKAGE_DEPENDS 
-    "libopenmpi-dev
-    , python-numpy, python-matplotlib, python-qt4
-    , openscenegraph
-    , python-tornado, python-suds, python-nose
-    , python-setuptools, libxml2"
-    )
+    "openmpi-bin
+    , python-numpy, python-matplotlib
+    , python-qt4, openscenegraph
+    , python-tornado, python-suds, python-nose, python-setuptools
+    , libxml2"
+)
 
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
     "${CMAKE_SOURCE_DIR}/debian/postinst;${CMAKE_SOURCE_DIR}/debian/prerm;"
     )
 include(CPack)
-
-#####################  TESTING  ###############################################
-#include(CTest)
-#find_package(PythonInterp REQUIRED)
-#set(ENV{PYTHONPATH} "${PROJECT_SOURCE_DIR}/python")
-#message("++ PYTHONPATH is set to $ENV{PYTHONPATH}")
-#
-#add_test(NAME check_moose
-#    WORKING_DIRECTORY .
-#    COMMAND ./run_moose.sh
-#    )
