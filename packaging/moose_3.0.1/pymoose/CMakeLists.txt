@@ -3,7 +3,6 @@ add_definitions(-DPYMOOSE)
 include_directories(../basecode ../msg)
 
 ADD_LIBRARY(moosepython STATIC
-    moosemodule.cpp
     mfield.cpp
     melement.cpp
     vec.cpp
