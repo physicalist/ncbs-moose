@@ -1,5 +1,4 @@
 file(GLOB random_SRC 
-    "*.h"
     "*.cpp"
 )
 include_directories(../basecode ..)

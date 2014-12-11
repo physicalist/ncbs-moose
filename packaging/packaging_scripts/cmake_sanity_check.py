@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 """cmake_sanity_check.py: Check if Cmake files are ok.
 
 Last modified: Sat Jan 18, 2014  05:01PM
@@ -54,16 +54,29 @@ def checkSrcs():
         with open(os.path.join(d, "Makefile"), "r") as f:
             txt = f.read()
             srcs = objPat.findall(txt)
-        with open(os.path.join(d, "CMakeLists.txt"), "r") as f:
-            txt = f.read()
-            csrcs = srcPat.findall(txt)
-        print("[TEST 2] In dir: %s" % d)
+        try:
+            with open(os.path.join(d, "CMakeLists.txt"), "r") as f:
+                txt = f.read()
+                csrcs = srcPat.findall(txt)
+        except:
+            print("Dir {} does not have CMakeLists.txt".format(d))
+            csrcs = []
+        #print("[TEST 2] Checking if CMake is creating extra objects")
         for csr in csrcs:
             objName = csr.replace(".cpp", ".o")
             if objName in srcs:
                 pass
             else:
-                print(" Failed: No file to create object {}".format(objName))
+                #print(" Failed: In dir {}, CMake is creating extra object {}".format(d, objName))
+
+                pass
+        print("[TEST 3] Checking if CMake is missing some objects")
+        for obj in srcs:
+            srcName = obj.replace(".o", ".cpp")
+            if srcName in csrcs: pass
+            else:
+                print(" Failed: In dir {}, CMake is missing object {}".format(d,
+                    srcName))
     
 def main():
     dir = sys.argv[1]
