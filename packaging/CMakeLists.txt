@@ -434,10 +434,17 @@ else()
     set(CPACK_STRIP_FILES moose)
 endif()
 set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libopenmpi, libhdf5-7, python-numpy, python-matplotlib, python-qt4, openscenegraph, python-torando, python-suds, python-nose, python-certifi, python-setuptools, libxml2"
-)
+
+set(CPACK_DEBIAN_PACKAGE_DEPENDS 
+    "libopenmpi-dev
+    , python-numpy, python-matplotlib, python-qt4
+    , openscenegraph
+    , python-tornado, python-suds, python-nose
+    , python-setuptools, libxml2"
+    )
+
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-    "${PROJECT_SOURCE_DIR}/scripts/postinst;${PROJECT_SOURCE_DIR}/scripts/prerm;"
+    "${CMAKE_SOURCE_DIR}/debian/postinst;${CMAKE_SOURCE_DIR}/debian/prerm;"
     )
 include(CPack)
 
