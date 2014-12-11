@@ -5,8 +5,8 @@ IF(USE_MPI)
     ADD_DEFINITIONS(-DUSE_MPI)
 ENDIF(USE_MPI)
 
-add_library(moose_mpi 
-    ./PostMaster.cpp 
-    ./testMpi.cpp 
-    )
+FILE(GLOB SRCS *.cpp)
+ADD_LIBRARY(moose_mpi STATIC
+    ${SRCS}
+)
 
