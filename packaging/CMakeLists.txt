@@ -112,8 +112,8 @@ else()
     add_definitions(-UDO_UNIT_TESTS)
 endif()
 
+#### GSL
 find_package(GSL 1.16)
-
 # If installed version of gsl is not 1.16 then download and build gsl locally.
 # THIS IS USEFULL TO BUILD MOOSE FOR VARIOUS DISTRIBUTIONS.
 if(NOT GSL_FOUND)
@@ -220,7 +220,8 @@ endif()
 
 # Openmpi
 find_package(MPI REQUIRED)
-set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+INCLUDE_DIRECTORIES(${MPI_INCLUDE_DIR})
+
 
 # Add subdirectroeis
 add_subdirectory(${PROJECT_SOURCE_DIR}/basecode)
@@ -342,6 +343,7 @@ if(BUILD_PYMOOSE)
     list(APPEND LIBRARIES ${PYTHON_LIBRARIES})
     target_link_libraries(
         _moose 
+        # This library is in pymoose folder.
         moosepython  
         "-Wl,--whole-archive"
         ${MOOSE_LIBRARIES}

@@ -5,6 +5,6 @@ include_directories(../basecode)
 include_directories(../external/muparser)
 
 FILE(GLOB SRCS *.cpp)
-ADD_LIBRARY(moose_builting STATIC
+ADD_LIBRARY(moose_builtins STATIC
     ${SRCS}
 )
