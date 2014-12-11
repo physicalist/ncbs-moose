@@ -141,8 +141,7 @@ endif()
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/dependencies)
 if(LOCAL_GSL)
     MESSAGE("++ GSL include path ${GSL_HEADER_PATHS}")
-    set(GSL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/gsl)
-    set(GSL_INSTALL_DIR ${PROJECT_SOURCE_DIR}/gsl)
+    set(GSL_INSTALL_DIR ${CMAKE_SOURCE_DIR}/_gsl)
     include(ExternalProject)
     ExternalProject_Add(GSL
         PREFIX ${EXTERNAL_DIR}
@@ -156,7 +155,7 @@ if(LOCAL_GSL)
 endif()
 
 ## SBML
-set(SBML_INSTALL_DIR ${PROJECT_SOURCE_DIR}/libsbml)
+set(SBML_INSTALL_DIR ${CMAKE_SOURCE_DIR}/_libsbml)
 find_package(LIBSBML)
 if(NOT LIBSBML_FOUND)
     MESSAGE("+ LIBSBML NOT FOUND. Using local SBML")
@@ -169,7 +168,7 @@ else()
 endif()
 add_definitions(-DUSE_SBML)
 
-set(HDF_INSTALL_DIR ${PROJECT_SOURCE_DIR}/libhdf)
+set(HDF_INSTALL_DIR ${CMAKE_SOURCE_DIR}/_libhdf)
 include_directories(${HDF_INSTALL_DIR}/include)
 if(LOCAL_HDF)
     include(ExternalProject)
@@ -440,7 +439,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/Demos
 
 ########################## PACKAGING #########################################
 
-#set(CPACK_GENERATOR "DEB")
+set(CPACK_GENERATOR "DEB;RPM;STGZ")
 set(CPACK_STRIP_FILES TRUE)
 set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
 #  We need to compile python scripts on the installation  host.
