@@ -140,6 +140,7 @@ endif()
 # Openmpi
 find_package(MPI REQUIRED)
 set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+INCLUDE_DIRECTORIES(${MPI_INCLUDE_DIR})
 
 # Add subdirectroeis
 add_subdirectory(basecode)
@@ -185,6 +186,10 @@ endif()
 
 if(READLINE_FOUND AND TERMCAP_FOUND)
     list(APPEND LIBRARIES ${Readline_LIBRARY} ${TERMCAP_LIBRARY})
+endif()
+
+if(MPI_FOUND)
+    list(APPEND LIBRARIES ${MPI_LIBRARY})
 endif()
 
 ###################################### LINKING #################################

@@ -2,7 +2,11 @@
 add_definitions(-DPYMOOSE)
 include_directories(../basecode ../msg)
 
-FILE(GLOB SRCS *.cpp)
 ADD_LIBRARY(moosepython STATIC
-    ${SRCS}
+    moosemodule.cpp
+    mfield.cpp
+    melement.cpp
+    vec.cpp
+    PyRun.cpp
+    test_moosemodule.cpp
 )
