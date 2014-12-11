@@ -5,6 +5,7 @@ include_directories(../basecode ../msg)
 ADD_LIBRARY(moosepython STATIC
     mfield.cpp
     melement.cpp
+    pymooseinit.cpp
     vec.cpp
     PyRun.cpp
     test_moosemodule.cpp
