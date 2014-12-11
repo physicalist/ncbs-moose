@@ -4,6 +4,5 @@ FILE(GLOB SRCS *.cpp)
 ## Remove the main.cpp from this list. Else we'll have multiple declarations of
 ## some symbols error.
 LIST(REMOVE_ITEM SRCS ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-ADD_LIBRARY(basecode STATIC
-    ${SRCS}
+ADD_LIBRARY(basecode ${SRCS}
 )

@@ -210,7 +210,9 @@ endif()
 ################################### SETUP BUILD ################################
 include_directories(${PROJECT_SOURCE_DIR}/msg ${PROJECT_SOURCE_DIR}/basecode)
 
-#add_executable(moose-bin ${PROJECT_SOURCE_DIR}/basecode/main.cpp)
+add_executable(moose-bin ${PROJECT_SOURCE_DIR}/basecode/main.cpp)
+# Without these two macros, main function will not get compiled."
+set_target_properties(moose-bin PROPERTIES COMPILE_FLAGS "-UMOOSE_LIB -UPYMOOSE")
 
 add_library(moose SHARED ${PROJECT_SOURCE_DIR}/basecode/main.cpp)
 set_target_properties(moose PROPERTIES COMPILE_FLAGS  "-DMOOSE_LIB")
@@ -330,15 +332,13 @@ set(MOOSE_LIBRARIES
     )
 
 target_link_libraries(moose
-    "-Wl,--whole-archive"
     ${MOOSE_LIBRARIES}
     ${LIBRARIES}
-    "-Wl,--no-whole-archive"
     )
 
-#target_link_libraries(moose-bin 
-    #moose
-    #)
+target_link_libraries(moose-bin 
+    moose
+    )
 
 ######################### BUILD PYMOOSE ########################################
 set(BUILD_PYMOOSE 1)
@@ -387,10 +387,10 @@ install(TARGETS moose
     COMPONENT moose-core
     )
 
-#install(TARGETS moose-bin
-    #DESTINATION bin
-    #COMPONENT moose-core
-    #)
+install(TARGETS moose-bin
+    DESTINATION bin
+    COMPONENT moose-core
+    )
 
 install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moose
     DESTINATION bin
