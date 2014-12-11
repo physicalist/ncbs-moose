@@ -209,7 +209,9 @@ endif()
 
 ################################### SETUP BUILD ################################
 include_directories(${PROJECT_SOURCE_DIR}/msg ${PROJECT_SOURCE_DIR}/basecode)
-add_executable(moose-bin ${PROJECT_SOURCE_DIR}/basecode/main.cpp)
+
+#add_executable(moose-bin ${PROJECT_SOURCE_DIR}/basecode/main.cpp)
+
 add_library(moose SHARED ${PROJECT_SOURCE_DIR}/basecode/main.cpp)
 set_target_properties(moose PROPERTIES COMPILE_FLAGS  "-DMOOSE_LIB")
 set_target_properties(moose PROPERTIES VERSION 3.0.1 SOVERSION 3)
@@ -328,10 +330,10 @@ set(MOOSE_LIBRARIES
     )
 
 target_link_libraries(moose
+    "-Wl,--whole-archive"
     ${MOOSE_LIBRARIES}
-    #"-Wl,--whole-archive"
     ${LIBRARIES}
-    #"-Wl,--no-whole-archive"
+    "-Wl,--no-whole-archive"
     )
 
 #target_link_libraries(moose-bin 
