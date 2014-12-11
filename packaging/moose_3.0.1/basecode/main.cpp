@@ -351,6 +351,10 @@ int main( int argc, char** argv )
 	bool doUnitTests = 0;
 	bool doRegressionTests = 0;
 	unsigned int benchmark = 0;
+#ifdef DO_UNIT_TESTS 
+        doUnitTests = 1;
+        doRegressionTests = 1;
+#endif
 	// This reorders the OpFunc to Fid mapping to ensure it is node and
 	// compiler independent.
 	Id shellId = init( argc, argv, doUnitTests, doRegressionTests, benchmark );
