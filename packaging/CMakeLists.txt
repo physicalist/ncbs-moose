@@ -373,8 +373,8 @@ if(BUILD_PYMOOSE)
         _moose 
         # This library is in pymoose folder.
         moosepython  
-        ${MOOSE_LIBRARIES}
         "-Wl,--whole-archive"
+        ${MOOSE_LIBRARIES}
         ${LIBRARIES}
         "-Wl,--no-whole-archive"
         )
