@@ -175,13 +175,17 @@ if(LOCAL_HDF)
     ExternalProject_Add(LIBHDF
         PREFIX ${EXTERNAL_DIR}
         URL ${EXTERNAL_DIR}/hdf5-1.8.14.tar.gz
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${HDF_INSTALL_DIR}
-        -DBUILD_SHARED_LIBS:BOOL=OFF
-        -DBUILD_STATIC_EXECS:BOOL=ON
-        -DHDF5_BUILD_CPP_LIB:BOOL=ON
+        CONFIGURE_COMMAND CXXFLAGS=-fPIC ../LIBHDF/configure --prefix=${HDF_INSTALL_DIR}
+        --enable-cxx --enable-static --disable-shared --with-pic --enable-production
+        BUILD_COMMAND make 
+        INSTALL_COMMAND make install
+        #CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${HDF_INSTALL_DIR}
+        #-DBUILD_SHARED_LIBS:BOOL=OFF
+        #-DBUILD_STATIC_EXECS:BOOL=ON
+        #-DHDF5_BUILD_CPP_LIB:BOOL=ON
         #-C Release
-        -DWITH_BZIP2:BOOL=ON 
-        -DWITH_LIBXML:BOOL=ON
+        #-DWITH_BZIP2:BOOL=ON 
+        #-DWITH_LIBXML:BOOL=ON
         )
     set(HDF5_LIBRARY ${HDF_INSTALL_DIR}/lib/libhdf5_cpp.a
         ${HDF_INSTALL_DIR}/lib/libhdf5.a
