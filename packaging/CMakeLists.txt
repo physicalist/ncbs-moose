@@ -141,11 +141,11 @@ endif()
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/dependencies)
 if(LOCAL_GSL)
     MESSAGE("++ GSL include path ${GSL_HEADER_PATHS}")
-    set(GSL_INSTALL_DIR ${CMAKE_SOURCE_DIR}/_gsl)
+    set(GSL_INSTALL_DIR ${CMAKE_SOURCE_DIR}/_libgsl)
     include(ExternalProject)
     ExternalProject_Add(GSL
         PREFIX ${EXTERNAL_DIR}
-        URL ${EXTERNAL_DIR}/gsl-1.16.zip
+        URL ${EXTERNAL_DIR}/gsl-1.16.tar.gz
         CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_C_FLAGS=-fpic -DCMAKE_INSTALL_PREFIX:PATH=${GSL_INSTALL_DIR} -DBUILD_SHARED_LIBS=OFF
         )
     include_directories(${GSL_INSTALL_DIR}/include)
