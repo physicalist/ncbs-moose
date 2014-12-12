@@ -12,11 +12,12 @@ License: GPL-3.0
 BuildRequires: gcc-c++
 BuildRequires: cmake
 BuildRequires: python-devel
-BuildRequires: numpy
+BuildRequires: python-numpy-devel
 BuildRequires: python-setuptools
 BuildRequires: libxml2-devel
 BuildRequires: libbz2-devel
 BuildRequires: doxygen
+BuildRequires: openmpi-devel
 
 %description
 MOOSE is the base and numerical core for large, detailed simulations

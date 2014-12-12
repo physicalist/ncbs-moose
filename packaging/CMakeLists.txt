@@ -279,7 +279,15 @@ endif()
 
 # Openmpi
 find_package(MPI REQUIRED)
-INCLUDE_DIRECTORIES(${MPI_INCLUDE_DIR})
+if(MPI_FOUND)
+    MESSAGE("++ OpenMPI is found: ${MPI_INCLUDE_DIR}")
+    INCLUDE_DIRECTORIES(${MPI_INCLUDE_DIR})
+    ADD_DEFINITIONS(-DUSE_MPI)
+else()
+    MESSAGE("++ OpenMPI not found")
+    ADD_DEFINITIONS(-UUSE_MPI)
+endif()
+
 
 
 # Add subdirectroeis
@@ -334,6 +342,9 @@ if(READLINE_FOUND AND TERMCAP_FOUND)
     list(APPEND LIBRARIES ${Readline_LIBRARY} ${TERMCAP_LIBRARY})
 endif()
 
+if(MPI_FOUND)
+    list(APPEND LIBRARIES ${MPI_CXX_LIBRARY})
+endif()
 
 ###################################### LINKING #################################
 MESSAGE("++ Linking: ${MOOSE_LIBRARIES}")
