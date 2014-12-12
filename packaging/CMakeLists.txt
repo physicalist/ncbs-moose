@@ -221,7 +221,7 @@ IF(DOXYGEN_FOUND)
         OUTPUT ${DOXYGEN_OUTPUT}
         COMMAND ${CMAKE_COMMAND} -E echo_append "Building API Documentation..."
         COMMAND rm -rf ${API_DOC_DIR}
-        COMMAND mkdir ${API_DOC_DIR}
+        COMMAND mkdir -p ${API_DOC_DIR}
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
         COMMAND ${CMAKE_COMMAND} -E echo "Done."
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -232,7 +232,7 @@ IF(DOXYGEN_FOUND)
 
     ADD_CUSTOM_TARGET(apidoc_forced
         COMMAND rm -rf ${API_DOC_DIR}
-        COMMAND mkdir ${API_DOC_DIR}
+        COMMAND mkdir -p ${API_DOC_DIR}
         COMMAND ${CMAKE_COMMAND} -E echo_append "Building API Documentation..."
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
         COMMAND ${CMAKE_COMMAND} -E echo "Done."
