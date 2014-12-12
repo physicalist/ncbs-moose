@@ -12,12 +12,11 @@ License: GPL-3.0
 BuildRequires: gcc-c++
 BuildRequires: cmake
 BuildRequires: python-devel
-BuildRequires: gsl-devel
-BuildRequires: hdf5-devel
 BuildRequires: numpy
 BuildRequires: python-setuptools
 BuildRequires: libxml2-devel
 BuildRequires: libbz2-devel
+BuildRequires: doxygen
 
 %description
 MOOSE is the base and numerical core for large, detailed simulations
@@ -48,8 +47,6 @@ Summary: Library of MOOSE simulator
 This package contains C++ core of MOOSE simulator. It is intended for clusters.
 For general purpose MOOSE with python scripting support, install moose-python.
 
-Requires: gsl
-Requires: hdf5
 Requires: bzip2
 Requires: libxml2
 Requires: bzip2
@@ -62,12 +59,10 @@ This package contains %{_summary}.
 
 Requires: numpy
 Requires: PyQt4
-Requires: gsl
 Requires: PyOpenGL
 Requires: python-matplotlib-tk
 Requires: libxml2
 Requires: bzip2
-Requires: hdf5
 Requires: python-networkx
 
 
@@ -98,6 +93,7 @@ cd _build && make install DESTDIR=$RPM_BUILD_ROOT
 %files python
 %defattr(-,root,root)
 %dir %{_prefix}/lib/moose/python
+%dir %{_prefix}/doc/moose
 
 %post python
 cd %{_prefix}/lib/moose/python && %{__python2} setup.py install

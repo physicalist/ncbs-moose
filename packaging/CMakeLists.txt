@@ -215,11 +215,13 @@ IF(DOXYGEN_FOUND)
     MESSAGE("++ Doxygen found. Creating document")
     SET(DOXYGEN_INPUT ${PROJECT_SOURCE_DIR}/Doxyfile)
     SET(DOXYGEN_OUTPUT ${PROJECT_SOURCE_DIR}/docs/api/index.html)
+    SET(API_DOC_DIR ${PROJECT_SOURCE_DIR}/docs/api)
 
     ADD_CUSTOM_COMMAND(
         OUTPUT ${DOXYGEN_OUTPUT}
         COMMAND ${CMAKE_COMMAND} -E echo_append "Building API Documentation..."
-        COMMAND mkdir ${PROJECT_SOURCE_DIR}/docs/api/index.html
+        COMMAND rm -rf ${API_DOC_DIR}
+        COMMAND mkdir ${API_DOC_DIR}
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
         COMMAND ${CMAKE_COMMAND} -E echo "Done."
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -229,7 +231,8 @@ IF(DOXYGEN_FOUND)
     ADD_CUSTOM_TARGET(apidoc ALL DEPENDS ${DOXYGEN_OUTPUT})
 
     ADD_CUSTOM_TARGET(apidoc_forced
-        COMMAND mkdir ${PROJECT_SOURCE_DIR}/docs/api
+        COMMAND rm -rf ${API_DOC_DIR}
+        COMMAND mkdir ${API_DOC_DIR}
         COMMAND ${CMAKE_COMMAND} -E echo_append "Building API Documentation..."
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
         COMMAND ${CMAKE_COMMAND} -E echo "Done."
