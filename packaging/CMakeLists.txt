@@ -206,13 +206,39 @@ if(LOCAL_SBML)
     set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml-static.a)
 endif()
 
-## Get the install path and install the sbml
-
-
-
 ################################### SETUP BUILD ################################
-include_directories(${PROJECT_SOURCE_DIR}/msg ${PROJECT_SOURCE_DIR}/basecode)
 
+## DoxyGen based documentation.
+
+find_package(Doxygen)
+IF(DOXYGEN_FOUND)
+    MESSAGE("++ Doxygen found. Creating document")
+    SET(DOXYGEN_INPUT ${PROJECT_SOURCE_DIR}/Doxyfile)
+    SET(DOXYGEN_OUTPUT ${PROJECT_SOURCE_DIR}/docs/developer/index.html)
+
+    ADD_CUSTOM_COMMAND(
+        OUTPUT ${DOXYGEN_OUTPUT}
+        COMMAND ${CMAKE_COMMAND} -E echo_append "Building API Documentation..."
+        COMMAND mkdir ${PROJECT_SOURCE_DIR}/docs/developer
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
+        COMMAND ${CMAKE_COMMAND} -E echo "Done."
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${DOXYGEN_INPUT}
+        )
+
+    ADD_CUSTOM_TARGET(apidoc ALL DEPENDS ${DOXYGEN_OUTPUT})
+
+    ADD_CUSTOM_TARGET(apidoc_forced
+        COMMAND mkdir ${PROJECT_SOURCE_DIR}/docs/developer
+        COMMAND ${CMAKE_COMMAND} -E echo_append "Building API Documentation..."
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
+        COMMAND ${CMAKE_COMMAND} -E echo "Done."
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+ENDIF (DOXYGEN_FOUND)
+
+
+include_directories(${PROJECT_SOURCE_DIR}/msg ${PROJECT_SOURCE_DIR}/basecode)
 add_executable(moose-bin ${PROJECT_SOURCE_DIR}/basecode/main.cpp)
 # Without these two macros, main function will not get compiled."
 set_target_properties(moose-bin PROPERTIES COMPILE_FLAGS "-UMOOSE_LIB -UPYMOOSE")
