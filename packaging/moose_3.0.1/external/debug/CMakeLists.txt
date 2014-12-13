@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 add_library(simpletest STATIC simple_test.hpp)
 set_target_properties(simpletest PROPERTIES LINKER_LANGUAGE CXX)
 
