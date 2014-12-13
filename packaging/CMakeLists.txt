@@ -113,13 +113,13 @@ endif()
 
 ## Setup hdf5
 find_package(HDF5)
-if(HDF5_FOUND)
+if(FOUND_HDF5)
     include_directories(${HDF5_INCLUDE_DIR})
 else()
     MESSAGE("++ Using local HDF5")
     SET(LOCAL_HDF 1)
-    set(HDF5_FOUND)
-endif(HDF5_FOUND)
+    set(FOUND_HDF5)
+endif(FOUND_HDF5)
 add_definitions(-DUSE_HDF5)
 
 
@@ -474,9 +474,10 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
     COMPONENT moose-python
     )
 
-## The demos goes here.
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/Demos
-    DESTINATION share/moose
+## The demos goes here. Trailing / is important. Effective way of renaming the
+## directory.
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/Demos/
+    DESTINATION share/moose/demos
     COMPONENT moose-python
     )
 
