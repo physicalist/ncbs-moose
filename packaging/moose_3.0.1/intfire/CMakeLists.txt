@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 INCLUDE_DIRECTORIES(../basecode)
 ADD_LIBRARY(intfire STATIC
     AdExIF.cpp
