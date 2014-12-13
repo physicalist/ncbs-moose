@@ -12,7 +12,7 @@ License: GPL-3.0
 BuildRequires: gcc-c++
 BuildRequires: cmake
 BuildRequires: python-devel
-BuildRequires: python-numpy-devel
+BuildRequires: numpy
 BuildRequires: python-setuptools
 BuildRequires: libxml2-devel
 BuildRequires: libbz2-devel
@@ -42,6 +42,7 @@ simulator.
 Requires: %{name}-gui
 Requires: %{name}-python
 
+
 %package -n libmoose-3
 Summary: Library of MOOSE simulator
 %description -n libmoose-3
@@ -59,20 +60,20 @@ Summary: Python-2 interface for %{name}
 This package contains %{_summary}.
 
 Requires: numpy
-Requires: PyQt4
-Requires: PyOpenGL
 Requires: python-matplotlib-tk
 Requires: libxml2
 Requires: bzip2
 Requires: python-networkx
 
-
 %package gui
 Summary: GUI frontend
 %description gui
 GUI frontend. It uses openscenegraph to visualize neural networks.
+
 Requires: OpenSceneGraph
 Requires: moose-python
+Requires: PyQt4
+Requires: PyOpenGL
 
 %prep
 %setup -q -n %{name}-%{branch}

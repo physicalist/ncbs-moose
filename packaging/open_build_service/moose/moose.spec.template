@@ -9,15 +9,7 @@ Source0: moose-%{branch}.tar.bz2
 
 License: GPL-3.0
 
-BuildRequires: gcc-c++
-BuildRequires: cmake
-BuildRequires: python-devel
-BuildRequires: numpy
-BuildRequires: python-setuptools
-BuildRequires: libxml2-devel
-BuildRequires: libbz2-devel
-BuildRequires: doxygen
-BuildRequires: openmpi-devel
+<<BuildRequires>>
 
 %description
 MOOSE is the base and numerical core for large, detailed simulations
@@ -49,31 +41,21 @@ Summary: Library of MOOSE simulator
 This package contains C++ core of MOOSE simulator. It is intended for clusters.
 For general purpose MOOSE with python scripting support, install moose-python.
 
-Requires: bzip2
-Requires: libxml2
-Requires: bzip2
-Requires: libxml2
+<<libmooseRequires>>
 
 %package python
 Summary: Python-2 interface for %{name}
 %description python
 This package contains %{_summary}.
 
-Requires: numpy
-Requires: python-matplotlib-tk
-Requires: libxml2
-Requires: bzip2
-Requires: python-networkx
+<<moose-pythonRequires>>
 
 %package gui
 Summary: GUI frontend
 %description gui
 GUI frontend. It uses openscenegraph to visualize neural networks.
 
-Requires: OpenSceneGraph
-Requires: moose-python
-Requires: PyQt4
-Requires: PyOpenGL
+<<moose-guiRequires>>
 
 %prep
 %setup -q -n %{name}-%{branch}
@@ -99,7 +81,6 @@ cd _build && make install DESTDIR=$RPM_BUILD_ROOT
 
 %post python
 cd %{_prefix}/lib/moose/python && python setup.py install
-
 
 %files gui
 %defattr(-,root,root)
