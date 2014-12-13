@@ -12,11 +12,12 @@ License: GPL-3.0
 BuildRequires: gcc-c++
 BuildRequires: cmake
 BuildRequires: python-devel
-BuildRequires: numpy
+BuildRequires: python-numpy-devel
 BuildRequires: python-setuptools
 BuildRequires: libxml2-devel
 BuildRequires: libbz2-devel
 BuildRequires: doxygen
+BuildRequires: openmpi-devel
 
 %description
 MOOSE is the base and numerical core for large, detailed simulations
@@ -93,10 +94,10 @@ cd _build && make install DESTDIR=$RPM_BUILD_ROOT
 %files python
 %defattr(-,root,root)
 %dir %{_prefix}/lib/moose/python
-%dir %{_prefix}/doc/moose
+%dir %{_prefix}/share/doc/moose
 
 %post python
-cd %{_prefix}/lib/moose/python && %{__python2} setup.py install
+cd %{_prefix}/lib/moose/python && python setup.py install
 
 
 %files gui
