@@ -1,8 +1,8 @@
-<directory name="moose" rev="39" srcmd5="3c66162ff190008ddf80e83c734c7256" vrev="3">
-  <serviceinfo code="succeeded" xsrcmd5="8f94fd5a1d9ac86ee0e181dddb3c115b" />
+<directory name="moose" rev="40" srcmd5="f2cb5238c95e41f3fd3f2281a2337b08" vrev="4">
+  <serviceinfo code="succeeded" xsrcmd5="a1ca4932a08ee5be99e145fc7a75a4ce" />
   <entry md5="4463c65100082b9fe397dd36ce1b3078" mtime="1415796630" name="README" size="388" />
   <entry md5="0f29008069d1c2f021c666b7a66f5607" mtime="1418116391" name="_service" size="550" />
   <entry md5="503d69aa415ccd405387d53b468aab89" mtime="1418197702" name="build.sh" size="175" />
   <entry md5="68cf22830dc633ee1d26b3bf9ef3ba86" mtime="1418210464" name="moose-CentOS_5.spec" size="2804" />
-  <entry md5="16abd0e52c1fa23f0b0b0908ad0d1868" mtime="1418377850" name="moose.spec" size="2695" />
+  <entry md5="59ffd74490813efb9391beeb2050bd33" mtime="1418386363" name="moose.spec" size="2737" />
 </directory>

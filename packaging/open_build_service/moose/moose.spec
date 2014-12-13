@@ -94,10 +94,10 @@ cd _build && make install DESTDIR=$RPM_BUILD_ROOT
 %files python
 %defattr(-,root,root)
 %dir %{_prefix}/lib/moose/python
-%dir %{_prefix}/doc/moose
+%dir %{_prefix}/share/doc/moose
 
 %post python
-cd %{_prefix}/lib/moose/python && %{__python2} setup.py install
+cd %{_prefix}/lib/moose/python && python setup.py install
 
 
 %files gui

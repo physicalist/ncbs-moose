@@ -474,8 +474,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
     COMPONENT moose-python
     )
 
-## The demos goes here. Trailing / is important. Effective way of renaming the
-## directory.
+## The demos goes here.
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/Demos/
     DESTINATION share/moose/demos
     COMPONENT moose-python
