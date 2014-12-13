@@ -46,6 +46,12 @@ libmooseRequires["default"] = commonlibmooseRequires + ["numpy"]
 moose_pythonRequires["default"] = commonmoose_pythonRequires + ["numpy"]
 moose_guiRequires["default"] = commonmoose_guiRequires 
 
+buildRequires["RHEL"] = buildRequires["default"] + [ "atlas" ]
+moose_pythonRequires["RHEL"] = moose_pythonRequires["default"] + [ "atlas"]
+
+buildRequires["ScientificLinux" ] = buildRequires["RHEL"] + [ "libibverbs"]
+moose_pythonRequires["ScientificLinux" ] = moose_pythonRequires["RHEL"]
+
 class SpecFile():
 
     def __init__(self, repository, version):
