@@ -12,12 +12,12 @@ License: GPL-3.0
 BuildRequires: gcc-c++
 BuildRequires: cmake
 BuildRequires: python-devel
-BuildRequires: gsl-devel
-BuildRequires: hdf-devel
-BuildRequires: python-numpy-devel
 BuildRequires: python-setuptools
 BuildRequires: libxml2-devel
 BuildRequires: libbz2-devel
+BuildRequires: doxygen
+BuildRequires: openmpi-devel
+BuildRequires: numpy
 
 %description
 MOOSE is the base and numerical core for large, detailed simulations
@@ -42,43 +42,37 @@ simulator.
 Requires: %{name}-gui
 Requires: %{name}-python
 
+
 %package -n libmoose-3
 Summary: Library of MOOSE simulator
 %description -n libmoose-3
 This package contains C++ core of MOOSE simulator. It is intended for clusters.
 For general purpose MOOSE with python scripting support, install moose-python.
 
-Requires: gsl
-Requires: hdf
-Requires: bzip2
-Requires: libxml2
-Requires: bzip2
-Requires: libxml2
-Requires: hdf
+Require: bzip2
+Require: libxml2
+Require: numpy
 
 %package python
 Summary: Python-2 interface for %{name}
 %description python
 This package contains %{_summary}.
 
-Requires: python-numpy
-Requires: PyQt4
-Requires: gsl
-Requires: PyOpenGL
-Requires: python-matplotlib-tk
-Requires: libxml2
-Requires: bzip2
-Requires: python-networkx
-Requires: hdf
-Requires: libxml2
-
+Require: python-matplotlib-tk
+Require: libxml2
+Require: bzip2
+Require: python-networkx
+Require: numpy
 
 %package gui
 Summary: GUI frontend
 %description gui
 GUI frontend. It uses openscenegraph to visualize neural networks.
-Requires: OpenSceneGraph
-Requires: moose-python
+
+Require: PyQt4
+Require: PyOpenGL
+Require: moose-python
+Require: OpenSceneGraph
 
 %prep
 %setup -q -n %{name}-%{branch}
@@ -100,10 +94,10 @@ cd _build && make install DESTDIR=$RPM_BUILD_ROOT
 %files python
 %defattr(-,root,root)
 %dir %{_prefix}/lib/moose/python
+%dir %{_prefix}/share/doc/moose
 
 %post python
-cd %{_prefix}/lib/moose/python && %{__python2} setup.py install
-
+cd %{_prefix}/lib/moose/python && python setup.py install
 
 %files gui
 %defattr(-,root,root)
