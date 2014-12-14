@@ -5,7 +5,7 @@ Summary: MOOSE is the Multiscale Object-Oriented Simulation Environment
 Version: 3.0.1
 Release: 1%{?dist}
 Url: http://sourceforge.net/projects/moose
-Source0: moose-%{branch}.tar.bz2
+Source0: moose-%{branch}.tar.gz
 
 License: GPL-3.0
 
