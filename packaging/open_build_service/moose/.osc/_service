@@ -6,11 +6,11 @@
         <param name="filename">moose</param>
     </service>
     <service name="recompress">
-        <param name="compression">bz2</param>
+        <param name="compression">gz</param>
         <param name="file">*.tar</param>
     </service>
     <service name="extract_file">
-        <param name="archive">*moose*.tar.bz2</param>
+        <param name="archive">*moose*.tar.gz</param>
         <param name="files">*</param>
     </service>
 </services>
