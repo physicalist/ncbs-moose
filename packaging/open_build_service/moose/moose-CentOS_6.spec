@@ -18,6 +18,7 @@ BuildRequires: libbz2-devel
 BuildRequires: doxygen
 BuildRequires: openmpi-devel
 BuildRequires: numpy
+BuildRequires: atlas
 
 %description
 MOOSE is the base and numerical core for large, detailed simulations
@@ -63,6 +64,7 @@ Require: libxml2
 Require: bzip2
 Require: python-networkx
 Require: numpy
+Require: atlas
 
 %package gui
 Summary: GUI frontend
