@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 """generate_spec.py: This script generates spec file for various distributions.
-
 Last modified: Sat Jan 18, 2014  05:01PM
 
 """
@@ -23,6 +22,7 @@ repository = { "CentOS" : [5, 6, 7]
         , "RHEL" : [ 6, 7 ]
         , "SLE" : [ "11_SP3", 12 ]
         , "ScientificLinux" : [6, 7]
+        , "Arch" : ["Core"]
         }
 
 buildRequires = {}
@@ -46,8 +46,14 @@ libmooseRequires["default"] = commonlibmooseRequires + ["numpy"]
 moose_pythonRequires["default"] = commonmoose_pythonRequires + ["numpy"]
 moose_guiRequires["default"] = commonmoose_guiRequires 
 
+#buildRequires["CentOS"] = commonBuildRequires + [ "python-numpy"]
+#moose_pythonRequires["CentOS"] = commonmoose_pythonRequires + [ "python-numpy"]
+
 buildRequires["RHEL"] = buildRequires["default"] + [ "atlas" ]
 moose_pythonRequires["RHEL"] = moose_pythonRequires["default"] + [ "atlas"]
+
+buildRequires["CentOS"] = buildRequires["RHEL"]
+moose_pythonRequires["CentOS"] = moose_pythonRequires["RHEL"]
 
 buildRequires["ScientificLinux" ] = buildRequires["RHEL"] + [ "libibverbs"]
 moose_pythonRequires["ScientificLinux" ] = moose_pythonRequires["RHEL"]

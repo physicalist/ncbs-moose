@@ -1,12 +1,13 @@
-<directory name="moose" rev="46" srcmd5="4a50cce6317e21822e8e3b2693492211" vrev="10">
-  <serviceinfo code="succeeded" xsrcmd5="b937bc8375b781f83ab56b8c9593318c" />
+<directory name="moose" rev="50" srcmd5="a24174c9e29453564d1913fbc917c1e4" vrev="14">
+  <serviceinfo code="succeeded" xsrcmd5="7741e1d63affac615ec08101f680e70d" />
   <entry md5="4463c65100082b9fe397dd36ce1b3078" mtime="1415796630" name="README" size="388" />
   <entry md5="0f29008069d1c2f021c666b7a66f5607" mtime="1418116391" name="_service" size="550" />
   <entry md5="4c93d0d099e5727f79226623e880b479" mtime="1418490260" name="build.sh" size="184" />
-  <entry md5="7379c9f19fe00bfc92c2100b006c5419" mtime="1418490261" name="generate_spec.py" size="3916" />
-  <entry md5="a2d2ad5252f969555d6f56a51419ea66" mtime="1418487911" name="moose-CentOS_5.spec" size="2694" />
-  <entry md5="a2d2ad5252f969555d6f56a51419ea66" mtime="1418487913" name="moose-CentOS_6.spec" size="2694" />
-  <entry md5="a2d2ad5252f969555d6f56a51419ea66" mtime="1418487916" name="moose-CentOS_7.spec" size="2694" />
+  <entry md5="21cf6f96e18c8434d5aedbd431386502" mtime="1418494416" name="generate_spec.py" size="4203" />
+  <entry md5="a2d2ad5252f969555d6f56a51419ea66" mtime="1418494418" name="moose-Arch_Core.spec" size="2694" />
+  <entry md5="20bf837247e92106cb010e707b08a7ec" mtime="1418494205" name="moose-CentOS_5.spec" size="2730" />
+  <entry md5="20bf837247e92106cb010e707b08a7ec" mtime="1418494207" name="moose-CentOS_6.spec" size="2730" />
+  <entry md5="20bf837247e92106cb010e707b08a7ec" mtime="1418494208" name="moose-CentOS_7.spec" size="2730" />
   <entry md5="a2d2ad5252f969555d6f56a51419ea66" mtime="1418487917" name="moose-Fedora_18.spec" size="2694" />
   <entry md5="a2d2ad5252f969555d6f56a51419ea66" mtime="1418487919" name="moose-Fedora_19.spec" size="2694" />
   <entry md5="a2d2ad5252f969555d6f56a51419ea66" mtime="1418487924" name="moose-Fedora_20.spec" size="2694" />
