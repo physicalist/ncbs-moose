@@ -521,4 +521,9 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
     "${CMAKE_SOURCE_DIR}/debian/postinst;${CMAKE_SOURCE_DIR}/debian/prerm;"
     )
+# A workaround in RPM
+set(CPACK_RPM_SPEC_MORE_DEFINE "%define ignore \#")
+set(CPACK_RPM_USER_FILELIST "%ignore /" "%ignore /usr" "%ignore /usr/share" 
+    "%ignore /usr/share/applications"
+    )
 include(CPack)
