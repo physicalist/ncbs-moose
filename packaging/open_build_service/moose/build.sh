@@ -1,9 +1,0 @@
-#!/bin/bash
-set -x
-set -e
-if [ ! -f ./_service:recompress:tar_scm:moose-3.0.1.tar.gz ]; then
-    osc service run
-    osc build --noservice "$@"
-else
-    osc build --noservice "$@"
-fi
