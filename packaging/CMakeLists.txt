@@ -520,9 +520,24 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
     "${CMAKE_SOURCE_DIR}/debian/postinst;${CMAKE_SOURCE_DIR}/debian/prerm;"
     )
+
+set(CPACK_RPM_SPEC_INSTALL_POST "/bin/true")
+set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_SOURCE_DIR}/rpm-scripts/postinst")
+set(CPACK_RPM_UNINSTALL_SCRIPT_FILE "${CMAKE_SOURCE_DIR}/rpm-scripts/prerm")
+
+set(CPACK_RPM_PACKAGE_REQUIRES
+    "openmpi-bin
+    , python-numpy, python-matplotlib-qt
+    , python-qt4, openscenegraph
+    , python-tornado, python-suds, python-nose, python-setuptools
+    , libxml2"
+    )
+
 # A workaround in RPM
 set(CPACK_RPM_SPEC_MORE_DEFINE "%define ignore \#")
 set(CPACK_RPM_USER_FILELIST "%ignore /" "%ignore /usr" "%ignore /usr/share" 
     "%ignore /usr/share/applications"
     )
+
+
 include(CPack)
