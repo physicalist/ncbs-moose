@@ -42,6 +42,7 @@ if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
     MESSAGE("++ 64 bit architecture")
     set(LIBSUFFIX "64")
     set(PKGARCH "amd64")
+    set(RPMPKGARCH "x86_64")
 else()
     MESSAGE("++ 32 bit architecture")
     set(LIBSUFFIX "")
@@ -524,7 +525,7 @@ set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
     )
 
 ## RPM 
-set(CPACK_RPM_PACKAGE_ARCHITECTURE "${PKGARCH}")
+set(CPACK_RPM_PACKAGE_ARCHITECTURE "${RPMPKGARCH}")
 set(CPACK_RPM_SPEC_INSTALL_POST "/bin/true")
 set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_SOURCE_DIR}/rpm-scripts/postinst")
 set(CPACK_RPM_UNINSTALL_SCRIPT_FILE "${CMAKE_SOURCE_DIR}/rpm-scripts/prerm")
