@@ -38,11 +38,14 @@ set(INSTALL_INCLUDE_DIR include CACHE PATH "${CMAKE_INSTALL_PREFIX}/include/")
 LINK_DIRECTORIES(${GSL_INSTALL_DIR}/lib)
 
 ########################### ARCHITECTURE SPECIFIC ##############################
-get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
-if(LIB64)
+if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+    MESSAGE("++ 64 bit architecture")
     set(LIBSUFFIX "64")
+    set(PKGARCH "amd64")
 else()
+    MESSAGE("++ 32 bit architecture")
     set(LIBSUFFIX "")
+    set(PKGARCH "i386")
 endif()
 
 ########################### COMPILER MACROS #####################################
@@ -503,11 +506,9 @@ set(CPACK_PACKAGE_VERSION_PATCH "1")
 set(CPACK_PACKAGE_VENDOR "NCBS Bangalore")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Dilawar Singh <dilawars@ncbs.res.in>")
-if(WIN32)
-    MESSAGE("++ Currently only Unix is supported")
-else()
-    set(CPACK_STRIP_FILES moose)
-endif()
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${PKGARCH}")
+set(CPACK_STRIP_FILES moose)
+
 set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 set(CPACK_DEBIAN_PACKAGE_DEPENDS 
     "openmpi-bin
@@ -521,6 +522,8 @@ set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
     "${CMAKE_SOURCE_DIR}/debian/postinst;${CMAKE_SOURCE_DIR}/debian/prerm;"
     )
 
+## RPM 
+set(CPACK_RPM_PACKAGE_ARCHITECTURE "${PKGARCH}")
 set(CPACK_RPM_SPEC_INSTALL_POST "/bin/true")
 set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_SOURCE_DIR}/rpm-scripts/postinst")
 set(CPACK_RPM_UNINSTALL_SCRIPT_FILE "${CMAKE_SOURCE_DIR}/rpm-scripts/prerm")
