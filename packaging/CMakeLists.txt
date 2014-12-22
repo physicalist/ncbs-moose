@@ -464,13 +464,13 @@ install(FILES ${PROJECT_SOURCE_DIR}/scripts/moose.desktop
 
 # And the gui
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/gui
-    DESTINATION lib${LIBSUFFIX}/moose
+    DESTINATION lib/moose
     COMPONENT moose-gui
     )
 
 # and the python dependencies
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
-    DESTINATION lib${LIBSUFFIX}/moose
+    DESTINATION lib/moose
     COMPONENT moose-python
     )
 
