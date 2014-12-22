@@ -527,7 +527,7 @@ set(CPACK_RPM_UNINSTALL_SCRIPT_FILE "${CMAKE_SOURCE_DIR}/rpm-scripts/prerm")
 
 # This has to be a single line.
 set(CPACK_RPM_PACKAGE_REQUIRES
-    "openmpi-devel python-numpy python-matplotlib-qt python-qt4  python-tornado python-suds python-nose python-setuptools libxml2"
+    "openmpi-devel python-numpy python-matplotlib-qt4 python-qt4  python-tornado python-suds python-nose python-setuptools libxml2"
     )
 
 # A workaround in RPM
