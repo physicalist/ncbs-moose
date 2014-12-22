@@ -512,7 +512,7 @@ set(CPACK_STRIP_FILES moose)
 set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 set(CPACK_DEBIAN_PACKAGE_DEPENDS 
     "openmpi-bin
-    , python-numpy, python-matplotlib
+    , python-matplotlib
     , python-qt4, openscenegraph
     , python-tornado, python-suds, python-nose, python-setuptools
     , libxml2"
@@ -530,7 +530,7 @@ set(CPACK_RPM_UNINSTALL_SCRIPT_FILE "${CMAKE_SOURCE_DIR}/rpm-scripts/prerm")
 
 # This has to be a single line.
 set(CPACK_RPM_PACKAGE_REQUIRES
-    "openmpi-devel python-numpy python-matplotlib-qt4 python-qt4  python-tornado python-suds python-nose python-setuptools libxml2"
+    "openmpi-devel python-matplotlib-qt4 python-qt4  python-tornado python-suds python-nose python-setuptools libxml2"
     )
 
 # A workaround in RPM
