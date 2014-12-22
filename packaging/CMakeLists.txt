@@ -187,8 +187,8 @@ if(LOCAL_HDF)
         #-DWITH_BZIP2:BOOL=ON 
         #-DWITH_LIBXML:BOOL=ON
         )
-    set(HDF5_LIBRARY ${HDF_INSTALL_DIR}/lib/libhdf5_cpp.a
-        ${HDF_INSTALL_DIR}/lib/libhdf5.a
+    set(HDF5_LIBRARY ${HDF_INSTALL_DIR}/lib${LIBSUFFIX}/libhdf5_cpp.a
+        ${HDF_INSTALL_DIR}/lib${LIBSUFFIX}/libhdf5.a
         )
 endif()
 
@@ -464,13 +464,13 @@ install(FILES ${PROJECT_SOURCE_DIR}/scripts/moose.desktop
 
 # And the gui
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/gui
-    DESTINATION lib/moose
+    DESTINATION lib${LIBSUFFIX}/moose
     COMPONENT moose-gui
     )
 
 # and the python dependencies
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
-    DESTINATION lib/moose
+    DESTINATION lib${LIBSUFFIX}/moose
     COMPONENT moose-python
     )
 
