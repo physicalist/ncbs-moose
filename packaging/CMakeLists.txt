@@ -181,6 +181,7 @@ if(LOCAL_HDF)
         URL ${EXTERNAL_DIR}/hdf5-1.8.14.tar.gz
         CONFIGURE_COMMAND CXXFLAGS=-fPIC ../LIBHDF/configure --prefix=${HDF_INSTALL_DIR}
         --enable-cxx --enable-static --disable-shared --with-pic --enable-production
+        --libdir=${HDF_INSTALL_DIR}/lib${LIBSUFFIX}
         BUILD_COMMAND make 
         INSTALL_COMMAND make install
         #CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${HDF_INSTALL_DIR}
@@ -478,10 +479,12 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
     COMPONENT moose-python
     )
 
-## The demos goes here.
+## The demos goes here. The ending backslash after Demos/ allows us to change
+## the name of target.
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/Demos/
     DESTINATION share/moose/demos
     COMPONENT moose-python
+    COMPONENT moose-gui
     )
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/docs
