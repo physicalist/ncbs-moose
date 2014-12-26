@@ -20,12 +20,13 @@ cdef class Shell:
 
     cdef _id.Id create(self
             , _type
+            , _parent
             ,  _name
             , _numData
             , _nodePolicy
             , _preferedNode
             ):
-        return self.thisptr.create(_type, _name, _numData
+        return self.thisptr.doCreate(_type, _parent, _name, _numData
                 , _nodePolicy , _preferedNode)
     
     def callCreate(self):

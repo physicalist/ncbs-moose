@@ -24,23 +24,23 @@ from distutils.extension import Extension
 from Cython.Distutils import build_ext
 from Cython.Build import cythonize
 
-os.environ['CC'] = "g++"
-os.environ['CXX'] = "g++"
+os.environ['CC'] = "clang++"
+os.environ['CXX'] = "clang++"
 
 
 # Clean up
 moduleName = "cymoose"
-#for root, dirs, files in os.walk(".", topdown=False):
-#    for name in files:
-#        if (name.startswith(moduleName) and not(
-#                name.endswith(".pyx") or name.endswith(".pxd") or name.endswith(".cxx") or name.endswith(".hpp")
-#                )
-#            ):
-#            os.remove(os.path.join(root, name))
-#for name in dirs:
-#    if(name == "build"):
-#        shutil.rmtree(name)
-#
+for root, dirs, files in os.walk(".", topdown=False):
+    for name in files:
+        if (name.startswith(moduleName) and not(
+                name.endswith(".pyx") or name.endswith(".pxd") or name.endswith(".cxx") or name.endswith(".hpp")
+                )
+            ):
+            os.remove(os.path.join(root, name))
+for name in dirs:
+    if(name == "build"):
+        shutil.rmtree(name)
+
 
 extensions = [ 
         Extension(moduleName, ["Shell.pyx"]
@@ -59,7 +59,7 @@ extensions = [
         , extra_link_args = ["-L.", "-g"]
         , libraries = [
             "mpi"
-            , "moose"
+            , "cymoose"
             , "stdc++"
             ]
         )
