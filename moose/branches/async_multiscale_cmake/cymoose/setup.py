@@ -43,7 +43,7 @@ moduleName = "cymoose"
 #
 
 extensions = [ 
-        Extension(moduleName, [ "*.pyx" ]
+        Extension(moduleName, [ "Shell.pyx" ]
             , language = "C++"
             , include_dirs = [ 
                 "../basecode" 
