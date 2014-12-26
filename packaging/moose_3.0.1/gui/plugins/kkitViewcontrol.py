@@ -51,7 +51,11 @@ class GraphicalView(QtGui.QGraphicsView):
         self.defaultComptsize = 5
     def setRefWidget(self,path):
         self.viewBaseType = path
-
+    
+    def resizeEvent(self, event):
+        self.fitInView(self.sceneContainerPt.itemsBoundingRect().x()-10,self.sceneContainerPt.itemsBoundingRect().y()-10,self.sceneContainerPt.itemsBoundingRect().width()+20,self.sceneContainerPt.itemsBoundingRect().height()+20,Qt.Qt.IgnoreAspectRatio)
+        #print("Called =>", event)
+        return
     def resolveCompartmentInteriorAndBoundary(self, item, position):
         bound = item.rect().adjusted(3,3,-3,-3)
         return COMPARTMENT_INTERIOR if bound.contains(item.mapFromScene(position)) else COMPARTMENT_BOUNDARY
@@ -502,10 +506,12 @@ class GraphicalView(QtGui.QGraphicsView):
             for unselectitem in self.rubberbandlist:
                 if unselectitem.isSelected() == True:
                     unselectitem.setSelected(0)
-            #First for loop removes all the enz b'cos if parent is removed then
-            #then it will created problem at    qgraphicitem
+            
             deleteSolver(self.layoutPt.modelRoot)
             for item in (qgraphicsitem for qgraphicsitem in self.rubberbandlist):
+                #First Loop to remove all the enz b'cos if parent (which is a Pool) is removed,
+                #then it will created problem at qgraphicalitem not having parent.
+                #So first delete enz and then delete pool
                 if isinstance(item,MMEnzItem) or isinstance(item,EnzItem) or isinstance(item,CplxItem):
                     self.deleteItem(item)
             for item in (qgraphicsitem for qgraphicsitem in self.rubberbandlist):
@@ -513,29 +519,18 @@ class GraphicalView(QtGui.QGraphicsView):
                     if isinstance(item,PoolItem):
                         plot = moose.wildcardFind(self.layoutPt.modelRoot+'/data/graph#/#')
                         for p in plot:
-                            #print p, p.neighbors['requestOut']
                             if len(p.neighbors['requestOut']):
                                 if item.mobj.path == moose.element(p.neighbors['requestOut'][0]).path:
                                     p.tick = -1
                                     moose.delete(p)
                                     self.layoutPt.plugin.view.getCentralWidget().plotWidgetContainer.plotAllData()
                     self.deleteItem(item)
-                    #moose.reinit()
-                    
-
-            self.sceneContainerPt.clear()
-            self.layoutPt.getMooseObj()
-            setupItem(self.modelRoot,self.layoutPt.srcdesConnection)
-            self.layoutPt.mooseObjOntoscene()
-            self.layoutPt.drawLine_arrow(False)
         self.selections = []
-
-        # self.deselectSelections()
-
+    
     def deleteConnection(self,item):
+        #Delete moose connection, i.e one can click on connection arrow and delete the connection
+        deleteSolver(self.layoutPt.modelRoot)
         if isinstance(item,QtGui.QGraphicsPolygonItem):
-            #deleting for function is pending
-            
             src = self.layoutPt.lineItem_dict[item]
             srcZero = [k for k, v in self.layoutPt.mooseId_GObj.iteritems() if v == src[0]]
             srcOne = [k for k, v in self.layoutPt.mooseId_GObj.iteritems() if v == src[1]]
@@ -550,42 +545,37 @@ class GraphicalView(QtGui.QGraphicsView):
                             msgIdforDeleting = msg
                     moose.delete(msgIdforDeleting)
             self.sceneContainerPt.removeItem(item)
+    
     def deleteItem(self,item):
-        if isinstance(item,QtGui.QGraphicsPolygonItem):
-            #deleting for function is pending
-            self.sceneContainerPt.removeItem(item)
-
-        elif isinstance(item,KineticsDisplayItem):
-            if moose.exists(item.mobj.path):
-                #self.updateDictionaries(item, mobj)
-                self.sceneContainerPt.removeItem(item)
-                #removing the table from the graph after removing object for Pool and BuffPool
-                if isinstance(item,PoolItem) or isinstance(item,BufPool):
-                    tableObj = (item.mobj).neighbors['getConc']
-                    if tableObj:
-                        pass
-                        #moose.delete(tableObj[0].path)
-                        #self.layoutPt.plugin.getRunView().plotWidgetContainer.plotAllData()
-                moose.delete(item.mobj)
-        '''        
-        self.layoutPt.plugin.mainWindow.objectEditSlot('/',False)
-        self.layoutPt.deleteSolver()
+        #delete Items 
         if isinstance(item,KineticsDisplayItem):
             if moose.exists(item.mobj.path):
-                #self.updateDictionaries(item, mobj)
-                self.sceneContainerPt.removeItem(item)
-                #removing the table from the graph after removing object for Pool and BuffPool
                 if isinstance(item,PoolItem) or isinstance(item,BufPool):
-                    tableObj = (item.mobj).neighbors['getConc']
-                    if tableObj:
-                        pass
-                        #moose.delete(tableObj[0].path)
-                        #self.layoutPt.plugin.getRunView().plotWidgetContainer.plotAllData()
+                    # pool is item is removed, then check is made if its a parent to any
+                    # enz if 'yes', then enz and its connection are removed before
+                    # removing Pool
+                    for items in moose.element(item.mobj.path).children:
+                        if isinstance(moose.element(items), EnzBase):
+                            gItem = self.layoutPt.mooseId_GObj[moose.element(items)]
+                            for l in self.layoutPt.object2line[gItem]:
+                                # Need to check if the connection on the scene exist
+                                # or its removed from some other means
+                                # E.g Enz to pool and pool to Enz is connected, 
+                                # when enz is removed the connection is removed, 
+                                # but when pool tried to remove then qgraphicscene says 
+                                # "item scene is different from this scene"
+                                sceneItems = self.sceneContainerPt.items()
+                                if l[0] in sceneItems:
+                                    #deleting the connection which is connected to Enz
+                                    self.sceneContainerPt.removeItem(l[0])
+                            moose.delete(items)
+                            self.sceneContainerPt.removeItem(gItem)
+                for l in self.layoutPt.object2line[item]:
+                    sceneItems = self.sceneContainerPt.items()
+                    if l[0] in sceneItems:
+                        self.sceneContainerPt.removeItem(l[0])
+                self.sceneContainerPt.removeItem(item)
                 moose.delete(item.mobj)
-
-        elif isinstance(item,QtGui.QGraphicsPolygonItem):
-            self.sceneContainerPt.removeItem(item)
-        '''
 
     def zoomSelections(self, x0, y0, x1, y1):
         self.fitInView(self.mapToScene(QtCore.QRect(x0, y0, x1 - x0, y1 - y0)).boundingRect(), Qt.Qt.KeepAspectRatio)

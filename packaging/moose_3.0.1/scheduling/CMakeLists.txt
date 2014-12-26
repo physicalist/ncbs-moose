@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.8)
+file(GLOB scheduling_SRC 
+    "*.h"
+    "*.cpp"
+)
 include_directories(../msg)
 include_directories(../basecode)
-add_library(scheduling 
-    Clock.cpp
-    testScheduling.cpp
-    )
+add_library(scheduling ${scheduling_SRC})

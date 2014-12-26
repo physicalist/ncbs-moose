@@ -1,7 +1,12 @@
-INCLUDE_DIRECTORIES(../msg ../basecode)
+include_directories(../msg ../basecode)
+IF(USE_MPI) 
+    find_package(MPI REQUIRED)
+    include_directories(MPI_INCLUDE_PATH)
+    ADD_DEFINITIONS(-DUSE_MPI)
+ENDIF(USE_MPI)
 
-FILE(GLOB SRCS PostMaster.cpp testMpi.cpp)
-ADD_LIBRARY(moose_mpi STATIC
-    ${SRCS}
-)
+add_library(moose_mpi 
+    ./PostMaster.cpp 
+    ./testMpi.cpp 
+    )
 

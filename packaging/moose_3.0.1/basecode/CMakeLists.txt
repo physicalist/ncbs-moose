@@ -1,8 +1,29 @@
 cmake_minimum_required(VERSION 2.8)
 include_directories(../msg)
-FILE(GLOB SRCS *.cpp)
-## Remove the main.cpp from this list. Else we'll have multiple declarations of
-## some symbols error.
-LIST(REMOVE_ITEM SRCS ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-ADD_LIBRARY(basecode ${SRCS}
-)
+add_library(basecode 
+	consts.cpp	
+	Element.cpp	
+	DataElement.cpp	
+	GlobalDataElement.cpp	
+	LocalDataElement.cpp	
+	Eref.cpp	
+	Finfo.cpp	
+	DestFinfo.cpp	
+	Cinfo.cpp	
+	SrcFinfo.cpp 
+	ValueFinfo.cpp 
+	SharedFinfo.cpp 
+	FieldElementFinfo.cpp 
+	FieldElement.cpp 
+	Id.cpp 
+	ObjId.cpp 
+	global.cpp 
+	SetGet.cpp 
+	OpFuncBase.cpp 
+	EpFunc.cpp 
+	HopFunc.cpp 
+	SparseMatrix.cpp 
+	doubleEq.cpp 
+        #PrepackedBuffer.cpp
+	testAsync.cpp	
+    )
