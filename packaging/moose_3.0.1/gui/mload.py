@@ -52,6 +52,7 @@ import posixpath
 from os.path import basename
 from os.path import splitext
 from PyQt4 import QtGui, QtCore, Qt
+from plugins.setsolver import *
 
 def loadFile(filename, target, merge=True):
     """Try to load a model from specified `filename` under the element
@@ -91,7 +92,7 @@ def loadFile(filename, target, merge=True):
     #self.statusBar.showMessage('Loading model, please wait')
     app = QtGui.qApp
     app.setOverrideCursor(QtGui.QCursor(Qt.Qt.BusyCursor)) #shows a hourglass - or a busy/working arrow
-            
+
     if modeltype == 'genesis':
         if subtype == 'kkit' or subtype == 'prototype':
             model = moose.loadModel(filename, target,'gsl')
@@ -126,7 +127,7 @@ def loadFile(filename, target, merge=True):
         else:
             print 'Only kkit and prototype files can be loaded.'
     elif modeltype == 'cspace':
-            model = moose.loadModel(filename, target)
+            model = moose.loadModel(filename, target,'gsl')
             #Harsha: Moving the model under /modelname/model and graphs under /model/graphs
             lmodel = moose.Neutral('%s/%s' %(model.path,"model"))
             for compt in moose.wildcardFind(model.path+'/##[ISA=ChemCompt]'):
@@ -155,15 +156,19 @@ def loadFile(filename, target, merge=True):
                 moose.move(moregraphs.path,graphspath)
             moose.delete(model.path+'/graphs')
             moose.delete(model.path+'/moregraphs')
+            addSolver(target,'gsl')
     elif modeltype == 'xml':
         if subtype == 'neuroml':
             popdict, projdict = neuroml.loadNeuroML_L123(filename)
-        # Circus to get the container of populations from loaded neuroml
+            # Circus to get the container of populations from loaded neuroml
             for popinfo in popdict.values():
                 for cell in popinfo[1].values():
+                    solver = moose.HSolve(cell.path + "/hsolve")
+                    solver.target = cell.path
                     model = cell.parent
                     break
                 break
+
 
             # Moving model to a new location under the model name
             # model name is the filename without extension
@@ -176,7 +181,8 @@ def loadFile(filename, target, merge=True):
 
             # moose.move("cells/", cell.path)
         elif subtype == 'sbml':
-            model = moose.readSBML(filename,target)
+            model = moose.readSBML(filename,target,'gsl')
+            addSolver(target,'gsl')
     else:
         raise FileLoadError('Do not know how to handle this filetype: %s' % (filename))
     moose.setCwe(pwe) # The MOOSE loadModel changes the current working element to newly loaded model. We revert that behaviour

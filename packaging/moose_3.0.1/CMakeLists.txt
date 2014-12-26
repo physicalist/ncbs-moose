@@ -98,12 +98,14 @@ endif()
 find_package(GSL 1.16 REQUIRED)
 
 find_package(LIBSBML)
-if(NOT LIBSBML)
+if(NOT LIBSBML_FOUND)
     MESSAGE("+ LIBSBML NOT FOUND.  Disabling SBML support.")
     ADD_DEFINITIONS(-UUSE_SBML)
 else()
     ADD_DEFINITIONS(-DUSE_SBML)
     include_directories(${LIBSBML_INCLUDE_DIR})
+    find_package(BZip2 REQUIRED)
+    find_package(LibXML2 REQUIRED)
 endif()
 
 
@@ -112,7 +114,6 @@ include_directories(msg basecode)
 add_executable(moose-bin basecode/main.cpp)
 add_library(moose SHARED basecode/main.cpp)
 set_target_properties(moose PROPERTIES COMPILE_FLAGS  "-DMOOSE_LIB")
-set_target_properties(moose PROPERTIES VERSION 3.0.1 SOVERSION 3)
 
 ## GSL
 # Setup GSL
@@ -140,7 +141,6 @@ endif()
 # Openmpi
 find_package(MPI REQUIRED)
 set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
-INCLUDE_DIRECTORIES(${MPI_INCLUDE_DIR})
 
 # Add subdirectroeis
 add_subdirectory(basecode)
@@ -155,6 +155,7 @@ add_subdirectory(external/muparser)
 add_subdirectory(external/debug)
 add_subdirectory(external/tinyxml)
 add_subdirectory(mesh)
+add_subdirectory(sbml)
 add_subdirectory(mpi)
 add_subdirectory(signeur)
 add_subdirectory(ksolve)
@@ -166,8 +167,9 @@ add_subdirectory(kinetics)
 add_subdirectory(synapse)
 add_subdirectory(intfire)
 add_subdirectory(examples)
+add_subdirectory(sbml)
 
-set(LIBRARIES ${LibBZip2_LIBRARIES})
+set(LIBRARIES ${BZIP2_LIBRARIES} ${LibXML2_LIBRARIES})
 if(HDF5_FOUND)
     list(APPEND LIBRARIES ${HDF5_LIBRARY})
 endif()
@@ -186,10 +188,6 @@ endif()
 
 if(READLINE_FOUND AND TERMCAP_FOUND)
     list(APPEND LIBRARIES ${Readline_LIBRARY} ${TERMCAP_LIBRARY})
-endif()
-
-if(MPI_FOUND)
-    list(APPEND LIBRARIES ${MPI_LIBRARY})
 endif()
 
 ###################################### LINKING #################################
@@ -269,28 +267,105 @@ if(BUILD_PYMOOSE)
 endif(BUILD_PYMOOSE)
 
 ######################### INSTALL ##############################################
-install(TARGETS moose 
+install(TARGETS moose
     LIBRARY DESTINATION lib
     COMPONENT moose-core
     )
 
 install(TARGETS moose-bin
-    RUNTIME DESTINATION bin
+    DESTINATION bin
     COMPONENT moose-core
     )
 
-install(SCRIPT python/InstallPyMoose.cmake
-    COMPONENT moose-python
+install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moose
+    DESTINATION bin
+    COMPONENT moose-core
+    )
+
+install(FILES ${PROJECT_SOURCE_DIR}/scripts/moose
+    DESTINATION bin
+    COMPONENT moose-core
+    )
+
+install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moosegui
+    DESTINATION bin
+    COMPONENT moose-gui
     )
 
 ## Install the icon
-install(FILES gui/icons/moose_icon.png 
+install(FILES ${PROJECT_SOURCE_DIR}/gui/icons/moose_icon.png 
     DESTINATION share/moose
     COMPONENT moose-python
     )
 
 # And the desktop file.
-install(FILES scripts/moose.desktop
+install(FILES ${PROJECT_SOURCE_DIR}/scripts/moose.desktop
     DESTINATION share/applications
     COMPONENT moose-python
     )
+
+# And the gui
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/gui
+    DESTINATION lib/moose
+    COMPONENT moose-gui
+    )
+
+# and the python dependencies
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
+    DESTINATION lib/moose
+    COMPONENT moose-python
+    )
+
+## The demos goes here.
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/Demos
+    DESTINATION share/moose
+    COMPONENT moose-python
+    )
+
+################################# PACKAGING ###################################
+
+set(CPACK_STRIP_FILES TRUE)
+set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
+#  We need to compile python scripts on the installation  host.
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Dilawar Singh")
+set(CPACK_PACKAGE_CONTACT "dilawars@ncbs.res.in")
+#set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MOOSE, The Neural Simulator")
+set(CPACK_PACKAGE_VERSION "3.0.1")
+set(CPACK_SYSTEM_NAME "i386")
+set(CPACK_PACKAGE_VERSION_MAJOR "3")
+set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_PATCH "1")
+set(CPACK_PACKAGE_VENDOR "NCBS Bangalore")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Dilawar Singh <dilawars@ncbs.res.in>")
+if(WIN32)
+    MESSAGE("++ Currently only Unix is supported")
+else()
+    set(CPACK_STRIP_FILES moose)
+endif()
+set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+
+set(CPACK_DEBIAN_PACKAGE_DEPENDS 
+    "openmpi-common, libhdf5-7
+    , python-numpy , python-matplotlib, python-qt4
+    , openscenegraph, python-tornado
+    , python-suds, python-nose, python-setuptools
+    , libxml2, bzip2"
+)
+
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+    "${PROJECT_SOURCE_DIR}/scripts/postinst;${PROJECT_SOURCE_DIR}/scripts/prerm;"
+    )
+include(CPack)
+
+#####################  TESTING  ###############################################
+#include(CTest)
+#find_package(PythonInterp REQUIRED)
+#set(ENV{PYTHONPATH} "${PROJECT_SOURCE_DIR}/python")
+#message("++ PYTHONPATH is set to $ENV{PYTHONPATH}")
+#
+#add_test(NAME check_moose
+#    WORKING_DIRECTORY .
+#    COMMAND ./run_moose.sh
+#    )
