@@ -22,6 +22,7 @@
 #include "NeuroNode.h"
 #include "NeuroMesh.h"
 #include "SpineEntry.h"
+#include "SpineMesh.h"
 #include "../utility/numutil.h"
 #include "../shell/Wildcard.h"
 
@@ -41,15 +42,18 @@ static SrcFinfo4< Id, vector< Id >, vector< Id >, vector< unsigned int > >*
 	return &spineListOut;
 }
 
-static SrcFinfo3< Id, vector< double >, vector< unsigned int > >* 
+static SrcFinfo4< Id, vector< double >, 
+		vector< Id >, vector< unsigned int > >* 
 	psdListOut()
 {
-	static SrcFinfo3< Id, vector< double >, vector< unsigned int > >
+	static SrcFinfo4< Id, vector< double >, 
+			vector< Id >, vector< unsigned int > >
    		psdListOut(
 		"psdListOut",
 		"Tells PsdMesh to build a mesh. "
-		"Arguments: Cell Id, Coordinates of each psd, "
-		"index of matching parent voxels for each spine"
+		"Arguments: (Cell Id, Coordinates of each psd, "
+		"Id of electrical compartment mapped to each voxel, "
+		"index of matching parent voxels for each spine.) "
 		"The coordinates each have 8 entries:"
 		"xyz of centre of psd, xyz of vector perpendicular to psd, "
 		"psd diameter, "
@@ -590,7 +594,7 @@ void NeuroMesh::setCellPortion( const Eref& e,
 
 void NeuroMesh::separateOutSpines( const Eref& e )
 {
-		vector< Id > ids;
+		// vector< Id > ids;
 		/*
 		e.element()->getNeighbors( ids, spineListOut() );
 		if ( ids.size() > 0 ) {
@@ -614,9 +618,9 @@ void NeuroMesh::separateOutSpines( const Eref& e )
 				psdCoords.insert( psdCoords.end(), ret.begin(), ret.end() );
 				index[i] = i;
 			}
-			ids.clear();
-			e.element()->getNeighbors( ids, psdListOut() );
-			psdListOut()->send( e, cell_, psdCoords, index );
+			// ids.clear();
+			// e.element()->getNeighbors( ids, psdListOut() );
+			psdListOut()->send( e, cell_, psdCoords, head_, index );
 			/*
 			SetGet3< Id, vector< double >, vector< unsigned int > >::set( 
 					ids[0], "psdList", cell_, psdCoords, index );
@@ -643,7 +647,9 @@ void NeuroMesh::updateShaftParents()
 		if ( r >= 0.0 ) {
 			parent_[i] = index + nn.startFid();
 		} else {
-			assert( 0 );
+			cout << "Warning: NeuroMesh::updateShaftParents: may be"
+					"misalgned on " << i << "\n";
+			parent_[i] = index + nn.startFid();
 		}
 	}
 }
@@ -747,6 +753,29 @@ vector< unsigned int > NeuroMesh::getEndVoxelInCompt() const
 const vector< double >& NeuroMesh::vGetVoxelVolume() const
 {
 	return vs_;
+}
+
+const vector< double >& NeuroMesh::vGetVoxelMidpoint() const
+{
+	static vector< double > midpoint;
+	unsigned int num = vs_.size();
+	midpoint.resize( num * 3 );
+	vector< double >::iterator k = midpoint.begin();
+	for ( unsigned int i = 0; i < nodes_.size(); ++i ) {
+		const NeuroNode& nn = nodes_[i];
+		if ( !nn.isDummyNode() ) {
+			assert( nn.parent() < nodes_.size() );
+			const NeuroNode& parent = nodes_[ nn.parent() ];
+			for ( unsigned int j = 0; j < nn.getNumDivs(); ++j ) {
+				vector< double > coords = nn.getCoordinates( parent, j );
+				*k = ( coords[0] + coords[3] ) / 2.0;
+				*(k + num ) = ( coords[1] + coords[4] ) / 2.0;
+				*(k + 2 * num ) = ( coords[2] + coords[5] ) / 2.0;
+				k++;
+			}
+		}
+	}
+	return midpoint;
 }
 
 const vector< double >& NeuroMesh::getVoxelArea() const
@@ -1141,13 +1170,12 @@ void NeuroMesh::matchMeshEntries( const ChemCompt* other,
 		matchCubeMeshEntries( other, ret );
 		return;
 	}
-	/*
 	const SpineMesh* sm = dynamic_cast< const SpineMesh* >( other );
 	if ( sm ) {
-		matchSpineMeshEntries( other, ret );
+		sm->matchNeuroMeshEntries( this, ret );
+		flipRet( ret );
 		return;
 	}
-	*/
 	const NeuroMesh* nm = dynamic_cast< const NeuroMesh* >( other );
 	if ( nm ) {
 		matchNeuroMeshEntries( other, ret );
@@ -1196,11 +1224,6 @@ double NeuroMesh::nearest( double x, double y, double z,
 	if ( best == 1e12 )
 		return -1;
 	return best;
-}
-
-void NeuroMesh::matchSpineMeshEntries( const ChemCompt* other,
-	   vector< VoxelJunction >& ret ) const
-{
 }
 
 void NeuroMesh::matchCubeMeshEntries( const ChemCompt* other,

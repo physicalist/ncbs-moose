@@ -3,6 +3,7 @@
 """sim_utils.py: 
     Helper function related with simulation.
 
+Last modified: Sat Jan 18, 2014  05:01PM
 
 """
     
@@ -12,7 +13,7 @@ __credits__          = ["NCBS Bangalore", "Bhalla Lab"]
 __license__          = "GPL"
 __version__          = "1.0.0"
 __maintainer__       = "Dilawar Singh"
-__email__            = "dilawars@iitb.ac.in"
+__email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
 import _moose

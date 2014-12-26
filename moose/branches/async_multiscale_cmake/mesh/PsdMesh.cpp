@@ -39,6 +39,15 @@ const Cinfo* PsdMesh::initCinfo()
 			&PsdMesh::getThickness
 		);
 
+		static ReadOnlyValueFinfo< PsdMesh, vector< Id > > elecComptMap(
+			"elecComptMap",
+			"Vector of Ids of electrical compartments that map to each "
+			"voxel. This is necessary because the order of the IDs may "
+			"differ from the ordering of the voxels. Note that there "
+			"is always just one voxel per PSD. ",
+			&PsdMesh::getElecComptMap
+		);
+
 		//////////////////////////////////////////////////////////////
 		// MsgDest Definitions
 		//////////////////////////////////////////////////////////////
@@ -46,10 +55,13 @@ const Cinfo* PsdMesh::initCinfo()
 		static DestFinfo psdList( "psdList",
 			"Specifies the geometry of the spine,"
 			"and the associated parent voxel"
-			"Arguments: cell container, disk params vector with 8 entries"
-			"per psd, parent voxel index ",
-			new EpFunc3< PsdMesh, Id,
+			"Arguments: cell container, "
+			"disk params vector with 8 entries per psd, "
+			"vector of Ids of electrical compts mapped to voxels, "
+			"parent voxel index ",
+			new EpFunc4< PsdMesh, Id,
 				vector< double >,
+				vector< Id >,
 		   		vector< unsigned int > >(
 				&PsdMesh::handlePsdList )
 		);
@@ -60,6 +72,7 @@ const Cinfo* PsdMesh::initCinfo()
 
 	static Finfo* psdMeshFinfos[] = {
 		&thickness,			// ValueFinfo
+		&elecComptMap,		// ReadOnlyValueFinfo
 		&psdList,			// DestFinfo
 	};
 
@@ -126,6 +139,11 @@ void PsdMesh::setThickness( double v )
 	thickness_ = v;
 }
 
+vector< Id > PsdMesh::getElecComptMap() const
+{
+	return elecCompt_;
+}
+
 /**
  * This assumes that lambda is the quantity to preserve, over numEntries.
  * So when the compartment changes volume, numEntries changes too.
@@ -151,6 +169,7 @@ void PsdMesh::handlePsdList(
 		const Eref& e,
 		Id cell,
 		vector< double > diskCoords, //ctr(xyz), dir(xyz), dia, diffDist
+		vector< Id > elecCompt,
 		vector< unsigned int > parentVoxel )
 {
 		double oldVol = getMeshEntryVolume( 0 );
@@ -161,6 +180,7 @@ void PsdMesh::handlePsdList(
 		area_.resize( parentVoxel.size() );
 		length_.resize( parentVoxel.size() );
 		cell_ = cell;
+		elecCompt_ = elecCompt;
 
 		psd_.clear();
 		pa_.clear();
@@ -404,6 +424,8 @@ void PsdMesh::matchSpineMeshEntries( const ChemCompt* other,
 		for ( unsigned int i = 0; i < psd_.size(); ++i ) {
 			double xda = psd_[i].getDiffusionArea( pa_[i], 0 ) / parentDist_[i];
 			ret.push_back( VoxelJunction( i, parent_[i], xda ) );
+			ret.back().firstVol = getMeshEntryVolume( i );
+			ret.back().secondVol = sm->getMeshEntryVolume( parent_[i] );
 		}
 	} else {
 		assert( 0 ); // Don't know how to do this yet.
@@ -458,6 +480,22 @@ vector< unsigned int > PsdMesh::getParentVoxel() const
 const vector< double >& PsdMesh::vGetVoxelVolume() const
 {
 	return vs_;
+}
+
+const vector< double >& PsdMesh::vGetVoxelMidpoint() const
+{
+	static vector< double > midpoint;
+	midpoint.resize( psd_.size() * 3 );
+	vector< double >::iterator k = midpoint.begin();
+	for ( unsigned int i = 0; i < psd_.size(); ++i ) {
+		vector< double > coords = 
+				psd_[i].getCoordinates( pa_[i], 0 );
+		*k = ( coords[0] + coords[3] ) / 2.0;
+		*(k + psd_.size() ) = ( coords[1] + coords[4] ) / 2.0;
+		*(k + 2 * psd_.size() ) = ( coords[2] + coords[5] ) / 2.0;
+		k++;
+	}
+	return midpoint;
 }
 
 const vector< double >& PsdMesh::getVoxelArea() const

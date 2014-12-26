@@ -38,38 +38,6 @@ class Shell
 		Shell();
 		~Shell();
 
-                /**
-                 * @brief Initialize shell.
-                 *
-                 * @return Pointer to shell.
-                 *
-                 * This function initialize shell and returns a pointer to it.
-                 * This function must create a fully functional shell which can
-                 * be used by cython interface.
-                 */
-                Shell* initShell();
-
-
-                /**
-                 * @brief A thin wrapper around doCreate function. Used in
-                 * cython interface.
-                 *
-                 * @param type Type of Moose-element to be created e.g. Table,
-                 * Compartment, etc.
-                 * @param parent Parent element under which this element is
-                 * being created.
-                 * @param name Name of the element. String.
-                 * @param numData 
-                 * @param nodePolicy
-                 * @param preferredNode
-                 *
-                 * @return Id of the element.
-                 */
-		Id create( string type, string name, unsigned int numData, 
-				NodePolicy nodePolicy = MooseBlockBalance,
-				unsigned int preferredNode = 1 );
-
-
 		///////////////////////////////////////////////////////////
 		// Field functions
 		///////////////////////////////////////////////////////////
@@ -116,9 +84,12 @@ class Shell
 
 		/**
 		 * Delete specified Element and all its children and all 
-		 * Msgs connected to it.
+		 * Msgs connected to it. This also works for Msgs, which are
+		 * also identified by an ObjId. Unlike regular objects, only
+		 * the one Msg entry specified by the DataIndex part of the ObjId
+		 * argument is deleted. 
 		 */
-		bool doDelete( Id id );
+		bool doDelete( ObjId oid );
 
 		/**
 		 * Sets up a Message of specified type.
@@ -320,7 +291,7 @@ class Shell
 		void handleCreate( const Eref& e,
 			string type, ObjId parent, Id newElm, string name,
 			NodeBalance nb, unsigned int parentMsgIndex );
-		void destroy( const Eref& e, Id eid);
+		void destroy( const Eref& e, ObjId oid);
 
 		/**
 		 * Function that does the actual work of creating a new Element.
@@ -634,9 +605,6 @@ class Shell
 
 		/// Current working Element
 		ObjId cwe_;
-
-                /// deliminator in path
-                char deliminator;
 };
 
 /*

@@ -23,7 +23,6 @@ import moose
 from moose.neuroml import *
 from moose.utils import * # has setupTable(), resetSim() etc
 import math
-import pylab
 
 ## import numpy and matplotlib in matlab style commands
 from pylab import *
@@ -40,10 +39,10 @@ def run_LIF():
     cells_path = '/cells'
 
     ## reset and run the simulation
-    print("Reinit MOOSE.")
+    print "Reinit MOOSE."
     ## from moose_utils.py sets clocks and resets
     resetSim(['/cells'], SIMDT, PLOTDT, simmethod='hsolve')
-    print("Running now...")
+    print "Running now..."
     moose.start(RUNTIME)
 
 if __name__ == '__main__':
@@ -61,18 +60,9 @@ if __name__ == '__main__':
     moose.connect(spikeGen,'event',IF1spikesTable,'input')
 
     run_LIF()
-    print("Spiketimes :",IF1spikesTable.vector)
+    print "Spiketimes :",IF1spikesTable.vector
     ## plot the membrane potential of the neuron
     timevec = arange(0.0,RUNTIME+PLOTDT/2.0,PLOTDT)
-    pylab.figure(facecolor='w')
-    pylab.plot(timevec, IF1vmTable.vector)
-    save = os.environ.get('SAVE_FIG', None)
-    if not save:
-        pylab.show()
-    else:
-        for i in pylab.get_fignums():
-            filename = __file__+"_{}.png".format(i)
-            pylab.figure(i)
-            print(("\t++ Storing figure {} to {}".format(i, filename)))
-            pylab.savefig(filename)
-
+    figure(facecolor='w')
+    plot(timevec, IF1vmTable.vector)
+    show()

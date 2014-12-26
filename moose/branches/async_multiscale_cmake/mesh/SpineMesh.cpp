@@ -69,6 +69,15 @@ const Cinfo* SpineMesh::initCinfo()
 			&SpineMesh::getNeuronVoxel
 		);
 
+		static ReadOnlyValueFinfo< SpineMesh, vector< Id > > elecComptMap(
+			"elecComptMap",
+			"Vector of Ids of electrical compartments that map to each "
+			"voxel. This is necessary because the order of the IDs may "
+			"differ from the ordering of the voxels. Note that there "
+			"is always just one voxel per spine head. ",
+			&SpineMesh::getElecComptMap
+		);
+
 		//////////////////////////////////////////////////////////////
 		// MsgDest Definitions
 		//////////////////////////////////////////////////////////////
@@ -89,6 +98,7 @@ const Cinfo* SpineMesh::initCinfo()
 
 	static Finfo* spineMeshFinfos[] = {
 		&parentVoxel,		// ReadOnlyValueFinfo
+		&elecComptMap,		// ReadOnlyValueFinfo
 		&spineList,			// DestFinfo
 		// psdListOut(),		// SrcFinfo
 	};
@@ -164,6 +174,16 @@ vector< unsigned int > SpineMesh::getNeuronVoxel() const
 	return ret;
 }
 
+vector< Id > SpineMesh::getElecComptMap() const
+{
+	vector< Id > ret( spines_.size() );
+	for ( unsigned int i = 0; i < spines_.size(); ++i ) 
+		ret[i] = spines_[i].headId();
+	return ret;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 /**
  * This assumes that lambda is the quantity to preserve, over numEntries.
  * So when the compartment changes volume, numEntries changes too.
@@ -237,7 +257,7 @@ void SpineMesh::handleSpineList(
 /// Virtual function to return MeshType of specified entry.
 unsigned int SpineMesh::getMeshType( unsigned int fid ) const
 {
-	assert( fid < spines_.size() * 3 );
+	assert( fid < spines_.size() );
 	return CYL;
 }
 
@@ -252,7 +272,7 @@ double SpineMesh::getMeshEntryVolume( unsigned int fid ) const
 {
 	if ( spines_.size() == 0 )
 		return 1.0;
-	assert( fid < spines_.size() * 3 );
+	assert( fid < spines_.size() );
 	return spines_[ fid % spines_.size() ].volume();
 }
 
@@ -321,6 +341,19 @@ void SpineMesh::innerHandleNodeInfo(
 const vector< double >& SpineMesh::vGetVoxelVolume() const
 {
 	return vs_;
+}
+
+const vector< double >& SpineMesh::vGetVoxelMidpoint() const
+{
+	static vector< double > midpoint;
+	midpoint.resize( spines_.size() * 3 );
+	for ( unsigned int i = 0; i < spines_.size(); ++i ) {
+		spines_[i].mid( midpoint[i], 
+						midpoint[i + spines_.size() ], 
+						midpoint[i + 2 * spines_.size() ] 
+		); 
+	}
+	return midpoint;
 }
 
 const vector< double >& SpineMesh::getVoxelArea() const
@@ -473,6 +506,9 @@ void SpineMesh::matchNeuroMeshEntries( const ChemCompt* other,
 		for ( unsigned int i = 0; i < spines_.size(); ++i ) {
 			double xda = spines_[i].rootArea() / spines_[i].diffusionLength();
 			ret.push_back( VoxelJunction( i, spines_[i].parent(), xda ) );
+			ret.back().firstVol = spines_[i].volume();
+			ret.back().secondVol = 
+					nm->getMeshEntryVolume( spines_[i].parent() );
 		}
 	} else {
 		assert( 0 ); // Don't know how to do this yet.

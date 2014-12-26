@@ -14,7 +14,7 @@ from moose.utils import *
 
 from moose.neuroml.NeuroML import NeuroML
 
-import pylab
+from pylab import *
 
 simdt = 10e-6 # s
 plotdt = 10e-6 # s
@@ -22,32 +22,26 @@ runtime = 0.2 # s
 
 def loadGran98NeuroML_L123(filename):
     neuromlR = NeuroML()
-    populationDict, projectionDict = neuromlR.readNeuroMLFromFile(filename)
+    populationDict, projectionDict = \
+        neuromlR.readNeuroMLFromFile(filename)
     soma_path = populationDict['CA1group'][1][0].path+'/Seg0_soma_0_0'
     somaVm = setupTable('somaVm',moose.Compartment(soma_path),'Vm')
     #somaCa = setupTable('somaCa',moose.CaConc(soma_path+'/Gran_CaPool_98'),'Ca')
     #somaIKCa = setupTable('somaIKCa',moose.HHChannel(soma_path+'/Gran_KCa_98'),'Gk')
     #KDrX = setupTable('ChanX',moose.HHChannel(soma_path+'/Gran_KDr_98'),'X')
     soma = moose.Compartment(soma_path)
-    print("Reinit MOOSE ... ")
+    print "Reinit MOOSE ... "
     resetSim(['/elec','/cells'],simdt,plotdt,simmethod='ee') # from moose.utils
-    print("Running ... ")
+    print "Running ... "
     moose.start(runtime)
-    tvec = pylab.arange(0.0,runtime,simdt)
-    pylab.plot(tvec,somaVm.vector[1:])
-    pylab.title('Soma Vm')
-    pylab.xlabel('time (s)')
-    pylab.ylabel('Voltage (V)')
-    print("Showing plots ...")
-    save = os.environ.get('SAVE_FIG', None)
-    if not save:
-        pylab.show()
-    else:
-        for i in pylab.get_fignums():
-            filename = __file__+"_{}.png".format(i)
-            pylab.figure(i)
-            print(("\t++ Storing figure {} to {}".format(i, filename)))
-            pylab.savefig(filename)
+    tvec = arange(0.0,runtime,simdt)
+    plot(tvec,somaVm.vector[1:])
+    title('Soma Vm')
+    xlabel('time (s)')
+    ylabel('Voltage (V)')
+    print "Showing plots ..."
+    show()
+
 if __name__ == "__main__":
     if len(sys.argv)<2:
         filename = "CA1soma.net.xml"

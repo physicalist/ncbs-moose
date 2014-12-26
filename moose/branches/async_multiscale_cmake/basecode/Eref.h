@@ -10,17 +10,6 @@
 #ifndef _EREF_H
 #define _EREF_H
 
-#ifdef  CYMOOSE
-#include <vector>
-class ObjId;
-class Element;
-class Id;
-class MsgDigest;
-#endif     /* -----  CYMOOSE  ----- */
-
-#include <iostream>
-using namespace std;
-
 class Eref
 {
 	public:

@@ -16,7 +16,8 @@ import moose
 from moose.utils import *
 
 from moose.neuroml.NeuroML import NeuroML
-import pylab
+
+from pylab import *
 
 SIMDT = 25e-6 # s
 PLOTDT = 25e-6 # s
@@ -40,7 +41,7 @@ moose.connect(CA1CellSoma,'VmOut',spikeGen,'Vm')
 ## save spikes in table
 table_path = moose.Neutral(CA1Cell.path+'/data').path
 CA1CellSpikesTable = moose.Table(table_path+'/spikesTable')
-moose.connect(spikeGen,'spikeOut',CA1CellSpikesTable,'spike')
+moose.connect(spikeGen,'event',CA1CellSpikesTable,'input')
 
 #CA1CellVmTable = moose.Table(table_path+'/vmTable')
 #moose.connect(CA1CellSoma,'VmOut',CA1CellVmTable,'input')
@@ -52,34 +53,24 @@ resetSim(['/cells'],SIMDT,PLOTDT,simmethod='hsolve') # from moose.utils
 
 ## Loop through different current injections
 freqList = []
-currentvec = pylab.arange(0, injectmax, injectmax/50.0)
+currentvec = arange(0, injectmax, injectmax/50.0)
 for currenti in currentvec:
     moose.reinit()
     CA1CellSoma.inject = currenti
     moose.start(RUNTIME)
-    spikesList = pylab.array(CA1CellSpikesTable.vector)
+    spikesList = array(CA1CellSpikesTable.vector)
     if len(spikesList)>0:
-        spikesList = spikesList[pylab.where(spikesList>0.0)[0]]
+        spikesList = spikesList[where(spikesList>0.0)[0]]
         spikesNow = len(spikesList)
     else: spikesNow = 0.0
     print "For injected current =",currenti,\
         "number of spikes in",RUNTIME,"seconds =",spikesNow
     freqList.append( spikesNow/float(RUNTIME) )
 
-## pylab.plot the F vs I curve of the neuron
-pylab.figure(facecolor='w')
-pylab.plot(currentvec, freqList,'o-')
-pylab.xlabel('time (s)')
-pylab.ylabel('frequency (Hz)')
-pylab.title('HH single-compartment Cell')
-
-save = os.environ.get('SAVE_FIG', None)
-if not save:
-    pylab.show()
-else:
-    for i in pylab.get_fignums():
-        filename = __file__+"_{}.png".format(i)
-        pylab.figure(i)
-        print(("\t++ Storing figure {} to {}".format(i, filename)))
-        pylab.savefig(filename)
-
+## plot the F vs I curve of the neuron
+figure(facecolor='w')
+plot(currentvec, freqList,'o-')
+xlabel('time (s)')
+ylabel('frequency (Hz)')
+title('HH single-compartment Cell')
+show()

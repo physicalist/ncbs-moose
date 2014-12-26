@@ -21,9 +21,10 @@ simdt = 25e-6 # s
 plotdt = 25e-6 # s
 runtime = 0.7 # s
 
-def loadGran98NeuroML_L123(filename, save=False):
+def loadGran98NeuroML_L123(filename):
     neuromlR = NeuroML()
-    populationDict, projectionDict = neuromlR.readNeuroMLFromFile(filename)
+    populationDict, projectionDict = \
+        neuromlR.readNeuroMLFromFile(filename)
     soma_path = populationDict['Gran'][1][0].path+'/Soma_0'
     somaVm = setupTable('somaVm',moose.Compartment(soma_path),'Vm')
     somaCa = setupTable('somaCa',moose.CaConc(soma_path+'/Gran_CaPool_98'),'Ca')
@@ -31,9 +32,9 @@ def loadGran98NeuroML_L123(filename, save=False):
     somaIKCa = setupTable('somaIKCa',moose.HHChannel(soma_path+'/Gran_KCa_98'),'Gk')
     #KDrX = setupTable('ChanX',moose.HHChannel(soma_path+'/Gran_KDr_98'),'X')
     soma = moose.Compartment(soma_path)
-    print("Reinit MOOSE ... ")
+    print "Reinit MOOSE ... "
     resetSim(['/elec','/cells'],simdt,plotdt) # from moose.utils
-    print("Running ... ")
+    print "Running ... "
     moose.start(runtime)
     tvec = arange(0.0,runtime,simdt)
     plot(tvec,somaVm.vector[1:])
@@ -55,22 +56,13 @@ def loadGran98NeuroML_L123(filename, save=False):
     title('KC current (A)')
     xlabel('time (s)')
     ylabel('')
-    if save:
-        for i in get_fignums():
-            filename = __file__+"_{}.png".format(i)
-            figure(i)
-            print(("Storing figure {} to {}".format(i, filename)))
-            savefig(filename)
-    else:
-        print("Showing plots ...")
-        show()
+    print "Showing plots ..."
+    show()
 
-
+filename = "allChannelsCell.net.xml"
 if __name__ == "__main__":
-    filename = "allChannelsCell.net.xml"
-    if len(sys.argv) < 2:
+    if len(sys.argv)<2:
         filename = "allChannelsCell.net.xml"
     else:
         filename = sys.argv[1]
-
-    loadGran98NeuroML_L123(filename, True)
+    loadGran98NeuroML_L123(filename)

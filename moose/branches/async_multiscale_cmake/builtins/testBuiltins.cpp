@@ -309,6 +309,32 @@ void testGetMsg()
 		assert( doubleEq( temp[i], 2 * i ) );
 	}
 
+	/////////////////////////////////////////////////////////////////
+	// Here we check using the 'get' message with multiple targets
+	/////////////////////////////////////////////////////////////////
+	Id arith2 = shell->doCopy( arithid, ObjId(), "arith2", 1, false, false);
+	shell->doUseClock( "/arith2", "process", 0 );
+	ret = shell->doAddMsg( "Single", 
+		tabid.eref().objId(), "requestOut",
+		arith2.eref().objId(), "getOutputValue" );
+	shell->doReinit();
+	SetGet1< double >::set( arithid, "arg1", 0.0 );
+	SetGet1< double >::set( arithid, "arg2", 2.0 );
+	SetGet1< double >::set( arith2, "arg1", 10.0 );
+	SetGet1< double >::set( arith2, "arg2", 12.0 );
+	shell->doStart( 100 );
+
+	numEntries = Field< unsigned int >::get( tabid, "size" );
+	// One for reinit call, 100 for process, and there are two targets.
+	assert( numEntries == 202 ); 
+	temp = Field< vector< double > >::get( tabid, "vector" );
+
+	for ( unsigned int i = 1; i < 100; ++i ) {
+		assert( doubleEq( temp[2 * i], 2 * i ) );
+		assert( doubleEq( temp[2 * i + 1], 10 + 12 * i ) );
+	}
+
+
 	// Perhaps I should do another test without reinit.
 	/*
 	SetGet2< string, string >::set( 
@@ -316,9 +342,81 @@ void testGetMsg()
 	tabentry.destroy();
 		*/
 	shell->doDelete( arithid );
+	shell->doDelete( arith2 );
 	shell->doDelete( tabid );
 	cout << "." << flush;
 	
+}
+
+void testStats()
+{
+	Shell* shell = reinterpret_cast< Shell* >( Id().eref().data() );
+	unsigned int size = 1000;
+	vector< double > sinewave( size, 0 );
+	for ( unsigned int i = 0; i < size; ++i ) {
+		sinewave[i] = sin( 2 * i * PI / static_cast< double >( size ) );
+	}
+	ObjId tabid = shell->doCreate( "StimulusTable", ObjId(), "tab", 1 );
+	assert( tabid != ObjId() );
+	Field< vector< double > >::set( tabid, "vector", sinewave );
+	Field< double >::set( tabid, "startTime", 0 );
+	Field< double >::set( tabid, "stopTime", size );
+	Field< double >::set( tabid, "loopTime", size );
+	Field< double >::set( tabid, "stepSize", 0 );
+	Field< double >::set( tabid, "stepPosition", 0 );
+	Field< bool >::set( tabid, "doLoop", true );
+
+	ObjId stat1 = shell->doCreate( "Stats", ObjId(), "stat1", 1 );
+	Field< unsigned int >::set( stat1, "windowLength", size );
+
+	ObjId mid = shell->doAddMsg( "Single", tabid, "output", 
+					stat1, "input" );
+
+	shell->doUseClock( "/tab", "process", 0 );
+	shell->doUseClock( "/stat1", "process", 1 );
+	shell->doSetClock( 0, 1 );
+	shell->doSetClock( 1, 1 );
+
+	shell->doReinit();
+	shell->doStart( size/2 );
+	double mean = Field< double >::get( stat1, "mean" );
+	double sdev = Field< double >::get( stat1, "sdev" );
+	double sum = Field< double >::get( stat1, "sum" );
+	unsigned int num = Field< unsigned int >::get( stat1, "num" );
+	double wmean = Field< double >::get( stat1, "wmean" );
+	double wsdev = Field< double >::get( stat1, "wsdev" );
+	double wsum = Field< double >::get( stat1, "wsum" );
+	unsigned int wnum = Field< unsigned int >::get( stat1, "wnum" );
+	assert( doubleApprox( mean, 2.0 / PI ) );
+	assert( doubleApprox( sdev, 0.3077627 ) );
+	assert( doubleApprox( sum, size / PI ) );
+	assert( doubleApprox( num, size/2 ) );
+	assert( doubleApprox( wmean, 2.0 / PI ) );
+	// assert( doubleApprox( wsdev, 1.0/sqrt( 2.0 ) ) );
+	assert( doubleApprox( wsum, size / PI ) );
+	assert( wnum == size/2 );
+
+	shell->doStart( size );
+	mean = Field< double >::get( stat1, "mean" );
+	sdev = Field< double >::get( stat1, "sdev" );
+	sum = Field< double >::get( stat1, "sum" );
+	num = Field< unsigned int >::get( stat1, "num" );
+	wmean = Field< double >::get( stat1, "wmean" );
+	wsdev = Field< double >::get( stat1, "wsdev" );
+	wsum = Field< double >::get( stat1, "wsum" );
+	wnum = Field< unsigned int >::get( stat1, "wnum" );
+	assert( doubleApprox( mean, 2.0 / (PI * 3.0) ) );
+	assert( doubleApprox( sdev, 0.6745136 ) );
+	assert( doubleApprox( sum, size / PI ) );
+	assert( doubleApprox( num, 3 * size/2 ) );
+	assert( doubleApprox( wmean, 0 ) );
+	assert( doubleApprox( wsdev, 1.0/sqrt( 2.0 ) ) );
+	assert( doubleApprox( wsum, 0 ) );
+	assert( wnum == size );
+
+	shell->doDelete( tabid );
+	shell->doDelete( stat1 );
+	cout << "." << flush;
 }
 
 void testBuiltins()
@@ -331,6 +429,7 @@ void testBuiltinsProcess()
 {
 //	testFibonacci(); Nov 2013: Waiting till we have the MsgObjects fixed.
 	testGetMsg();
+	testStats();
 }
 
 void testMpiBuiltins( )

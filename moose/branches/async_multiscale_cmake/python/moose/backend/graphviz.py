@@ -13,7 +13,7 @@ __credits__          = ["NCBS Bangalore", "Bhalla Lab"]
 __license__          = "GPL"
 __version__          = "1.0.0"
 __maintainer__       = "Dilawar Singh"
-__email__            = "dilawars@iitb.ac.in"
+__email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
 import sys
@@ -191,7 +191,7 @@ def getConnectedCompartments(obj):
 # @param Ignore paths containing this pattern. A regular expression. 
 #
 # @return None. 
-def writeGraphviz(filename=None, pat='/##[TYPE=Compartment]', **kwargs):
+def writeGraphviz(filename=None, pat='/##[TYPE=Compartment]', ignore=None):
     '''This is  a generic function. It takes the the pattern, search for paths
     and write a graphviz file.
     '''
@@ -212,10 +212,6 @@ def writeGraphviz(filename=None, pat='/##[TYPE=Compartment]', **kwargs):
         dotFile.setIgnorePat(ignorePat)
 
     compList = b.filterPaths(b.compartments, ignorePat)
-
-    dotFile.compShape = kwargs.get('compartment_shape', 'box3d')
-    dotFile.tableShape = kwargs.get('table_shape', 'folder')
-    dotFile.pulseShape = kwargs.get('pulse_shape', 'invtriangle')
 
     if not compList:
         print_utils.dump("WARN"
@@ -255,4 +251,5 @@ def writeGraphviz(filename=None, pat='/##[TYPE=Compartment]', **kwargs):
         dotFile.addTable(t, sources)
 
     dotFile.writeDotFile(filename)
+    return True
 
