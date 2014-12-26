@@ -1,6 +1,6 @@
 # distutils: language = c++
 # distutils: include_dirs = ., cymoose
-# distutils: extra_compiler_args = -DCYTHON
+# distutils: extra_compile_args = -DCYTHON
 
 cimport Id as _Id
 cimport ObjId as _ObjId
