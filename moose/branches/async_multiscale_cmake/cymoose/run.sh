@@ -1,8 +1,8 @@
 #!/bin/bash -e
 export LDFLAGS="-L. -L/usr/lib -L/usr/local/lib -L/usr/lib/mpi/gcc/openmpi/lib/" 
 if [ $# -lt 1 ]; then
-    CXX="g++" \
-    CC="g++" \
+    CXX="clang++" \
+    CC="clang++" \
     LDFLAGS="-L. -L/usr/lib -L/usr/local/lib -L/usr/lib/mpi/gcc/openmpi/lib/" \
     python ./setup.py build_ext --inplace
     echo "Copying latest libmoose.so to /usr/local/lib"
