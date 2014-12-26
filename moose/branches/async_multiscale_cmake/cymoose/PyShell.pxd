@@ -23,7 +23,7 @@ cdef extern from "../shell/Shell.h":
         Shell() 
         Shell* initShell()
         _Id.Id create(string elemType
-                , string path
+                , string name
                 , unsigned int numData 
                 , NodePolicy nodePolicy 
                 , unsigned int preferredNode 

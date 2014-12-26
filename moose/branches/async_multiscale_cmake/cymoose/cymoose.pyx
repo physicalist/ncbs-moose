@@ -2,10 +2,6 @@
 # distutils: include_dirs = ., cymoose
 # distutils: extra_compile_args = -DCYTHON
 
-include "PyShell.pyx"
-include "PyNeutral.pyx"
-include "PyCompartment.pyx"
-
 cimport Id as _Id
 cimport ObjId as _ObjId 
 cimport Neutral as _Neutral
