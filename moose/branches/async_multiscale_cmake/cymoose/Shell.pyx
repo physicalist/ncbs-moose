@@ -18,16 +18,14 @@ cdef class PyShell:
 
     cdef _Id.Id doCreate(self
             , _type
-            , _parent
+            , _ObjId.ObjId  _parent
             ,  _name
             , _numData
             , _nodePolicy
             , _preferedNode
             ):
 
-        cdef _ObjId.ObjId pId = _parent.getObj()
-
-        return self.thisptr.doCreate(_type, pId, _name, _numData
+        return self.thisptr.doCreate(_type, _parent, _name, _numData
                 , _nodePolicy , _preferedNode)
     
     def callCreate(self):
