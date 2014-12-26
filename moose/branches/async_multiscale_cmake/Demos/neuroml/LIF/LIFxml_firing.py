@@ -23,7 +23,6 @@ import moose
 from moose.neuroml import *
 from moose.utils import * # has setupTable(), resetSim() etc
 import math
-import pylab
 
 ## import numpy and matplotlib in matlab style commands
 from pylab import *
@@ -38,43 +37,29 @@ def create_LIF():
 
 def run_LIF():
 	## reset and run the simulation
-	print("Reinit MOOSE.")
+	print "Reinit MOOSE."
 	## from moose_utils.py sets clocks and resets
 	resetSim(['/cells[0]'], SIMDT, PLOTDT, simmethod='ee')
-	print("Running now...")
+	print "Running now..."
 	moose.start(RUNTIME)
 
 if __name__ == '__main__':
     IF1 = create_LIF()
     printCellTree(IF1)
-    IF1Soma = moose.Compartment(IF1.path+'/soma_0')
+    IF1Soma = moose.element(IF1.path+'/soma_0') # moose.LIF instance
     IF1Soma.inject = injectI
     IF1vmTable = setupTable("vmTableIF1",IF1Soma,'Vm')
 
-    ## edge-detect the spikes using spike-gen (table does not have edge detect)
-    ## IaF_spikegen is already present for compartments having IaF mechanisms
-    spikeGen = moose.SpikeGen(IF1Soma.path+'/IaF_spikegen')
     table_path = moose.Neutral(IF1Soma.path+'/data').path
     IF1spikesTable = moose.Table(table_path+'/spikesTable')
-    moose.connect(spikeGen,'spikeOut',IF1spikesTable,'input') ## spikeGen gives spiketimes
+    moose.connect(IF1Soma,'spikeOut',IF1spikesTable,'input') ## spikeGen gives spiketimes
 
     run_LIF()
-    print("Spiketimes :",IF1spikesTable.vector)
+    print "Spiketimes :",IF1spikesTable.vector
     ## plot the membrane potential of the neuron
     timevec = arange(0.0,RUNTIME+PLOTDT/2.0,PLOTDT)
     ## Something is crazy! Why twice the number of table entries compared to time!!??
-    pylab.figure(facecolor='w')
-    print(IF1vmTable)
-    pylab.plot(timevec, IF1vmTable.vector)
-    save = os.environ.get('SAVE_FIG', None)
-    if not save:
-        pylab.show()
-    else:
-        for i in pylab.get_fignums():
-            filename = __file__+"_{}.png".format(i)
-            pylab.figure(i)
-            print(("\t++ Storing figure {} to {}".format(i, filename)))
-            pylab.savefig(filename)
-
-    ## At the end, some issue with Func (as per Subha) gives below or core dump error
-    ## *** glibc detected *** python: corrupted double-linked list: 0x00000000038f9aa0 ***
+    figure(facecolor='w')
+    print IF1vmTable
+    plot(timevec, IF1vmTable.vector)
+    show()

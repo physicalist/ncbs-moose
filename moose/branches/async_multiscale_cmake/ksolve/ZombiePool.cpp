@@ -9,6 +9,9 @@
 
 #include "header.h"
 #include "PoolBase.h"
+#include "VoxelPoolsBase.h"
+#include "../mesh/VoxelJunction.h"
+#include "XferInfo.h"
 #include "ZombiePoolInterface.h"
 #include "ZombiePool.h"
 #include "lookupVolumeFromMesh.h"
@@ -81,10 +84,10 @@ void ZombiePool::vSetN( const Eref& e, double v )
 
 double ZombiePool::vGetN( const Eref& e ) const
 {
-	if ( dsolve_ != 0 )
-		return dsolve_->getN( e );
-	else if ( ksolve_ != 0 )
+	if ( ksolve_ != 0 )
 		return ksolve_->getN( e );
+	else if ( dsolve_ != 0 )
+		return dsolve_->getN( e );
 	return 0.0;
 }
 
@@ -98,10 +101,10 @@ void ZombiePool::vSetNinit( const Eref& e, double v )
 
 double ZombiePool::vGetNinit( const Eref& e ) const
 {
-	if ( dsolve_ != 0 )
-		return dsolve_->getNinit( e );
-	else if ( ksolve_ != 0 )
+	if ( ksolve_ != 0 )
 		return ksolve_->getNinit( e );
+	else if ( dsolve_ != 0 )
+		return dsolve_->getNinit( e );
 	return 0.0;
 }
 
@@ -122,11 +125,7 @@ void ZombiePool::vSetConcInit( const Eref& e, double conc )
 	double n = NA * conc * lookupVolumeFromMesh( e );
 	vSetNinit( e, n );
 }
-
-double ZombiePool::vGetConcInit( const Eref& e ) const
-{
-	return vGetNinit( e ) / ( NA * lookupVolumeFromMesh( e ) );
-}
+// Do not get concInit from ZombiePool, the PoolBase handles it.
 
 void ZombiePool::vSetDiffConst( const Eref& e, double v )
 {

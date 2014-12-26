@@ -41,4 +41,8 @@ some higher-level hand-written documents:
 
 \ref HSolveImplementation
 
+\ref Profiling
+
+\ref ParamFitting
+
 */

@@ -14,6 +14,9 @@
 #include "FuncTerm.h"
 #include "SparseMatrix.h"
 #include "KinSparseMatrix.h"
+#include "VoxelPoolsBase.h"
+#include "../mesh/VoxelJunction.h"
+#include "XferInfo.h"
 #include "ZombiePoolInterface.h"
 #include "Stoich.h"
 #include "ZombieReac.h"
@@ -111,7 +114,7 @@ void ZombieReac::vSetNumKb( const Eref& e, double v )
 
 double ZombieReac::vGetNumKb( const Eref& e ) const
 {
-	double volScale = convertConcToNumRateUsingMesh( e, subOut, 0 );
+	double volScale = convertConcToNumRateUsingMesh( e, prdOut, 0 );
 	return concKb_ / volScale;
 }
 

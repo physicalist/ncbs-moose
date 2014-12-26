@@ -10,7 +10,7 @@
 #ifndef _SynChan_h
 #define _SynChan_h
 
-class SynChan: public SynChanBase
+class SynChan: public ChanCommon
 {
 	public:
 		SynChan();
@@ -30,12 +30,16 @@ class SynChan: public SynChanBase
 		bool getNormalizeWeights() const;
 
 		// override virtual func from ChanBase
-		void innerSetGbar( double Gbar );
+		void vSetGbar( const Eref& e, double Gbar );
 
 		/////////////////////////////////////////////////////////////////
 		// Utility function for any time Gbar changes
 		void normalizeGbar();
 
+		/// Utility function used to do the alpha function calculations for
+		/// Gk.
+		/// Separated out for convenience so that derived classes can use.
+		double calcGk();
 		/////////////////////////////////////////////////////////////////
 		// ElementFinfo access function definitions
 		/////////////////////////////////////////////////////////////////
@@ -49,8 +53,8 @@ class SynChan: public SynChanBase
 // Dest function definitions
 ///////////////////////////////////////////////////
 
-		void process( const Eref& e, ProcPtr p );
-		void reinit( const Eref& e, ProcPtr p );
+		void vProcess( const Eref& e, ProcPtr p );
+		void vReinit( const Eref& e, ProcPtr p );
 
 		void activation( double val );
 		void modulator( double val );
@@ -80,7 +84,7 @@ class SynChan: public SynChanBase
 		double modulation_;
 		double X_;	
 		double Y_;	
-		/* priority_queue< Synapse > pendingEvents_; */
+		double dt_; /// Tracks the timestep assigned at reinit.
 };
 
 

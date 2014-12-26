@@ -36,9 +36,10 @@ import os
 # Universal paths 
 nmlPath = '/neuroml'
 nmlCellPath = os.path.join(nmlPath, 'cells')
+libraryPath = os.path.join(nmlPath, 'cells')
 cellPath = nmlCellPath
-libraryPath = '/library'
-cellPath = '/cells'
+elecPath = os.path.join(nmlPath, 'electrical')
+
 mumblePath = '/mumbl'
 
 

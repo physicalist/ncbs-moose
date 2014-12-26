@@ -25,7 +25,7 @@ from moose.utils import * # has setupTable(), resetSim() etc
 import math
 
 ## import numpy and matplotlib in matlab style commands
-import pylab
+from pylab import *
 
 def create_twoLIFs():
     NML = NetworkML({'temperature':37.0,'model_dir':'.'})
@@ -37,10 +37,10 @@ def create_twoLIFs():
 
 def run_twoLIFs():
 	## reset and run the simulation
-	print("Reinit MOOSE.")
+	print "Reinit MOOSE."
 	## from moose_utils.py sets clocks and resets
 	resetSim(['/cells[0]'], SIMDT, PLOTDT, simmethod='ee')
-	print("Running now...")
+	print "Running now..."
 	moose.start(RUNTIME)
 
 if __name__ == '__main__':
@@ -54,32 +54,32 @@ if __name__ == '__main__':
     IF1vmTable = setupTable("vmTableIF1",IF1Soma,'Vm')
     IF2vmTable = setupTable("vmTableIF2",IF2Soma,'Vm')
 
-    ## edge-detect the spikes using spike-gen (table does not have edge detect)
-    ## IaF_spikegen is already present for compartments having IaF mechanisms
-    spikeGen = moose.SpikeGen(IF1Soma.path+'/IaF_spikegen')
     table_path = moose.Neutral(IF1Soma.path+'/data').path
     IF1spikesTable = moose.Table(table_path+'/spikesTable')
-    moose.connect(spikeGen,'spikeOut',IF1spikesTable,'input') ## spikeGen gives spiketimes
+    moose.connect(IF1Soma,'spikeOut',IF1spikesTable,'input') ## spikeGen gives spiketimes
+
+    ## record Gk of the synapse on IF2
+    #print IF2Soma.children
+    IF2SynChanTable = moose.Table(table_path+'/synChanTable')
+    moose.connect(IF2SynChanTable,'requestOut',IF2Soma.path+'/exc_syn','getIk')
 
     run_twoLIFs()
-    print("Spiketimes :",IF1spikesTable.vector)
+    print "Spiketimes :",IF1spikesTable.vector
     ## plot the membrane potential of the neuron
-    timevec = pylab.arange(0.0,RUNTIME+PLOTDT/2.0,PLOTDT)
-    pylab.figure(facecolor='w')
-    print(IF1vmTable, IF2vmTable)
-    pylab.plot(timevec, IF1vmTable.vector,'r-')
-    pylab.figure(facecolor='w')
-    pylab.plot(timevec, IF2vmTable.vector,'b-')
-    save = os.environ.get('SAVE_FIG', None)
-    if not save:
-        pylab.show()
-    else:
-        for i in pylab.get_fignums():
-            filename = __file__+"_{}.png".format(i)
-            pylab.figure(i)
-            print(("\t++ Storing figure {} to {}".format(i, filename)))
-            pylab.savefig(filename)
-
-
-    ## At the end, some issue with Func (as per Subha) gives below or core dump error
-    ## *** glibc detected *** python: corrupted double-linked list: 0x00000000038f9aa0 ***
+    timevec = arange(0.0,RUNTIME+PLOTDT/2.0,PLOTDT)
+    figure(facecolor='w')
+    plot(timevec, IF1vmTable.vector*1000,'r-')
+    xlabel('time(s)')
+    ylabel('Vm (mV)')
+    title('Vm of presynaptic IntFire')
+    figure(facecolor='w')
+    plot(timevec, IF2vmTable.vector*1000,'b-')
+    xlabel('time(s)')
+    ylabel('Vm (mV)')
+    title('Vm of postsynaptic IntFire')
+    figure(facecolor='w')
+    plot(timevec, IF2SynChanTable.vector*1e12,'b-')
+    xlabel('time(s)')
+    ylabel('Ik (pA)')
+    title('Ik entering postsynaptic IntFire')
+    show()

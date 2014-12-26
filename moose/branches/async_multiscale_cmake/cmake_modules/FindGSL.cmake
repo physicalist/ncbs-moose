@@ -66,6 +66,7 @@ ELSE(WIN32)
         ARGS --prefix
         OUTPUT_VARIABLE GSL_PREFIX)
       message(${GSL_PREFIX})
+
       SET(GSL_INCLUDE_DIR ${GSL_PREFIX}/include CACHE STRING INTERNAL)
 
       # set link libraries and link flags
@@ -77,6 +78,11 @@ ELSE(WIN32)
       EXEC_PROGRAM(${GSL_CONFIG}
         ARGS --libs
         OUTPUT_VARIABLE GSL_CONFIG_LIBS )
+
+     EXEC_PROGRAM(${GSL_CONFIG}
+         ARGS --version
+         OUTPUT_VARIABLE GSL_VERSION
+         )
 
       ## split off the link dirs (for rpath)
       ## use regular expression to match wildcard equivalent "-L*<endchar>"

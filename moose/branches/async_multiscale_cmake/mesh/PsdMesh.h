@@ -57,6 +57,8 @@ class PsdMesh: public MeshCompt
 		double getThickness() const;
 		void setThickness( double v );
 
+		vector< Id > getElecComptMap() const;
+
 		//////////////////////////////////////////////////////////////////
 		// FieldElement assignment stuff for MeshEntries
 		//////////////////////////////////////////////////////////////////
@@ -89,6 +91,7 @@ class PsdMesh: public MeshCompt
 		
 		vector< unsigned int > getParentVoxel() const;
 		const vector< double >& vGetVoxelVolume() const;
+		const vector< double >& vGetVoxelMidpoint() const;
 		const vector< double >& getVoxelArea() const;
 		const vector< double >& getVoxelLength() const;
 
@@ -119,6 +122,7 @@ class PsdMesh: public MeshCompt
 			const Eref& e,
 			Id cell,
 			vector< double > params,
+			vector< Id > elecCompts,
 			vector< unsigned int > parentVoxel );
 
 		void transmitChange( const Eref& e );
@@ -171,6 +175,7 @@ class PsdMesh: public MeshCompt
 		vector< CylBase > pa_; ///Specifies direction of psd. Length ignored
 		vector< double > parentDist_; /// Specifies diff distance to PSD.
 		vector< unsigned int > parent_; /// Parent voxel index.
+		vector< Id > elecCompt_; /// Ids of elec compts mapped to each voxel
 
 		/**
 		 * Decides how finely to subdivide diffLength_ or radius or cubic

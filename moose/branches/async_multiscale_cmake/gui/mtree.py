@@ -186,10 +186,13 @@ class MooseTreeWidget(QtGui.QTreeWidget):
 	item = MooseTreeItem(parent)
 	item.setObject(obj)
 	odict[obj] = item
+        # TODO: check and verify that this still works with synapses -
+        # there have been change in API. - Subha, Fri Sep 19 19:04:35 IST 2014
+
 	for child in obj.children:    
             ch = child
-            if child[0].name in obj.getFieldNames('fieldElementFinfo'):
-                ch = obj.getField(child[0].name)
+            if child.name in obj.getFieldNames('fieldElementFinfo'):
+                ch = obj.getField(child.name)
             for elm in ch:
                 self.setupTree(moose.element(elm), item, odict)      
 	return item
@@ -251,8 +254,7 @@ class MooseTreeWidget(QtGui.QTreeWidget):
 def main():
     """Test main: load a model and display the tree for it"""
     model = moose.Neutral('/model')
-    #moose.loadModel('../Demos/Genesis_files/Kholodenko.g', '/model/Kholodenko')
-    moose.loadModel('/home/harsha/genesis_files/gfile/acc42.g','/model/acc42')
+    moose.loadModel('../Demos/Genesis_files/Kholodenko.g', '/model/Kholodenko')
     # tab = moose.element('/model/Kholodenko/graphs/conc1/MAPK_PP.Co')
     # print tab
     # for t in tab.children:
