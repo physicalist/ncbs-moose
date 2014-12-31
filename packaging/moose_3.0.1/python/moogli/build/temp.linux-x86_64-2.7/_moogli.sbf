@@ -1,3 +1,0 @@
-target = _moogli
-sources = sip_mooglicmodule.cpp sip_moogliMorphologyViewer.cpp sip_moogliMorphology.cpp sip_moogliSelectInfo.cpp
-headers = sipAPI_moogli.h
