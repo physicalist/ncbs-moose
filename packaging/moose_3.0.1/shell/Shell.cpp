@@ -164,6 +164,39 @@ Shell::Shell()
 Shell::~Shell()
 {;}
 
+#ifdef  CYMOOSE
+
+/*-----------------------------------------------------------------------------
+ *  This function must create a fully functional Shell. Used in cython
+ *  interface.
+ *-----------------------------------------------------------------------------*/
+Shell* Shell::initShell()
+{
+    Eref sheller = Id().eref();
+    Shell* shell = reinterpret_cast< Shell* >( sheller.data() );
+    return shell;
+}
+
+Id Shell::create(string type, string name, unsigned int numData
+        , NodePolicy nodePolicy, unsigned int preferredNode 
+        ) 
+{
+    if(name.size() == 0)
+        return doCreate(type, Id(), name, numData, nodePolicy, preferredNode);
+
+    string::size_type pos = name.find_last_of('/');
+    string parentPath = name.substr(0, pos);
+    ObjId parentObj = ObjId(parentPath);
+//    cerr << "info: Creating Obj with parent : " << parentObj << endl;
+    Id id = doCreate(type, parentObj, name.substr(pos+1)
+            , numData, nodePolicy, preferredNode
+            );
+//    cerr << "    ++ with id " << id << endl;
+    return id;
+}
+
+#endif     /* -----  CYMOOSE  ----- */
+
 void Shell::setShellElement( Element* shelle )
 {
 	shelle_ = shelle;
