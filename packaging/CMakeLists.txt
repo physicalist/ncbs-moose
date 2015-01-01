@@ -7,6 +7,7 @@ set(MOOSE_SRC_DIRNAME moose_3.0.1)
 
 ## Project related macros
 set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${MOOSE_SRC_DIRNAME})
+## Modules are always in branch 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake_modules")
 
 # This snippet is from LLVM project.
@@ -38,6 +39,7 @@ set(INSTALL_INCLUDE_DIR include CACHE PATH "${CMAKE_INSTALL_PREFIX}/include/")
 LINK_DIRECTORIES(${GSL_INSTALL_DIR}/lib)
 
 ########################### ARCHITECTURE SPECIFIC ##############################
+MESSAGE("++ Testing for architecture: 64 bit or 32 bit")
 if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
     MESSAGE("++ 64 bit architecture")
     set(LIBSUFFIX "64")
@@ -69,12 +71,18 @@ add_definitions(-Wall
     )
 add_definitions(-fPIC)
 
-## Enable/Disable 2011 stupport.
-set(ENABLE_STD_2011 0)
-if(ENABLE_STD_2011)
-    add_definitions(-DENABLE_STD_2011 -DDEBUG2)
+## Enable 2011 support if available.
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-endif(ENABLE_STD_2011)
+else()
+    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
+
 
 # DO UNIT TESTS 
 set(ENABLE_UNIT_TESTS 1)
@@ -319,6 +327,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/kinetics)
 add_subdirectory(${PROJECT_SOURCE_DIR}/synapse)
 add_subdirectory(${PROJECT_SOURCE_DIR}/sbml)
 add_subdirectory(${PROJECT_SOURCE_DIR}/intfire)
+add_subdirectory(${PROJECT_SOURCE_DIR}/python/moogli)
 
 set(LIBRARIES ${LibBZip2_LIBRARIES})
 list(APPEND LIBRARIES ${HDF5_LIBRARY})
