@@ -50,7 +50,7 @@ Description: GUI of moose.
 
 Package: moose-moogli
 Architecture: any
-Depends: python-qt4, python-sip, libqt4-gui, libopenscenegraph
+Depends: python-qt4, python-sip, libqt4-gui, libopenscenegraph99
 Suggests: moose-gui
 Description: Visualizer for neural simulator
  .
