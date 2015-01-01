@@ -48,7 +48,7 @@ add_definitions(-Wall
     )
 add_definitions(-fPIC)
 
-# Enable std11 support if available.
+## Enable/Disable 2011 stupport.
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
@@ -349,6 +349,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/gui
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
     DESTINATION lib/moose
     COMPONENT moose-python
+    COMPONENT moogli
     )
 
 ## The demos goes here.
