@@ -3,6 +3,7 @@ set -e
 
 if [ -d /usr/lib/moose/python ]; then
     ( cd /usr/lib/moose/python && cat installed_files.txt | xargs rm -rf )
+    ( cd /usr/lib/moose/python && cat installed_files_moogli.txt | xargs rm -rf )
 fi
 
 if [ -d /usr/lib/moose ]; then
