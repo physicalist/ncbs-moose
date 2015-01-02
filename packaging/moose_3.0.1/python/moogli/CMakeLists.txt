@@ -14,6 +14,8 @@ else()
     message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+FIND_PACKAGE(PythonLibs REQUIRED)
+
 SET(SIP_INCLUDES ${PYQT4_SIP_DIR})
 
 SEPARATE_ARGUMENTS(PYQT4_SIP_FLAGS) # convert space separated values to a list
