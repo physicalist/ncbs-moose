@@ -1,10 +1,21 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 # setup SIP variables
-SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/../../cmake_modules")
+SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../cmake_modules")
+MESSAGE("++ CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}")
 
 FIND_PACKAGE(PyQt4 REQUIRED)
 FIND_PACKAGE(PythonLibs REQUIRED)
 
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else()
+    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
 SET(SIP_INCLUDES ${PYQT4_SIP_DIR})
 
 SEPARATE_ARGUMENTS(PYQT4_SIP_FLAGS) # convert space separated values to a list
@@ -26,7 +37,9 @@ INCLUDE(${QT_USE_FILE})
 FIND_PROGRAM(SIP_EXECUTABLE sip)
 MESSAGE("++ SIP ${SIP_EXECUTABLE}")
 
-include_directories(./include ${CMAKE_SOURCE_DIR} ".")
+include_directories(./include ${CMAKE_SOURCE_DIR} "."
+    ${CMAKE_CURRENT_SOURCE_DIR}/moc
+    )
 include_directories(${OSGQT_INCLUDE_DIR})
 include_directories(${SIP_INCLUDES} ${PYTHON_INCLUDE_DIRS})
 include_directories(${OPENSCENEGRAPH_INCLUDE_DIRS})
