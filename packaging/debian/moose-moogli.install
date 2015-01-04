@@ -1,2 +1,2 @@
-/usr/lib/moose/python/moogli
-/usr/lib/moose/python/setup-moogli.py
+/usr/lib/moogli/_moogli.so
+/usr/lib/moogli/setup.py
