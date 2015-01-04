@@ -23,6 +23,10 @@ case "$1" in
             ( cd /usr/lib/moose/python && cat installed_files.txt | xargs rm -rf )
 	fi
 
+        if [ -d /usr/lib/moogli ]; then
+            rm -R /usr/lib/moogli
+        fi
+
         if [ -d /usr/lib/moose ]; then
             rm -R /usr/lib/moose
         fi

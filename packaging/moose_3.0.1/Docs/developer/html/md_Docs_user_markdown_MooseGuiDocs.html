@@ -44,6 +44,7 @@
 <div class="textblock"><p><b>Graphical interface for MOOSE</b></p>
 <p><em>Harsha Rani, Aviral Goel, Upinder S. Bhalla</em> </p>
 <hr/>
+ <h2>Contents</h2>
 <ul>
 <li><a href="#introduction">Introduction</a></li>
 <li><a href="#interface">Interface</a><ul>
@@ -77,7 +78,6 @@
 </li>
 <li><a href="#run-view">Run View</a><ul>
 <li><a href="#simulation-controls">Simulation Controls</a></li>
-<li><a href="#visualization-widget">Visualization Widget</a></li>
 <li><a href="#plot-widget">Plot Widget</a><ul>
 <li><a href="#plot-widget-toolbar">Toolbar</a></li>
 <li><a href="#plot-widget-context-menu">Context Menu</a></li>
@@ -88,16 +88,16 @@
 </ul>
 </li>
 </ul>
-<p>#<a href="#introduction">Introduction</a></p>
+<h2>Introduction</h2>
 <p>The Moose GUI lets you work on both <a href="Kkit12Documentation.html">chemical</a> and <a href="Nkit2Documentation.html">compartmental/electrical</a> neuronal models using a common interface. This document describes the salient features of the GUI</p>
-<p>#<a href="#interface">Interface</a></p>
+<h2>Interface</h2>
 <p>The common interface layout consists of a a <a href="#menu-bar">menu bar</a> and two views, <a href="#editor-view">editor view</a> and <a href="#run-view">run view</a>.</p>
-<h2><a href="#menu-bar">Menu Bar</a></h2>
+<h3>Menu Bar</h3>
 <div class="image">
 <img src="../../images/MooseGuiMenuImage.png" />
 </div>
 <p>The menu bar appears at the top of the top of the main window. In Ubuntu 12.04, the menu bar appears only when the mouse is in the top menu strip of the screen. It consists of the following options -</p>
-<h3><a href="#menu-file">File</a></h3>
+<h4>File</h4>
 <p>The File menu option provides the following sub options -</p>
 <ul>
 <li><a href="#file-new">New</a> - Create a new chemical signalling model.</li>
@@ -106,7 +106,7 @@
 <li><a href="#file-connect-biomodels">Connect BioModels</a> - Load chemical signaling models from the BioModels database.</li>
 <li><a href="#file-quit">Quit</a> - Quit the interface.</li>
 </ul>
-<h3><a href="#menu-view">View</a></h3>
+<h4>View</h4>
 <p>View menu option provides the following sub options -</p>
 <ul>
 <li><a href="#editor-view">Editor View</a> - Switch to the editor view for editing models.</li>
@@ -118,20 +118,16 @@
 </li>
 <li><a href="#subwindows">SubWindows</a> - This allows you to tile or tabify the run and editor views.</li>
 </ul>
-<h3><a href="#menu-help">Help</a></h3>
+<h4>Help</h4>
 <ul>
 <li><a href="#about-moose">About Moose</a> - Version and general information about MOOSE.</li>
 <li><a href="#butilt-in-documentation">Built-in documentation</a> - Documentation of MOOSE GUI.</li>
 <li><a href="#report-a-bug">Report a bug</a> - Directs to the SourceForge bug tracker for reporting bugs.</li>
 </ul>
-<h2><a href="#editor-view">Editor View</a></h2>
+<h3>Editor View</h3>
 <p>The editor view provides two windows -</p>
 <ul>
-<li><a href="#model-editor">Model Editor</a> - The model editor is a workspace to edit and create models. Using click-and-drag from the icons in the menu bar, you can create model entities such as chemical pools, reactions, and so on. A click on any object brings its property editor on screen (see below). In objects that can be interconnected, a click also brings up a special arrow icon that is used to connect objects together with messages. You can move objects around within the edit window using click-and-drag. Finally, you can delete objects by selecting one or more, and then choosing the delete option from the pop-up menu.</li>
-</ul>
-<p>When displaying a neuronal model, most of the editing options are disabled. However, you can still click on a dendrite in order to bring up the property editor.</p>
-<ul>
-<li><a href="#property-editor">Property Editor</a> - The property editor provides a way of viewing and editing the properties of objects selected in the model editor.</li>
+<li><a href="#model-editor">Model Editor</a> - The model editor is a workspace to edit and create models. Using click-and-drag from the icons in the menu bar, you can create model entities such as chemical pools, reactions, and so on. A click on any object brings its property editor on screen (see below). In objects that can be interconnected, a click also brings up a special arrow icon that is used to connect objects together with messages. You can move objects around within the edit window using click-and-drag. Finally, you can delete objects by selecting one or more, and then choosing the delete option from the pop-up menu. When displaying a neuronal model, most of the editing options are disabled. However, you can still click on a dendrite in order to bring up the property editor.</li>
 </ul>
 <p>The Model Editor is different for chemical signalling and compartmental neuronal models. The links below the screenshots point to the details for the respective editors.</p>
 <div class="image">
@@ -140,9 +136,18 @@
 <div class="image">
 <img src="../../images/CompartmentalEditor.png"  alt="Compartmental Model Editor"/>
 </div>
-<h2><a href="#run-view">Run View</a></h2>
+<ul>
+<li><a href="#property-editor">Property Editor</a> - The property editor provides a way of viewing and editing the properties of objects selected in the model editor.</li>
+</ul>
+<div class="image">
+<img src="../../images/PropertyEditor.png"  alt="Property Editor"/>
+</div>
+<h3>Run View</h3>
 <p>The Run view, as the name suggests, puts the GUI into a mode where the model can be simulated. As a first step in this, you can click-and-drag an object to the graph window in order to create a time-series plot for that object. For example, in a chemical reaction, you could drag a pool into the graph window and subsequent simulations will display a graph of the concentration of the pool as a function of time. Within the Run View window, the time-evolution of the simulation is displayed as an animation. For chemical kinetic models, the size of the icons for reactant pools scale to indicate concentration. For neuronal models, the colour of dendritic segments changes to indicate membrane potential. Above the Run View window, there is a special tool bar with a set of simulation controls to run the simulation.</p>
-<h3><a href="#simulation-controls">Simulation Controls</a></h3>
+<h4>Simulation Controls</h4>
+<div class="image">
+<img src="../../images/SimulationControl.png"  alt="Simulation Control"/>
+</div>
 <p>This panel allows you to control the various aspects of the simulation.</p>
 <ul>
 <li><a href="#run-time">Run Time</a> - Determines duration for which simulation is to run. A simulation which has already run, runs further for the specified additional period.</li>
@@ -151,11 +156,9 @@
 <li><a href="#current-time">Current time</a> - This reports the current simulation time.</li>
 <li><a href="#preferences">Preferences</a> - Allows you to set simulation and visualization related preferences.</li>
 </ul>
-<h3><a href="#visualization-widget">Visualization Widget</a></h3>
-<h3><a href="#plot-widget">Plot Widget</a></h3>
-<ul>
-<li><a href="#plot-widget-toolbar">Toolbar</a> - On top of plot window there is a little row of icons:</li>
-</ul>
+<h4>Plot Widget</h4>
+<h5>Toolbar</h5>
+<p>On top of plot window there is a little row of icons:</p>
 <div class="image">
 <img src="../../images/PlotWindowIcons.png" />
 </div>
@@ -197,21 +200,18 @@
 <img src="../../images/MatPlotLibSave.png" />
 </div>
  - Save the plot.</li>
-<li><a href="#plot-widget-context-menu">Context Menu</a></li>
 </ul>
-<p>The context menu is enabled by right clicking on the plot window.</p>
-<div class="image">
-<img src="../../images/context-menu.png" />
-</div>
+<h5>Context Menu</h5>
+<p>The context menu is enabled by right clicking on the plot window. It has the following options -</p>
 <ul>
-<li>Export to CSV - Exports the plotted data to CSV format</li>
-<li>Toggle Legend - Toggles the plot legend</li>
-<li>Remove - Provides a list of plotted entities. The selected entity will not be plotted. </li>
+<li><b>Export to CSV</b> - Exports the plotted data to CSV format</li>
+<li><b>Toggle Legend</b> - Toggles the plot legend</li>
+<li><b>Remove</b> - Provides a list of plotted entities. The selected entity will not be plotted. </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 2 2015 21:51:25 for MOOSE by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sun Jan 4 2015 10:15:35 for MOOSE by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

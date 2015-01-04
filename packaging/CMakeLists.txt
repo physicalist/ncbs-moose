@@ -150,6 +150,17 @@ else()
     endif()
 endif()
 
+## External projects
+include(ExternalProject)
+ExternalProject_Add(
+   moogli
+   PREFIX ${PROJECT_SOURCE_DIR}/python/moogli
+   SOURCE_DIR  ${PROJECT_SOURCE_DIR}/python/moogli
+   CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${PROJECT_SOURCE_DIR}/python/moogli"
+) 
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/python/moogli/include)
+LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/python/moogli)
+
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/dependencies)
 if(LOCAL_GSL)
     MESSAGE("++ GSL include path ${GSL_HEADER_PATHS}")
@@ -327,7 +338,6 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/kinetics)
 add_subdirectory(${PROJECT_SOURCE_DIR}/synapse)
 add_subdirectory(${PROJECT_SOURCE_DIR}/sbml)
 add_subdirectory(${PROJECT_SOURCE_DIR}/intfire)
-add_subdirectory(${PROJECT_SOURCE_DIR}/python/moogli)
 
 set(LIBRARIES ${LibBZip2_LIBRARIES})
 list(APPEND LIBRARIES ${HDF5_LIBRARY})
@@ -441,72 +451,94 @@ endif(BUILD_PYMOOSE)
 ######################### INSTALL ##############################################
 install(TARGETS moose
     LIBRARY DESTINATION lib
-    COMPONENT moose-core
+    COMPONENT moose
     )
 
 install(TARGETS moose-bin
     DESTINATION bin
-    COMPONENT moose-core
+    COMPONENT moose
     )
 
 install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moose
     DESTINATION bin
-    COMPONENT moose-core
+    COMPONENT moose
     )
 
 install(FILES ${PROJECT_SOURCE_DIR}/scripts/moose
     DESTINATION bin
-    COMPONENT moose-core
+    COMPONENT moose
     )
 
 install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moosegui
     DESTINATION bin
-    COMPONENT moose-gui
+    COMPONENT moose
     )
 
 ## Install the icon
 install(FILES ${PROJECT_SOURCE_DIR}/gui/icons/moose_icon.png 
     DESTINATION share/moose
-    COMPONENT moose-python
+    COMPONENT moose
     )
 
 # And the desktop file.
 install(FILES ${PROJECT_SOURCE_DIR}/scripts/moose.desktop
     DESTINATION share/applications
-    COMPONENT moose-python
+    COMPONENT moose
     )
 
 # And the gui
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/gui
     DESTINATION lib/moose
-    COMPONENT moose-gui
+    COMPONENT moose
     )
 
 # and the python dependencies
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/python
-    DESTINATION lib/moose
-    COMPONENT moose-python
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/python/moose
+    DESTINATION lib/moose/python
+    COMPONENT moose
+    )
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/python/libmumbl
+    DESTINATION lib/moose/python
+    COMPONENT moose
+    )
+install(FILES ${PROJECT_SOURCE_DIR}/python/setup.py
+    DESTINATION lib/moose/python
+    COMPONENT moose
     )
 
 ## The demos goes here. The ending backslash after Demos/ allows us to change
 ## the name of target.
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/Demos/
     DESTINATION share/moose/demos
-    COMPONENT moose-python
-    COMPONENT moose-gui
+    COMPONENT moose
     )
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     DESTINATION share/doc/moose
-    COMPONENT moose-core
-    COMPONENT moose-python
+    COMPONENT moose
     )
+
+### And here is moogli
+install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/_moogli.so
+    DESTINATION lib/moogli
+    COMPONENT moogli
+    )
+install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/setup.py
+    DESTINATION lib/moogli
+    COMPONENT moogli
+    )
+
 
 ########################## PACKAGING #########################################
 
+set(CPACK_COMPONENTS_ALL moose moogli)
+set(CPACK_COMPONENT_MOOSE_GROUP "moose")
+set(CPACK_COMPONENT_MOOGLI_GROUP "moogli")
+
 set(CPACK_GENERATOR "DEB;RPM;STGZ")
 set(CPACK_STRIP_FILES TRUE)
-set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
+set(CPACK_COMPONENTS_IGNORE_GROUPS 1)
+
 #  We need to compile python scripts on the installation  host.
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Dilawar Singh")
 set(CPACK_PACKAGE_CONTACT "dilawars@ncbs.res.in")
