@@ -1,0 +1,19 @@
+1. Ubuntu
+
+1.1 Build 
+    
+1.1.1 MOOSE
+
+    a) python-numpy
+    b) python-dev
+    c) libxml2-dev
+    d) libbz2-dev
+
+1.1.2 MOOGLI
+
+    a) python-qt4-dev
+    b) python-sip-dev
+    c) libqt4-dev
+    d) libopenscenegraph-dev
+
+1.2 Runtime 
