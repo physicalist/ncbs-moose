@@ -521,23 +521,19 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/docs
 ### And here is moogli
 install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/_moogli.so
     DESTINATION lib/moogli
-    COMPONENT moogli
+    COMPONENT moose
     )
 install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/setup.py
     DESTINATION lib/moogli
-    COMPONENT moogli
+    COMPONENT moose
     )
 
 
 ########################## PACKAGING #########################################
 
-set(CPACK_COMPONENTS_ALL moose moogli)
-set(CPACK_COMPONENT_MOOSE_GROUP "moose")
-set(CPACK_COMPONENT_MOOGLI_GROUP "moogli")
-
 set(CPACK_GENERATOR "DEB;RPM;STGZ")
 set(CPACK_STRIP_FILES TRUE)
-set(CPACK_COMPONENTS_IGNORE_GROUPS 1)
+set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE ON)
 
 #  We need to compile python scripts on the installation  host.
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Dilawar Singh")
