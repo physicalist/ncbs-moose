@@ -4,6 +4,7 @@ set(CMAKE_INSTALL_PREFIX /usr)
 
 # This variable should point to the source code.
 set(MOOSE_SRC_DIRNAME moose_3.0.1)
+set(MOOSE_SRC_DIRNAME trunk)
 
 ## Project related macros
 set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${MOOSE_SRC_DIRNAME})
