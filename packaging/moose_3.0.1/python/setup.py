@@ -43,10 +43,10 @@ setup(
         options={'build' : {'build_base' : '/tmp' } },
         packages=['libmumbl'
             , 'moose', 'moose.neuroml', 'moose.backend'
+            , 'moogli'
             ],
         package_dir = { 'moose' : 'moose'
             , 'libmumbl' : 'libmumbl'
             },
         package_data = { 'moose' : ['_moose.so'] },
-        #install_requires = [ 'matplotlib'],
     ) 

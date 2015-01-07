@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(moose)
+project(MOOSE)
 set(CMAKE_INSTALL_PREFIX /usr)
 
 # This snippet is from LLVM project.
