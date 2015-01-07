@@ -520,11 +520,11 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     )
 
 ### And here is moogli
-install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/_moogli.so
+install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/moogli.so
     DESTINATION lib/moogli
     COMPONENT moose
     )
-install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/setup.py
+install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/setup-moogli.py
     DESTINATION lib/moogli
     COMPONENT moose
     )
