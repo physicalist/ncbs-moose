@@ -495,15 +495,15 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/gui
 
 # and the python dependencies
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/python/moose
-    DESTINATION lib/moose/python
+    DESTINATION /tmp
     COMPONENT moose
     )
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/python/libmumbl
-    DESTINATION lib/moose/python
+    DESTINATION /tmp
     COMPONENT moose
     )
 install(FILES ${PROJECT_SOURCE_DIR}/python/setup.py
-    DESTINATION lib/moose/python
+    DESTINATION /tmp
     COMPONENT moose
     )
 
@@ -521,11 +521,17 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/docs
 
 ### And here is moogli
 install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/moogli.so
-    DESTINATION lib/moogli
+    DESTINATION /tmp/moogli
     COMPONENT moose
     )
-install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/setup-moogli.py
-    DESTINATION lib/moogli
+
+install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/__init__.py
+    DESTINATION /tmp/moogli
+    COMPONENT moose
+    )
+
+install(FILES ${PROJECT_SOURCE_DIR}/python/setup-moogli.py
+    DESTINATION /tmp
     COMPONENT moose
     )
 

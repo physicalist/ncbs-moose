@@ -20,8 +20,8 @@ set -e
 
 case "$1" in
     configure)
-        ( cd /usr/lib/moose/python && python setup.py install --record installed_files.txt )       
-        ( cd /usr/lib/moogli && python setup-moogli.py install --record installed_files.txt  )
+        ( cd /tmp && python setup.py install  )       
+        ( cd /tmp && python setup-moogli.py install )
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
