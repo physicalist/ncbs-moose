@@ -73,20 +73,6 @@ from MdiArea import MdiArea
 import os
 __author__ = 'Subhasis Ray , HarshaRani, Aviral Goel, NCBS'
 
-
-
-# import sys
-# import traceback
-
-# class TracePrints(object):
-#   def __init__(self):
-#     self.stdout = sys.stdout
-#   def write(self, s):
-#     self.stdout.write("Writing %r\n" % s)
-#     traceback.print_stack(file=self.stdout)
-
-sys.stdout = TracePrints()
-
 # This maps model subtypes to corresponding plugin names. Should be
 # moved to a separate property file perhaps
 subtype_plugin_map = {  'genesis/kkit': 'kkit'
@@ -98,15 +84,6 @@ subtype_plugin_map = {  'genesis/kkit': 'kkit'
 APPLICATION_ICON_PATH = os.path.join( os.path.dirname(os.path.realpath(__file__))
                                     , "icons/moose_icon.png"
                                     )
-
-
-def busyCursor():
-    app = QtGui.qApp
-    app.setOverrideCursor(QtGui.QCursor(Qt.Qt.BusyCursor)) #shows a hourglass - or a busy/working arrow
-
-def freeCursor():
-    app = QtGui.qApp
-    app.restoreOverrideCursor()
 
 
 
@@ -340,7 +317,7 @@ class MWindow(QtGui.QMainWindow):
         3. sets the current view  to the plugins editor view.
 
         """
-        busyCursor()
+
         self.plugin = self.loadPluginClass(str(name))(str(root), self)
         compt = moose.wildcardFind(root+'/##[ISA=ChemCompt]')
         if compt:
@@ -397,7 +374,6 @@ class MWindow(QtGui.QMainWindow):
             self.objectEditDockWidget.colorChanged.connect(self.plugin.getEditorView().getCentralWidget().updateColorSlot)
 
         self.setCurrentView('editor')
-        freeCursor()
         return self.plugin
 
     def updateExistingMenu(self, menu):
@@ -930,7 +906,7 @@ class MWindow(QtGui.QMainWindow):
             for neuron in neurons:
                 #print(neuron)
                 solver = moose.element(neuron.path + "/hsolve")
-                # print("Disabling => ", solver)
+                print("Disabling => ", solver)
                 solver.tick = -1
 
         for table in moose.wildcardFind( modelPath+'/data/graph#/#' ):

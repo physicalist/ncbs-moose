@@ -648,7 +648,7 @@ void NeuroMesh::updateShaftParents()
 			parent_[i] = index + nn.startFid();
 		} else {
 			cout << "Warning: NeuroMesh::updateShaftParents: may be"
-					" misaligned on " << i << "\n";
+					"misalgned on " << i << "\n";
 			parent_[i] = index + nn.startFid();
 		}
 	}
