@@ -13,9 +13,9 @@ from PyQt4.QtGui import QFont
 from PyQt4.QtCore import QPoint
 import moose
 import default
-import moogli
+import _moogli
 
-class MorphologyEditor(moogli.MorphologyViewer):
+class MorphologyEditor(_moogli.MorphologyViewer):
 
     def __init__(self, morphology, width, height, plugin):
         super(MorphologyEditor, self).__init__( morphology
@@ -48,7 +48,7 @@ class MorphologyEditor(moogli.MorphologyViewer):
             self.plugin.mainWindow.objectEditSlot(info_id)
             self.select_info.set_event_type(0)
 
-class MorphologySimulator(moogli.MorphologyViewer):
+class MorphologySimulator(_moogli.MorphologyViewer):
 
     def __init__(self, morphology, width, height, plugin):
         super(MorphologySimulator, self).__init__( morphology
@@ -106,7 +106,7 @@ class MorphologySimulator(moogli.MorphologyViewer):
 
 
 
-class NeuroKitVisualizer(moogli.MorphologyViewer):
+class NeuroKitVisualizer(_moogli.MorphologyViewer):
 
     def __init__(self, modelRoot):
         super(NeuroKitVisualizer, self).__init__()
