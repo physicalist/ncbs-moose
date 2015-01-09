@@ -20,7 +20,8 @@ set -e
 
 case "$1" in
     configure)
-        cd /usr/lib/moogli && python setup-moogli.py install --record installed_files.txt 
+        mkdir -p /etc/moogli
+        cd /tmp && python setup-moogli.py install --record /etc/moogli/installed_files.txt 
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
