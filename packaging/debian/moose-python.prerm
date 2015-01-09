@@ -54,6 +54,10 @@ case "$1" in
 	    rm $HOME/Desktop/HHSquidDemo.desktop
 	fi
 
+        set +e
+        ( pip uninstall pymoose )
+        set -e
+
     ;;
 
     failed-upgrade)
