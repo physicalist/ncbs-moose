@@ -29,6 +29,10 @@ case "$1" in
             rm -R /etc/moogli
         fi
 
+        set +e
+        ( pip uninstall moogli )
+        set -e
+
     ;;
 
     failed-upgrade)
