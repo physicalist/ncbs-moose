@@ -20,7 +20,8 @@ set -e
 
 case "$1" in
     configure)
-        cd /usr/lib/moose/python && python setup.py install --record installed_files.txt 
+        mkdir -p /etc/moose
+        cd /tmp && python setup.py install --record /etc/moose/installed_files.txt 
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
