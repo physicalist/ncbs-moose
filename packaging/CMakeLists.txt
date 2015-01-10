@@ -692,6 +692,7 @@ set(CPACK_RPM_PACKAGE_REQUIRES
 set(CPACK_RPM_SPEC_MORE_DEFINE "%define ignore \#")
 set(CPACK_RPM_USER_FILELIST "%ignore /" "%ignore /usr" "%ignore /usr/share" 
     "%ignore /usr/share/applications"
+    "%ignore /tmp"
     )
 
 
