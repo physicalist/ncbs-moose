@@ -72,7 +72,6 @@ from PyQt4.QtGui import *
 from MdiArea import MdiArea
 import os
 from setsolver import *
-
 __author__ = 'Subhasis Ray , HarshaRani, Aviral Goel, NCBS'
 
 # This maps model subtypes to corresponding plugin names. Should be
@@ -86,6 +85,15 @@ subtype_plugin_map = {  'genesis/kkit': 'kkit'
 APPLICATION_ICON_PATH = os.path.join( os.path.dirname(os.path.realpath(__file__))
                                     , "icons/moose_icon.png"
                                     )
+
+
+def busyCursor():
+    app = QtGui.qApp
+    app.setOverrideCursor(QtGui.QCursor(Qt.Qt.BusyCursor)) #shows a hourglass - or a busy/working arrow
+
+def freeCursor():
+    app = QtGui.qApp
+    app.restoreOverrideCursor()
 
 
 
@@ -282,8 +290,9 @@ class MWindow(QtGui.QMainWindow):
         QSciQScintialla widget or a PyCute widget (extends QTextArea)
         if the first is not available"""
         if not hasattr(self, 'shellWidget') or self.shellWidget is None:
-            self.shellWidget = get_shell_class()(code.InteractiveInterpreter(),
-                                                 message='MOOSE version %s' % (moose._moose.__version__))
+            self.shellWidget = get_shell_class()( code.InteractiveInterpreter()
+                                                , message='MOOSE version %s' % (moose._moose.__version__)
+                                                )
             self.shellWidget.interpreter.runsource('from moose import *')
             self.shellWidget.setVisible(False)
         return self.shellWidget
@@ -319,28 +328,44 @@ class MWindow(QtGui.QMainWindow):
         3. sets the current view  to the plugins editor view.
 
         """
+        busyCursor()
         for model in self._loadedModels:
             self.disableModel(model[0])
 
-        for i in range (0, len(self._loadedModels)):
+        for i in range(0, len(self._loadedModels)):
+            print "##############3 ",root
+
             if self._loadedModels[i][0]== root:
                 c = moose.Clock('/clock')
-                c.tickDt[11] = self._loadedModels[i][3]
-                c.tickDt[16] = self._loadedModels[i][4]
+                compt = moose.wildcardFind(root+'/##[ISA=ChemCompt]')
+                if compt:
+                    c.tickDt[11] = self._loadedModels[i][3]
+                    c.tickDt[16] = self._loadedModels[i][4]
+                    if moose.exists(compt[0].path+'/ksolve'):
+                        ksolve = moose.Ksolve( compt[0].path+'/ksolve' )
+                        ksolve.tick = 16
+                    if moose.exists(compt[0].path+'/gsolve'):
+                        gsolve = moose.Gsolve( compt[0].path+'/gsolve' )
+                        gsolve.tick = 16
+                    for x in moose.wildcardFind( root+'/data/graph#/#' ):
+                        x.tick = 18
+                    
+                else:
+                    c.tickDt[7] = self._loadedModels[i][3]
+                    c.tickDt[8] = self._loadedModels[i][4]
+                    neurons = moose.wildcardFind(root + "/model/cells/##[ISA=Neuron]")
+                    for neuron in neurons:
+                        #print(neuron)
+                        solver = moose.element(neuron.path + "/hsolve")
+                        # print("Disabling => ", solver)
+                        solver.tick = 7
+                    for x in moose.wildcardFind( root+'/data/graph#/#' ):
+                        x.tick = 8
+
+                break
+        
         self.plugin = self.loadPluginClass(str(name))(str(root), self)
-        compt = moose.wildcardFind(root+'/##[ISA=ChemCompt]')
-        if compt:
-            if moose.exists(compt[0].path+'/ksolve'):
-                ksolve = moose.Ksolve( compt[0].path+'/ksolve' )
-                ksolve.tick = 16
-            if moose.exists(compt[0].path+'/gsolve'):
-                gsolve = moose.Gsolve( compt[0].path+'/gsolve' )
-                gsolve.tick = 16
-            # if moose.exists(compt[0].path+'/stoich'):
-            #     stoich = moose.Stoich( compt[0].path+'/stoich' )
-            #     stoich.tick = -1
-            for x in moose.wildcardFind( root+'/data/graph#/#' ):
-                x.tick = 18
+        moose.reinit()
         # if root != '/' and root not in self._loadedModels:
         #     self._loadedModels[root] = name
         # for k,v in self._loadedModels.items():
@@ -383,6 +408,7 @@ class MWindow(QtGui.QMainWindow):
             self.objectEditDockWidget.colorChanged.connect(self.plugin.getEditorView().getCentralWidget().updateColorSlot)
 
         self.setCurrentView('editor')
+        freeCursor()
         return self.plugin
 
     def updateExistingMenu(self, menu):
@@ -895,12 +921,13 @@ class MWindow(QtGui.QMainWindow):
         action = QAction(modelPath[1:],self)
         action.triggered.connect(lambda : self.setPlugin(pluginName, modelPath))
         compt = moose.wildcardFind(modelPath + '/##[ISA=ChemCompt]')
-        self.simulationdt = ''
-        self.plotdt = ''
+        c = moose.Clock('/clock')
+        self.simulationdt = c.tickDt[7]
+        self.plotdt = c.tickDt[8]
         if compt:
-            c = moose.Clock('/clock')
             self.simulationdt = c.tickDt[11]
             self.plotdt = c.tickDt[16]
+
         self._loadedModels.append([modelPath,pluginName,action,self.simulationdt,self.plotdt])
         if len(self._loadedModels)>5:
             self._loadedModels.pop(0)
@@ -908,7 +935,6 @@ class MWindow(QtGui.QMainWindow):
     def disableModel(self, modelPath):
         compt = moose.wildcardFind(modelPath + '/##[ISA=ChemCompt]')
         if compt:
-
             if moose.exists(compt[0].path+'/ksolve'):
                 ksolve = moose.Ksolve( compt[0].path+'/ksolve' )
                 ksolve.tick = -1
@@ -918,13 +944,12 @@ class MWindow(QtGui.QMainWindow):
             # if moose.exists(compt[0].path+'/stoich'):
             #     stoich = moose.Stoich( compt[0].path+'/stoich' )
             #     stoich.tick = -1
-            #deleteSolver(modelPath)
         else :
             neurons = moose.wildcardFind(modelPath + "/model/cells/##[ISA=Neuron]")
             for neuron in neurons:
                 #print(neuron)
                 solver = moose.element(neuron.path + "/hsolve")
-                print("Disabling => ", solver)
+                # print("Disabling => ", solver)
                 solver.tick = -1
 
         for table in moose.wildcardFind( modelPath+'/data/graph#/#' ):
