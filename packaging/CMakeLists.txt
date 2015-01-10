@@ -494,7 +494,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/gui
     )
 
 # and the python dependencies
-SET(PYMOOSE_TEMP_DIR "/tmp")
+SET(PYMOOSE_TEMP_DIR "/usr/lib/moose")
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/python/moose
     DESTINATION ${PYMOOSE_TEMP_DIR}
@@ -522,7 +522,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     )
 
 ### And here is moogli
-SET(MOOGLI_TEMP_DIR "/tmp")
+SET(MOOGLI_TEMP_DIR "/usr/lib/moogli")
 
 SET(DEBIAN_POSTINST_PATH ${CMAKE_SOURCE_DIR}/debian-scripts/postinst)
 SET(DEBIAN_PRERM_PATH ${CMAKE_SOURCE_DIR}/debian-scripts/prerm)
@@ -622,7 +622,6 @@ fi
 if [ -d /etc/moogli ]; then
     cd /etc/moogli && cat installed_files.txt | xargs rm -rf 
 fi
-${DETELE_PACKAGE_DIR_STEPS}
 "
 )
 
