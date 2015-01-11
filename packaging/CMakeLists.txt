@@ -277,22 +277,23 @@ if(LOCAL_SBML)
     SET(SBML_TAR_FILE ${CMAKE_SOURCE_DIR}/dependencies/libSBML-5.10.2-core-src.tar.gz)
     SET(SBML_INSTALL_DIR ${CMAKE_BINARY_DIR}/_libsbml)
     FILE(MAKE_DIRECTORY ${SBML_INSTALL_DIR})
-    execute_process(COMMAND tar xzf ${SBML_TAR_FILE} -C ${SBML_INSTALL_DIR})
-    SET(SBML_SRC_DIR ${SBML_INSTALL_DIR}/libsbml-5.10.2)
 
-    ADD_CUSTOM_COMMAND(OUTPUT _libsml.out
-        COMMAND CXXFLAGS=-fPIC ${SBML_SRC_DIR}/configure --prefix=${SBML_INSTALL_DIR}
-        --with-pic --with-swig=no --with-doxygen=no --with-bzip2 --with-libxml
-        --enable-static --disable-shared
-        COMMAND make
+    execute_process(COMMAND tar xzf ${SBML_TAR_FILE} -C ${SBML_INSTALL_DIR})
+
+    SET(SBML_SRC_DIR ${SBML_INSTALL_DIR}/libsbml-5.10.2)
+    ADD_CUSTOM_COMMAND(OUTPUT _libsbml.out
+        COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${SBML_INSTALL_DIR}
+        -DBUILD_SHARED_LIBS=OFF
+        -DWITH_BZIP2=ON
+        -DWITH_LIBXML=ON ${SBML_SRC_DIR}
         COMMAND make install
-        WORKING_DIRECTORY ${SBML_SRC_DIR}
+        WORKING_DIRECTORY ${SBML_INSTALL_DIR}
         VERBATIM
         )
-
-    ADD_CUSTOM_TARGET(_libsml ALL DEPENDS _libsml.out)
+        
+    ADD_CUSTOM_TARGET(_libsml ALL DEPENDS _libsbml.out)
     MESSAGE("+++ LIBSBML_LIBRARY: ${LIBSBML_LIBRARY}")
-    set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml.a)
+    set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml-static.a) 
     include_directories(${SBML_INSTALL_DIR}/include)
 endif()
 
