@@ -208,7 +208,7 @@ if(LOCAL_GSL)
 
     execute_process(COMMAND tar xzf ${GSL_TAR_FILE} -C ${GSL_BUILD_DIR})
 
-    ADD_CUSTOM_COMMAND(OUTPUT _libgsl_tgt
+    ADD_CUSTOM_COMMAND(OUTPUT _libgsl_tgt.out
         COMMAND ${GSL_SRC_DIR}/configure --prefix=${GSL_INSTALL_DIR} --with-pic --enable-static 
         COMMAND make -f ${GSL_SRC_DIR}/Makefile
         COMMAND make install
@@ -216,6 +216,8 @@ if(LOCAL_GSL)
         COMMENT("++ Extracting gsl and building it")
         VERBATIM
         )
+    ADD_CUSTOM_TARGET(_libgsl_tgt ALL DEPENDS _libgsl_tgt.out)
+
     include_directories(${GSL_INSTALL_DIR}/include)
     set(LOCAL_GSL_LIBRARIES ${GSL_INSTALL_DIR}/lib/libgsl.a 
         ${GSL_INSTALL_DIR}/lib/libgslcblas.a
@@ -243,7 +245,7 @@ if(LOCAL_HDF)
     FILE(MAKE_DIRECTORY ${HDF_BUILD_DIR})
     execute_process(COMMAND tar xzf ${HDF_TAR_FILE} -C ${HDF_BUILD_DIR})
 
-    ADD_CUSTOM_COMMAND(OUTPUT _libhdf
+    ADD_CUSTOM_COMMAND(OUTPUT _libhdf.out
         COMMAND ${HDF_SRC_DIR}/configure --prefix=${HDF_INSTALL_DIR}
         --enable-cxx --enable-static --disable-shared --with-pic --enable-production
         --libdir=${HDF_INSTALL_DIR}/lib${LIBSUFFIX}
@@ -260,6 +262,9 @@ if(LOCAL_HDF)
         #-DWITH_BZIP2:BOOL=ON 
         #-DWITH_LIBXML:BOOL=ON
         )
+
+    ADD_CUSTOM_TARGET(_libhdf ALL DEPENDS _libhdf.out)
+
     set(HDF5_LIBRARY ${HDF_INSTALL_DIR}/lib${LIBSUFFIX}/libhdf5_cpp.a
         ${HDF_INSTALL_DIR}/lib${LIBSUFFIX}/libhdf5.a
         )
@@ -275,14 +280,16 @@ if(LOCAL_SBML)
     execute_process(COMMAND tar xzf ${SBML_TAR_FILE} -C ${SBML_INSTALL_DIR})
     SET(SBML_SRC_DIR ${SBML_INSTALL_DIR}/libsbml-5.10.2)
 
-    ADD_CUSTOM_COMMAND(OUTPUT _libsml
-        COMMAND ${SBML_SRC_DIR}/configure --prefix=${SBML_INSTALL_DIR}
+    ADD_CUSTOM_COMMAND(OUTPUT _libsml.out
+        COMMAND CXXFLAGS=-fPIC ${SBML_SRC_DIR}/configure --prefix=${SBML_INSTALL_DIR}
         --with-pic --with-swig=no --with-doxygen=no --with-bzip2 --with-libxml --disable-shared
         COMMAND make
         COMMAND make install
         WORKING_DIRECTORY ${SBML_SRC_DIR}
         VERBATIM
         )
+
+    ADD_CUSTOM_TARGET(_libsml ALL DEPENDS _libsml.out)
     MESSAGE("+++ LIBSBML_LIBRARY: ${LIBSBML_LIBRARY}")
     set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml.a)
     include_directories(${SBML_INSTALL_DIR}/include)
