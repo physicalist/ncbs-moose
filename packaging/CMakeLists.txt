@@ -1,5 +1,35 @@
-cmake_minimum_required(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+## Now setting up project.
 project(moose)
+
+## Here we check for available cmake, if anything less than 2.8 is found,
+## build a cmake 3.0.1 in source tree and use it
+#MESSAGE("++ CMAKE VERSION IS : ${CMAKE_VERSION}")
+#IF(${CMAKE_VERSION} VERSION_GREATER 2.8.0.0)
+    #MESSAGE("++ Cool. CMake 2.8 or higher is found. Continuing ...")
+#else()
+    #MESSAGE("++Version ${CMAKE_VERSION} found. Not good enough! Building a local copy")
+    #SET(CMAKE_LOCAL_INSTALL_PATH ${CMAKE_SOURCE_DIR})
+    #SET(CMAKE_LOCAL_SRC_DIR ${CMAKE_SOURCE_DIR}/dependencies/cmake-3.1.0)
+    #SET(CMAKE_LOCAL_BUILD_DIR ${CMAKE_BINARY_DIR}/_cmake)
+    #FILE(MAKE_DIRECTORY ${CMAKE_LOCAL_BUILD_DIR})
+    #MESSAGE("++ Building in ${CMAKE_LOCAL_SRC_DIR}")
+    #execute_process(COMMAND ${CMAKE_LOCAL_SRC_DIR}/configure --prefix=${CMAKE_LOCAL_INSTALL_PATH}
+        #WORKING_DIRECTORY ${CMAKE_LOCAL_BUILD_DIR}
+        #RESULT_VARIABLE CMAKE_BUILD_RESULT
+        #)
+    #execute_process(COMMAND make 
+        #WORKING_DIRECTORY ${CMAKE_LOCAL_BUILD_DIR}
+        #)
+    #execute_process(COMMAND make install
+        #WORKING_DIRECTORY ${CMAKE_LOCAL_BUILD_DIR}
+        #)
+    #SET(CMAKE_COMMAND ${CMAKE_LOCAL_INSTALL_PATH}/bin/cmake)
+    #SET(CPACK_COMMAND ${CMAKE_LOCAL_INSTALL_PATH}/bin/cpack)
+    #SET(CTEST_COMMAND ${CMAKE_LOCAL_INSTALL_PATH}/bin/ctest)
+#endif()  ## CMAKE_VERSION_CHECK
+
+
 set(CMAKE_INSTALL_PREFIX /usr)
 
 # This variable should point to the source code.
@@ -152,25 +182,39 @@ else()
 endif()
 
 ## External projects
-include(ExternalProject)
-ExternalProject_Add(
-   moogli
-   PREFIX ${PROJECT_SOURCE_DIR}/python/moogli
-   SOURCE_DIR  ${PROJECT_SOURCE_DIR}/python/moogli
-   CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${PROJECT_SOURCE_DIR}/python/moogli"
-) 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/python/moogli/include)
-LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/python/moogli)
+OPTION(BUILD_MOOGLI "Build moogli extension." ON)
+IF(BUILD_MOOGLI)
+    MESSAGE("++ Building MOOGLI")
+    SET(MOOGL_SRC_PATH ${PROJECT_SOURCE_DIR}/python/moogli)
+    SET(MOOGLI_BUILD_PATH ${CMAKE_BINARY_DIR}/_moogli)
+    FILE(MAKE_DIRECTORY ${MOOGLI_BUILD_PATH})
+    ADD_CUSTOM_TARGET(moogli
+        COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${MOOGLI_BUILD_PATH}
+        RESULT_VARIABLE MOOGLI_BUILD_RESULT
+    ) 
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/python/moogli/include)
+    LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/python/moogli)
+else()
+    MESSAGE("++ NOT building MOOGLI")
+endif()
 
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/dependencies)
 if(LOCAL_GSL)
-    MESSAGE("++ GSL include path ${GSL_HEADER_PATHS}")
-    set(GSL_INSTALL_DIR ${CMAKE_SOURCE_DIR}/_libgsl)
-    include(ExternalProject)
-    ExternalProject_Add(GSL
-        PREFIX ${EXTERNAL_DIR}
-        URL ${EXTERNAL_DIR}/gsl-1.16.tar.gz
-        CMAKE_ARGS -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_C_FLAGS=-fpic -DCMAKE_INSTALL_PREFIX:PATH=${GSL_INSTALL_DIR} -DBUILD_SHARED_LIBS=OFF
+    SET(GSL_TAR_FILE ${CMAKE_SOURCE_DIR}/dependencies/gsl-1.16.tar.gz)
+    SET(GSL_BUILD_DIR ${CMAKE_BINARY_DIR}/_libgsl)
+    SET(GSL_SRC_DIR ${GSL_BUILD_DIR}/gsl-master)
+    set(GSL_INSTALL_DIR ${CMAKE_BINARY_DIR}/_libgsl)
+    FILE(MAKE_DIRECTORY ${GSL_BUILD_DIR})
+
+    execute_process(COMMAND tar xzf ${GSL_TAR_FILE} -C ${GSL_BUILD_DIR})
+
+    ADD_CUSTOM_COMMAND(OUTPUT _libgsl_tgt
+        COMMAND ${GSL_SRC_DIR}/configure --prefix=${GSL_INSTALL_DIR} --with-pic --enable-static 
+        COMMAND make -f ${GSL_SRC_DIR}/Makefile
+        COMMAND make install
+        WORKING_DIRECTORY ${GSL_SRC_DIR}
+        COMMENT("++ Extracting gsl and building it")
+        VERBATIM
         )
     include_directories(${GSL_INSTALL_DIR}/include)
     set(LOCAL_GSL_LIBRARIES ${GSL_INSTALL_DIR}/lib/libgsl.a 
@@ -179,12 +223,10 @@ if(LOCAL_GSL)
 endif()
 
 ## SBML
-set(SBML_INSTALL_DIR ${CMAKE_SOURCE_DIR}/_libsbml)
 find_package(LIBSBML)
 if(NOT LIBSBML_FOUND)
     MESSAGE("+ LIBSBML NOT FOUND. Using local SBML")
     SET(LOCAL_SBML 1)
-    include_directories(${SBML_INSTALL_DIR}/include)
 else()
     SET(LOCAL_SBML 0)
     MESSAGE("++ SBML found")
@@ -192,18 +234,24 @@ else()
 endif()
 add_definitions(-DUSE_SBML)
 
-set(HDF_INSTALL_DIR ${CMAKE_SOURCE_DIR}/_libhdf)
-include_directories(${HDF_INSTALL_DIR}/include)
 if(LOCAL_HDF)
-    include(ExternalProject)
-    ExternalProject_Add(LIBHDF
-        PREFIX ${EXTERNAL_DIR}
-        URL ${EXTERNAL_DIR}/hdf5-1.8.14.tar.gz
-        CONFIGURE_COMMAND CXXFLAGS=-fPIC ../LIBHDF/configure --prefix=${HDF_INSTALL_DIR}
+    MESSAGE("++ Building local hdf")
+    set(HDF_TAR_FILE ${CMAKE_SOURCE_DIR}/dependencies/hdf5-1.8.14.tar.gz)
+    SET(HDF_BUILD_DIR ${CMAKE_BINARY_DIR}/_hdf)
+    SET(HDF_SRC_DIR ${CMAKE_BINARY_DIR}/_hdf/hdf5-1.8.14)
+    set(HDF_INSTALL_DIR ${CMAKE_BINARY_DIR}/_libhdf)
+    FILE(MAKE_DIRECTORY ${HDF_BUILD_DIR})
+    execute_process(COMMAND tar xzf ${HDF_TAR_FILE} -C ${HDF_BUILD_DIR})
+
+    ADD_CUSTOM_COMMAND(OUTPUT _libhdf
+        COMMAND ${HDF_SRC_DIR}/configure --prefix=${HDF_INSTALL_DIR}
         --enable-cxx --enable-static --disable-shared --with-pic --enable-production
         --libdir=${HDF_INSTALL_DIR}/lib${LIBSUFFIX}
-        BUILD_COMMAND make 
-        INSTALL_COMMAND make install
+        COMMAND make 
+        COMMAND make install
+        WORKING_DIRECTORY ${HDF_SRC_DIR}
+        COMMENT "+++ Building Local HDF"
+        VERBATIM
         #CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${HDF_INSTALL_DIR}
         #-DBUILD_SHARED_LIBS:BOOL=OFF
         #-DBUILD_STATIC_EXECS:BOOL=ON
@@ -215,20 +263,29 @@ if(LOCAL_HDF)
     set(HDF5_LIBRARY ${HDF_INSTALL_DIR}/lib${LIBSUFFIX}/libhdf5_cpp.a
         ${HDF_INSTALL_DIR}/lib${LIBSUFFIX}/libhdf5.a
         )
+    include_directories(${HDF_INSTALL_DIR}/include)
 endif()
 
 
 if(LOCAL_SBML)
-    include(ExternalProject)
-    ExternalProject_Add(LIBSBML
-        PREFIX ${EXTERNAL_DIR}
-        URL ${EXTERNAL_DIR}/libSBML-5.10.2-core-src.tar.gz
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${SBML_INSTALL_DIR}
-        -DBUILD_SHARED_LIBS:BOOL=OFF
-        -DWITH_BZIP2:BOOL=ON 
-        -DWITH_LIBXML:BOOL=ON
+    MESSAGE("+++ Building local sbml")
+    SET(SBML_TAR_FILE ${CMAKE_SOURCE_DIR}/dependencies/libSBML-5.10.2-core-src.tar.gz)
+    SET(SBML_INSTALL_DIR ${CMAKE_BINARY_DIR}/_libsbml)
+    FILE(MAKE_DIRECTORY ${SBML_INSTALL_DIR})
+    execute_process(COMMAND tar xzf ${SBML_TAR_FILE} -C ${SBML_INSTALL_DIR})
+    SET(SBML_SRC_DIR ${SBML_INSTALL_DIR}/libsbml-5.10.2)
+
+    ADD_CUSTOM_COMMAND(OUTPUT _libsml
+        COMMAND ${SBML_SRC_DIR}/configure --prefix=${SBML_INSTALL_DIR}
+        --with-pic --with-swig=no --with-doxygen=no --with-bzip2 --with-libxml --disable-shared
+        COMMAND make
+        COMMAND make install
+        WORKING_DIRECTORY ${SBML_SRC_DIR}
+        VERBATIM
         )
-    set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml-static.a)
+    MESSAGE("+++ LIBSBML_LIBRARY: ${LIBSBML_LIBRARY}")
+    set(LIBSBML_LIBRARY ${SBML_INSTALL_DIR}/lib/libsbml.a)
+    include_directories(${SBML_INSTALL_DIR}/include)
 endif()
 
 ################################### SETUP BUILD ################################
@@ -274,6 +331,23 @@ set_target_properties(moose-bin PROPERTIES COMPILE_FLAGS "-UMOOSE_LIB -UPYMOOSE"
 add_library(moose SHARED ${PROJECT_SOURCE_DIR}/basecode/main.cpp)
 set_target_properties(moose PROPERTIES COMPILE_FLAGS  "-DMOOSE_LIB")
 set_target_properties(moose PROPERTIES VERSION 3.0.1 SOVERSION 3)
+
+if(LOCAL_GSL)
+    #MESSAGE("++ Adding dependencies to moose-bin and moose: _libgsl_tgt")
+    add_dependencies(moose-bin _libgsl_tgt)
+    add_dependencies(moose _libgsl_tgt)
+endif()
+
+if(LOCAL_HDF)
+    #MESSAGE(" ++ Adding dependencies to moose-bin and moose: _libhdf")
+    add_dependencies(moose-bin _libhdf)
+    add_dependencies(moose _libhdf)
+endif()
+
+if(LOCAL_SBML)
+    add_dependencies(moose-bin _libsml)
+    add_dependencies(moose _libsml)
+endif()
 
 ## GSL
 # Setup GSL
@@ -521,6 +595,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     COMPONENT moose
     )
 
+if(BUILD_MOOGLI)
 ### And here is moogli
 SET(MOOGLI_TEMP_DIR "/usr/lib/moogli")
 
@@ -639,7 +714,7 @@ install(FILES ${PROJECT_SOURCE_DIR}/python/setup-moogli.py
     DESTINATION ${MOOGLI_TEMP_DIR}
     COMPONENT moose
     )
-
+endif(BUILD_MOOGLI)
 
 ########################## PACKAGING #########################################
 
