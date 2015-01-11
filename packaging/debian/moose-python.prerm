@@ -55,7 +55,7 @@ case "$1" in
 	fi
 
         set +e
-        ( pip uninstall pymoose )
+        ( pip uninstall -y pymoose )
         set -e
 
     ;;
