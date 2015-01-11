@@ -282,7 +282,8 @@ if(LOCAL_SBML)
 
     ADD_CUSTOM_COMMAND(OUTPUT _libsml.out
         COMMAND CXXFLAGS=-fPIC ${SBML_SRC_DIR}/configure --prefix=${SBML_INSTALL_DIR}
-        --with-pic --with-swig=no --with-doxygen=no --with-bzip2 --with-libxml --disable-shared
+        --with-pic --with-swig=no --with-doxygen=no --with-bzip2 --with-libxml
+        --enable-static --disable-shared
         COMMAND make
         COMMAND make install
         WORKING_DIRECTORY ${SBML_SRC_DIR}
