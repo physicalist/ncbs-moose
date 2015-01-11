@@ -30,7 +30,7 @@ case "$1" in
         fi
 
         set +e
-        ( pip uninstall moogli )
+        ( pip uninstall -y moogli )
         set -e
 
     ;;
