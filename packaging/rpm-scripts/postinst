@@ -2,5 +2,5 @@
 set -e
 mkdir -p /etc/moose
 mkdir -p /etc/moogli
-( cd /tmp && python setup.py install --record /etc/moose/installed_files.txt )
-( cd /tmp && python setup-moogli.py install --record /etc/moogli/installed_files.txt )
+( cd /usr/lib/moose && python setup.py install --record /etc/moose/installed_files.txt )
+( cd /usr/lib/moogli && python setup-moogli.py install --record /etc/moogli/installed_files.txt )

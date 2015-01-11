@@ -6,20 +6,3 @@ fi
 if [ -d /etc/moogli ]; then
     cd /etc/moogli && cat installed_files.txt | xargs rm -rf 
 fi
-
-        if [ -d /usr/share/doc/moose ]; then 
-            rm -R /usr/share/doc/moose
-        fi
-
-        if [ -d /usr/share/moose ]; then
-            rm -R /usr/share/moose 
-        fi
-
-        if [ -d /etc/moose ]; then
-            rm -R /etc/moose
-        fi
-
-        if [ -d /etc/moogli ]; then
-            rm -R /etc/moogli 
-        fi
-        
