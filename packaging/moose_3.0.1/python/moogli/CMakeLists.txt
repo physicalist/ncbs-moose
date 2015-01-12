@@ -27,7 +27,6 @@ endif()
 
 ADD_DEFINITIONS("-fPIC")
 
-FIND_PACKAGE(PythonLibs REQUIRED)
 FIND_PACKAGE(PythonInterp REQUIRED)
 
 FIND_PACKAGE(PyQt4 REQUIRED)
@@ -72,11 +71,13 @@ ADD_LIBRARY(moogli SHARED
     ${PROJECT_SOURCE_DIR}/moc/MorphologyViewer.moc.cpp
     )
 
+SET(MOOGLI_BUILD_PATH ${CMAKE_CURRENT_BINARY_DIR}/_moogli)
+FILE(MAKE_DIRECTORY ${MOOGLI_BUILD_PATH})
+
 SET_TARGET_PROPERTIES(moogli PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY "${MOOGLI_BUILD_PATH}"
     PREFIX ""
     )
-
 
 ## Link the following libraries to moogli.
 TARGET_LINK_LIBRARIES(moogli
@@ -100,13 +101,28 @@ TARGET_LINK_LIBRARIES(moogli
     osgText
     )
 
-## INSTALL components.
-INSTALL(TARGETS moogli
-    LIBRARY DESTINATION lib/moogli
+SET(MOOGLI_TEMP_DIR "${CMAKE_CURRENT_BINARY_DIR}/_moogli")
+FILE(MAKE_DIRECTORY ${MOOGLI_TEMP_DIR})
+
+install(FILES ${MOOGLI_BUILD_PATH}/moogli.so
+    DESTINATION ${MOOGLI_TEMP_DIR}/moogli
+    COMPONENT moogli
     )
 
-INSTALL(FILES ${PROJECT_SOURCE_DIR}/setup.py
-    DESTINATION lib/moogli
+install(FILES ${PROJECT_SOURCE_DIR}/__init__.py
+    DESTINATION ${MOOGLI_TEMP_DIR}/moogli
+    COMPONENT moogli
+    )
+
+install(FILES ${PROJECT_SOURCE_DIR}/setup-moogli.py
+    DESTINATION ${MOOGLI_TEMP_DIR}
+    COMPONENT moogli
+    )
+
+install(CODE 
+    "execute_process(COMMAND ${PYTHON_EXECUTABLE} setup-moogli.py install
+    WORKING_DIRECTORY ${MOOGLI_TEMP_DIR})"
+    COMPONENT moogli
     )
 
 SET(CPACK_STRIP_FILES TRUE)
