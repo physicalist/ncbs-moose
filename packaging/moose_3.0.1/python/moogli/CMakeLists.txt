@@ -65,11 +65,11 @@ include_directories(${OPENSCENEGRAPH_INCLUDE_DIRS})
 include_directories(${OSGANIMATION_INCLUDE_DIR})
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/sip)
-add_subdirectory(${PROJECT_SOURCE_DIR}/moc)
+#add_subdirectory(${PROJECT_SOURCE_DIR}/moc)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 
 ADD_LIBRARY(moogli SHARED 
-	${EMPTY_FILE}
+    ${PROJECT_SOURCE_DIR}/moc/MorphologyViewer.moc.cpp
     )
 
 SET_TARGET_PROPERTIES(moogli PROPERTIES
@@ -81,7 +81,6 @@ SET_TARGET_PROPERTIES(moogli PROPERTIES
 ## Link the following libraries to moogli.
 TARGET_LINK_LIBRARIES(moogli
     "-Wl,--whole-archive"
-    moc
     src
     sip
     "-Wl,--no-whole-archive"
