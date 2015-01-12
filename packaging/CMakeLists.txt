@@ -188,9 +188,12 @@ IF(BUILD_MOOGLI)
     SET(MOOGL_SRC_PATH ${PROJECT_SOURCE_DIR}/python/moogli)
     SET(MOOGLI_BUILD_PATH ${CMAKE_BINARY_DIR}/_moogli)
     FILE(MAKE_DIRECTORY ${MOOGLI_BUILD_PATH})
-    ADD_CUSTOM_TARGET(moogli
-        COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${MOOGLI_BUILD_PATH}
-        RESULT_VARIABLE MOOGLI_BUILD_RESULT
+    ADD_CUSTOM_TARGET(moogli ALL
+        COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${MOOGLI_BUILD_PATH} ${MOOGL_SRC_PATH}
+        COMMAND make install
+        WORKING_DIRECTORY ${MOOGLI_BUILD_PATH}
+        COMMENT "Building MOOGLI"
+        VERBATIM
     ) 
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/python/moogli/include)
     LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/python/moogli)
@@ -709,7 +712,7 @@ fi
 "
 )
 
-install(FILES ${PROJECT_SOURCE_DIR}/python/moogli/moogli.so
+install(FILES ${MOOGLI_BUILD_PATH}/lib/moogli/moogli.so
     DESTINATION ${MOOGLI_TEMP_DIR}/moogli
     COMPONENT moose
     )
@@ -723,6 +726,7 @@ install(FILES ${PROJECT_SOURCE_DIR}/python/setup-moogli.py
     DESTINATION ${MOOGLI_TEMP_DIR}
     COMPONENT moose
     )
+
 endif(BUILD_MOOGLI)
 
 ########################## PACKAGING #########################################
