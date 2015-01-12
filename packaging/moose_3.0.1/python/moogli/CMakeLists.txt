@@ -28,6 +28,7 @@ endif()
 ADD_DEFINITIONS("-fPIC")
 
 FIND_PACKAGE(PythonInterp REQUIRED)
+FIND_PACKAGE(PythonLibs REQUIRED)
 
 FIND_PACKAGE(PyQt4 REQUIRED)
 SEPARATE_ARGUMENTS(PYQT4_SIP_FLAGS) # convert space separated values to a list
