@@ -1,0 +1,24 @@
+1. On Ubuntu (12.04 and other LTS)
+
+Following releases are supported: Vivid, Utopic, Trusty, Precise.
+
+Open your terminal, set up the proxy variables (if any), and type the following
+commands:
+
+    $ sudo -E add-apt-repository ppa:dilawar/moose
+    $ sudo apt-get update
+    $ sudo apt-get install moose-gui moose-moogli
+
+In terminal, command `moosegui` will launch the GUI. From python interpretor, 
+`import moose` will load the moose into python. 
+
+2. RPM based distribution
+
+For RPM, we are using Open-Build-Service to build MOOSE. This is experimental
+build. Except Fedora, we could not build `moose-moogli`. 
+
+Follow instructions on this page
+http://software.opensuse.org/download.html?project=home%3Amoose&package=moose-all
+. And follow the instructions. Make sure that you have proxy variables
+setup in your package manager.
+
