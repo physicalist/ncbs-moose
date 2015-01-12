@@ -712,7 +712,7 @@ fi
 "
 )
 
-install(FILES ${MOOGLI_BUILD_PATH}/lib/moogli/moogli.so
+install(FILES ${MOOGLI_BUILD_PATH}/_moogli/moogli.so
     DESTINATION ${MOOGLI_TEMP_DIR}/moogli
     COMPONENT moose
     )
