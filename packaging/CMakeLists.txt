@@ -31,10 +31,10 @@ project(moose)
 
 
 set(CMAKE_INSTALL_PREFIX /usr)
+OPTION(WHOLE_ARCHIVE "Link all libraries in one big package" ON)
 
 # This variable should point to the source code.
 set(MOOSE_SRC_DIRNAME moose_3.0.1)
-#set(MOOSE_SRC_DIRNAME trunk)
 
 ## Project related macros
 set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${MOOSE_SRC_DIRNAME})
@@ -189,7 +189,7 @@ IF(BUILD_MOOGLI)
     SET(MOOGLI_BUILD_PATH ${CMAKE_BINARY_DIR}/_moogli)
     FILE(MAKE_DIRECTORY ${MOOGLI_BUILD_PATH})
     ADD_CUSTOM_TARGET(moogli ALL
-        COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${MOOGLI_BUILD_PATH} ${MOOGL_SRC_PATH}
+        COMMAND ${CMAKE_COMMAND} -DWHOLE_ARHIVE=${WHOLE_ARCHIVE} -DCMAKE_INSTALL_PREFIX=${MOOGLI_BUILD_PATH} ${MOOGL_SRC_PATH}
         COMMAND make install
         WORKING_DIRECTORY ${MOOGLI_BUILD_PATH}
         COMMENT "Building MOOGLI"
@@ -667,6 +667,10 @@ FILE(WRITE ${DEBIAN_PRERM_PATH} "#!/bin/sh
 set -e
 case \"$1\" in
     remove|upgrade|deconfigure)
+        set +e 
+        pip uninstall -y pymoose
+        pip uninstall -y moogli
+        set -e
         if [ -d /etc/moose ]; then
             cd /etc/moose && cat installed_files.txt | xargs rm -rf
         fi

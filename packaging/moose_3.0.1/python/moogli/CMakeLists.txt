@@ -4,6 +4,7 @@ PROJECT(moogli)
 
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 SET(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
+OPTION(WHOLE_ARCHIVE "Link all library in one" OFF)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_COMPILER "clang++")
@@ -81,26 +82,51 @@ SET_TARGET_PROPERTIES(moogli PROPERTIES
     )
 
 ## Link the following libraries to moogli.
-TARGET_LINK_LIBRARIES(moogli
-    "-Wl,--whole-archive"
-    src
-    sip
-    "-Wl,--no-whole-archive"
-    QtCore
-    QtGui
-    QtOpenGL           
-    osg
-    osgFX
-    osgUtil
-    osgFX
-    osgGA
-    osgQt
-    osgAnimation
-    osgViewer
-    osgQt
-    osgManipulator
-    osgText
-    )
+IF(WHOLE_ARCHIVE)
+    MESSAGE("++ Whole archive ")
+    TARGET_LINK_LIBRARIES(moogli
+        "-Wl,--whole-archive"
+        src
+        sip
+        QtCore
+        QtGui
+        QtOpenGL           
+        osg
+        osgFX
+        osgUtil
+        osgFX
+        osgGA
+        osgQt
+        osgAnimation
+        osgViewer
+        osgQt
+        osgManipulator
+        osgText
+        "-Wl,--no-whole-archive"
+        )
+else()
+    MESSAGE("++ No-Whole archive")
+    TARGET_LINK_LIBRARIES(moogli
+        "-Wl,--whole-archive"
+        src
+        sip
+        "-Wl,--no-whole-archive"
+        QtCore
+        QtGui
+        QtOpenGL           
+        osg
+        osgFX
+        osgUtil
+        osgFX
+        osgGA
+        osgQt
+        osgAnimation
+        osgViewer
+        osgQt
+        osgManipulator
+        osgText
+        )
+endif()
 
 SET(MOOGLI_TEMP_DIR "${CMAKE_CURRENT_BINARY_DIR}/_moogli")
 FILE(MAKE_DIRECTORY ${MOOGLI_TEMP_DIR})
