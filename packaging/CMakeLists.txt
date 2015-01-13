@@ -31,7 +31,7 @@ project(moose)
 
 
 set(CMAKE_INSTALL_PREFIX /usr)
-OPTION(WHOLE_ARCHIVE "Link all libraries in one big package" ON)
+OPTION(WHOLE_ARCHIVE "Link all libraries in one big package" OFF)
 
 # This variable should point to the source code.
 set(MOOSE_SRC_DIRNAME moose_3.0.1)
