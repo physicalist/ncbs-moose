@@ -20,6 +20,10 @@ set -e
 case "$1" in
     remove|upgrade|deconfigure)
 
+        set +e
+        ( pip uninstall -y moogli )
+        set -e
+
 	if [ -d /usr/lib/moogli ]; then
             rm -R /usr/lib/moogli
 	fi
@@ -28,11 +32,6 @@ case "$1" in
             cd /etc/moogli && cat installed_files.txt | xargs rm -rf
             rm -R /etc/moogli
         fi
-
-        set +e
-        ( pip uninstall -y moogli )
-        set -e
-
     ;;
 
     failed-upgrade)
