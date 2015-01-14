@@ -5,6 +5,10 @@
 set -e
 case "$1" in
     remove|upgrade|deconfigure)
+        set +e 
+        pip uninstall -y pymoose
+        pip uninstall -y moogli
+        set -e
         if [ -d /etc/moose ]; then
             cd /etc/moose && cat installed_files.txt | xargs rm -rf
         fi
@@ -26,6 +30,10 @@ case "$1" in
 
         if [ -d /etc/moogli ]; then
             rm -R /etc/moogli 
+        fi
+
+        if [ -f /usr/share/icons/moose_icon.png ]; then
+            rm -f /usr/share/icons/moose_icon.png 
         fi
         
     ;;

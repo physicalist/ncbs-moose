@@ -211,12 +211,11 @@ if(LOCAL_GSL)
     execute_process(COMMAND tar xzf ${GSL_TAR_FILE} -C ${GSL_BUILD_DIR})
 
     ADD_CUSTOM_COMMAND(OUTPUT _libgsl_tgt.out
-        COMMAND ${GSL_SRC_DIR}/configure --prefix=${GSL_INSTALL_DIR} --with-pic
-        --enable-static --disable-shared
-        COMMAND make -f ${GSL_SRC_DIR}/Makefile
+        COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${GSL_INSTALL_DIR}
+        ${GSL_SRC_DIR}
         COMMAND make install
         WORKING_DIRECTORY ${GSL_SRC_DIR}
-        COMMENT("++ Extracting gsl and building it")
+        COMMENT("++ Building GSL using cmake.")
         VERBATIM
         )
     ADD_CUSTOM_TARGET(_libgsl_tgt ALL DEPENDS _libgsl_tgt.out)
