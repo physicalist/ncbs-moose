@@ -174,9 +174,8 @@ if(NOT GSL_FOUND)
     set(LOCAL_GSL 1)
 else()
     if(${GSL_VERSION} VERSION_LESS 1.16)
-        MESSAGE("+ Trouble. Needed version 1.16.")
-        MESSAGE("+-- I'll go ahead, download gsl-1.16 and build it for moose. Make
-        sure you have proxy environment variables set.")
+        MESSAGE("+ Trouble. Needed version 1.16. I'll now build GSL locally and
+        link it with MOOSE")
         SET(LOCAL_GSL 1)
     endif()
 endif()
@@ -212,7 +211,8 @@ if(LOCAL_GSL)
     execute_process(COMMAND tar xzf ${GSL_TAR_FILE} -C ${GSL_BUILD_DIR})
 
     ADD_CUSTOM_COMMAND(OUTPUT _libgsl_tgt.out
-        COMMAND ${GSL_SRC_DIR}/configure --prefix=${GSL_INSTALL_DIR} --with-pic --enable-static 
+        COMMAND ${GSL_SRC_DIR}/configure --prefix=${GSL_INSTALL_DIR} --with-pic
+        --enable-static --disable-shared
         COMMAND make -f ${GSL_SRC_DIR}/Makefile
         COMMAND make install
         WORKING_DIRECTORY ${GSL_SRC_DIR}
@@ -563,7 +563,7 @@ install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moosegui
 
 ## Install the icon
 install(FILES ${PROJECT_SOURCE_DIR}/gui/icons/moose_icon.png 
-    DESTINATION share/moose
+    DESTINATION share/icons
     COMPONENT moose
     )
 
