@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=MOOSE
+Name=moose
 Exec=moosegui
 Type=Application
-Version=3.0
-Icon=moose_icon.png
+Version=3.0.1
+Icon=moose
 Categories=Education;Biology;Science;Neuroscience;

@@ -566,8 +566,9 @@ install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/moosegui
 
 ## Install the icon
 install(FILES ${PROJECT_SOURCE_DIR}/gui/icons/moose_icon.png 
-    DESTINATION share/icons
+    DESTINATION share/icons/moose
     COMPONENT moose
+    RENAME moose.png
     )
 
 # And the desktop file.
