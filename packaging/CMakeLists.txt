@@ -656,6 +656,10 @@ SET(DETELE_PACKAGE_DIR_STEPS "
         if [ -d /etc/moogli ]; then
             rm -R /etc/moogli 
         fi
+
+        if [ -f /usr/share/icons/moose_icon.png ]; then
+            rm -f /usr/share/icons/moose_icon.png 
+        fi
         "
         )
 
