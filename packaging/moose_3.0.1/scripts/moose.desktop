@@ -2,5 +2,6 @@
 Name=moose
 Exec=moosegui
 Type=Application
+GenericName=Neuronal Simulator
 Version=3.0.1
 Categories=Education;Biology;Science;Neuroscience;
