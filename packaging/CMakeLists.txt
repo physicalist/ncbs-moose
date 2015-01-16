@@ -310,9 +310,11 @@ endif()
 find_package(Doxygen)
 IF(DOXYGEN_FOUND)
     MESSAGE("++ Doxygen found. Creating document")
+    SET(DOC_INSTALL_DIR ${CMAKE_BINARY_DIR}/docs)
+    FILE(MAKE_DIRECTORY ${DOC_INSTALL_DIR})
     SET(DOXYGEN_INPUT ${PROJECT_SOURCE_DIR}/Doxyfile)
-    SET(DOXYGEN_OUTPUT ${PROJECT_SOURCE_DIR}/docs/api/index.html)
-    SET(API_DOC_DIR ${PROJECT_SOURCE_DIR}/docs/api)
+    SET(DOXYGEN_OUTPUT ${DOC_INSTALL_DIR}/api/index.html)
+    SET(API_DOC_DIR ${DOC_INSTALL_DIR}/api)
 
     ADD_CUSTOM_COMMAND(
         OUTPUT ${DOXYGEN_OUTPUT}
@@ -540,7 +542,7 @@ endif(BUILD_PYMOOSE)
 
 ######################### INSTALL ##############################################
 install(TARGETS moose
-    LIBRARY DESTINATION lib
+    LIBRARY DESTINATION lib/moose
     COMPONENT moose
     )
 
@@ -606,7 +608,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/Demos/
     COMPONENT moose
     )
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+install(DIRECTORY ${DOC_INSTALL_DIR}
     DESTINATION share/doc/moose
     COMPONENT moose
     )
