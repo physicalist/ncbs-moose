@@ -670,6 +670,7 @@ SET(DETELE_PACKAGE_DIR_STEPS "
         if [ -f /usr/share/icons/moose_icon.png ]; then
             rm -f /usr/share/icons/moose_icon.png 
         fi
+
         "
         )
 
