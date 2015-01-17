@@ -211,12 +211,15 @@ if(LOCAL_GSL)
     execute_process(COMMAND tar xzf ${GSL_TAR_FILE} -C ${GSL_BUILD_DIR})
 
     ADD_CUSTOM_COMMAND(OUTPUT _libgsl_tgt.out
-        COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${GSL_INSTALL_DIR}
-        -DBUILD_SHARED_LIBRARIES:BOOL=OFF
-        -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-        -DCMAKE_C_FLAGS=-fPIC -O3
-        -DCMAKE_CXX_FLAGS=-fPIC -O3
-        ${GSL_SRC_DIR}
+        COMMAND C_FLAGS=-fPIC CXX_FLAGS=-fPIC ${GSL_SRC_DIR}/configure
+        --prefix=${GSL_INSTALL_DIR} --with-pic
+        #COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${GSL_INSTALL_DIR}
+        #-DBUILD_SHARED_LIBRARIES:BOOL=OFF
+        #-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+        #-DCMAKE_C_FLAGS=-fPIC -O3
+        #-DCMAKE_CXX_FLAGS=-fPIC -O3
+        #${GSL_SRC_DIR}
+        COMMAND make
         COMMAND make install
         WORKING_DIRECTORY ${GSL_SRC_DIR}
         COMMENT("++ Building GSL using cmake.")
@@ -225,8 +228,9 @@ if(LOCAL_GSL)
     ADD_CUSTOM_TARGET(_libgsl_tgt ALL DEPENDS _libgsl_tgt.out)
 
     include_directories(${GSL_INSTALL_DIR}/include)
-    set(LOCAL_GSL_LIBRARIES ${GSL_INSTALL_DIR}/lib/libgsl.a 
-        ${GSL_INSTALL_DIR}/lib/libgslcblas.a
+    set(LOCAL_GSL_LIBRARIES 
+        ${GSL_INSTALL_DIR}/lib/libgsl.so
+        ${GSL_INSTALL_DIR}/lib/libgslcblas.so
         )
 endif()
 
