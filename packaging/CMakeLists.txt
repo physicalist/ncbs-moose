@@ -546,7 +546,7 @@ endif(BUILD_PYMOOSE)
 
 ######################### INSTALL ##############################################
 install(TARGETS moose
-    LIBRARY DESTINATION lib/moose
+    LIBRARY DESTINATION lib
     COMPONENT moose
     )
 
@@ -585,7 +585,7 @@ install(FILES ${PROJECT_SOURCE_DIR}/scripts/moose.desktop
 
 # And the gui
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/gui
-    DESTINATION lib/moose
+    DESTINATION lib
     COMPONENT moose
     )
 
