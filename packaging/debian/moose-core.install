@@ -1,2 +1,2 @@
-usr/bin/moose
-usr/lib/libmoose*
+usr/bin/moose*
+usr/lib/moose/libmoose*
