@@ -585,7 +585,7 @@ install(FILES ${PROJECT_SOURCE_DIR}/scripts/moose.desktop
 
 # And the gui
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/gui
-    DESTINATION lib
+    DESTINATION lib/moose
     COMPONENT moose
     )
 
