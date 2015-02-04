@@ -36,7 +36,7 @@ Description: Development library
 
 Package: moose-python
 Architecture: any
-Depends: python-numpy, python-matplotlib, python-nose, libxml2, python-networkx, moose-doc
+Depends: python-numpy, python-matplotlib, python-nose, libxml2, python-networkx, moose-doc, python-setuptools, python-suds, moose-core
 Description: Python interface of MOOSE.
  .
  This package installs python scripting interface.
