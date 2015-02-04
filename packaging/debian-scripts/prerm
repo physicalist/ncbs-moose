@@ -35,6 +35,7 @@ case "$1" in
         if [ -f /usr/share/icons/moose_icon.png ]; then
             rm -f /usr/share/icons/moose_icon.png 
         fi
+
         
     ;;
 
