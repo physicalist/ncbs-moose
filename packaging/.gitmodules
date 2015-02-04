@@ -1,0 +1,4 @@
+[submodule "moose_3.0.1"]
+	path = moose_3.0.1
+	url = git@github.com:dilawar/moose-svn
+	branch = trunk
