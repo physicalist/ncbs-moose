@@ -4,5 +4,5 @@
 
 # Don't fail on local system when dependencies are installed locally. TODO: This
 # should be removed after testing.
-override_dh_shilbdeps:
-	dh_shilibdeps --dpkg-shilibs-params=--ignore-missing-info
+override_dh_shlibdeps:
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
