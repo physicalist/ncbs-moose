@@ -13,8 +13,8 @@ moose_dir=moose-3.0
     if [ -f dist/$moose_dir.tar.gz ]; then
         rm -f dist/*.tar.gz
     fi
-    python setup.py sdist -vv
+    python setup.py sdist -vv | tee $0.log
     echo "Created new archive"
-    sudo pip install dist/*.tar.gz --no-clean
+    sudo pip install dist/*.tar.gz --no-clean | tee $0.log
     echo "Do the rest in $moose_dir"
 )

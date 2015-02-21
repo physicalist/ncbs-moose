@@ -12,10 +12,10 @@ EOF
 if [ $# -gt 0 ]; then
     if [[ "$1" == "update" ]]; then
         echo "Fetching repo and creating tar-ball"
-        bzr dailydeb --allow-fallback-to-native moose.recipe ..
+        bzr dailydeb --allow-fallback-to-native moose.recipe .. | tee $0.log
     elif [[ "$1" == "pbuilder" ]]; then
-        bzr dailydeb --allow-fallback-to-native moose.recipe ..
-        sudo -E pbuilder build ../*.dsc
+        bzr dailydeb --allow-fallback-to-native moose.recipe .. | tee $0.log
+        sudo -E pbuilder build ../*.dsc | tee $0.log
         exit
     fi
 fi
@@ -27,10 +27,10 @@ if [[ ! $tarFile ]]; then
     echo "++ Cleaning previous mess"
     rm -rf ../moose_3.0* ../moose-{*
     echo "++ Let me download a fresh one"
-    bzr dailydeb --allow-fallback-to-native moose.recipe ..
+    bzr dailydeb --allow-fallback-to-native moose.recipe .. | tee $0.log
 fi
 
 rm -f moose.recipe
 echo "Building debian package"
-bzr builddeb -- -uc -us
+bzr builddeb -- -uc -us | tee $0.log
 )
