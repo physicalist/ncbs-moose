@@ -522,10 +522,6 @@ if(BUILD_PYMOOSE)
     add_subdirectory(${PROJECT_SOURCE_DIR}/pymoose)
     add_library(_moose SHARED ${PROJECT_SOURCE_DIR}/pymoose/moosemodule.cpp)
 
-    if(LOCAL_GSL)
-        add_dependencies(_moose GSL)
-    endif()
-
     set_target_properties(_moose PROPERTIES COMPILE_DEFINITIONS "PYMOOSE")
     set_target_properties(_moose PROPERTIES 
         LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/python/moose"
