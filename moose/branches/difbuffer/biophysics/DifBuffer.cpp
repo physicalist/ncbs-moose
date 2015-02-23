@@ -7,9 +7,9 @@
 // Created: Mon Feb 16 12:02:11 2015 (-0500)
 // Version: 
 // Package-Requires: ()
-// Last-Updated: Mon Feb 16 14:03:00 2015 (-0500)
+// Last-Updated: Mon Feb 23 13:07:56 2015 (-0500)
 //           By: Subhasis Ray
-//     Update #: 85
+//     Update #: 130
 // URL: 
 // Doc URL: 
 // Keywords: 
@@ -45,6 +45,9 @@
 
 // Code:
 
+#include "header.h"
+#include "DifBuffer.h"
+
 static SrcFinfo4< double, double, double, double >* reactionOut()
 {
   static SrcFinfo4< double, double, double, double > reactionOut(
@@ -59,13 +62,10 @@ const Cinfo * DifBuffer::initCinfo()
 {
   static DestFinfo process( "process",
                             "Handles process call",
-                            new ProcOpFunc< DifBuffer >(  &DifBuffer::process_0 ) );
-  static DestFinfo process( "process",
-                            "Handles process call",
-                            new ProcOpFunc< DifBuffer >(  &DifBuffer::process_0 ) );
+                            new ProcOpFunc< DifBuffer >(  &DifBuffer::process) );
   static DestFinfo reinit( "reinit",
                            "Reinit happens only in stage 0",
-                           new ProcOpFunc< DifBuffer >( &DifBuffer::reinit_0 ));
+                           new ProcOpFunc< DifBuffer >( &DifBuffer::reinit));
     
   static Finfo* processShared_0[] = {
     &process,
@@ -108,16 +108,16 @@ const Cinfo * DifBuffer::initCinfo()
     &concentration, reactionOut()
   };
   static SharedFinfo buffer( "buffer",
-                             "This is a shared message from a DifBuffer to a Buffer (FixBuffer or DifBuffer). "
+                             "This is a shared message with DifShell. "
                              "During stage 0:\n "
                              " - DifBuffer sends ion concentration\n"
                              " - Buffer updates buffer concentration and sends it back immediately using a call-back.\n"
-                             " - DifBuffer updates the time-derivative ( dC / dt ) \n"
+                             " - DifShell updates the time-derivative ( dC / dt ) \n"
                              "\n"
                              "During stage 1: \n"
-                             " - DifBuffer advances concentration C \n\n"
+                             " - DifShell advances concentration C \n\n"
                              "This scheme means that the Buffer does not need to be scheduled, and it does its computations when "
-                             "it receives a cue from the DifBuffer. May not be the best idea, but it saves us from doing the above "
+                             "it receives a cue from the DifShell. May not be the best idea, but it saves us from doing the above "
                              "computations in 3 stages instead of 2." ,
                              bufferShared,
                              sizeof( bufferShared ) / sizeof( Finfo* ));
@@ -264,7 +264,31 @@ DifBuffer::DifBuffer()
 // Field access functions
 ////////////////////////////////////////////////////////////////////////////////
 
+// Dest function for conenctration received from DifShell.  This
+// function updates buffer concentration and sends back immediately
+// using call back.
+// TODO: complete this ... where do we get dt from?
+void DifBuffer::concentration(double conc)
+{
+  activation_ = conc;
+  Af_ += kb_ * bBound_;
+  Bf_ += kf_ * activation_;
+  bFree_ += (Af_ - bFree_ * Bf_) * dt_;  
+}
 
+void DifBuffer::fluxFromIn(double innerC, double innerThickness)
+{
+  double dif = 2 * D_ * innerArea_ / ((thickness_ + innerThickness) * volume_);
+  Af_ += dif * innerC;
+  Bf_ += dif;
+}
+
+void DifBuffer::fluxFromOut(double outerC, double outerThickness)
+{
+  double dif = 2 * D_ * outerArea_ / ((thickness_ + outerThickness)  * volume_);
+  Af_ += dif * outerC;
+  Bf_ += dif;
+}
 
 
 // 

@@ -7,9 +7,9 @@
  * Created: Mon Feb 16 11:42:50 2015 (-0500)
  * Version: 
  * Package-Requires: ()
- * Last-Updated: Mon Feb 16 13:35:54 2015 (-0500)
+ * Last-Updated: Mon Feb 23 10:49:54 2015 (-0500)
  *           By: Subhasis Ray
- *     Update #: 23
+ *     Update #: 25
  * URL: 
  * Doc URL: 
  * Keywords: 
@@ -44,6 +44,9 @@
 
 /* Code: */
 
+#ifndef _DifBuffer_h
+#define _DifBuffer_h
+
 class DifBuffer
 {
  public:
@@ -72,6 +75,8 @@ class DifBuffer
   double getOuterArea() const; //         area of upper (outer) shell surface
   double getInnerArea() const; //       area of lower (inner) shell surface
 
+  void concentration();
+
   void reinit(const Eref & e, ProcPtr p);
   void init(const Eref & e, ProcPtr p);
   
@@ -96,4 +101,5 @@ class DifBuffer
   
 };
 
+#endif // _DifBuffer_h
 /* DifBuffer.h ends here */
